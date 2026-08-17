@@ -26,6 +26,5 @@ function renderHelp(container){
 
 window.Modules = window.Modules || {};
 window.Modules['bai-viet-mau'] = { title:'Bài Viết Mẫu', render: comingSoon('Bài Viết Mẫu', 'Thư viện bài mẫu đã lên triệu view, đóng gói theo cấu trúc — do đội ngũ tuyển chọn.') };
-window.Modules['tao-anh'] = { title:'Tạo Ảnh Thương Hiệu', render: comingSoon('Tạo Ảnh Thương Hiệu', 'Ghép ảnh thương hiệu (tiêu đề, chữ nổi bật, handle) và tải PNG chỉ trong vài giây.') };
 window.Modules['tro-giup'] = { title:'Hỏi & Trợ Giúp', render: renderHelp };
 })();

@@ -49,7 +49,8 @@ function isAnswered(q, val){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null };
+  const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
+    suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null };
 
   function draw(){ container.innerHTML = screenHtml(); bind(); }
 
@@ -111,8 +112,26 @@ function render(container, ctx){
     const answered = isAnswered(q, val);
 
     let inputHtml = '';
+    let suggestHtml = '';
     if(q.type==='textarea'){
-      inputHtml = `<textarea id="qinput" placeholder="${esc(q.placeholder||'Trả lời thật, càng cụ thể càng tốt...')}">${esc(val||'')}</textarea>`;
+      inputHtml = `<textarea id="qinput" placeholder="${esc(q.placeholder||'Trả lời thật, càng cụ thể càng tốt...')}">${esc(val||'')}</textarea>
+        <div style="margin-top:10px;">
+          <span style="color:var(--accent);font-size:13px;cursor:pointer;font-weight:600;" data-action="suggest">${state.suggestLoading?'Đang nghĩ ví dụ…':'💡 Gợi ý câu trả lời cụ thể'}</span>
+        </div>`;
+      if(state.suggestForQ===state.qIndex){
+        if(state.suggestError){
+          suggestHtml = `<div class="error-box">${esc(state.suggestError)}</div>`;
+        } else if(state.suggestions){
+          suggestHtml = `<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+            ${state.suggestions.map((s,i)=>`
+              <div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--accent-soft);">
+                <div style="font-size:13.5px;line-height:1.6;color:var(--ink);">${esc(s)}</div>
+                <span style="display:inline-block;margin-top:8px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-use-suggestion="${i}">Dùng làm gợi ý →</span>
+              </div>
+            `).join('')}
+          </div>`;
+        }
+      }
     } else if(q.type==='radio'){
       inputHtml = `<div class="chips">${q.options.map(opt=>`<div class="chip ${val===opt?'selected':''}" data-opt="${esc(opt)}">${esc(opt)}</div>`).join('')}</div>`;
     } else if(q.type==='chips'){
@@ -134,6 +153,7 @@ function render(container, ctx){
         <h2 style="font-size:21px;line-height:1.4;">${esc(q.q)}</h2>
         ${q.helper?`<div style="margin-top:10px;font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${esc(q.helper)}</div>`:''}
         ${inputHtml}
+        ${suggestHtml}
       </div>
       <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
         ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
@@ -227,7 +247,18 @@ function render(container, ctx){
     if(viewSaved) viewSaved.onclick = ()=>{ state.screen = state.luot2 ? 'results2' : 'results1'; draw(); };
 
     const backLink = container.querySelector('[data-action="back"]');
-    if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); draw(); };
+    if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); resetSuggestions(); draw(); };
+
+    const suggestBtn = container.querySelector('[data-action="suggest"]');
+    if(suggestBtn) suggestBtn.onclick = fetchSuggestions;
+
+    container.querySelectorAll('[data-use-suggestion]').forEach(el=>{
+      el.onclick = ()=>{
+        const i = Number(el.getAttribute('data-use-suggestion'));
+        state.answers[q.id] = state.suggestions[i];
+        draw();
+      };
+    });
 
     const nextBtn = container.querySelector('[data-action="next"]');
     if(nextBtn) nextBtn.onclick = onNext;
@@ -284,8 +315,28 @@ function render(container, ctx){
   }
 
   function onNext(){
-    if(state.qIndex < QUESTIONS.length-1){ state.qIndex++; draw(); }
+    if(state.qIndex < QUESTIONS.length-1){ state.qIndex++; resetSuggestions(); draw(); }
     else { state.screen='saving1'; draw(); runLuot1(); }
+  }
+
+  function resetSuggestions(){
+    state.suggestions = null; state.suggestError = null; state.suggestForQ = null; state.suggestLoading = false;
+  }
+
+  async function fetchSuggestions(){
+    const q = QUESTIONS[state.qIndex];
+    state.suggestLoading = true; draw();
+    try{
+      const data = await callApi('/api/dinh-vi-goi-y', { question: q.q, previousAnswers: flattenAnswers() });
+      state.suggestions = data.result.vi_du;
+      state.suggestForQ = state.qIndex;
+      state.suggestError = null;
+    } catch(e){
+      state.suggestError = e.message;
+      state.suggestForQ = state.qIndex;
+    }
+    state.suggestLoading = false;
+    draw();
   }
 
   function flattenAnswers(){

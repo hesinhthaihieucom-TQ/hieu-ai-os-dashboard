@@ -40,7 +40,8 @@ NGUYÊN TẮC BẮT BUỘC:
 - Nếu một câu trả lời của người dùng còn mỏng, hãy suy luận hợp lý nhất có thể từ toàn bộ bối cảnh còn lại — đừng bỏ trống, đừng viết chung chung để né.
 - Giọng văn: quan sát → phân tích → định vị → dẫn đường. Không dạy đời, không than thở, không kể lể sáo rỗng.
 - Giữ nguyên các thuật ngữ tiếng Anh chuyên ngành (hook, CTA, content, format, insight, funnel, brand voice...), không dịch sang tiếng Việt.
-- Toàn bộ output bằng tiếng Việt, gọi người dùng là "bạn".`;
+- Toàn bộ output bằng tiếng Việt, gọi người dùng là "bạn".
+- TRỤC NỘI DUNG (quan trọng nhất): dù người dùng chia sẻ nhiều chủ đề/mối quan tâm, BẮT BUỘC chốt lại thành ĐÚNG 1 trục nội dung chính duy nhất — trục rõ nhất, có khả năng nuôi kênh lâu dài nhất. Không dàn trải, không ghép nhiều ý thành 1 trục mơ hồ. Chỉ thêm tối đa 1-2 trục phụ thật sự cần thiết để bổ trợ.`;
 
 function buildUserBlock(answers) {
   const lines = Object.keys(QUESTION_LABELS).map((id) => {
@@ -114,13 +115,15 @@ const TOOL_LUOT2 = {
       insight_cot_loi: { type: 'string', description: 'Theo đúng khuôn: "Họ không chỉ muốn [bề mặt], thật sự muốn [sâu hơn], vì đang sợ [nỗi sợ], và sẽ tin người giúp họ [chuyển hoá cụ thể]."' },
       he_truc_noi_dung: {
         type: 'object',
-        description: 'Hệ trục nội dung của kênh.',
+        description: 'Hệ trục nội dung của kênh — BẮT BUỘC chỉ chọn ĐÚNG 1 trục chính duy nhất, không dàn trải. Đây là tiêu chí quan trọng nhất của cả bản định vị.',
         properties: {
           cong_thuc: { type: 'string', description: 'Theo khuôn: "Mình giúp [ai] từ [kẹt] sang [kết quả] qua [lợi thế]."' },
-          truc_chinh: { type: 'string', description: 'Tên trục nội dung chính.' },
+          truc_chinh: { type: 'string', description: 'Tên 1 trục nội dung chính DUY NHẤT — trục rõ nhất, quan trọng nhất, xuyên suốt toàn kênh. Không được ghép nhiều ý thành 1 trục mơ hồ.' },
           tru_phu: {
             type: 'array',
-            description: 'Từ 3 đến 5 trụ nội dung phụ, mỗi trụ ghi rõ vai trò (kéo reach / xây niềm tin / chuyển đổi / dẫn dòng tiền).',
+            description: 'CHỈ 1 đến 2 trụ nội dung phụ (không quá 2), mỗi trụ ghi rõ vai trò (kéo reach / xây niềm tin / chuyển đổi / dẫn dòng tiền) và vì sao trụ đó bổ trợ cho trục chính.',
+            minItems: 1,
+            maxItems: 2,
             items: {
               type: 'object',
               properties: { ten: { type: 'string' }, vai_tro: { type: 'string' } },
