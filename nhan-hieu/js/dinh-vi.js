@@ -1,31 +1,23 @@
 (function(){
 const QUESTIONS = [
   {id:'a1', group:'A', type:'textarea', q:'Hiện tại bạn đang làm công việc/lĩnh vực gì? Đã làm bao lâu? Việc gì bạn giỏi nhất, việc gì đang thấy kẹt?', placeholder:'Ví dụ: Mình làm coach tài chính cá nhân được 3 năm, giỏi phần lên kế hoạch dòng tiền, còn kẹt ở phần marketing bản thân...'},
-  {id:'a2', group:'A', type:'textarea', q:'Bạn muốn xây dựng thương hiệu cá nhân trên mạng xã hội để làm gì?'},
-  {id:'a3', group:'A', type:'textarea', q:'Bạn có sản phẩm/dịch vụ/khoá học/cơ hội nào muốn dẫn người xem về không?', placeholder:'Nếu chưa có, ghi "chưa có"'},
-  {id:'a4', group:'A', type:'chips', multi:false, allowOther:true, q:'Vấn đề bạn đang gặp phải là gì?', options:['Chưa có kênh','Không rõ mình là ai','Đăng lung tung, không nhất quán','Không biết bắt đầu từ đâu']},
-  {id:'b5', group:'B', type:'textarea', q:'Bạn từng trải qua biến cố hoặc hành trình nào để lại bài học sâu sắc?'},
-  {id:'b6', group:'B', type:'textarea', q:'Người khác thường tìm đến bạn để hỏi về điều gì?'},
-  {id:'b7', group:'B', type:'textarea', q:'Chủ đề nào bạn có thể nói rất lâu mà không hết ý?'},
-  {id:'b8', group:'B', type:'textarea', q:'Bạn thích làm việc gì đến mức không thấy mệt?'},
-  {id:'b9', group:'B', type:'textarea', q:'Bạn không thích làm gì / việc gì khiến bạn dễ tụt năng lượng?'},
-  {id:'b10', group:'B', type:'textarea', q:'Bạn thường được người khác khen về điều gì nhiều nhất?'},
-  {id:'b11', group:'B', type:'textarea', q:'Bạn từng tự ti hoặc bị chê về điều gì?'},
-  {id:'b12', group:'B', type:'chips', multi:false, allowOther:true, q:'Bạn muốn giúp nhóm người nào?', options:['Mệt - kẹt - gồng','Kiếm tiền tốt hơn','Khoẻ - đẹp','Xây nhân hiệu','Kinh doanh','Chữa lành']},
-  {id:'b13', group:'B', type:'textarea', q:'Câu chuyện nào có thể trở thành "linh hồn" cho kênh của bạn?', helper:'Nếu là chuyện nhạy cảm (bệnh nặng, trầm cảm, mất mát...), mình sẽ giúp bạn kể lại có trách nhiệm — không câu view, không hù doạ.'},
-  {id:'c14', group:'C', type:'radio', q:'Bạn có thoải mái xuất hiện trước camera không?', options:['Rất thoải mái','Hơi ngại nhưng có thể tập','Không muốn lộ mặt','Chỉ muốn dùng giọng nói','Kết hợp tuỳ lúc']},
-  {id:'c15', group:'C', type:'radio', q:'Năng lượng tự nhiên của bạn thiên về hướng nào?', options:['Sâu / chữa lành','Mạnh / động lực','Vui / gần gũi','Sang / chuyên gia','Từng trải','Hài hước','Bình an / tâm linh']},
-  {id:'c16', group:'C', type:'chips', multi:true, q:'Bạn muốn người xem cảm nhận gì khi xem nội dung của bạn?', options:['Tin tưởng','Chữa lành','Động lực','Chuyên gia','Gần gũi','Kết quả thật','Chiều sâu']},
-  {id:'c17', group:'C', type:'textarea', q:'Chất liệu hình ảnh nào bạn có thể quay dễ dàng mỗi ngày?', helper:'Ví dụ: nơi làm việc, sản phẩm, khách hàng, thiên nhiên quanh bạn...'},
-  {id:'d18', group:'D', type:'textarea', q:'Bạn biết ai đang làm nội dung trong lĩnh vực tương tự? Họ đang làm tốt điều gì?'},
-  {id:'d19', group:'D', type:'textarea', q:'Bạn khác họ ở điểm nào?'},
-  {id:'d20', group:'D', type:'textarea', q:'Nếu chỉ có 10 giây để người lạ nhớ bạn là ai, bạn sẽ nói gì?'},
-  {id:'d21', group:'D', type:'textarea', q:'Điều bạn tin sâu sắc nhất về lĩnh vực mình làm — điều không phải ai cũng đồng ý?'},
-  {id:'e22', group:'E', type:'textarea', q:'Mỗi ngày bạn làm gì nhiều nhất? Hành động nào lặp đi lặp lại nhiều nhất trong công việc?', helper:'Ví dụ: gặp khách, gõ máy tính, dạy học, tư vấn, di chuyển, cầm đồ vật gì đó, viết lên bảng...'},
-  {id:'e23', group:'E', type:'textarea', q:'Có đồ vật nào luôn xuất hiện trong công việc của bạn không?', helper:'Ví dụ: laptop, sổ tay, bút, công cụ nghề, sản phẩm, trang phục đặc trưng...'},
-  {id:'e24', group:'E', type:'textarea', q:'Không gian bạn thường xuất hiện nhiều nhất là ở đâu?', helper:'Ví dụ: bàn làm việc, xe hơi, văn phòng, thiên nhiên, hội trường, nhà bếp, ngoài trời...'},
-  {id:'e25', group:'E', type:'textarea', q:'Bạn có phong cách ăn mặc / xuất hiện nhất quán không?', helper:'Ví dụ: màu hay mặc, kiểu tóc, phụ kiện đặc trưng, formal hay casual...'},
-  {id:'e26', group:'E', type:'textarea', q:'Khi nghĩ về những người có thương hiệu hình ảnh mạnh mà bạn ngưỡng mộ, họ có điểm chung gì về hình ảnh?'},
+  {id:'a2', group:'A', type:'textarea', q:'Bạn muốn xây dựng thương hiệu cá nhân để làm gì, và có sản phẩm/dịch vụ/khoá học nào muốn dẫn người xem về không?', placeholder:'Nếu chưa có sản phẩm, ghi "chưa có"'},
+  {id:'a3', group:'A', type:'chips', multi:false, allowOther:true, q:'Vấn đề bạn đang gặp phải là gì?', options:['Chưa có kênh','Không rõ mình là ai','Đăng lung tung, không nhất quán','Không biết bắt đầu từ đâu']},
+  {id:'b1', group:'B', type:'textarea', q:'Bạn từng trải qua biến cố hoặc hành trình nào để lại bài học sâu sắc? Câu chuyện đó có thể trở thành "linh hồn" cho kênh của bạn không?', helper:'Nếu là chuyện nhạy cảm (bệnh nặng, trầm cảm, mất mát...), mình sẽ giúp bạn kể lại có trách nhiệm — không câu view, không hù doạ.'},
+  {id:'b2', group:'B', type:'textarea', q:'Người khác thường tìm đến bạn để hỏi về điều gì, khen bạn nhiều nhất về điều gì, hoặc chủ đề nào bạn có thể nói rất lâu mà không hết ý?'},
+  {id:'b3', group:'B', type:'textarea', q:'Bạn thích làm việc gì đến mức không thấy mệt? Và không thích làm gì / việc gì khiến bạn dễ tụt năng lượng?'},
+  {id:'b4', group:'B', type:'textarea', q:'Bạn từng tự ti hoặc bị chê về điều gì?'},
+  {id:'b5', group:'B', type:'chips', multi:false, allowOther:true, q:'Bạn muốn giúp nhóm người nào?', options:['Mệt - kẹt - gồng','Kiếm tiền tốt hơn','Khoẻ - đẹp','Xây nhân hiệu','Kinh doanh','Chữa lành']},
+  {id:'c1', group:'C', type:'radio', q:'Bạn có thoải mái xuất hiện trước camera không?', options:['Rất thoải mái','Hơi ngại nhưng có thể tập','Không muốn lộ mặt','Chỉ muốn dùng giọng nói','Kết hợp tuỳ lúc']},
+  {id:'c2', group:'C', type:'radio', q:'Năng lượng tự nhiên của bạn thiên về hướng nào?', options:['Sâu / chữa lành','Mạnh / động lực','Vui / gần gũi','Sang / chuyên gia','Từng trải','Hài hước','Bình an / tâm linh']},
+  {id:'c3', group:'C', type:'chips', multi:true, q:'Bạn muốn người xem cảm nhận gì khi xem nội dung của bạn?', options:['Tin tưởng','Chữa lành','Động lực','Chuyên gia','Gần gũi','Kết quả thật','Chiều sâu']},
+  {id:'c4', group:'C', type:'textarea', q:'Chất liệu hình ảnh nào bạn có thể quay dễ dàng mỗi ngày?', helper:'Ví dụ: nơi làm việc, sản phẩm, khách hàng, thiên nhiên quanh bạn...'},
+  {id:'d1', group:'D', type:'textarea', q:'Bạn biết ai đang làm nội dung trong lĩnh vực tương tự? Họ đang làm tốt điều gì, và bạn khác họ ở điểm nào?'},
+  {id:'d2', group:'D', type:'textarea', q:'Nếu chỉ có 10 giây để người lạ nhớ bạn là ai, bạn sẽ nói gì?'},
+  {id:'d3', group:'D', type:'textarea', q:'Điều bạn tin sâu sắc nhất về lĩnh vực mình làm — điều không phải ai cũng đồng ý?'},
+  {id:'e1', group:'E', type:'textarea', q:'Mỗi ngày bạn làm gì nhiều nhất trong công việc? Có đồ vật hoặc không gian nào luôn xuất hiện cùng bạn không?', helper:'Ví dụ: gặp khách/dạy học/tư vấn ở bàn làm việc, với laptop/sổ tay/công cụ nghề luôn bên cạnh...'},
+  {id:'e2', group:'E', type:'textarea', q:'Bạn có phong cách ăn mặc / xuất hiện nhất quán không?', helper:'Ví dụ: màu hay mặc, kiểu tóc, phụ kiện đặc trưng, formal hay casual...'},
+  {id:'e3', group:'E', type:'textarea', q:'Khi nghĩ về những người có thương hiệu hình ảnh mạnh mà bạn ngưỡng mộ, họ có điểm chung gì về hình ảnh?'},
 ];
 
 const GROUPS = [
@@ -97,7 +89,7 @@ function render(container, ctx){
       <div class="page-head" style="text-align:center;">
         <div class="tag">Bước 1 · Định Vị</div>
         <h1>Tìm ra định vị thương hiệu chuẩn nhất</h1>
-        <p>Trả lời thật 26 câu hỏi trong 5 nhóm — mất khoảng 15-20 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>
+        <p>Trả lời thật 18 câu hỏi trong 5 nhóm — mất khoảng 10-12 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>
       </div>
       <div class="source-grid">
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
@@ -117,7 +109,7 @@ function render(container, ctx){
       <div class="page-head" style="text-align:center;">
         <div class="tag">Dán kết quả có sẵn</div>
         <h1>Dán kết quả Định Vị bạn đã làm trước đây</h1>
-        <p>Copy toàn bộ kết quả từ trợ lý ĐỊNH VỊ AI (ChatGPT) bạn đã dùng trước đây — Lượt 1, hoặc cả Lượt 1 + Lượt 2 — dán nguyên văn vào ô bên dưới. AI sẽ tự sắp xếp lại đúng cấu trúc, không cần làm lại 26 câu hỏi.</p>
+        <p>Copy toàn bộ kết quả từ trợ lý ĐỊNH VỊ AI (ChatGPT) bạn đã dùng trước đây — Lượt 1, hoặc cả Lượt 1 + Lượt 2 — dán nguyên văn vào ô bên dưới. AI sẽ tự sắp xếp lại đúng cấu trúc, không cần làm lại 18 câu hỏi.</p>
       </div>
       <div class="card">
         <textarea id="paste-input" style="min-height:260px;" placeholder="Dán nguyên văn kết quả định vị vào đây...">${esc(state.pasteText)}</textarea>
