@@ -70,6 +70,13 @@ function render(container, ctx){
       </div>
       <div class="section"><h3>Hashtag</h3><div class="body">${r.hashtag.map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div></div>
       <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
+      <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
+        <div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>
+        <div class="body">${esc(r.ly_do_dinh_dang)}</div>
+      </div>
+      <div class="btn-row no-print" style="margin-top:-6px;margin-bottom:10px;">
+        <a class="btn-ghost btn" href="#dinh-dang-content">Xem cách làm dạng này →</a>
+      </div>
       <div class="btn-row no-print">
         <button class="btn" data-action="save">${state.savedId?'Đã lưu vào thư viện ✓':'Lưu vào thư viện bài viết'}</button>
         ${state.savedId?`<a class="btn-ghost btn" href="#lich-dang">Đưa vào Lịch Đăng Bài →</a>`:''}
@@ -117,7 +124,7 @@ function render(container, ctx){
       idea_id: state.ideaId,
       title: r.tieu_de,
       content: r.bai_hoan_chinh,
-      structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh },
+      structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: r.dinh_dang_de_xuat },
     }).select().single();
     if(error){ state.error = error.message; draw(); return; }
     state.savedId = data.id;
