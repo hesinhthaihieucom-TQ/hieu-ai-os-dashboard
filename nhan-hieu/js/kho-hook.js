@@ -65,14 +65,6 @@ function render(container, ctx){
 
   function writePanelHtml(){
     const hasPositioning = !!(state.positioning && state.positioning.luot1);
-    if(!hasPositioning && !state.writeIdeas && !state.writeLoading){
-      return `<div class="hint-box" style="margin-top:10px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — điền nhanh ngành/đối tượng bên dưới để vẫn sinh được ý tưởng đúng hướng, hoặc giữ nguyên hook để viết luôn.</div>
-        <textarea id="write-quick-context" style="min-height:auto;height:44px;margin-top:8px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.writeQuickContext)}</textarea>
-        <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
-          <button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button>
-          <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
-        </div>`;
-    }
     if(state.writeLoading) return `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Đang sinh ý tưởng…</div>`;
     if(state.writeIdeas){
       return `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
@@ -83,6 +75,10 @@ function render(container, ctx){
       </div>`;
     }
     return `
+      ${!hasPositioning ? `
+        <div class="hint-box" style="margin-top:10px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — điền nhanh ngành/đối tượng bên dưới để vẫn sinh được ý tưởng đúng hướng, hoặc giữ nguyên hook để viết luôn.</div>
+        <textarea id="write-quick-context" style="min-height:auto;height:44px;margin-top:8px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.writeQuickContext)}</textarea>
+      ` : ''}
       ${state.writeError?`<div class="error-box" style="margin-top:10px;">${esc(state.writeError)}</div>`:''}
       <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
         <button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button>
