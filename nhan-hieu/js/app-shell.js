@@ -1,9 +1,18 @@
 const NAV = [
   { key:'dinh-vi', title:'Định Vị' },
   { key:'sua-kenh', title:'Sửa Kênh' },
+  { key:'chan-dung-kh', title:'Chân Dung KH' },
+  { key:'giong-van', title:'Giọng Văn' },
   { key:'y-tuong', title:'Ý Tưởng' },
+  { key:'kho-content', title:'Kho Content' },
+  { key:'kho-hook', title:'Kho Hook' },
   { key:'viet-content', title:'Viết Content' },
+  { key:'cham-diem-content', title:'Chấm Điểm Content' },
+  { key:'cham-diem-hook', title:'Chấm Điểm Hook' },
   { key:'lich-dang', title:'Lịch Đăng Bài' },
+  { key:'bai-viet-mau', title:'Bài Viết Mẫu' },
+  { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
+  { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
 ];
 
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };

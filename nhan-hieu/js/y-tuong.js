@@ -9,7 +9,7 @@ const SOURCES = [
 const SOURCE_MAP = Object.fromEntries(SOURCES.map(s=>[s.key, s.label]));
 
 function render(container, ctx){
-  const state = { screen:'loading', tab:'sinh', positioning:null, selectedSources:[], context:'', ideas:[], personalBank:[], sharedBank:[], generating:false, error:null, newEntry:{ title:'', content:'', source_type:'', tags:'' } };
+  const state = { screen:'loading', positioning:null, selectedSources:[], context:'', ideas:[], personalBank:[], sharedBank:[], generating:false, error:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -42,20 +42,10 @@ function render(container, ctx){
       <div class="page-head"><div class="tag">Bước 3 · Ý Tưởng</div><h1>Cần Định Vị trước đã</h1>
       <p>Hoàn thành bước Định Vị để ý tưởng sinh ra đúng trục nội dung của bạn.</p></div>
       <div class="btn-row"><a class="btn" href="#dinh-vi">Đi tới Định Vị</a></div>`;
+
     return `
       <div class="page-head"><div class="tag">Bước 3 · Ý Tưởng</div><h1>Sinh ý tưởng content</h1>
-      <p>Chọn 1 hoặc nhiều kho nguồn, AI sẽ sinh ý tưởng bám sát định vị của bạn.</p></div>
-      <div class="tab-row">
-        <div class="tab-btn ${state.tab==='sinh'?'active':''}" data-tab="sinh">Sinh ý tưởng</div>
-        <div class="tab-btn ${state.tab==='kho-toi'?'active':''}" data-tab="kho-toi">Kho của tôi (${state.personalBank.length})</div>
-        <div class="tab-btn ${state.tab==='kho-chung'?'active':''}" data-tab="kho-chung">Kho chung (${state.sharedBank.length})</div>
-      </div>
-      ${state.tab==='sinh' ? sinhTab() : state.tab==='kho-toi' ? khoToiTab() : khoChungTab()}
-    `;
-  }
-
-  function sinhTab(){
-    return `
+      <p>Chọn 1 hoặc nhiều kho nguồn, AI sẽ sinh ý tưởng bám sát định vị của bạn. Muốn thêm tư liệu riêng để AI dùng làm chất liệu? Sang <a href="#kho-content">Kho Content</a>.</p></div>
       <div class="card">
         <div class="source-grid">
           ${SOURCES.map(s=>`<div class="source-card ${state.selectedSources.includes(s.key)?'selected':''}" data-source="${s.key}">
@@ -84,53 +74,8 @@ function render(container, ctx){
     `;
   }
 
-  function khoToiTab(){
-    return `
-      <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tiêu đề</label>
-        <textarea id="ne-title" style="min-height:auto;height:44px;">${esc(state.newEntry.title)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Nội dung (content viral / mẫu bạn muốn lưu)</label>
-        <textarea id="ne-content">${esc(state.newEntry.content)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại nguồn</label>
-        <select id="ne-source">
-          <option value="">— Chọn —</option>
-          ${SOURCES.map(s=>`<option value="${s.key}" ${state.newEntry.source_type===s.key?'selected':''}>${esc(s.label)}</option>`).join('')}
-        </select>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tags (cách nhau bởi dấu phẩy)</label>
-        <textarea id="ne-tags" style="min-height:auto;height:44px;">${esc(state.newEntry.tags)}</textarea>
-        <div class="btn-row"><button class="btn" data-action="add-personal">Thêm vào kho của tôi</button></div>
-      </div>
-      <div style="margin-top:20px;">
-        ${state.personalBank.length===0?`<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`:''}
-        ${state.personalBank.map(b=>`
-          <div class="list-item">
-            <div class="txt"><div class="meta">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div><b>${esc(b.title)}</b><br>${esc(b.content)}</div>
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;flex-shrink:0;" data-del-personal="${b.id}">Xoá</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  function khoChungTab(){
-    return `
-      <div>
-        ${state.sharedBank.length===0?`<div class="card" style="color:var(--ink-soft);">Kho chung chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`:''}
-        ${state.sharedBank.map(b=>`
-          <div class="list-item">
-            <div class="txt"><div class="meta">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div><b>${esc(b.title)}</b><br>${esc(b.content)}</div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
   function bind(){
-    container.querySelectorAll('[data-tab]').forEach(el=>{
-      el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
-    });
-    if(state.tab!=='sinh') return void bindBankTabs();
-
+    if(state.screen!=='main') return;
     container.querySelectorAll('[data-source]').forEach(el=>{
       el.onclick = ()=>{
         const k = el.getAttribute('data-source');
@@ -161,33 +106,6 @@ function render(container, ctx){
         draw();
       };
     });
-  }
-
-  function bindBankTabs(){
-    const t = container.querySelector('#ne-title'); if(t) t.oninput = ()=>state.newEntry.title = t.value;
-    const c = container.querySelector('#ne-content'); if(c) c.oninput = ()=>state.newEntry.content = c.value;
-    const s = container.querySelector('#ne-source'); if(s) s.onchange = ()=>state.newEntry.source_type = s.value;
-    const tg = container.querySelector('#ne-tags'); if(tg) tg.oninput = ()=>state.newEntry.tags = tg.value;
-    const addBtn = container.querySelector('[data-action="add-personal"]');
-    if(addBtn) addBtn.onclick = addPersonal;
-    container.querySelectorAll('[data-del-personal]').forEach(el=>{
-      el.onclick = async ()=>{
-        await ctx.supabase.from('content_bank_personal').delete().eq('id', el.getAttribute('data-del-personal'));
-        await loadPersonalBank(); draw();
-      };
-    });
-  }
-
-  async function addPersonal(){
-    if(!state.newEntry.title.trim() || !state.newEntry.content.trim()) return;
-    const tags = state.newEntry.tags.split(',').map(t=>t.trim()).filter(Boolean);
-    await ctx.supabase.from('content_bank_personal').insert({
-      user_id: ctx.user.id, title: state.newEntry.title, content: state.newEntry.content,
-      source_type: state.newEntry.source_type || null, tags,
-    });
-    state.newEntry = { title:'', content:'', source_type:'', tags:'' };
-    await loadPersonalBank();
-    draw();
   }
 
   async function generate(){
