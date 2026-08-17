@@ -13,6 +13,7 @@ const NAV = [
   { key:'lich-dang', title:'Lịch Đăng Bài' },
   { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
+  { key:'quan-tri', title:'Quản trị', adminOnly:true },
 ];
 
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
@@ -162,8 +163,10 @@ function renderApp(){
     </div>
   `;
 
+  const isAdmin = AppState.profile && AppState.profile.role === 'admin';
+  const visibleNav = NAV.filter(n=> !n.adminOnly || isAdmin);
   const nav = root.querySelector('#sidebar-nav');
-  nav.innerHTML = NAV.map((n,i)=>`
+  nav.innerHTML = visibleNav.map((n,i)=>`
     <div class="sidebar-item ${AppState.route===n.key?'active':''}" data-key="${n.key}">
       <span class="num">${i+1}</span><span>${esc(n.title)}</span>
     </div>

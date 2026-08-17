@@ -1,4 +1,5 @@
--- XÂY NHÂN HIỆU — migration v3: khoá truy cập theo hạn dùng (trả phí định kỳ theo tháng).
+-- XÂY NHÂN HIỆU — migration v3: khoá truy cập theo hạn dùng (trả phí định kỳ theo tháng),
+-- có dùng thử miễn phí 7 ngày cho tài khoản mới.
 -- Chạy SAU khi đã chạy schema.sql. Cách dùng: SQL Editor → New query → dán → Run.
 -- An toàn để chạy lại nhiều lần.
 
@@ -12,12 +13,12 @@ update profiles p set email = u.email
 from auth.users u
 where p.id = u.id and p.email is null;
 
--- Cập nhật trigger tạo profile khi có user mới đăng ký — lưu luôn email.
+-- Cập nhật trigger tạo profile khi có user mới đăng ký — lưu email + tự cấp 7 ngày dùng thử.
 create or replace function handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, email)
-  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email);
+  insert into public.profiles (id, full_name, email, access_until)
+  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days');
   return new;
 end;
 $$ language plpgsql security definer;
@@ -29,5 +30,8 @@ drop policy if exists "profiles_self_update" on profiles;
 drop policy if exists "profiles_admin_update" on profiles;
 create policy "profiles_admin_update" on profiles for update using (is_admin()) with check (is_admin());
 
--- Học viên vẫn tự xem được đúng dòng của mình (để app hiển thị hạn dùng của họ).
--- Policy "profiles_self" (select) đã có sẵn từ schema.sql, giữ nguyên không đổi.
+-- Admin xem được TOÀN BỘ danh sách học viên (email, hạn dùng...) để quản lý — cần cho trang
+-- "Quản trị" trong app. Học viên thường vẫn chỉ tự xem được đúng dòng của mình (policy
+-- "profiles_self" có sẵn từ schema.sql).
+drop policy if exists "profiles_admin_read_all" on profiles;
+create policy "profiles_admin_read_all" on profiles for select using (is_admin());
