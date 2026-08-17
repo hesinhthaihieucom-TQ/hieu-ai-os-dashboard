@@ -1,0 +1,95 @@
+// Serverless function — gợi ý lịch đăng bài 7 ngày, dựa trên trục nội dung, dạng content phù hợp,
+// giờ đăng tối ưu, và mục tiêu tuần này người dùng nhập.
+const { requireUser } = require('./_lib/auth');
+const { FORMAT_GUIDE } = require('./_lib/formats');
+
+const SYSTEM_PROMPT = `Bạn là trợ lý lập lịch đăng bài cho người xây thương hiệu cá nhân tại Việt Nam.
+
+${FORMAT_GUIDE}
+
+KHUNG GIỜ ĐĂNG TỐT (tham khảo, chọn khung phù hợp mục tiêu từng bài):
+- Facebook: 7-9h / 11-13h / 20-22h.
+- TikTok: 6-9h / 11-13h / 19-22h.
+- Tối thiểu 1 bài/ngày.
+
+NGUYÊN TẮC:
+- Đúng 7 bài cho 7 ngày (Thứ 2 → Chủ nhật), mỗi ngày 1 bài, rải đều slot Sáng/Trưa/Tối hợp lý (không dồn hết vào 1 khung giờ).
+- Bám sát trục nội dung chính đã chốt trong định vị — trụ phụ chỉ nên xuất hiện 1-2 lần/tuần, không lấn át trục chính.
+- Nếu người dùng có nêu mục tiêu tuần này (ra mắt sản phẩm, tăng follow, xây niềm tin...), ưu tiên xếp bài phục vụ đúng mục tiêu đó vào các ngày giữa/cuối tuần, đầu tuần vẫn giữ bài kéo reach/xây niềm tin để làm nóng trước.
+- Mỗi bài chọn 1 dạng content phù hợp (theo đúng 12 dạng ở trên) và 1 gợi ý hook ngắn, cụ thể — không chung chung.
+- CTA phải khớp mục tiêu bài đó, không phải ngày nào cũng "inbox".
+- Output tiếng Việt.`;
+
+const TOOL_LICH = {
+  name: 'xuat_lich_tuan',
+  description: 'Xuất lịch đăng bài đề xuất cho 7 ngày.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      lich: {
+        type: 'array',
+        minItems: 7,
+        maxItems: 7,
+        items: {
+          type: 'object',
+          properties: {
+            thu: { type: 'integer', minimum: 0, maximum: 6, description: '0=Thứ 2 ... 6=Chủ nhật' },
+            slot: { type: 'string', enum: ['sang', 'trua', 'toi'] },
+            chu_de: { type: 'string', description: 'Chủ đề/góc content cụ thể cho bài này.' },
+            dinh_dang: { type: 'string', description: 'Tên 1 trong 12 dạng content.' },
+            hook_goi_y: { type: 'string' },
+            cta: { type: 'string' },
+          },
+          required: ['thu', 'slot', 'chu_de', 'dinh_dang', 'hook_goi_y', 'cta'],
+        },
+      },
+    },
+    required: ['lich'],
+  },
+};
+
+async function callClaude({ apiKey, system, userContent, tool }) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-5',
+      max_tokens: 3000,
+      system,
+      messages: [{ role: 'user', content: userContent }],
+      tools: [tool],
+      tool_choice: { type: 'tool', name: tool.name },
+    }),
+  });
+  if (!resp.ok) throw new Error(`Anthropic API lỗi (${resp.status}): ${await resp.text()}`);
+  const data = await resp.json();
+  const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
+  if (!toolUse) throw new Error('Không nhận được kết quả có cấu trúc từ AI.');
+  return toolUse.input;
+}
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+
+  const user = await requireUser(req);
+  if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
+
+  try {
+    const { positioning, weekly_goal } = req.body || {};
+    if (!positioning || !positioning.luot1) { res.status(400).json({ error: 'Cần có kết quả Định Vị trước khi gợi ý lịch.' }); return; }
+
+    const userContent = `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}
+
+MỤC TIÊU TUẦN NÀY: ${weekly_goal && weekly_goal.trim() ? weekly_goal : '(không nêu cụ thể — cứ bám trục nội dung chính là được)'}
+
+Hãy xuất lịch 7 ngày.`;
+
+    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_LICH });
+    res.status(200).json({ result });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi gợi ý lịch.' });
+  }
+};

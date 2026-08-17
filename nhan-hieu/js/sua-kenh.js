@@ -82,7 +82,7 @@ function render(container, ctx){
       `).join('')}
       <div class="btn-row no-print">
         <button class="btn-ghost btn" data-action="redo">Audit lại</button>
-        <a class="btn" href="#y-tuong">Tiếp tục: Ý Tưởng →</a>
+        <a class="btn" href="#dinh-dang-content">Tiếp tục: Dạng Content →</a>
       </div>
     `;
   }

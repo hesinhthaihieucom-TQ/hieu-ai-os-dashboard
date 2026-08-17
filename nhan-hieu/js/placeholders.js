@@ -25,6 +25,5 @@ function renderHelp(container){
 }
 
 window.Modules = window.Modules || {};
-window.Modules['bai-viet-mau'] = { title:'Bài Viết Mẫu', render: comingSoon('Bài Viết Mẫu', 'Thư viện bài mẫu đã lên triệu view, đóng gói theo cấu trúc — do đội ngũ tuyển chọn.') };
 window.Modules['tro-giup'] = { title:'Hỏi & Trợ Giúp', render: renderHelp };
 })();

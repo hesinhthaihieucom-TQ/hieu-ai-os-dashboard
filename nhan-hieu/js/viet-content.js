@@ -9,12 +9,6 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(!pos || !pos.luot1){ state.screen='need-positioning'; draw(); return; }
     state.positioning = pos;
-
-    if(window.PendingIdea){
-      state.ideaText = window.PendingIdea.idea_text;
-      state.ideaId = window.PendingIdea.id;
-      window.PendingIdea = null;
-    }
     await loadRecent();
     state.screen='main';
     draw();

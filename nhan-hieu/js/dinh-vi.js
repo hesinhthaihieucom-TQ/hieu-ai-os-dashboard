@@ -50,7 +50,8 @@ function isAnswered(q, val){
 
 function render(container, ctx){
   const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
-    suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null };
+    suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
+    pasteText:'', pasteError:null, pasteLoading:false };
 
   function draw(){ container.innerHTML = screenHtml(); bind(); }
 
@@ -73,9 +74,11 @@ function render(container, ctx){
   function screenHtml(){
     if(state.screen==='loading') return loadingHtml('Đang tải…');
     if(state.screen==='intro') return introHtml();
+    if(state.screen==='paste') return pasteHtml();
     if(state.screen==='wizard') return wizardHtml();
     if(state.screen==='saving1') return loadingHtml('Đang phân tích định vị của bạn…');
     if(state.screen==='saving2') return loadingHtml('Đang xây chiến lược nội dung & dòng tiền…');
+    if(state.screen==='parsing') return loadingHtml('Đang đọc kết quả bạn dán vào…');
     if(state.screen==='results1') return results1Html();
     if(state.screen==='results2') return results2Html();
     return '';
@@ -101,6 +104,27 @@ function render(container, ctx){
       <div class="btn-row">
         <button class="btn" data-action="start">${hasSaved?'Làm lại từ đầu':'Bắt đầu'}</button>
         ${hasSaved?`<button class="btn-ghost btn" data-action="view-saved">Xem định vị đã lưu</button>`:''}
+      </div>
+      <div style="text-align:center;margin-top:18px;">
+        <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Đã có kết quả Định Vị rồi? Dán vào đây thay vì làm lại →</span>
+      </div>
+    `;
+  }
+
+  function pasteHtml(){
+    return `
+      <div class="page-head" style="text-align:center;">
+        <div class="tag">Dán kết quả có sẵn</div>
+        <h1>Dán kết quả Định Vị bạn đã làm trước đây</h1>
+        <p>Copy toàn bộ kết quả từ trợ lý ĐỊNH VỊ AI (ChatGPT) bạn đã dùng trước đây — Lượt 1, hoặc cả Lượt 1 + Lượt 2 — dán nguyên văn vào ô bên dưới. AI sẽ tự sắp xếp lại đúng cấu trúc, không cần làm lại 26 câu hỏi.</p>
+      </div>
+      <div class="card">
+        <textarea id="paste-input" style="min-height:260px;" placeholder="Dán nguyên văn kết quả định vị vào đây...">${esc(state.pasteText)}</textarea>
+        <div class="btn-row">
+          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button>
+          <button class="btn-ghost btn" data-action="back-to-intro">← Quay lại</button>
+        </div>
+        ${state.pasteError?`<div class="error-box">${esc(state.pasteError)}</div>`:''}
       </div>
     `;
   }
@@ -243,6 +267,18 @@ function render(container, ctx){
     const startBtn = container.querySelector('[data-action="start"]');
     if(startBtn) startBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; state.luot1=null; state.luot2=null; draw(); };
 
+    const goPaste = container.querySelector('[data-action="go-paste"]');
+    if(goPaste) goPaste.onclick = ()=>{ state.screen='paste'; state.pasteError=null; draw(); };
+
+    const backToIntro = container.querySelector('[data-action="back-to-intro"]');
+    if(backToIntro) backToIntro.onclick = ()=>{ state.screen='intro'; draw(); };
+
+    const pasteInput = container.querySelector('#paste-input');
+    if(pasteInput) pasteInput.oninput = ()=>{ state.pasteText = pasteInput.value; };
+
+    const submitPasteBtn = container.querySelector('[data-action="submit-paste"]');
+    if(submitPasteBtn) submitPasteBtn.onclick = submitPaste;
+
     const viewSaved = container.querySelector('[data-action="view-saved"]');
     if(viewSaved) viewSaved.onclick = ()=>{ state.screen = state.luot2 ? 'results2' : 'results1'; draw(); };
 
@@ -264,7 +300,12 @@ function render(container, ctx){
     if(nextBtn) nextBtn.onclick = onNext;
 
     const retryBtn = container.querySelector('[data-action="retry"]');
-    if(retryBtn) retryBtn.onclick = ()=>{ state.error=null; if(state.screen==='saving1') runLuot1(); else runLuot2(); };
+    if(retryBtn) retryBtn.onclick = ()=>{
+      state.error=null;
+      if(state.screen==='saving1') runLuot1();
+      else if(state.screen==='parsing') submitPaste();
+      else runLuot2();
+    };
 
     const luot2Btn = container.querySelector('[data-action="get-luot2"]');
     if(luot2Btn) luot2Btn.onclick = ()=>{ state.screen='saving2'; draw(); runLuot2(); };
@@ -357,6 +398,28 @@ function render(container, ctx){
     const { data, error } = await ctx.supabase.from('positioning_results').upsert(payload, { onConflict:'user_id' }).select().single();
     if(error) throw error;
     state.savedId = data.id;
+  }
+
+  async function submitPaste(){
+    if(!state.pasteText.trim()) return;
+    state.pasteLoading = true; state.pasteError = null;
+    const prevScreen = state.screen;
+    state.screen = 'parsing'; draw();
+    try{
+      const data = await callApi('/api/dinh-vi-parse', { raw_text: state.pasteText });
+      state.luot1 = data.luot1;
+      state.luot2 = data.luot2 || null;
+      await persist({ luot1: data.luot1, luot2: data.luot2 || null });
+      state.pasteLoading = false; state.error = null;
+      state.screen = state.luot2 ? 'results2' : 'results1';
+      draw();
+    } catch(e){
+      state.pasteLoading = false;
+      state.error = e.message;
+      state.pasteError = e.message;
+      state.screen = prevScreen === 'paste' ? 'paste' : 'parsing';
+      draw();
+    }
   }
 
   async function runLuot1(){

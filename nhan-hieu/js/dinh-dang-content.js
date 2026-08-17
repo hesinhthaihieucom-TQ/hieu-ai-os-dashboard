@@ -97,10 +97,30 @@ const FORMATS = [
     ket_luan: 'Trend chỉ là chiếc xe, thông điệp mới là đích đến — dùng để kéo người xem vào sâu hơn, không phải mục tiêu cuối.' },
 ];
 
-function render(container){
-  const state = { query:'' };
+function imgSrc(id){ return `assets/formats/${id}.jpg`; }
+
+function render(container, ctx){
+  const state = { query:'', positioning:null, suggestLoading:false, suggestions:null, suggestError:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
+
+  async function boot(){
+    draw();
+    const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
+    state.positioning = pos || null;
+    draw();
+    if(pos && pos.luot1) fetchSuggestions();
+  }
+
+  async function fetchSuggestions(){
+    state.suggestLoading = true; state.suggestError = null; draw();
+    try{
+      const data = await callApi('/api/goi-y-dinh-dang', { positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } });
+      state.suggestions = data.result.goi_y;
+    } catch(e){ state.suggestError = e.message; }
+    state.suggestLoading = false;
+    draw();
+  }
 
   function filtered(){
     if(!state.query.trim()) return FORMATS;
@@ -111,19 +131,51 @@ function render(container){
     );
   }
 
+  function suggestBlock(){
+    if(!state.positioning || !state.positioning.luot1){
+      return `<div class="hint-box" style="margin-bottom:20px;">Hoàn thành <a href="#dinh-vi">Định Vị</a> trước để được gợi ý đúng 2-3 dạng content phù hợp nhất với trục nội dung của bạn.</div>`;
+    }
+    if(state.suggestLoading){
+      return `<div class="loading" style="padding:30px 0;"><div class="spinner"></div><p>Đang chọn dạng phù hợp với định vị của bạn…</p></div>`;
+    }
+    if(state.suggestError){
+      return `<div class="error-box" style="margin-bottom:20px;">${esc(state.suggestError)}</div><div class="btn-row" style="margin-bottom:20px;"><button class="btn" data-action="retry-suggest">Thử lại</button></div>`;
+    }
+    if(!state.suggestions) return '';
+    return `
+      <div class="page-head" style="margin-bottom:14px;"><div class="tag">Gợi ý riêng cho bạn</div><h1 style="font-size:20px;">2-3 dạng phù hợp nhất với trục nội dung của bạn</h1></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:28px;">
+        ${state.suggestions.map(s=>{
+          const f = FORMATS.find(x=>x.name===s.dinh_dang);
+          return `<div class="section highlight" style="flex:1;min-width:240px;margin-bottom:0;">
+            <h3>${esc(s.dinh_dang)}</h3>
+            <div class="body">${esc(s.ly_do)}</div>
+            ${f?`<div class="btn-row" style="margin-top:14px;"><a class="btn-ghost btn" style="background:#fff;" href="#fmt-${f.id}" data-jump="${f.id}">Xem cách làm →</a></div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
   function html(){
     const list = filtered();
     return `
-      <div class="page-head"><h1>12 Dạng Content</h1><p>Chọn dạng content phù hợp với trục nội dung và ngành của bạn — mỗi dạng có hướng dẫn cách làm cụ thể.</p></div>
+      <div class="page-head"><h1>Dạng Content</h1><p>AI gợi ý 2-3 dạng phù hợp nhất với trục nội dung của bạn — vẫn hiển thị đủ các dạng còn lại để dễ hình dung và tham khảo thêm.</p></div>
+      ${suggestBlock()}
       <div class="card" style="margin-bottom:20px;">
         <input type="text" id="fmt-search" placeholder="Tìm theo tên dạng content hoặc ngành, ví dụ: sức khoẻ, coach, video..." value="${esc(state.query)}"
           style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
       </div>
       ${list.length===0 ? `<div style="color:var(--ink-soft);">Không tìm thấy dạng content phù hợp với từ khoá này.</div>` : ''}
       ${list.map(f=>`
-        <div class="section">
-          <h3>${esc(f.name)}</h3>
-          <div class="body">${esc(f.ban_chat)}</div>
+        <div class="section" id="fmt-${f.id}">
+          <div style="display:flex;gap:18px;flex-wrap:wrap;">
+            <img src="${imgSrc(f.id)}" alt="Ví dụ ${esc(f.name)}" style="width:130px;border-radius:8px;border:1px solid var(--line);flex-shrink:0;object-fit:cover;">
+            <div style="flex:1;min-width:200px;">
+              <h3>${esc(f.name)}</h3>
+              <div class="body">${esc(f.ban_chat)}</div>
+            </div>
+          </div>
           <div class="sub-grid" style="margin-top:14px;">
             <div><div class="k">Ngành phù hợp</div><div class="v">${f.nganh_phu_hop.map(esc).join('; ')}</div></div>
             <div><div class="k">Không phù hợp</div><div class="v">${f.nganh_khong_hop.map(esc).join('; ')}</div></div>
@@ -143,9 +195,18 @@ function render(container){
     if(search){
       search.oninput = () => { state.query = search.value; draw(); container.querySelector('#fmt-search').focus(); };
     }
+    const retry = container.querySelector('[data-action="retry-suggest"]');
+    if(retry) retry.onclick = fetchSuggestions;
+    container.querySelectorAll('[data-jump]').forEach(el=>{
+      el.onclick = (e) => {
+        e.preventDefault();
+        const target = container.querySelector(`#fmt-${el.getAttribute('data-jump')}`);
+        if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+    });
   }
 
-  draw();
+  boot();
 }
 
 window.Modules = window.Modules || {};

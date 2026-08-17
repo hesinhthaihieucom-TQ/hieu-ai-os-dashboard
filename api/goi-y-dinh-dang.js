@@ -1,0 +1,78 @@
+// Serverless function — gợi ý 2-3 dạng content phù hợp nhất với trục nội dung đã định vị.
+const { requireUser } = require('./_lib/auth');
+const { FORMAT_NAMES, FORMAT_GUIDE } = require('./_lib/formats');
+
+const SYSTEM_PROMPT = `Bạn là trợ lý chọn dạng content phù hợp cho người xây thương hiệu cá nhân tại Việt Nam.
+
+${FORMAT_GUIDE}
+
+NGUYÊN TẮC:
+- Dựa vào định vị đã chốt (ngành, trục nội dung, hình ảnh nên xây, style) để chọn ra 2-3 dạng phù hợp NHẤT — không phải liệt kê hết.
+- Ưu tiên dạng khớp cả ngành lẫn mức độ thoải mái xuất hiện trước camera của người dùng nếu có trong dữ liệu.
+- Giải thích ngắn gọn, cụ thể vì sao dạng đó phù hợp với đúng định vị này — không nói chung chung.`;
+
+const TOOL_GOI_Y = {
+  name: 'xuat_goi_y_dinh_dang',
+  description: 'Xuất 2-3 dạng content phù hợp nhất.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      goi_y: {
+        type: 'array',
+        minItems: 2,
+        maxItems: 3,
+        items: {
+          type: 'object',
+          properties: {
+            dinh_dang: { type: 'string', enum: FORMAT_NAMES },
+            ly_do: { type: 'string' },
+          },
+          required: ['dinh_dang', 'ly_do'],
+        },
+      },
+    },
+    required: ['goi_y'],
+  },
+};
+
+async function callClaude({ apiKey, system, userContent, tool }) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-5',
+      max_tokens: 1500,
+      system,
+      messages: [{ role: 'user', content: userContent }],
+      tools: [tool],
+      tool_choice: { type: 'tool', name: tool.name },
+    }),
+  });
+  if (!resp.ok) throw new Error(`Anthropic API lỗi (${resp.status}): ${await resp.text()}`);
+  const data = await resp.json();
+  const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
+  if (!toolUse) throw new Error('Không nhận được kết quả có cấu trúc từ AI.');
+  return toolUse.input;
+}
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+
+  const user = await requireUser(req);
+  if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
+
+  try {
+    const { positioning } = req.body || {};
+    if (!positioning || !positioning.luot1) { res.status(400).json({ error: 'Cần có kết quả Định Vị trước khi gợi ý dạng content.' }); return; }
+
+    const userContent = `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}\n\nHãy chọn 2-3 dạng content phù hợp nhất.`;
+
+    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_GOI_Y });
+    res.status(200).json({ result });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi gợi ý dạng content.' });
+  }
+};
