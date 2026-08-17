@@ -27,6 +27,7 @@ const COLORS = [
   { key:'green', label:'Xanh lá', hex:'#8BD17C' },
 ];
 
+// Tách theo **...** để biết từ nào tô màu nhấn — giữ nguyên chữ hoa/thường người dùng gõ.
 function parseWords(text){
   const segments = String(text||'').split('**');
   const words = [];
@@ -56,6 +57,33 @@ function wrapWords(ctx, words, maxWidth){
   });
   if(current.length) lines.push(current);
   return lines;
+}
+
+// Tôn trọng dấu xuống dòng (Enter) người dùng gõ: mỗi đoạn xuống dòng riêng, chỉ tự wrap trong đoạn đó.
+function wrapTitle(ctx, title, maxWidth){
+  const paragraphs = String(title||'').split('\n');
+  const lines = [];
+  paragraphs.forEach(p => {
+    const words = parseWords(p);
+    if(words.length === 0) lines.push([]);
+    else lines.push(...wrapWords(ctx, words, maxWidth));
+  });
+  return lines;
+}
+
+// Tự co cỡ chữ để khối chữ luôn nằm vừa trong vùng cao tối đa cho phép — tránh chữ tràn ra ngoài/đè lên vùng khác.
+function fitTitle(ctx, title, { maxWidth, maxHeight, baseFontSize, minFontSize, lineHeightRatio, fontFamily, fontWeight }){
+  let fontSize = baseFontSize;
+  let lines, lineHeight;
+  while(true){
+    ctx.font = `${fontWeight} ${fontSize}px '${fontFamily}', sans-serif`;
+    lines = wrapTitle(ctx, title, maxWidth);
+    lineHeight = Math.round(fontSize * lineHeightRatio);
+    const blockHeight = Math.max(lines.length, 1) * lineHeight;
+    if(blockHeight <= maxHeight || fontSize <= minFontSize) break;
+    fontSize -= 2;
+  }
+  return { fontSize, lineHeight, lines };
 }
 
 function drawImageCover(ctx, img, x, y, w, h){
@@ -94,51 +122,60 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
   const color = COLORS.find(c=>c.key===colorKey) || COLORS[0];
   const scale = W / CANVAS_W;
   const marginX = 64 * scale;
+  const handleGap = 14 * scale;
+  const isAccent = layout.decor === 'accent-bar';
 
   cx.clearRect(0,0,W,H);
   if(bgImage) drawImageCover(cx, bgImage, 0, 0, W, H);
   else { cx.fillStyle = '#2F6F62'; cx.fillRect(0,0,W,H); }
-
-  const isAccent = layout.decor === 'accent-bar';
-  const fontSize = Math.round((isAccent ? 44 : layout.decor==='solid-bar' ? 40 : 56) * scale);
-  const lineHeight = Math.round((isAccent ? 56 : layout.decor==='solid-bar' ? 50 : 68) * scale);
-  const handleSize = Math.round((layout.decor==='solid-bar' ? 24 : 30) * scale);
-
-  cx.font = `${font.weight} ${fontSize}px '${font.family}', sans-serif`;
   cx.textBaseline = 'alphabetic';
-  const maxWidth = W - marginX*2 - (isAccent ? 24*scale : 0);
-  const words = parseWords(title);
-  const lines = wrapWords(cx, words, maxWidth);
 
-  let anchorY;
-  if(layout.textPos === 'bottom') anchorY = H - (layout.decor==='solid-bar' ? 74*scale : 120*scale);
-  else if(layout.textPos === 'top') anchorY = 150*scale;
-  else anchorY = H * 0.5;
+  const maxTextWidth = W - marginX*2 - (isAccent ? 24*scale : 0);
+  const handleFontSize = Math.round((layout.decor==='solid-bar' ? 24 : 30) * scale);
 
+  // Vùng an toàn tối đa cho khối chữ theo từng bố cục (tỉ lệ theo chiều cao canvas).
+  let zoneTop, zoneBottom, baseFontSize, minFontSize;
+  if(layout.key === 'bottom-center'){ zoneTop = 0.40*H; zoneBottom = 0.86*H; baseFontSize = 58*scale; minFontSize = 24*scale; }
+  else if(layout.key === 'top-center'){ zoneTop = 0.07*H; zoneBottom = 0.46*H; baseFontSize = 54*scale; minFontSize = 22*scale; }
+  else if(layout.key === 'quote-left'){ zoneTop = 0.26*H; zoneBottom = 0.74*H; baseFontSize = 46*scale; minFontSize = 20*scale; }
+  else { zoneTop = 0.60*H; zoneBottom = 0.97*H; baseFontSize = 44*scale; minFontSize = 18*scale; } // caption-bar
+
+  const availableHeight = Math.max((zoneBottom - zoneTop) - handleFontSize - handleGap, minFontSize*1.2);
+  const { fontSize, lineHeight, lines } = fitTitle(cx, title, {
+    maxWidth: maxTextWidth, maxHeight: availableHeight,
+    baseFontSize, minFontSize, lineHeightRatio: 1.2,
+    fontFamily: font.family, fontWeight: font.weight,
+  });
+  const blockHeight = Math.max(lines.length,1) * lineHeight;
+
+  // startY = baseline của dòng đầu tiên.
   let startY;
-  if(layout.textPos === 'bottom') startY = anchorY - (lines.length-1)*lineHeight;
-  else if(layout.textPos === 'top') startY = anchorY;
-  else startY = anchorY - (lines.length-1)*lineHeight/2;
+  if(layout.textPos === 'bottom') startY = (zoneBottom - handleFontSize - handleGap) - (lines.length-1)*lineHeight;
+  else if(layout.textPos === 'top') startY = zoneTop + fontSize*0.85;
+  else startY = zoneTop + ((zoneBottom - zoneTop) - blockHeight)/2 + fontSize*0.75;
 
   if(layout.decor === 'gradient-bottom'){
-    const gradStart = H * 0.45;
+    const gradStart = H * 0.42;
     const grad = cx.createLinearGradient(0, gradStart, 0, H);
     grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,0.8)');
     cx.fillStyle = grad; cx.fillRect(0, gradStart, W, H - gradStart);
   } else if(layout.decor === 'gradient-top'){
-    const gradEnd = H * 0.42;
+    const gradEnd = H * 0.48;
     const grad = cx.createLinearGradient(0, 0, 0, gradEnd);
     grad.addColorStop(0, 'rgba(0,0,0,0.65)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
     cx.fillStyle = grad; cx.fillRect(0, 0, W, gradEnd);
   } else if(layout.decor === 'solid-bar'){
-    const barH = H * 0.26;
+    const padding = 28*scale;
+    const barHeight = Math.min(Math.max(blockHeight + handleFontSize + handleGap + padding*2, 0.16*H), 0.40*H);
     cx.fillStyle = 'rgba(10,12,10,0.9)';
-    cx.fillRect(0, H - barH, W, barH);
+    cx.fillRect(0, H - barHeight, W, barHeight);
+    // Neo lại khối chữ theo đúng thanh vừa vẽ (không dùng zoneBottom cố định nữa).
+    startY = (H - padding - handleFontSize - handleGap) - (lines.length-1)*lineHeight;
   } else if(layout.decor === 'accent-bar'){
-    const boxTop = startY - lineHeight*0.7;
-    const boxHeight = lines.length*lineHeight + lineHeight*0.35;
+    const boxTop = startY - lineHeight*0.75;
+    const boxHeight = blockHeight + lineHeight*0.35;
     cx.fillStyle = 'rgba(8,10,8,0.5)';
-    cx.fillRect(marginX - 22*scale, boxTop, maxWidth + 40*scale, boxHeight);
+    cx.fillRect(marginX - 22*scale, boxTop, maxTextWidth + 40*scale, boxHeight);
     cx.fillStyle = color.hex;
     cx.fillRect(marginX - 22*scale, boxTop, 6*scale, boxHeight);
   }
@@ -146,14 +183,11 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
   const alignX = layout.align === 'center' ? W/2 : marginX;
   drawLines(cx, lines, { align: layout.align, x: alignX, startY, lineHeight, highlightColor: color.hex });
 
-  cx.font = `500 ${handleSize}px 'Be Vietnam Pro', sans-serif`;
+  cx.font = `500 ${handleFontSize}px 'Be Vietnam Pro', sans-serif`;
   cx.fillStyle = '#E8E4D6';
   cx.shadowColor = 'rgba(0,0,0,0.5)'; cx.shadowBlur = 6*scale;
-  const handleY = layout.textPos==='bottom'
-    ? anchorY + lineHeight*0.62
-    : layout.textPos==='top'
-      ? startY + lines.length*lineHeight + handleSize*0.2
-      : startY + lines.length*lineHeight + handleSize*0.6;
+  const lastLineBaseline = startY + (lines.length-1)*lineHeight;
+  const handleY = lastLineBaseline + lineHeight*0.62;
   if(layout.align === 'center'){
     const hw = cx.measureText(handle).width;
     cx.fillText(handle, W/2 - hw/2, handleY);
