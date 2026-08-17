@@ -1,0 +1,145 @@
+// Serverless function — nhận webhook từ SePay mỗi khi có giao dịch vào tài khoản Vietinbank
+// của Xây Nhân Hiệu, tự đối chiếu mã tham chiếu (ref_code) trong nội dung chuyển khoản và
+// số tiền, rồi tự gia hạn access_until cho đúng tài khoản — không cần admin bấm tay.
+//
+// Bảo mật: xác thực bằng header "Authorization: Apikey <SEPAY_WEBHOOK_APIKEY>" (khớp đúng
+// method "API Key" cấu hình trong SePay dashboard khi tạo webhook). Dùng SUPABASE_SERVICE_ROLE_KEY
+// (bỏ qua RLS) vì đây là thao tác hệ thống, không gắn với 1 phiên đăng nhập user nào.
+
+const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
+
+// Số tiền → số ngày được cộng thêm. Phải khớp CHÍNH XÁC 1 trong các mức giá đang bán.
+const AMOUNT_TO_DAYS = {
+  499000: 30,   // 1 tháng, giá chuẩn
+  299000: 30,   // 1 tháng, giá ưu đãi học viên khoá Xây Nhân Hiệu
+  2390000: 180, // 6 tháng
+  3990000: 365, // 12 tháng
+};
+
+function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+function extractRefCode(content) {
+  const m = /XNH[A-Z0-9]{6}/i.exec(content || '');
+  return m ? m[0].toUpperCase() : null;
+}
+
+async function supabaseAdmin(path, opts = {}) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      'content-type': 'application/json',
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      Prefer: opts.prefer || 'return=representation',
+      ...(opts.headers || {}),
+    },
+  });
+  return resp;
+}
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') { res.status(405).json({ success: false }); return; }
+
+  const expectedKey = process.env.SEPAY_WEBHOOK_APIKEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!expectedKey || !serviceKey) {
+    // Chưa cấu hình xong — trả lỗi rõ ràng để dễ debug lúc setup, không âm thầm bỏ qua.
+    res.status(500).json({ success: false, error: 'Server chưa cấu hình SEPAY_WEBHOOK_APIKEY hoặc SUPABASE_SERVICE_ROLE_KEY.' });
+    return;
+  }
+
+  const authHeader = req.headers['authorization'] || '';
+  const providedKey = authHeader.replace(/^Apikey\s+/i, '');
+  if (!timingSafeEqual(providedKey, expectedKey)) {
+    res.status(401).json({ success: false });
+    return;
+  }
+
+  try {
+    const body = req.body || {};
+    const {
+      id: sepayId, gateway, transactionDate, accountNumber,
+      transferAmount, content, transferType,
+    } = body;
+
+    // Giao dịch tiền RA thì bỏ qua hoàn toàn, không ghi log (không liên quan đến kích hoạt).
+    if (transferType !== 'in') {
+      res.status(200).json({ success: true });
+      return;
+    }
+
+    // Chống xử lý trùng nếu SePay gửi lại cùng 1 giao dịch (retry).
+    if (sepayId) {
+      const dupCheck = await supabaseAdmin(`sepay_transactions?sepay_id=eq.${sepayId}&select=id`, { prefer: 'return=minimal' });
+      const dupRows = dupCheck.ok ? await dupCheck.json() : [];
+      if (Array.isArray(dupRows) && dupRows.length > 0) {
+        res.status(200).json({ success: true });
+        return;
+      }
+    }
+
+    const refCode = extractRefCode(content);
+    let status = 'unmatched_code';
+    let matchedProfileId = null;
+    let daysGranted = null;
+
+    if (refCode) {
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until`);
+      const profRows = profResp.ok ? await profResp.json() : [];
+      const profile = profRows[0];
+
+      if (profile) {
+        const days = AMOUNT_TO_DAYS[transferAmount];
+        if (days) {
+          const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
+            ? new Date(profile.access_until) : new Date();
+          const next = new Date(base.getTime() + days * 86400000);
+          const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ access_until: next.toISOString() }),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProfileId = profile.id;
+            daysGranted = days;
+          } else {
+            status = 'unmatched_amount'; // update thất bại, giữ nguyên để admin soát lại
+          }
+        } else {
+          status = 'unmatched_amount';
+        }
+      } else {
+        status = 'unmatched_code';
+      }
+    }
+
+    await supabaseAdmin('sepay_transactions', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify({
+        sepay_id: sepayId || null,
+        gateway: gateway || null,
+        transaction_date: transactionDate || null,
+        account_number: accountNumber || null,
+        transfer_amount: transferAmount || null,
+        content: content || null,
+        ref_code_found: refCode,
+        matched_profile_id: matchedProfileId,
+        days_granted: daysGranted,
+        status,
+      }),
+    });
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    // Luôn trả success:true cho SePay để tránh spam retry — lỗi thật đã được ghi log ở trên
+    // (nếu ghi log cũng lỗi thì đây là sự cố hạ tầng, cần xem log Vercel trực tiếp).
+    res.status(200).json({ success: true });
+  }
+};

@@ -18,6 +18,15 @@ const NAV = [
 
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
 
+const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
+const PAYMENT_PLANS = [
+  { key:'1m', label:'1 tháng', amount:499000 },
+  { key:'6m', label:'6 tháng', amount:2390000, note:'~398.000đ/tháng, tiết kiệm ~20%' },
+  { key:'12m', label:'12 tháng', amount:3990000, note:'~332.500đ/tháng, tiết kiệm ~33%' },
+  { key:'1m_hv', label:'1 tháng — đã học khoá Xây Nhân Hiệu', amount:299000, note:'Giá ưu đãi cho học viên E-learning/Zoom' },
+];
+let selectedPaymentPlanKey = PAYMENT_PLANS[0].key;
+
 function currentRouteFromHash(){
   const h = (location.hash || '').replace('#','');
   return NAV.some(n=>n.key===h) ? h : 'dinh-vi';
@@ -72,22 +81,59 @@ function renderExpiredScreen(){
   const root = document.getElementById('app');
   const p = AppState.profile;
   const hadAccessBefore = !!(p && p.access_until);
+  const refCode = p && p.ref_code;
+  const plan = PAYMENT_PLANS.find(pl => pl.key === selectedPaymentPlanKey) || PAYMENT_PLANS[0];
+
+  const qrUrl = refCode
+    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(refCode)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+    : null;
+
   root.innerHTML = `
-    <div class="auth-shell">
+    <div class="auth-shell" style="max-width:460px;">
       <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
-      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Tài khoản đang chờ kích hoạt'}</h1>
+      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 7 ngày đã kết thúc'}</h1>
       <div class="sub">${hadAccessBefore
-        ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Gia hạn để tiếp tục dùng đầy đủ tính năng.`
-        : 'Tài khoản của bạn đang chờ kích hoạt sau khi thanh toán. Liên hệ để được kích hoạt ngay.'}</div>
-      <div class="card" style="text-align:center;">
-        <p style="margin:0 0 16px;color:var(--ink-soft);font-size:14.5px;">Email đăng ký: <b>${esc((AppState.user&&AppState.user.email)||'')}</b></p>
-        <a class="btn btn-full" href="https://hesinhthaihieu.com" target="_blank" rel="noopener">Liên hệ gia hạn / kích hoạt →</a>
-        <div class="btn-row" style="margin-top:14px;justify-content:center;">
+        ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Chuyển khoản để tiếp tục dùng ngay.`
+        : 'Chuyển khoản theo đúng hướng dẫn bên dưới — hệ thống tự kích hoạt trong vài phút, không cần chờ ai xác nhận.'}</div>
+
+      <div class="card">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
+        <div class="chips" id="plan-chips">
+          ${PAYMENT_PLANS.map(pl=>`<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ</div>`).join('')}
+        </div>
+        ${plan.note?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">${esc(plan.note)}</div>`:''}
+
+        ${qrUrl ? `
+          <div style="text-align:center;margin-top:18px;">
+            <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
+          </div>
+          <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+            <div><b>Ngân hàng:</b> Vietinbank</div>
+            <div><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)}</div>
+            <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
+            <div><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ</div>
+            <div><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span></div>
+          </div>
+          <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung có mã <b>${esc(refCode)}</b> — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác. Chuyển xong đợi 1-2 phút rồi tải lại trang.</div>
+        ` : `
+          <div class="error-box" style="margin-top:14px;">Chưa có mã tài khoản để đối chiếu tự động. Nhắn email đăng ký (${esc((AppState.user&&AppState.user.email)||'')}) qua Zalo/Fanpage để được kích hoạt thủ công.</div>
+        `}
+
+        <div class="btn-row" style="margin-top:16px;justify-content:center;">
+          <button class="btn-ghost btn" id="reload-status-btn">Tôi đã chuyển khoản — tải lại trạng thái</button>
+        </div>
+        <div class="btn-row" style="margin-top:6px;justify-content:center;">
           <span class="signout" id="signout-btn-expired" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
         </div>
       </div>
     </div>
   `;
+
+  root.querySelectorAll('[data-plan]').forEach(el=>{
+    el.onclick = ()=>{ selectedPaymentPlanKey = el.getAttribute('data-plan'); renderExpiredScreen(); };
+  });
+  const reloadBtn = root.querySelector('#reload-status-btn');
+  if(reloadBtn) reloadBtn.onclick = async ()=>{ await loadProfile(); renderApp(); };
   const btn = root.querySelector('#signout-btn-expired');
   if(btn) btn.onclick = async ()=>{ await supabaseClient.auth.signOut(); };
 }

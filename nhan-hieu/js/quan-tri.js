@@ -10,7 +10,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], q:'', error:null, busyId:null };
+  const state = { screen:'loading', profiles:[], transactions:[], q:'', error:null, busyId:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -19,7 +19,7 @@ function render(container, ctx){
     if(!ctx.profile || ctx.profile.role !== 'admin'){
       state.screen = 'denied'; draw(); return;
     }
-    await load();
+    await Promise.all([load(), loadTransactions()]);
     state.screen = 'main';
     draw();
   }
@@ -28,6 +28,11 @@ function render(container, ctx){
     const { data, error } = await ctx.supabase.from('profiles').select('*').order('access_until', { ascending:true, nullsFirst:true });
     if(error){ state.error = error.message; state.profiles = []; return; }
     state.profiles = data || [];
+  }
+
+  async function loadTransactions(){
+    const { data } = await ctx.supabase.from('sepay_transactions').select('*').order('created_at', { ascending:false }).limit(20);
+    state.transactions = data || [];
   }
 
   function filtered(){
@@ -60,6 +65,22 @@ function render(container, ctx){
 
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
 
+      ${state.transactions.length ? `
+        <div class="card" style="margin-bottom:20px;">
+          <h3 style="margin-bottom:10px;">Giao dịch SePay gần đây</h3>
+          ${state.transactions.map(t=>{
+            const ok = t.status === 'matched';
+            return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap;">
+              <span>${esc(new Date(t.created_at).toLocaleString('vi-VN'))} — ${esc((t.transfer_amount||0).toLocaleString('vi-VN'))}đ — <span style="font-family:'IBM Plex Mono',monospace;">${esc(t.ref_code_found||'(không tìm thấy mã)')}</span></span>
+              <span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;
+                background:${ok?'var(--accent-soft)':'#FBEAE4'};color:${ok?'var(--accent)':'var(--danger)'};">
+                ${ok?`Đã cộng ${t.days_granted} ngày`:t.status==='unmatched_code'?'Không tìm thấy mã':'Sai số tiền — cần xử lý tay'}
+              </span>
+            </div>`;
+          }).join('')}
+        </div>
+      ` : ''}
+
       ${list.map(p=>{
         const st = statusOf(p);
         return `
@@ -74,6 +95,7 @@ function render(container, ctx){
               color:${st.cls==='active'?'var(--accent)':st.cls==='soon'?'var(--gold)':st.cls==='expired'?'var(--danger)':'var(--ink-soft)'};">${esc(st.label)}</span>
           </div>
           <div class="body" style="margin-top:8px;font-size:13px;">Hạn dùng: ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
+          ${p.ref_code ? `<div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">Mã tham chiếu chuyển khoản: <span style="font-family:'IBM Plex Mono',monospace;">${esc(p.ref_code)}</span></div>` : ''}
           ${p.role!=='admin' ? `
             <div class="btn-row" style="margin-top:12px;justify-content:flex-start;">
               <button class="btn btn-sm" data-extend="${p.id}|30" ${state.busyId===p.id?'disabled':''}>+30 ngày</button>
