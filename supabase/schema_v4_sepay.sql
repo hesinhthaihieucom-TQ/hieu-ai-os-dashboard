@@ -7,12 +7,12 @@
 -- để webhook tự đối chiếu đúng người mà không cần đọc email/tên (nội dung CK có giới hạn ký tự).
 alter table profiles add column if not exists ref_code text;
 
-create or replace function generate_ref_code()
+create or replace function public.generate_ref_code()
 returns text as $$
 begin
   return 'XNH' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
 end;
-$$ language plpgsql;
+$$ language plpgsql set search_path = public, pg_temp;
 
 update profiles set ref_code = generate_ref_code() where ref_code is null;
 
@@ -24,14 +24,16 @@ begin
 end $$;
 
 -- Cập nhật trigger tạo profile: sinh luôn ref_code cho tài khoản mới.
-create or replace function handle_new_user()
+-- LƯU Ý: phải gọi public.generate_ref_code() có ghi rõ schema — trigger này chạy trong ngữ
+-- cảnh search_path khác lúc gọi RPC tay, gọi tên trần dễ báo "function does not exist".
+create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.profiles (id, full_name, email, access_until, ref_code)
-  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days', generate_ref_code());
+  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days', public.generate_ref_code());
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public, pg_temp;
 
 -- Nhật ký MỌI giao dịch nhận được từ webhook SePay (khớp hay không) — để đối chiếu/soát lỗi
 -- thủ công khi cần, và để chống xử lý trùng nếu SePay gửi lại cùng 1 giao dịch.
