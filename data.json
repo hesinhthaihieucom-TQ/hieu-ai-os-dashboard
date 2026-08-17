@@ -1,0 +1,89 @@
+{
+  "products": [
+    { "id":"HANH_21CHUYENNGHIEP", "name":"21 Ngày Giải Nghiệp — Trọn Bộ Tự Học", "branch":"HIỂU HẠNH", "type":"Sản phẩm số / tự học (web app)", "role":"Entry",
+      "price":"399.000đ", "priceOld":"149.000đ", "offerId":"LAUNCH399", "status":"CURRENT",
+      "notes":"Landing ghi giảm từ 1.500.000đ (chưa xác minh giá gốc). Đổi tên hiển thị 2026-08-16, cùng PRODUCT_ID với '21 Ngày Chuyển Nghiệp' cũ." },
+    { "id":"HANH_30TTTC_ELEARNING", "name":"30 Ngày Tâm Linh Tài Chính — E-learning", "branch":"HIỂU HẠNH", "type":"E-learning", "role":"Core",
+      "price":"990.000đ", "offerId":null, "status":"CURRENT" },
+    { "id":"HANH_30TTTC_LIVE", "name":"30 Ngày Tâm Linh Tài Chính — Học trực tiếp", "branch":"HIỂU HẠNH", "type":"Live / Cohort", "role":"Core / Deeper",
+      "price":"3.990.000đ", "offerId":null, "status":"CURRENT" },
+    { "id":"HANH_SODONGTIEN", "name":"Sổ Dòng Tiền", "branch":"HIỂU HẠNH", "type":"Workbook / Tool", "role":"Entry / Tool",
+      "price":"199.000đ", "priceOld":"149.000đ", "offerId":null, "status":"CURRENT" },
+
+    { "id":"MANH_CHECKSUCKHOE", "name":"Bản Đồ Check Sức Khỏe", "branch":"HIỂU MẠNH", "type":"Lead magnet", "role":"Cửa vào",
+      "price":"0đ", "offerId":null, "status":"FREE" },
+    { "id":"MANH_CAITIEN_SUCKHOE", "name":"Cải Thiện Sức Khỏe Nâng Cao", "branch":"HIỂU MẠNH", "type":"Health coaching / Solution", "role":"Entry / Mid",
+      "price":"6.900.000đ", "offerId":null, "status":"NEEDS_CONFIRMATION" },
+    { "id":"MANH_CANBANG_1M", "name":"Cân Bằng Chuyển Hóa — 1 tháng", "branch":"HIỂU MẠNH", "type":"Health coaching / Solution", "role":"Core",
+      "price":"20.000.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt." },
+    { "id":"MANH_CANBANG_FULL", "name":"Cân Bằng Chuyển Hóa Full — 2 tháng", "branch":"HIỂU MẠNH", "type":"Health coaching / Solution", "role":"Premium",
+      "price":"39.000.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt. Có nghi vấn NEEDS_CONFIRMATION: có nằm trong VIP_COACHING_1Y không." },
+
+    { "id":"KENH_8DONGTIEN", "name":"Công Thức Tạo Ra 8 Dòng Tiền Từ Nhân Hiệu", "branch":"HIỂU KÊNH", "type":"Workshop / Sản phẩm số", "role":"Front-end",
+      "price":"199.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt." },
+    { "id":"KENH_XNH_ELEARNING", "name":"Xây Nhân Hiệu — E-learning", "branch":"HIỂU KÊNH", "type":"E-learning", "role":"Core",
+      "price":"990.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt." },
+    { "id":"KENH_XNH_ZOOM6", "name":"Xây Nhân Hiệu — Zoom 6 buổi", "branch":"HIỂU KÊNH", "type":"Live", "role":"Core",
+      "price":"1.990.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt." },
+    { "id":"KENH_XNH_ZOOM8", "name":"Xây Nhân Hiệu — Zoom 8 buổi", "branch":"HIỂU KÊNH", "type":"Live + sửa kênh", "role":"Deeper",
+      "price":"2.990.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt." },
+    { "id":"KENH_XNH_ZOOM10", "name":"Xây Nhân Hiệu — Zoom 10 buổi", "branch":"HIỂU KÊNH", "type":"Live + sửa kênh + coaching", "role":"Premium",
+      "price":"6.990.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt. Chi tiết từng buổi: MISSING." },
+
+    { "id":"VIP_COACHING_1Y", "name":"VIP Coaching Chuyên Sâu", "branch":"VIP", "type":"Coaching / Membership", "role":"Highest / Premium",
+      "price":"55.000.000đ", "offerId":null, "status":"NEEDS_CONFIRMATION", "notes":"Quyền lợi/điều kiện cần lấy từ Offer + Policy Registry — chưa xác nhận đầy đủ." }
+  ],
+
+  "offers": [
+    { "id":"LAUNCH399", "productId":"HANH_21CHUYENNGHIEP", "name":"21 Ngày Giải Nghiệp — Trọn Bộ Tự Học (launch offer)",
+      "price":"399.000đ", "type":"LIMITED", "status":"CURRENT",
+      "from":"2026-08-16", "until":"NEEDS_CONFIRMATION (landing không ghi rõ deadline)",
+      "bonus":["Chiếc Gương Có Trí Nhớ AI (phản chiếu 24/7)","Bộ tài liệu bài tập áp dụng","Điểm Karma 5 chiều (đo lường tiến độ)","Quyền vào Không Gian Alumni"],
+      "payment":"Thanh toán 1 lần, truy cập trọn đời",
+      "eligibility":"Mở cho mọi khách hàng qua landing page",
+      "notes":"Giá gốc 1.500.000đ trên landing chưa được xác minh từng bán ở mức đó — có rủi ro tuân thủ quảng cáo giá so sánh (luật bảo vệ người tiêu dùng + chính sách Meta)." }
+  ],
+  "offersMissing": ["HANH_30TTTC_*", "KENH_XNH_*", "MANH_*", "VIP_COACHING_1Y"],
+
+  "policies": [
+    { "id":"POLICY_UNICITY_CURRENT", "name":"Chính sách Unicity hiện hành", "scope":"Kinh doanh / đối tác Unicity", "status":"NEEDS_CONFIRMATION",
+      "note":"Chưa có nội dung — cần nguồn chính thức từ Unicity." },
+    { "id":"POLICY_SKOOL_ACCESS", "name":"Quyền truy cập Skool", "scope":"Khu / course / resource trên Skool", "status":"NEEDS_CONFIRMATION",
+      "note":"Chưa có nội dung — cần cấu hình Skool hiện hành." },
+    { "id":"POLICY_VIP_ACCESS", "name":"Quyền lợi & điều kiện VIP", "scope":"Chương trình VIP", "status":"NEEDS_CONFIRMATION",
+      "note":"Chưa có nội dung." },
+    { "id":"POLICY_PRODUCT_ACCESS", "name":"Quyền truy cập theo sản phẩm/offer", "scope":"Toàn bộ sản phẩm", "status":"NEEDS_CONFIRMATION",
+      "note":"Chưa có nội dung." },
+    { "id":"POLICY_PAYMENT", "name":"Thanh toán / chia đợt", "scope":"Điều kiện thanh toán", "status":"NEEDS_CONFIRMATION",
+      "note":"Chưa có nội dung." },
+    { "id":"POLICY_REFUND_CANCELLATION", "name":"Hoàn / hủy", "scope":"Refund & cancellation", "status":"MISSING",
+      "note":"Chưa có chính sách chính thức." }
+  ],
+
+  "resources": [
+    { "id":"RES_HANH_21GIAINGHIEP_CHAMDIEM", "name":"Chấm Điểm Nghiệp (lead magnet)", "url":"https://hesinhthaihieu.com/chamdiem", "branch":"HIỂU HẠNH", "status":"CURRENT",
+      "note":"Đích quảng cáo Traffic/Engagement giai đoạn đầu. Web chưa có Meta Pixel/Conversions API." },
+    { "id":"RES_HANH_21GIAINGHIEP_LANDING", "name":"Landing bán hàng 21 Ngày Giải Nghiệp", "url":"https://hesinhthaihieu.com/21ngaygiainghiep", "branch":"HIỂU HẠNH", "status":"CURRENT",
+      "note":"Checkout trực tiếp qua VietQR/SePay. Không có trang cảm ơn chuẩn." },
+    { "id":"RES_HANH_30TTTC_LANDING", "name":"Landing 30 Ngày Tâm Linh Tài Chính", "url":"https://30ngaytamlinhtaichinh.netlify.app/", "branch":"HIỂU HẠNH", "status":"CURRENT" },
+    { "id":"RES_HANH_21CHUYENNGHIEP_FLIPBOOK", "name":"Flipbook 21 Ngày Chuyển Nghiệp (bản cũ)", "url":"https://heyzine.com/flip-book/8a3cdfbaf7.html", "branch":"HIỂU HẠNH", "status":"CURRENT",
+      "note":"Cần xác nhận vai trò còn dùng sau khi có landing mới." },
+    { "id":"RES_KENH_8DONGTIEN_LANDING", "name":"Landing 8 Dòng Tiền Từ Nhân Hiệu", "url":"https://xaynhanhieu8dongtien.netlify.app/", "branch":"HIỂU KÊNH", "status":"CURRENT" },
+    { "id":"RES_KENH_BANDO8DONGTIEN", "name":"Bản Đồ 8 Dòng Tiền", "url":"https://bando8dongtien.netlify.app/?v=11", "branch":"HIỂU KÊNH", "status":"CURRENT" },
+    { "id":"RES_MANH_CHECKSUCKHOE", "name":"Check Sức Khỏe", "url":"https://hieu-de-khoe-manh.vercel.app/", "branch":"HIỂU MẠNH", "status":"CURRENT" },
+    { "id":"RES_PARTNER_MOHINH_KINHDOANH", "name":"Mô Hình Kinh Doanh (Partner)", "url":"https://dinhhuongnghe1-1.netlify.app/", "branch":"VIP", "status":"CURRENT" }
+  ],
+  "resourcesMissing": [
+    "Landing/form các gói sức khỏe chuyên sâu",
+    "Landing/form các gói Xây Nhân Hiệu",
+    "Proposal/form VIP",
+    "Form onboarding Partner",
+    "Link Skool chính thức",
+    "Link cộng đồng theo từng nhóm",
+    "Payment link từng sản phẩm/offer (ngoại trừ HANH_21CHUYENNGHIEP)",
+    "Video/tài liệu mô hình kinh doanh hiện hành",
+    "Tài liệu chính sách Unicity hiện hành"
+  ],
+
+  "lastUpdated": "2026-08-17"
+}
