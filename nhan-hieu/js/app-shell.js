@@ -7,6 +7,7 @@ const NAV = [
   { key:'kho-content', title:'Kho Content' },
   { key:'kho-hook', title:'Kho Hook' },
   { key:'viet-content', title:'Viết Content' },
+  { key:'tai-che-viral', title:'Tái Chế Content Viral' },
   { key:'cham-diem-content', title:'Chấm Điểm Content' },
   { key:'cham-diem-hook', title:'Chấm Điểm Hook' },
   { key:'lich-dang', title:'Lịch Đăng Bài' },
@@ -64,8 +65,9 @@ function renderAuthScreen(err){
   const isLogin = AppState.authMode === 'login';
   root.innerHTML = `
     <div class="auth-shell">
+      <img src="assets/logo-hieu-kenh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>XÂY NHÂN HIỆU</h1>
-      <div class="sub">Định vị · Sửa kênh · Viết content · Lịch đăng — hệ sinh thái HIỂU - HIỂU KÊNH</div>
+      <div class="sub">Định vị · Sửa kênh · Viết content · Lịch đăng<br><span class="sub-brand">Hệ sinh thái HIỂU - HIỂU KÊNH</span></div>
       <div class="auth-tabs">
         <div class="auth-tab ${isLogin?'active':''}" data-mode="login">Đăng nhập</div>
         <div class="auth-tab ${!isLogin?'active':''}" data-mode="signup">Đăng ký</div>
@@ -112,7 +114,10 @@ function renderApp(){
   root.innerHTML = `
     <div class="app-layout">
       <div class="sidebar">
-        <div class="sidebar-brand">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU - HIỂU KÊNH</small></div>
+        <div class="sidebar-brand">
+          <img src="assets/logo-hieu-kenh.png" class="brand-logo" alt="" onerror="this.style.display='none'">
+          <div class="brand-text">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU<br>HIỂU KÊNH</small></div>
+        </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
         <div class="sidebar-foot">
           ${esc((AppState.user && AppState.user.email) || '')}<br>

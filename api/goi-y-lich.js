@@ -81,11 +81,18 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, weekly_goal, posts_per_day } = req.body || {};
-    if (!positioning || !positioning.luot1) { res.status(400).json({ error: 'Cần có kết quả Định Vị trước khi gợi ý lịch.' }); return; }
+    const { positioning, quick_context, weekly_goal, posts_per_day } = req.body || {};
+    const hasPositioning = !!(positioning && positioning.luot1);
+    if (!hasPositioning && !(quick_context && quick_context.trim())) {
+      res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi gợi ý lịch.' }); return;
+    }
     const postsPerDay = [1, 2, 3].includes(posts_per_day) ? posts_per_day : 1;
 
-    const userContent = `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}
+    const contextBlock = hasPositioning
+      ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}`
+      : `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
+
+    const userContent = `${contextBlock}
 
 MỤC TIÊU TUẦN NÀY: ${weekly_goal && weekly_goal.trim() ? weekly_goal : '(không nêu cụ thể — cứ bám trục nội dung chính là được)'}
 

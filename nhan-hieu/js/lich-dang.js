@@ -5,7 +5,7 @@ const DAY_NAMES = ['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ
 function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
-    positioning:null, weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
+    positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -14,7 +14,7 @@ function render(container, ctx){
     draw();
     if(window.PendingPost){ state.pending = window.PendingPost; window.PendingPost = null; }
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
-    state.positioning = pos || null;
+    state.positioning = (pos && pos.luot1) ? pos : null;
     await Promise.all([loadEntries(), loadPosts()]);
     state.screen='main';
     draw();
@@ -57,8 +57,12 @@ function render(container, ctx){
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mỗi ngày muốn đăng mấy bài?</label>
         <div class="chips">${[1,2,3].map(n=>`<div class="chip ${state.postsPerDay===n?'selected':''}" data-posts-per-day="${n}">${n} bài/ngày</div>`).join('')}</div>
+        ${!state.positioning ? `
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
+          <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
+        ` : ''}
         <div class="btn-row"><button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button></div>
-        ${!state.positioning || !state.positioning.luot1 ? `<div class="hint-box">Cần hoàn thành <a href="#dinh-vi">Định Vị</a> trước để AI gợi ý đúng trục nội dung.</div>` : ''}
+        ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
       </div>
 
@@ -131,6 +135,8 @@ function render(container, ctx){
   function bind(){
     const goalInput = container.querySelector('#weekly-goal');
     if(goalInput) goalInput.oninput = ()=>{ state.weeklyGoal = goalInput.value; };
+    const quickContext = container.querySelector('#quick-context');
+    if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
     container.querySelectorAll('[data-posts-per-day]').forEach(el=>{
       el.onclick = ()=>{ state.postsPerDay = Number(el.getAttribute('data-posts-per-day')); draw(); };
     });
@@ -210,11 +216,11 @@ function render(container, ctx){
   }
 
   async function fetchAiSchedule(){
-    if(!state.positioning || !state.positioning.luot1) return;
     state.aiLoading = true; state.aiError = null; draw();
     try{
       const data = await callApi('/api/goi-y-lich', {
-        positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
+        positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
+        quick_context: state.quickContext,
         weekly_goal: state.weeklyGoal,
         posts_per_day: state.postsPerDay,
       });

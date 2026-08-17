@@ -8,7 +8,7 @@ function render(container, ctx){
   const state = {
     tab:'kho-toi', personal:[], shared:[], error:null, positioning:null,
     newEntry:{ hook_text:'', category:'', note:'' },
-    writeFor:null, writeLoading:false, writeIdeas:null, writeError:null,
+    writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -64,9 +64,14 @@ function render(container, ctx){
   }
 
   function writePanelHtml(){
-    if(!state.positioning || !state.positioning.luot1){
-      return `<div class="hint-box" style="margin-top:10px;">Cần hoàn thành <a href="#dinh-vi">Định Vị</a> trước để sinh ý tưởng đúng trục nội dung. Vẫn có thể giữ nguyên hook để viết luôn.</div>
-        <div class="btn-row" style="margin-top:10px;justify-content:flex-start;"><button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button></div>`;
+    const hasPositioning = !!(state.positioning && state.positioning.luot1);
+    if(!hasPositioning && !state.writeIdeas && !state.writeLoading){
+      return `<div class="hint-box" style="margin-top:10px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — điền nhanh ngành/đối tượng bên dưới để vẫn sinh được ý tưởng đúng hướng, hoặc giữ nguyên hook để viết luôn.</div>
+        <textarea id="write-quick-context" style="min-height:auto;height:44px;margin-top:8px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.writeQuickContext)}</textarea>
+        <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+          <button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button>
+          <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
+        </div>`;
     }
     if(state.writeLoading) return `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Đang sinh ý tưởng…</div>`;
     if(state.writeIdeas){
@@ -144,7 +149,7 @@ function render(container, ctx){
       el.onclick = ()=>{
         const key = el.getAttribute('data-write-toggle');
         state.writeFor = state.writeFor===key ? null : key;
-        state.writeIdeas = null; state.writeError = null; state.writeLoading = false;
+        state.writeIdeas = null; state.writeError = null; state.writeLoading = false; state.writeQuickContext = '';
         draw();
       };
     });
@@ -155,6 +160,8 @@ function render(container, ctx){
     };
     const genBtn = container.querySelector('[data-write-generate]');
     if(genBtn) genBtn.onclick = generateIdeasFromSource;
+    const wqc = container.querySelector('#write-quick-context');
+    if(wqc) wqc.oninput = ()=>{ state.writeQuickContext = wqc.value; };
     container.querySelectorAll('[data-use-idea]').forEach(el=>{
       el.onclick = ()=>{
         const i = Number(el.getAttribute('data-use-idea'));
@@ -169,7 +176,8 @@ function render(container, ctx){
     try{
       const data = await callApi('/api/goi-y-tu-nguon', {
         source_text: findSourceText(state.writeFor),
-        positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
+        positioning: (state.positioning && state.positioning.luot1) ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
+        quick_context: state.writeQuickContext,
       });
       state.writeIdeas = data.result.y_tuong;
     } catch(e){ state.writeError = e.message; }

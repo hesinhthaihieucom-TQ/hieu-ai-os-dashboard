@@ -1,14 +1,14 @@
 (function(){
 function render(container, ctx){
-  const state = { screen:'loading', positioning:null, ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null };
+  const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
+    showExtra:false, channelHandle:'', productName:'', groupName:'' };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
-    if(!pos || !pos.luot1){ state.screen='need-positioning'; draw(); return; }
-    state.positioning = pos;
+    state.positioning = (pos && pos.luot1) ? pos : null;
     if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
     await loadRecent();
     state.screen='main';
@@ -22,17 +22,37 @@ function render(container, ctx){
 
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
-    if(state.screen==='need-positioning') return `
-      <div class="page-head"><div class="tag">Bước 4 · Viết Content</div><h1>Cần Định Vị trước đã</h1>
-      <p>Hoàn thành bước Định Vị để bài viết ra đúng giọng văn của bạn.</p></div>
-      <div class="btn-row"><a class="btn" href="#dinh-vi">Đi tới Định Vị</a></div>`;
 
     return `
       <div class="page-head"><div class="tag">Bước 4 · Viết Content</div><h1>Viết bài tự động</h1>
-      <p>Nhập chủ đề/ý tưởng, hoặc bấm "Viết →" từ 1 ý tưởng ở bước Ý Tưởng — AI sẽ viết bài đầy đủ đúng giọng văn định vị.</p></div>
+      <p>Nhập chủ đề/ý tưởng, hoặc bấm "Viết →" từ 1 ý tưởng ở bước khác — AI sẽ viết bài đầy đủ.</p></div>
+      ${!state.positioning ? `<div class="hint-box">Chưa có Định Vị đã lưu — vẫn viết được bình thường, nhưng nếu <a href="#dinh-vi">làm Định Vị trước</a>, bài viết sẽ đúng giọng văn và đối tượng của bạn hơn.</div>` : ''}
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
         <textarea id="idea-input" placeholder="Ví dụ: 3 sai lầm khiến dòng tiền cá nhân bị nghẽn...">${esc(state.ideaText)}</textarea>
+        ${!state.positioning ? `
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc, giúp bài viết sát hơn)</label>
+          <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
+        ` : ''}
+        <div style="margin-top:10px;">
+          <span style="color:var(--accent);font-size:13px;cursor:pointer;font-weight:600;" data-action="toggle-extra">${state.showExtra?'▾':'▸'} Tuỳ chọn thêm (tên kênh, sản phẩm, group — để ghép hashtag & CTA chính xác hơn)</span>
+        </div>
+        ${state.showExtra ? `
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Tên kênh Facebook/TikTok (nếu có)</label>
+              <textarea id="ex-channel" style="min-height:auto;height:40px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Sản phẩm/dịch vụ muốn nhắc (nếu có)</label>
+              <textarea id="ex-product" style="min-height:auto;height:40px;" placeholder="Ví dụ: Sổ tay Dòng Tiền">${esc(state.productName)}</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Group/cộng đồng muốn nhắc (nếu có)</label>
+              <textarea id="ex-group" style="min-height:auto;height:40px;" placeholder="Ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.groupName)}</textarea>
+            </div>
+          </div>
+        ` : ''}
         <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':'Viết bài'}</button></div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
@@ -61,9 +81,14 @@ function render(container, ctx){
         <div class="body" style="margin-top:8px;"><b>Vấn đề:</b> ${esc(r.van_de)}</div>
         <div class="body" style="margin-top:8px;"><b>Giá trị:</b> ${esc(r.gia_tri)}</div>
         <div class="body" style="margin-top:8px;"><b>Niềm tin:</b> ${esc(r.niem_tin)}</div>
-        <div class="body" style="margin-top:8px;"><b>CTA:</b> ${esc(r.cta)}</div>
+        <div class="body" style="margin-top:8px;"><b>CTA:</b> ${esc(r.cta)}${r.tu_khoa_cta?` <span style="display:inline-block;margin-left:4px;padding:2px 9px;border-radius:999px;background:var(--gold);color:#1E2420;font-size:12px;font-weight:700;">${esc(r.tu_khoa_cta)}</span>`:''}</div>
       </div>
-      <div class="section"><h3>Hashtag</h3><div class="body">${r.hashtag.map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div></div>
+      <div class="section"><h3>Bình luận ghim</h3><div class="body">${esc(r.cau_cmt_ghim||'')}</div></div>
+      ${(r.cmt_cta_san_pham && r.cmt_cta_san_pham.length) ? `
+        <div class="section"><h3>Bình luận CTA sản phẩm/group</h3>
+          <ul>${r.cmt_cta_san_pham.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>
+        </div>` : ''}
+      <div class="section"><h3>Hashtag (5)</h3><div class="body">${(r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div></div>
       <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
       <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
         <div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>
@@ -82,6 +107,19 @@ function render(container, ctx){
   function bind(){
     const ideaInput = container.querySelector('#idea-input');
     if(ideaInput) ideaInput.oninput = ()=>{ state.ideaText = ideaInput.value; };
+
+    const quickContext = container.querySelector('#quick-context');
+    if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
+
+    const toggleExtra = container.querySelector('[data-action="toggle-extra"]');
+    if(toggleExtra) toggleExtra.onclick = ()=>{ state.showExtra = !state.showExtra; draw(); };
+
+    const exChannel = container.querySelector('#ex-channel');
+    if(exChannel) exChannel.oninput = ()=>{ state.channelHandle = exChannel.value; };
+    const exProduct = container.querySelector('#ex-product');
+    if(exProduct) exProduct.oninput = ()=>{ state.productName = exProduct.value; };
+    const exGroup = container.querySelector('#ex-group');
+    if(exGroup) exGroup.oninput = ()=>{ state.groupName = exGroup.value; };
 
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
@@ -103,8 +141,12 @@ function render(container, ctx){
     state.generating = true; state.error = null; state.result = null; state.savedId = null; draw();
     try{
       const data = await callApi('/api/viet-content', {
-        positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
+        positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
+        quick_context: state.quickContext,
         idea_text: state.ideaText,
+        channel_handle: state.channelHandle,
+        product_name: state.productName,
+        group_name: state.groupName,
       });
       state.result = data.result;
       state.generating = false; draw();
@@ -119,7 +161,7 @@ function render(container, ctx){
       idea_id: state.ideaId,
       title: r.tieu_de,
       content: r.bai_hoan_chinh,
-      structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: r.dinh_dang_de_xuat },
+      structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, tu_khoa_cta:r.tu_khoa_cta, cau_cmt_ghim:r.cau_cmt_ghim, cmt_cta_san_pham:r.cmt_cta_san_pham, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: r.dinh_dang_de_xuat },
     }).select().single();
     if(error){ state.error = error.message; draw(); return; }
     state.savedId = data.id;

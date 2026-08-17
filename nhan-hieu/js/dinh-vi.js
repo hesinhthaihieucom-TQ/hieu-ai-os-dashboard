@@ -59,12 +59,13 @@ function render(container, ctx){
     draw();
     const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
+    const isComplete = data && data.luot1 && data.luot1.ket_luan_dinh_vi;
     if(data){
       state.savedId = data.id;
       state.answers = data.answers || {};
-      state.luot1 = data.luot1;
-      state.luot2 = data.luot2;
-      state.screen = data.luot2 ? 'results2' : (data.luot1 ? 'results1' : 'intro');
+      state.luot1 = isComplete ? data.luot1 : null;
+      state.luot2 = isComplete ? data.luot2 : null;
+      state.screen = isComplete ? (data.luot2 ? 'results2' : 'results1') : 'intro';
     } else {
       state.screen = 'intro';
     }

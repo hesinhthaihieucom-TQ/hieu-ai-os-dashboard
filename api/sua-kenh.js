@@ -93,8 +93,11 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, channel } = req.body || {};
-    if (!positioning || !positioning.luot1) { res.status(400).json({ error: 'Cần có kết quả Định Vị trước khi Sửa Kênh.' }); return; }
+    const { positioning, quick_context, channel } = req.body || {};
+    const hasPositioning = !!(positioning && positioning.luot1);
+    if (!hasPositioning && !(quick_context && quick_context.trim())) {
+      res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi Sửa Kênh.' }); return;
+    }
 
     const ch = channel || {};
     const imageFields = [
@@ -104,8 +107,12 @@ module.exports = async (req, res) => {
       { key: 'bai_ghim', label: 'HM5 — Bài ghim' },
     ];
 
+    const contextBlock = hasPositioning
+      ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}`
+      : `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
+
     const contentBlocks = [];
-    contentBlocks.push({ type: 'text', text: `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}\n\nNền tảng chính: ${ch.platform || '(không rõ)'}\nHM4 — Bio hiện tại: ${ch.bio || '(chưa có)'}` });
+    contentBlocks.push({ type: 'text', text: `${contextBlock}\n\nNền tảng chính: ${ch.platform || '(không rõ)'}\nHM4 — Bio hiện tại: ${ch.bio || '(chưa có)'}` });
 
     let hasAnyImage = false;
     imageFields.forEach(({ key, label }) => {

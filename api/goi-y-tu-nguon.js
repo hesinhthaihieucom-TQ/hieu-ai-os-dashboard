@@ -53,11 +53,18 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { source_text, positioning } = req.body || {};
+    const { source_text, positioning, quick_context } = req.body || {};
     if (!source_text || !source_text.trim()) { res.status(400).json({ error: 'Thiếu nội dung nguồn để sinh ý tưởng.' }); return; }
-    if (!positioning || !positioning.luot1) { res.status(400).json({ error: 'Cần có kết quả Định Vị trước khi sinh ý tưởng.' }); return; }
+    const hasPositioning = !!(positioning && positioning.luot1);
+    if (!hasPositioning && !(quick_context && quick_context.trim())) {
+      res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi sinh ý tưởng.' }); return;
+    }
 
-    const userContent = `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}
+    const contextBlock = hasPositioning
+      ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}`
+      : `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
+
+    const userContent = `${contextBlock}
 
 NỘI DUNG NGUỒN THAM KHẢO (từ kho tư liệu):\n${source_text}
 

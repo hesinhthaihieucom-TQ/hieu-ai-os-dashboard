@@ -12,7 +12,7 @@ const STEPS = [
 
 function render(container, ctx){
   const state = {
-    screen:'loading', qIndex:0, answers:{ platform:'Facebook' }, positioning:null,
+    screen:'loading', qIndex:0, answers:{ platform:'Facebook' }, positioning:null, quickContext:'',
     result:null, error:null, submitting:false, coverColor:null, coverTitle:null,
   };
 
@@ -21,8 +21,7 @@ function render(container, ctx){
   async function boot(){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
-    if(!pos || !pos.luot1){ state.screen='need-positioning'; draw(); return; }
-    state.positioning = pos;
+    state.positioning = (pos && pos.luot1) ? pos : null;
 
     const { data: audit } = await ctx.supabase.from('channel_audits').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(1).maybeSingle();
     if(audit){ state.auditId = audit.id; state.answers = { ...state.answers, ...(audit.input||{}) }; state.result = audit.result; state.screen='result'; }
@@ -32,10 +31,6 @@ function render(container, ctx){
 
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
-    if(state.screen==='need-positioning') return `
-      <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Cần Định Vị trước đã</h1>
-      <p>Hoàn thành bước Định Vị trước, sau đó quay lại đây để sửa hình ảnh kênh cho khớp định vị.</p></div>
-      <div class="btn-row"><a class="btn" href="#dinh-vi">Đi tới Định Vị</a></div>`;
     if(state.screen==='wizard') return wizardHtml();
     if(state.screen==='submitting') return `<div class="loading"><div class="spinner"></div><p>Đang phân tích ảnh kênh của bạn…</p>
       ${state.error?`<div class="error-box">${esc(state.error)}</div><div class="btn-row"><button class="btn" data-action="retry">Thử lại</button></div>`:''}</div>`;
@@ -57,8 +52,11 @@ function render(container, ctx){
         <input type="file" accept="image/*" id="step-upload">
         ${val ? `<img src="${val}" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--line);margin-top:12px;display:block;">
           <span style="display:inline-block;margin-top:8px;color:var(--danger);font-size:12.5px;cursor:pointer;" data-action="clear-image">Xoá ảnh, chọn lại</span>` : ''}
-        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này:</div>
-          <div style="border:1px dashed var(--line);border-radius:8px;padding:12px;font-size:12.5px;color:var(--ink-soft);">Ảnh chụp toàn bộ phần "Giới thiệu" trên trang cá nhân: công việc, vị trí, học vấn, liên kết, Story Highlights...</div></div>` : ''}
+        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này (chụp đủ cả 2 phần: giới thiệu ngắn ở đầu trang, và phần công việc/liên kết/cộng đồng bên dưới):</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <img src="assets/sua-kenh-vi-du-1.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
+            <img src="assets/sua-kenh-vi-du-2.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
+          </div></div>` : ''}
       `;
     }
 
@@ -69,6 +67,13 @@ function render(container, ctx){
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
         <span>SỬA KÊNH</span><span>Bước ${state.qIndex+1}/${STEPS.length}</span>
       </div>
+      ${(state.qIndex===0 && !state.positioning) ? `
+        <div class="hint-box" style="margin-bottom:16px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn audit được bình thường, nhưng nếu làm Định Vị trước, kết quả sẽ sát hơn. Có thể điền nhanh bên dưới thay thế:</div>
+        <div class="card" style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
+          <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext||'')}</textarea>
+        </div>
+      ` : ''}
       <div class="card">
         <h2 style="font-size:21px;line-height:1.4;">${esc(step.title)}</h2>
         ${step.helper?`<div style="margin-top:10px;font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${esc(step.helper)}</div>`:''}
@@ -147,6 +152,8 @@ function render(container, ctx){
     });
     const textInput = container.querySelector('#step-text');
     if(textInput) textInput.oninput = ()=>{ state.answers[step.key] = textInput.value; };
+    const quickContext = container.querySelector('#quick-context');
+    if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
     const upload = container.querySelector('#step-upload');
     if(upload) upload.onchange = ()=>{
       const file = upload.files[0];
@@ -201,7 +208,8 @@ function render(container, ctx){
     state.screen='submitting'; state.error=null; draw();
     try{
       const data = await callApi('/api/sua-kenh', {
-        positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
+        positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
+        quick_context: state.quickContext,
         channel: state.answers,
       });
       state.result = data.result;
