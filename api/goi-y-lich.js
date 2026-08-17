@@ -13,23 +13,25 @@ KHUNG GIỜ ĐĂNG TỐT (tham khảo, chọn khung phù hợp mục tiêu từn
 - Tối thiểu 1 bài/ngày.
 
 NGUYÊN TẮC:
-- Đúng 7 bài cho 7 ngày (Thứ 2 → Chủ nhật), mỗi ngày 1 bài, rải đều slot Sáng/Trưa/Tối hợp lý (không dồn hết vào 1 khung giờ).
+- Xuất đúng số bài mỗi ngày người dùng yêu cầu cho đủ 7 ngày (Thứ 2 → Chủ nhật). Nếu nhiều hơn 1 bài/ngày, rải vào các slot Sáng/Trưa/Tối khác nhau trong cùng 1 ngày (không trùng slot trong cùng 1 ngày), và đảm bảo các bài trong cùng ngày không trùng chủ đề/dạng content.
 - Bám sát trục nội dung chính đã chốt trong định vị — trụ phụ chỉ nên xuất hiện 1-2 lần/tuần, không lấn át trục chính.
 - Nếu người dùng có nêu mục tiêu tuần này (ra mắt sản phẩm, tăng follow, xây niềm tin...), ưu tiên xếp bài phục vụ đúng mục tiêu đó vào các ngày giữa/cuối tuần, đầu tuần vẫn giữ bài kéo reach/xây niềm tin để làm nóng trước.
 - Mỗi bài chọn 1 dạng content phù hợp (theo đúng 12 dạng ở trên) và 1 gợi ý hook ngắn, cụ thể — không chung chung.
 - CTA phải khớp mục tiêu bài đó, không phải ngày nào cũng "inbox".
 - Output tiếng Việt.`;
 
-const TOOL_LICH = {
+function buildToolLich(postsPerDay) {
+  const total = 7 * postsPerDay;
+  return {
   name: 'xuat_lich_tuan',
-  description: 'Xuất lịch đăng bài đề xuất cho 7 ngày.',
+  description: `Xuất lịch đăng bài đề xuất cho 7 ngày, đúng ${postsPerDay} bài/ngày (tổng ${total} bài).`,
   input_schema: {
     type: 'object',
     properties: {
       lich: {
         type: 'array',
-        minItems: 7,
-        maxItems: 7,
+        minItems: total,
+        maxItems: total,
         items: {
           type: 'object',
           properties: {
@@ -46,7 +48,8 @@ const TOOL_LICH = {
     },
     required: ['lich'],
   },
-};
+  };
+}
 
 async function callClaude({ apiKey, system, userContent, tool }) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -78,16 +81,19 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, weekly_goal } = req.body || {};
+    const { positioning, weekly_goal, posts_per_day } = req.body || {};
     if (!positioning || !positioning.luot1) { res.status(400).json({ error: 'Cần có kết quả Định Vị trước khi gợi ý lịch.' }); return; }
+    const postsPerDay = [1, 2, 3].includes(posts_per_day) ? posts_per_day : 1;
 
     const userContent = `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}
 
 MỤC TIÊU TUẦN NÀY: ${weekly_goal && weekly_goal.trim() ? weekly_goal : '(không nêu cụ thể — cứ bám trục nội dung chính là được)'}
 
-Hãy xuất lịch 7 ngày.`;
+SỐ BÀI MUỐN ĐĂNG MỖI NGÀY: ${postsPerDay}
 
-    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_LICH });
+Hãy xuất lịch 7 ngày, đúng ${postsPerDay} bài/ngày.`;
+
+    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: buildToolLich(postsPerDay) });
     res.status(200).json({ result });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi gợi ý lịch.' });

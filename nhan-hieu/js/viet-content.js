@@ -9,6 +9,7 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(!pos || !pos.luot1){ state.screen='need-positioning'; draw(); return; }
     state.positioning = pos;
+    if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
     await loadRecent();
     state.screen='main';
     draw();

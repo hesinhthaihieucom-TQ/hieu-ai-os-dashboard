@@ -1,21 +1,22 @@
 (function(){
-const FIELDS = [
-  {id:'platform', label:'Nền tảng chính đang dùng', type:'chips', options:['Facebook','TikTok'], single:true},
-  {id:'bio', label:'Bio hiện tại (copy nguyên văn)', type:'textarea'},
-  {id:'anh_dai_dien', label:'Mô tả ảnh đại diện hiện tại', type:'textarea', helper:'Chụp ở đâu, góc nào, ánh sáng, biểu cảm, mặc gì, nền gì.'},
-  {id:'anh_bia', label:'Mô tả ảnh bìa hiện tại', type:'textarea', helper:'Có chữ gì trên ảnh, bố cục, màu sắc, có CTA không.'},
-  {id:'profile_day_du', label:'Profile đầy đủ', type:'textarea', helper:'Nghề nghiệp, vị trí, học vấn, website/link, SĐT/email, Featured/Story Highlights... — mục nào có điền, mục nào bỏ trống.'},
-  {id:'bai_gan_nhat', label:'Mô tả 6-10 bài gần nhất', type:'textarea', helper:'Chủ đề, format, mức tương tác từng bài.'},
-  {id:'bai_vien_top', label:'Nội dung 5 bài có tương tác cao nhất', type:'textarea', helper:'Copy nguyên văn nếu là bài chữ, hoặc mô tả kỹ nếu là video.'},
-  {id:'bai_ghim', label:'Mô tả bài ghim (nếu có)', type:'textarea'},
+const COVER_W = 820, COVER_H = 312;
+
+const STEPS = [
+  { key:'platform', title:'Nền tảng chính bạn đang dùng', type:'choice', options:['Facebook','TikTok'] },
+  { key:'anh_dai_dien', title:'HM1 — Ảnh đại diện', type:'image', helper:'Chụp màn hình ảnh đại diện hiện tại trên kênh của bạn.' },
+  { key:'anh_bia', title:'HM2 — Ảnh bìa', type:'image', helper:'Chụp màn hình ảnh bìa hiện tại trên kênh của bạn.' },
+  { key:'profile_day_du', title:'HM3 — Profile đầy đủ', type:'image', helper:'Chụp màn hình phần giới thiệu/thông tin cá nhân (nghề nghiệp, vị trí, link, highlight...) — giống ảnh mẫu bên dưới.', hasExample:true },
+  { key:'bio', title:'HM4 — Bio', type:'text', helper:'Copy nguyên văn bio hiện tại của bạn vào đây.' },
+  { key:'bai_ghim', title:'HM5 — Bài ghim', type:'image', helper:'Chụp màn hình bài ghim hiện tại trên kênh (nếu có).' },
 ];
 
-const PRIORITY_LABEL = { do:'🔴 Sửa ngay', vang:'🟡 Sửa sớm', xanh:'🟢 Cải thiện dần' };
-
 function render(container, ctx){
-  const state = { screen:'loading', positioning:null, channel:{}, result:null, error:null, auditId:null };
+  const state = {
+    screen:'loading', qIndex:0, answers:{ platform:'Facebook' }, positioning:null,
+    result:null, error:null, submitting:false, coverColor:null, coverTitle:null,
+  };
 
-  function draw(){ container.innerHTML = html(); bind(); }
+  function draw(){ container.innerHTML = html(); bind(); paintCoverIfNeeded(); }
 
   async function boot(){
     draw();
@@ -24,8 +25,8 @@ function render(container, ctx){
     state.positioning = pos;
 
     const { data: audit } = await ctx.supabase.from('channel_audits').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(1).maybeSingle();
-    if(audit){ state.auditId = audit.id; state.channel = audit.input || {}; state.result = audit.result; state.screen='result'; }
-    else state.screen='form';
+    if(audit){ state.auditId = audit.id; state.answers = { ...state.answers, ...(audit.input||{}) }; state.result = audit.result; state.screen='result'; }
+    else state.screen='wizard';
     draw();
   }
 
@@ -33,43 +34,66 @@ function render(container, ctx){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     if(state.screen==='need-positioning') return `
       <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Cần Định Vị trước đã</h1>
-      <p>Hoàn thành bước Định Vị trước, sau đó quay lại đây để audit kênh thật so với định vị.</p></div>
+      <p>Hoàn thành bước Định Vị trước, sau đó quay lại đây để sửa hình ảnh kênh cho khớp định vị.</p></div>
       <div class="btn-row"><a class="btn" href="#dinh-vi">Đi tới Định Vị</a></div>`;
-    if(state.screen==='form') return formHtml();
-    if(state.screen==='saving') return `<div class="loading"><div class="spinner"></div><p>Đang audit kênh của bạn…</p>
+    if(state.screen==='wizard') return wizardHtml();
+    if(state.screen==='submitting') return `<div class="loading"><div class="spinner"></div><p>Đang phân tích ảnh kênh của bạn…</p>
       ${state.error?`<div class="error-box">${esc(state.error)}</div><div class="btn-row"><button class="btn" data-action="retry">Thử lại</button></div>`:''}</div>`;
     if(state.screen==='result') return resultHtml();
     return '';
   }
 
-  function formHtml(){
+  function wizardHtml(){
+    const step = STEPS[state.qIndex];
+    const val = state.answers[step.key];
+
+    let inputHtml = '';
+    if(step.type==='choice'){
+      inputHtml = `<div class="chips">${step.options.map(o=>`<div class="chip ${val===o?'selected':''}" data-choice="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
+    } else if(step.type==='text'){
+      inputHtml = `<textarea id="step-text" placeholder="Dán nội dung vào đây...">${esc(val||'')}</textarea>`;
+    } else if(step.type==='image'){
+      inputHtml = `
+        <input type="file" accept="image/*" id="step-upload">
+        ${val ? `<img src="${val}" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--line);margin-top:12px;display:block;">
+          <span style="display:inline-block;margin-top:8px;color:var(--danger);font-size:12.5px;cursor:pointer;" data-action="clear-image">Xoá ảnh, chọn lại</span>` : ''}
+        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này:</div>
+          <div style="border:1px dashed var(--line);border-radius:8px;padding:12px;font-size:12.5px;color:var(--ink-soft);">Ảnh chụp toàn bộ phần "Giới thiệu" trên trang cá nhân: công việc, vị trí, học vấn, liên kết, Story Highlights...</div></div>` : ''}
+      `;
+    }
+
     return `
-      <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Audit kênh thật so với định vị</h1>
-      <p>Mô tả càng chi tiết, audit càng chính xác. Nếu chưa quen mô tả bằng chữ, cứ viết thật những gì đang có trên kênh.</p></div>
-      <div class="card">
-        ${FIELDS.map(f=>{
-          if(f.type==='chips'){
-            const val = state.channel[f.id];
-            return `<label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">${esc(f.label)}</label>
-              <div class="chips">${f.options.map(o=>`<div class="chip ${val===o?'selected':''}" data-fchip="${f.id}" data-val="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
-          }
-          return `<label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">${esc(f.label)}</label>
-            ${f.helper?`<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">${esc(f.helper)}</div>`:''}
-            <textarea data-field="${f.id}" style="margin-top:0;">${esc(state.channel[f.id]||'')}</textarea>`;
-        }).join('')}
-        <div class="btn-row"><button class="btn" data-action="submit">Audit kênh của tôi</button></div>
-        ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
+      <div class="progress-groups" style="display:flex;gap:6px;margin-bottom:10px;">
+        ${STEPS.map((s,i)=>`<span style="flex:1;height:5px;border-radius:3px;background:${i<state.qIndex?'var(--accent)':i===state.qIndex?'var(--gold)':'var(--line)'};"></span>`).join('')}
       </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
+        <span>SỬA KÊNH</span><span>Bước ${state.qIndex+1}/${STEPS.length}</span>
+      </div>
+      <div class="card">
+        <h2 style="font-size:21px;line-height:1.4;">${esc(step.title)}</h2>
+        ${step.helper?`<div style="margin-top:10px;font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${esc(step.helper)}</div>`:''}
+        <div style="margin-top:16px;">${inputHtml}</div>
+      </div>
+      <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
+        ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Bước trước</span>` : `<span></span>`}
+        <div style="display:flex;gap:10px;">
+          ${step.type!=='choice' ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;align-self:center;" data-action="skip">Bỏ qua</span>` : ''}
+          <button class="btn" data-action="next">${state.qIndex===STEPS.length-1?'Audit kênh của tôi':'Tiếp tục'}</button>
+        </div>
+      </div>
+      ${state.error?`<div class="error-box" style="margin-top:16px;">${esc(state.error)}</div>`:''}
     `;
   }
+
+  const PRIORITY_LABEL = { do:'🔴 Sửa ngay', vang:'🟡 Sửa sớm', xanh:'🟢 Cải thiện dần' };
 
   function resultHtml(){
     const r = state.result;
     return `
       <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Kết quả audit kênh</h1></div>
-      <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:16px;">/100</span></div></div>
-      <div class="section"><h3>Top 3 điểm mạnh</h3><ul>${r.top_diem_manh.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Top 3 điểm nghẽn</h3><ul>${r.top_diem_nghen.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:16px;">/50</span></div></div>
+      <div class="section"><h3>Điểm mạnh</h3><ul>${r.top_diem_manh.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="section"><h3>Điểm nghẽn</h3><ul>${r.top_diem_nghen.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${r.thu_tu_uu_tien.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
       ${r.hang_muc.map(hm=>`
         <div class="section">
@@ -80,6 +104,15 @@ function render(container, ctx){
           <div class="body" style="margin-top:8px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Viết lại:</b> ${esc(hm.viet_lai)}</div>
         </div>
       `).join('')}
+      <div class="section">
+        <h3>Gợi ý ảnh bìa phù hợp</h3>
+        <div class="body" style="margin-bottom:12px;">${esc(r.goi_y_anh_bia.ly_do)}</div>
+        <canvas id="cover-canvas" width="${COVER_W}" height="${COVER_H}" style="width:100%;max-width:480px;border-radius:8px;border:1px solid var(--line);display:block;"></canvas>
+        <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
+          <button class="btn btn-sm" data-action="download-cover">Tải ảnh bìa PNG</button>
+          <a class="btn-ghost btn btn-sm" href="#tao-anh">Chỉnh tiếp trong Tạo Ảnh Thương Hiệu →</a>
+        </div>
+      </div>
       <div class="btn-row no-print">
         <button class="btn-ghost btn" data-action="redo">Audit lại</button>
         <a class="btn" href="#dinh-dang-content">Tiếp tục: Dạng Content →</a>
@@ -87,30 +120,92 @@ function render(container, ctx){
     `;
   }
 
+  function paintCoverIfNeeded(){
+    if(state.screen!=='result' || !window.TaoAnhEngine) return;
+    const canvas = container.querySelector('#cover-canvas');
+    if(!canvas) return;
+    const bg = state.answers.anh_bia ? loadedCoverImage() : null;
+    window.TaoAnhEngine.paintDesign(canvas.getContext('2d'), COVER_W, COVER_H, {
+      layoutKey:'bottom-center', fontKey:'oswald', colorKey: state.result.goi_y_anh_bia.mau_nhan,
+      title: state.result.goi_y_anh_bia.tieu_de, handle:'', bgImage: state._coverImgEl || null,
+    });
+  }
+
+  function loadedCoverImage(){
+    if(state._coverImgEl) return state._coverImgEl;
+    const img = new Image();
+    img.onload = () => { state._coverImgEl = img; paintCoverIfNeeded(); };
+    img.src = state.answers.anh_bia;
+    return null;
+  }
+
   function bind(){
-    container.querySelectorAll('[data-field]').forEach(el=>{
-      el.oninput = ()=>{ state.channel[el.getAttribute('data-field')] = el.value; };
+    const step = STEPS[state.qIndex];
+
+    container.querySelectorAll('[data-choice]').forEach(el=>{
+      el.onclick = ()=>{ state.answers[step.key] = el.getAttribute('data-choice'); draw(); };
     });
-    container.querySelectorAll('[data-fchip]').forEach(el=>{
-      el.onclick = ()=>{ state.channel[el.getAttribute('data-fchip')] = el.getAttribute('data-val'); draw(); };
-    });
-    const submitBtn = container.querySelector('[data-action="submit"]');
-    if(submitBtn) submitBtn.onclick = submit;
+    const textInput = container.querySelector('#step-text');
+    if(textInput) textInput.oninput = ()=>{ state.answers[step.key] = textInput.value; };
+    const upload = container.querySelector('#step-upload');
+    if(upload) upload.onchange = ()=>{
+      const file = upload.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          state.answers[step.key] = c.toDataURL('image/jpeg', 0.82);
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    const clearImg = container.querySelector('[data-action="clear-image"]');
+    if(clearImg) clearImg.onclick = ()=>{ state.answers[step.key] = null; draw(); };
+
+    const backLink = container.querySelector('[data-action="back"]');
+    if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); draw(); };
+    const skipLink = container.querySelector('[data-action="skip"]');
+    if(skipLink) skipLink.onclick = ()=> onNext();
+    const nextBtn = container.querySelector('[data-action="next"]');
+    if(nextBtn) nextBtn.onclick = onNext;
+
     const retryBtn = container.querySelector('[data-action="retry"]');
     if(retryBtn) retryBtn.onclick = submit;
     const redoBtn = container.querySelector('[data-action="redo"]');
-    if(redoBtn) redoBtn.onclick = ()=>{ state.screen='form'; draw(); };
+    if(redoBtn) redoBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; draw(); };
+    const downloadBtn = container.querySelector('[data-action="download-cover"]');
+    if(downloadBtn) downloadBtn.onclick = ()=>{
+      const canvas = container.querySelector('#cover-canvas');
+      const a = document.createElement('a');
+      a.download = 'anh-bia.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+  }
+
+  function onNext(){
+    if(state.qIndex < STEPS.length-1){ state.qIndex++; state.error=null; draw(); }
+    else submit();
   }
 
   async function submit(){
-    state.screen='saving'; state.error=null; draw();
+    state.screen='submitting'; state.error=null; draw();
     try{
       const data = await callApi('/api/sua-kenh', {
         positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
-        channel: state.channel,
+        channel: state.answers,
       });
       state.result = data.result;
-      const payload = { user_id: ctx.user.id, input: state.channel, result: data.result };
+      const payload = { user_id: ctx.user.id, input: state.answers, result: data.result };
       if(state.auditId){
         await ctx.supabase.from('channel_audits').update(payload).eq('id', state.auditId);
       } else {
@@ -118,7 +213,7 @@ function render(container, ctx){
         if(inserted) state.auditId = inserted.id;
       }
       state.screen='result'; draw();
-    } catch(e){ state.error = e.message; state.screen='form'; draw(); }
+    } catch(e){ state.error = e.message; state.screen='wizard'; state.qIndex = STEPS.length-1; draw(); }
   }
 
   boot();

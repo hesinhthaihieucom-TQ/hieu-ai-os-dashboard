@@ -65,7 +65,7 @@ function renderAuthScreen(err){
   root.innerHTML = `
     <div class="auth-shell">
       <h1>XÂY NHÂN HIỆU</h1>
-      <div class="sub">Định vị · Sửa kênh · Ý tưởng · Viết content · Lịch đăng — hệ sinh thái HIỂU KÊNH</div>
+      <div class="sub">Định vị · Sửa kênh · Viết content · Lịch đăng — hệ sinh thái HIỂU - HIỂU KÊNH</div>
       <div class="auth-tabs">
         <div class="auth-tab ${isLogin?'active':''}" data-mode="login">Đăng nhập</div>
         <div class="auth-tab ${!isLogin?'active':''}" data-mode="signup">Đăng ký</div>
@@ -112,7 +112,7 @@ function renderApp(){
   root.innerHTML = `
     <div class="app-layout">
       <div class="sidebar">
-        <div class="sidebar-brand">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU KÊNH</small></div>
+        <div class="sidebar-brand">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU - HIỂU KÊNH</small></div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
         <div class="sidebar-foot">
           ${esc((AppState.user && AppState.user.email) || '')}<br>

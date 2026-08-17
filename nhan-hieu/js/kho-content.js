@@ -5,12 +5,18 @@ const SOURCE_MAP = {
 };
 
 function render(container, ctx){
-  const state = { tab:'da-viet', posts:[], personalBank:[], sharedBank:[], newEntry:{ title:'', content:'', source_type:'', tags:'' } };
+  const state = {
+    tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
+    newEntry:{ title:'', content:'', source_type:'', tags:'' },
+    writeFor:null, writeLoading:false, writeIdeas:null, writeError:null,
+  };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
+    const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
+    state.positioning = pos || null;
     await Promise.all([loadPosts(), loadPersonal(), loadShared()]);
     draw();
   }
@@ -27,6 +33,15 @@ function render(container, ctx){
     state.sharedBank = data || [];
   }
 
+  function findSourceText(key){
+    if(!key) return '';
+    const [kind, id] = key.split(':');
+    if(kind==='post') return (state.posts.find(p=>p.id===id)||{}).content || '';
+    if(kind==='personal') return (state.personalBank.find(b=>b.id===id)||{}).content || '';
+    if(kind==='shared') return (state.sharedBank.find(b=>b.id===id)||{}).content || '';
+    return '';
+  }
+
   function html(){
     return `
       <div class="page-head"><h1>Kho Content</h1><p>Bài đã viết, tư liệu bạn tự sưu tầm, và kho chung do đội ngũ cập nhật.</p></div>
@@ -39,6 +54,38 @@ function render(container, ctx){
     `;
   }
 
+  function writeActionHtml(key){
+    const isOpen = state.writeFor === key;
+    return `
+      <div style="margin-top:12px;">
+        <span class="btn-ghost btn btn-sm" data-write-toggle="${key}">${isOpen?'Đóng':'Viết bài từ đây →'}</span>
+        ${isOpen ? writePanelHtml() : ''}
+      </div>
+    `;
+  }
+
+  function writePanelHtml(){
+    if(!state.positioning || !state.positioning.luot1){
+      return `<div class="hint-box" style="margin-top:10px;">Cần hoàn thành <a href="#dinh-vi">Định Vị</a> trước để sinh ý tưởng đúng trục nội dung. Vẫn có thể giữ nguyên nội dung để viết luôn.</div>
+        <div class="btn-row" style="margin-top:10px;justify-content:flex-start;"><button class="btn btn-sm" data-write-keep="1">Giữ nguyên nội dung này</button></div>`;
+    }
+    if(state.writeLoading) return `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Đang sinh ý tưởng…</div>`;
+    if(state.writeIdeas){
+      return `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+        ${state.writeIdeas.map((idea,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--accent-soft);">
+          <div style="font-size:13px;">${esc(idea)}</div>
+          <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;" data-use-idea="${i}">Dùng ý tưởng này →</span>
+        </div>`).join('')}
+      </div>`;
+    }
+    return `
+      ${state.writeError?`<div class="error-box" style="margin-top:10px;">${esc(state.writeError)}</div>`:''}
+      <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+        <button class="btn btn-sm" data-write-keep="1">Giữ nguyên nội dung này</button>
+        <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
+      </div>`;
+  }
+
   function daVietTab(){
     if(state.posts.length===0) return `<div class="card" style="color:var(--ink-soft);">Chưa có bài nào — sang mục Viết Content để tạo bài đầu tiên.</div>`;
     return state.posts.map(p=>`
@@ -46,6 +93,7 @@ function render(container, ctx){
         <h3>${esc(p.title||'(không tiêu đề)')}</h3>
         <div class="body">${esc(p.content)}</div>
         <div class="btn-row" style="margin-top:14px;"><button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button></div>
+        ${writeActionHtml('post:'+p.id)}
       </div>
     `).join('');
   }
@@ -69,9 +117,14 @@ function render(container, ctx){
       <div style="margin-top:20px;">
         ${state.personalBank.length===0?`<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`:''}
         ${state.personalBank.map(b=>`
-          <div class="list-item">
-            <div class="txt"><div class="meta">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div><b>${esc(b.title)}</b><br>${esc(b.content)}</div>
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;flex-shrink:0;" data-del-personal="${b.id}">Xoá</span>
+          <div class="section">
+            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+            <h3>${esc(b.title)}</h3>
+            <div class="body">${esc(b.content)}</div>
+            <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
+              <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
+            </div>
+            ${writeActionHtml('personal:'+b.id)}
           </div>
         `).join('')}
       </div>
@@ -81,8 +134,11 @@ function render(container, ctx){
   function khoChungTab(){
     if(state.sharedBank.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`;
     return state.sharedBank.map(b=>`
-      <div class="list-item">
-        <div class="txt"><div class="meta">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div><b>${esc(b.title)}</b><br>${esc(b.content)}</div>
+      <div class="section">
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+        <h3>${esc(b.title)}</h3>
+        <div class="body">${esc(b.content)}</div>
+        ${writeActionHtml('shared:'+b.id)}
       </div>
     `).join('');
   }
@@ -94,6 +150,29 @@ function render(container, ctx){
       el.onclick = ()=>{
         window.PendingPost = state.posts.find(p=>p.id===el.getAttribute('data-schedule'));
         location.hash = 'lich-dang';
+      };
+    });
+
+    container.querySelectorAll('[data-write-toggle]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-write-toggle');
+        state.writeFor = state.writeFor===key ? null : key;
+        state.writeIdeas = null; state.writeError = null; state.writeLoading = false;
+        draw();
+      };
+    });
+    const keepBtn = container.querySelector('[data-write-keep]');
+    if(keepBtn) keepBtn.onclick = ()=>{
+      window.PendingTopic = findSourceText(state.writeFor);
+      location.hash = 'viet-content';
+    };
+    const genBtn = container.querySelector('[data-write-generate]');
+    if(genBtn) genBtn.onclick = generateIdeasFromSource;
+    container.querySelectorAll('[data-use-idea]').forEach(el=>{
+      el.onclick = ()=>{
+        const i = Number(el.getAttribute('data-use-idea'));
+        window.PendingTopic = state.writeIdeas[i];
+        location.hash = 'viet-content';
       };
     });
 
@@ -109,6 +188,18 @@ function render(container, ctx){
         await loadPersonal(); draw();
       };
     });
+  }
+
+  async function generateIdeasFromSource(){
+    state.writeLoading = true; state.writeError = null; draw();
+    try{
+      const data = await callApi('/api/goi-y-tu-nguon', {
+        source_text: findSourceText(state.writeFor),
+        positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
+      });
+      state.writeIdeas = data.result.y_tuong;
+    } catch(e){ state.writeError = e.message; }
+    state.writeLoading = false; draw();
   }
 
   async function addPersonal(){

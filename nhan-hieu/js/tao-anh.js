@@ -326,4 +326,6 @@ function render(container, ctx){
 
 window.Modules = window.Modules || {};
 window.Modules['tao-anh'] = { title:'Tạo Ảnh Thương Hiệu', render };
+// Cho các module khác (vd Sửa Kênh) tái dùng để vẽ ảnh bìa gợi ý.
+window.TaoAnhEngine = { paintDesign, LAYOUTS, FONTS, COLORS };
 })();

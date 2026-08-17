@@ -5,7 +5,7 @@ const DAY_NAMES = ['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ
 function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
-    positioning:null, weeklyGoal:'', aiSuggestions:null, aiLoading:false, aiError:null,
+    positioning:null, weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -55,6 +55,8 @@ function render(container, ctx){
       <div class="card" style="margin-bottom:20px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tuần này bạn muốn đẩy mục tiêu gì nhất?</label>
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mỗi ngày muốn đăng mấy bài?</label>
+        <div class="chips">${[1,2,3].map(n=>`<div class="chip ${state.postsPerDay===n?'selected':''}" data-posts-per-day="${n}">${n} bài/ngày</div>`).join('')}</div>
         <div class="btn-row"><button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button></div>
         ${!state.positioning || !state.positioning.luot1 ? `<div class="hint-box">Cần hoàn thành <a href="#dinh-vi">Định Vị</a> trước để AI gợi ý đúng trục nội dung.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
@@ -129,6 +131,9 @@ function render(container, ctx){
   function bind(){
     const goalInput = container.querySelector('#weekly-goal');
     if(goalInput) goalInput.oninput = ()=>{ state.weeklyGoal = goalInput.value; };
+    container.querySelectorAll('[data-posts-per-day]').forEach(el=>{
+      el.onclick = ()=>{ state.postsPerDay = Number(el.getAttribute('data-posts-per-day')); draw(); };
+    });
     const aiBtn = container.querySelector('[data-action="ai-suggest"]');
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
 
@@ -211,6 +216,7 @@ function render(container, ctx){
       const data = await callApi('/api/goi-y-lich', {
         positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
         weekly_goal: state.weeklyGoal,
+        posts_per_day: state.postsPerDay,
       });
       state.aiSuggestions = data.result.lich;
     } catch(e){ state.aiError = e.message; }

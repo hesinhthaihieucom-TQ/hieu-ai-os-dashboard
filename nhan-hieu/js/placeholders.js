@@ -10,17 +10,38 @@ function comingSoon(title, desc){
   };
 }
 
-const HELP_ITEMS = [
-  { q:'Vì sao Sửa Kênh / Ý Tưởng / Viết Content bắt tôi làm Định Vị trước?', a:'Toàn bộ nội dung AI sinh ra đều bám theo định vị đã chốt để không bị lệch trục — nên cần có Định Vị trước mới dùng được các bước sau.' },
-  { q:'Kho Content và Kho Hook khác gì nhau?', a:'Kho Content lưu bài viết/mẫu content (của bạn và của đội ngũ). Kho Hook lưu riêng các câu hook hay để tra cứu nhanh khi cần mở đầu bài.' },
-  { q:'Chấm Điểm Content dùng để làm gì?', a:'Dán 1 bài đã viết (tự viết hoặc AI viết) vào để AI chấm theo đúng khung Hook-Vấn đề-Giá trị-Niềm tin-CTA, chỉ ra chỗ yếu và cách sửa cụ thể.' },
-  { q:'Dữ liệu của tôi có bị người khác xem không?', a:'Không. Mỗi tài khoản chỉ thấy dữ liệu của chính mình, trừ "Kho chung" do đội ngũ quản lý là mọi người đều xem được.' },
+const HELP_SECTIONS = [
+  { group:'Bắt đầu từ đâu', items: [
+    { q:'Tôi nên làm theo thứ tự nào?', a:'Đi đúng theo thứ tự sidebar từ trên xuống: Định Vị → Sửa Kênh → Chân Dung KH / Giọng Văn (đọc tham khảo) → Dạng Content → Kho Content / Kho Hook → Viết Content → Chấm Điểm → Lịch Đăng Bài. Định Vị luôn là bước đầu tiên vì mọi bước sau đều dựa vào kết quả đó.' },
+    { q:'Tôi đã làm Định Vị ở một trợ lý GPT khác trước đây rồi, có phải làm lại không?', a:'Không cần làm lại. Ở màn hình Định Vị, bấm "Đã có kết quả Định Vị rồi? Dán vào đây" rồi dán nguyên văn kết quả cũ vào — hệ thống tự sắp xếp lại đúng cấu trúc, không cần trả lời lại 26 câu hỏi.' },
+  ]},
+  { group:'Định Vị & Sửa Kênh', items: [
+    { q:'Vì sao các mục sau bắt tôi làm Định Vị trước?', a:'Toàn bộ nội dung AI sinh ra (dạng content, ý tưởng, bài viết, lịch đăng) đều bám theo định vị đã chốt để không bị lệch trục — nên cần có Định Vị trước mới dùng được các bước sau.' },
+    { q:'Sửa Kênh dùng để làm gì?', a:'Kiểm tra ảnh đại diện, ảnh bìa, profile, bio và bài ghim trên kênh thật của bạn có khớp với định vị đã chốt không, rồi đưa ra hướng sửa cụ thể — kể cả gợi ý ảnh bìa phù hợp.' },
+  ]},
+  { group:'Content & Lịch đăng', items: [
+    { q:'Kho Content và Kho Hook khác gì nhau?', a:'Kho Content lưu bài viết/mẫu content (của bạn và của đội ngũ). Kho Hook lưu riêng các câu hook hay để tra cứu nhanh khi cần mở đầu bài.' },
+    { q:'Dạng Content dùng để làm gì?', a:'Sau khi có Định Vị, trang này tự gợi ý 2-3 dạng content (trong 12 dạng) phù hợp nhất với trục nội dung của bạn, kèm hướng dẫn cách làm cụ thể từng dạng.' },
+    { q:'Chấm Điểm Content / Chấm Điểm Hook dùng để làm gì?', a:'Dán 1 bài viết hoặc 1 câu hook vào để AI chấm theo đúng khung chuẩn, chỉ ra chỗ yếu và cách sửa cụ thể — không chỉ khen chê chung chung.' },
+    { q:'Lịch Đăng Bài có tự động không?', a:'Có. Nhập mục tiêu tuần này, bấm "AI gợi ý lịch tuần" — hệ thống xếp sẵn 7 ngày theo đúng trục nội dung, bạn chỉ cần bấm "Dùng gợi ý" hoặc tự chọn bài khác.' },
+  ]},
+  { group:'Dữ liệu & bảo mật', items: [
+    { q:'Dữ liệu của tôi có bị người khác xem không?', a:'Không. Mỗi tài khoản chỉ thấy dữ liệu của chính mình, trừ "Kho chung" do đội ngũ quản lý là mọi người đều xem được.' },
+    { q:'Tôi đổi máy/điện thoại thì dữ liệu có mất không?', a:'Không mất — dữ liệu lưu trên server theo tài khoản, đăng nhập lại ở bất kỳ thiết bị nào cũng thấy đầy đủ.' },
+  ]},
 ];
 
 function renderHelp(container){
   container.innerHTML = `
     <div class="page-head"><h1>Hỏi & Trợ Giúp</h1><p>Câu hỏi thường gặp khi dùng Xây Nhân Hiệu.</p></div>
-    ${HELP_ITEMS.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('')}
+    ${HELP_SECTIONS.map(sec=>`
+      <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">${esc(sec.group)}</div>
+      ${sec.items.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('')}
+    `).join('')}
+    <div class="section highlight" style="margin-top:28px;">
+      <h3>Liên hệ</h3>
+      <div class="body">Cần hỗ trợ thêm hoặc muốn tìm hiểu các sản phẩm khác trong hệ sinh thái HIỂU? Truy cập <a href="https://hesinhthaihieu.com" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline;">hesinhthaihieu.com</a>.</div>
+    </div>
   `;
 }
 

@@ -5,12 +5,18 @@ const CATEGORIES = {
 };
 
 function render(container, ctx){
-  const state = { tab:'kho-toi', personal:[], shared:[], error:null, newEntry:{ hook_text:'', category:'', note:'' } };
+  const state = {
+    tab:'kho-toi', personal:[], shared:[], error:null, positioning:null,
+    newEntry:{ hook_text:'', category:'', note:'' },
+    writeFor:null, writeLoading:false, writeIdeas:null, writeError:null,
+  };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
+    const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
+    state.positioning = pos || null;
     await Promise.all([loadPersonal(), loadShared()]);
     draw();
   }
@@ -25,6 +31,14 @@ function render(container, ctx){
     state.shared = data || [];
   }
 
+  function findSourceText(key){
+    if(!key) return '';
+    const [kind, id] = key.split(':');
+    if(kind==='personal') return (state.personal.find(h=>h.id===id)||{}).hook_text || '';
+    if(kind==='shared') return (state.shared.find(h=>h.id===id)||{}).hook_text || '';
+    return '';
+  }
+
   function html(){
     if(state.error) return `
       <div class="page-head"><h1>Kho Hook</h1></div>
@@ -37,6 +51,38 @@ function render(container, ctx){
       </div>
       ${state.tab==='kho-toi' ? khoToiTab() : khoChungTab()}
     `;
+  }
+
+  function writeActionHtml(key){
+    const isOpen = state.writeFor === key;
+    return `
+      <div style="margin-top:10px;">
+        <span class="btn-ghost btn btn-sm" data-write-toggle="${key}">${isOpen?'Đóng':'Viết bài từ hook này →'}</span>
+        ${isOpen ? writePanelHtml() : ''}
+      </div>
+    `;
+  }
+
+  function writePanelHtml(){
+    if(!state.positioning || !state.positioning.luot1){
+      return `<div class="hint-box" style="margin-top:10px;">Cần hoàn thành <a href="#dinh-vi">Định Vị</a> trước để sinh ý tưởng đúng trục nội dung. Vẫn có thể giữ nguyên hook để viết luôn.</div>
+        <div class="btn-row" style="margin-top:10px;justify-content:flex-start;"><button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button></div>`;
+    }
+    if(state.writeLoading) return `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Đang sinh ý tưởng…</div>`;
+    if(state.writeIdeas){
+      return `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+        ${state.writeIdeas.map((idea,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--accent-soft);">
+          <div style="font-size:13px;">${esc(idea)}</div>
+          <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;" data-use-idea="${i}">Dùng ý tưởng này →</span>
+        </div>`).join('')}
+      </div>`;
+    }
+    return `
+      ${state.writeError?`<div class="error-box" style="margin-top:10px;">${esc(state.writeError)}</div>`:''}
+      <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+        <button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button>
+        <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
+      </div>`;
   }
 
   function khoToiTab(){
@@ -56,9 +102,13 @@ function render(container, ctx){
       <div style="margin-top:20px;">
         ${state.personal.length===0?`<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`:''}
         ${state.personal.map(h=>`
-          <div class="list-item">
-            <div class="txt"><div class="meta">${esc(CATEGORIES[h.category]||h.category||'')}</div><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;flex-shrink:0;" data-del="${h.id}">Xoá</span>
+          <div class="section">
+            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(CATEGORIES[h.category]||h.category||'')}</div>
+            <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+            <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
+              <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
+            </div>
+            ${writeActionHtml('personal:'+h.id)}
           </div>
         `).join('')}
       </div>
@@ -68,8 +118,10 @@ function render(container, ctx){
   function khoChungTab(){
     if(state.shared.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
     return state.shared.map(h=>`
-      <div class="list-item">
-        <div class="txt"><div class="meta">${esc(CATEGORIES[h.category]||h.category||'')}</div><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+      <div class="section">
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(CATEGORIES[h.category]||h.category||'')}</div>
+        <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+        ${writeActionHtml('shared:'+h.id)}
       </div>
     `).join('');
   }
@@ -87,6 +139,41 @@ function render(container, ctx){
         await loadPersonal(); draw();
       };
     });
+
+    container.querySelectorAll('[data-write-toggle]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-write-toggle');
+        state.writeFor = state.writeFor===key ? null : key;
+        state.writeIdeas = null; state.writeError = null; state.writeLoading = false;
+        draw();
+      };
+    });
+    const keepBtn = container.querySelector('[data-write-keep]');
+    if(keepBtn) keepBtn.onclick = ()=>{
+      window.PendingTopic = findSourceText(state.writeFor);
+      location.hash = 'viet-content';
+    };
+    const genBtn = container.querySelector('[data-write-generate]');
+    if(genBtn) genBtn.onclick = generateIdeasFromSource;
+    container.querySelectorAll('[data-use-idea]').forEach(el=>{
+      el.onclick = ()=>{
+        const i = Number(el.getAttribute('data-use-idea'));
+        window.PendingTopic = state.writeIdeas[i];
+        location.hash = 'viet-content';
+      };
+    });
+  }
+
+  async function generateIdeasFromSource(){
+    state.writeLoading = true; state.writeError = null; draw();
+    try{
+      const data = await callApi('/api/goi-y-tu-nguon', {
+        source_text: findSourceText(state.writeFor),
+        positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 },
+      });
+      state.writeIdeas = data.result.y_tuong;
+    } catch(e){ state.writeError = e.message; }
+    state.writeLoading = false; draw();
   }
 
   async function addHook(){
