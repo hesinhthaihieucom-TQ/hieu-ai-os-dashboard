@@ -65,7 +65,7 @@ function renderAuthScreen(err){
   const isLogin = AppState.authMode === 'login';
   root.innerHTML = `
     <div class="auth-shell">
-      <img src="assets/logo-hieu-kenh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>XÂY NHÂN HIỆU</h1>
       <div class="sub">Định vị · Sửa kênh · Viết content · Lịch đăng<br><span class="sub-brand">Hệ sinh thái HIỂU - HIỂU KÊNH</span></div>
       <div class="auth-tabs">
@@ -115,7 +115,7 @@ function renderApp(){
     <div class="app-layout">
       <div class="sidebar">
         <div class="sidebar-brand">
-          <img src="assets/logo-hieu-kenh.png" class="brand-logo" alt="" onerror="this.style.display='none'">
+          <img src="assets/logo-hieu-kenh-badge.svg" class="brand-logo" alt="" onerror="this.style.display='none'">
           <div class="brand-text">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU<br>HIỂU KÊNH</small></div>
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
