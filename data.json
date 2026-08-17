@@ -29,6 +29,9 @@
       "price":"2.990.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt." },
     { "id":"KENH_XNH_ZOOM10", "name":"Xây Nhân Hiệu — Zoom 10 buổi", "branch":"HIỂU KÊNH", "type":"Live + sửa kênh + coaching", "role":"Premium",
       "price":"6.990.000đ", "offerId":null, "status":"CURRENT", "notes":"Time-sensitive theo cohort/đợt. Chi tiết từng buổi: MISSING." },
+    { "id":"KENH_XNH_WEBAPP", "name":"Xây Nhân Hiệu — Web App AI", "branch":"HIỂU KÊNH", "type":"SaaS / Web app (thuê bao)", "role":"Tool / Hệ thống vận hành",
+      "price":"499.000đ/tháng", "offerId":null, "status":"CURRENT",
+      "notes":"Công cụ đi kèm dòng sản phẩm Xây Nhân Hiệu (định vị AI, sửa kênh, kho content/hook, viết content, chấm điểm, lịch đăng, tạo ảnh thương hiệu). Trả phí định kỳ, có 7 ngày dùng thử miễn phí, kích hoạt/gia hạn thủ công qua chuyển khoản (chưa có cổng thanh toán tự động). Giá chuẩn 499.000đ/tháng — gói dài: 6 tháng 2.390.000đ (~398.333đ/tháng, tiết kiệm ~20%), 12 tháng 3.990.000đ (~332.500đ/tháng, tiết kiệm ~33%). Ưu đãi riêng cho học viên đã học khoá Xây Nhân Hiệu (KENH_XNH_ELEARNING/ZOOM6/8/10): 299.000đ/tháng, để họ trải nghiệm công cụ với giá thấp hơn. NEEDS_CONFIRMATION: giá chưa có landing/case study, có thể cần thử nghiệm lại sau khi có học viên trả phí đầu tiên." },
 
     { "id":"VIP_COACHING_1Y", "name":"VIP Coaching Chuyên Sâu", "branch":"VIP", "type":"Coaching / Membership", "role":"Highest / Premium",
       "price":"55.000.000đ", "offerId":null, "status":"NEEDS_CONFIRMATION", "notes":"Quyền lợi/điều kiện cần lấy từ Offer + Policy Registry — chưa xác nhận đầy đủ." }
