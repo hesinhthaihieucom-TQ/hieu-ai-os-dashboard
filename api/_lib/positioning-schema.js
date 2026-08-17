@@ -21,7 +21,7 @@ const TOOL_LUOT1 = {
       },
       triet_ly_thuong_hieu: { type: 'string', description: 'Tin gì / không đồng tình gì / bảo vệ khách hàng khỏi điều gì / muốn họ thay đổi nhận thức nào.' },
       khong_theo_duoi: { type: 'string', description: 'Liệt kê rõ những gì nội dung của kênh này KHÔNG nên làm: không sáo rỗng, không phóng đại, không bán lộ, không câu view bằng nỗi đau, không chạy trend lệch định vị — cụ thể hoá theo đúng bối cảnh người dùng.' },
-      ket_luan_dinh_vi: { type: 'string', description: 'Một câu định vị sắc, dạng: "Nếu tóm gọn, kênh của bạn nên được định vị là…"' },
+      ket_luan_dinh_vi: { type: 'string', description: 'Một câu định vị sắc, dạng: "Nếu tóm gọn, kênh của bạn nên được định vị là…". Phần định vị nêu ra PHẢI là 1 ngách cụ thể (ví dụ "Tài chính gia đình", "Tâm linh tài chính", "Tài chính hôn nhân"...), không được chỉ nêu tên 1 ngành lớn chung chung như "Tài chính" hay "Tâm linh".' },
       dau_an_hinh_anh: {
         type: 'object',
         description: 'Dấu ấn hình ảnh thương hiệu cụ thể để quay/chụp ngay.',
@@ -65,7 +65,7 @@ const TOOL_LUOT2 = {
         description: 'Hệ trục nội dung của kênh — BẮT BUỘC chỉ chọn ĐÚNG 1 trục chính duy nhất, không dàn trải. Đây là tiêu chí quan trọng nhất của cả bản định vị.',
         properties: {
           cong_thuc: { type: 'string', description: 'Theo khuôn: "Mình giúp [ai] từ [kẹt] sang [kết quả] qua [lợi thế]."' },
-          truc_chinh: { type: 'string', description: 'Tên 1 trục nội dung chính DUY NHẤT — trục rõ nhất, quan trọng nhất, xuyên suốt toàn kênh. Không được ghép nhiều ý thành 1 trục mơ hồ.' },
+          truc_chinh: { type: 'string', description: 'Tên 1 trục nội dung chính DUY NHẤT — trục rõ nhất, quan trọng nhất, xuyên suốt toàn kênh. Không được ghép nhiều ý thành 1 trục mơ hồ. BẮT BUỘC là 1 ngách cụ thể kết hợp ngành lớn với góc riêng của người này (ví dụ "Tài chính gia đình", "Tâm linh tài chính", "Tài chính hôn nhân", "Sức khoẻ dân văn phòng"...) — TUYỆT ĐỐI không chỉ ghi tên ngành lớn chung chung như "Tài chính" hay "Tâm linh".' },
           tru_phu: {
             type: 'array',
             description: 'CHỈ 1 đến 2 trụ nội dung phụ (không quá 2), mỗi trụ ghi rõ vai trò (kéo reach / xây niềm tin / chuyển đổi / dẫn dòng tiền) và vì sao trụ đó bổ trợ cho trục chính.',
