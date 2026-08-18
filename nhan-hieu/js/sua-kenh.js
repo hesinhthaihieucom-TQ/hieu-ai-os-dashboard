@@ -111,13 +111,17 @@ function render(container, ctx){
 
   function resultHtml(){
     const r = state.result;
+    // AI đôi khi bỏ sót 1 field dù schema đánh dấu required (API không ép buộc điều này) —
+    // dùng giá trị rỗng an toàn thay vì để cả trang crash vì undefined.ly_do/.map trên 1 field thiếu.
+    const cover = r.goi_y_anh_bia || {};
+    const hangMuc = r.hang_muc || [];
     return `
       <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Kết quả audit kênh</h1></div>
       <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:16px;">/100</span></div></div>
-      <div class="section"><h3>Điểm mạnh</h3><ul>${r.top_diem_manh.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Điểm nghẽn</h3><ul>${r.top_diem_nghen.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${r.thu_tu_uu_tien.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
-      ${r.hang_muc.map(hm=>`
+      <div class="section"><h3>Điểm mạnh</h3><ul>${(r.top_diem_manh||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="section"><h3>Điểm nghẽn</h3><ul>${(r.top_diem_nghen||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${(r.thu_tu_uu_tien||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
+      ${hangMuc.map(hm=>`
         <div class="section">
           <h3>${esc(hm.ma)} · ${esc(hm.ten)} — ${hm.diem}/20 · ${PRIORITY_LABEL[hm.uu_tien]||''}</h3>
           <div class="body"><b>Hiện tại:</b> ${esc(hm.hien_tai)}</div>
@@ -126,16 +130,18 @@ function render(container, ctx){
           <div class="body" style="margin-top:8px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Viết lại:</b> ${esc(hm.viet_lai)}</div>
         </div>
       `).join('')}
-      <div class="section">
-        <h3>Gợi ý ảnh bìa phù hợp</h3>
-        <div class="body" style="margin-bottom:12px;">${esc(r.goi_y_anh_bia.ly_do)}</div>
-        <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;">${esc(r.goi_y_anh_bia.prompt_anh_bia)}</div>
-        <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
-          <button class="btn btn-sm" data-action="copy-cover-prompt">${state.coverPromptCopied?'Đã copy ✓':'Copy prompt'}</button>
-          <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Dán vào ChatGPT để tạo ảnh →</a>
+      ${cover.prompt_anh_bia ? `
+        <div class="section">
+          <h3>Gợi ý ảnh bìa phù hợp</h3>
+          <div class="body" style="margin-bottom:12px;">${esc(cover.ly_do)}</div>
+          <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;">${esc(cover.prompt_anh_bia)}</div>
+          <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
+            <button class="btn btn-sm" data-action="copy-cover-prompt">${state.coverPromptCopied?'Đã copy ✓':'Copy prompt'}</button>
+            <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Dán vào ChatGPT để tạo ảnh →</a>
+          </div>
+          <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Dán nguyên văn prompt trên vào ChatGPT (hoặc công cụ tạo ảnh AI bất kỳ) để ra ảnh bìa.</div>
         </div>
-        <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Dán nguyên văn prompt trên vào ChatGPT (hoặc công cụ tạo ảnh AI bất kỳ) để ra ảnh bìa.</div>
-      </div>
+      ` : ''}
       <div class="btn-row no-print">
         <button class="btn-ghost btn" data-action="redo">Audit lại</button>
         <a class="btn" href="#dinh-dang-content">Tiếp tục: Dạng Content →</a>
