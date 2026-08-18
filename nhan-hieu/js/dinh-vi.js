@@ -316,21 +316,37 @@ function render(container, ctx){
         <div class="body"><b>Bề mặt:</b> ${esc(r2.noi_dau_rao_can.be_mat)}<br><b>Sâu bên trong:</b> ${esc(r2.noi_dau_rao_can.sau_ben_trong)}<br><b>Nỗi sợ:</b> ${esc(r2.noi_dau_rao_can.noi_so)}<br><b>Rào cản:</b> ${esc(r2.noi_dau_rao_can.rao_can_chua_hanh_dong)}</div></div>
       ${sectionHtml('Khao khát & mục tiêu', r2.khao_khat_muc_tieu)}
       <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${esc(r2.insight_cot_loi)}</div></div>
-      <div class="section"><h3>Hệ trục nội dung</h3><div class="body" style="margin-bottom:10px;"><b>${esc(r2.he_truc_noi_dung.cong_thuc)}</b></div>
-        <div>Trục chính: ${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
-        <ul>${r2.he_truc_noi_dung.tru_phu.map(t=>`<li><b>${esc(t.ten)}</b> — ${esc(t.vai_tro)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Style & dạng nội dung</h3><div class="body">${esc(r2.style_dang_noi_dung.style)}</div>
-        <div style="margin-top:10px;"><b>Dạng chính:</b> ${(r2.style_dang_noi_dung.dang_chinh||[]).join(', ')}<br><b>Dạng phụ:</b> ${(r2.style_dang_noi_dung.dang_phu||[]).join(', ')}</div>
-        <div style="margin-top:10px;"><b>Tỷ lệ test 7 ngày:</b> ${esc(r2.style_dang_noi_dung.ty_le_format_7_ngay)}</div></div>
-      <div class="section"><h3>15 chủ đề đầu tiên</h3><ul>${(r2.chu_de_dau_tien||[]).map(c=>`<li><b>[${esc(c.nhom)}]</b> ${esc(c.ten)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Kế hoạch 7 ngày</h3><div style="overflow-x:auto;">
-        <table class="plan"><thead><tr><th>Ngày</th><th>Đăng gì</th><th>Format</th><th>Mục tiêu</th><th>Hook</th><th>CTA</th><th>Chỉ số</th></tr></thead>
-        <tbody>${(r2.ke_hoach_7_ngay||[]).map(d=>`<tr><td>${esc(d.ngay)}</td><td>${esc(d.dang_gi)}</td><td>${esc(d.format)}</td><td>${esc(d.muc_tieu)}</td><td>${esc(d.hook)}</td><td>${esc(d.cta)}</td><td>${esc(d.chi_so_quan_sat)}</td></tr>`).join('')}</tbody></table>
-      </div></div>
+      <div class="section">
+        <h3>Hệ trục nội dung</h3>
+        <div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${esc(r2.he_truc_noi_dung.cong_thuc)}</div>
+        <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
+          <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
+        ${r2.he_truc_noi_dung.tru_phu.map(t=>`
+          <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
+            <b>${esc(t.ten)}</b><br><span style="font-size:13px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
+          </div>
+        `).join('')}
+      </div>
       <div class="section"><h3>Dòng tiền phù hợp</h3><div class="body" style="margin-bottom:10px;">${esc(r2.dong_tien_phu_hop.uu_tien)}</div>
         <ul>${(r2.dong_tien_phu_hop.danh_sach||[]).map(d=>`<li><b>${esc(d.ten)}</b> (${esc(d.thoi_han)}) — ${esc(d.ly_do)}</li>`).join('')}</ul></div>
-      ${sectionHtml('Lộ trình dẫn về dòng tiền', r2.lo_trinh_dan_ve_dong_tien)}
-      <div class="section"><h3>3 phiên bản bio</h3><ul>${(r2.bio_3_phien_ban||[]).map(b=>`<li>${esc(b)}</li>`).join('')}</ul></div>
+      <div class="section">
+        <h3>Lộ trình dẫn về dòng tiền</h3>
+        <div style="display:flex;flex-wrap:wrap;align-items:stretch;gap:0;">
+          ${(r2.lo_trinh_dan_ve_dong_tien||[]).map((b,i,arr)=>`
+            <div style="display:flex;align-items:center;">
+              <div style="min-width:140px;max-width:180px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);">
+                <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Bước ${i+1}</div>
+                <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${esc(b.buoc)}</div>
+                <div style="font-size:12px;color:var(--ink-soft);line-height:1.4;">${esc(b.mo_ta)}</div>
+              </div>
+              ${i<arr.length-1?`<div style="padding:0 8px;color:var(--ink-soft);font-size:18px;">→</div>`:''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
       ${sectionHtml('Script tự giới thiệu 30 giây', r2.script_gioi_thieu_30s)}
       <div class="section"><h3>Hook cá nhân</h3><ul>${(r2.hook_ca_nhan||[]).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
       <div class="section"><h3>Cần sửa ngay</h3><ul>${(r2.can_sua_ngay||[]).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>

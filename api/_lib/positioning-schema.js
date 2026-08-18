@@ -80,47 +80,6 @@ const TOOL_LUOT2 = {
         },
         required: ['cong_thuc', 'truc_chinh', 'tru_phu'],
       },
-      style_dang_noi_dung: {
-        type: 'object',
-        description: 'Style thể hiện và dạng nội dung phù hợp.',
-        properties: {
-          style: { type: 'string', description: 'Style/kiểu thể hiện phù hợp nhất (talking head / POV / B-roll+voiceover / storytelling...) + lý do.' },
-          dang_chinh: { type: 'array', items: { type: 'string' }, description: '1-2 dạng nội dung chính.' },
-          dang_phu: { type: 'array', items: { type: 'string' }, description: '2-3 dạng nội dung phụ.' },
-          ty_le_format_7_ngay: { type: 'string', description: 'Tỷ lệ format đề xuất để test trong 7 ngày đầu.' },
-        },
-        required: ['style', 'dang_chinh', 'dang_phu', 'ty_le_format_7_ngay'],
-      },
-      chu_de_dau_tien: {
-        type: 'array',
-        description: 'Đúng 15 chủ đề bài đăng đầu tiên, chia theo nhóm: nhận diện / kể chuyện / giáo dục / nỗi đau / niềm tin / dẫn dòng tiền.',
-        minItems: 15,
-        maxItems: 15,
-        items: {
-          type: 'object',
-          properties: { nhom: { type: 'string' }, ten: { type: 'string' } },
-          required: ['nhom', 'ten'],
-        },
-      },
-      ke_hoach_7_ngay: {
-        type: 'array',
-        description: 'Kế hoạch đăng bài 7 ngày đầu tiên, mỗi ngày 1 mục.',
-        minItems: 7,
-        maxItems: 7,
-        items: {
-          type: 'object',
-          properties: {
-            ngay: { type: 'string' },
-            dang_gi: { type: 'string' },
-            format: { type: 'string' },
-            muc_tieu: { type: 'string' },
-            hook: { type: 'string' },
-            cta: { type: 'string' },
-            chi_so_quan_sat: { type: 'string' },
-          },
-          required: ['ngay', 'dang_gi', 'format', 'muc_tieu', 'hook', 'cta', 'chi_so_quan_sat'],
-        },
-      },
       dong_tien_phu_hop: {
         type: 'object',
         description: 'Đề xuất dòng tiền phù hợp — đề xuất thẳng, không để người dùng tự chọn.',
@@ -137,14 +96,26 @@ const TOOL_LUOT2 = {
         },
         required: ['uu_tien', 'danh_sach'],
       },
-      lo_trinh_dan_ve_dong_tien: { type: 'string', description: 'Theo khuôn: Nội dung → Niềm tin → Hội thoại → Tài nguyên miễn phí → Tư vấn/sự kiện → Sản phẩm — cụ thể hoá theo dữ liệu người dùng.' },
-      bio_3_phien_ban: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 3, description: '3 phiên bản bio, mỗi bản ≤100 ký tự: rõ chuyên môn / cảm xúc / định vị mạnh.' },
+      lo_trinh_dan_ve_dong_tien: {
+        type: 'array',
+        description: 'Lộ trình 4-6 bước dẫn từ nội dung miễn phí đến dòng tiền (theo khuôn tinh thần: Nội dung → Niềm tin → Hội thoại → Tài nguyên miễn phí → Tư vấn/sự kiện → Sản phẩm), cụ thể hoá đúng theo dữ liệu người dùng — dùng để vẽ thành sơ đồ các bước nối tiếp nhau, mỗi bước phải NGẮN GỌN.',
+        minItems: 4,
+        maxItems: 6,
+        items: {
+          type: 'object',
+          properties: {
+            buoc: { type: 'string', description: 'Tên bước, tối đa 4-5 từ, ví dụ "Bài viết miễn phí".' },
+            mo_ta: { type: 'string', description: '1 câu ngắn mô tả cụ thể bước này với đúng kênh của người dùng.' },
+          },
+          required: ['buoc', 'mo_ta'],
+        },
+      },
       script_gioi_thieu_30s: { type: 'string', description: 'Script tự giới thiệu 30 giây, dùng khi livestream, gặp khách, sự kiện.' },
       hook_ca_nhan: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 3, description: '2-3 phiên bản câu mở đầu đặc trưng cho bài đăng/video.' },
       can_sua_ngay: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 5, description: '3-5 việc cần sửa ngay: bio / ảnh / bài ghim / chủ đề / CTA / format / cách kể chuyện / cách dẫn dòng tiền.' },
       canh_bao: { type: 'array', items: { type: 'string' }, description: 'Nội dung không nên làm / không bán quá sớm / format không phù hợp / trend không nên chạy.' },
     },
-    required: ['chan_dung_khach_hang', 'noi_dau_rao_can', 'khao_khat_muc_tieu', 'insight_cot_loi', 'he_truc_noi_dung', 'style_dang_noi_dung', 'chu_de_dau_tien', 'ke_hoach_7_ngay', 'dong_tien_phu_hop', 'lo_trinh_dan_ve_dong_tien', 'bio_3_phien_ban', 'script_gioi_thieu_30s', 'hook_ca_nhan', 'can_sua_ngay', 'canh_bao'],
+    required: ['chan_dung_khach_hang', 'noi_dau_rao_can', 'khao_khat_muc_tieu', 'insight_cot_loi', 'he_truc_noi_dung', 'dong_tien_phu_hop', 'lo_trinh_dan_ve_dong_tien', 'script_gioi_thieu_30s', 'hook_ca_nhan', 'can_sua_ngay', 'canh_bao'],
   },
 };
 
