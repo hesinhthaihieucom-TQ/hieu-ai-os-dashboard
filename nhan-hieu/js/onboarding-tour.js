@@ -67,9 +67,10 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
     const r = target.getBoundingClientRect();
     const pad = 6;
     const welcomeHtml = overlay.querySelector('#ot-welcome').outerHTML;
-    overlay.innerHTML = welcomeHtml + `
+    overlay.innerHTML = `
       <div style="position:fixed;top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;
         border-radius:10px;box-shadow:0 0 0 9999px rgba(20,24,20,.78);pointer-events:none;transition:all .2s ease;"></div>
+    ` + welcomeHtml + `
       <div style="position:fixed;top:${Math.min(r.top, window.innerHeight-220)}px;left:${Math.min(r.left+r.width+16, window.innerWidth-320)}px;
         width:280px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 8px 28px rgba(0,0,0,.25);pointer-events:auto;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft, #5B5F55);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Bước ${idx+1}/${availableSteps.length}</div>
