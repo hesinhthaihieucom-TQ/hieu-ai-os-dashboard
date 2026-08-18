@@ -2,10 +2,13 @@
 function render(container, ctx){
   const state = {
     screen:'loading', positioning:null, quickContext:'',
-    viralText:'', topic:'', mode:'tieu_de',
-    generating:false, error:null, result:null,
-    savedTitleIdx:{}, savedPostIdx:{},
+    viralText:'', topic:'',
+    analyzing:false, analyzeError:null, phanTich:null,
+    recycleMode:null, // 'tieu_de' | 'bai_moi'
+    titlesLoading:false, titlesError:null, titles:null, savedTitleIdx:{},
+    postsLoading:false, postsError:null, posts:[], savedPostIdx:{},
   };
+  const TOTAL_POSTS = 5;
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -30,64 +33,86 @@ function render(container, ctx){
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">1. Dán nguyên văn bài/video đang viral</label>
         <textarea id="viral-text" style="min-height:180px;" placeholder="Dán caption, kịch bản video, hoặc bài viết đang viral bạn muốn học theo...">${esc(state.viralText)}</textarea>
-
-        ${!state.positioning ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">2. Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
-          <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
-        ` : ''}
-
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">${state.positioning?'2':'3'}. Chủ đề mới bạn muốn áp dụng</label>
-        <textarea id="topic-text" style="min-height:auto;height:52px;" placeholder="Ví dụ: Sai lầm khiến dòng tiền cá nhân bị nghẽn">${esc(state.topic)}</textarea>
-
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">${state.positioning?'3':'4'}. Bạn muốn AI tạo ra gì</label>
-        <div class="chips">
-          <div class="chip ${state.mode==='tieu_de'?'selected':''}" data-mode="tieu_de">10 tiêu đề mới</div>
-          <div class="chip ${state.mode==='bai_moi'?'selected':''}" data-mode="bai_moi">5 bài viết mới hoàn chỉnh</div>
-        </div>
-
-        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang phân tích…':'Phân tích &amp; Tái chế'}</button></div>
-        <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để phân tích và tái chế xong — đừng thoát trang khi đang đợi.</div>
-        ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="analyze" ${state.analyzing?'disabled':''}>${state.analyzing?'Đang phân tích…':(state.phanTich?'Phân tích lại':'Phân tích bài viral')}</button></div>
+        <div class="hint-box" style="margin-top:10px;">Chỉ mổ xẻ vì sao bài gốc viral trước — chọn tái chế thành gì sau khi có kết quả.</div>
+        ${state.analyzeError?`<div class="error-box">${esc(state.analyzeError)}</div>`:''}
       </div>
 
-      ${state.result ? resultHtml() : ''}
+      ${state.phanTich ? phanTichHtml() : ''}
     `;
   }
 
-  function resultHtml(){
-    const r = state.result;
+  function phanTichHtml(){
+    const r = state.phanTich;
     return `
-      <div class="section highlight"><h3>Vì sao bài gốc viral</h3>
-        <div class="body"><b>Yếu tố mở đầu khiến người đọc dừng lại:</b> ${esc(r.phan_tich.yeu_to_mo_dau)}</div>
-        <div class="body" style="margin-top:8px;"><b>Điểm cảm xúc mạnh nhất:</b> ${esc(r.phan_tich.diem_cam_xuc_manh_nhat)} <i>(cảm xúc: ${esc(r.phan_tich.loai_cam_xuc)})</i></div>
-        <div class="body" style="margin-top:8px;"><b>Vì sao người đọc muốn share:</b> ${esc(r.phan_tich.ly_do_muon_share)}</div>
+      <div class="section highlight" style="margin-top:20px;"><h3>Vì sao bài gốc viral</h3>
+        <div class="body"><b>Yếu tố mở đầu khiến người đọc dừng lại:</b> ${esc(r.yeu_to_mo_dau)}</div>
+        <div class="body" style="margin-top:8px;"><b>Điểm cảm xúc mạnh nhất:</b> ${esc(r.diem_cam_xuc_manh_nhat)} <i>(cảm xúc: ${esc(r.loai_cam_xuc)})</i></div>
+        <div class="body" style="margin-top:8px;"><b>Vì sao người đọc muốn share:</b> ${esc(r.ly_do_muon_share)}</div>
       </div>
 
-      ${r.tieu_de_moi && r.tieu_de_moi.length ? `
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">10 tiêu đề mới — giữ nguyên cấu trúc tâm lý bài gốc</h3>
-        ${r.tieu_de_moi.map((t,i)=>`
-          <div class="section">
-            <div class="body" style="font-weight:600;">${esc(t)}</div>
-            <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
-              <button class="btn btn-sm" data-save-title="${i}" ${state.savedTitleIdx[i]?'disabled':''}>${state.savedTitleIdx[i]?'Đã lưu vào Kho Hook ✓':'Lưu vào Kho Hook'}</button>
-              <span class="btn-ghost btn btn-sm" data-write-title="${i}">Viết bài từ tiêu đề này →</span>
-            </div>
-          </div>
-        `).join('')}
-      ` : ''}
+      <div class="card" style="margin-top:16px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề mới bạn muốn áp dụng</label>
+        <textarea id="topic-text" style="min-height:auto;height:52px;" placeholder="Ví dụ: Sai lầm khiến dòng tiền cá nhân bị nghẽn">${esc(state.topic)}</textarea>
+        ${!state.positioning ? `
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
+          <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
+        ` : ''}
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bạn muốn tái chế thành gì?</label>
+        <div class="chips">
+          <div class="chip ${state.recycleMode==='tieu_de'?'selected':''}" data-recycle-mode="tieu_de">10 tiêu đề mới</div>
+          <div class="chip ${state.recycleMode==='bai_moi'?'selected':''}" data-recycle-mode="bai_moi">5 bài viết mới hoàn chỉnh</div>
+        </div>
+        ${recycleActionHtml()}
+      </div>
 
-      ${r.bai_moi && r.bai_moi.length ? `
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">5 bài mới — áp dụng đúng công thức bài gốc</h3>
-        ${r.bai_moi.map((p,i)=>`
-          <div class="section">
-            <h3>${esc(p.tieu_de)}</h3>
-            <div class="body">${esc(p.noi_dung)}</div>
-            <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
-              <button class="btn btn-sm" data-save-post="${i}" ${state.savedPostIdx[i]?'disabled':''}>${state.savedPostIdx[i]?'Đã lưu vào Kho Content ✓':'Lưu vào Kho Content'}</button>
-            </div>
+      ${state.recycleMode==='tieu_de' && state.titles ? titlesHtml() : ''}
+      ${state.recycleMode==='bai_moi' && state.posts.length ? postsHtml() : ''}
+    `;
+  }
+
+  function recycleActionHtml(){
+    if(!state.recycleMode) return '';
+    if(state.recycleMode==='tieu_de'){
+      return `
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="fetch-titles" ${state.titlesLoading?'disabled':''}>${state.titlesLoading?'Đang tạo…':(state.titles?'Tạo lại 10 tiêu đề':'Tạo 10 tiêu đề mới →')}</button></div>
+        ${state.titlesError?`<div class="error-box" style="margin-top:10px;">${esc(state.titlesError)}</div>`:''}
+      `;
+    }
+    const done = state.posts.length >= TOTAL_POSTS;
+    return `
+      ${!done ? `<div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="next-post" ${state.postsLoading?'disabled':''}>${state.postsLoading?'Đang viết…':(state.posts.length===0?'Viết bài đầu tiên →':`Viết bài tiếp theo (${state.posts.length+1}/${TOTAL_POSTS}) →`)}</button></div>` : `<div class="hint-box" style="margin-top:14px;">Đã viết đủ ${TOTAL_POSTS} bài — xem bên dưới, bấm "Lưu vào Kho Content" cho bài nào bạn ưng ý.</div>`}
+      ${state.postsError?`<div class="error-box" style="margin-top:10px;">${esc(state.postsError)}</div>`:''}
+    `;
+  }
+
+  function titlesHtml(){
+    return `
+      <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">10 tiêu đề mới — giữ nguyên cấu trúc tâm lý bài gốc</h3>
+      ${state.titles.map((t,i)=>`
+        <div class="section">
+          <div class="body" style="font-weight:600;">${esc(t)}</div>
+          <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+            <button class="btn btn-sm" data-save-title="${i}" ${state.savedTitleIdx[i]?'disabled':''}>${state.savedTitleIdx[i]?'Đã lưu vào Kho Hook ✓':'Lưu vào Kho Hook'}</button>
+            <span class="btn-ghost btn btn-sm" data-write-title="${i}">Viết bài từ tiêu đề này →</span>
           </div>
-        `).join('')}
-      ` : ''}
+        </div>
+      `).join('')}
+    `;
+  }
+
+  function postsHtml(){
+    return `
+      <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">Bài mới đã viết (${state.posts.length}/${TOTAL_POSTS}) — áp dụng đúng công thức bài gốc</h3>
+      ${state.posts.map((p,i)=>`
+        <div class="section">
+          <h3>${esc(p.tieu_de)}</h3>
+          <div class="body">${esc(p.noi_dung)}</div>
+          <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+            <button class="btn btn-sm" data-save-post="${i}" ${state.savedPostIdx[i]?'disabled':''}>${state.savedPostIdx[i]?'Đã lưu vào Kho Content ✓':'Lưu vào Kho Content'}</button>
+          </div>
+        </div>
+      `).join('')}
     `;
   }
 
@@ -96,12 +121,22 @@ function render(container, ctx){
     const qc = container.querySelector('#quick-context'); if(qc) qc.oninput = ()=>{ state.quickContext = qc.value; };
     const tp = container.querySelector('#topic-text'); if(tp) tp.oninput = ()=>{ state.topic = tp.value; };
 
-    container.querySelectorAll('[data-mode]').forEach(el=>{
-      el.onclick = ()=>{ state.mode = el.getAttribute('data-mode'); draw(); };
+    const analyzeBtn = container.querySelector('[data-action="analyze"]');
+    if(analyzeBtn) analyzeBtn.onclick = analyzeViral;
+
+    container.querySelectorAll('[data-recycle-mode]').forEach(el=>{
+      el.onclick = ()=>{
+        state.recycleMode = el.getAttribute('data-recycle-mode');
+        state.titles = null; state.titlesError = null; state.savedTitleIdx = {};
+        state.posts = []; state.postsError = null; state.savedPostIdx = {};
+        draw();
+      };
     });
 
-    const genBtn = container.querySelector('[data-action="generate"]');
-    if(genBtn) genBtn.onclick = generate;
+    const fetchTitlesBtn = container.querySelector('[data-action="fetch-titles"]');
+    if(fetchTitlesBtn) fetchTitlesBtn.onclick = fetchTitles;
+    const nextPostBtn = container.querySelector('[data-action="next-post"]');
+    if(nextPostBtn) nextPostBtn.onclick = fetchNextPost;
 
     container.querySelectorAll('[data-save-title]').forEach(el=>{
       el.onclick = ()=>{ saveTitle(Number(el.getAttribute('data-save-title'))); };
@@ -109,7 +144,7 @@ function render(container, ctx){
     container.querySelectorAll('[data-write-title]').forEach(el=>{
       el.onclick = ()=>{
         const i = Number(el.getAttribute('data-write-title'));
-        window.PendingTopic = state.result.tieu_de_moi[i];
+        window.PendingTopic = state.titles[i];
         location.hash = 'viet-content';
       };
     });
@@ -118,29 +153,60 @@ function render(container, ctx){
     });
   }
 
-  async function generate(){
-    if(!state.viralText.trim() || !state.topic.trim()) return;
-    state.generating = true; state.error = null; state.result = null;
-    state.savedTitleIdx = {}; state.savedPostIdx = {};
+  async function analyzeViral(){
+    if(!state.viralText.trim()) return;
+    state.analyzing = true; state.analyzeError = null; state.phanTich = null;
+    state.recycleMode = null; state.titles = null; state.posts = []; state.savedTitleIdx = {}; state.savedPostIdx = {};
     draw();
-    const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 55, 'Đang phân tích');
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="analyze"]'), 18, 'Đang phân tích');
+    acquireWakeLock();
+    try{
+      const data = await callApi('/api/tai-che-viral', { viral_text: state.viralText, stage:'phan_tich' }, 60000);
+      state.phanTich = data.result.phan_tich;
+    } catch(e){ state.analyzeError = e.message; }
+    stopProgress(); releaseWakeLock();
+    state.analyzing = false; draw();
+  }
+
+  async function fetchTitles(){
+    if(!state.topic.trim()){ state.titlesError = 'Nhập chủ đề mới muốn áp dụng trước đã.'; draw(); return; }
+    state.titlesLoading = true; state.titlesError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="fetch-titles"]'), 20, 'Đang tạo');
     acquireWakeLock();
     try{
       const data = await callApi('/api/tai-che-viral', {
-        viral_text: state.viralText,
-        topic: state.topic,
-        mode: state.mode,
+        viral_text: state.viralText, stage:'tieu_de', topic: state.topic, phan_tich: state.phanTich,
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
-      }, 280000);
-      state.result = data.result;
-    } catch(e){ state.error = e.message; }
+      }, 90000);
+      state.titles = data.result.tieu_de_moi;
+      state.savedTitleIdx = {};
+    } catch(e){ state.titlesError = e.message; }
     stopProgress(); releaseWakeLock();
-    state.generating = false; draw();
+    state.titlesLoading = false; draw();
+  }
+
+  async function fetchNextPost(){
+    if(!state.topic.trim()){ state.postsError = 'Nhập chủ đề mới muốn áp dụng trước đã.'; draw(); return; }
+    state.postsLoading = true; state.postsError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="next-post"]'), 20, 'Đang viết');
+    acquireWakeLock();
+    try{
+      const data = await callApi('/api/tai-che-viral', {
+        viral_text: state.viralText, stage:'mot_bai', topic: state.topic, phan_tich: state.phanTich,
+        positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
+        quick_context: state.quickContext,
+        post_index: state.posts.length, total_posts: TOTAL_POSTS,
+        previous_ideas: state.posts.map(p=>p.tieu_de),
+      }, 90000);
+      state.posts.push({ tieu_de: data.result.tieu_de, noi_dung: data.result.noi_dung });
+    } catch(e){ state.postsError = e.message; }
+    stopProgress(); releaseWakeLock();
+    state.postsLoading = false; draw();
   }
 
   async function saveTitle(i){
-    const title = state.result.tieu_de_moi[i];
+    const title = state.titles[i];
     await ctx.supabase.from('hooks_bank_personal').insert({
       user_id: ctx.user.id, hook_text: title, category: 'Tái chế từ bài viral',
       note: `Chủ đề: ${state.topic}`,
@@ -149,7 +215,7 @@ function render(container, ctx){
   }
 
   async function savePost(i){
-    const p = state.result.bai_moi[i];
+    const p = state.posts[i];
     await ctx.supabase.from('content_bank_personal').insert({
       user_id: ctx.user.id, title: p.tieu_de, content: p.noi_dung,
       source_type: 'tai_che_viral', tags: [state.topic].filter(Boolean),

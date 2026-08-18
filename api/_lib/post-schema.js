@@ -22,7 +22,7 @@ const TOOL_POST_CORE = {
       niem_tin: { type: 'string', description: 'Đoạn chất liệu thật: câu chuyện, quan sát, case cụ thể.' },
       cta: { type: 'string', description: 'Câu CTA đầy đủ, chốt bằng đúng 1 từ khoá kích hoạt 2 chữ theo mẫu "Để lại bình luận chữ \'...\' và mình sẽ gửi bạn ...".' },
       tu_khoa_cta: { type: 'string', description: 'Đúng từ khoá 2 chữ dùng trong CTA (tách riêng để hiển thị nổi bật), ví dụ "Dòng tiền".' },
-      cau_cmt_ghim: { type: 'string', description: 'Câu bình luận ghim nhắc lại từ khoá CTA, giọng tự nhiên.' },
+      cau_cmt_ghim: { type: 'string', description: 'Câu bình luận ghim — đánh thẳng vào nỗi đau/nỗi sợ/mong muốn của người đọc để kích hoạt hành động, không phải chỉ nhắc lại CTA cho có (xem QUY TẮC BÌNH LUẬN GHIM).' },
       cmt_cta_san_pham: {
         type: 'array', items: { type: 'string' }, minItems: 0, maxItems: 2,
         description: 'Câu bình luận CTA dẫn về sản phẩm/group cụ thể nếu người dùng có cung cấp; mảng rỗng nếu không có.',
@@ -89,8 +89,12 @@ const CTA_COMMENT_RULES = `QUY TẮC CTA (BẮT BUỘC):
 - CTA luôn phải chốt bằng 1 từ khoá kích hoạt cụ thể gồm ĐÚNG 2 CHỮ (ví dụ: "Dòng tiền", "Sổ tay", "Bí kíp", "Bắt đầu"...), theo mẫu: "Để lại bình luận chữ '<từ khoá 2 chữ>' và mình sẽ gửi bạn <thứ nhận được cụ thể>." — không dùng CTA chung chung kiểu "inbox mình nhé" hay "để lại bình luận bên dưới" mà không có từ khoá.
 - Từ khoá phải khớp chủ đề bài và thứ người đọc sẽ nhận được (tài liệu, link, ưu đãi, tư vấn...).
 
-QUY TẮC BÌNH LUẬN GHIM:
-- Luôn viết 1 câu bình luận ghim (cau_cmt_ghim) — câu tác giả tự để lại ngay dưới bài, nhắc lại đúng từ khoá CTA để tăng khả năng người đọc làm theo, giọng tự nhiên như đang nói với người đọc chứ không phải thông báo cứng nhắc.
+QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — đây là cú hích cuối cùng, không phải nhắc lại CTA cho có):
+- Bình luận ghim (cau_cmt_ghim) phải đánh THẲNG vào đúng nỗi đau/nỗi sợ/mong muốn đã nêu ở đoạn vấn đề (van_de) của bài — không viết chung chung, phải khiến người đang lưỡng lự cảm thấy "nói đúng tim đen mình" thì mới bấm bình luận. Chọn 1 trong các hướng sau, tuỳ hợp bài:
+  • Xoáy vào cái giá phải trả nếu CỨ ĐỂ NGUYÊN tình trạng hiện tại, không hành động gì.
+  • Gọi đúng tên nỗi ngại/lý do trì hoãn phổ biến nhất của người đọc, rồi trấn an bằng đúng 1 câu ngắn gọn.
+  • Tạo cảm giác cấp bách thật (vì sao nên làm ngay lúc đọc bài này, không phải "để đó tính sau").
+- Vẫn phải nhắc đúng từ khoá CTA để người đọc biết gõ gì, nhưng viết như 1 câu tác giả buột miệng nói thêm — có cảm xúc thật, KHÔNG được viết kiểu thông báo hành chính ("Bình luận '...' để nhận ngay...").
 
 QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 - Nếu người dùng có cung cấp tên sản phẩm/dịch vụ và/hoặc tên group/cộng đồng, viết thêm 1-2 câu bình luận CTA (cmt_cta_san_pham) dẫn khéo về đúng sản phẩm hoặc group đó, giọng chia sẻ tự nhiên, không quảng cáo lộ liễu.
