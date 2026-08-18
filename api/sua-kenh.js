@@ -9,6 +9,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Nếu có ảnh đính kèm, hãy QUAN SÁT KỸ ảnh thật (màu sắc, bố cục, biểu cảm, nội dung chữ trên ảnh...) — không bịa chi tiết không thấy trong ảnh.
 - Không khen xã giao. Chỉ ra đúng vấn đề, đúng chỗ, đúng cách sửa.
 - Cụ thể đến mức đọc xong biết làm ngay — không nói chung chung.
+- NGẮN GỌN LÀ ƯU TIÊN — người đọc lướt trên điện thoại. Mỗi trường text chỉ 1-2 câu ngắn, đúng trọng tâm, cắt hết phần diễn giải/ví dụ phụ không cần thiết.
 - Chấm điểm theo độ lệch giữa kênh thật và định vị gốc — không cảm tính.
 - THANG ĐIỂM MỖI HẠNG MỤC LÀ 0-20 (KHÔNG PHẢI 0-10) — tổng 5 hạng mục = /100. Chấm theo mốc: 17-20 = khớp định vị tốt, chỉ cần tinh chỉnh nhỏ; 11-16 = còn lệch rõ, cần sửa; 4-10 = lệch nặng, sửa gấp; 0-3 = gần như chưa có/hoàn toàn lệch định vị. Tuyệt đối không chấm như đang chấm thang 10 rồi báo cáo con số đó — phải thật sự cân nhắc và chấm đúng trên thang 20 cho từng hạng mục.
 - Output tiếng Việt, giữ nguyên thuật ngữ tiếng Anh chuyên ngành (bio, CTA, profile, cover...).
@@ -40,10 +41,10 @@ const TOOL_AUDIT = {
             ma: { type: 'string', description: 'Ví dụ: HM1' },
             ten: { type: 'string' },
             diem: { type: 'integer', minimum: 0, maximum: 20 },
-            hien_tai: { type: 'string', description: 'Đang thể hiện thế nào, chỉ đúng chỗ — dựa trên ảnh/thông tin thật được cung cấp.' },
-            lech_dinh_vi: { type: 'string', description: 'Lệch định vị ở điểm nào.' },
-            can_sua: { type: 'string', description: 'Cần sửa gì, sửa như thế nào — cụ thể, dùng ngay được.' },
-            viet_lai: { type: 'string', description: 'Bản viết lại/đề xuất cụ thể (mô tả ảnh mới nên chụp thế nào...). Riêng hạng mục Bio (HM4): bắt buộc viết theo đúng CÔNG THỨC VIẾT BIO ở trên (Ai — Giúp ai — Kết quả gì — Bằng gì — Hành động), gộp thành 1 đoạn bio hoàn chỉnh sẵn sàng copy dùng ngay.' },
+            hien_tai: { type: 'string', description: 'Đang thể hiện thế nào, chỉ đúng chỗ — dựa trên ảnh/thông tin thật được cung cấp. TỐI ĐA 1 câu ngắn.' },
+            lech_dinh_vi: { type: 'string', description: 'Lệch định vị ở điểm nào. TỐI ĐA 1 câu ngắn.' },
+            can_sua: { type: 'string', description: 'Cần sửa gì, sửa như thế nào — cụ thể, dùng ngay được. TỐI ĐA 1-2 câu ngắn, không lan man.' },
+            viet_lai: { type: 'string', description: 'Bản viết lại/đề xuất cụ thể (mô tả ảnh mới nên chụp thế nào...) — ngắn gọn, không lan man. Riêng hạng mục Bio (HM4): bắt buộc viết theo đúng CÔNG THỨC VIẾT BIO ở trên (Ai — Giúp ai — Kết quả gì — Bằng gì — Hành động), gộp thành 1 đoạn bio hoàn chỉnh sẵn sàng copy dùng ngay, ngắn gọn tự nhiên (không quá 2-3 câu).' },
             uu_tien: { type: 'string', enum: ['do','vang','xanh'], description: 'do=sửa ngay, vang=sửa sớm, xanh=cải thiện dần.' },
           },
           required: ['ma','ten','diem','hien_tai','lech_dinh_vi','can_sua','viet_lai','uu_tien'],
@@ -61,7 +62,7 @@ const TOOL_AUDIT = {
             type: 'string',
             description: 'Prompt đầy đủ, chi tiết, viết bằng tiếng Anh (để tương thích tốt nhất với công cụ tạo ảnh) mô tả: chủ thể/bối cảnh, tông màu chủ đạo phù hợp bản sắc thương hiệu, phong cách hình ảnh, tỉ lệ ảnh bìa Facebook 820x312px, và có ghi chú rõ nếu cần chừa khoảng trống cho chữ tiêu đề. Sẵn sàng copy-paste dùng ngay, không cần chỉnh sửa thêm.',
           },
-          ly_do: { type: 'string', description: 'Vì sao concept ảnh bìa này phù hợp định vị — viết tiếng Việt.' },
+          ly_do: { type: 'string', description: 'Vì sao concept ảnh bìa này phù hợp định vị — viết tiếng Việt. TỐI ĐA 1 câu ngắn.' },
         },
         required: ['prompt_anh_bia','ly_do'],
       },
