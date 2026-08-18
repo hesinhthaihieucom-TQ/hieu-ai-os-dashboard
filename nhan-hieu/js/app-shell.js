@@ -271,6 +271,12 @@ function renderAuthScreen(err, successMsg){
         const full_name = root.querySelector('#af-name').value.trim();
         const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name, is_student: signupIsStudent } } });
         if(error) throw error;
+        // Đẩy lead sang Brevo để chăm sóc qua email — không chờ, không chặn luồng đăng ký dù lỗi
+        // (vd chưa cấu hình BREVO_API_KEY) vì đây chỉ là việc phụ, không phải điều kiện đăng ký.
+        fetch('api/sync-lead-brevo', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email, full_name, is_student: signupIsStudent }),
+        }).catch(()=>{});
         if(!data.session){
           AppState.authMode = 'login';
           renderAuthScreen(null, 'Đăng ký thành công! Nếu tài khoản cần xác nhận email, kiểm tra hộp thư rồi quay lại đăng nhập bằng email/mật khẩu vừa tạo.');
