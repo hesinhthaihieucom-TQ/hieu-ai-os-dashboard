@@ -8,13 +8,19 @@
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
-// Số tiền → số ngày được cộng thêm. Phải khớp CHÍNH XÁC 1 trong các mức giá đang bán.
+// Số tiền → số ngày được cộng thêm. Phải khớp CHÍNH XÁC 1 trong các mức giá đang bán, và
+// TUYỆT ĐỐI KHÔNG được trùng số tiền giữa 2 gói khác thời hạn — hệ thống chỉ nhận diện gói
+// qua đúng số tiền chuyển khoản, trùng số tiền sẽ cộng sai số ngày mà không có cách nào phát hiện.
 const AMOUNT_TO_DAYS = {
-  499000: 30,   // 1 tháng, giá chuẩn
-  299000: 30,   // 1 tháng, giá ưu đãi học viên khoá Xây Nhân Hiệu
-  2390000: 180, // 6 tháng
-  3990000: 365, // 12 tháng
+  499000: 30,    // 1 tháng, giá chuẩn (cũng là giá gói 1 tháng của học viên SAU KHI đã dùng ưu đãi tháng đầu)
+  2390000: 180,  // 6 tháng, giá chuẩn
+  3990000: 365,  // 12 tháng, giá chuẩn
+  399200: 30,    // 1 tháng, ưu đãi học viên khoá Xây Nhân Hiệu — CHỈ áp dụng ĐÚNG THÁNG ĐẦU TIÊN (xem cờ first_month_discount_used)
+  1912000: 180,  // 6 tháng, giá học viên (giảm 20% so với giá chuẩn 2.390.000đ) — áp dụng lâu dài
+  3192000: 365,  // 12 tháng, giá học viên (giảm 20% so với giá chuẩn 3.990.000đ) — áp dụng lâu dài
 };
+// Số tiền coi là "đã dùng ưu đãi tháng đầu" — sau lần này học viên mua gói 1 tháng sẽ trả giá thường.
+const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 
 function timingSafeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
@@ -100,9 +106,13 @@ module.exports = async (req, res) => {
           const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
             ? new Date(profile.access_until) : new Date();
           const next = new Date(base.getTime() + days * 86400000);
+          const patchBody = { access_until: next.toISOString() };
+          // Ưu đãi tháng đầu chỉ áp dụng đúng 1 lần — đánh dấu đã dùng để lần mua gói 1 tháng sau
+          // đó tự động về giá thường (gói 6/12 tháng học viên không bị ảnh hưởng bởi cờ này).
+          if (transferAmount === FIRST_MONTH_DISCOUNT_AMOUNT) patchBody.first_month_discount_used = true;
           const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ access_until: next.toISOString() }),
+            body: JSON.stringify(patchBody),
           });
           if (updateResp.ok) {
             status = 'matched';

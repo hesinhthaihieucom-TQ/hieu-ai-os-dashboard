@@ -19,6 +19,12 @@ alter table profiles add column if not exists ref_code text;
 alter table profiles add column if not exists channel_handle text;
 alter table profiles add column if not exists brand_name text; -- cũ (v9), không còn dùng ở UI nhưng vẫn giữ cột, xem bảng "brands"
 alter table profiles add column if not exists onboarding_seen boolean not null default false;
+-- Học viên khoá Xây Nhân Hiệu được giảm 20% ở gói 6/12 tháng (lâu dài) và gói 1 tháng (chỉ tháng
+-- đầu tiên — xem cột first_month_discount_used) so với giá thường.
+alter table profiles add column if not exists is_student boolean not null default false;
+-- Đánh dấu học viên đã dùng ưu đãi 1 tháng đầu (399.200đ) chưa — dùng rồi thì các lần mua gói 1
+-- tháng sau đó về giá thường 499.000đ, không lặp lại ưu đãi này (gói 6/12 tháng không bị ảnh hưởng).
+alter table profiles add column if not exists first_month_discount_used boolean not null default false;
 
 update profiles p set email = u.email from auth.users u where p.id = u.id and p.email is null;
 
@@ -38,12 +44,17 @@ begin
   end if;
 end $$;
 
--- Trigger tạo profile khi có user mới đăng ký: lưu email, cấp 7 ngày dùng thử, sinh ref_code.
+-- Trigger tạo profile khi có user mới đăng ký: lưu email, cấp 7 ngày dùng thử, sinh ref_code,
+-- và lưu luôn is_student (hỏi ngay lúc đăng ký) — dùng để quyết định hiển thị bảng giá nào ở
+-- màn hình thanh toán, không hỏi lại lúc đó nữa.
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, email, access_until, ref_code)
-  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days', public.generate_ref_code());
+  insert into public.profiles (id, full_name, email, access_until, ref_code, is_student)
+  values (
+    new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days',
+    public.generate_ref_code(), coalesce((new.raw_user_meta_data->>'is_student')::boolean, false)
+  );
   return new;
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;

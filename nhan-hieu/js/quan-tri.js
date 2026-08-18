@@ -97,11 +97,18 @@ function render(container, ctx){
           <div class="body" style="margin-top:8px;font-size:13px;">Hạn dùng: ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
           ${p.ref_code ? `<div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">Mã tham chiếu chuyển khoản: <span style="font-family:'IBM Plex Mono',monospace;">${esc(p.ref_code)}</span></div>` : ''}
           ${p.role!=='admin' ? `
+            <div class="body" style="margin-top:6px;font-size:12.5px;">
+              ${p.is_student
+                ? `<span style="color:var(--accent);font-weight:600;">🎓 Học viên (giá ưu đãi)</span>`
+                : `<span style="color:var(--ink-soft);">Khách thường (giá thường)</span>`}
+              — tự khai lúc đăng ký, chưa xác minh. Đối chiếu email với danh sách học viên thật rồi bấm nút bên dưới nếu cần sửa lại.
+            </div>
             <div class="btn-row" style="margin-top:12px;justify-content:flex-start;">
               <button class="btn btn-sm" data-extend="${p.id}|30" ${state.busyId===p.id?'disabled':''}>+30 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|180" ${state.busyId===p.id?'disabled':''}>+180 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|365" ${state.busyId===p.id?'disabled':''}>+365 ngày</button>
               <button class="btn-ghost btn btn-sm" data-revoke="${p.id}" ${state.busyId===p.id?'disabled':''}>Thu hồi ngay</button>
+              <button class="btn-ghost btn btn-sm" data-toggle-student="${p.id}|${!p.is_student}" ${state.busyId===p.id?'disabled':''}>${p.is_student?'Bỏ đánh dấu học viên':'Đánh dấu là học viên'}</button>
             </div>
           ` : ''}
         </div>
@@ -122,6 +129,21 @@ function render(container, ctx){
     container.querySelectorAll('[data-revoke]').forEach(el=>{
       el.onclick = ()=>{ revoke(el.getAttribute('data-revoke')); };
     });
+    container.querySelectorAll('[data-toggle-student]').forEach(el=>{
+      el.onclick = ()=>{
+        const [id, next] = el.getAttribute('data-toggle-student').split('|');
+        toggleStudent(id, next === 'true');
+      };
+    });
+  }
+
+  async function toggleStudent(id, isStudent){
+    state.busyId = id; draw();
+    const { error } = await ctx.supabase.from('profiles').update({ is_student: isStudent }).eq('id', id);
+    if(error) state.error = error.message; else state.error = null;
+    await load();
+    state.busyId = null;
+    draw();
   }
 
   async function extend(id, days){

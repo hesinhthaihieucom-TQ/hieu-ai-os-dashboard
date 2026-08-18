@@ -18,14 +18,58 @@ const NAV = [
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
-const PAYMENT_PLANS = [
+// Giá thường và giá học viên (đã học khoá Xây Nhân Hiệu) tách 2 bảng riêng thay vì gộp chung 1
+// danh sách dài — is_student được hỏi ngay lúc đăng ký (xem renderAuthScreen) nên tới màn thanh
+// toán chỉ cần hiện đúng 1 bảng phù hợp, không bắt người dùng tự lọc giữa 2 loại giá.
+// LƯU Ý QUAN TRỌNG: số tiền mỗi gói (ở cả 2 bảng) phải KHÁC NHAU TUYỆT ĐỐI — webhook SePay chỉ
+// nhận diện gói qua đúng số tiền chuyển khoản, trùng số tiền giữa 2 gói sẽ cộng sai số ngày.
+const REGULAR_PLANS = [
   { key:'1m', label:'1 tháng', amount:499000 },
   { key:'6m', label:'6 tháng', amount:2390000, note:'~398.000đ/tháng — tiết kiệm 604.000đ (~20%) so với mua 6 tháng theo giá lẻ 1 tháng', recommended:true },
   { key:'12m', label:'12 tháng', amount:3990000, note:'~332.500đ/tháng — tiết kiệm 1.998.000đ (~33%) so với mua 12 tháng theo giá lẻ 1 tháng — giữ giá lâu nhất trước khi web tăng giá', recommended:true },
-  { key:'1m_hv', label:'1 tháng — đã học khoá Xây Nhân Hiệu', amount:299000, note:'Giá ưu đãi cho học viên E-learning/Zoom' },
 ];
+// Gói 6/12 tháng học viên = giảm đều 20% so với giá thường tương ứng, áp dụng LÂU DÀI (không phải
+// ưu đãi tạm thời). Riêng gói 1 tháng chỉ giảm giá (399.200đ) cho ĐÚNG THÁNG ĐẦU TIÊN — từ tháng
+// thứ 2 trở đi nếu vẫn mua theo tháng thì về giá thường 499.000đ (xem buildStudentPlans + cờ
+// first_month_discount_used) — khuyến khích chọn gói 6/12 tháng để giữ giá tốt lâu hơn.
+const STUDENT_PLANS_LONG = [
+  { key:'6m_hv', label:'6 tháng', amount:1912000, note:'~319.000đ/tháng — rẻ hơn 1.082.000đ (~36%) so với mua lẻ từng tháng theo giá thường (499.000đ × 6 = 2.994.000đ).', recommended:true },
+  { key:'12m_hv', label:'12 tháng', amount:3192000, note:'~266.000đ/tháng — rẻ hơn 2.796.000đ (~47%) so với mua lẻ từng tháng theo giá thường (499.000đ × 12 = 5.988.000đ) — giữ giá lâu nhất trước khi web tăng giá.', recommended:true },
+];
+function buildStudentPlans(profile){
+  const usedFirstMonth = !!(profile && profile.first_month_discount_used);
+  const oneMonth = usedFirstMonth
+    ? { key:'1m_hv', label:'1 tháng', amount:499000, note:'Đã dùng ưu đãi tháng đầu — gói 1 tháng từ giờ theo giá thường. Chọn gói 6/12 tháng bên dưới để có giá học viên.' }
+    : { key:'1m_hv', label:'1 tháng (ưu đãi tháng đầu)', amount:399200, note:'Chỉ áp dụng cho đúng tháng đầu tiên — từ tháng thứ 2 nếu vẫn mua theo tháng sẽ về giá thường 499.000đ (chọn gói 6/12 tháng bên dưới để giữ giá học viên lâu hơn).' };
+  return [oneMonth, ...STUDENT_PLANS_LONG];
+}
+function currentPaymentPlans(){
+  return (AppState.profile && AppState.profile.is_student) ? buildStudentPlans(AppState.profile) : REGULAR_PLANS;
+}
+// Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
+// - Gói 1 tháng: so với giá thường CÙNG 1 tháng (499.000đ) — không hiện gì nếu đã hết ưu đãi
+//   tháng đầu (giá bằng giá thường, không có gì để "rẻ hơn").
+// - Gói 6/12 tháng: so với mua lẻ từng tháng theo giá thường (499.000đ x 6 hoặc x12) — vì đây là
+//   khoản tiết kiệm THẬT SỰ nếu không mua trọn gói, gộp cả phần giảm học viên lẫn phần giảm theo
+//   gói dài hạn, nên số tiền/% sẽ lớn hơn nhiều so với chỉ so với giá gói 6/12 tháng thường.
+function planSavingsLabel(pl){
+  const retailMonthly = REGULAR_PLANS.find(r => r.key === '1m').amount;
+  if(pl.key === '1m_hv'){
+    if(pl.amount >= retailMonthly) return '';
+    const saved = retailMonthly - pl.amount;
+    const pct = Math.round((saved / retailMonthly) * 100);
+    return `rẻ hơn ${saved.toLocaleString('vi-VN')}đ (~${pct}%)`;
+  }
+  const months = pl.key === '6m_hv' ? 6 : pl.key === '12m_hv' ? 12 : null;
+  if(!months) return '';
+  const retailTotal = retailMonthly * months;
+  const saved = retailTotal - pl.amount;
+  const pct = Math.round((saved / retailTotal) * 100);
+  return `tiết kiệm ${saved.toLocaleString('vi-VN')}đ (~${pct}%) so với mua lẻ`;
+}
 // Mặc định gợi ý gói 6 tháng thay vì gói 1 tháng — web sẽ còn cập nhật/mở rộng thêm (đặc biệt
-// các Kho Nội Dung), lúc đó giá sẽ tăng, nên chọn gói dài ngay bây giờ để giữ được mức giá hiện tại lâu hơn.
+// Kho Content và Kho Hook viral), lúc đó giá sẽ tăng, nên chọn gói dài ngay bây giờ để giữ được
+// mức giá hiện tại lâu hơn. Key khác nhau giữa 2 bảng (6m vs 6m_hv) nên set lại đúng lúc render.
 let selectedPaymentPlanKey = '6m';
 
 function currentRouteFromHash(){
@@ -89,7 +133,10 @@ function renderExpiredScreen(){
   const p = AppState.profile;
   const hadAccessBefore = !!(p && p.access_until);
   const refCode = p && p.ref_code;
-  const plan = PAYMENT_PLANS.find(pl => pl.key === selectedPaymentPlanKey) || PAYMENT_PLANS[0];
+  const isStudent = !!(p && p.is_student);
+  const plans = currentPaymentPlans();
+  const plan = plans.find(pl => pl.key === selectedPaymentPlanKey) || plans.find(pl => pl.recommended) || plans[0];
+  selectedPaymentPlanKey = plan.key; // đồng bộ lại key — 2 bảng giá (thường/học viên) dùng key khác nhau (vd 6m vs 6m_hv)
 
   const qrUrl = refCode
     ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(refCode)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
@@ -104,10 +151,17 @@ function renderExpiredScreen(){
         : 'Chuyển khoản theo đúng hướng dẫn bên dưới — hệ thống tự kích hoạt trong vài phút, không cần chờ ai xác nhận.'}</div>
 
       <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
-        <div class="hint-box" style="margin-bottom:12px;">💡 Web sẽ còn cập nhật/mở rộng thêm — đặc biệt Kho Content và Kho Hook viral — nên giá sẽ tăng dần theo thời gian. Chọn gói 6 tháng hoặc 12 tháng ngay bây giờ để giữ được mức giá ưu đãi hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.</div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
+        <div class="hint-box" style="margin-bottom:12px;line-height:1.7;">
+          💡 <b>Đặc biệt Kho Content và Kho Hook viral</b> — nơi giúp bạn viết content dễ dàng từ các content đang có tín hiệu tốt trên thị trường.<br><br>
+          Kho này được <b>cập nhật liên tục</b> và <b>mở rộng vô hạn theo từng tuần</b> — càng dùng lâu càng có nhiều để khai thác.<br><br>
+          Web cũng sẽ <b>tăng giá dần theo thời gian</b>, nên chọn <b>gói 6 hoặc 12 tháng ngay bây giờ</b> để giữ mức giá hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.
+        </div>
         <div class="chips" id="plan-chips">
-          ${PAYMENT_PLANS.map(pl=>`<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ</div>`).join('')}
+          ${plans.map(pl=>{
+            const savings = isStudent ? planSavingsLabel(pl) : '';
+            return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+          }).join('')}
         </div>
         ${plan.note?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">${esc(plan.note)}</div>`:''}
 
@@ -156,6 +210,8 @@ function renderExpiredScreen(){
   if(btn) btn.onclick = async ()=>{ await supabaseClient.auth.signOut(); };
 }
 
+let signupIsStudent = null;
+
 function renderAuthScreen(err, successMsg){
   const root = document.getElementById('app');
   const isLogin = AppState.authMode === 'login';
@@ -175,6 +231,13 @@ function renderAuthScreen(err, successMsg){
         <label>Mật khẩu</label>
         <input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự">
         ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu">` : ''}
+        ${!isLogin ? `
+          <label>Bạn đã học khoá Xây Nhân Hiệu chưa?</label>
+          <div class="chips" id="af-student-chips" style="margin-bottom:14px;">
+            <div class="chip ${signupIsStudent===true?'selected':''}" data-student="yes">🎓 Đã học rồi — giá ưu đãi học viên</div>
+            <div class="chip ${signupIsStudent===false?'selected':''}" data-student="no">Chưa — giá thường</div>
+          </div>
+        ` : ''}
         <button class="btn btn-full" id="af-submit">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
@@ -185,6 +248,10 @@ function renderAuthScreen(err, successMsg){
 
   root.querySelectorAll('.auth-tab').forEach(el=>{
     el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderAuthScreen(); };
+  });
+
+  root.querySelectorAll('#af-student-chips [data-student]').forEach(el=>{
+    el.onclick = ()=>{ signupIsStudent = (el.getAttribute('data-student') === 'yes'); renderAuthScreen(); };
   });
 
   root.querySelector('#af-submit').onclick = async ()=>{
@@ -199,9 +266,10 @@ function renderAuthScreen(err, successMsg){
       } else {
         const confirmPass = root.querySelector('#af-pass-confirm').value;
         if(pass !== confirmPass){ renderAuthScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+        if(signupIsStudent === null){ renderAuthScreen('Vui lòng chọn bạn đã học khoá Xây Nhân Hiệu hay chưa.'); return; }
         btn.disabled = true; btn.textContent = 'Đang xử lý…';
         const full_name = root.querySelector('#af-name').value.trim();
-        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name } } });
+        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name, is_student: signupIsStudent } } });
         if(error) throw error;
         if(!data.session){
           AppState.authMode = 'login';
