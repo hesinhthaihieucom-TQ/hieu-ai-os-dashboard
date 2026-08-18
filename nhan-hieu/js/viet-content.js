@@ -61,10 +61,12 @@ function render(container, ctx){
       ${!state.positioning ? `<div class="hint-box">Chưa có Định Vị đã lưu — vẫn viết được bình thường, nhưng nếu <a href="#dinh-vi">làm Định Vị trước</a>, bài viết sẽ đúng giọng văn và đối tượng của bạn hơn.</div>` : ''}
       <div class="card">
         ${state.khoGocSource ? `
-          <div class="hint-box">Đang viết từ 1 bài trong <b>Kho Content</b> — sẽ <b>giữ nguyên hook, tiêu đề và cấu trúc gốc</b> (đây là cấu trúc đã kiểm chứng viral), chỉ cá nhân hoá ~20% bằng câu chuyện của bạn. <span style="cursor:pointer;text-decoration:underline;" data-action="cancel-kho-goc">Huỷ, viết bài mới thay vì giữ nguyên →</span></div>
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bài gốc (tham khảo, sẽ không đổi hook/tiêu đề)</label>
-          <div class="body" style="max-height:160px;overflow-y:auto;background:var(--accent-soft);padding:12px;border-radius:8px;font-size:13px;">${esc(state.khoGocSource)}</div>
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện riêng của bạn (chèn ~20% vào bài)</label>
+          <div class="hint-box">Đang viết từ 1 bài trong <b>Kho Content</b> — sẽ <b>giữ nguyên hook và cấu trúc/trình tự bài gốc</b> (đây là công thức đã kiểm chứng viral), chỉ đổi câu từ ở các đoạn còn lại bằng giọng và câu chuyện của bạn, không sao chép nguyên văn. <span style="cursor:pointer;text-decoration:underline;" data-action="cancel-kho-goc">Huỷ, viết bài mới thay vì giữ nguyên →</span></div>
+          ${state.khoGocSource.title ? `<label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tiêu đề gốc</label>
+          <div class="body" style="background:var(--accent-soft);padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;">${esc(state.khoGocSource.title)}</div>` : ''}
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bài gốc (tham khảo — hook và cấu trúc sẽ giữ, câu từ ở các đoạn khác sẽ đổi)</label>
+          <div class="body" style="max-height:160px;overflow-y:auto;background:var(--accent-soft);padding:12px;border-radius:8px;font-size:13px;">${esc(state.khoGocSource.content)}</div>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện riêng của bạn (AI sẽ diễn đạt lại theo giọng bài này, không copy nguyên văn)</label>
           ${state.cauChuyenRieng ? `
             <div class="body" style="background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:8px;font-size:13px;">${esc(state.cauChuyenRieng)}</div>
             <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">AI tổng hợp từ câu trả lời Định Vị của bạn — xem/làm lại ở <a href="#dinh-vi">Định Vị</a> nếu muốn câu chuyện khác.</div>
@@ -296,7 +298,7 @@ function render(container, ctx){
   }
 
   async function generate(){
-    if(state.khoGocSource ? !state.khoGocSource.trim() : !state.ideaText.trim()) return;
+    if(state.khoGocSource ? !state.khoGocSource.content.trim() : !state.ideaText.trim()) return;
     state.generating = true; state.error = null; state.result = null; state.savedId = null;
     state.score = null; state.scoring = false; state.scoreError = null;
     state.hookScore = null; state.hookScoring = false; state.hookScoreError = null; draw();
@@ -311,7 +313,8 @@ function render(container, ctx){
         group_name: resolvedGroupName(),
       };
       if(state.khoGocSource){
-        payload.source_text = state.khoGocSource;
+        payload.source_text = state.khoGocSource.content;
+        payload.source_title = state.khoGocSource.title;
         payload.cau_chuyen_rieng = state.cauChuyenRieng;
       } else {
         payload.idea_text = state.ideaText;

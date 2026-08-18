@@ -64,6 +64,17 @@ function render(container, ctx){
     return '';
   }
 
+  // Tiêu đề lưu riêng cột "title" trong DB, tách khỏi "content" (thân bài) — cần lấy đúng cột này
+  // khi đưa bài sang Viết Content, nếu không AI sẽ không biết đâu là tiêu đề gốc do admin đặt.
+  function findSourceTitle(key){
+    if(!key) return '';
+    const [kind, id] = key.split(':');
+    if(kind==='post') return (state.posts.find(p=>p.id===id)||{}).title || '';
+    if(kind==='personal') return (state.personalBank.find(b=>b.id===id)||{}).title || '';
+    if(kind==='shared') return (state.sharedBank.find(b=>b.id===id)||{}).title || '';
+    return '';
+  }
+
   function html(){
     return `
       <div class="page-head"><h1>Kho Content</h1><p>Bài đã viết, tư liệu bạn tự sưu tầm, và kho chung do đội ngũ cập nhật.</p></div>
@@ -107,10 +118,10 @@ function render(container, ctx){
       ` : ''}
       ${state.writeError?`<div class="error-box" style="margin-top:10px;">${esc(state.writeError)}</div>`:''}
       <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
-        <button class="btn btn-sm" data-write-keep="1">Giữ nguyên cấu trúc, thêm câu chuyện của tôi →</button>
+        <button class="btn btn-sm" data-write-keep="1">Viết lại bằng câu chuyện của tôi →</button>
         <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
       </div>
-      <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Bài trong kho là cấu trúc đã được kiểm chứng viral — nên giữ nguyên hook/tiêu đề, chỉ cá nhân hoá ~20% bằng câu chuyện của bạn, thay vì viết lại hoàn toàn khác.</div>`;
+      <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Bài trong kho là cấu trúc đã được kiểm chứng viral — giữ nguyên hook và cấu trúc/trình tự bài gốc, chỉ đổi câu từ ở các đoạn còn lại bằng giọng và câu chuyện của bạn, không sao chép nguyên văn.</div>`;
   }
 
   function daVietTab(){
@@ -218,7 +229,7 @@ function render(container, ctx){
     });
     const keepBtn = container.querySelector('[data-write-keep]');
     if(keepBtn) keepBtn.onclick = ()=>{
-      window.PendingKhoGoc = findSourceText(state.writeFor);
+      window.PendingKhoGoc = { title: findSourceTitle(state.writeFor), content: findSourceText(state.writeFor) };
       location.hash = 'viet-content';
     };
     const genBtn = container.querySelector('[data-write-generate]');
