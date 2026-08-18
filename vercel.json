@@ -3,6 +3,13 @@
   "rewrites": [
     { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" }
   ],
+  "functions": {
+    "api/goi-y-lich.js": { "maxDuration": 60 },
+    "api/dinh-vi.js": { "maxDuration": 60 },
+    "api/dinh-vi-parse.js": { "maxDuration": 60 },
+    "api/sua-kenh.js": { "maxDuration": 60 },
+    "api/tai-che-viral.js": { "maxDuration": 60 }
+  },
   "headers": [
     {
       "source": "/nhan-hieu/js/:path*",

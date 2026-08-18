@@ -91,7 +91,16 @@ async function callApi(path, body, timeoutMs){
     await supabaseClient.auth.refreshSession();
     resp = await callApiOnce(relativePath, body, timeoutMs);
   }
-  const data = await resp.json();
+  let data;
+  try{
+    data = await resp.json();
+  } catch(e){
+    // Server trả về trang lỗi không phải JSON (vd trang 504 timeout của Vercel khi hàm chạy quá
+    // lâu) — báo rõ nguyên nhân thay vì để lộ ra lỗi kỹ thuật khó hiểu kiểu "Unexpected token '<'".
+    throw new Error(resp.status >= 500
+      ? 'Server xử lý quá lâu và bị ngắt giữa chừng — thử lại giúp mình, nếu vẫn vậy báo lại nhé.'
+      : 'Không đọc được phản hồi từ server — thử lại giúp mình.');
+  }
   if(!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
   return data;
 }

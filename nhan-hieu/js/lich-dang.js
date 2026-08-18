@@ -2,6 +2,24 @@
 const SLOTS = [ {key:'sang', label:'Sáng'}, {key:'trua', label:'Trưa'}, {key:'toi', label:'Tối'} ];
 const DAY_NAMES = ['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
 
+// Khớp mô tả trục nội dung tự do của AI (vd "Trục chính: Tài chính gia đình") sang đúng key trục
+// dùng trong Kho Content — cùng nhóm PILLARS bên kho-content.js — để khi khách chưa có bài viết
+// sẵn cho slot này, trỏ thẳng về đúng trục thay vì bắt viết từ số 0.
+const PILLAR_KEYWORDS = [
+  { key:'tai_chinh', words:['tài chính','tich san','tích sản','tiết kiệm','tín dụng','dòng tiền','nợ'] },
+  { key:'tam_linh', words:['tâm linh','phong thuỷ','phong thủy','thần số học','phước khí'] },
+  { key:'hon_nhan_gia_dinh', words:['hôn nhân','gia đình','tình yêu','nuôi dạy con'] },
+  { key:'phat_trien_ban_than', words:['phát triển bản thân','động lực','tư duy','tâm lý','lối sống'] },
+  { key:'kinh_doanh', words:['kinh doanh','bán hàng','chiến lược'] },
+  { key:'suc_khoe_lam_dep', words:['sức khoẻ','sức khỏe','chăm sóc da','làm đẹp'] },
+  { key:'xay_kenh', words:['xây kênh','content','hook','giao tiếp','quan điểm','video','listicle'] },
+];
+function matchPillarKey(text){
+  const t = (text||'').toLowerCase();
+  for(const p of PILLAR_KEYWORDS){ if(p.words.some(w=>t.includes(w))) return p.key; }
+  return null;
+}
+
 function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
@@ -113,6 +131,7 @@ function render(container, ctx){
               }
               if(suggestion){
                 const matchedPost = suggestion.bai_co_san ? state.posts.find(p=>p.title===suggestion.bai_co_san) : null;
+                const pillarKey = !matchedPost ? matchPillarKey(suggestion.truc_noi_dung) : null;
                 return `<div class="week-slot" style="border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
                   <div class="slot-label">${s.label} · <span style="color:var(--gold);">Gợi ý AI</span></div>
                   ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
@@ -121,7 +140,9 @@ function render(container, ctx){
                   <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
                     ${matchedPost
                       ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>`
-                      : `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Viết bài cho trục này →</span>`
+                      : pillarKey
+                        ? `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Xem bài mẫu đúng trục này →</span>`
+                        : `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Viết bài cho trục này →</span>`
                     }
                     <span style="align-self:center;color:var(--ink-soft);font-size:11px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
                   </div>
@@ -195,8 +216,16 @@ function render(container, ctx){
         const [dateStr, slotKey] = el.getAttribute('data-write-for-slot').split('|');
         const thu = (new Date(dateStr).getDay()+6)%7;
         const s = suggestionFor(thu, slotKey);
-        window.PendingTopic = (s && s.chu_de) || '';
-        location.hash = 'viet-content';
+        const pillarKey = matchPillarKey(s && s.truc_noi_dung);
+        if(pillarKey){
+          // Chưa có bài viết sẵn cho trục này — trỏ về đúng trục trong Kho Content Viral để chọn
+          // bài mẫu viết theo, thay vì bắt viết hẳn từ 1 câu chủ đề trống không.
+          window.PendingPillar = pillarKey;
+          location.hash = 'kho-content';
+        } else {
+          window.PendingTopic = (s && s.chu_de) || '';
+          location.hash = 'viet-content';
+        }
       };
     });
 

@@ -38,6 +38,13 @@ function render(container, ctx){
     state.positioning = pos || null;
     state.positioningId = pos ? pos.id : null;
     await Promise.all([loadPosts(), loadPersonal(), loadShared()]);
+    // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung
+    // trong Kho Content Viral thay vì bắt người dùng tự chọn lại từ đầu.
+    if(window.PendingPillar){
+      state.tab = 'kho-chung';
+      state.chungPillar = window.PendingPillar;
+      window.PendingPillar = null;
+    }
     draw();
   }
   async function loadPosts(){
