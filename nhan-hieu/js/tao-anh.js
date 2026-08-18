@@ -198,7 +198,9 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
 }
 
 function render(container, ctx){
-  const state = { bgImage:null, layout:'bottom-center', font:'oswald', color:'yellow', title:DEMO_TITLE, handle:DEMO_HANDLE };
+  const pendingTitle = window.PendingImageTitle;
+  window.PendingImageTitle = null;
+  const state = { bgImage:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE };
 
   function draw(){ container.innerHTML = html(); bind(); ensureFontsThenPaint(); }
 

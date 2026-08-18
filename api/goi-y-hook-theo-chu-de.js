@@ -28,17 +28,24 @@ NGUYÊN TẮC BẮT BUỘC:
 - Câu ngắn gọn (1-2 dòng), đọc lên là dừng lại ngay, không cần giải thích thêm mới hiểu.
 - Nếu có định vị thương hiệu, bám đúng giọng điệu và đối tượng trong định vị đó.
 - 5 hook phải khác góc độ nhau, không lặp cấu trúc câu.
+- Ngoài 5 hook, luôn xuất thêm 3 gợi ý TIÊU ĐỀ THUMBNAIL — chữ ngắn ghi đè lên ảnh bìa/thumbnail video,
+  KHÁC với hook: cực ngắn (tối đa 6-8 từ), viết hoa hoặc nhấn mạnh từ khoá chính, không cần đủ câu ngữ pháp,
+  đọc lướt 1 giây là hiểu ngay — kiểu chữ hay thấy trên thumbnail YouTube/Reels/TikTok.
 - Output tiếng Việt.`;
 
 const TOOL_HOOK = {
   name: 'xuat_hook_theo_chu_de',
-  description: 'Xuất đúng 5 hook mẫu theo 1 chủ đề và 1 loại hook cụ thể.',
+  description: 'Xuất đúng 5 hook mẫu và 3 gợi ý tiêu đề thumbnail theo 1 chủ đề và 1 loại hook cụ thể.',
   input_schema: {
     type: 'object',
     properties: {
       hooks: { type: 'array', items: { type: 'string' }, minItems: 5, maxItems: 5 },
+      tieu_de_thumbnail: {
+        type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 3,
+        description: 'Đúng 3 gợi ý chữ ngắn để ghi đè lên ảnh thumbnail/bìa, tối đa 6-8 từ mỗi câu.',
+      },
     },
-    required: ['hooks'],
+    required: ['hooks', 'tieu_de_thumbnail'],
   },
 };
 

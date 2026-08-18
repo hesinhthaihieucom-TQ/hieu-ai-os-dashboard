@@ -1,7 +1,6 @@
 const NAV = [
   { key:'dinh-vi', title:'Định Vị' },
   { key:'sua-kenh', title:'Sửa Kênh' },
-  { key:'chan-dung-kh', title:'Chân Dung KH' },
   { key:'giong-van', title:'Giọng Văn' },
   { key:'dinh-dang-content', title:'Dạng Content' },
   { key:'kho-content', title:'Kho Content' },
@@ -11,6 +10,7 @@ const NAV = [
   { key:'cham-diem-content', title:'Chấm Điểm Content' },
   { key:'cham-diem-hook', title:'Chấm Điểm Hook' },
   { key:'lich-dang', title:'Lịch Đăng Bài' },
+  { key:'day-bai', title:'Đẩy Bài & CTA Comment' },
   { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
   { key:'quan-tri', title:'Quản trị', adminOnly:true },

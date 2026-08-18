@@ -28,7 +28,7 @@ function render(container, ctx){
     newEntry:{ hook_text:'', category:'', note:'' },
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     genTopic:'', genCategory:HOOK_GEN_CATEGORIES[0].key, genQuickContext:'',
-    genLoading:false, genError:null, genResult:null, genSavedIdx:{},
+    genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -103,6 +103,20 @@ function render(container, ctx){
               <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
                 <button class="btn btn-sm" data-save-gen="${i}" ${state.genSavedIdx[i]?'disabled':''}>${state.genSavedIdx[i]?'Đã lưu ✓':'Lưu vào Kho của tôi'}</button>
                 <span class="btn-ghost btn btn-sm" data-write-gen="${i}">Viết content từ hook này →</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      ${state.genThumbTitles ? `
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">Gợi ý tiêu đề ghi lên thumbnail</h3>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${state.genThumbTitles.map((t,i)=>`
+            <div class="section">
+              <div class="body" style="font-weight:700;text-transform:uppercase;">${esc(t)}</div>
+              <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+                <span class="btn-ghost btn btn-sm" data-use-thumb="${i}">Dùng làm tiêu đề ảnh →</span>
               </div>
             </div>
           `).join('')}
@@ -205,6 +219,13 @@ function render(container, ctx){
         location.hash = 'viet-content';
       };
     });
+    container.querySelectorAll('[data-use-thumb]').forEach(el=>{
+      el.onclick = ()=>{
+        const i = Number(el.getAttribute('data-use-thumb'));
+        window.PendingImageTitle = state.genThumbTitles[i];
+        location.hash = 'tao-anh';
+      };
+    });
 
     const h = container.querySelector('#ne-hook'); if(h) h.oninput = ()=>state.newEntry.hook_text = h.value;
     const c = container.querySelector('#ne-cat'); if(c) c.onchange = ()=>state.newEntry.category = c.value;
@@ -246,7 +267,7 @@ function render(container, ctx){
 
   async function generateHooksByTopic(){
     if(!state.genTopic.trim()) return;
-    state.genLoading = true; state.genError = null; state.genResult = null; state.genSavedIdx = {};
+    state.genLoading = true; state.genError = null; state.genResult = null; state.genThumbTitles = null; state.genSavedIdx = {};
     draw();
     try{
       const data = await callApi('/api/goi-y-hook-theo-chu-de', {
@@ -256,6 +277,7 @@ function render(container, ctx){
         quick_context: state.genQuickContext,
       });
       state.genResult = data.result.hooks;
+      state.genThumbTitles = data.result.tieu_de_thumbnail;
     } catch(e){ state.genError = e.message; }
     state.genLoading = false; draw();
   }
