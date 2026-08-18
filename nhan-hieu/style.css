@@ -94,6 +94,7 @@ a{ color:inherit; }
 .section{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
 .section h3{ font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); font-family:'IBM Plex Mono',monospace; font-weight:600; margin-bottom:12px; }
 .section .body{ font-size:15px; line-height:1.7; color:var(--ink); white-space:pre-line; }
+.section .body.protected{ user-select:none; -webkit-user-select:none; -moz-user-select:none; }
 .section.highlight{ background:var(--accent); color:#fff; }
 .section.highlight h3{ color:#DCEAE4; }
 

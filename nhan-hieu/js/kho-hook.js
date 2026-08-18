@@ -121,7 +121,7 @@ function render(container, ctx){
     return state.shared.map(h=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(CATEGORIES[h.category]||h.category||'')}</div>
-        <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+        <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
         ${writeActionHtml('shared:'+h.id)}
       </div>
     `).join('');

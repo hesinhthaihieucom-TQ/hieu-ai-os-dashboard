@@ -139,7 +139,7 @@ function render(container, ctx){
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
         <h3>${esc(b.title)}</h3>
-        <div class="body">${esc(b.content)}</div>
+        <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;">${esc(b.content)}</div>
         ${writeActionHtml('shared:'+b.id)}
       </div>
     `).join('');
