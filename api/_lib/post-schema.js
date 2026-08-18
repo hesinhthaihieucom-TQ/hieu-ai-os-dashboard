@@ -99,7 +99,10 @@ QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 const HASHTAG_CAPTION_RULES = `QUY TẮC CAPTION VIDEO (goi_y_caption):
 - Nếu dạng content đề xuất (dinh_dang_de_xuat) là dạng quay video (Video Ngồi Nói, POV, Vlog, Text trên Video AI/thật + Caption...), phải điền đủ goi_y_caption.
 - Tự quyết định giu_nguyen_tieu_de: true nếu tiêu đề trên thumbnail đã đủ mạnh để dùng luôn làm caption; false nếu nên viết 1 caption riêng, khác đi, hiệu quả hơn khi đứng dưới video.
-- Chỉ thêm biến thể theo_nen_tang cho nền tảng thực sự nên viết khác caption_chinh — không liệt kê cho đủ 3 nền tảng nếu không cần thiết.
+- Chỉ thêm biến thể theo_nen_tang cho nền tảng thực sự nên viết khác caption_chinh đáng kể — không liệt kê cho đủ 3 nền tảng nếu không cần thiết. Khi có thêm, PHẢI viết đúng đặc thù thuật toán/hành vi người dùng từng nền tảng, không chỉ đổi giọng văn qua loa:
+  • TikTok: caption NGẮN (dưới ~150 ký tự, phần dài bị ẩn), câu đầu phải giữ được sự tò mò vì đây là phần luôn hiện — không lặp lại y hệt hook trên video; có thể chèn 1 câu hỏi cuối để kích thích bình luận (thuật toán ưu tiên watch time + tương tác bình luận/chia sẻ); 3-5 hashtag ngắn (trộn hashtag ngách + hashtag rộng đang thịnh hành), viết liền không dấu.
+  • YouTube: caption/mô tả dùng cho SEO nên có thể dài hơn hẳn — 2-3 câu ĐẦU phải chứa đúng từ khoá chính người xem hay tìm (vì đây là phần hiện trong kết quả tìm kiếm/preview), sau đó có thể mô tả thêm chi tiết/bối cảnh; hashtag đặt cuối cùng, tối đa 3-5 (YouTube chỉ hiện 3 hashtag đầu phía trên tiêu đề nên đặt hashtag quan trọng nhất lên đầu).
+  • Zalo: giọng gần gũi, cá nhân, như đang nhắn tin chia sẻ với người quen chứ không phải đăng bài quảng cáo; ngắn gọn, hầu như KHÔNG dùng hashtag (Zalo không dùng hashtag để gợi ý khám phá nội dung như TikTok/YouTube); nên có 1 CTA rõ ràng dẫn về Zalo OA/nhóm nếu phù hợp.
 - Nếu dạng content đề xuất KHÔNG phải dạng video (ảnh tĩnh, carousel, ghi chú...), để caption_chinh = "" và theo_nen_tang = mảng rỗng.
 
 QUY TẮC HASHTAG (BẮT BUỘC):
