@@ -130,7 +130,7 @@ function render(container, ctx){
         mode: state.mode,
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
-      });
+      }, 150000);
       state.result = data.result;
     } catch(e){ state.error = e.message; }
     state.generating = false; draw();

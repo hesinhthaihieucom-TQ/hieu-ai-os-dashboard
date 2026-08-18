@@ -44,21 +44,35 @@ function startOfWeek(d){
   return dt;
 }
 
-async function callApi(path, body){
+async function callApi(path, body, timeoutMs){
   // Đường dẫn tương đối (bỏ dấu "/" đầu) để hoạt động đúng dù web được host ở
   // gốc domain (Vercel) hay dưới 1 thư mục con qua reverse proxy (vd Cloudflare Worker
   // tại hesinhthaihieu.com/webxaynhanhieu) — trình duyệt sẽ tự nối theo đúng thư mục hiện tại.
   const relativePath = path.replace(/^\//, '');
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData && sessionData.session ? sessionData.session.access_token : null;
-  const resp = await fetch(relativePath, {
-    method:'POST',
-    headers:{
-      'content-type':'application/json',
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
+  // Không có timeout thì nếu server treo/không phản hồi (vd hết hạn hàm serverless mà kết nối
+  // không đóng gọn gàng), trình duyệt sẽ chờ vô thời hạn — màn hình đứng ở "Đang xử lý…" mãi mãi,
+  // không báo lỗi, không có cách nào tự thoát. Đặt trần thời gian để luôn có phản hồi cho người dùng.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs || 90000);
+  let resp;
+  try{
+    resp = await fetch(relativePath, {
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch(e){
+    if(e.name === 'AbortError') throw new Error('Yêu cầu mất quá lâu (quá 90 giây) — server có thể đang quá tải, thử lại giúp mình.');
+    throw new Error('Không kết nối được tới server — kiểm tra lại mạng và thử lại.');
+  } finally {
+    clearTimeout(timer);
+  }
   const data = await resp.json();
   if(!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
   return data;
