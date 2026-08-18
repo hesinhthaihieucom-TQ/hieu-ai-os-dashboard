@@ -10,7 +10,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', error:null, busyId:null };
+  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', error:null, busyId:null, confirmDeleteId:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -128,6 +128,15 @@ function render(container, ctx){
               <button class="btn-ghost btn btn-sm" data-revoke="${p.id}" ${state.busyId===p.id?'disabled':''}>Thu hồi ngay</button>
               <button class="btn-ghost btn btn-sm" data-toggle-student="${p.id}|${!p.is_student}" ${state.busyId===p.id?'disabled':''}>${p.is_student?'Bỏ đánh dấu học viên':'Đánh dấu là học viên'}</button>
             </div>
+            <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
+              ${state.confirmDeleteId===p.id ? `
+                <span style="font-size:12.5px;color:var(--danger);font-weight:600;">Xoá vĩnh viễn tài khoản này? Không khôi phục được.</span>
+                <button class="btn btn-sm" style="background:var(--danger);" data-confirm-delete="${p.id}" ${state.busyId===p.id?'disabled':''}>${state.busyId===p.id?'Đang xoá…':'Xác nhận xoá'}</button>
+                <span class="btn-ghost btn btn-sm" data-cancel-delete="1">Huỷ</span>
+              ` : `
+                <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-delete="${p.id}">Xoá tài khoản (tài khoản test/rác)</span>
+              `}
+            </div>
           ` : ''}
         </div>
       `;}).join('')}
@@ -153,6 +162,27 @@ function render(container, ctx){
         toggleStudent(id, next === 'true');
       };
     });
+
+    container.querySelectorAll('[data-ask-delete]').forEach(el=>{
+      el.onclick = ()=>{ state.confirmDeleteId = el.getAttribute('data-ask-delete'); draw(); };
+    });
+    const cancelDeleteLink = container.querySelector('[data-cancel-delete]');
+    if(cancelDeleteLink) cancelDeleteLink.onclick = ()=>{ state.confirmDeleteId = null; draw(); };
+    container.querySelectorAll('[data-confirm-delete]').forEach(el=>{
+      el.onclick = ()=>{ deleteAccount(el.getAttribute('data-confirm-delete')); };
+    });
+  }
+
+  async function deleteAccount(id){
+    state.busyId = id; draw();
+    try{
+      await callApi('/api/admin-delete-user', { user_id: id });
+      state.error = null;
+    } catch(e){ state.error = e.message; }
+    state.confirmDeleteId = null;
+    state.busyId = null;
+    await load();
+    draw();
   }
 
   async function toggleStudent(id, isStudent){
