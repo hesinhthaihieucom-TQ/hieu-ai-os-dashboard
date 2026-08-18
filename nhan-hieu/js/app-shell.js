@@ -47,6 +47,12 @@ async function initApp(){
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if(event === 'SIGNED_IN' && session){
+      // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại —
+      // không phải chỉ lúc đăng nhập thật. Nếu render lại toàn bộ app mỗi lần đó, bất kỳ màn hình
+      // nào đang có state tạm chưa lưu (ví dụ AI gợi ý lịch tuần vừa chạy xong) sẽ bị xoá sạch
+      // ngay khi vừa hiện ra — nhìn như tính năng "không chạy". Chỉ render lại khi đây thực sự là
+      // 1 phiên đăng nhập mới (user id khác với user đang có).
+      if(AppState.user && AppState.user.id === session.user.id) return;
       AppState.user = session.user;
       loadProfile().then(renderApp);
     } else if(event === 'SIGNED_OUT'){
