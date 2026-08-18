@@ -10,7 +10,17 @@ NGUYÊN TẮC BẮT BUỘC:
 - Không khen xã giao. Chỉ ra đúng vấn đề, đúng chỗ, đúng cách sửa.
 - Cụ thể đến mức đọc xong biết làm ngay — không nói chung chung.
 - Chấm điểm theo độ lệch giữa kênh thật và định vị gốc — không cảm tính.
-- Output tiếng Việt, giữ nguyên thuật ngữ tiếng Anh chuyên ngành (bio, CTA, profile, cover...).`;
+- Output tiếng Việt, giữ nguyên thuật ngữ tiếng Anh chuyên ngành (bio, CTA, profile, cover...).
+
+CÔNG THỨC VIẾT BIO (HM4 — bắt buộc áp dụng khi viết viet_lai cho hạng mục Bio):
+Người lạ phải hiểu bạn trong 5-10 giây đầu tiên. Bio phải trả lời đủ, đúng thứ tự, gộp thành 1 đoạn liền mạch tự nhiên (không liệt kê rời rạc từng gạch đầu dòng):
+1. AI — vai trò/hình ảnh bạn muốn được nhớ.
+2. GIÚP AI — tệp người xem chính, càng cụ thể càng dễ nhớ.
+3. KẾT QUẢ GÌ — điều người xem nhận được khi theo dõi bạn.
+4. BẰNG GÌ — kinh nghiệm/phương pháp/góc nhìn hoặc lợi thế của bạn.
+5. HÀNH ĐỘNG — follow/comment/inbox/nhận tài liệu/đăng ký... nên làm tiếp theo.
+Ví dụ đúng công thức: "Tôi giúp người mới xây kênh cá nhân có định vị rõ, content nền và dòng tiền đầu tiên bằng AI + lộ trình thực hành."
+Ghi nhớ nhanh: Rõ người — rõ kết quả — rõ lý do tin — rõ bước tiếp theo.`;
 
 const TOOL_AUDIT = {
   name: 'xuat_audit_kenh',
@@ -32,7 +42,7 @@ const TOOL_AUDIT = {
             hien_tai: { type: 'string', description: 'Đang thể hiện thế nào, chỉ đúng chỗ — dựa trên ảnh/thông tin thật được cung cấp.' },
             lech_dinh_vi: { type: 'string', description: 'Lệch định vị ở điểm nào.' },
             can_sua: { type: 'string', description: 'Cần sửa gì, sửa như thế nào — cụ thể, dùng ngay được.' },
-            viet_lai: { type: 'string', description: 'Bản viết lại/đề xuất cụ thể (bio mẫu, mô tả ảnh mới nên chụp thế nào...).' },
+            viet_lai: { type: 'string', description: 'Bản viết lại/đề xuất cụ thể (mô tả ảnh mới nên chụp thế nào...). Riêng hạng mục Bio (HM4): bắt buộc viết theo đúng CÔNG THỨC VIẾT BIO ở trên (Ai — Giúp ai — Kết quả gì — Bằng gì — Hành động), gộp thành 1 đoạn bio hoàn chỉnh sẵn sàng copy dùng ngay.' },
             uu_tien: { type: 'string', enum: ['do','vang','xanh'], description: 'do=sửa ngay, vang=sửa sớm, xanh=cải thiện dần.' },
           },
           required: ['ma','ten','diem','hien_tai','lech_dinh_vi','can_sua','viet_lai','uu_tien'],

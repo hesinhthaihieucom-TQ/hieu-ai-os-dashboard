@@ -232,6 +232,8 @@ function renderApp(){
 
   root.querySelector('#signout-btn').onclick = async ()=>{ await supabaseClient.auth.signOut(); };
 
+  if(window.startOnboardingTour && AppState.user) window.startOnboardingTour(AppState.user.id);
+
   const content = root.querySelector('#main-content');
   const mod = window.Modules && window.Modules[AppState.route];
   if(mod && mod.render){
