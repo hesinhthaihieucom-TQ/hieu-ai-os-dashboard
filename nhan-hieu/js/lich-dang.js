@@ -112,12 +112,17 @@ function render(container, ctx){
                 </div>`;
               }
               if(suggestion){
+                const matchedPost = suggestion.bai_co_san ? state.posts.find(p=>p.title===suggestion.bai_co_san) : null;
                 return `<div class="week-slot" style="border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
                   <div class="slot-label">${s.label} · <span style="color:var(--gold);">Gợi ý AI</span></div>
-                  <b style="font-size:12px;">${esc(suggestion.chu_de)}</b>
-                  <div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${esc(suggestion.dinh_dang)}</div>
+                  ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
+                  <b style="font-size:12px;">${esc(matchedPost ? matchedPost.title : suggestion.chu_de)}</b>
+                  <div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${matchedPost?'Bài đã viết sẵn':esc(suggestion.dinh_dang)}</div>
                   <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                    <button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng gợi ý</button>
+                    ${matchedPost
+                      ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>`
+                      : `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Viết bài cho trục này →</span>`
+                    }
                     <span style="align-self:center;color:var(--ink-soft);font-size:11px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
                   </div>
                 </div>`;
@@ -176,12 +181,22 @@ function render(container, ctx){
         const thu = (new Date(dateStr).getDay()+6)%7;
         const s = suggestionFor(thu, slotKey);
         if(!s) return;
+        const matchedPost = s.bai_co_san ? state.posts.find(p=>p.title===s.bai_co_san) : null;
         await ctx.supabase.from('calendar_entries').insert({
-          user_id: ctx.user.id, post_id: null, scheduled_date: dateStr, slot: slotKey,
-          title: s.chu_de, format: s.dinh_dang, cta: s.cta,
+          user_id: ctx.user.id, post_id: matchedPost ? matchedPost.id : null, scheduled_date: dateStr, slot: slotKey,
+          title: matchedPost ? matchedPost.title : s.chu_de, format: s.dinh_dang, cta: s.cta,
         });
         await loadEntries();
         draw();
+      };
+    });
+    container.querySelectorAll('[data-write-for-slot]').forEach(el=>{
+      el.onclick = ()=>{
+        const [dateStr, slotKey] = el.getAttribute('data-write-for-slot').split('|');
+        const thu = (new Date(dateStr).getDay()+6)%7;
+        const s = suggestionFor(thu, slotKey);
+        window.PendingTopic = (s && s.chu_de) || '';
+        location.hash = 'viet-content';
       };
     });
 
@@ -217,13 +232,18 @@ function render(container, ctx){
   }
 
   async function fetchAiSchedule(){
+    if(state.aiLoading) return;
     state.aiLoading = true; state.aiError = null; draw();
     try{
+      const scheduledPostIds = new Set(state.entries.map(e=>e.post_id).filter(Boolean));
+      const unscheduledPosts = state.posts.filter(p=>!scheduledPostIds.has(p.id)).slice(0, 15)
+        .map(p=>({ title:p.title, content:p.content }));
       const data = await callApi('/api/goi-y-lich', {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
         weekly_goal: state.weeklyGoal,
         posts_per_day: state.postsPerDay,
+        existing_posts: unscheduledPosts,
       });
       state.aiSuggestions = data.result.lich;
     } catch(e){ state.aiError = e.message; }

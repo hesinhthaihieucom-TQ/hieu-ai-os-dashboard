@@ -18,6 +18,9 @@ NGUYÊN TẮC:
 - Nếu người dùng có nêu mục tiêu tuần này (ra mắt sản phẩm, tăng follow, xây niềm tin...), ưu tiên xếp bài phục vụ đúng mục tiêu đó vào các ngày giữa/cuối tuần, đầu tuần vẫn giữ bài kéo reach/xây niềm tin để làm nóng trước.
 - Mỗi bài chọn 1 dạng content phù hợp (theo đúng 12 dạng ở trên) và 1 gợi ý hook ngắn, cụ thể — không chung chung.
 - CTA phải khớp mục tiêu bài đó, không phải ngày nào cũng "inbox".
+- BÀI ĐÃ VIẾT SẴN: nếu người dùng có cung cấp danh sách bài đã viết, ƯU TIÊN xếp các bài đó vào lịch trước (ghi đúng nguyên văn tiêu đề vào bai_co_san) — chỉ bịa chủ đề mới (chu_de) cho những ngày/slot không còn bài có sẵn nào phù hợp. Mỗi bài đã viết chỉ dùng 1 lần trong cả tuần, không lặp lại.
+- Nếu người dùng KHÔNG cung cấp bài đã viết nào (hoặc đã dùng hết), luôn để bai_co_san rỗng và chỉ gợi ý chu_de (chủ đề) — không tự bịa ra nội dung bài hoàn chỉnh.
+- Luôn ghi rõ truc_noi_dung cho mỗi bài (trục chính hay trục phụ, tên trục gì) để người dùng biết mỗi bài đang phục vụ trục nào.
 - Output tiếng Việt.`;
 
 function buildToolLich(postsPerDay) {
@@ -37,12 +40,14 @@ function buildToolLich(postsPerDay) {
           properties: {
             thu: { type: 'integer', minimum: 0, maximum: 6, description: '0=Thứ 2 ... 6=Chủ nhật' },
             slot: { type: 'string', enum: ['sang', 'trua', 'toi'] },
-            chu_de: { type: 'string', description: 'Chủ đề/góc content cụ thể cho bài này.' },
+            truc_noi_dung: { type: 'string', description: 'Trục nội dung (chính hoặc phụ) mà bài này phục vụ — ngắn gọn, ví dụ "Trục chính: Tài chính gia đình".' },
+            bai_co_san: { type: 'string', description: 'Nếu 1 trong các BÀI ĐÃ VIẾT được cung cấp khớp tốt với ngày/trục này, ghi ĐÚNG NGUYÊN VĂN tiêu đề bài đó. Nếu không có bài nào phù hợp, để chuỗi rỗng "".' },
+            chu_de: { type: 'string', description: 'Chủ đề/góc content cụ thể cho bài này — chỉ dùng khi bai_co_san rỗng (chưa có bài viết sẵn phù hợp).' },
             dinh_dang: { type: 'string', description: 'Tên 1 trong 12 dạng content.' },
             hook_goi_y: { type: 'string' },
             cta: { type: 'string' },
           },
-          required: ['thu', 'slot', 'chu_de', 'dinh_dang', 'hook_goi_y', 'cta'],
+          required: ['thu', 'slot', 'truc_noi_dung', 'bai_co_san', 'chu_de', 'dinh_dang', 'hook_goi_y', 'cta'],
         },
       },
     },
@@ -81,7 +86,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, quick_context, weekly_goal, posts_per_day } = req.body || {};
+    const { positioning, quick_context, weekly_goal, posts_per_day, existing_posts } = req.body || {};
     const hasPositioning = !!(positioning && positioning.luot1);
     if (!hasPositioning && !(quick_context && quick_context.trim())) {
       res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi gợi ý lịch.' }); return;
@@ -92,11 +97,18 @@ module.exports = async (req, res) => {
       ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}`
       : `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
 
+    const postsList = Array.isArray(existing_posts) ? existing_posts.filter(p => p && p.title) : [];
+    const postsBlock = postsList.length
+      ? `BÀI ĐÃ VIẾT SẴN (ưu tiên xếp vào lịch trước, ghi đúng nguyên văn tiêu đề vào bai_co_san):\n${postsList.map((p, i) => `${i + 1}. "${p.title}" — ${(p.content || '').slice(0, 150)}`).join('\n')}`
+      : 'BÀI ĐÃ VIẾT SẴN: (chưa có bài nào — chỉ gợi ý chủ đề, để bai_co_san rỗng)';
+
     const userContent = `${contextBlock}
 
 MỤC TIÊU TUẦN NÀY: ${weekly_goal && weekly_goal.trim() ? weekly_goal : '(không nêu cụ thể — cứ bám trục nội dung chính là được)'}
 
 SỐ BÀI MUỐN ĐĂNG MỖI NGÀY: ${postsPerDay}
+
+${postsBlock}
 
 Hãy xuất lịch 7 ngày, đúng ${postsPerDay} bài/ngày.`;
 
