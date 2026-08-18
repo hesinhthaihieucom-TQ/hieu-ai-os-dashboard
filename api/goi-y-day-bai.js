@@ -18,6 +18,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Bình luận tự đăng (cmt_tu_dang) ở mốc đầu (trước 1.000 view) phải là bình luận KÍCH THÍCH người khác trả lời/tranh luận, tuyệt đối không chèn link hay CTA bán hàng.
 - Từ mốc 10.000 view trở đi, nếu bình luận có CTA, luôn chốt bằng đúng 1 từ khoá kích hoạt 2 chữ theo mẫu "Để lại bình luận chữ '...' và mình sẽ gửi bạn ...", giống quy tắc CTA dùng trong Viết Content.
 - Chỉ đề xuất gắn 1 tài sản quảng bá trong danh sách được cung cấp — nếu danh sách rỗng hoặc không có tài sản nào phù hợp với mốc này, để trống và giải thích rõ vì sao chưa nên gắn gì.
+- Nếu người dùng đã chỉ định rõ 1 TÀI SẢN MUỐN DÙNG, ưu tiên chọn đúng tài sản đó (trừ khi nó thực sự không phù hợp mốc này — ví dụ mốc trước 1.000 view thì dù người dùng chỉ định vẫn không nên gắn link) — khi đó giải thích rõ vì sao chưa hợp và gợi ý nên đợi mốc nào.
 - Gợi ý trả lời bình luận (goi_y_tra_loi_cmt) phải là các mẫu câu tự nhiên, đúng giọng, dùng được cho nhiều loại bình luận khác nhau (khen, hỏi, nghi ngờ...).
 - Output tiếng Việt.`;
 
@@ -73,7 +74,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { topic, milestone, assets, positioning, quick_context } = req.body || {};
+    const { topic, milestone, assets, preferred_asset, positioning, quick_context } = req.body || {};
     if (!topic || !topic.trim()) { res.status(400).json({ error: 'Thiếu nội dung/chủ đề bài đang đẩy.' }); return; }
     const m = MILESTONES[milestone];
     if (!m) { res.status(400).json({ error: 'Mốc lượt xem không hợp lệ.' }); return; }
@@ -88,7 +89,11 @@ module.exports = async (req, res) => {
         ? `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`
         : 'BỐI CẢNH: (không cung cấp — viết tự nhiên, phổ quát)');
 
-    const userContent = `BÀI ĐANG ĐẨY (chủ đề/nội dung):\n${topic}\n\nMỐC LƯỢT XEM HIỆN TẠI: ${m.label} — ${m.desc}\n\nDANH SÁCH TÀI SẢN QUẢNG BÁ CÓ SẴN:\n${assetsList}\n\n${contextBlock}\n\nHãy gợi ý đẩy bài đúng cho mốc này.`;
+    const preferredLine = preferred_asset && preferred_asset.trim()
+      ? `\n\nTÀI SẢN NGƯỜI DÙNG MUỐN DÙNG CHO BÀI NÀY: ${preferred_asset.trim()}`
+      : '';
+
+    const userContent = `BÀI ĐANG ĐẨY (chủ đề/nội dung):\n${topic}\n\nMỐC LƯỢT XEM HIỆN TẠI: ${m.label} — ${m.desc}\n\nDANH SÁCH TÀI SẢN QUẢNG BÁ CÓ SẴN:\n${assetsList}${preferredLine}\n\n${contextBlock}\n\nHãy gợi ý đẩy bài đúng cho mốc này.`;
 
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_DAY_BAI });
     res.status(200).json({ result });

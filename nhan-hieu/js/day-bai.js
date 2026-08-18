@@ -15,7 +15,7 @@ function render(container, ctx){
   const state = {
     screen:'loading', positioning:null, assets:[], calendarEntries:[], posts:[],
     postSource:'lich', postChoice:'', topicOther:'', milestone:'m1', quickContext:'',
-    generating:false, error:null, result:null,
+    selectedAssetId:'', generating:false, error:null, result:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -60,9 +60,7 @@ function render(container, ctx){
     return `
       <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — đúng theo mốc lượt xem bài đang lên.</p></div>
 
-      ${assetsCardHtml()}
-
-      <div class="card" style="margin-top:16px;">
+      <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy</label>
         <div class="chips" style="margin-bottom:10px;">
           <div class="chip ${state.postSource==='lich'?'selected':''}" data-post-source="lich">Từ Lịch Đăng Bài</div>
@@ -89,8 +87,12 @@ function render(container, ctx){
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
           <textarea id="db-quick-context" style="min-height:auto;height:44px;" placeholder="Ví dụ: Coach tài chính cá nhân...">${esc(state.quickContext)}</textarea>
         ` : ''}
+      </div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mốc lượt xem hiện tại</label>
+      ${assetsCardHtml()}
+
+      <div class="card" style="margin-top:16px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;">Mốc lượt xem hiện tại</label>
         <div class="chips">
           ${MILESTONES.map(m=>`<div class="chip ${state.milestone===m.key?'selected':''}" data-milestone="${m.key}">${esc(m.label)}</div>`).join('')}
         </div>
@@ -107,20 +109,18 @@ function render(container, ctx){
 
   function assetsCardHtml(){
     return `
-      <div class="card">
-        <h3 style="margin-bottom:4px;">Tài sản quảng bá của bạn</h3>
-        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Cố định 1 lần ở Định Vị, chọn nhanh ở đây khi đẩy bài.</p>
-        ${Object.entries(ASSET_KINDS).map(([kind,label])=>{
-          const items = state.assets.filter(a=>a.kind===kind);
-          return `
-            <div style="padding:8px 0;border-bottom:1px solid var(--line);">
-              <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">${esc(label)}</div>
-              ${items.length===0
-                ? `<div style="font-size:13px;color:var(--ink-soft);font-style:italic;">Chưa có</div>`
-                : items.map(a=>`<div style="font-size:13.5px;">${esc(a.label)}</div>`).join('')}
-            </div>
-          `;
-        }).join('')}
+      <div class="card" style="margin-top:16px;">
+        <h3 style="margin-bottom:4px;">Tài sản muốn đẩy cho bài này</h3>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 tài sản cụ thể muốn gắn cho bài đang đẩy, hoặc để AI tự gợi ý theo mốc view.</p>
+        <select id="db-asset-select">
+          <option value="">— Để AI tự gợi ý —</option>
+          ${Object.entries(ASSET_KINDS).map(([kind,label])=>{
+            const items = state.assets.filter(a=>a.kind===kind);
+            if(items.length===0) return '';
+            return `<optgroup label="${esc(label)}">${items.map(a=>`<option value="${a.id}" ${state.selectedAssetId===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}</optgroup>`;
+          }).join('')}
+        </select>
+        ${state.assets.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào.</div>`:''}
         <div style="margin-top:10px;"><a href="#dinh-vi" style="font-size:12.5px;color:var(--ink-soft);">Thêm/sửa tài sản ở Định Vị →</a></div>
       </div>
     `;
@@ -152,6 +152,8 @@ function render(container, ctx){
     if(topicOtherEl) topicOtherEl.oninput = ()=>{ state.topicOther = topicOtherEl.value; };
 
     const qcEl = container.querySelector('#db-quick-context'); if(qcEl) qcEl.oninput = ()=>state.quickContext = qcEl.value;
+    const assetSelect = container.querySelector('#db-asset-select');
+    if(assetSelect) assetSelect.onchange = ()=>{ state.selectedAssetId = assetSelect.value; };
     container.querySelectorAll('[data-milestone]').forEach(el=>{
       el.onclick = ()=>{ state.milestone = el.getAttribute('data-milestone'); draw(); };
     });
@@ -164,10 +166,12 @@ function render(container, ctx){
     if(!topic.trim()) return;
     state.generating = true; state.error = null; state.result = null; draw();
     try{
+      const preferredAsset = state.assets.find(a=>a.id===state.selectedAssetId);
       const data = await callApi('/api/goi-y-day-bai', {
         topic,
         milestone: state.milestone,
         assets: state.assets.map(a=>({ label:a.label, url:a.url })),
+        preferred_asset: preferredAsset ? preferredAsset.label : null,
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
       });

@@ -242,6 +242,7 @@ function render(container, ctx){
       <div class="card" style="margin-top:14px;">
         <h3 style="margin-bottom:10px;">Tài sản quảng bá</h3>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Sản phẩm số, link aff, link cộng đồng — lưu 1 lần ở đây, dùng lại ở Viết Content và Đẩy Bài &amp; CTA Comment.</div>
+        <div class="hint-box" style="margin-bottom:12px;">Có group/cộng đồng riêng (Facebook, Zalo, Telegram...)? Nhớ thêm vào đây — chọn loại <b>"Link cộng đồng"</b> và dán kèm link đầy đủ, để Viết Content/Đẩy Bài tự gợi ý mời đúng người vào đúng group.</div>
         ${state.assets.length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có tài sản nào.</div>`:''}
         ${state.assets.map(a=>{
           if(state.editingAssetId===a.id){
