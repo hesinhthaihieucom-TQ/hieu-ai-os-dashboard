@@ -95,10 +95,10 @@ a{ color:inherit; }
 .section h3{ font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); font-family:'IBM Plex Mono',monospace; font-weight:600; margin-bottom:12px; }
 .section .body{ font-size:15px; line-height:1.7; color:var(--ink); white-space:pre-line; }
 .section .body.protected{ user-select:none; -webkit-user-select:none; -moz-user-select:none; }
-.section.highlight, .section.highlight-dark{ background:#2A2E29; color:#fff; }
-.section.highlight h3, .section.highlight-dark h3{ color:#C9CDC5; }
-.section.highlight .body, .section.highlight-dark .body{ color:#fff; }
-.section.highlight .body b, .section.highlight-dark .body b{ color:var(--gold); }
+.section.highlight, .section.highlight-dark{ background:#EDEBE3; color:var(--ink); border-color:#DCD8C9; }
+.section.highlight h3, .section.highlight-dark h3{ color:var(--ink-soft); }
+.section.highlight .body, .section.highlight-dark .body{ color:var(--ink); }
+.section.highlight .body b, .section.highlight-dark .body b{ color:#8A5A00; }
 
 textarea, select{
   width:100%; margin-top:12px; font-family:'Be Vietnam Pro',sans-serif; font-size:15px; line-height:1.55;

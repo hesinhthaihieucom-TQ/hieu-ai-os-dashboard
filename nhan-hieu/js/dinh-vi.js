@@ -45,8 +45,7 @@ function render(container, ctx){
     suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
     pasteText:'', pasteError:null, pasteLoading:false,
     channelHandle:'', channelSaving:false, channelSaved:false,
-    cauChuyenRieng:'', storySaving:false, storySaved:false,
-    assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' },
+    assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'' };
   const ASSET_KINDS = {
@@ -54,12 +53,41 @@ function render(container, ctx){
     aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
   };
 
+  function communityAssets(){ return state.assets.filter(a=>a.kind==='cong_dong'); }
+  function promoAssets(){ return state.assets.filter(a=>a.kind!=='cong_dong'); }
+
+  function assetRowHtml(a){
+    if(state.editingAssetId===a.id){
+      return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px;">
+          <textarea id="ea-label" style="min-height:auto;height:40px;">${esc(state.editAsset.label)}</textarea>
+          <textarea id="ea-url" style="min-height:auto;height:40px;" placeholder="Link (không bắt buộc)">${esc(state.editAsset.url)}</textarea>
+          ${a.kind!=='cong_dong' ? `<select id="ea-kind">
+            ${Object.entries(ASSET_KINDS).filter(([k])=>k!=='cong_dong').map(([k,v])=>`<option value="${k}" ${state.editAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
+          </select>` : ''}
+          <div class="btn-row" style="justify-content:flex-start;">
+            <button class="btn btn-sm" data-action="save-edit-asset">Lưu</button>
+            <span class="btn-ghost btn btn-sm" data-action="cancel-edit-asset">Huỷ</span>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+        <div><b>${esc(a.label)}</b>${a.kind!=='cong_dong'?` <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>`:''}${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}</div>
+        <div style="display:flex;gap:12px;">
+          <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
+        </div>
+      </div>
+    `;
+  }
+
   function draw(){ container.innerHTML = screenHtml(); bind(); }
 
   async function boot(){
     draw();
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
-    state.cauChuyenRieng = (ctx.profile && ctx.profile.cau_chuyen_rieng) || '';
     await Promise.all([loadAssets(), loadBrands()]);
     const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
@@ -241,7 +269,7 @@ function render(container, ctx){
         ${state.channelSaved?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">Đã lưu ✓</div>`:''}
       </div>
       <div class="card" style="margin-top:14px;">
-        <h3 style="margin-bottom:6px;">Thương hiệu / Tên sản phẩm</h3>
+        <h3 style="margin-bottom:6px;">Thương hiệu</h3>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Nếu bạn có nhiều thương hiệu khác tên kênh (ví dụ: Hiểu Hạnh, Hiểu Mạnh, Hiểu Kênh tuỳ content) — thêm hết ở đây, mỗi bài Viết Content sẽ cho chọn dùng đúng thương hiệu nào.</div>
         ${state.brands.length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có thương hiệu nào.</div>`:''}
         ${state.brands.map(b=>{
@@ -265,70 +293,54 @@ function render(container, ctx){
         `;
         }).join('')}
         <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-          <textarea id="new-brand-input" style="min-height:auto;height:40px;flex:1;min-width:200px;" placeholder="Ví dụ: Sổ Dòng Tiền">${esc(state.newBrandName)}</textarea>
+          <textarea id="new-brand-input" style="min-height:auto;height:40px;flex:1;min-width:200px;" placeholder="Ví dụ: Hiểu Hạnh">${esc(state.newBrandName)}</textarea>
           <button class="btn btn-sm" data-action="add-brand">Thêm thương hiệu</button>
         </div>
       </div>
       <div class="card" style="margin-top:14px;">
+        <h3 style="margin-bottom:6px;">Cộng đồng / Group</h3>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Group/cộng đồng riêng (Facebook, Zalo, Telegram...) — lưu 1 lần ở đây kèm link đầy đủ, để Viết Content/Đẩy Bài tự gợi ý mời đúng người vào đúng group.</div>
+        ${communityAssets().length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có cộng đồng/group nào.</div>`:''}
+        ${communityAssets().map(a=>assetRowHtml(a)).join('')}
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+          <textarea id="ng-label" style="min-height:auto;height:40px;" placeholder="Tên group, ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.newGroup.label)}</textarea>
+          <textarea id="ng-url" style="min-height:auto;height:40px;" placeholder="Link group">${esc(state.newGroup.url)}</textarea>
+          <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-group">Thêm group</button></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
         <h3 style="margin-bottom:10px;">Tài sản quảng bá</h3>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Sản phẩm số, link aff, link cộng đồng — lưu 1 lần ở đây, dùng lại ở Viết Content và Đẩy Bài &amp; CTA Comment.</div>
-        <div class="hint-box" style="margin-bottom:12px;">Có group/cộng đồng riêng (Facebook, Zalo, Telegram...)? Nhớ thêm vào đây — chọn loại <b>"Link cộng đồng"</b> và dán kèm link đầy đủ, để Viết Content/Đẩy Bài tự gợi ý mời đúng người vào đúng group.</div>
-        ${state.assets.length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có tài sản nào.</div>`:''}
-        ${state.assets.map(a=>{
-          if(state.editingAssetId===a.id){
-            return `
-              <div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px;">
-                <textarea id="ea-label" style="min-height:auto;height:40px;">${esc(state.editAsset.label)}</textarea>
-                <textarea id="ea-url" style="min-height:auto;height:40px;" placeholder="Link (không bắt buộc)">${esc(state.editAsset.url)}</textarea>
-                <select id="ea-kind">
-                  ${Object.entries(ASSET_KINDS).map(([k,v])=>`<option value="${k}" ${state.editAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
-                </select>
-                <div class="btn-row" style="justify-content:flex-start;">
-                  <button class="btn btn-sm" data-action="save-edit-asset">Lưu</button>
-                  <span class="btn-ghost btn btn-sm" data-action="cancel-edit-asset">Huỷ</span>
-                </div>
-              </div>
-            `;
-          }
-          return `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-            <div><b>${esc(a.label)}</b> <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}</div>
-            <div style="display:flex;gap:12px;">
-              <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
-              <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
-            </div>
-          </div>
-        `;
-        }).join('')}
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Sản phẩm số, khoá học, link aff — lưu 1 lần ở đây, dùng lại ở Viết Content và Đẩy Bài &amp; CTA Comment.</div>
+        ${promoAssets().length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có tài sản nào.</div>`:''}
+        ${promoAssets().map(a=>assetRowHtml(a)).join('')}
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
           <textarea id="na-label" style="min-height:auto;height:40px;" placeholder="Tên tài sản, ví dụ: Khoá học Sổ Dòng Tiền">${esc(state.newAsset.label)}</textarea>
           <textarea id="na-url" style="min-height:auto;height:40px;" placeholder="Link (không bắt buộc)">${esc(state.newAsset.url)}</textarea>
           <select id="na-kind">
-            ${Object.entries(ASSET_KINDS).map(([k,v])=>`<option value="${k}" ${state.newAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
+            ${Object.entries(ASSET_KINDS).filter(([k])=>k!=='cong_dong').map(([k,v])=>`<option value="${k}" ${state.newAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
           </select>
           <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-asset">Thêm tài sản</button></div>
         </div>
-      </div>
-      <div class="card" style="margin-top:14px;">
-        <h3 style="margin-bottom:6px;">Câu chuyện của bạn</h3>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Kể 1 câu chuyện/trải nghiệm thật cụ thể của bạn (có mốc thời gian, con số, cảm xúc, kết quả) — lưu 1 lần ở đây, dùng lại khi viết bài giữ nguyên cấu trúc từ Kho Content, khỏi phải nhập lại mỗi lần viết.</div>
-        <textarea id="story-input" placeholder="Ví dụ: 3 năm trước mình từng...">${esc(state.cauChuyenRieng)}</textarea>
-        <div class="btn-row" style="margin-top:8px;"><button class="btn btn-sm" data-action="save-story" ${state.storySaving?'disabled':''}>${state.storySaving?'Đang lưu…':'Lưu'}</button></div>
-        ${state.storySaved?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">Đã lưu ✓</div>`:''}
       </div>
       <div class="section highlight"><h3>Kết luận định vị</h3><div class="body" style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;line-height:1.6;">${escBold(breakSentences(r.ket_luan_dinh_vi))}</div></div>
       ${sectionHtml('Tổng quan thương hiệu', r.tong_quan_thuong_hieu)}
       ${sectionHtml('Hồ sơ chuyên môn', r.ho_so_chuyen_mon)}
       ${sectionHtml('Lợi thế cạnh tranh', r.loi_the_canh_tranh)}
       ${sectionHtml('Hình ảnh nên xây', r.hinh_anh_nen_xay)}
-      ${sectionHtml('Bản sắc thương hiệu', r.ban_sac_thuong_hieu)}
+      ${sectionHtml('Bản sắc & Triết lý thương hiệu', r.ban_sac_triet_ly_thuong_hieu)}
       ${sectionHtml('Giọng điệu & ngôn ngữ', r.giong_dieu_ngon_ngu)}
-      ${(r.hook_mo_dau && (r.hook_mo_dau.kieu_hook || (r.hook_mo_dau.vi_du||[]).length)) ? `
-      <div class="section"><h3>Hook mở đầu</h3>${r.hook_mo_dau.kieu_hook?`<div class="body">${escBold(r.hook_mo_dau.kieu_hook)}</div>`:''}
-        <ul>${(r.hook_mo_dau.vi_du||[]).filter(Boolean).map(h=>`<li>${escBold(h)}</li>`).join('')}</ul></div>
-      ` : ''}
-      ${sectionHtml('Triết lý thương hiệu', r.triet_ly_thuong_hieu)}
       ${sectionHtml('Không theo đuổi', r.khong_theo_duoi)}
+      ${(()=>{
+        const cc = r.cau_chuyen_ca_nhan;
+        if(!cc || !cc.cau_chuyen) return '';
+        return `<div class="section"><h3>Câu chuyện cá nhân</h3><div class="body">${escBold(cc.cau_chuyen)}</div>
+          ${cc.qua_so_sai && (cc.cau_hoi_lam_ro||[]).length ? `
+            <div class="hint-box" style="margin-top:12px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu này rồi làm lại Định Vị để câu chuyện cụ thể hơn:
+              <ul style="margin-top:8px;">${cc.cau_hoi_lam_ro.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
+            </div>
+          ` : ''}
+        </div>`;
+      })()}
       ${(()=>{
         const d = r.dau_an_hinh_anh || {};
         const body = pairsBodyHtml([
@@ -403,7 +415,6 @@ function render(container, ctx){
         </div>
       </div>
       ${sectionHtml('Script tự giới thiệu 30 giây', r2.script_gioi_thieu_30s)}
-      ${listSectionHtml('Hook cá nhân', r2.hook_ca_nhan)}
       ${listSectionHtml('Cần sửa ngay', r2.can_sua_ngay)}
       ${listSectionHtml('Cảnh báo', r2.canh_bao)}
       <div class="btn-row no-print">
@@ -438,11 +449,6 @@ function render(container, ctx){
     const saveChBtn = container.querySelector('[data-action="save-channel-handle"]');
     if(saveChBtn) saveChBtn.onclick = saveChannelHandle;
 
-    const storyInput = container.querySelector('#story-input');
-    if(storyInput) storyInput.oninput = ()=>{ state.cauChuyenRieng = storyInput.value; state.storySaved = false; };
-    const saveStoryBtn = container.querySelector('[data-action="save-story"]');
-    if(saveStoryBtn) saveStoryBtn.onclick = saveStory;
-
     const newBrandInput = container.querySelector('#new-brand-input');
     if(newBrandInput) newBrandInput.oninput = ()=>state.newBrandName = newBrandInput.value;
     const addBrandBtn = container.querySelector('[data-action="add-brand"]');
@@ -474,6 +480,11 @@ function render(container, ctx){
     const nk = container.querySelector('#na-kind'); if(nk) nk.onchange = ()=>state.newAsset.kind = nk.value;
     const addAssetBtn = container.querySelector('[data-action="add-asset"]');
     if(addAssetBtn) addAssetBtn.onclick = addAsset;
+
+    const ngl = container.querySelector('#ng-label'); if(ngl) ngl.oninput = ()=>state.newGroup.label = ngl.value;
+    const ngu = container.querySelector('#ng-url'); if(ngu) ngu.oninput = ()=>state.newGroup.url = ngu.value;
+    const addGroupBtn = container.querySelector('[data-action="add-group"]');
+    if(addGroupBtn) addGroupBtn.onclick = addGroup;
     container.querySelectorAll('[data-del-asset]').forEach(el=>{
       el.onclick = async ()=>{
         await ctx.supabase.from('promo_assets').delete().eq('id', el.getAttribute('data-del-asset'));
@@ -680,6 +691,16 @@ function render(container, ctx){
     draw();
   }
 
+  async function addGroup(){
+    if(!state.newGroup.label.trim()) return;
+    await ctx.supabase.from('promo_assets').insert({
+      user_id: ctx.user.id, label: state.newGroup.label, url: state.newGroup.url || null, kind: 'cong_dong',
+    });
+    state.newGroup = { label:'', url:'' };
+    await loadAssets();
+    draw();
+  }
+
   async function saveEditAsset(){
     if(!state.editingAssetId || !state.editAsset.label.trim()) return;
     await ctx.supabase.from('promo_assets').update({
@@ -696,15 +717,6 @@ function render(container, ctx){
     const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null });
     if(!error && ctx.profile){ ctx.profile.channel_handle = state.channelHandle.trim() || null; }
     state.channelSaving = false; state.channelSaved = !error; state.error = error ? error.message : null;
-    draw();
-  }
-
-  async function saveStory(){
-    if(state.storySaving) return;
-    state.storySaving = true; state.storySaved = false; draw();
-    const { error } = await ctx.supabase.rpc('update_my_story', { new_story: state.cauChuyenRieng.trim() || null });
-    if(!error && ctx.profile){ ctx.profile.cau_chuyen_rieng = state.cauChuyenRieng.trim() || null; }
-    state.storySaving = false; state.storySaved = !error; state.error = error ? error.message : null;
     draw();
   }
 

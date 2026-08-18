@@ -11,7 +11,7 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
-    state.cauChuyenRieng = (ctx.profile && ctx.profile.cau_chuyen_rieng) || '';
+    state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
     if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
     else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
     await Promise.all([loadRecent(), loadAssets(), loadBrands()]);
@@ -66,9 +66,9 @@ function render(container, ctx){
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện riêng của bạn (chèn ~20% vào bài)</label>
           ${state.cauChuyenRieng ? `
             <div class="body" style="background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:8px;font-size:13px;">${esc(state.cauChuyenRieng)}</div>
-            <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Lấy từ <a href="#dinh-vi">Định Vị</a> — sửa ở đó nếu muốn dùng câu chuyện khác.</div>
+            <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">AI tổng hợp từ câu trả lời Định Vị của bạn — xem/làm lại ở <a href="#dinh-vi">Định Vị</a> nếu muốn câu chuyện khác.</div>
           ` : `
-            <div class="hint-box">Chưa có câu chuyện nào được lưu — sang <a href="#dinh-vi">Định Vị</a> điền mục "Câu chuyện của bạn" trước, rồi quay lại đây bấm tạo lại.</div>
+            <div class="hint-box">Chưa có câu chuyện cá nhân trong kết quả <a href="#dinh-vi">Định Vị</a> — làm Định Vị (hoặc làm lại) trước, rồi quay lại đây bấm tạo lại.</div>
           `}
         ` : `
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
