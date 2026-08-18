@@ -460,12 +460,13 @@ function render(container, ctx){
     const entry = state.newEntry;
     let category = null;
     let tags = [];
+    let classifyWarning = null;
     try{
       const data = await callApi('/api/phan-loai-hook', { hook_text: entry.hook_text });
       category = categoryLabel(data.result.category);
     } catch(e){
       // Không phân loại được (vd lỗi mạng) — vẫn lưu hook, chỉ thiếu nhãn loại, không chặn người dùng.
-      state.addError = `Không tự nhận diện được loại hook (${e.message}) — đã lưu hook, bạn có thể bỏ qua.`;
+      classifyWarning = `Không tự nhận diện được loại hook (${e.message}) — đã lưu hook, bạn có thể bỏ qua.`;
     }
     try{
       const data = await callApi('/api/phan-loai-truc', { title: entry.hook_text, content: entry.note || '' });
@@ -479,11 +480,17 @@ function render(container, ctx){
       viral_likes: entry.isViral===true ? (entry.viralLikes||null) : null,
     }).select().single();
 
+    state.addingHook = false;
+    if(error){
+      state.addError = `Không lưu được: ${error.message}`;
+      draw();
+      return;
+    }
     const wasViral = entry.isViral===true;
     state.newEntry = { hook_text:'', note:'', isViral:null, viralViews:'', viralLikes:'' };
-    state.addingHook = false;
+    state.addError = classifyWarning;
     await loadPersonal();
-    if(!error && wasViral) state.sharePromptFor = row.id;
+    if(wasViral) state.sharePromptFor = row.id;
     draw();
   }
 

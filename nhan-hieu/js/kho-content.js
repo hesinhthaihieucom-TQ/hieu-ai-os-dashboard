@@ -1,9 +1,14 @@
 (function(){
+// chuyen_gia_viet gộp chung nhãn với bai_mau (trùng ý — cùng là "mẫu tham khảo có sẵn", không phải
+// tự viết), tai_che_viral vẫn giữ để hiển thị đúng nhãn cho bài cũ — nhưng cả 2 key này KHÔNG còn
+// nằm trong danh sách người dùng tự chọn ở SOURCE_OPTIONS bên dưới, vì tai_che_viral đã được flow
+// Tái Chế Viral tự gắn sẵn (xem tai-che-viral.js), không cần chọn tay.
 const SOURCE_MAP = {
   ca_nhan: 'Câu chuyện cá nhân', case_hoc_vien: 'Case học viên', cau_hoi_kh: 'Câu hỏi khách hàng',
-  xu_huong: 'Xu hướng thị trường', quan_diem_nguoc_dong: 'Quan điểm ngược dòng', bai_mau: 'Bài mẫu thật',
-  chuyen_gia_viet: 'Mẫu chuyên gia viết', tai_che_viral: 'Tái chế từ bài viral',
+  xu_huong: 'Xu hướng thị trường', quan_diem_nguoc_dong: 'Quan điểm ngược dòng', bai_mau: 'Bài mẫu tham khảo',
+  chuyen_gia_viet: 'Bài mẫu tham khảo', tai_che_viral: 'Tái chế từ bài viral',
 };
+const SOURCE_OPTIONS = ['ca_nhan', 'case_hoc_vien', 'cau_hoi_kh', 'xu_huong', 'quan_diem_nguoc_dong', 'bai_mau'];
 
 // Trục nội dung (content pillar) — nhóm các tag chi tiết trong data lại thành nhóm lớn dễ chọn,
 // tránh người dùng bị ngộp vì phải lướt qua cả kho chung chưa lọc. Khớp key với api/_lib/pillars.js.
@@ -26,7 +31,7 @@ function render(container, ctx){
   const state = {
     tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
     newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'' },
-    addingPersonal:false, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
+    addingPersonal:false, addPersonalError:null, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(),
@@ -218,7 +223,7 @@ function render(container, ctx){
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại nguồn</label>
         <select id="ne-source">
           <option value="">— Chọn —</option>
-          ${Object.entries(SOURCE_MAP).map(([k,v])=>`<option value="${k}" ${state.newEntry.source_type===k?'selected':''}>${esc(v)}</option>`).join('')}
+          ${SOURCE_OPTIONS.map(k=>`<option value="${k}" ${state.newEntry.source_type===k?'selected':''}>${esc(SOURCE_MAP[k])}</option>`).join('')}
         </select>
 
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đây có phải content đang viral bạn tìm thấy ở nơi khác không?</label>
@@ -240,6 +245,7 @@ function render(container, ctx){
         ` : ''}
 
         <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add-personal" ${state.addingPersonal?'disabled':''}>${state.addingPersonal?'Đang phân loại…':'Thêm vào kho của tôi'}</button></div>
+        ${state.addPersonalError?`<div class="error-box">${esc(state.addPersonalError)}</div>`:''}
       </div>
       ${state.sharePromptFor ? sharePromptHtml() : ''}
       ${state.shareDoneFor ? `<div class="hint-box" style="margin-top:14px;">${esc(state.shareDoneFor)}</div>` : ''}
@@ -407,8 +413,13 @@ function render(container, ctx){
   }
 
   async function addPersonal(){
-    if(!state.newEntry.title.trim() || !state.newEntry.content.trim() || state.addingPersonal) return;
-    state.addingPersonal = true; state.sharePromptFor = null; state.shareDoneFor = null; draw();
+    if(state.addingPersonal) return;
+    if(!state.newEntry.title.trim() || !state.newEntry.content.trim()){
+      state.addPersonalError = 'Cần điền cả tiêu đề và nội dung trước khi thêm.';
+      draw();
+      return;
+    }
+    state.addingPersonal = true; state.addPersonalError = null; state.sharePromptFor = null; state.shareDoneFor = null; draw();
     const entry = state.newEntry;
     // AI tự chọn trục nội dung ngay khi thêm — không còn bắt người dùng tự chọn trục thủ công.
     let tags = [];
@@ -425,10 +436,15 @@ function render(container, ctx){
     }).select().single();
 
     state.addingPersonal = false;
+    if(error){
+      state.addPersonalError = `Không lưu được: ${error.message}`;
+      draw();
+      return;
+    }
     const wasViral = entry.isViral===true;
     state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'' };
     await loadPersonal();
-    if(!error && wasViral) state.sharePromptFor = row.id;
+    if(wasViral) state.sharePromptFor = row.id;
     draw();
   }
 
