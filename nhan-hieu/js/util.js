@@ -11,7 +11,7 @@ function escBold(s){
 // Một số bản định vị cũ lưu "kết luận định vị" dạng cả đoạn dài nhiều câu dính liền nhau
 // (trước khi siết prompt chỉ còn đúng 1 câu) — tách xuống dòng theo từng câu cho dễ đọc.
 function breakSentences(s){
-  return String(s==null?'':s).replace(/([.!?])\s+(?=[A-ZÀ-Ỹ"'"])/g, '$1\n\n');
+  return String(s==null?'':s).replace(/([.!?]['"'"”]?)\s+(?=[A-ZÀ-Ỹ"'"“])/g, '$1\n\n');
 }
 
 // Lấy đúng câu đầu tiên — dùng khi cần hiển thị ngắn gọn dạng tiêu đề (vd bản cũ dài nhiều câu).
