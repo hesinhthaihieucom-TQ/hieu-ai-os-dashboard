@@ -48,10 +48,10 @@ const TOOL_POST_EXTRAS = {
       ly_do_dinh_dang: { type: 'string', description: 'Vì sao dạng content này phù hợp nhất cho bài này.' },
       goi_y_caption: {
         type: 'object',
-        description: 'Caption dùng khi đăng dạng VIDEO — khác với tiêu đề ghi trên ảnh/thumbnail. Nếu dinh_dang_de_xuat không phải dạng quay video, để caption_chinh rỗng "" và theo_nen_tang là mảng rỗng.',
+        description: 'Caption dùng khi đăng dạng VIDEO — khác với tiêu đề ghi trên ảnh/thumbnail. LUÔN điền đầy đủ mục này, KỂ CẢ khi dinh_dang_de_xuat không phải dạng video — người dùng có thể tự chọn quay video (vd Video Ngồi Nói) dù không phải dạng AI đề xuất, nên không được để trống chỉ vì lý do đó.',
         properties: {
           giu_nguyen_tieu_de: { type: 'boolean', description: 'true nếu nên dùng ĐÚNG tiêu đề ghi trên thumbnail làm caption luôn (tiêu đề đã đủ mạnh để đứng riêng); false nếu nên viết 1 caption khác đi, hiệu quả hơn.' },
-          caption_chinh: { type: 'string', description: 'Caption chính đề xuất — trùng tiêu đề nếu giu_nguyen_tieu_de=true, hoặc bản viết riêng nếu false. Rỗng "" nếu bài này không phải dạng video.' },
+          caption_chinh: { type: 'string', description: 'Caption chính đề xuất — trùng tiêu đề nếu giu_nguyen_tieu_de=true, hoặc bản viết riêng nếu false. LUÔN điền, không để rỗng.' },
           theo_nen_tang: {
             type: 'array', minItems: 0, maxItems: 3,
             items: {
@@ -97,13 +97,12 @@ QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 - Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.`;
 
 const HASHTAG_CAPTION_RULES = `QUY TẮC CAPTION VIDEO (goi_y_caption):
-- Nếu dạng content đề xuất (dinh_dang_de_xuat) là dạng quay video (Video Ngồi Nói, POV, Vlog, Text trên Video AI/thật + Caption...), phải điền đủ goi_y_caption.
+- LUÔN điền đầy đủ goi_y_caption cho MỌI bài, bất kể dinh_dang_de_xuat AI chọn là gì — người dùng có thể tự quyết định quay video (vd Video Ngồi Nói) dù đó không phải dạng AI đề xuất là phù hợp nhất, nên không được bỏ trống vì lý do "bài này hợp ảnh tĩnh hơn".
 - Tự quyết định giu_nguyen_tieu_de: true nếu tiêu đề trên thumbnail đã đủ mạnh để dùng luôn làm caption; false nếu nên viết 1 caption riêng, khác đi, hiệu quả hơn khi đứng dưới video.
 - Chỉ thêm biến thể theo_nen_tang cho nền tảng thực sự nên viết khác caption_chinh đáng kể — không liệt kê cho đủ 3 nền tảng nếu không cần thiết. Khi có thêm, PHẢI viết đúng đặc thù thuật toán/hành vi người dùng từng nền tảng, không chỉ đổi giọng văn qua loa:
   • TikTok: caption NGẮN (dưới ~150 ký tự, phần dài bị ẩn), câu đầu phải giữ được sự tò mò vì đây là phần luôn hiện — không lặp lại y hệt hook trên video; có thể chèn 1 câu hỏi cuối để kích thích bình luận (thuật toán ưu tiên watch time + tương tác bình luận/chia sẻ); 3-5 hashtag ngắn (trộn hashtag ngách + hashtag rộng đang thịnh hành), viết liền không dấu.
   • YouTube: caption/mô tả dùng cho SEO nên có thể dài hơn hẳn — 2-3 câu ĐẦU phải chứa đúng từ khoá chính người xem hay tìm (vì đây là phần hiện trong kết quả tìm kiếm/preview), sau đó có thể mô tả thêm chi tiết/bối cảnh; hashtag đặt cuối cùng, tối đa 3-5 (YouTube chỉ hiện 3 hashtag đầu phía trên tiêu đề nên đặt hashtag quan trọng nhất lên đầu).
   • Zalo: giọng gần gũi, cá nhân, như đang nhắn tin chia sẻ với người quen chứ không phải đăng bài quảng cáo; ngắn gọn, hầu như KHÔNG dùng hashtag (Zalo không dùng hashtag để gợi ý khám phá nội dung như TikTok/YouTube); nên có 1 CTA rõ ràng dẫn về Zalo OA/nhóm nếu phù hợp.
-- Nếu dạng content đề xuất KHÔNG phải dạng video (ảnh tĩnh, carousel, ghi chú...), để caption_chinh = "" và theo_nen_tang = mảng rỗng.
 
 QUY TẮC HASHTAG (BẮT BUỘC):
 - Xuất ĐÚNG 5 hashtag, không hơn không kém.
