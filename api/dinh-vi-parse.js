@@ -11,6 +11,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Nếu 1 field hoàn toàn không có thông tin tương ứng trong văn bản gốc, điền "(không có trong dữ liệu gốc)" thay vì bịa.
 - Với "luot1": luôn cố gắng trích xuất đầy đủ nếu văn bản có đủ nội dung tương ứng (thường là phần "định vị cốt lõi").
 - Với "luot2": CHỈ điền nếu văn bản gốc thực sự có phần chiến lược nội dung/dòng tiền/chân dung khách hàng tương ứng. Nếu văn bản gốc chỉ có phần định vị cốt lõi, KHÔNG gọi tool phần luot2 — bỏ qua hoàn toàn field này.
+- 2 mục "dau_an_hinh_anh" và "cau_chuyen_ca_nhan" là mục MỚI, các bản định vị làm TRƯỚC ĐÂY chắc chắn KHÔNG có nội dung tương ứng — đây là chuyện BÌNH THƯỜNG, không phải lỗi. Nếu văn bản gốc không có nội dung khớp 2 mục này: điền mọi sub-field text trong dau_an_hinh_anh = "" và canh_mo_dau = mảng rỗng; điền cau_chuyen = "", qua_so_sai = false, cau_hoi_lam_ro = mảng rỗng. TUYỆT ĐỐI KHÔNG vì 2 mục mới này thiếu mà suy ra các mục CƠ BẢN khác (tong_quan_thuong_hieu, ho_so_chuyen_mon, loi_the_canh_tranh, hinh_anh_nen_xay, ban_sac_triet_ly_thuong_hieu, giong_dieu_ngon_ngu, khong_theo_duoi, ket_luan_dinh_vi...) cũng "không có trong dữ liệu gốc" — các mục đó vẫn phải trích xuất đầy đủ bình thường nếu văn bản gốc có nội dung tương ứng, dù diễn đạt khác cấu trúc hiện tại.
 - Output tiếng Việt, giữ nguyên thuật ngữ chuyên ngành có trong văn bản gốc.`;
 
 const TOOL_PARSE = {
