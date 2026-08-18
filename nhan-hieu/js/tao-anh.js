@@ -3,6 +3,14 @@ const CANVAS_W = 1080, CANVAS_H = 1350;
 const DEMO_TITLE = 'Facebook đang **trả lương** ảnh\ncao gấp đôi video?';
 const DEMO_HANDLE = '@tenban';
 
+// Kích thước ảnh xuất ra — chiều rộng giữ cố định 1080 (chuẩn Instagram/Facebook), chỉ đổi chiều
+// cao theo tỉ lệ khung mong muốn, để không phải tính lại scale riêng cho từng kích thước.
+const SIZES = [
+  { key:'vuong', label:'Vuông 1:1 (Post)', h:1080 },
+  { key:'doc', label:'Dọc 4:5 (Feed)', h:1350 },
+  { key:'story', label:'Story/Reels 9:16', h:1920 },
+];
+
 // Bố cục chữ — vị trí/căn lề/kiểu nền, tổng hợp từ các mẫu Canva thực tế.
 const LAYOUTS = [
   { key:'bottom-center', label:'Chữ dưới - căn giữa', desc:'Chữ đè lên ảnh, căn giữa phía dưới, nền mờ dần — giống mẫu ảnh thời trang/ảnh nói chuyện.', textPos:'bottom', align:'center', decor:'gradient-bottom' },
@@ -86,15 +94,24 @@ function fitTitle(ctx, title, { maxWidth, maxHeight, baseFontSize, minFontSize, 
   return { fontSize, lineHeight, lines };
 }
 
-function drawImageCover(ctx, img, x, y, w, h){
+// zoom>1 phóng to ảnh gốc (crop vùng nhỏ hơn), offsetX/offsetY (-1..1) dịch vùng crop đó sang
+// trái/phải/lên/xuống trong phần dư ra sau khi zoom — để người dùng tự chỉnh đúng phần ảnh muốn
+// lấy nét (mặt người, sản phẩm...) thay vì luôn bị crop cứng ở chính giữa.
+function drawImageCover(ctx, img, x, y, w, h, transform){
+  const zoom = Math.max(1, (transform && transform.zoom) || 1);
+  const offsetX = (transform && transform.offsetX) || 0;
+  const offsetY = (transform && transform.offsetY) || 0;
   const imgRatio = img.width / img.height;
   const boxRatio = w / h;
-  let sx, sy, sw, sh;
-  if(imgRatio > boxRatio){
-    sh = img.height; sw = sh * boxRatio; sx = (img.width - sw) / 2; sy = 0;
-  } else {
-    sw = img.width; sh = sw / boxRatio; sx = 0; sy = (img.height - sh) / 2;
-  }
+  let baseW, baseH;
+  if(imgRatio > boxRatio){ baseH = img.height; baseW = baseH * boxRatio; }
+  else { baseW = img.width; baseH = baseW / boxRatio; }
+  const sw = baseW / zoom;
+  const sh = baseH / zoom;
+  const maxX = img.width - sw;
+  const maxY = img.height - sh;
+  const sx = Math.min(Math.max(0, (maxX / 2) * (1 + offsetX)), maxX);
+  const sy = Math.min(Math.max(0, (maxY / 2) * (1 + offsetY)), maxY);
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 
@@ -116,7 +133,7 @@ function drawLines(ctx, lines, opts){
   ctx.shadowBlur = 0;
 }
 
-function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bgImage }){
+function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bgImage, imgZoom, imgOffsetX, imgOffsetY }){
   const layout = LAYOUTS.find(l=>l.key===layoutKey) || LAYOUTS[0];
   const font = FONTS.find(f=>f.key===fontKey) || FONTS[0];
   const color = COLORS.find(c=>c.key===colorKey) || COLORS[0];
@@ -126,7 +143,7 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
   const isAccent = layout.decor === 'accent-bar';
 
   cx.clearRect(0,0,W,H);
-  if(bgImage) drawImageCover(cx, bgImage, 0, 0, W, H);
+  if(bgImage) drawImageCover(cx, bgImage, 0, 0, W, H, { zoom: imgZoom, offsetX: imgOffsetX, offsetY: imgOffsetY });
   else { cx.fillStyle = '#2F6F62'; cx.fillRect(0,0,W,H); }
   cx.textBaseline = 'alphabetic';
 
@@ -183,7 +200,7 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
   const alignX = layout.align === 'center' ? W/2 : marginX;
   drawLines(cx, lines, { align: layout.align, x: alignX, startY, lineHeight, highlightColor: color.hex });
 
-  cx.font = `500 ${handleFontSize}px 'Be Vietnam Pro', sans-serif`;
+  cx.font = `italic 500 ${handleFontSize}px 'Be Vietnam Pro', sans-serif`;
   cx.fillStyle = '#E8E4D6';
   cx.shadowColor = 'rgba(0,0,0,0.5)'; cx.shadowBlur = 6*scale;
   const lastLineBaseline = startY + (lines.length-1)*lineHeight;
@@ -200,7 +217,10 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
 function render(container, ctx){
   const pendingTitle = window.PendingImageTitle;
   window.PendingImageTitle = null;
-  const state = { bgImage:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE };
+  const state = { bgImage:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE, size:'doc',
+    imgZoom:1, imgOffsetX:0, imgOffsetY:0 };
+
+  function sizeObj(){ return SIZES.find(s=>s.key===state.size) || SIZES[1]; }
 
   function draw(){ container.innerHTML = html(); bind(); ensureFontsThenPaint(); }
 
@@ -235,8 +255,25 @@ function render(container, ctx){
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ảnh nền</label>
           <input type="file" accept="image/*" id="ta-upload">
 
+          ${state.bgImage ? `
+            <div style="margin-top:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><label style="font-size:12.5px;font-weight:600;color:var(--ink-soft);">Phóng to / thu nhỏ ảnh nền</label><span id="ta-zoom-pct" style="font-size:12px;color:var(--ink-soft);">${Math.round(state.imgZoom*100)}%</span></div>
+              <input type="range" id="ta-img-zoom" min="1" max="3" step="0.02" value="${state.imgZoom}" style="width:100%;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Dịch ngang (trái/phải)</label>
+              <input type="range" id="ta-img-offset-x" min="-1" max="1" step="0.02" value="${state.imgOffsetX}" style="width:100%;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Dịch dọc (lên/xuống)</label>
+              <input type="range" id="ta-img-offset-y" min="-1" max="1" step="0.02" value="${state.imgOffsetY}" style="width:100%;">
+              <span style="display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="reset-image-transform">Đặt lại vị trí ảnh</span>
+            </div>
+          ` : ''}
+
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Kích thước ảnh</label>
+          <div class="chips" style="margin-top:0;">
+            ${SIZES.map(s=>`<div class="chip ${state.size===s.key?'selected':''}" data-size="${s.key}">${esc(s.label)}</div>`).join('')}
+          </div>
+
           ${pickerRow('Bố cục chữ', LAYOUTS, state.layout, 'layout', (it, active)=>`
-            <canvas class="ta-thumb-layout" data-thumb-layout="${it.key}" width="160" height="200"
+            <canvas class="ta-thumb-layout" data-thumb-layout="${it.key}" width="160" height="${Math.round(160*sizeObj().h/CANVAS_W)}"
               style="width:112px;height:auto;border-radius:8px;border:2px solid ${active?'var(--accent)':'var(--line)'};display:block;"></canvas>
           `)}
           <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${esc((LAYOUTS.find(l=>l.key===state.layout)||{}).desc||'')} Xem full ở khung ảnh xem trước phía trên. ⬆</div>
@@ -261,19 +298,21 @@ function render(container, ctx){
         </div>
         <div style="flex:0 0 auto;position:sticky;top:16px;">
           <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Xem trước — cập nhật ngay khi bạn chọn</div>
-          <canvas id="ta-canvas" width="${CANVAS_W}" height="${CANVAS_H}" style="width:320px;max-width:80vw;height:auto;aspect-ratio:${CANVAS_W}/${CANVAS_H};border-radius:12px;border:1px solid var(--line);background:#ddd;"></canvas>
+          <canvas id="ta-canvas" width="${CANVAS_W}" height="${sizeObj().h}" style="width:320px;max-width:80vw;height:auto;aspect-ratio:${CANVAS_W}/${sizeObj().h};border-radius:12px;border:1px solid var(--line);background:#ddd;"></canvas>
         </div>
       </div>
     `;
   }
 
+  function imgTransform(){ return { imgZoom: state.imgZoom, imgOffsetX: state.imgOffsetX, imgOffsetY: state.imgOffsetY }; }
+
   function paintAll(){
     const main = container.querySelector('#ta-canvas');
-    if(main) paintDesign(main.getContext('2d'), CANVAS_W, CANVAS_H, { layoutKey: state.layout, fontKey: state.font, colorKey: state.color, title: state.title, handle: state.handle, bgImage: state.bgImage });
+    if(main) paintDesign(main.getContext('2d'), CANVAS_W, sizeObj().h, { layoutKey: state.layout, fontKey: state.font, colorKey: state.color, title: state.title, handle: state.handle, bgImage: state.bgImage, ...imgTransform() });
 
     container.querySelectorAll('.ta-thumb-layout').forEach(c=>{
       const key = c.getAttribute('data-thumb-layout');
-      paintDesign(c.getContext('2d'), c.width, c.height, { layoutKey: key, fontKey: state.font, colorKey: state.color, title: DEMO_TITLE, handle: DEMO_HANDLE, bgImage: state.bgImage });
+      paintDesign(c.getContext('2d'), c.width, c.height, { layoutKey: key, fontKey: state.font, colorKey: state.color, title: DEMO_TITLE, handle: DEMO_HANDLE, bgImage: state.bgImage, ...imgTransform() });
     });
     container.querySelectorAll('.ta-thumb-font').forEach(c=>{
       const key = c.getAttribute('data-thumb-font');
@@ -298,12 +337,31 @@ function render(container, ctx){
       const reader = new FileReader();
       reader.onload = () => {
         const img = new Image();
-        img.onload = () => { state.bgImage = img; paintAll(); };
+        img.onload = () => {
+          state.bgImage = img;
+          state.imgZoom = 1; state.imgOffsetX = 0; state.imgOffsetY = 0;
+          draw();
+        };
         img.src = reader.result;
       };
       reader.readAsDataURL(file);
     };
 
+    const zoomInput = container.querySelector('#ta-img-zoom');
+    if(zoomInput) zoomInput.oninput = () => {
+      state.imgZoom = Number(zoomInput.value);
+      const pct = container.querySelector('#ta-zoom-pct');
+      if(pct) pct.textContent = Math.round(state.imgZoom*100)+'%';
+      paintAll();
+    };
+    const offsetXInput = container.querySelector('#ta-img-offset-x');
+    if(offsetXInput) offsetXInput.oninput = () => { state.imgOffsetX = Number(offsetXInput.value); paintAll(); };
+    const offsetYInput = container.querySelector('#ta-img-offset-y');
+    if(offsetYInput) offsetYInput.oninput = () => { state.imgOffsetY = Number(offsetYInput.value); paintAll(); };
+    const resetTransformBtn = container.querySelector('[data-action="reset-image-transform"]');
+    if(resetTransformBtn) resetTransformBtn.onclick = () => { state.imgZoom = 1; state.imgOffsetX = 0; state.imgOffsetY = 0; draw(); };
+
+    container.querySelectorAll('[data-size]').forEach(el=>{ el.onclick = () => { state.size = el.getAttribute('data-size'); draw(); }; });
     container.querySelectorAll('[data-layout]').forEach(el=>{ el.onclick = () => { state.layout = el.getAttribute('data-layout'); draw(); }; });
     container.querySelectorAll('[data-font]').forEach(el=>{ el.onclick = () => { state.font = el.getAttribute('data-font'); draw(); }; });
     container.querySelectorAll('[data-color]').forEach(el=>{ el.onclick = () => { state.color = el.getAttribute('data-color'); draw(); }; });
