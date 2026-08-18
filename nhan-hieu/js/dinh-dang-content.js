@@ -147,7 +147,7 @@ function render(container, ctx){
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:28px;">
         ${state.suggestions.map(s=>{
           const f = FORMATS.find(x=>x.name===s.dinh_dang);
-          return `<div class="section highlight" style="flex:1;min-width:240px;margin-bottom:0;">
+          return `<div class="section highlight-dark" style="flex:1;min-width:240px;margin-bottom:0;">
             <h3>${esc(s.dinh_dang)}</h3>
             <div class="body">${escBold(s.ly_do)}</div>
             ${f?`<div class="btn-row" style="margin-top:14px;"><a class="btn-ghost btn" style="background:#fff;" href="#fmt-${f.id}" data-jump="${f.id}">Xem cách làm →</a></div>`:''}

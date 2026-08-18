@@ -10,6 +10,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Không khen xã giao. Chỉ ra đúng vấn đề, đúng chỗ, đúng cách sửa.
 - Cụ thể đến mức đọc xong biết làm ngay — không nói chung chung.
 - Chấm điểm theo độ lệch giữa kênh thật và định vị gốc — không cảm tính.
+- THANG ĐIỂM MỖI HẠNG MỤC LÀ 0-20 (KHÔNG PHẢI 0-10) — tổng 5 hạng mục = /100. Chấm theo mốc: 17-20 = khớp định vị tốt, chỉ cần tinh chỉnh nhỏ; 11-16 = còn lệch rõ, cần sửa; 4-10 = lệch nặng, sửa gấp; 0-3 = gần như chưa có/hoàn toàn lệch định vị. Tuyệt đối không chấm như đang chấm thang 10 rồi báo cáo con số đó — phải thật sự cân nhắc và chấm đúng trên thang 20 cho từng hạng mục.
 - Output tiếng Việt, giữ nguyên thuật ngữ tiếng Anh chuyên ngành (bio, CTA, profile, cover...).
 
 CÔNG THỨC VIẾT BIO (HM4 — bắt buộc áp dụng khi viết viet_lai cho hạng mục Bio):

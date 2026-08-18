@@ -99,6 +99,10 @@ a{ color:inherit; }
 .section.highlight h3{ color:#DCEAE4; }
 .section.highlight .body{ color:#fff; }
 .section.highlight .body b{ color:var(--gold); }
+.section.highlight-dark{ background:#2A2E29; color:#fff; }
+.section.highlight-dark h3{ color:#C9CDC5; }
+.section.highlight-dark .body{ color:#fff; }
+.section.highlight-dark .body b{ color:var(--gold); }
 
 textarea, select{
   width:100%; margin-top:12px; font-family:'Be Vietnam Pro',sans-serif; font-size:15px; line-height:1.55;

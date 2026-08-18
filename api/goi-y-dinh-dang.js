@@ -2,6 +2,10 @@
 const { requireUser } = require('./_lib/auth');
 const { FORMAT_NAMES, FORMAT_GUIDE } = require('./_lib/formats');
 
+// Livestream không phải dạng content cố định/lặp lại được theo lịch (phụ thuộc lịch trực tiếp),
+// nên không đưa vào danh sách được AI chọn gợi ý cá nhân hoá — vẫn giữ trong 12 dạng để tham khảo.
+const SUGGESTABLE_FORMAT_NAMES = FORMAT_NAMES.filter(n => n !== 'Livestream / Mini Q&A');
+
 const SYSTEM_PROMPT = `Bạn là trợ lý chọn dạng content phù hợp cho người xây thương hiệu cá nhân tại Việt Nam.
 
 ${FORMAT_GUIDE}
@@ -25,7 +29,7 @@ const TOOL_GOI_Y = {
         items: {
           type: 'object',
           properties: {
-            dinh_dang: { type: 'string', enum: FORMAT_NAMES },
+            dinh_dang: { type: 'string', enum: SUGGESTABLE_FORMAT_NAMES },
             ly_do: { type: 'string' },
           },
           required: ['dinh_dang', 'ly_do'],
