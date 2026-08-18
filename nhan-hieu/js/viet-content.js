@@ -123,7 +123,7 @@ function render(container, ctx){
           </div>
         ` : ''}
         <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button></div>
-        <div class="hint-box" style="margin-top:10px;">AI viết xong sẽ tự chấm điểm &amp; gợi ý bản tối ưu hơn ngay bên dưới — tổng thời gian khoảng 1-2 phút, đừng thoát trang khi đang đợi.</div>
+        <div class="hint-box" style="margin-top:10px;">AI viết xong sẽ tự chấm điểm content &amp; hook, gợi ý bản tối ưu hơn ngay bên dưới — tổng thời gian khoảng 2-3 phút, đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
