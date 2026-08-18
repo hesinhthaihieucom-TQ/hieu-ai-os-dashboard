@@ -12,7 +12,8 @@ const NAV = [
   { key:'day-bai', title:'Đẩy Bài & CTA Comment' },
   { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
-  { key:'quan-tri', title:'Quản trị', adminOnly:true },
+  { key:'quan-tri', title:'Quản trị thành viên', adminOnly:true },
+  { key:'quan-tri-kho', title:'Quản trị Kho nội dung', adminOnly:true },
 ];
 
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };

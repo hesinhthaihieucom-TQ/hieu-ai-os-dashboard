@@ -166,8 +166,11 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
   }
   .sidebar-overlay.open{ opacity:1; pointer-events:auto; }
 
+  /* Thanh này là nút mở toolbar (sidebar), phải luôn nổi cố định trên cùng khi cuộn — chỉ bản
+     thân toolbar mới ẩn mặc định, không được để mất luôn cả nút mở ra nó. Dùng fixed (không phải
+     sticky) để chắc chắn không bị cuộn mất trong mọi trường hợp (kể cả PWA standalone trên iOS). */
   .topbar-mobile{
-    display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:60;
+    display:flex; align-items:center; gap:12px; position:fixed; top:0; left:0; right:0; z-index:60;
     background:var(--sidebar-bg); color:var(--sidebar-ink); padding:14px 16px;
   }
   .topbar-mobile .menu-toggle{
@@ -175,6 +178,7 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
     font-size:18px; cursor:pointer; background:rgba(255,255,255,.08); flex-shrink:0;
   }
   .topbar-mobile .topbar-title{ font-family:'Playfair Display',serif; font-size:16px; font-weight:700; }
+  .app-layout{ margin-top:62px; }
 
   .main-inner{ padding:20px 16px 70px; }
   .week-grid{ grid-template-columns:repeat(7,140px); }

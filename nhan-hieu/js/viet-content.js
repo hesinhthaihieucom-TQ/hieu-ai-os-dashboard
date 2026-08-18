@@ -4,7 +4,7 @@ function render(container, ctx){
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', extrasLoading:false, extrasError:null,
-    showScoreContent:false, showScoreHook:false, showExtras:false };
+    showScoreContent:false, showScoreHook:false, showExtras:false, saving:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -16,9 +16,13 @@ function render(container, ctx){
     state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
     if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
     else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
+    // Đến từ nút "Viết lại theo góp ý" ở Chấm Điểm Content — idea_text đã có sẵn nội dung + lỗi cần
+    // sửa, chạy luôn không bắt người dùng bấm lại, cho cảm giác liền mạch giữa 2 trang.
+    const autoGenerate = !!window.PendingRewriteAuto; window.PendingRewriteAuto = null;
     await Promise.all([loadRecent(), loadAssets(), loadBrands(), loadScheduledPostIds()]);
     state.screen='main';
     draw();
+    if(autoGenerate) generate();
   }
 
   async function loadAssets(){
@@ -305,7 +309,7 @@ function render(container, ctx){
       ${state.showExtras ? extrasSectionHtml() : ''}
 
       <div class="btn-row no-print" style="margin-top:20px;">
-        <button class="btn" data-action="save">${state.savedId?'Đã lưu vào thư viện ✓':'Lưu vào thư viện bài viết'}</button>
+        <button class="btn" data-action="save" ${state.saving?'disabled':''}>${state.savedId?'Đã lưu vào thư viện ✓':state.saving?'Đang lưu…':'Lưu vào thư viện bài viết'}</button>
         ${state.savedId?`<a class="btn-ghost btn" href="#lich-dang">Đưa vào Lịch Đăng Bài →</a>`:''}
         ${state.savedId?`<a class="btn-ghost btn" href="#day-bai">Đẩy Bài &amp; CTA Comment →</a>`:''}
       </div>
@@ -474,6 +478,7 @@ function render(container, ctx){
   async function scoreContent(){
     if(!state.result) return;
     state.scoring = true; state.scoreError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="toggle-score-content"]'), 55, 'Đang chấm');
     try{
       const data = await callApi('/api/cham-diem-content', {
         content_text: state.result.bai_hoan_chinh,
@@ -482,6 +487,7 @@ function render(container, ctx){
       state.score = data.result;
       await ctx.supabase.from('content_scores').insert({ user_id: ctx.user.id, content_text: state.result.bai_hoan_chinh, result: data.result });
     } catch(e){ state.scoreError = e.message; }
+    stopProgress();
     state.scoring = false; draw();
   }
 
@@ -490,6 +496,7 @@ function render(container, ctx){
   async function scoreHook(){
     if(!state.result || !state.result.hook || !state.result.hook.trim()) return;
     state.hookScoring = true; state.hookScoreError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="toggle-score-hook"]'), 35, 'Đang chấm');
     try{
       const data = await callApi('/api/cham-diem-hook', {
         hook_text: state.result.hook,
@@ -498,22 +505,32 @@ function render(container, ctx){
       state.hookScore = data.result;
       await ctx.supabase.from('hook_scores').insert({ user_id: ctx.user.id, hook_text: state.result.hook, result: data.result });
     } catch(e){ state.hookScoreError = e.message; }
+    stopProgress();
     state.hookScoring = false; draw();
   }
 
   async function save(){
-    if(!state.result || state.savedId) return;
+    if(!state.result || state.savedId || state.saving) return;
+    state.saving = true; draw();
     const r = state.result;
+    // Kế thừa trục nội dung từ bài/hook gốc trong Kho Content nếu viết từ đó. Nếu không có nguồn
+    // (ý tưởng mới hoàn toàn), để AI tự phân loại ngay — không còn để trống/"Chưa phân loại" nữa.
+    let tags = (state.khoGocSource && state.khoGocSource.tags) || [];
+    if(!tags.length){
+      try{
+        const data = await callApi('/api/phan-loai-truc', { title: r.tieu_de, content: r.bai_hoan_chinh });
+        if(data.result && data.result.truc) tags = [data.result.truc];
+      } catch(e){ /* không phân loại được (vd lỗi mạng) — vẫn lưu bài, không chặn người dùng */ }
+    }
     const { data, error } = await ctx.supabase.from('posts').insert({
       user_id: ctx.user.id,
       idea_id: state.ideaId,
       title: r.tieu_de,
       content: r.bai_hoan_chinh,
       structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, tu_khoa_cta:r.tu_khoa_cta, cau_cmt_ghim:r.cau_cmt_ghim, cmt_cta_san_pham:r.cmt_cta_san_pham, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: r.dinh_dang_de_xuat },
-      // Kế thừa trục nội dung từ bài/hook gốc trong Kho Content nếu viết từ đó — để "Bài đã viết"
-      // tự xếp đúng trục, không có thì để trống (xếp vào "Chưa phân loại").
-      tags: (state.khoGocSource && state.khoGocSource.tags) || [],
+      tags,
     }).select().single();
+    state.saving = false;
     if(error){ state.error = error.message; draw(); return; }
     state.savedId = data.id;
     if(state.ideaId) await ctx.supabase.from('ideas').update({ used:true }).eq('id', state.ideaId);

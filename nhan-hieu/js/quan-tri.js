@@ -218,5 +218,5 @@ function render(container, ctx){
   boot();
 }
 window.Modules = window.Modules || {};
-window.Modules['quan-tri'] = { title:'Quản trị', render };
+window.Modules['quan-tri'] = { title:'Quản trị thành viên', render };
 })();

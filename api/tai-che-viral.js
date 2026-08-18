@@ -138,7 +138,7 @@ module.exports = async (req, res) => {
         ? `CÁC BÀI ĐÃ VIẾT TRƯỚC ĐÓ TRONG LOẠT NÀY (không lặp lại góc độ/ví dụ, phải khác hẳn):\n${prevList.map((t, i) => `${i + 1}. ${t}`).join('\n')}`
         : '(đây là bài đầu tiên trong loạt, chưa có bài nào trước đó)';
       const userContent = `${phanTichBlock}\n\n${contextBlock}\n\nCHỦ ĐỀ MỚI MUỐN ÁP DỤNG:\n${topic}\n\n${prevBlock}\n\nHãy viết ĐÚNG 1 bài mới hoàn chỉnh (bài thứ ${idx + 1}/${total}) giữ nguyên cấu trúc tâm lý (hook, điểm cảm xúc cao trào, lý do đáng chia sẻ) như bài gốc, nội dung/câu chữ/ví dụ hoàn toàn mới và khác các bài đã liệt kê ở trên.`;
-      const result = await callClaude({ apiKey, system: recycleSystemPrompt(), userContent, tool: TOOL_MOT_BAI, maxTokens: 2000 });
+      const result = await callClaude({ apiKey, system: recycleSystemPrompt(), userContent, tool: TOOL_MOT_BAI, maxTokens: 4000 });
       res.status(200).json({ result });
       return;
     }

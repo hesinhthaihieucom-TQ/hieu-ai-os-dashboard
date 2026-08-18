@@ -1,6 +1,7 @@
 (function(){
 function render(container, ctx){
-  const state = { text:'', result:null, error:null, loading:false, positioning:null, history:[] };
+  const state = { text:'', result:null, error:null, loading:false, positioning:null, history:[],
+    improving:false, improveError:null, improved:null, improvedSavedIdx:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -46,6 +47,20 @@ function render(container, ctx){
       <div class="section"><h3>Dự đoán mức độ dừng lại: ${esc(r.du_doan_muc_do_dung_lai)}</h3><div class="body">${esc(r.giai_thich_du_doan)}</div></div>
       <div class="section"><h3>Điểm yếu</h3><div class="body">${esc(r.diem_yeu)}</div></div>
       <div class="section"><h3>3 bản cải thiện</h3><ul>${r.ban_cai_thien.map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
+      <div class="btn-row"><span class="btn-ghost btn" data-action="improve" ${state.improving?'disabled':''}>${state.improving?'Đang viết lại…':'Viết lại 5 hook mới theo góp ý này →'}</span></div>
+      ${state.improveError?`<div class="error-box">${esc(state.improveError)}</div>`:''}
+      ${state.improved ? `
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+          ${state.improved.map((h,i)=>`
+            <div class="section">
+              <div class="body" style="font-weight:600;">${esc(h)}</div>
+              <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+                <button class="btn btn-sm" data-save-improved="${i}" ${state.improvedSavedIdx[i]?'disabled':''}>${state.improvedSavedIdx[i]?'Đã lưu ✓':'Lưu vào Kho của tôi'}</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
     `;
   }
 
@@ -54,11 +69,17 @@ function render(container, ctx){
     if(input) input.oninput = ()=>{ state.text = input.value; };
     const btn = container.querySelector('[data-action="score"]');
     if(btn) btn.onclick = score;
+    const improveBtn = container.querySelector('[data-action="improve"]');
+    if(improveBtn) improveBtn.onclick = improve;
+    container.querySelectorAll('[data-save-improved]').forEach(el=>{
+      el.onclick = ()=>saveImprovedHook(Number(el.getAttribute('data-save-improved')));
+    });
   }
 
   async function score(){
     if(!state.text.trim()) return;
-    state.loading = true; state.error = null; draw();
+    state.loading = true; state.error = null; state.improved = null; state.improveError = null; state.improvedSavedIdx = {}; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="score"]'), 35, 'Đang chấm');
     try{
       const data = await callApi('/api/cham-diem-hook', {
         hook_text: state.text,
@@ -66,8 +87,43 @@ function render(container, ctx){
       });
       state.result = data.result;
       await ctx.supabase.from('hook_scores').insert({ user_id: ctx.user.id, hook_text: state.text, result: data.result });
+      stopProgress();
       state.loading = false; draw();
-    } catch(e){ state.error = e.message; state.loading = false; draw(); }
+    } catch(e){ stopProgress(); state.error = e.message; state.loading = false; draw(); }
+  }
+
+  // Sửa đúng điểm yếu vừa chấm thành 5 hook mới — ngay tại trang này (khác phần chấm Content vốn
+  // trỏ sang Viết Content, vì hook ngắn/rẻ, sửa xong người dùng muốn thấy và lưu ngay, không cần
+  // đi qua cả bộ khung viết bài đầy đủ).
+  async function improve(){
+    if(!state.result || state.improving) return;
+    state.improving = true; state.improveError = null; state.improved = null; state.improvedSavedIdx = {}; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="improve"]'), 30, 'Đang viết lại');
+    try{
+      const r = state.result;
+      const data = await callApi('/api/cai-thien-hook', {
+        hook_text: state.text,
+        diem_yeu: r.diem_yeu,
+        goi_y: (r.ban_cai_thien||[]).join('; '),
+        positioning: state.positioning && state.positioning.luot1 ? { luot1: state.positioning.luot1 } : null,
+      });
+      state.improved = data.result.hooks;
+      stopProgress();
+    } catch(e){ stopProgress(); state.improveError = e.message; }
+    state.improving = false; draw();
+  }
+
+  async function saveImprovedHook(i){
+    const hookText = state.improved[i];
+    let category = null;
+    try{
+      const data = await callApi('/api/phan-loai-hook', { hook_text: hookText });
+      category = data.result.category;
+    } catch(e){ /* không phân loại được — vẫn lưu, chỉ thiếu nhãn loại */ }
+    await ctx.supabase.from('hooks_bank_personal').insert({
+      user_id: ctx.user.id, hook_text: hookText, category, note: `Sửa từ hook: ${state.text}`,
+    });
+    state.improvedSavedIdx[i] = true; draw();
   }
 
   boot();

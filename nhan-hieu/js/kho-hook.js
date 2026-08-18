@@ -52,12 +52,13 @@ function categoryLabel(key){
 function render(container, ctx){
   const state = {
     tab:'tao-hook', personal:[], shared:[], sharedContent:[], error:null, positioning:null,
-    newEntry:{ hook_text:'', note:'', tagKeys:[] }, addingHook:false, addError:null,
+    newEntry:{ hook_text:'', note:'', isViral:null, viralViews:'', viralLikes:'' }, addingHook:false, addError:null,
+    sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
-    chungPillar:null, khoToiPillar:null,
+    chungPillar:'all', khoToiPillar:'all',
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -216,8 +217,39 @@ function render(container, ctx){
       </div>`;
   }
 
+  // Thanh chip lọc theo trục — LUÔN hiển thị cùng danh sách đầy đủ ngay bên dưới, không còn là
+  // màn hình chặn phải chọn trục xong mới thấy item.
+  function pillarChipsHtml(items, currentKey, dataAttr){
+    const chips = HOOK_PILLARS.map(p=>{
+      const count = items.filter(h=>(h.tags||[]).includes(p.key)).length;
+      if(count===0) return '';
+      return `<div class="chip ${currentKey===p.key?'selected':''}" data-${dataAttr}="${p.key}">${esc(p.label)} (${count})</div>`;
+    }).join('');
+    const noneCount = items.filter(h=>!(h.tags||[]).length).length;
+    const noneChip = noneCount ? `<div class="chip ${currentKey==='none'?'selected':''}" data-${dataAttr}="none">Chưa phân loại (${noneCount})</div>` : '';
+    return `<div class="chips" style="margin-bottom:16px;">
+      <div class="chip ${currentKey==='all'?'selected':''}" data-${dataAttr}="all">Tất cả (${items.length})</div>
+      ${chips}${noneChip}
+    </div>`;
+  }
+  function filterByPillar(items, key){
+    return key==='all' ? items : key==='none' ? items.filter(h=>!(h.tags||[]).length) : items.filter(h=>(h.tags||[]).includes(key));
+  }
+
+  function sharePromptHtml(){
+    return `
+      <div class="hint-box" style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+        <div>Bạn vừa thêm 1 hook từ content viral — muốn đề xuất đẩy lên <b>Kho Hook Viral</b> để mọi người cùng dùng không? Admin sẽ xem qua rồi mới duyệt hiển thị công khai.</div>
+        <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
+          <button class="btn btn-sm" data-share-yes="1" ${state.shareSubmitting?'disabled':''}>${state.shareSubmitting?'Đang gửi…':'Có, đề xuất lên Kho chung'}</button>
+          <span class="btn-ghost btn btn-sm" data-share-no="1">Không, giữ riêng</span>
+        </div>
+      </div>
+    `;
+  }
+
   function khoToiTab(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook hay của riêng bạn — tự nghĩ ra hoặc lưu lại từ hook AI vừa sinh — gom hết vào đây để lần sau viết bài không phải nghĩ lại từ đầu. Chọn trục nội dung khi thêm để kho lớn vẫn tìm lại nhanh.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook hay của riêng bạn — tự nghĩ ra hoặc lưu lại từ hook AI vừa sinh. <b>Đặc biệt nên cập nhật cả hook từ content đang viral bạn tự tìm thấy ở nơi khác</b> — AI sẽ tự chọn đúng trục nội dung và loại hook giúp bạn, không cần tự chọn nữa.</div>`;
     return hint + `
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Câu hook</label>
@@ -225,13 +257,30 @@ function render(container, ctx){
         <div style="margin-top:6px;font-size:12px;color:var(--ink-soft);">Không cần chọn loại hook — hệ thống tự nhận diện khi bạn lưu.</div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ghi chú (tuỳ chọn)</label>
         <textarea id="ne-note" style="min-height:auto;height:44px;">${esc(state.newEntry.note)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Trục nội dung (chọn 1 hoặc nhiều)</label>
+
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đây có phải hook từ content đang viral bạn tìm thấy ở nơi khác không?</label>
         <div class="chips">
-          ${HOOK_PILLARS.map(p=>`<div class="chip ${state.newEntry.tagKeys.includes(p.key)?'selected':''}" data-ne-tag="${p.key}">${esc(p.label)}</div>`).join('')}
+          <div class="chip ${state.newEntry.isViral===true?'selected':''}" data-ne-viral="yes">Có, từ content viral tôi sưu tầm</div>
+          <div class="chip ${state.newEntry.isViral===false?'selected':''}" data-ne-viral="no">Không, hook tôi tự nghĩ</div>
         </div>
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add" ${state.addingHook?'disabled':''}>${state.addingHook?'Đang nhận diện loại hook…':'Thêm vào kho của tôi'}</button></div>
+        ${state.newEntry.isViral===true ? `
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:140px;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt xem (view) — nếu biết</label>
+              <input id="ne-views" type="text" value="${esc(state.newEntry.viralViews)}" placeholder="VD: 500k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+            </div>
+            <div style="flex:1;min-width:140px;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt thích (like) — nếu biết</label>
+              <input id="ne-likes" type="text" value="${esc(state.newEntry.viralLikes)}" placeholder="VD: 20k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add" ${state.addingHook?'disabled':''}>${state.addingHook?'Đang nhận diện…':'Thêm vào kho của tôi'}</button></div>
         ${state.addError?`<div class="error-box">${esc(state.addError)}</div>`:''}
       </div>
+      ${state.sharePromptFor ? sharePromptHtml() : ''}
+      ${state.shareDoneFor ? `<div class="hint-box" style="margin-top:14px;">${esc(state.shareDoneFor)}</div>` : ''}
       <div style="margin-top:20px;">
         ${khoToiListHtml()}
       </div>
@@ -241,40 +290,18 @@ function render(container, ctx){
   function khoToiListHtml(){
     if(state.personal.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
 
-    if(!state.khoToiPillar){
-      return `
-        <div class="chips">
-          ${HOOK_PILLARS.map(p=>{
-            const count = state.personal.filter(h=>(h.tags||[]).includes(p.key)).length;
-            if(count===0) return '';
-            return `<div class="chip" data-khotoi-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
-          }).join('')}
-          ${(()=>{ const n = state.personal.filter(h=>!(h.tags||[]).length).length; return n ? `<div class="chip" data-khotoi-pillar="none">Chưa phân loại (${n})</div>` : ''; })()}
-          <div class="chip" data-khotoi-pillar="all">Xem tất cả (${state.personal.length})</div>
+    const items = filterByPillar(state.personal, state.khoToiPillar);
+    return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + items.map(h=>`
+      <div class="section">
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
+        <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+        <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
+          ${h.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>':h.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>':''}
         </div>
-      `;
-    }
-
-    const items = state.khoToiPillar==='all' ? state.personal
-      : state.khoToiPillar==='none' ? state.personal.filter(h=>!(h.tags||[]).length)
-      : state.personal.filter(h=>(h.tags||[]).includes(state.khoToiPillar));
-    const pillarLabel = state.khoToiPillar==='all' ? 'Tất cả' : state.khoToiPillar==='none' ? 'Chưa phân loại' : (HOOK_PILLARS.find(p=>p.key===state.khoToiPillar)||{}).label;
-    return `
-      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} hook)</div>
-        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="khotoi-back">← Chọn trục khác</span>
+        ${writeActionHtml('personal:'+h.id)}
       </div>
-      ${items.map(h=>`
-        <div class="section">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
-          <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
-          <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
-          </div>
-          ${writeActionHtml('personal:'+h.id)}
-        </div>
-      `).join('')}
-    `;
+    `).join('');
   }
 
   function khoChungTab(){
@@ -282,35 +309,14 @@ function render(container, ctx){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook <b>đã được kiểm chứng viral</b> — câu mở đầu đã khiến rất nhiều người dừng lại xem — do đội ngũ tuyển chọn và cập nhật liên tục. Dùng làm mẫu để viết hook riêng cho chủ đề của bạn, không phải để copy nguyên văn.</div>`;
     if(all.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Hook Viral chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
 
-    if(!state.chungPillar){
-      return hint + `
-        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng hook phù hợp — đỡ phải lướt qua cả kho. Gồm cả hook riêng và tiêu đề viral từ Kho Content Viral.</div>
-        <div class="chips">
-          ${HOOK_PILLARS.map(p=>{
-            const count = all.filter(h=>(h.tags||[]).includes(p.key)).length;
-            if(count===0) return '';
-            return `<div class="chip" data-chung-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
-          }).join('')}
-          <div class="chip" data-chung-pillar="all">Xem tất cả (${all.length})</div>
-        </div>
-      `;
-    }
-
-    const items = state.chungPillar==='all' ? all : all.filter(h=>(h.tags||[]).includes(state.chungPillar));
-    const pillarLabel = state.chungPillar==='all' ? 'Tất cả' : (HOOK_PILLARS.find(p=>p.key===state.chungPillar)||{}).label;
-    return `
-      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} hook)</div>
-        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="chung-back">← Chọn trục khác</span>
+    const items = filterByPillar(all, state.chungPillar);
+    return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + items.map(h=>`
+      <div class="section">
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
+        <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+        ${writeActionHtml(h._src+':'+h.id)}
       </div>
-      ${items.map(h=>`
-        <div class="section">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
-          <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
-          ${writeActionHtml(h._src+':'+h.id)}
-        </div>
-      `).join('')}
-    `;
+    `).join('');
   }
 
   function bind(){
@@ -318,20 +324,13 @@ function render(container, ctx){
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
     });
-    const chungBackLink = container.querySelector('[data-action="chung-back"]');
-    if(chungBackLink) chungBackLink.onclick = ()=>{ state.chungPillar = null; draw(); };
-
     container.querySelectorAll('[data-khotoi-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.khoToiPillar = el.getAttribute('data-khotoi-pillar'); draw(); };
     });
-    const khoToiBackLink = container.querySelector('[data-action="khotoi-back"]');
-    if(khoToiBackLink) khoToiBackLink.onclick = ()=>{ state.khoToiPillar = null; draw(); };
 
-    container.querySelectorAll('[data-ne-tag]').forEach(el=>{
+    container.querySelectorAll('[data-ne-viral]').forEach(el=>{
       el.onclick = ()=>{
-        const key = el.getAttribute('data-ne-tag');
-        const i = state.newEntry.tagKeys.indexOf(key);
-        if(i>=0) state.newEntry.tagKeys.splice(i,1); else state.newEntry.tagKeys.push(key);
+        state.newEntry.isViral = el.getAttribute('data-ne-viral')==='yes';
         draw();
       };
     });
@@ -373,6 +372,8 @@ function render(container, ctx){
 
     const h = container.querySelector('#ne-hook'); if(h) h.oninput = ()=>state.newEntry.hook_text = h.value;
     const n = container.querySelector('#ne-note'); if(n) n.oninput = ()=>state.newEntry.note = n.value;
+    const v1 = container.querySelector('#ne-views'); if(v1) v1.oninput = ()=>state.newEntry.viralViews = v1.value;
+    const v2 = container.querySelector('#ne-likes'); if(v2) v2.oninput = ()=>state.newEntry.viralLikes = v2.value;
     const addBtn = container.querySelector('[data-action="add"]');
     if(addBtn) addBtn.onclick = addHook;
     container.querySelectorAll('[data-del]').forEach(el=>{
@@ -381,6 +382,11 @@ function render(container, ctx){
         await loadPersonal(); draw();
       };
     });
+
+    const shareYes = container.querySelector('[data-share-yes]');
+    if(shareYes) shareYes.onclick = ()=>confirmShare(true);
+    const shareNo = container.querySelector('[data-share-no]');
+    if(shareNo) shareNo.onclick = ()=>confirmShare(false);
 
     container.querySelectorAll('[data-write-toggle]').forEach(el=>{
       el.onclick = ()=>{
@@ -450,22 +456,48 @@ function render(container, ctx){
 
   async function addHook(){
     if(!state.newEntry.hook_text.trim() || state.addingHook) return;
-    state.addingHook = true; state.addError = null; draw();
+    state.addingHook = true; state.addError = null; state.sharePromptFor = null; state.shareDoneFor = null; draw();
+    const entry = state.newEntry;
     let category = null;
+    let tags = [];
     try{
-      const data = await callApi('/api/phan-loai-hook', { hook_text: state.newEntry.hook_text });
+      const data = await callApi('/api/phan-loai-hook', { hook_text: entry.hook_text });
       category = categoryLabel(data.result.category);
     } catch(e){
       // Không phân loại được (vd lỗi mạng) — vẫn lưu hook, chỉ thiếu nhãn loại, không chặn người dùng.
       state.addError = `Không tự nhận diện được loại hook (${e.message}) — đã lưu hook, bạn có thể bỏ qua.`;
     }
-    await ctx.supabase.from('hooks_bank_personal').insert({
-      user_id: ctx.user.id, hook_text: state.newEntry.hook_text,
-      category, note: state.newEntry.note || null, tags: state.newEntry.tagKeys,
-    });
-    state.newEntry = { hook_text:'', note:'', tagKeys:[] };
+    try{
+      const data = await callApi('/api/phan-loai-truc', { title: entry.hook_text, content: entry.note || '' });
+      if(data.result && data.result.truc) tags = [data.result.truc];
+    } catch(e){ /* không phân loại được trục — vẫn lưu, không chặn người dùng */ }
+
+    const { data: row, error } = await ctx.supabase.from('hooks_bank_personal').insert({
+      user_id: ctx.user.id, hook_text: entry.hook_text,
+      category, note: entry.note || null, tags,
+      is_viral: entry.isViral===true, viral_views: entry.isViral===true ? (entry.viralViews||null) : null,
+      viral_likes: entry.isViral===true ? (entry.viralLikes||null) : null,
+    }).select().single();
+
+    const wasViral = entry.isViral===true;
+    state.newEntry = { hook_text:'', note:'', isViral:null, viralViews:'', viralLikes:'' };
     state.addingHook = false;
     await loadPersonal();
+    if(!error && wasViral) state.sharePromptFor = row.id;
+    draw();
+  }
+
+  async function confirmShare(yes){
+    if(!state.sharePromptFor || state.shareSubmitting) return;
+    const id = state.sharePromptFor;
+    if(yes){
+      state.shareSubmitting = true; draw();
+      await ctx.supabase.from('hooks_bank_personal').update({ share_status:'pending' }).eq('id', id);
+      state.shareSubmitting = false;
+      state.shareDoneFor = 'Đã gửi đề xuất — chờ admin duyệt trước khi hiển thị ở Kho chung.';
+      await loadPersonal();
+    }
+    state.sharePromptFor = null;
     draw();
   }
 

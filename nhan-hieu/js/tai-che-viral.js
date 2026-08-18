@@ -42,13 +42,30 @@ function render(container, ctx){
     `;
   }
 
+  // AI hay dồn các ý đánh số "(1)...(2)...(3)..." liền thành 1 đoạn dài, đọc rất rối mắt — tách
+  // mỗi ý xuống dòng riêng và làm đậm số thứ tự để dễ quét ý chính.
+  function formatAnalysisText(text){
+    if(!text) return '';
+    const withBreaks = text.replace(/\s*(\(\d+\))\s*/g, (m, marker, offset) => (offset===0 ? '' : '\n') + marker + ' ');
+    return esc(withBreaks).replace(/\(\d+\)/g, m => `<b>${m}</b>`);
+  }
+
   function phanTichHtml(){
     const r = state.phanTich;
     return `
       <div class="section highlight" style="margin-top:20px;"><h3>Vì sao bài gốc viral</h3>
-        <div class="body"><b>Yếu tố mở đầu khiến người đọc dừng lại:</b> ${esc(r.yeu_to_mo_dau)}</div>
-        <div class="body" style="margin-top:8px;"><b>Điểm cảm xúc mạnh nhất:</b> ${esc(r.diem_cam_xuc_manh_nhat)} <i>(cảm xúc: ${esc(r.loai_cam_xuc)})</i></div>
-        <div class="body" style="margin-top:8px;"><b>Vì sao người đọc muốn share:</b> ${esc(r.ly_do_muon_share)}</div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Yếu tố mở đầu khiến người đọc dừng lại</div>
+          <div class="body">${formatAnalysisText(r.yeu_to_mo_dau)}</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Điểm cảm xúc mạnh nhất <span style="text-transform:none;font-weight:600;color:var(--ink-soft);">(cảm xúc: ${esc(r.loai_cam_xuc)})</span></div>
+          <div class="body">${formatAnalysisText(r.diem_cam_xuc_manh_nhat)}</div>
+        </div>
+        <div>
+          <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Vì sao người đọc muốn share</div>
+          <div class="body">${formatAnalysisText(r.ly_do_muon_share)}</div>
+        </div>
       </div>
 
       <div class="card" style="margin-top:16px;">

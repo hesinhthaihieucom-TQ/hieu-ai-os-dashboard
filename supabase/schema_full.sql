@@ -377,3 +377,36 @@ update hooks_bank_shared set tags = array['phat_trien_ban_than'] where tags is n
 
 -- Backfill email cho tài khoản đã tồn tại từ trước khi có cột email
 update profiles p set email = u.email from auth.users u where p.id = u.id and p.email is null;
+
+-- ============================================================
+-- 9. ĐỀ XUẤT NỘI DUNG TỪ "KHO CỦA TÔI" LÊN KHO CHUNG (cần admin duyệt)
+-- ============================================================
+-- Người dùng thêm 1 mục vào Kho của tôi có thể chọn đề xuất đẩy lên Kho chung để mọi người cùng
+-- dùng — không vào thẳng Kho chung mà phải qua duyệt của admin (mục Quản trị Kho nội dung) trước,
+-- tránh nội dung kém chất lượng/spam lọt vào kho chung.
+alter table content_bank_personal add column if not exists share_status text check (share_status in ('pending','approved','rejected'));
+alter table content_bank_personal add column if not exists reviewed_at timestamptz;
+alter table hooks_bank_personal add column if not exists share_status text check (share_status in ('pending','approved','rejected'));
+alter table hooks_bank_personal add column if not exists reviewed_at timestamptz;
+
+-- Khi thêm vào Kho của tôi, hỏi luôn đây có phải nội dung đang viral bạn sưu tầm được không (và
+-- view/like nếu có) — admin cần thấy đúng số liệu này để quyết định duyệt lên Kho chung hay không.
+-- Lưu view/like dạng text vì người dùng hay nhập ước lượng ("15k", "khoảng 2 triệu").
+alter table content_bank_personal add column if not exists is_viral boolean;
+alter table content_bank_personal add column if not exists viral_views text;
+alter table content_bank_personal add column if not exists viral_likes text;
+alter table hooks_bank_personal add column if not exists is_viral boolean;
+alter table hooks_bank_personal add column if not exists viral_views text;
+alter table hooks_bank_personal add column if not exists viral_likes text;
+
+-- Admin cần đọc/duyệt được đề xuất của MỌI người dùng, không chỉ của chính mình — policy owner_all
+-- hiện tại chỉ cho chủ sở hữu, nên thêm 2 policy riêng cho admin (RLS cộng dồn theo kiểu OR).
+drop policy if exists "content_bank_personal_admin_read" on content_bank_personal;
+create policy "content_bank_personal_admin_read" on content_bank_personal for select using (is_admin());
+drop policy if exists "content_bank_personal_admin_update" on content_bank_personal;
+create policy "content_bank_personal_admin_update" on content_bank_personal for update using (is_admin()) with check (is_admin());
+
+drop policy if exists "hooks_bank_personal_admin_read" on hooks_bank_personal;
+create policy "hooks_bank_personal_admin_read" on hooks_bank_personal for select using (is_admin());
+drop policy if exists "hooks_bank_personal_admin_update" on hooks_bank_personal;
+create policy "hooks_bank_personal_admin_update" on hooks_bank_personal for update using (is_admin()) with check (is_admin());

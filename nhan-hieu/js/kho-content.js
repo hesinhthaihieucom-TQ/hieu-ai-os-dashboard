@@ -6,7 +6,7 @@ const SOURCE_MAP = {
 };
 
 // Trục nội dung (content pillar) — nhóm các tag chi tiết trong data lại thành nhóm lớn dễ chọn,
-// tránh người dùng bị ngộp vì phải lướt qua cả kho chung chưa lọc.
+// tránh người dùng bị ngộp vì phải lướt qua cả kho chung chưa lọc. Khớp key với api/_lib/pillars.js.
 const PILLARS = [
   { key:'tai_chinh', label:'Tài chính', tags:['tai_chinh','tich_san','tiet_kiem','tin_dung','dong_tien','no'] },
   { key:'tam_linh', label:'Tâm linh', tags:['tam_linh','phong_thuy','than_so_hoc','phuoc_khi'] },
@@ -22,12 +22,14 @@ function pillarsForItem(item){
 }
 
 function render(container, ctx){
+  const isAdmin = !!(ctx.profile && ctx.profile.role==='admin');
   const state = {
     tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
-    newEntry:{ title:'', content:'', source_type:'', tagKeys:[] },
+    newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'' },
+    addingPersonal:false, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
-    chungPillar:null, daVietPillar:null, khoToiPillar:null, expandedIds:new Set(),
+    chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(),
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -122,6 +124,25 @@ function render(container, ctx){
     `;
   }
 
+  // Thanh chip lọc theo trục — LUÔN hiển thị cùng danh sách đầy đủ ngay bên dưới, không còn là
+  // màn hình chặn phải chọn trục xong mới thấy item (gây khó tìm khi người dùng chưa rõ trục nào).
+  function pillarChipsHtml(items, currentKey, dataAttr){
+    const chips = PILLARS.map(p=>{
+      const count = items.filter(x=>pillarsForItem(x).includes(p.key)).length;
+      if(count===0) return '';
+      return `<div class="chip ${currentKey===p.key?'selected':''}" data-${dataAttr}="${p.key}">${esc(p.label)} (${count})</div>`;
+    }).join('');
+    const noneCount = items.filter(x=>pillarsForItem(x).length===0).length;
+    const noneChip = noneCount ? `<div class="chip ${currentKey==='none'?'selected':''}" data-${dataAttr}="none">Chưa phân loại (${noneCount})</div>` : '';
+    return `<div class="chips" style="margin-bottom:16px;">
+      <div class="chip ${currentKey==='all'?'selected':''}" data-${dataAttr}="all">Tất cả (${items.length})</div>
+      ${chips}${noneChip}
+    </div>`;
+  }
+  function filterByPillar(items, key){
+    return key==='all' ? items : key==='none' ? items.filter(x=>pillarsForItem(x).length===0) : items.filter(x=>pillarsForItem(x).includes(key));
+  }
+
   function writeActionHtml(key){
     const isOpen = state.writeFor === key;
     return `
@@ -160,45 +181,34 @@ function render(container, ctx){
   }
 
   function daVietTab(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Toàn bộ bài bạn đã viết và lưu lại — xem lại, sửa tiếp, hoặc đưa vào Lịch Đăng Bài từ đây. Bài viết từ Kho Content/Kho Hook sẽ tự xếp đúng trục nội dung của bài gốc.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Toàn bộ bài bạn đã viết và lưu lại — xem lại, sửa tiếp, hoặc đưa vào Lịch Đăng Bài từ đây. AI tự xếp đúng trục nội dung ngay khi bạn lưu bài.</div>`;
     if(state.posts.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Chưa có bài nào — sang tab <b>Kho Content Viral</b> chọn 1 bài mẫu phù hợp trục nội dung của bạn để viết bài đầu tiên.</div>`;
 
-    if(!state.daVietPillar){
-      return hint + `
-        <div class="chips">
-          ${PILLARS.map(p=>{
-            const count = state.posts.filter(x=>pillarsForItem(x).includes(p.key)).length;
-            if(count===0) return '';
-            return `<div class="chip" data-daviet-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
-          }).join('')}
-          ${(()=>{ const n = state.posts.filter(x=>pillarsForItem(x).length===0).length; return n ? `<div class="chip" data-daviet-pillar="none">Chưa phân loại (${n})</div>` : ''; })()}
-          <div class="chip" data-daviet-pillar="all">Xem tất cả (${state.posts.length})</div>
-        </div>
-      `;
-    }
-
-    const items = state.daVietPillar==='all' ? state.posts
-      : state.daVietPillar==='none' ? state.posts.filter(x=>pillarsForItem(x).length===0)
-      : state.posts.filter(x=>pillarsForItem(x).includes(state.daVietPillar));
-    const pillarLabel = state.daVietPillar==='all' ? 'Tất cả' : state.daVietPillar==='none' ? 'Chưa phân loại' : (PILLARS.find(p=>p.key===state.daVietPillar)||{}).label;
-    return `
-      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} bài)</div>
-        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="daviet-back">← Chọn trục khác</span>
+    const items = filterByPillar(state.posts, state.daVietPillar);
+    return hint + pillarChipsHtml(state.posts, state.daVietPillar, 'daviet-pillar') + items.map(p=>`
+      <div class="section">
+        <h3>${esc(p.title||'(không tiêu đề)')}</h3>
+        ${contentBodyHtml('post:'+p.id, p.content)}
+        <div class="btn-row" style="margin-top:14px;"><button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button></div>
+        ${writeActionHtml('post:'+p.id)}
       </div>
-      ${items.map(p=>`
-        <div class="section">
-          <h3>${esc(p.title||'(không tiêu đề)')}</h3>
-          ${contentBodyHtml('post:'+p.id, p.content)}
-          <div class="btn-row" style="margin-top:14px;"><button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button></div>
-          ${writeActionHtml('post:'+p.id)}
+    `).join('');
+  }
+
+  function sharePromptHtml(){
+    return `
+      <div class="hint-box" style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+        <div>Bạn vừa thêm 1 content viral — muốn đề xuất đẩy lên <b>Kho Content Viral</b> để mọi người cùng dùng không? Admin sẽ xem qua rồi mới duyệt hiển thị công khai.</div>
+        <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
+          <button class="btn btn-sm" data-share-yes="1" ${state.shareSubmitting?'disabled':''}>${state.shareSubmitting?'Đang gửi…':'Có, đề xuất lên Kho chung'}</button>
+          <span class="btn-ghost btn btn-sm" data-share-no="1">Không, giữ riêng</span>
         </div>
-      `).join('')}
+      </div>
     `;
   }
 
   function khoToiTab(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Nơi lưu chất liệu của riêng bạn — câu chuyện cá nhân, case học viên, câu hỏi khách hàng hay gặp... Càng có nhiều tư liệu thật ở đây, AI càng viết đúng chất riêng của bạn thay vì chung chung. Chọn trục nội dung khi thêm để sau này kho lớn vẫn tìm lại nhanh.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Nơi lưu chất liệu của riêng bạn — câu chuyện cá nhân, case học viên, câu hỏi khách hàng hay gặp. <b>Đặc biệt nên cập nhật cả những content đang viral bạn tự tìm thấy ở nơi khác</b> (kênh khác, group khác...) — AI sẽ tự chọn đúng trục nội dung giúp bạn, không cần tự chọn nữa.</div>`;
     return hint + `
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tiêu đề</label>
@@ -210,12 +220,29 @@ function render(container, ctx){
           <option value="">— Chọn —</option>
           ${Object.entries(SOURCE_MAP).map(([k,v])=>`<option value="${k}" ${state.newEntry.source_type===k?'selected':''}>${esc(v)}</option>`).join('')}
         </select>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Trục nội dung (chọn 1 hoặc nhiều)</label>
+
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đây có phải content đang viral bạn tìm thấy ở nơi khác không?</label>
         <div class="chips">
-          ${PILLARS.map(p=>`<div class="chip ${state.newEntry.tagKeys.includes(p.key)?'selected':''}" data-ne-tag="${p.key}">${esc(p.label)}</div>`).join('')}
+          <div class="chip ${state.newEntry.isViral===true?'selected':''}" data-ne-viral="yes">Có, content viral tôi sưu tầm</div>
+          <div class="chip ${state.newEntry.isViral===false?'selected':''}" data-ne-viral="no">Không, câu chuyện/case của tôi</div>
         </div>
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add-personal">Thêm vào kho của tôi</button></div>
+        ${state.newEntry.isViral===true ? `
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:140px;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt xem (view) — nếu biết</label>
+              <input id="ne-views" type="text" value="${esc(state.newEntry.viralViews)}" placeholder="VD: 500k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+            </div>
+            <div style="flex:1;min-width:140px;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt thích (like) — nếu biết</label>
+              <input id="ne-likes" type="text" value="${esc(state.newEntry.viralLikes)}" placeholder="VD: 20k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add-personal" ${state.addingPersonal?'disabled':''}>${state.addingPersonal?'Đang phân loại…':'Thêm vào kho của tôi'}</button></div>
       </div>
+      ${state.sharePromptFor ? sharePromptHtml() : ''}
+      ${state.shareDoneFor ? `<div class="hint-box" style="margin-top:14px;">${esc(state.shareDoneFor)}</div>` : ''}
       <div style="margin-top:20px;">
         ${khoToiListHtml()}
       </div>
@@ -225,77 +252,34 @@ function render(container, ctx){
   function khoToiListHtml(){
     if(state.personalBank.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
 
-    if(!state.khoToiPillar){
-      return `
-        <div class="chips">
-          ${PILLARS.map(p=>{
-            const count = state.personalBank.filter(b=>pillarsForItem(b).includes(p.key)).length;
-            if(count===0) return '';
-            return `<div class="chip" data-khotoi-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
-          }).join('')}
-          ${(()=>{ const n = state.personalBank.filter(b=>pillarsForItem(b).length===0).length; return n ? `<div class="chip" data-khotoi-pillar="none">Chưa phân loại (${n})</div>` : ''; })()}
-          <div class="chip" data-khotoi-pillar="all">Xem tất cả (${state.personalBank.length})</div>
+    const items = filterByPillar(state.personalBank, state.khoToiPillar);
+    return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + items.map(b=>`
+      <div class="section">
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
+        <h3>${esc(b.title)}</h3>
+        ${contentBodyHtml('personal:'+b.id, b.content)}
+        <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
+          ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>':b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>':''}
         </div>
-      `;
-    }
-
-    const items = state.khoToiPillar==='all' ? state.personalBank
-      : state.khoToiPillar==='none' ? state.personalBank.filter(b=>pillarsForItem(b).length===0)
-      : state.personalBank.filter(b=>pillarsForItem(b).includes(state.khoToiPillar));
-    const pillarLabel = state.khoToiPillar==='all' ? 'Tất cả' : state.khoToiPillar==='none' ? 'Chưa phân loại' : (PILLARS.find(p=>p.key===state.khoToiPillar)||{}).label;
-    return `
-      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} mục)</div>
-        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="khotoi-back">← Chọn trục khác</span>
+        ${writeActionHtml('personal:'+b.id)}
       </div>
-      ${items.map(b=>`
-        <div class="section">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}</div>
-          <h3>${esc(b.title)}</h3>
-          ${contentBodyHtml('personal:'+b.id, b.content)}
-          <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
-          </div>
-          ${writeActionHtml('personal:'+b.id)}
-        </div>
-      `).join('')}
-    `;
+    `).join('');
   }
 
   function khoChungTab(){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Kho bài mẫu <b>đã được kiểm chứng viral</b>, do đội ngũ tuyển chọn và cập nhật liên tục — dùng làm khung sườn (hook + cấu trúc) để viết lại theo giọng văn và câu chuyện thật của bạn, không phải để sao chép nguyên văn. Đây là cách nhanh nhất để bài mới của bạn có nền tảng đã được thị trường kiểm chứng thay vì viết từ số 0.</div>`;
     if(state.sharedBank.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Content Viral chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`;
 
-    if(!state.chungPillar){
-      return hint + `
-        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng bài mẫu phù hợp — đỡ phải lướt qua cả kho.</div>
-        <div class="chips">
-          ${PILLARS.map(p=>{
-            const count = state.sharedBank.filter(b=>pillarsForItem(b).includes(p.key)).length;
-            if(count===0) return '';
-            return `<div class="chip" data-chung-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
-          }).join('')}
-          <div class="chip" data-chung-pillar="all">Xem tất cả (${state.sharedBank.length})</div>
-        </div>
-      `;
-    }
-
-    const items = state.chungPillar==='all' ? state.sharedBank : state.sharedBank.filter(b=>pillarsForItem(b).includes(state.chungPillar));
-    const pillarLabel = state.chungPillar==='all' ? 'Tất cả' : (PILLARS.find(p=>p.key===state.chungPillar)||{}).label;
-    return `
-      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} bài)</div>
-        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="chung-back">← Chọn trục khác</span>
+    const items = filterByPillar(state.sharedBank, state.chungPillar);
+    return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + items.map(b=>`
+      <div class="section">
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+        <h3>${esc(b.title)}</h3>
+        ${contentBodyHtml('shared:'+b.id, b.content, { protected:true })}
+        ${writeActionHtml('shared:'+b.id)}
       </div>
-      ${items.map(b=>`
-        <div class="section">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
-          <h3>${esc(b.title)}</h3>
-          ${contentBodyHtml('shared:'+b.id, b.content, { protected:true })}
-          ${writeActionHtml('shared:'+b.id)}
-        </div>
-      `).join('')}
-    `;
+    `).join('');
   }
 
   function bind(){
@@ -303,20 +287,12 @@ function render(container, ctx){
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
     });
-    const chungBackLink = container.querySelector('[data-action="chung-back"]');
-    if(chungBackLink) chungBackLink.onclick = ()=>{ state.chungPillar = null; draw(); };
-
     container.querySelectorAll('[data-daviet-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.daVietPillar = el.getAttribute('data-daviet-pillar'); draw(); };
     });
-    const daVietBackLink = container.querySelector('[data-action="daviet-back"]');
-    if(daVietBackLink) daVietBackLink.onclick = ()=>{ state.daVietPillar = null; draw(); };
-
     container.querySelectorAll('[data-khotoi-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.khoToiPillar = el.getAttribute('data-khotoi-pillar'); draw(); };
     });
-    const khoToiBackLink = container.querySelector('[data-action="khotoi-back"]');
-    if(khoToiBackLink) khoToiBackLink.onclick = ()=>{ state.khoToiPillar = null; draw(); };
 
     container.querySelectorAll('[data-toggle-full]').forEach(el=>{
       el.onclick = ()=>{
@@ -326,11 +302,9 @@ function render(container, ctx){
       };
     });
 
-    container.querySelectorAll('[data-ne-tag]').forEach(el=>{
+    container.querySelectorAll('[data-ne-viral]').forEach(el=>{
       el.onclick = ()=>{
-        const key = el.getAttribute('data-ne-tag');
-        const i = state.newEntry.tagKeys.indexOf(key);
-        if(i>=0) state.newEntry.tagKeys.splice(i,1); else state.newEntry.tagKeys.push(key);
+        state.newEntry.isViral = el.getAttribute('data-ne-viral')==='yes';
         draw();
       };
     });
@@ -377,6 +351,8 @@ function render(container, ctx){
     const t = container.querySelector('#ne-title'); if(t) t.oninput = ()=>state.newEntry.title = t.value;
     const c = container.querySelector('#ne-content'); if(c) c.oninput = ()=>state.newEntry.content = c.value;
     const s = container.querySelector('#ne-source'); if(s) s.onchange = ()=>state.newEntry.source_type = s.value;
+    const v1 = container.querySelector('#ne-views'); if(v1) v1.oninput = ()=>state.newEntry.viralViews = v1.value;
+    const v2 = container.querySelector('#ne-likes'); if(v2) v2.oninput = ()=>state.newEntry.viralLikes = v2.value;
     const addBtn = container.querySelector('[data-action="add-personal"]');
     if(addBtn) addBtn.onclick = addPersonal;
     container.querySelectorAll('[data-del-personal]').forEach(el=>{
@@ -385,6 +361,11 @@ function render(container, ctx){
         await loadPersonal(); draw();
       };
     });
+
+    const shareYes = container.querySelector('[data-share-yes]');
+    if(shareYes) shareYes.onclick = ()=>confirmShare(true);
+    const shareNo = container.querySelector('[data-share-no]');
+    if(shareNo) shareNo.onclick = ()=>confirmShare(false);
   }
 
   async function generateIdeasFromSource(){
@@ -426,13 +407,42 @@ function render(container, ctx){
   }
 
   async function addPersonal(){
-    if(!state.newEntry.title.trim() || !state.newEntry.content.trim()) return;
-    await ctx.supabase.from('content_bank_personal').insert({
-      user_id: ctx.user.id, title: state.newEntry.title, content: state.newEntry.content,
-      source_type: state.newEntry.source_type || null, tags: state.newEntry.tagKeys,
-    });
-    state.newEntry = { title:'', content:'', source_type:'', tagKeys:[] };
+    if(!state.newEntry.title.trim() || !state.newEntry.content.trim() || state.addingPersonal) return;
+    state.addingPersonal = true; state.sharePromptFor = null; state.shareDoneFor = null; draw();
+    const entry = state.newEntry;
+    // AI tự chọn trục nội dung ngay khi thêm — không còn bắt người dùng tự chọn trục thủ công.
+    let tags = [];
+    try{
+      const data = await callApi('/api/phan-loai-truc', { title: entry.title, content: entry.content });
+      if(data.result && data.result.truc) tags = [data.result.truc];
+    } catch(e){ /* không phân loại được (vd lỗi mạng) — vẫn lưu, chỉ thiếu trục, không chặn người dùng */ }
+
+    const { data: row, error } = await ctx.supabase.from('content_bank_personal').insert({
+      user_id: ctx.user.id, title: entry.title, content: entry.content,
+      source_type: entry.source_type || null, tags,
+      is_viral: entry.isViral===true, viral_views: entry.isViral===true ? (entry.viralViews||null) : null,
+      viral_likes: entry.isViral===true ? (entry.viralLikes||null) : null,
+    }).select().single();
+
+    state.addingPersonal = false;
+    const wasViral = entry.isViral===true;
+    state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'' };
     await loadPersonal();
+    if(!error && wasViral) state.sharePromptFor = row.id;
+    draw();
+  }
+
+  async function confirmShare(yes){
+    if(!state.sharePromptFor || state.shareSubmitting) return;
+    const id = state.sharePromptFor;
+    if(yes){
+      state.shareSubmitting = true; draw();
+      await ctx.supabase.from('content_bank_personal').update({ share_status:'pending' }).eq('id', id);
+      state.shareSubmitting = false;
+      state.shareDoneFor = 'Đã gửi đề xuất — chờ admin duyệt trước khi hiển thị ở Kho chung.';
+      await loadPersonal();
+    }
+    state.sharePromptFor = null;
     draw();
   }
 

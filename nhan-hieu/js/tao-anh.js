@@ -230,16 +230,16 @@ function render(container, ctx){
   function html(){
     return `
       <div class="page-head"><h1>Tạo Ảnh Thương Hiệu</h1><p>Dùng để tạo ảnh có chữ đăng content (dạng "Text trên ảnh") — tải ảnh nền, chọn bố cục / font / màu, điền tiêu đề, tải PNG đăng ngay.</p></div>
-      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="display:flex;gap:24px;flex-wrap:wrap-reverse;align-items:flex-start;">
         <div class="card" style="flex:1;min-width:300px;">
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ảnh nền</label>
           <input type="file" accept="image/*" id="ta-upload">
 
           ${pickerRow('Bố cục chữ', LAYOUTS, state.layout, 'layout', (it, active)=>`
-            <canvas class="ta-thumb-layout" data-thumb-layout="${it.key}" width="120" height="150"
-              style="width:82px;height:auto;border-radius:8px;border:2px solid ${active?'var(--accent)':'var(--line)'};display:block;"></canvas>
+            <canvas class="ta-thumb-layout" data-thumb-layout="${it.key}" width="160" height="200"
+              style="width:112px;height:auto;border-radius:8px;border:2px solid ${active?'var(--accent)':'var(--line)'};display:block;"></canvas>
           `)}
-          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${esc((LAYOUTS.find(l=>l.key===state.layout)||{}).desc||'')}</div>
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${esc((LAYOUTS.find(l=>l.key===state.layout)||{}).desc||'')} Xem full ở khung ảnh xem trước phía trên. ⬆</div>
 
           ${pickerRow('Kiểu chữ (font)', FONTS, state.font, 'font', (it, active)=>`
             <canvas class="ta-thumb-font" data-thumb-font="${it.key}" width="150" height="60"
@@ -259,8 +259,9 @@ function render(container, ctx){
 
           <div class="btn-row"><button class="btn" data-action="download">Tải ảnh PNG</button></div>
         </div>
-        <div style="flex:0 0 auto;">
-          <canvas id="ta-canvas" width="${CANVAS_W}" height="${CANVAS_H}" style="width:320px;height:400px;border-radius:12px;border:1px solid var(--line);background:#ddd;"></canvas>
+        <div style="flex:0 0 auto;position:sticky;top:16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Xem trước — cập nhật ngay khi bạn chọn</div>
+          <canvas id="ta-canvas" width="${CANVAS_W}" height="${CANVAS_H}" style="width:320px;max-width:80vw;height:auto;aspect-ratio:${CANVAS_W}/${CANVAS_H};border-radius:12px;border:1px solid var(--line);background:#ddd;"></canvas>
         </div>
       </div>
     `;
@@ -316,10 +317,25 @@ function render(container, ctx){
     const downloadBtn = container.querySelector('[data-action="download"]');
     if(downloadBtn) downloadBtn.onclick = () => {
       const canvas = container.querySelector('#ta-canvas');
-      const a = document.createElement('a');
-      a.download = 'anh-thuong-hieu.png';
-      a.href = canvas.toDataURL('image/png');
-      a.click();
+      // Thẻ <a download> với data URL không đáng tin cậy trên Safari iOS/PWA (thường chỉ mở ảnh ra
+      // xem chứ không lưu được thật) — ưu tiên Web Share API (mở đúng bảng chia sẻ "Lưu ảnh" của
+      // hệ điều hành) nếu máy hỗ trợ, chỉ dùng lại cách tải file cũ làm phương án dự phòng.
+      canvas.toBlob(async (blob) => {
+        if(!blob) return;
+        const file = new File([blob], 'anh-thuong-hieu.png', { type:'image/png' });
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          try{ await navigator.share({ files:[file], title:'Ảnh thương hiệu' }); return; }
+          catch(e){ if(e && e.name==='AbortError') return; }
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = 'anh-thuong-hieu.png';
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(url), 30000);
+      }, 'image/png');
     };
   }
 
