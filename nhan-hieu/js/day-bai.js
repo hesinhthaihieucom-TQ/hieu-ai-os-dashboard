@@ -60,6 +60,12 @@ function render(container, ctx){
     return `
       <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — đúng theo mốc lượt xem bài đang lên.</p></div>
 
+      <div class="hint-box" style="margin-bottom:16px;">
+        <b>Vì sao bước này quan trọng?</b> Facebook không chỉ đo lượt xem để quyết định có đẩy bài đi tiếp hay không — nó đo mức độ NGƯỜI TA Ở LẠI TƯƠNG TÁC sau khi xem: bình luận, được trả lời, bình luận tiếp. Bài có bình luận qua lại (đặc biệt là tác giả tự trả lời) được thuật toán hiểu là "nội dung đáng bàn luận" và tiếp tục đẩy cho nhóm người xem mới, thay vì chỉ đứng yên hoặc chết dần sau vài giờ đầu.
+        <br><br>
+        Về phía người xem: ở mốc view còn thấp, người xem lạ chưa đủ tin tưởng — CTA mạnh (bán/dẫn link) lúc này dễ bị lướt qua hoặc phản tác dụng. Đợi bài đủ view/bình luận (có "bằng chứng xã hội") rồi mới tăng dần độ mạnh của CTA sẽ tự nhiên và chuyển đổi tốt hơn hẳn — đây là lý do mỗi mốc lượt xem bên dưới có 1 chiến lược bình luận khác nhau, không dùng chung 1 kiểu CTA cho mọi giai đoạn.
+      </div>
+
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy</label>
         <div class="chips" style="margin-bottom:10px;">
