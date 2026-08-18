@@ -8,6 +8,19 @@ function escBold(s){
   return esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 }
 
+// Một số bản định vị cũ lưu "kết luận định vị" dạng cả đoạn dài nhiều câu dính liền nhau
+// (trước khi siết prompt chỉ còn đúng 1 câu) — tách xuống dòng theo từng câu cho dễ đọc.
+function breakSentences(s){
+  return String(s==null?'':s).replace(/([.!?])\s+(?=[A-ZÀ-Ỹ"'"])/g, '$1\n\n');
+}
+
+// Lấy đúng câu đầu tiên — dùng khi cần hiển thị ngắn gọn dạng tiêu đề (vd bản cũ dài nhiều câu).
+function firstSentence(s){
+  const str = String(s==null?'':s).trim();
+  const m = /^[^.!?]*[.!?]/.exec(str);
+  return m ? m[0].trim() : str;
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });

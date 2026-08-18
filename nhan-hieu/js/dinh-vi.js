@@ -67,7 +67,7 @@ function render(container, ctx){
       state.answers = data.answers || {};
       state.luot1 = isComplete ? data.luot1 : null;
       state.luot2 = isComplete ? data.luot2 : null;
-      state.screen = isComplete ? (data.luot2 ? 'results2' : 'results1') : 'intro';
+      state.screen = isComplete ? 'done' : 'intro';
     } else {
       state.screen = 'intro';
     }
@@ -84,7 +84,22 @@ function render(container, ctx){
     if(state.screen==='parsing') return loadingHtml('Đang đọc kết quả bạn dán vào…', true);
     if(state.screen==='results1') return results1Html();
     if(state.screen==='results2') return results2Html();
+    if(state.screen==='done') return doneHtml();
     return '';
+  }
+
+  function doneHtml(){
+    return `
+      <div class="page-head" style="text-align:center;">
+        <div class="tag">Định Vị</div>
+        <h1>Bạn đã hoàn thành Định Vị! 🎉</h1>
+        <p>Kết quả đã lưu và đang được dùng cho toàn bộ các bước khác (Sửa Kênh, Viết Content, Lịch Đăng...).</p>
+      </div>
+      <div class="btn-row" style="justify-content:center;margin-top:14px;">
+        <button class="btn" data-action="view-results">Xem kết quả →</button>
+        <button class="btn-ghost btn" data-action="redo-from-done">Làm lại từ đầu</button>
+      </div>
+    `;
   }
 
   function loadingHtml(msg, showWaitHint){
@@ -279,7 +294,7 @@ function render(container, ctx){
           <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-asset">Thêm tài sản</button></div>
         </div>
       </div>
-      <div class="section highlight"><h3>Kết luận định vị</h3><div class="body" style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;line-height:1.6;">${escBold(r.ket_luan_dinh_vi)}</div></div>
+      <div class="section highlight"><h3>Kết luận định vị</h3><div class="body" style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;line-height:1.6;">${escBold(breakSentences(r.ket_luan_dinh_vi))}</div></div>
       ${sectionHtml('Tổng quan thương hiệu', r.tong_quan_thuong_hieu)}
       ${sectionHtml('Hồ sơ chuyên môn', r.ho_so_chuyen_mon)}
       ${sectionHtml('Lợi thế cạnh tranh', r.loi_the_canh_tranh)}
@@ -310,7 +325,7 @@ function render(container, ctx){
     return `
       <div class="page-head" style="text-align:center;">
         <div class="tag">Lượt 2 · Chiến Lược &amp; Dòng Tiền</div>
-        <h1 style="font-size:22px;">${escBold(r1.ket_luan_dinh_vi)}</h1>
+        <h1 style="font-size:22px;">${escBold(firstSentence(r1.ket_luan_dinh_vi))}</h1>
       </div>
       ${sectionHtml('Chân dung khách hàng', r2.chan_dung_khach_hang)}
       <div class="section"><h3>Nỗi đau & rào cản (4 tầng)</h3>
@@ -364,6 +379,11 @@ function render(container, ctx){
 
     const startBtn = container.querySelector('[data-action="start"]');
     if(startBtn) startBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; state.luot1=null; state.luot2=null; draw(); };
+
+    const viewResultsBtn = container.querySelector('[data-action="view-results"]');
+    if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = state.luot2 ? 'results2' : 'results1'; draw(); };
+    const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
+    if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; draw(); };
 
     const goPaste = container.querySelector('[data-action="go-paste"]');
     if(goPaste) goPaste.onclick = ()=>{ state.screen='paste'; state.pasteError=null; draw(); };
