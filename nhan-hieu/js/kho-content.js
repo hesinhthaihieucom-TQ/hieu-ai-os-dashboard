@@ -27,7 +27,7 @@ function render(container, ctx){
     newEntry:{ title:'', content:'', source_type:'', tagKeys:[] },
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
-    chungPillar:null, daVietPillar:null, khoToiPillar:null,
+    chungPillar:null, daVietPillar:null, khoToiPillar:null, expandedIds:new Set(),
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -105,6 +105,23 @@ function render(container, ctx){
     `;
   }
 
+  // Danh sách chọn bài (Bài đã viết/Kho của tôi/Kho Content Viral) chỉ hiện vài dòng đầu — đọc hết
+  // cả bài ngay trong lúc lướt chọn khiến trang dài dằng dặc. Bấm "Đọc full" mới xổ ra toàn bộ,
+  // "Thu gọn" để đóng lại — trạng thái nhớ theo từng item qua state.expandedIds.
+  function contentBodyHtml(key, content, opts){
+    const isExpanded = state.expandedIds.has(key);
+    const text = content || '';
+    const preview = excerpt(text, 160);
+    const needsToggle = text.length > preview.length;
+    const isProtected = opts && opts.protected;
+    const bodyClass = isProtected ? 'body protected' : 'body';
+    const protectAttrs = isProtected ? ' oncontextmenu="return false;" oncopy="return false;" oncut="return false;"' : '';
+    return `
+      <div class="${bodyClass}"${protectAttrs}>${esc(isExpanded ? text : preview)}</div>
+      ${needsToggle ? `<span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">${isExpanded?'Thu gọn ↑':'Đọc full →'}</span>` : ''}
+    `;
+  }
+
   function writeActionHtml(key){
     const isOpen = state.writeFor === key;
     return `
@@ -172,7 +189,7 @@ function render(container, ctx){
       ${items.map(p=>`
         <div class="section">
           <h3>${esc(p.title||'(không tiêu đề)')}</h3>
-          <div class="body">${esc(excerpt(p.content, 220))}</div>
+          ${contentBodyHtml('post:'+p.id, p.content)}
           <div class="btn-row" style="margin-top:14px;"><button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button></div>
           ${writeActionHtml('post:'+p.id)}
         </div>
@@ -235,7 +252,7 @@ function render(container, ctx){
         <div class="section">
           <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}</div>
           <h3>${esc(b.title)}</h3>
-          <div class="body">${esc(b.content)}</div>
+          ${contentBodyHtml('personal:'+b.id, b.content)}
           <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
             <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
           </div>
@@ -274,7 +291,7 @@ function render(container, ctx){
         <div class="section">
           <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
           <h3>${esc(b.title)}</h3>
-          <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;">${esc(b.content)}</div>
+          ${contentBodyHtml('shared:'+b.id, b.content, { protected:true })}
           ${writeActionHtml('shared:'+b.id)}
         </div>
       `).join('')}
@@ -300,6 +317,14 @@ function render(container, ctx){
     });
     const khoToiBackLink = container.querySelector('[data-action="khotoi-back"]');
     if(khoToiBackLink) khoToiBackLink.onclick = ()=>{ state.khoToiPillar = null; draw(); };
+
+    container.querySelectorAll('[data-toggle-full]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-toggle-full');
+        if(state.expandedIds.has(key)) state.expandedIds.delete(key); else state.expandedIds.add(key);
+        draw();
+      };
+    });
 
     container.querySelectorAll('[data-ne-tag]').forEach(el=>{
       el.onclick = ()=>{
