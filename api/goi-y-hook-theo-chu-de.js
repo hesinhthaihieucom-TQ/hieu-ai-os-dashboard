@@ -3,6 +3,12 @@
 const { requireUser } = require('./_lib/auth');
 const { HOOK_CATEGORIES } = require('./_lib/hook-categories');
 
+const CONTENT_GOALS = {
+  viral: 'Viral (tối đa lượt xem) — ưu tiên giật mắt, gây tò mò/gây sốc mạnh, chấp nhận kịch tính hơn để nhiều người dừng lại xem.',
+  uy_tin: 'Uy tín (xây thẩm quyền) — ưu tiên thể hiện chiều sâu hiểu biết, đáng tin, không giật tít rẻ tiền.',
+  case_study: 'Case study (chứng minh kết quả) — ưu tiên dẫn vào 1 kết quả/số liệu/câu chuyện thật cụ thể, có thể kiểm chứng.',
+};
+
 const SYSTEM_PROMPT = `Bạn là chuyên gia viết hook (câu mở đầu) cho content mạng xã hội tại Việt Nam.
 
 NGUYÊN TẮC BẮT BUỘC:
@@ -62,7 +68,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { topic, category, positioning, quick_context } = req.body || {};
+    const { topic, category, positioning, quick_context, goal } = req.body || {};
     if (!topic || !topic.trim()) { res.status(400).json({ error: 'Thiếu chủ đề để sinh hook.' }); return; }
     const cat = HOOK_CATEGORIES[category];
     if (!cat) { res.status(400).json({ error: 'Loại hook không hợp lệ.' }); return; }
@@ -73,7 +79,9 @@ module.exports = async (req, res) => {
         ? `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`
         : 'BỐI CẢNH: (không cung cấp — viết tự nhiên, phổ quát)');
 
-    const userContent = `CHỦ ĐỀ: ${topic}\n\nLOẠI HOOK CẦN VIẾT: ${cat.label} — ${cat.desc}\n\n${contextBlock}\n\nHãy viết đúng 5 hook theo loại trên, sát chủ đề.`;
+    const goalLine = goal && CONTENT_GOALS[goal] ? `\n\nMỤC TIÊU CONTENT NÀY: ${CONTENT_GOALS[goal]}` : '';
+
+    const userContent = `CHỦ ĐỀ: ${topic}\n\nLOẠI HOOK CẦN VIẾT: ${cat.label} — ${cat.desc}${goalLine}\n\n${contextBlock}\n\nHãy viết đúng 5 hook theo loại trên, sát chủ đề, đúng mục tiêu content.`;
 
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_HOOK });
     res.status(200).json({ result });

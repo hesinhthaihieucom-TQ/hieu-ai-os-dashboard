@@ -22,6 +22,17 @@ const HOOK_GEN_CATEGORIES = [
   { key:'su_that_phu_phang', label:'Sự thật phũ phàng' },
 ];
 const HOOK_GEN_LABEL_BY_KEY = Object.fromEntries(HOOK_GEN_CATEGORIES.map(c=>[c.key, c.label]));
+
+const CONTENT_GOALS = [
+  { key:'viral', label:'Viral (tối đa lượt xem)', desc:'Ưu tiên giật mắt, gây tò mò hoặc gây sốc mạnh để nhiều người dừng lại xem.' },
+  { key:'uy_tin', label:'Uy tín (xây thẩm quyền)', desc:'Ưu tiên hook cho thấy bạn hiểu sâu, đáng tin — không câu view rẻ tiền.' },
+  { key:'case_study', label:'Case study (chứng minh kết quả)', desc:'Ưu tiên hook dẫn vào 1 kết quả/số liệu/câu chuyện thật cụ thể.' },
+];
+const GOAL_RECOMMENDED_CATS = {
+  viral: ['to_mo_bo_ngo','nghich_ly','canh_bao_mat_mat','ket_qua_gay_soc','khan_hiem_thoi_han','chi_dich_danh'],
+  uy_tin: ['bi_mat_noi_bo','su_that_phu_phang','lat_nguoc_niem_tin','loi_sai_pho_bien','con_so_cu_the'],
+  case_study: ['ket_qua_gay_soc','truoc_sau','con_so_cu_the','thu_nhan_ca_nhan'],
+};
 function categoryLabel(key){
   return HOOK_GEN_LABEL_BY_KEY[key] || CATEGORIES[key] || key || '';
 }
@@ -31,7 +42,8 @@ function render(container, ctx){
     tab:'tao-hook', personal:[], shared:[], error:null, positioning:null,
     newEntry:{ hook_text:'', note:'' }, addingHook:false, addError:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
-    genTopic:'', genCategory:HOOK_GEN_CATEGORIES[0].key, genQuickContext:'',
+    genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
+    genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
   };
 
@@ -90,12 +102,22 @@ function render(container, ctx){
           <textarea id="gen-quick-context" style="min-height:auto;height:44px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.genQuickContext)}</textarea>
         ` : ''}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại hook</label>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mục tiêu content này là gì?</label>
         <div class="chips">
-          ${HOOK_GEN_CATEGORIES.map(c=>`<div class="chip ${state.genCategory===c.key?'selected':''}" data-gen-cat="${c.key}">${esc(c.label)}</div>`).join('')}
+          ${CONTENT_GOALS.map(g=>`<div class="chip ${state.genGoal===g.key?'selected':''}" data-gen-goal="${g.key}">${esc(g.label)}</div>`).join('')}
+        </div>
+        <div style="margin-top:6px;font-size:12.5px;color:var(--ink-soft);">${esc((CONTENT_GOALS.find(g=>g.key===state.genGoal)||{}).desc||'')}</div>
+
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại hook phù hợp mục tiêu này</label>
+        <div class="chips">
+          ${(state.genShowAllCats ? HOOK_GEN_CATEGORIES : HOOK_GEN_CATEGORIES.filter(c=>(GOAL_RECOMMENDED_CATS[state.genGoal]||[]).includes(c.key)))
+            .map(c=>`<div class="chip ${state.genCategory===c.key?'selected':''}" data-gen-cat="${c.key}">${esc(c.label)}</div>`).join('')}
+        </div>
+        <div style="margin-top:6px;">
+          <span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="toggle-all-cats">${state.genShowAllCats?'Chỉ xem loại phù hợp mục tiêu này':'Xem tất cả 15 loại hook →'}</span>
         </div>
 
-        <div class="btn-row"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button></div>
         ${state.genError?`<div class="error-box">${esc(state.genError)}</div>`:''}
       </div>
 
@@ -205,6 +227,16 @@ function render(container, ctx){
 
     const gt = container.querySelector('#gen-topic'); if(gt) gt.oninput = ()=>state.genTopic = gt.value;
     const gqc = container.querySelector('#gen-quick-context'); if(gqc) gqc.oninput = ()=>state.genQuickContext = gqc.value;
+    container.querySelectorAll('[data-gen-goal]').forEach(el=>{
+      el.onclick = ()=>{
+        state.genGoal = el.getAttribute('data-gen-goal');
+        const recommended = GOAL_RECOMMENDED_CATS[state.genGoal] || [];
+        if(!state.genShowAllCats && recommended.length) state.genCategory = recommended[0];
+        draw();
+      };
+    });
+    const toggleAllCats = container.querySelector('[data-action="toggle-all-cats"]');
+    if(toggleAllCats) toggleAllCats.onclick = ()=>{ state.genShowAllCats = !state.genShowAllCats; draw(); };
     container.querySelectorAll('[data-gen-cat]').forEach(el=>{
       el.onclick = ()=>{ state.genCategory = el.getAttribute('data-gen-cat'); draw(); };
     });
@@ -273,6 +305,7 @@ function render(container, ctx){
       const data = await callApi('/api/goi-y-hook-theo-chu-de', {
         topic: state.genTopic,
         category: state.genCategory,
+        goal: state.genGoal,
         positioning: (state.positioning && state.positioning.luot1) ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.genQuickContext,
       });

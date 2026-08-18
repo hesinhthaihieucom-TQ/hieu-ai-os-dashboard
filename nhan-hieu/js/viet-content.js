@@ -1,7 +1,8 @@
 (function(){
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
-    showExtra:false, channelHandle:'', brandName:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'' };
+    showExtra:false, channelHandle:'', brandName:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
+    score:null, scoring:false, scoreError:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -90,6 +91,7 @@ function render(container, ctx){
           </div>
         ` : ''}
         <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':'Viết bài'}</button></div>
+        <div class="hint-box" style="margin-top:10px;">AI viết xong sẽ tự chấm điểm &amp; gợi ý bản tối ưu hơn ngay bên dưới — tổng thời gian khoảng 1-2 phút, đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
@@ -108,10 +110,34 @@ function render(container, ctx){
     `;
   }
 
+  function scoreSectionHtml(){
+    if(state.scoring) return `<div class="section" style="text-align:center;color:var(--ink-soft);">Đang chấm điểm &amp; tìm chỗ tối ưu…</div>`;
+    if(state.scoreError) return `<div class="error-box">Không chấm điểm được: ${esc(state.scoreError)}</div>`;
+    if(!state.score) return '';
+    const s = state.score;
+    return `
+      <div class="section highlight">
+        <h3>Chấm điểm &amp; tối ưu tự động</h3>
+        <div class="body" style="font-size:28px;font-weight:700;">${s.diem_tong}<span style="font-size:14px;">/100</span>
+          <span style="font-size:13px;font-weight:400;color:var(--ink-soft);margin-left:8px;">${esc(s.tang_noi_dung)} · ${esc(s.loai_content)}</span>
+        </div>
+      </div>
+      ${(s.tieu_chi||[]).filter(t=>t.diem<8).map(t=>`
+        <div class="section"><h3>${esc(t.ten)} — ${t.diem}/10</h3>
+          <div class="body">${esc(t.nhan_xet)}</div>
+          <div class="body" style="margin-top:8px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Gợi ý sửa:</b> ${esc(t.goi_y_sua)}</div>
+        </div>
+      `).join('')}
+      <div class="section"><h3>Bản sửa đề xuất (tối ưu hơn)</h3><div class="body">${esc(s.ban_sua_de_xuat)}</div></div>
+      <div class="btn-row no-print"><a class="btn-ghost btn" href="#cham-diem-content">Xem chi tiết đầy đủ ở Chấm Điểm Content →</a></div>
+    `;
+  }
+
   function resultHtml(){
     const r = state.result;
     return `
       <div class="section highlight"><h3>${esc(r.tieu_de)}</h3><div class="body">${esc(r.bai_hoan_chinh)}</div></div>
+      ${scoreSectionHtml()}
       <div class="section"><h3>Cấu trúc bài</h3>
         <div class="body"><b>Hook:</b> ${esc(r.hook)}</div>
         <div class="body" style="margin-top:8px;"><b>Vấn đề:</b> ${esc(r.van_de)}</div>
@@ -188,7 +214,8 @@ function render(container, ctx){
 
   async function generate(){
     if(!state.ideaText.trim()) return;
-    state.generating = true; state.error = null; state.result = null; state.savedId = null; draw();
+    state.generating = true; state.error = null; state.result = null; state.savedId = null;
+    state.score = null; state.scoring = false; state.scoreError = null; draw();
     try{
       const data = await callApi('/api/viet-content', {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
@@ -201,7 +228,22 @@ function render(container, ctx){
       });
       state.result = data.result;
       state.generating = false; draw();
+      scoreResult();
     } catch(e){ state.error = e.message; state.generating = false; draw(); }
+  }
+
+  async function scoreResult(){
+    if(!state.result) return;
+    state.scoring = true; state.scoreError = null; draw();
+    try{
+      const data = await callApi('/api/cham-diem-content', {
+        content_text: state.result.bai_hoan_chinh,
+        positioning: state.positioning && state.positioning.luot1 ? { luot1: state.positioning.luot1 } : null,
+      });
+      state.score = data.result;
+      await ctx.supabase.from('content_scores').insert({ user_id: ctx.user.id, content_text: state.result.bai_hoan_chinh, result: data.result });
+    } catch(e){ state.scoreError = e.message; }
+    state.scoring = false; draw();
   }
 
   async function save(){
