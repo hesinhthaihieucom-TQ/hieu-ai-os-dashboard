@@ -14,6 +14,7 @@ const HELP_SECTIONS = [
   { group:'Bắt đầu từ đâu', items: [
     { q:'Tôi nên làm theo thứ tự nào?', a:'Đi đúng theo thứ tự sidebar từ trên xuống: Định Vị → Sửa Kênh → Dạng Content → Kho Content / Kho Hook → Viết Content → Chấm Điểm → Lịch Đăng Bài. Định Vị luôn là bước đầu tiên vì mọi bước sau đều dựa vào kết quả đó (bao gồm cả chân dung khách hàng và giọng văn).' },
     { q:'Tôi đã làm Định Vị ở một trợ lý GPT khác trước đây rồi, có phải làm lại không?', a:'Không cần làm lại. Ở màn hình Định Vị, bấm "Đã có kết quả Định Vị rồi? Dán vào đây" rồi dán nguyên văn kết quả cũ vào — hệ thống tự sắp xếp lại đúng cấu trúc, không cần trả lời lại 26 câu hỏi.' },
+    { q:'Dùng trên điện thoại có cài thành app riêng được không?', a:'Được. Trên Android (Chrome): mở link này, Chrome sẽ tự hiện banner "Thêm vào màn hình chính" — hoặc vào menu (⋮) → "Cài đặt ứng dụng". Trên iPhone (Safari): mở link → bấm nút Chia sẻ (hình vuông có mũi tên đi lên) → "Thêm vào MH chính". Sau khi cài, mở từ icon trên màn hình chính sẽ chạy như 1 app riêng, không còn thanh địa chỉ trình duyệt.' },
   ]},
   { group:'Định Vị & Sửa Kênh', items: [
     { q:'Vì sao các mục sau bắt tôi làm Định Vị trước?', a:'Toàn bộ nội dung AI sinh ra (dạng content, ý tưởng, bài viết, lịch đăng) đều bám theo định vị đã chốt để không bị lệch trục — nên cần có Định Vị trước mới dùng được các bước sau.' },
