@@ -23,8 +23,36 @@ NGUYÊN TẮC:
 - Luôn ghi rõ truc_noi_dung cho mỗi bài (trục chính hay trục phụ, tên trục gì) để người dùng biết mỗi bài đang phục vụ trục nào.
 - Output tiếng Việt.`;
 
+// Từ 2 bài/ngày trở lên (14-21 mục/tuần), KHÔNG bắt AI nghĩ chi tiết chủ đề/dạng/hook/cta cho
+// từng mục — vừa nặng (dễ vượt max_tokens, bị cắt giữa chừng), vừa không cần thiết vì người dùng
+// sẽ vào thẳng Kho Content Viral đúng trục đó để tự chọn bài/hook cụ thể. AI chỉ cần quyết định
+// mỗi slot phục vụ trục nội dung nào (và có bài đã viết sẵn khớp không) — nhẹ và nhanh hơn nhiều.
+const SIMPLE_MODE_NOTE = `
+
+CHẾ ĐỘ RÚT GỌN (đang bật vì người dùng chọn từ 2 bài/ngày trở lên): CHỈ cần xác định mỗi slot phục
+vụ trục nội dung nào (truc_noi_dung) và có bài đã viết sẵn khớp không (bai_co_san) — KHÔNG cần nghĩ
+chủ đề cụ thể, dạng content, hook, hay CTA cho những slot chưa có bài viết sẵn. Người dùng sẽ tự
+chọn bài mẫu đúng trục đó trong Kho Content Viral.`;
+
 function buildToolLich(postsPerDay) {
   const total = 7 * postsPerDay;
+  const simple = postsPerDay >= 2;
+  const baseProps = {
+    thu: { type: 'integer', minimum: 0, maximum: 6, description: '0=Thứ 2 ... 6=Chủ nhật' },
+    slot: { type: 'string', enum: ['sang', 'trua', 'toi'] },
+    truc_noi_dung: { type: 'string', description: 'Trục nội dung (chính hoặc phụ) mà bài này phục vụ — ngắn gọn, ví dụ "Trục chính: Tài chính gia đình".' },
+    bai_co_san: { type: 'string', description: 'Nếu 1 trong các BÀI ĐÃ VIẾT được cung cấp khớp tốt với ngày/trục này, ghi ĐÚNG NGUYÊN VĂN tiêu đề bài đó. Nếu không có bài nào phù hợp, để chuỗi rỗng "".' },
+  };
+  const detailProps = {
+    chu_de: { type: 'string', description: 'Chủ đề/góc content cụ thể cho bài này — chỉ dùng khi bai_co_san rỗng (chưa có bài viết sẵn phù hợp).' },
+    dinh_dang: { type: 'string', description: 'Tên 1 trong 12 dạng content.' },
+    hook_goi_y: { type: 'string' },
+    cta: { type: 'string' },
+  };
+  const properties = simple ? baseProps : { ...baseProps, ...detailProps };
+  const required = simple
+    ? ['thu', 'slot', 'truc_noi_dung', 'bai_co_san']
+    : ['thu', 'slot', 'truc_noi_dung', 'bai_co_san', 'chu_de', 'dinh_dang', 'hook_goi_y', 'cta'];
   return {
   name: 'xuat_lich_tuan',
   description: `Xuất lịch đăng bài đề xuất cho 7 ngày, đúng ${postsPerDay} bài/ngày (tổng ${total} bài).`,
@@ -35,20 +63,7 @@ function buildToolLich(postsPerDay) {
         type: 'array',
         minItems: total,
         maxItems: total,
-        items: {
-          type: 'object',
-          properties: {
-            thu: { type: 'integer', minimum: 0, maximum: 6, description: '0=Thứ 2 ... 6=Chủ nhật' },
-            slot: { type: 'string', enum: ['sang', 'trua', 'toi'] },
-            truc_noi_dung: { type: 'string', description: 'Trục nội dung (chính hoặc phụ) mà bài này phục vụ — ngắn gọn, ví dụ "Trục chính: Tài chính gia đình".' },
-            bai_co_san: { type: 'string', description: 'Nếu 1 trong các BÀI ĐÃ VIẾT được cung cấp khớp tốt với ngày/trục này, ghi ĐÚNG NGUYÊN VĂN tiêu đề bài đó. Nếu không có bài nào phù hợp, để chuỗi rỗng "".' },
-            chu_de: { type: 'string', description: 'Chủ đề/góc content cụ thể cho bài này — chỉ dùng khi bai_co_san rỗng (chưa có bài viết sẵn phù hợp).' },
-            dinh_dang: { type: 'string', description: 'Tên 1 trong 12 dạng content.' },
-            hook_goi_y: { type: 'string' },
-            cta: { type: 'string' },
-          },
-          required: ['thu', 'slot', 'truc_noi_dung', 'bai_co_san', 'chu_de', 'dinh_dang', 'hook_goi_y', 'cta'],
-        },
+        items: { type: 'object', properties, required },
       },
     },
     required: ['lich'],
@@ -56,13 +71,13 @@ function buildToolLich(postsPerDay) {
   };
 }
 
-async function callClaude({ apiKey, system, userContent, tool }) {
+async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
       model: 'claude-sonnet-5',
-      max_tokens: 3000,
+      max_tokens: maxTokens,
       system,
       messages: [{ role: 'user', content: userContent }],
       tools: [tool],
@@ -71,6 +86,11 @@ async function callClaude({ apiKey, system, userContent, tool }) {
   });
   if (!resp.ok) throw new Error(`Anthropic API lỗi (${resp.status}): ${await resp.text()}`);
   const data = await resp.json();
+  // Nếu bị cắt giữa chừng vì hết max_tokens, tool_use trả về sẽ thiếu/hỏng dữ liệu — báo lỗi rõ
+  // ràng ngay tại đây thay vì để lọt xuống dưới rồi gãy khó hiểu ở phía frontend.
+  if (data.stop_reason === 'max_tokens') {
+    throw new Error('AI sinh kết quả dài quá giới hạn cho phép — thử giảm số bài/ngày hoặc thử lại.');
+  }
   const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
   if (!toolUse) throw new Error('Không nhận được kết quả có cấu trúc từ AI.');
   return toolUse.input;
@@ -112,7 +132,15 @@ ${postsBlock}
 
 Hãy xuất lịch 7 ngày, đúng ${postsPerDay} bài/ngày.`;
 
-    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: buildToolLich(postsPerDay) });
+    // max_tokens phải đủ cho TOÀN BỘ 7*postsPerDay mục cùng lúc (tool_choice bắt buộc xuất hết 1
+    // lần) — cố định 3000 trước đây chỉ đủ cho 1 bài/ngày (7 mục), 2-3 bài/ngày (14-21 mục) bị cắt
+    // giữa chừng nên lỗi/không ra kết quả. Từ 2 bài/ngày dùng schema rút gọn (ít field/mục hơn hẳn)
+    // nên chỉ cần nhân hệ số nhỏ hơn nhiều so với chế độ đầy đủ của 1 bài/ngày.
+    const simple = postsPerDay >= 2;
+    const totalItems = 7 * postsPerDay;
+    const maxTokens = simple ? Math.min(4000, 800 + totalItems * 100) : 3000;
+    const system = simple ? SYSTEM_PROMPT + SIMPLE_MODE_NOTE : SYSTEM_PROMPT;
+    const result = await callClaude({ apiKey, system, userContent, tool: buildToolLich(postsPerDay), maxTokens });
     res.status(200).json({ result });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi gợi ý lịch.' });

@@ -20,6 +20,22 @@ function matchPillarKey(text){
   return null;
 }
 
+// Lưu tạm gợi ý AI + các ô nhập (mục tiêu tuần, số bài/ngày...) theo từng tuần cụ thể — trước đây
+// mất sạch mỗi khi rời trang rồi quay lại (component bị dựng lại từ đầu), giờ chỉ mất khi người
+// dùng bấm "Reset tuần" rõ ràng. Lưu theo localStorage (đủ dùng, không cần đồng bộ nhiều thiết bị).
+const DRAFT_PREFIX = 'xnh_lich_draft_';
+function draftKey(userId, weekStart){ return DRAFT_PREFIX + userId + '_' + isoDate(weekStart); }
+function loadDraft(userId, weekStart){
+  try{ const raw = localStorage.getItem(draftKey(userId, weekStart)); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function saveDraft(userId, weekStart, draft){
+  try{ localStorage.setItem(draftKey(userId, weekStart), JSON.stringify(draft)); } catch(e){}
+}
+function clearDraft(userId, weekStart){
+  try{ localStorage.removeItem(draftKey(userId, weekStart)); } catch(e){}
+}
+
 function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
@@ -33,8 +49,30 @@ function render(container, ctx){
     if(window.PendingPost){ state.pending = window.PendingPost; window.PendingPost = null; }
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
+    applyDraftForCurrentWeek();
     await Promise.all([loadEntries(), loadPosts()]);
     state.screen='main';
+    draw();
+  }
+
+  function applyDraftForCurrentWeek(){
+    const draft = loadDraft(ctx.user.id, state.weekStart);
+    state.aiSuggestions = draft ? draft.aiSuggestions : null;
+    state.weeklyGoal = draft ? (draft.weeklyGoal || '') : '';
+    state.postsPerDay = draft ? (draft.postsPerDay || 1) : 1;
+    state.quickContext = draft ? (draft.quickContext || '') : '';
+  }
+
+  function saveDraftForCurrentWeek(){
+    saveDraft(ctx.user.id, state.weekStart, {
+      aiSuggestions: state.aiSuggestions, weeklyGoal: state.weeklyGoal,
+      postsPerDay: state.postsPerDay, quickContext: state.quickContext,
+    });
+  }
+
+  function resetWeekDraft(){
+    clearDraft(ctx.user.id, state.weekStart);
+    state.aiSuggestions = null; state.weeklyGoal = ''; state.postsPerDay = 1; state.quickContext = '';
     draw();
   }
 
@@ -79,7 +117,11 @@ function render(container, ctx){
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
         ` : ''}
-        <div class="btn-row"><button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button></div>
+        <div class="btn-row">
+          <button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button>
+          ${(state.aiSuggestions || state.weeklyGoal) ? `<span class="btn-ghost btn btn-sm" data-action="reset-week">Reset tuần</span>` : ''}
+        </div>
+        <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu tạm trên máy — không mất khi bạn thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để xếp xong cả tuần — đừng thoát trang khi đang đợi.</div>
         ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
@@ -131,18 +173,15 @@ function render(container, ctx){
               }
               if(suggestion){
                 const matchedPost = suggestion.bai_co_san ? state.posts.find(p=>p.title===suggestion.bai_co_san) : null;
-                const pillarKey = !matchedPost ? matchPillarKey(suggestion.truc_noi_dung) : null;
                 return `<div class="week-slot" style="border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
                   <div class="slot-label">${s.label} · <span style="color:var(--gold);">Gợi ý AI</span></div>
                   ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
-                  <b style="font-size:12px;">${esc(matchedPost ? matchedPost.title : suggestion.chu_de)}</b>
-                  <div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${matchedPost?'Bài đã viết sẵn':esc(suggestion.dinh_dang)}</div>
+                  <b style="font-size:12px;">${esc(matchedPost ? matchedPost.title : (suggestion.chu_de || 'Chưa chọn bài cụ thể'))}</b>
+                  <div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${matchedPost ? 'Bài đã viết sẵn' : (suggestion.dinh_dang ? esc(suggestion.dinh_dang) : 'Chọn bài mẫu đúng trục ở Kho Content Viral')}</div>
                   <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
                     ${matchedPost
                       ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>`
-                      : pillarKey
-                        ? `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Xem bài mẫu đúng trục này →</span>`
-                        : `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Viết bài cho trục này →</span>`
+                      : `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Tìm bài phù hợp trong Kho Content →</span>`
                     }
                     <span style="align-self:center;color:var(--ink-soft);font-size:11px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
                   </div>
@@ -161,19 +200,21 @@ function render(container, ctx){
 
   function bind(){
     const goalInput = container.querySelector('#weekly-goal');
-    if(goalInput) goalInput.oninput = ()=>{ state.weeklyGoal = goalInput.value; };
+    if(goalInput) goalInput.oninput = ()=>{ state.weeklyGoal = goalInput.value; saveDraftForCurrentWeek(); };
     const quickContext = container.querySelector('#quick-context');
-    if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
+    if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; saveDraftForCurrentWeek(); };
     container.querySelectorAll('[data-posts-per-day]').forEach(el=>{
-      el.onclick = ()=>{ state.postsPerDay = Number(el.getAttribute('data-posts-per-day')); draw(); };
+      el.onclick = ()=>{ state.postsPerDay = Number(el.getAttribute('data-posts-per-day')); saveDraftForCurrentWeek(); draw(); };
     });
     const aiBtn = container.querySelector('[data-action="ai-suggest"]');
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
 
     const prev = container.querySelector('[data-action="prev-week"]');
-    if(prev) prev.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()-7); state.aiSuggestions=null; loadEntries().then(draw); };
+    if(prev) prev.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()-7); applyDraftForCurrentWeek(); loadEntries().then(draw); };
     const next = container.querySelector('[data-action="next-week"]');
-    if(next) next.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()+7); state.aiSuggestions=null; loadEntries().then(draw); };
+    if(next) next.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()+7); applyDraftForCurrentWeek(); loadEntries().then(draw); };
+    const resetBtn = container.querySelector('[data-action="reset-week"]');
+    if(resetBtn) resetBtn.onclick = resetWeekDraft;
     const cancelPending = container.querySelector('[data-action="cancel-pending"]');
     if(cancelPending) cancelPending.onclick = ()=>{ state.pending = null; draw(); };
 
@@ -216,16 +257,11 @@ function render(container, ctx){
         const [dateStr, slotKey] = el.getAttribute('data-write-for-slot').split('|');
         const thu = (new Date(dateStr).getDay()+6)%7;
         const s = suggestionFor(thu, slotKey);
-        const pillarKey = matchPillarKey(s && s.truc_noi_dung);
-        if(pillarKey){
-          // Chưa có bài viết sẵn cho trục này — trỏ về đúng trục trong Kho Content Viral để chọn
-          // bài mẫu viết theo, thay vì bắt viết hẳn từ 1 câu chủ đề trống không.
-          window.PendingPillar = pillarKey;
-          location.hash = 'kho-content';
-        } else {
-          window.PendingTopic = (s && s.chu_de) || '';
-          location.hash = 'viet-content';
-        }
+        // Chưa có bài viết sẵn cho slot này — luôn trỏ về Kho Content Viral để tự chọn bài mẫu.
+        // Khớp được đúng trục AI gợi ý thì lọc sẵn luôn; không khớp được (mô tả trục lạ, AI viết
+        // khác cách) thì vẫn vào Kho Content Viral ở màn chọn trục, không rơi về Viết Content nữa.
+        window.PendingPillar = matchPillarKey(s && s.truc_noi_dung) || 'all';
+        location.hash = 'kho-content';
       };
     });
 
@@ -275,6 +311,7 @@ function render(container, ctx){
         existing_posts: unscheduledPosts,
       }, 150000);
       state.aiSuggestions = data.result.lich;
+      saveDraftForCurrentWeek();
     } catch(e){ state.aiError = e.message; }
     state.aiLoading = false;
     draw();
