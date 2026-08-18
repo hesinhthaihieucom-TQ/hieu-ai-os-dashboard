@@ -649,7 +649,7 @@ function render(container, ctx){
       const data = await callApi('/api/dinh-vi-parse', { raw_text: state.pasteText });
       state.luot1 = data.luot1;
       state.luot2 = data.luot2 || null;
-      await persist({ luot1: data.luot1, luot2: data.luot2 || null });
+      await persist({ luot1: data.luot1, luot2: data.luot2 || null, format_suggestions: null });
       state.pasteLoading = false; state.error = null;
       state.screen = state.luot2 ? 'results2' : 'results1';
       draw();
@@ -740,11 +740,12 @@ function render(container, ctx){
   async function regenerateResults(){
     const hadLuot2 = !!state.luot2;
     state.regenLoading = true; state.error = null; state.screen = 'saving1'; draw();
-    await runLuot1();
+    await runLuot1(); // đặt screen='results1' khi xong — luôn xem Lượt 1 trước
     if(state.error){ state.regenLoading = false; draw(); return; }
     if(hadLuot2){
       state.screen = 'saving2'; draw();
-      await runLuot2();
+      await runLuot2(); // đặt screen='results2' — đưa lại về results1, chỉ làm mới dữ liệu ngầm
+      if(!state.error) state.screen = 'results1';
     }
     state.regenLoading = false;
     draw();
@@ -754,7 +755,7 @@ function render(container, ctx){
     try{
       const data = await callApi('/api/dinh-vi', { luot:1, answers: flattenAnswers() });
       state.luot1 = data.result;
-      await persist({ luot1: data.result, luot2: null });
+      await persist({ luot1: data.result, luot2: null, format_suggestions: null });
       state.error = null; state.screen='results1'; draw();
     } catch(e){ state.error = e.message; draw(); }
   }

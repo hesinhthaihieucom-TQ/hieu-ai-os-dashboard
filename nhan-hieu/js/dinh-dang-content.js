@@ -100,16 +100,23 @@ const FORMATS = [
 function imgSrc(id){ return `assets/formats/${id}.jpg`; }
 
 function render(container, ctx){
-  const state = { query:'', positioning:null, suggestLoading:false, suggestions:null, suggestError:null };
+  const state = { query:'', positioning:null, suggestLoading:false, suggestions:null, suggestError:null, chosen:[] };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
+  // Gợi ý AI được lưu vào positioning_results.format_suggestions, tính đúng 1 lần ngay khi có
+  // Định Vị mới — không gọi lại AI mỗi lần mở trang/đăng nhập. Định Vị sẽ tự xoá cache này
+  // (đặt về null) mỗi khi Lượt 1 được tạo lại, để lần mở Dạng Content tiếp theo tính lại đúng 1 lần.
   async function boot(){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
+    state.chosen = (pos && pos.chosen_formats) || [];
+    if(pos && pos.format_suggestions){
+      state.suggestions = pos.format_suggestions;
+    }
     draw();
-    if(pos && pos.luot1) fetchSuggestions();
+    if(pos && pos.luot1 && !pos.format_suggestions) fetchSuggestions();
   }
 
   async function fetchSuggestions(){
@@ -117,9 +124,17 @@ function render(container, ctx){
     try{
       const data = await callApi('/api/goi-y-dinh-dang', { positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } });
       state.suggestions = data.result.goi_y;
+      await ctx.supabase.from('positioning_results').update({ format_suggestions: state.suggestions }).eq('user_id', ctx.user.id);
     } catch(e){ state.suggestError = e.message; }
     state.suggestLoading = false;
     draw();
+  }
+
+  async function toggleChosen(id){
+    state.chosen = state.chosen.includes(id) ? state.chosen.filter(x=>x!==id) : [...state.chosen, id];
+    draw();
+    if(!state.positioning) return; // chưa có hàng positioning_results (chưa làm Định Vị) thì chỉ giữ tạm trên màn hình
+    await ctx.supabase.from('positioning_results').update({ chosen_formats: state.chosen }).eq('user_id', ctx.user.id);
   }
 
   function filtered(){
@@ -160,19 +175,24 @@ function render(container, ctx){
   function html(){
     const list = filtered();
     return `
-      <div class="page-head"><h1>Dạng Content</h1><p>AI gợi ý 2-3 dạng phù hợp nhất với trục nội dung của bạn — vẫn hiển thị đủ các dạng còn lại để dễ hình dung và tham khảo thêm.</p></div>
+      <div class="page-head"><h1>Dạng Content</h1><p>AI gợi ý 2-3 dạng phù hợp nhất với trục nội dung của bạn — vẫn hiển thị đủ các dạng còn lại để tham khảo, bạn có thể tự bấm "Chọn dạng này" ở bất kỳ dạng nào mình thấy hợp.</p></div>
       ${suggestBlock()}
       <div class="card" style="margin-bottom:20px;">
         <input type="text" id="fmt-search" placeholder="Tìm theo tên dạng content hoặc ngành, ví dụ: sức khoẻ, coach, video..." value="${esc(state.query)}"
           style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
       </div>
       ${list.length===0 ? `<div style="color:var(--ink-soft);">Không tìm thấy dạng content phù hợp với từ khoá này.</div>` : ''}
-      ${list.map(f=>`
-        <div class="section" id="fmt-${f.id}">
+      ${list.map(f=>{
+        const isChosen = state.chosen.includes(f.id);
+        return `
+        <div class="section" id="fmt-${f.id}" style="${isChosen?'border-color:var(--accent);':''}">
           <div style="display:flex;gap:18px;flex-wrap:wrap;">
             <img src="${imgSrc(f.id)}" alt="Ví dụ ${esc(f.name)}" style="width:130px;border-radius:8px;border:1px solid var(--line);flex-shrink:0;object-fit:cover;">
             <div style="flex:1;min-width:200px;">
-              <h3>${esc(f.name)}</h3>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+                <h3>${esc(f.name)}</h3>
+                <span class="${isChosen?'btn':'btn-ghost btn'} btn-sm" style="white-space:nowrap;" data-choose="${f.id}">${isChosen?'✓ Đã chọn':'Chọn dạng này'}</span>
+              </div>
               <div class="body">${esc(f.ban_chat)}</div>
             </div>
           </div>
@@ -187,7 +207,8 @@ function render(container, ctx){
           <div class="body" style="margin-top:10px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Kết luận:</b> ${esc(f.ket_luan)}</div>
           ${(f.id==='text-anh-ai' || f.id==='text-anh-that') ? `<div class="btn-row" style="margin-top:14px;"><a class="btn-ghost btn" href="#tao-anh">Tạo ảnh ngay →</a></div>` : ''}
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     `;
   }
 
@@ -204,6 +225,9 @@ function render(container, ctx){
         const target = container.querySelector(`#fmt-${el.getAttribute('data-jump')}`);
         if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
       };
+    });
+    container.querySelectorAll('[data-choose]').forEach(el=>{
+      el.onclick = () => toggleChosen(el.getAttribute('data-choose'));
     });
   }
 
