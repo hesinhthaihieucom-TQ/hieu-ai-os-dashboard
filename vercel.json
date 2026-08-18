@@ -1,3 +1,6 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" }
+  ]
 }

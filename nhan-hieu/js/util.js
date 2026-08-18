@@ -23,9 +23,13 @@ function startOfWeek(d){
 }
 
 async function callApi(path, body){
+  // Đường dẫn tương đối (bỏ dấu "/" đầu) để hoạt động đúng dù web được host ở
+  // gốc domain (Vercel) hay dưới 1 thư mục con qua reverse proxy (vd Cloudflare Worker
+  // tại hesinhthaihieu.com/webxaynhanhieu) — trình duyệt sẽ tự nối theo đúng thư mục hiện tại.
+  const relativePath = path.replace(/^\//, '');
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData && sessionData.session ? sessionData.session.access_token : null;
-  const resp = await fetch(path, {
+  const resp = await fetch(relativePath, {
     method:'POST',
     headers:{
       'content-type':'application/json',
