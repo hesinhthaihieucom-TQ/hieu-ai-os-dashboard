@@ -42,6 +42,7 @@ function isAnswered(q, val){
 
 function render(container, ctx){
   const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
+    luot2Loading:false, luot2Error:null,
     suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
     pasteText:'', pasteError:null, pasteLoading:false,
     channelHandle:'', channelSaving:false, channelSaved:false,
@@ -110,10 +111,8 @@ function render(container, ctx){
     if(state.screen==='paste') return pasteHtml();
     if(state.screen==='wizard') return wizardHtml();
     if(state.screen==='saving1') return loadingHtml('Đang phân tích định vị của bạn…', true);
-    if(state.screen==='saving2') return loadingHtml('Đang xây chiến lược nội dung & dòng tiền…', true);
     if(state.screen==='parsing') return loadingHtml('Đang đọc kết quả bạn dán vào…', true);
-    if(state.screen==='results1') return results1Html();
-    if(state.screen==='results2') return results2Html();
+    if(state.screen==='results') return resultsHtml();
     if(state.screen==='done') return doneHtml();
     return '';
   }
@@ -258,11 +257,12 @@ function render(container, ctx){
     return pairs.filter(([,v])=>v && String(v).trim()).map(([label,v])=>`<b>${esc(label)}:</b> ${escBold(v)}`).join('<br>');
   }
 
-  function results1Html(){
+  function resultsHtml(){
     const r = state.luot1;
+    const r2 = state.luot2;
     return `
       <div class="page-head" style="text-align:center;">
-        <div class="tag">Lượt 1 · Định Vị Cốt Lõi</div>
+        <div class="tag">Định Vị</div>
         <h1>Định vị thương hiệu của bạn</h1>
       </div>
       ${state.saveError?`<div class="error-box" style="margin-bottom:14px;">${esc(state.saveError)}</div>`:''}
@@ -361,72 +361,73 @@ function render(container, ctx){
           ${canh.length?`<ul>${canh.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
         </div>`;
       })()}
-      <div class="btn-row no-print">
-        ${!state.luot2 ? `<button class="btn" data-action="get-luot2">Xem tiếp: Chiến lược & Dòng tiền →</button>` : `<button class="btn" data-action="goto-r2">Xem Chiến lược & Dòng tiền →</button>`}
-        <button class="btn-ghost btn" data-action="redo">Làm lại định vị</button>
-      </div>
-    `;
-  }
-
-  function results2Html(){
-    const r1 = state.luot1, r2 = state.luot2;
-    return `
-      <div class="page-head" style="text-align:center;">
-        <div class="tag">Lượt 2 · Chiến Lược &amp; Dòng Tiền</div>
-        <h1 style="font-size:22px;">${escBold(firstSentence(r1.ket_luan_dinh_vi))}</h1>
-      </div>
-      ${sectionHtml('Chân dung khách hàng', r2.chan_dung_khach_hang)}
-      ${(()=>{
-        const n = r2.noi_dau_rao_can || {};
-        const body = pairsBodyHtml([
-          ['Bề mặt', n.be_mat], ['Sâu bên trong', n.sau_ben_trong], ['Nỗi sợ', n.noi_so], ['Rào cản', n.rao_can_chua_hanh_dong],
-        ]);
-        return body ? `<div class="section"><h3>Nỗi đau & rào cản (4 tầng)</h3><div class="body">${body}</div></div>` : '';
-      })()}
-      ${sectionHtml('Khao khát & mục tiêu', r2.khao_khat_muc_tieu)}
-      <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${escBold(r2.insight_cot_loi)}</div></div>
-      <div class="section">
-        <h3>Hệ trục nội dung</h3>
-        ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
-        <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
-          <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
-          <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
+      ${r2 ? `
+        <div style="text-align:center;margin:34px 0 18px;">
+          <div class="tag">Chiến Lược &amp; Dòng Tiền</div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
-        ${r2.he_truc_noi_dung.tru_phu.map(t=>`
-          <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
-            <b>${esc(t.ten)}</b><br><span style="font-size:13px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
+        ${sectionHtml('Chân dung khách hàng', r2.chan_dung_khach_hang)}
+        ${(()=>{
+          const n = r2.noi_dau_rao_can || {};
+          const body = pairsBodyHtml([
+            ['Bề mặt', n.be_mat], ['Sâu bên trong', n.sau_ben_trong], ['Nỗi sợ', n.noi_so], ['Rào cản', n.rao_can_chua_hanh_dong],
+          ]);
+          return body ? `<div class="section"><h3>Nỗi đau & rào cản (4 tầng)</h3><div class="body">${body}</div></div>` : '';
+        })()}
+        ${sectionHtml('Khao khát & mục tiêu', r2.khao_khat_muc_tieu)}
+        <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${escBold(r2.insight_cot_loi)}</div></div>
+        <div class="section">
+          <h3>Hệ trục nội dung</h3>
+          ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
+          <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
+            <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
           </div>
-        `).join('')}
-      </div>
-      ${(()=>{
-        const dt = r2.dong_tien_phu_hop || {};
-        const list = (dt.danh_sach||[]).filter(d=>d && d.ten);
-        if(!dt.uu_tien && list.length===0) return '';
-        return `<div class="section"><h3>Dòng tiền phù hợp</h3>${dt.uu_tien?`<div class="body" style="margin-bottom:10px;">${esc(dt.uu_tien)}</div>`:''}
-        ${list.length?`<ul>${list.map(d=>`<li><b>${esc(d.ten)}</b>${d.thoi_han?` (${esc(d.thoi_han)})`:''}${d.ly_do?` — ${esc(d.ly_do)}`:''}</li>`).join('')}</ul>`:''}</div>`;
-      })()}
-      <div class="section">
-        <h3>Lộ trình dẫn về dòng tiền</h3>
-        <div style="display:flex;flex-wrap:wrap;align-items:stretch;gap:0;">
-          ${(Array.isArray(r2.lo_trinh_dan_ve_dong_tien)?r2.lo_trinh_dan_ve_dong_tien:[]).map((b,i,arr)=>`
-            <div style="display:flex;align-items:center;">
-              <div style="min-width:140px;max-width:180px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);">
-                <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Bước ${i+1}</div>
-                <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${esc(b.buoc)}</div>
-                <div style="font-size:12px;color:var(--ink-soft);line-height:1.4;">${esc(b.mo_ta)}</div>
-              </div>
-              ${i<arr.length-1?`<div style="padding:0 8px;color:var(--ink-soft);font-size:18px;">→</div>`:''}
+          <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
+          ${r2.he_truc_noi_dung.tru_phu.map(t=>`
+            <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
+              <b>${esc(t.ten)}</b><br><span style="font-size:13px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
             </div>
           `).join('')}
         </div>
-      </div>
-      ${sectionHtml('Script tự giới thiệu 30 giây', r2.script_gioi_thieu_30s)}
-      ${listSectionHtml('Cần sửa ngay', r2.can_sua_ngay)}
-      ${listSectionHtml('Cảnh báo', r2.canh_bao)}
-      <div class="btn-row no-print">
-        <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;align-self:center;" data-action="back-to-r1">← Xem lại Định Vị Cốt Lõi</span>
-        <button class="btn-ghost btn" data-action="print">Tải PDF / In</button>
+        ${(()=>{
+          const dt = r2.dong_tien_phu_hop || {};
+          const list = (dt.danh_sach||[]).filter(d=>d && d.ten);
+          if(!dt.uu_tien && list.length===0) return '';
+          return `<div class="section"><h3>Dòng tiền phù hợp</h3>${dt.uu_tien?`<div class="body" style="margin-bottom:10px;">${esc(dt.uu_tien)}</div>`:''}
+          ${list.length?`<ul>${list.map(d=>`<li><b>${esc(d.ten)}</b>${d.thoi_han?` (${esc(d.thoi_han)})`:''}${d.ly_do?` — ${esc(d.ly_do)}`:''}</li>`).join('')}</ul>`:''}</div>`;
+        })()}
+        <div class="section">
+          <h3>Lộ trình dẫn về dòng tiền</h3>
+          <div style="display:flex;flex-wrap:wrap;align-items:stretch;gap:0;">
+            ${(Array.isArray(r2.lo_trinh_dan_ve_dong_tien)?r2.lo_trinh_dan_ve_dong_tien:[]).map((b,i,arr)=>`
+              <div style="display:flex;align-items:center;">
+                <div style="min-width:140px;max-width:180px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);">
+                  <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Bước ${i+1}</div>
+                  <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${esc(b.buoc)}</div>
+                  <div style="font-size:12px;color:var(--ink-soft);line-height:1.4;">${esc(b.mo_ta)}</div>
+                </div>
+                ${i<arr.length-1?`<div style="padding:0 8px;color:var(--ink-soft);font-size:18px;">→</div>`:''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ${sectionHtml('Script tự giới thiệu 30 giây', r2.script_gioi_thieu_30s)}
+        ${listSectionHtml('Cần sửa ngay', r2.can_sua_ngay)}
+        ${listSectionHtml('Cảnh báo', r2.canh_bao)}
+      ` : state.luot2Loading ? `
+        <div class="section" style="text-align:center;color:var(--ink-soft);margin-top:24px;">
+          <div class="spinner" style="margin:0 auto 12px;"></div>
+          Đang xây tiếp Chiến lược &amp; Dòng tiền…
+        </div>
+      ` : `
+        <div class="section" style="text-align:center;margin-top:24px;">
+          ${state.luot2Error?`<div class="error-box" style="margin-bottom:12px;">${esc(state.luot2Error)}</div>`:''}
+          <button class="btn" data-action="get-luot2">Tạo Chiến lược &amp; Dòng tiền →</button>
+        </div>
+      `}
+      <div class="btn-row no-print" style="margin-top:20px;">
+        <button class="btn-ghost btn" data-action="redo">Làm lại định vị</button>
+        ${r2?`<button class="btn-ghost btn" data-action="print">Tải PDF / In</button>`:''}
       </div>
     `;
   }
@@ -438,7 +439,7 @@ function render(container, ctx){
     if(startBtn) startBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; state.luot1=null; state.luot2=null; draw(); };
 
     const viewResultsBtn = container.querySelector('[data-action="view-results"]');
-    if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results1'; draw(); };
+    if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results'; draw(); };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
     if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; draw(); };
 
@@ -520,7 +521,7 @@ function render(container, ctx){
     if(submitPasteBtn) submitPasteBtn.onclick = submitPaste;
 
     const viewSaved = container.querySelector('[data-action="view-saved"]');
-    if(viewSaved) viewSaved.onclick = ()=>{ state.screen = state.luot2 ? 'results2' : 'results1'; draw(); };
+    if(viewSaved) viewSaved.onclick = ()=>{ state.screen = 'results'; draw(); };
 
     const backLink = container.querySelector('[data-action="back"]');
     if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); resetSuggestions(); draw(); };
@@ -542,19 +543,12 @@ function render(container, ctx){
     const retryBtn = container.querySelector('[data-action="retry"]');
     if(retryBtn) retryBtn.onclick = ()=>{
       state.error=null;
-      if(state.screen==='saving1') runLuot1();
-      else if(state.screen==='parsing') submitPaste();
-      else runLuot2();
+      if(state.screen==='parsing') submitPaste();
+      else runLuot1();
     };
 
     const luot2Btn = container.querySelector('[data-action="get-luot2"]');
-    if(luot2Btn) luot2Btn.onclick = ()=>{ state.screen='saving2'; draw(); runLuot2(); };
-
-    const gotoR2 = container.querySelector('[data-action="goto-r2"]');
-    if(gotoR2) gotoR2.onclick = ()=>{ state.screen='results2'; draw(); };
-
-    const backR1 = container.querySelector('[data-action="back-to-r1"]');
-    if(backR1) backR1.onclick = ()=>{ state.screen='results1'; draw(); };
+    if(luot2Btn) luot2Btn.onclick = runLuot2;
 
     const redoBtn = container.querySelector('[data-action="redo"]');
     if(redoBtn) redoBtn.onclick = ()=>{ state.screen='intro'; draw(); };
@@ -651,7 +645,7 @@ function render(container, ctx){
       state.luot2 = data.luot2 || null;
       await persist({ luot1: data.luot1, luot2: data.luot2 || null, format_suggestions: null });
       state.pasteLoading = false; state.error = null;
-      state.screen = state.luot2 ? 'results2' : 'results1';
+      state.screen = 'results';
       draw();
     } catch(e){
       state.pasteLoading = false;
@@ -740,17 +734,22 @@ function render(container, ctx){
       const data = await callApi('/api/dinh-vi', { luot:1, answers: flattenAnswers() });
       state.luot1 = data.result;
       await persist({ luot1: data.result, luot2: null, format_suggestions: null });
-      state.error = null; state.screen='results1'; draw();
+      state.error = null; state.screen='results'; draw();
+      runLuot2(); // chạy tiếp Lượt 2 ngầm ngay sau đó — hiện Lượt 1 trước, Lượt 2 tự điền vào cùng trang khi xong
     } catch(e){ state.error = e.message; draw(); }
   }
 
   async function runLuot2(){
+    state.luot2Loading = true; state.luot2Error = null; draw();
     try{
       const data = await callApi('/api/dinh-vi', { luot:2, answers: flattenAnswers(), luot1: state.luot1 });
       state.luot2 = data.result;
       await persist({ luot1: state.luot1, luot2: data.result });
-      state.error = null; state.screen='results2'; draw();
-    } catch(e){ state.error = e.message; draw(); }
+      state.luot2Error = null;
+    } catch(e){ state.luot2Error = e.message; }
+    state.luot2Loading = false;
+    state.screen = 'results';
+    draw();
   }
 
   boot();

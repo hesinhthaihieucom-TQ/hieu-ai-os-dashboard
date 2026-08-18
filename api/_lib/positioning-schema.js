@@ -1,6 +1,6 @@
 // LƯU Ý: không mô tả ký tự xuống dòng bằng chữ "\n" trong text này — model hay hiểu nhầm và in ra
 // đúng 4 ký tự \,n,\,n theo nghĩa đen thay vì xuống dòng thật. Mô tả bằng lời thường để tránh lỗi đó.
-const XUONG_DONG = ' (mỗi ý viết thành 1 đoạn ngắn tách riêng bằng cách xuống dòng thật giữa các đoạn, giống như đang gõ Enter xuống dòng mới — KHÔNG dồn nhiều ý thành 1 khối văn dài dính liền nhau; bọc 1-2 cụm từ khoá quan trọng nhất trong dấu **...**).';
+const XUONG_DONG = ' (TỐI ĐA 2-3 ý cốt lõi — không hơn; mỗi ý viết 1 câu NGẮN rồi xuống dòng thật sang ý tiếp theo, giống như đang gõ Enter — KHÔNG dồn nhiều ý thành 1 khối văn dài dính liền nhau, KHÔNG viết thêm ví dụ/diễn giải phụ ngoài đúng ý chính; bọc 1-2 cụm từ khoá quan trọng nhất trong dấu **...**. Người đọc lướt trên điện thoại, càng ngắn gọn càng tốt.).';
 
 const TOOL_LUOT1 = {
   name: 'xuat_dinh_vi_luot_1',
@@ -8,7 +8,7 @@ const TOOL_LUOT1 = {
   input_schema: {
     type: 'object',
     properties: {
-      tong_quan_thuong_hieu: { type: 'string', description: 'Là ai, nền tảng đang có, nên xây hình ảnh hướng nào. 3-5 câu cụ thể.' + XUONG_DONG },
+      tong_quan_thuong_hieu: { type: 'string', description: 'Là ai, nền tảng đang có, nên xây hình ảnh hướng nào.' + XUONG_DONG },
       ho_so_chuyen_mon: { type: 'string', description: 'Công việc / kinh nghiệm / năng lực chính / kết quả đã tạo ra / lĩnh vực nên chia sẻ lâu dài.' + XUONG_DONG },
       loi_the_canh_tranh: { type: 'string', description: 'Điểm khác biệt thật: câu chuyện, trải nghiệm, chuyên môn, tính cách, năng lượng — không bị lẫn với người khác trong ngành.' + XUONG_DONG },
       hinh_anh_nen_xay: { type: 'string', description: 'Nên được người xem nhớ là ai: chọn rõ 1-2 hình ảnh chủ đạo trong nhóm truyền cảm hứng / chuyên gia thực chiến / người chữa lành / dẫn đường / kết quả thật / chiều sâu / gần gũi đáng tin, và giải thích vì sao khớp dữ liệu.' + XUONG_DONG },
@@ -17,7 +17,7 @@ const TOOL_LUOT1 = {
         description: 'GỘP CHUNG bản sắc + triết lý thương hiệu thành 1 mục duy nhất, không tách 2 mục riêng (tránh lặp ý): vừa định vị trên các trục (mộc mạc hay sang / đời thường hay chuyên gia / mạnh hay nhẹ / thực tế hay cảm xúc / gần gũi hay cao cấp), vừa nêu rõ tin gì / không đồng tình gì / muốn thay đổi nhận thức nào cho người xem — viết liền mạch thành 1 bức tranh thống nhất, câu sau không lặp lại ý câu trước.' + XUONG_DONG,
       },
       giong_dieu_ngon_ngu: { type: 'string', description: 'Giọng viết/nói cụ thể: câu ngắn hay dài, storytelling hay phân tích, ví dụ đời thường hay thuật ngữ, mức độ quan điểm riêng.' + XUONG_DONG },
-      khong_theo_duoi: { type: 'string', description: 'Liệt kê rõ những gì nội dung của kênh này KHÔNG nên làm: không sáo rỗng, không phóng đại, không bán lộ, không câu view bằng nỗi đau, không chạy trend lệch định vị — cụ thể hoá theo đúng bối cảnh người dùng.' + XUONG_DONG },
+      khong_theo_duoi: { type: 'string', description: 'Chọn TỐI ĐA 2-3 điều quan trọng nhất mà nội dung kênh này KHÔNG nên làm (không sáo rỗng, không phóng đại, không bán lộ, không câu view bằng nỗi đau, không chạy trend lệch định vị...) — cụ thể hoá đúng theo bối cảnh người dùng, không cần liệt kê hết mọi loại.' + XUONG_DONG },
       ket_luan_dinh_vi: { type: 'string', description: 'CHỈ ĐÚNG 1 CÂU DUY NHẤT, tối đa 30 từ, dạng: "Nếu tóm gọn, kênh của bạn nên được định vị là…". Phần định vị nêu ra PHẢI là 1 ngách cụ thể (ví dụ "Tài chính gia đình", "Tâm linh tài chính", "Tài chính hôn nhân"...), không được chỉ nêu tên 1 ngành lớn chung chung như "Tài chính" hay "Tâm linh". TUYỆT ĐỐI KHÔNG thêm câu thứ 2, không thêm "phiên bản khác", không giải thích thêm, không xuống dòng — chỉ 1 câu duy nhất. Có thể bọc đúng 1 cụm từ ngách trong dấu **...** để nhấn mạnh, ví dụ: kênh nên định vị là **Tài chính gia đình**.' },
       dau_an_hinh_anh: {
         type: 'object',
