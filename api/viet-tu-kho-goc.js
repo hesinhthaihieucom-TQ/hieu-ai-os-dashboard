@@ -4,8 +4,7 @@
 // không sao chép nguyên văn như bản trước đây từng làm (giữ 80%, chỉ thay 20% — quá giống bài
 // gốc, đọc như đăng lại y nguyên).
 const { requireUser } = require('./_lib/auth');
-const { FORMAT_GUIDE } = require('./_lib/formats');
-const { TOOL_POST, stripDiacritics, CTA_HASHTAG_RULES, extraFieldsBlock } = require('./_lib/post-schema');
+const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, chuyên viết lại 1 bài trong "kho content" (bài viral có sẵn) thành bản của riêng người dùng.
 
@@ -30,26 +29,24 @@ KIỂM TRA ĐỘ CỤ THỂ CỦA CÂU CHUYỆN RIÊNG (bắt buộc):
   sao?") — vẫn cứ viết bài như bình thường, KHÔNG chặn kết quả, chỉ thêm gợi ý để lần sau họ kể rõ hơn.
 - Nếu câu chuyện đã đủ cụ thể, đặt cau_chuyen_qua_chung_chung = false và để cau_hoi_lam_ro là mảng rỗng.
 
-${CTA_HASHTAG_RULES}
+${CTA_COMMENT_RULES}`;
 
-${FORMAT_GUIDE}
-(Chọn đúng 1 dạng khớp nhất với ngành + mục tiêu bài này.)`;
-
-// Mở rộng TOOL_POST dùng chung, thêm 2 trường riêng để kiểm tra độ cụ thể của câu chuyện người dùng.
+// Mở rộng TOOL_POST_CORE dùng chung, thêm 2 trường riêng để kiểm tra độ cụ thể của câu chuyện
+// người dùng. hashtag/gợi ý hình ảnh/dạng content/caption được hỏi riêng ở /api/viet-content-extras.
 const TOOL_POST_KHO_GOC = {
-  name: TOOL_POST.name,
-  description: TOOL_POST.description,
+  name: TOOL_POST_CORE.name,
+  description: TOOL_POST_CORE.description,
   input_schema: {
     type: 'object',
     properties: {
-      ...TOOL_POST.input_schema.properties,
+      ...TOOL_POST_CORE.input_schema.properties,
       cau_chuyen_qua_chung_chung: { type: 'boolean', description: 'true nếu câu chuyện người dùng cung cấp còn chung chung/thiếu chi tiết cụ thể hoặc để trống.' },
       cau_hoi_lam_ro: {
         type: 'array', items: { type: 'string' }, minItems: 0, maxItems: 5,
         description: 'Đúng 5 câu hỏi giúp làm rõ câu chuyện nếu cau_chuyen_qua_chung_chung=true, mảng rỗng nếu không.',
       },
     },
-    required: [...TOOL_POST.input_schema.required, 'cau_chuyen_qua_chung_chung', 'cau_hoi_lam_ro'],
+    required: [...TOOL_POST_CORE.input_schema.required, 'cau_chuyen_qua_chung_chung', 'cau_hoi_lam_ro'],
   },
 };
 
@@ -108,7 +105,7 @@ ${extraFieldsBlock({ channel_handle, brand_name, product_name, group_name })}
 Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`;
 
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_POST_KHO_GOC });
-    if (Array.isArray(result.hashtag)) result.hashtag = result.hashtag.map(stripDiacritics).filter(Boolean);
+    result.bai_hoan_chinh = assemblePost(result);
     res.status(200).json({ result });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi cá nhân hoá bài từ kho.' });

@@ -1,11 +1,17 @@
 // Schema + helper dùng chung cho mọi endpoint xuất ra 1 bài viết hoàn chỉnh
 // (Viết Content viết mới, và Viết từ Kho Content giữ nguyên cấu trúc gốc) —
 // giữ chung 1 shape để lưu vào bảng posts và hiển thị bằng đúng 1 UI.
+//
+// Tách CORE (hook/van_de/gia_tri/niem_tin/cta/cmt...) và EXTRAS (hashtag/gợi ý hình ảnh/dạng
+// content/caption) thành 2 lượt gọi AI riêng thay vì 1 lượt gộp hết — CORE là thứ người dùng cần
+// đọc/dùng ngay, hiển thị xong ngay khi có; EXTRAS là gợi ý bổ sung, chạy tiếp ngầm ở bước sau
+// (giống cách Định Vị tách Lượt 1 hiện ngay, Lượt 2 chạy ngầm) — vừa thấy kết quả nhanh hơn hẳn,
+// vừa không bắt người dùng chờ đủ mọi thứ mới thấy được bài viết.
 const { FORMAT_NAMES } = require('./formats');
 
-const TOOL_POST = {
-  name: 'xuat_bai_viet',
-  description: 'Xuất 1 bài viết hoàn chỉnh.',
+const TOOL_POST_CORE = {
+  name: 'xuat_bai_viet_core',
+  description: 'Xuất nội dung chính của 1 bài viết — chưa gồm hashtag/gợi ý hình ảnh/dạng content/caption (sẽ hỏi riêng ở bước sau).',
   input_schema: {
     type: 'object',
     properties: {
@@ -21,7 +27,17 @@ const TOOL_POST = {
         type: 'array', items: { type: 'string' }, minItems: 0, maxItems: 2,
         description: 'Câu bình luận CTA dẫn về sản phẩm/group cụ thể nếu người dùng có cung cấp; mảng rỗng nếu không có.',
       },
-      bai_hoan_chinh: { type: 'string', description: 'Toàn bộ bài viết ghép liền mạch, sẵn sàng copy đăng ngay.' },
+    },
+    required: ['tieu_de','hook','van_de','gia_tri','niem_tin','cta','tu_khoa_cta','cau_cmt_ghim','cmt_cta_san_pham'],
+  },
+};
+
+const TOOL_POST_EXTRAS = {
+  name: 'xuat_goi_y_bo_sung',
+  description: 'Xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption gợi ý cho 1 bài viết đã viết xong.',
+  input_schema: {
+    type: 'object',
+    properties: {
       hashtag: { type: 'array', items: { type: 'string' }, minItems: 5, maxItems: 5, description: 'Đúng 5 hashtag theo quy tắc hashtag đã nêu.' },
       goi_y_hinh_anh: { type: 'string', description: '1 ý tưởng hình ảnh/video minh hoạ cho bài này, khớp dấu ấn hình ảnh trong định vị.' },
       dinh_dang_de_xuat: {
@@ -49,9 +65,18 @@ const TOOL_POST = {
         required: ['giu_nguyen_tieu_de', 'caption_chinh', 'theo_nen_tang'],
       },
     },
-    required: ['tieu_de','hook','van_de','gia_tri','niem_tin','cta','tu_khoa_cta','cau_cmt_ghim','cmt_cta_san_pham','bai_hoan_chinh','hashtag','goi_y_hinh_anh','dinh_dang_de_xuat','ly_do_dinh_dang','goi_y_caption'],
+    required: ['hashtag','goi_y_hinh_anh','dinh_dang_de_xuat','ly_do_dinh_dang','goi_y_caption'],
   },
 };
+
+// Trước đây bắt AI viết riêng "bai_hoan_chinh" (toàn bài ghép liền mạch) NGOÀI 5 đoạn hook/van_de/
+// gia_tri/niem_tin/cta đã có — tức là AI phải viết lại gần như đúng nội dung đó lần thứ 2, tốn thêm
+// rất nhiều token sinh ra (gần gấp đôi độ dài bài) mà không thêm giá trị, khiến mỗi lần viết chậm hẳn.
+// Ghép lại bằng code thay vì bắt AI sinh riêng — nhanh hơn nhiều, nội dung y hệt vì các đoạn vốn đã
+// được viết liền mạch để đọc nối tiếp nhau.
+function assemblePost({ hook, van_de, gia_tri, niem_tin, cta }) {
+  return [hook, van_de, gia_tri, niem_tin, cta].filter(p => p && p.trim()).join('\n\n');
+}
 
 function stripDiacritics(str) {
   return (str || '')
@@ -60,7 +85,7 @@ function stripDiacritics(str) {
     .replace(/[^a-zA-Z0-9]/g, '');
 }
 
-const CTA_HASHTAG_RULES = `QUY TẮC CTA (BẮT BUỘC):
+const CTA_COMMENT_RULES = `QUY TẮC CTA (BẮT BUỘC):
 - CTA luôn phải chốt bằng 1 từ khoá kích hoạt cụ thể gồm ĐÚNG 2 CHỮ (ví dụ: "Dòng tiền", "Sổ tay", "Bí kíp", "Bắt đầu"...), theo mẫu: "Để lại bình luận chữ '<từ khoá 2 chữ>' và mình sẽ gửi bạn <thứ nhận được cụ thể>." — không dùng CTA chung chung kiểu "inbox mình nhé" hay "để lại bình luận bên dưới" mà không có từ khoá.
 - Từ khoá phải khớp chủ đề bài và thứ người đọc sẽ nhận được (tài liệu, link, ưu đãi, tư vấn...).
 
@@ -69,9 +94,9 @@ QUY TẮC BÌNH LUẬN GHIM:
 
 QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 - Nếu người dùng có cung cấp tên sản phẩm/dịch vụ và/hoặc tên group/cộng đồng, viết thêm 1-2 câu bình luận CTA (cmt_cta_san_pham) dẫn khéo về đúng sản phẩm hoặc group đó, giọng chia sẻ tự nhiên, không quảng cáo lộ liễu.
-- Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.
+- Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.`;
 
-QUY TẮC CAPTION VIDEO (goi_y_caption):
+const HASHTAG_CAPTION_RULES = `QUY TẮC CAPTION VIDEO (goi_y_caption):
 - Nếu dạng content đề xuất (dinh_dang_de_xuat) là dạng quay video (Video Ngồi Nói, POV, Vlog, Text trên Video AI/thật + Caption...), phải điền đủ goi_y_caption.
 - Tự quyết định giu_nguyen_tieu_de: true nếu tiêu đề trên thumbnail đã đủ mạnh để dùng luôn làm caption; false nếu nên viết 1 caption riêng, khác đi, hiệu quả hơn khi đứng dưới video.
 - Chỉ thêm biến thể theo_nen_tang cho nền tảng thực sự nên viết khác caption_chinh — không liệt kê cho đủ 3 nền tảng nếu không cần thiết.
@@ -92,4 +117,4 @@ SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY: ${product_name && produc
 GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}`;
 }
 
-module.exports = { TOOL_POST, stripDiacritics, CTA_HASHTAG_RULES, extraFieldsBlock };
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock };

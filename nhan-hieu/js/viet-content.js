@@ -3,7 +3,7 @@ function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
-    khoGocSource:null, cauChuyenRieng:'' };
+    khoGocSource:null, cauChuyenRieng:'', extrasLoading:false, extrasError:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -123,7 +123,7 @@ function render(container, ctx){
           </div>
         ` : ''}
         <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button></div>
-        <div class="hint-box" style="margin-top:10px;">AI viết xong sẽ tự chấm điểm content &amp; hook, gợi ý bản tối ưu hơn ngay bên dưới — tổng thời gian khoảng 2-3 phút, đừng thoát trang khi đang đợi.</div>
+        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng 30-45 giây — hashtag, gợi ý hình ảnh, dạng content, chấm điểm sẽ tự điền tiếp ngay bên dưới sau đó.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
@@ -213,25 +213,37 @@ function render(container, ctx){
         <div class="section"><h3>Bình luận CTA sản phẩm/group</h3>
           <ul>${r.cmt_cta_san_pham.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>
         </div>` : ''}
-      <div class="section"><h3>Hashtag (5)</h3><div class="body">${(r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div></div>
-      <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
-      ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (r.goi_y_caption.theo_nen_tang||[]).length)) ? `
-        <div class="section"><h3>Caption gợi ý (khi đăng dạng video)</h3>
-          <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:12.5px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
-          ${(r.goi_y_caption.theo_nen_tang||[]).length ? `
-            <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
-              ${r.goi_y_caption.theo_nen_tang.map(p=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;"><b>${esc(p.nen_tang)}:</b> ${esc(p.caption)}</div>`).join('')}
-            </div>
-          ` : ''}
+      ${r.hashtag ? `
+        <div class="section"><h3>Hashtag (5)</h3><div class="body">${(r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div></div>
+        <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
+        ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (r.goi_y_caption.theo_nen_tang||[]).length)) ? `
+          <div class="section"><h3>Caption gợi ý (khi đăng dạng video)</h3>
+            <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:12.5px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
+            ${(r.goi_y_caption.theo_nen_tang||[]).length ? `
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+                ${r.goi_y_caption.theo_nen_tang.map(p=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;"><b>${esc(p.nen_tang)}:</b> ${esc(p.caption)}</div>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+        <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
+          <div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>
+          <div class="body">${esc(r.ly_do_dinh_dang)}</div>
         </div>
-      ` : ''}
-      <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
-        <div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>
-        <div class="body">${esc(r.ly_do_dinh_dang)}</div>
-      </div>
-      <div class="btn-row no-print" style="margin-top:-6px;margin-bottom:10px;">
-        <a class="btn-ghost btn" href="#dinh-dang-content">Xem cách làm dạng này →</a>
-      </div>
+        <div class="btn-row no-print" style="margin-top:-6px;margin-bottom:10px;">
+          <a class="btn-ghost btn" href="#dinh-dang-content">Xem cách làm dạng này →</a>
+        </div>
+      ` : state.extrasLoading ? `
+        <div class="section" style="text-align:center;color:var(--ink-soft);">
+          <div class="spinner" style="margin:0 auto 12px;"></div>
+          Đang tạo thêm hashtag, gợi ý hình ảnh, dạng content phù hợp…
+        </div>
+      ` : `
+        <div class="section" style="text-align:center;">
+          ${state.extrasError?`<div class="error-box" style="margin-bottom:12px;">${esc(state.extrasError)}</div>`:''}
+          <button class="btn" data-action="retry-extras">Tạo gợi ý bổ sung (hashtag, hình ảnh, dạng content)</button>
+        </div>
+      `}
       <div class="btn-row no-print">
         <button class="btn" data-action="save">${state.savedId?'Đã lưu vào thư viện ✓':'Lưu vào thư viện bài viết'}</button>
         ${state.savedId?`<a class="btn-ghost btn" href="#lich-dang">Đưa vào Lịch Đăng Bài →</a>`:''}
@@ -281,6 +293,9 @@ function render(container, ctx){
       location.hash = 'cham-diem-hook';
     };
 
+    const retryExtrasBtn = container.querySelector('[data-action="retry-extras"]');
+    if(retryExtrasBtn) retryExtrasBtn.onclick = loadExtras;
+
     container.querySelectorAll('[data-schedule]').forEach(el=>{
       el.onclick = ()=>{
         const id = el.getAttribute('data-schedule');
@@ -301,7 +316,8 @@ function render(container, ctx){
     if(state.khoGocSource ? !state.khoGocSource.content.trim() : !state.ideaText.trim()) return;
     state.generating = true; state.error = null; state.result = null; state.savedId = null;
     state.score = null; state.scoring = false; state.scoreError = null;
-    state.hookScore = null; state.hookScoring = false; state.hookScoreError = null; draw();
+    state.hookScore = null; state.hookScoring = false; state.hookScoreError = null;
+    state.extrasLoading = false; state.extrasError = null; draw();
     try{
       const endpoint = state.khoGocSource ? '/api/viet-tu-kho-goc' : '/api/viet-content';
       const payload = {
@@ -322,9 +338,34 @@ function render(container, ctx){
       const data = await callApi(endpoint, payload);
       state.result = data.result;
       state.generating = false; draw();
-      scoreContent();
-      scoreHook();
+      // Nội dung lấy từ Kho Content vốn đã là content viral kiểm chứng — không cần chấm điểm lại.
+      if(!state.khoGocSource){
+        scoreContent();
+        scoreHook();
+      }
+      loadExtras();
     } catch(e){ state.error = e.message; state.generating = false; draw(); }
+  }
+
+  // Hashtag/gợi ý hình ảnh/dạng content/caption là bước "tiếp theo" sau khi đã có bài viết —
+  // tách khỏi lượt viết chính để bài viết hiện ra ngay, không phải chờ đủ mọi thứ mới thấy nội dung.
+  async function loadExtras(){
+    if(!state.result) return;
+    state.extrasLoading = true; state.extrasError = null; draw();
+    try{
+      const data = await callApi('/api/viet-content-extras', {
+        positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
+        quick_context: state.quickContext,
+        post_text: state.result.bai_hoan_chinh,
+        channel_handle: state.channelHandle,
+        brand_name: resolvedBrandName(),
+        product_name: resolvedProductName(),
+        group_name: resolvedGroupName(),
+      });
+      state.result = { ...state.result, ...data.result };
+      state.extrasError = null;
+    } catch(e){ state.extrasError = e.message; }
+    state.extrasLoading = false; draw();
   }
 
   async function scoreContent(){

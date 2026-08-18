@@ -1,8 +1,9 @@
 // Serverless function — viết bài hoàn chỉnh từ 1 ý tưởng, theo cấu trúc Hook-Vấn đề-Giá trị-Niềm tin-CTA
 // (khung 5 phần từ tài liệu "Viết Content Có Cấu Trúc"), giọng văn khớp định vị đã chốt.
+// Chỉ trả về nội dung CHÍNH của bài — hashtag/gợi ý hình ảnh/dạng content/caption được hỏi riêng
+// ở /api/viet-content-extras (chạy sau, không chặn hiển thị bài viết chính).
 const { requireUser } = require('./_lib/auth');
-const { FORMAT_GUIDE } = require('./_lib/formats');
-const { TOOL_POST, stripDiacritics, CTA_HASHTAG_RULES, extraFieldsBlock } = require('./_lib/post-schema');
+const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, viết đúng giọng văn và định vị đã chốt của họ.
 
@@ -12,10 +13,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Bài viết liền mạch, tự nhiên như đang nói chuyện — không viết kiểu 1 câu 1 dòng rời rạc, không sáo rỗng, không kể lể kiểu "ngày xưa mình từng...".
 - Output tiếng Việt, giữ nguyên thuật ngữ chuyên ngành (hook, CTA, content, insight...).
 
-${CTA_HASHTAG_RULES}
-
-${FORMAT_GUIDE}
-(Chọn đúng 1 dạng khớp nhất với ngành + mục tiêu bài này.)`;
+${CTA_COMMENT_RULES}`;
 
 async function callClaude({ apiKey, system, userContent, tool }) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -64,10 +62,10 @@ module.exports = async (req, res) => {
 
 ${extraFieldsBlock({ channel_handle, brand_name, product_name, group_name })}
 
-Hãy viết 1 bài hoàn chỉnh theo đúng khung 5 phần, giọng văn khớp định vị trên, đúng quy tắc CTA/bình luận ghim/hashtag đã nêu.`;
+Hãy viết 1 bài hoàn chỉnh theo đúng khung 5 phần, giọng văn khớp định vị trên, đúng quy tắc CTA/bình luận ghim đã nêu.`;
 
-    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_POST });
-    if (Array.isArray(result.hashtag)) result.hashtag = result.hashtag.map(stripDiacritics).filter(Boolean);
+    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_POST_CORE });
+    result.bai_hoan_chinh = assemblePost(result);
     res.status(200).json({ result });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi viết content.' });
