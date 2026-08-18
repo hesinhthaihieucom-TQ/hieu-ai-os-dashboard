@@ -28,7 +28,7 @@ const HELP_SECTIONS = [
     { q:'Lịch Đăng Bài có tự động không?', a:'Có. Nhập mục tiêu tuần này, bấm "AI gợi ý lịch tuần" — hệ thống xếp sẵn 7 ngày theo đúng trục nội dung, bạn chỉ cần bấm "Dùng gợi ý" hoặc tự chọn bài khác.' },
   ]},
   { group:'Dữ liệu & bảo mật', items: [
-    { q:'Dữ liệu của tôi có bị người khác xem không?', a:'Không. Mỗi tài khoản chỉ thấy dữ liệu của chính mình, trừ "Kho chung" do đội ngũ quản lý là mọi người đều xem được.' },
+    { q:'Dữ liệu của tôi có bị người khác xem không?', a:'Không. Mỗi tài khoản chỉ thấy dữ liệu của chính mình, trừ "Kho Content Viral"/"Kho Hook Viral" do đội ngũ quản lý là mọi người đều xem được.' },
     { q:'Tôi đổi máy/điện thoại thì dữ liệu có mất không?', a:'Không mất — dữ liệu lưu trên server theo tài khoản, đăng nhập lại ở bất kỳ thiết bị nào cũng thấy đầy đủ.' },
   ]},
 ];

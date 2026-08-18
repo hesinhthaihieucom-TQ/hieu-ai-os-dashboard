@@ -24,6 +24,14 @@ function firstSentence(s){
   return m ? m[0].trim() : str;
 }
 
+// Rút gọn nội dung dài cho danh sách duyệt nhanh (vd "Bài đã viết") — không hiện nguyên cả bài,
+// tránh trang dài lê thê, người dùng bấm vào mới cần xem đủ (qua Lịch Đăng/chỉnh sửa).
+function excerpt(s, maxLen){
+  const str = String(s==null?'':s).trim();
+  if(str.length <= maxLen) return str;
+  return str.slice(0, maxLen).trim() + '…';
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });

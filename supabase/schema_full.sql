@@ -163,6 +163,10 @@ create table if not exists posts (
   structure jsonb,
   created_at timestamptz not null default now()
 );
+-- Trục nội dung kế thừa từ bài/hook gốc trong Kho Content khi viết lại từ đó — dùng để nhóm
+-- "Bài đã viết" theo trục cho dễ tìm, giống cách Kho Content Viral đang nhóm. Bài viết từ ý
+-- tưởng mới (không xuất phát từ Kho) sẽ không có tags, xếp vào nhóm "Chưa phân loại".
+alter table posts add column if not exists tags text[];
 
 create table if not exists calendar_entries (
   id uuid primary key default gen_random_uuid(),
@@ -187,6 +191,9 @@ create table if not exists hooks_bank_personal (
   note text,
   created_at timestamptz not null default now()
 );
+-- Trục nội dung do người dùng tự chọn khi thêm hook vào Kho của tôi — dùng để nhóm theo trục,
+-- càng lưu nhiều hook càng dễ tìm lại đúng loại cần dùng.
+alter table hooks_bank_personal add column if not exists tags text[];
 
 create table if not exists hooks_bank_shared (
   id uuid primary key default gen_random_uuid(),

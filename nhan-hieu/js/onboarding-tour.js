@@ -36,6 +36,10 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
   const availableSteps = STEPS.filter(s => document.querySelector(`.sidebar-item[data-key="${s.key}"]`));
   if(availableSteps.length === 0) return;
   const sidebarEl = document.querySelector('.sidebar');
+  // Trên điện thoại, sidebar giờ là ngăn kéo ẩn ngoài màn hình theo mặc định — phải mở ra trong
+  // lúc chạy tour thì mới trỏ sáng đúng vị trí thật của từng mục (không ảnh hưởng bản desktop,
+  // class "open" chỉ có tác dụng trong media query mobile).
+  if(sidebarEl) sidebarEl.classList.add('open');
   const sidebarWidth = sidebarEl ? sidebarEl.getBoundingClientRect().width : 260;
 
   let idx = 0;
@@ -56,6 +60,7 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
     markTourSeenLocally(userId);
     if(typeof onSeen === 'function') onSeen();
     overlay.remove();
+    if(sidebarEl) sidebarEl.classList.remove('open');
     window.removeEventListener('hashchange', finish);
   }
   window.addEventListener('hashchange', finish);

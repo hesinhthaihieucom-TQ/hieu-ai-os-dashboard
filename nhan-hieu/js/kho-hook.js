@@ -52,12 +52,12 @@ function categoryLabel(key){
 function render(container, ctx){
   const state = {
     tab:'tao-hook', personal:[], shared:[], sharedContent:[], error:null, positioning:null,
-    newEntry:{ hook_text:'', note:'' }, addingHook:false, addError:null,
+    newEntry:{ hook_text:'', note:'', tagKeys:[] }, addingHook:false, addError:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
-    chungPillar:null,
+    chungPillar:null, khoToiPillar:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -114,7 +114,7 @@ function render(container, ctx){
       <div class="tab-row">
         <div class="tab-btn ${state.tab==='tao-hook'?'active':''}" data-tab="tao-hook">Tạo Hook</div>
         <div class="tab-btn ${state.tab==='kho-toi'?'active':''}" data-tab="kho-toi">Kho của tôi (${state.personal.length})</div>
-        <div class="tab-btn ${state.tab==='kho-chung'?'active':''}" data-tab="kho-chung">Kho chung (${state.shared.length + state.sharedContent.length})</div>
+        <div class="tab-btn ${state.tab==='kho-chung'?'active':''}" data-tab="kho-chung">Kho Hook Viral (${state.shared.length + state.sharedContent.length})</div>
       </div>
       ${state.tab==='tao-hook' ? taoHookTab() : state.tab==='kho-toi' ? khoToiTab() : khoChungTab()}
     `;
@@ -123,6 +123,7 @@ function render(container, ctx){
   function taoHookTab(){
     const hasPositioning = !!(state.positioning && state.positioning.luot1);
     return `
+      <div class="hint-box" style="margin-bottom:14px;">Câu hook (câu mở đầu) quyết định người xem có dừng lại đọc tiếp hay lướt qua — quan trọng ngang bài viết. Nhập chủ đề + chọn đúng mục tiêu, AI sinh ngay 5 hook phù hợp, lưu lại vào <b>Kho của tôi</b> để dùng dần.</div>
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề muốn viết hook</label>
         <textarea id="gen-topic" style="min-height:auto;height:52px;" placeholder="Ví dụ: sai lầm khiến dòng tiền cá nhân bị nghẽn">${esc(state.genTopic)}</textarea>
@@ -216,39 +217,74 @@ function render(container, ctx){
   }
 
   function khoToiTab(){
-    return `
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook hay của riêng bạn — tự nghĩ ra hoặc lưu lại từ hook AI vừa sinh — gom hết vào đây để lần sau viết bài không phải nghĩ lại từ đầu. Chọn trục nội dung khi thêm để kho lớn vẫn tìm lại nhanh.</div>`;
+    return hint + `
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Câu hook</label>
         <textarea id="ne-hook" style="min-height:auto;height:56px;">${esc(state.newEntry.hook_text)}</textarea>
         <div style="margin-top:6px;font-size:12px;color:var(--ink-soft);">Không cần chọn loại hook — hệ thống tự nhận diện khi bạn lưu.</div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ghi chú (tuỳ chọn)</label>
         <textarea id="ne-note" style="min-height:auto;height:44px;">${esc(state.newEntry.note)}</textarea>
-        <div class="btn-row"><button class="btn" data-action="add" ${state.addingHook?'disabled':''}>${state.addingHook?'Đang nhận diện loại hook…':'Thêm vào kho của tôi'}</button></div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Trục nội dung (chọn 1 hoặc nhiều)</label>
+        <div class="chips">
+          ${HOOK_PILLARS.map(p=>`<div class="chip ${state.newEntry.tagKeys.includes(p.key)?'selected':''}" data-ne-tag="${p.key}">${esc(p.label)}</div>`).join('')}
+        </div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add" ${state.addingHook?'disabled':''}>${state.addingHook?'Đang nhận diện loại hook…':'Thêm vào kho của tôi'}</button></div>
         ${state.addError?`<div class="error-box">${esc(state.addError)}</div>`:''}
       </div>
       <div style="margin-top:20px;">
-        ${state.personal.length===0?`<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`:''}
-        ${state.personal.map(h=>`
-          <div class="section">
-            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
-            <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
-            <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-              <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
-            </div>
-            ${writeActionHtml('personal:'+h.id)}
-          </div>
-        `).join('')}
+        ${khoToiListHtml()}
       </div>
+    `;
+  }
+
+  function khoToiListHtml(){
+    if(state.personal.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
+
+    if(!state.khoToiPillar){
+      return `
+        <div class="chips">
+          ${HOOK_PILLARS.map(p=>{
+            const count = state.personal.filter(h=>(h.tags||[]).includes(p.key)).length;
+            if(count===0) return '';
+            return `<div class="chip" data-khotoi-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
+          }).join('')}
+          ${(()=>{ const n = state.personal.filter(h=>!(h.tags||[]).length).length; return n ? `<div class="chip" data-khotoi-pillar="none">Chưa phân loại (${n})</div>` : ''; })()}
+          <div class="chip" data-khotoi-pillar="all">Xem tất cả (${state.personal.length})</div>
+        </div>
+      `;
+    }
+
+    const items = state.khoToiPillar==='all' ? state.personal
+      : state.khoToiPillar==='none' ? state.personal.filter(h=>!(h.tags||[]).length)
+      : state.personal.filter(h=>(h.tags||[]).includes(state.khoToiPillar));
+    const pillarLabel = state.khoToiPillar==='all' ? 'Tất cả' : state.khoToiPillar==='none' ? 'Chưa phân loại' : (HOOK_PILLARS.find(p=>p.key===state.khoToiPillar)||{}).label;
+    return `
+      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} hook)</div>
+        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="khotoi-back">← Chọn trục khác</span>
+      </div>
+      ${items.map(h=>`
+        <div class="section">
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
+          <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+          <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
+            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
+          </div>
+          ${writeActionHtml('personal:'+h.id)}
+        </div>
+      `).join('')}
     `;
   }
 
   function khoChungTab(){
     const all = combinedShared();
-    if(all.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook <b>đã được kiểm chứng viral</b> — câu mở đầu đã khiến rất nhiều người dừng lại xem — do đội ngũ tuyển chọn và cập nhật liên tục. Dùng làm mẫu để viết hook riêng cho chủ đề của bạn, không phải để copy nguyên văn.</div>`;
+    if(all.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Hook Viral chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
 
     if(!state.chungPillar){
-      return `
-        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng hook phù hợp — đỡ phải lướt qua cả kho. Gồm cả hook riêng và tiêu đề viral từ Kho Content chung.</div>
+      return hint + `
+        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng hook phù hợp — đỡ phải lướt qua cả kho. Gồm cả hook riêng và tiêu đề viral từ Kho Content Viral.</div>
         <div class="chips">
           ${HOOK_PILLARS.map(p=>{
             const count = all.filter(h=>(h.tags||[]).includes(p.key)).length;
@@ -284,6 +320,21 @@ function render(container, ctx){
     });
     const chungBackLink = container.querySelector('[data-action="chung-back"]');
     if(chungBackLink) chungBackLink.onclick = ()=>{ state.chungPillar = null; draw(); };
+
+    container.querySelectorAll('[data-khotoi-pillar]').forEach(el=>{
+      el.onclick = ()=>{ state.khoToiPillar = el.getAttribute('data-khotoi-pillar'); draw(); };
+    });
+    const khoToiBackLink = container.querySelector('[data-action="khotoi-back"]');
+    if(khoToiBackLink) khoToiBackLink.onclick = ()=>{ state.khoToiPillar = null; draw(); };
+
+    container.querySelectorAll('[data-ne-tag]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-ne-tag');
+        const i = state.newEntry.tagKeys.indexOf(key);
+        if(i>=0) state.newEntry.tagKeys.splice(i,1); else state.newEntry.tagKeys.push(key);
+        draw();
+      };
+    });
 
     const gt = container.querySelector('#gen-topic'); if(gt) gt.oninput = ()=>state.genTopic = gt.value;
     const gqc = container.querySelector('#gen-quick-context'); if(gqc) gqc.oninput = ()=>state.genQuickContext = gqc.value;
@@ -410,9 +461,9 @@ function render(container, ctx){
     }
     await ctx.supabase.from('hooks_bank_personal').insert({
       user_id: ctx.user.id, hook_text: state.newEntry.hook_text,
-      category, note: state.newEntry.note || null,
+      category, note: state.newEntry.note || null, tags: state.newEntry.tagKeys,
     });
-    state.newEntry = { hook_text:'', note:'' };
+    state.newEntry = { hook_text:'', note:'', tagKeys:[] };
     state.addingHook = false;
     await loadPersonal();
     draw();

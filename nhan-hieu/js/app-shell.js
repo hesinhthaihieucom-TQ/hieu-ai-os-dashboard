@@ -287,8 +287,13 @@ function renderApp(){
   if(!hasActiveAccess()){ renderExpiredScreen(); return; }
   const root = document.getElementById('app');
   root.innerHTML = `
+    <div class="topbar-mobile">
+      <span class="menu-toggle" id="menu-toggle-btn">☰</span>
+      <span class="topbar-title">XÂY NHÂN HIỆU</span>
+    </div>
     <div class="app-layout">
-      <div class="sidebar">
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+      <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
           <img src="assets/logo-hieu-kenh-badge.svg" class="brand-logo" alt="" onerror="this.style.display='none'">
           <div class="brand-text">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU<br>HIỂU KÊNH</small></div>
@@ -313,8 +318,19 @@ function renderApp(){
       <span class="num">${i+1}</span><span>${esc(n.title)}</span>
     </div>
   `).join('');
+
+  const sidebar = root.querySelector('#sidebar');
+  const overlay = root.querySelector('#sidebar-overlay');
+  const closeDrawer = ()=>{ sidebar.classList.remove('open'); overlay.classList.remove('open'); };
+  const menuBtn = root.querySelector('#menu-toggle-btn');
+  if(menuBtn) menuBtn.onclick = ()=>{ sidebar.classList.add('open'); overlay.classList.add('open'); };
+  overlay.onclick = closeDrawer;
+
   nav.querySelectorAll('.sidebar-item').forEach(el=>{
-    el.onclick = ()=>{ location.hash = el.getAttribute('data-key'); };
+    el.onclick = ()=>{
+      location.hash = el.getAttribute('data-key');
+      closeDrawer(); // trên điện thoại, chọn xong 1 mục thì tự đóng ngăn kéo lại, khỏi phải bấm tay
+    };
   });
 
   root.querySelector('#signout-btn').onclick = async ()=>{ await supabaseClient.auth.signOut(); };

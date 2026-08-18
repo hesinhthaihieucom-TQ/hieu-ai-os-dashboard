@@ -492,6 +492,9 @@ function render(container, ctx){
       title: r.tieu_de,
       content: r.bai_hoan_chinh,
       structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, tu_khoa_cta:r.tu_khoa_cta, cau_cmt_ghim:r.cau_cmt_ghim, cmt_cta_san_pham:r.cmt_cta_san_pham, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: r.dinh_dang_de_xuat },
+      // Kế thừa trục nội dung từ bài/hook gốc trong Kho Content nếu viết từ đó — để "Bài đã viết"
+      // tự xếp đúng trục, không có thì để trống (xếp vào "Chưa phân loại").
+      tags: (state.khoGocSource && state.khoGocSource.tags) || [],
     }).select().single();
     if(error){ state.error = error.message; draw(); return; }
     state.savedId = data.id;
