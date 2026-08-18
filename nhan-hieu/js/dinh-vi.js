@@ -206,7 +206,20 @@ function render(container, ctx){
   }
 
   function sectionHtml(title, body){
+    if(!body || !String(body).trim()) return '';
     return `<div class="section"><h3>${esc(title)}</h3><div class="body">${esc(body)}</div></div>`;
+  }
+
+  // Danh sách (mảng chuỗi) — bỏ qua hẳn cả section nếu mảng rỗng, thay vì hiện tiêu đề với danh sách trống.
+  function listSectionHtml(title, items, highlight){
+    const list = (items||[]).filter(x=>x && String(x).trim());
+    if(list.length===0) return '';
+    return `<div class="section${highlight?' highlight':''}"><h3>${esc(title)}</h3><ul>${list.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
+  }
+
+  // Ghép các cặp nhãn/giá trị, bỏ qua cặp nào rỗng — dùng cho các section gồm nhiều dòng con.
+  function pairsBodyHtml(pairs){
+    return pairs.filter(([,v])=>v && String(v).trim()).map(([label,v])=>`<b>${esc(label)}:</b> ${esc(v)}`).join('<br>');
   }
 
   function results1Html(){
@@ -301,18 +314,25 @@ function render(container, ctx){
       ${sectionHtml('Hình ảnh nên xây', r.hinh_anh_nen_xay)}
       ${sectionHtml('Bản sắc thương hiệu', r.ban_sac_thuong_hieu)}
       ${sectionHtml('Giọng điệu & ngôn ngữ', r.giong_dieu_ngon_ngu)}
-      <div class="section"><h3>Hook mở đầu</h3><div class="body">${esc(r.hook_mo_dau && r.hook_mo_dau.kieu_hook)}</div>
-        <ul>${((r.hook_mo_dau && r.hook_mo_dau.vi_du)||[]).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
+      ${(r.hook_mo_dau && (r.hook_mo_dau.kieu_hook || (r.hook_mo_dau.vi_du||[]).length)) ? `
+      <div class="section"><h3>Hook mở đầu</h3>${r.hook_mo_dau.kieu_hook?`<div class="body">${esc(r.hook_mo_dau.kieu_hook)}</div>`:''}
+        <ul>${(r.hook_mo_dau.vi_du||[]).filter(Boolean).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
+      ` : ''}
       ${sectionHtml('Triết lý thương hiệu', r.triet_ly_thuong_hieu)}
       ${sectionHtml('Không theo đuổi', r.khong_theo_duoi)}
-      <div class="section"><h3>Dấu ấn hình ảnh thương hiệu</h3>
-        <div class="body"><b>Hành động đặc trưng:</b> ${esc(r.dau_an_hinh_anh && r.dau_an_hinh_anh.hanh_dong_dac_trung)}<br>
-        <b>Đồ vật/prop:</b> ${esc(r.dau_an_hinh_anh && r.dau_an_hinh_anh.do_vat_prop)}<br>
-        <b>Không gian:</b> ${esc(r.dau_an_hinh_anh && r.dau_an_hinh_anh.khong_gian_signature)}<br>
-        <b>Phong cách:</b> ${esc(r.dau_an_hinh_anh && r.dau_an_hinh_anh.phong_cach_xuat_hien)}<br>
-        <b>Góc quay POV:</b> ${esc(r.dau_an_hinh_anh && r.dau_an_hinh_anh.goc_quay_pov)}</div>
-        <ul>${((r.dau_an_hinh_anh && r.dau_an_hinh_anh.canh_mo_dau)||[]).map(c=>`<li>${esc(c)}</li>`).join('')}</ul>
-      </div>
+      ${(()=>{
+        const d = r.dau_an_hinh_anh || {};
+        const body = pairsBodyHtml([
+          ['Hành động đặc trưng', d.hanh_dong_dac_trung], ['Đồ vật/prop', d.do_vat_prop],
+          ['Không gian', d.khong_gian_signature], ['Phong cách', d.phong_cach_xuat_hien], ['Góc quay POV', d.goc_quay_pov],
+        ]);
+        const canh = (d.canh_mo_dau||[]).filter(Boolean);
+        if(!body && canh.length===0) return '';
+        return `<div class="section"><h3>Dấu ấn hình ảnh thương hiệu</h3>
+          ${body?`<div class="body">${body}</div>`:''}
+          ${canh.length?`<ul>${canh.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
+        </div>`;
+      })()}
       <div class="btn-row no-print">
         ${!state.luot2 ? `<button class="btn" data-action="get-luot2">Xem tiếp: Chiến lược & Dòng tiền →</button>` : `<button class="btn" data-action="goto-r2">Xem Chiến lược & Dòng tiền →</button>`}
         <button class="btn-ghost btn" data-action="redo">Làm lại định vị</button>
@@ -328,13 +348,18 @@ function render(container, ctx){
         <h1 style="font-size:22px;">${escBold(firstSentence(r1.ket_luan_dinh_vi))}</h1>
       </div>
       ${sectionHtml('Chân dung khách hàng', r2.chan_dung_khach_hang)}
-      <div class="section"><h3>Nỗi đau & rào cản (4 tầng)</h3>
-        <div class="body"><b>Bề mặt:</b> ${esc(r2.noi_dau_rao_can.be_mat)}<br><b>Sâu bên trong:</b> ${esc(r2.noi_dau_rao_can.sau_ben_trong)}<br><b>Nỗi sợ:</b> ${esc(r2.noi_dau_rao_can.noi_so)}<br><b>Rào cản:</b> ${esc(r2.noi_dau_rao_can.rao_can_chua_hanh_dong)}</div></div>
+      ${(()=>{
+        const n = r2.noi_dau_rao_can || {};
+        const body = pairsBodyHtml([
+          ['Bề mặt', n.be_mat], ['Sâu bên trong', n.sau_ben_trong], ['Nỗi sợ', n.noi_so], ['Rào cản', n.rao_can_chua_hanh_dong],
+        ]);
+        return body ? `<div class="section"><h3>Nỗi đau & rào cản (4 tầng)</h3><div class="body">${body}</div></div>` : '';
+      })()}
       ${sectionHtml('Khao khát & mục tiêu', r2.khao_khat_muc_tieu)}
       <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${esc(r2.insight_cot_loi)}</div></div>
       <div class="section">
         <h3>Hệ trục nội dung</h3>
-        <div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${esc(r2.he_truc_noi_dung.cong_thuc)}</div>
+        ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${esc(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
         <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
           <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
           <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
@@ -346,8 +371,13 @@ function render(container, ctx){
           </div>
         `).join('')}
       </div>
-      <div class="section"><h3>Dòng tiền phù hợp</h3><div class="body" style="margin-bottom:10px;">${esc(r2.dong_tien_phu_hop.uu_tien)}</div>
-        <ul>${(r2.dong_tien_phu_hop.danh_sach||[]).map(d=>`<li><b>${esc(d.ten)}</b> (${esc(d.thoi_han)}) — ${esc(d.ly_do)}</li>`).join('')}</ul></div>
+      ${(()=>{
+        const dt = r2.dong_tien_phu_hop || {};
+        const list = (dt.danh_sach||[]).filter(d=>d && d.ten);
+        if(!dt.uu_tien && list.length===0) return '';
+        return `<div class="section"><h3>Dòng tiền phù hợp</h3>${dt.uu_tien?`<div class="body" style="margin-bottom:10px;">${esc(dt.uu_tien)}</div>`:''}
+        ${list.length?`<ul>${list.map(d=>`<li><b>${esc(d.ten)}</b>${d.thoi_han?` (${esc(d.thoi_han)})`:''}${d.ly_do?` — ${esc(d.ly_do)}`:''}</li>`).join('')}</ul>`:''}</div>`;
+      })()}
       <div class="section">
         <h3>Lộ trình dẫn về dòng tiền</h3>
         <div style="display:flex;flex-wrap:wrap;align-items:stretch;gap:0;">
@@ -364,9 +394,9 @@ function render(container, ctx){
         </div>
       </div>
       ${sectionHtml('Script tự giới thiệu 30 giây', r2.script_gioi_thieu_30s)}
-      <div class="section"><h3>Hook cá nhân</h3><ul>${(r2.hook_ca_nhan||[]).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Cần sửa ngay</h3><ul>${(r2.can_sua_ngay||[]).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Cảnh báo</h3><ul>${(r2.canh_bao||[]).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
+      ${listSectionHtml('Hook cá nhân', r2.hook_ca_nhan)}
+      ${listSectionHtml('Cần sửa ngay', r2.can_sua_ngay)}
+      ${listSectionHtml('Cảnh báo', r2.canh_bao)}
       <div class="btn-row no-print">
         <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;align-self:center;" data-action="back-to-r1">← Xem lại Định Vị Cốt Lõi</span>
         <button class="btn-ghost btn" data-action="print">Tải PDF / In</button>

@@ -23,10 +23,37 @@ KHÔNG được viết lại tự do như viết bài mới. Nhiệm vụ là GI
   chỉ tinh chỉnh nhẹ giọng văn cho khớp định vị (không tự bịa câu chuyện thay họ).
 - Output tiếng Việt, giữ nguyên thuật ngữ chuyên ngành (hook, CTA, content, insight...).
 
+KIỂM TRA ĐỘ CỤ THỂ CỦA CÂU CHUYỆN RIÊNG (bắt buộc):
+- Nếu câu chuyện người dùng cung cấp còn CHUNG CHUNG (thiếu chi tiết cụ thể: không có mốc thời gian,
+  con số, tên/tình huống cụ thể, cảm xúc/kết quả rõ ràng...) hoặc để trống, đặt cau_chuyen_qua_chung_chung
+  = true và viết đúng 5 câu hỏi (cau_hoi_lam_ro) để giúp họ kể lại câu chuyện cụ thể hơn — mỗi câu hỏi
+  nhắm đúng 1 chi tiết còn thiếu (ví dụ: "Chuyện này xảy ra khi nào/giai đoạn nào?", "Con số cụ thể là bao
+  nhiêu?", "Lúc đó bạn cảm thấy thế nào?", "Ai/việc gì khiến bạn nhận ra điều này?", "Kết quả cuối cùng ra
+  sao?") — vẫn cứ viết bài như bình thường, KHÔNG chặn kết quả, chỉ thêm gợi ý để lần sau họ kể rõ hơn.
+- Nếu câu chuyện đã đủ cụ thể, đặt cau_chuyen_qua_chung_chung = false và để cau_hoi_lam_ro là mảng rỗng.
+
 ${CTA_HASHTAG_RULES}
 
 ${FORMAT_GUIDE}
 (Chọn đúng 1 dạng khớp nhất với ngành + mục tiêu bài này.)`;
+
+// Mở rộng TOOL_POST dùng chung, thêm 2 trường riêng để kiểm tra độ cụ thể của câu chuyện người dùng.
+const TOOL_POST_KHO_GOC = {
+  name: TOOL_POST.name,
+  description: TOOL_POST.description,
+  input_schema: {
+    type: 'object',
+    properties: {
+      ...TOOL_POST.input_schema.properties,
+      cau_chuyen_qua_chung_chung: { type: 'boolean', description: 'true nếu câu chuyện người dùng cung cấp còn chung chung/thiếu chi tiết cụ thể hoặc để trống.' },
+      cau_hoi_lam_ro: {
+        type: 'array', items: { type: 'string' }, minItems: 0, maxItems: 5,
+        description: 'Đúng 5 câu hỏi giúp làm rõ câu chuyện nếu cau_chuyen_qua_chung_chung=true, mảng rỗng nếu không.',
+      },
+    },
+    required: [...TOOL_POST.input_schema.required, 'cau_chuyen_qua_chung_chung', 'cau_hoi_lam_ro'],
+  },
+};
 
 async function callClaude({ apiKey, system, userContent, tool }) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -80,7 +107,7 @@ ${extraFieldsBlock({ channel_handle, brand_name, product_name, group_name })}
 
 Hãy xuất bài đã cá nhân hoá theo đúng nguyên tắc đã nêu — giữ hook/tiêu đề/cấu trúc gốc, chỉ thay ~20% bằng câu chuyện riêng.`;
 
-    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_POST });
+    const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_POST_KHO_GOC });
     if (Array.isArray(result.hashtag)) result.hashtag = result.hashtag.map(stripDiacritics).filter(Boolean);
     res.status(200).json({ result });
   } catch (err) {

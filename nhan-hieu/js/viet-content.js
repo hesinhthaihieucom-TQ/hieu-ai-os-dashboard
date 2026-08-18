@@ -159,6 +159,13 @@ function render(container, ctx){
   function resultHtml(){
     const r = state.result;
     return `
+      ${(r.cau_chuyen_qua_chung_chung && (r.cau_hoi_lam_ro||[]).length) ? `
+        <div class="section highlight-dark">
+          <h3>Câu chuyện của bạn còn hơi chung chung</h3>
+          <div class="body">AI vẫn viết bài bên dưới, nhưng để bài cá nhân hoá thật hơn, thử trả lời mấy câu này rồi sửa lại phần "Câu chuyện riêng của bạn" ở trên và bấm tạo lại:</div>
+          <ul>${r.cau_hoi_lam_ro.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
+        </div>
+      ` : ''}
       <div class="section highlight"><h3>${esc(r.tieu_de)}</h3><div class="body">${esc(r.bai_hoan_chinh)}</div></div>
       ${scoreSectionHtml()}
       <div class="section"><h3>Cấu trúc bài</h3>
