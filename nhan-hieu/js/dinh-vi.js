@@ -47,7 +47,7 @@ function render(container, ctx){
     channelHandle:'', channelSaving:false, channelSaved:false,
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
-    brands:[], newBrandName:'', editingBrandId:null, editBrandName:'' };
+    brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null, regenLoading:false };
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
     aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
@@ -127,8 +127,10 @@ function render(container, ctx){
       </div>
       <div class="btn-row" style="justify-content:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
-        <button class="btn-ghost btn" data-action="redo-from-done">Làm lại từ đầu</button>
+        <button class="btn-ghost btn" data-action="regenerate-results" ${state.regenLoading?'disabled':''}>${state.regenLoading?'Đang tạo lại…':'Tạo lại kết quả (giữ câu trả lời)'}</button>
+        <button class="btn-ghost btn" data-action="redo-from-done">Làm lại từ đầu (trả lời lại 18 câu)</button>
       </div>
+      ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
     `;
   }
 
@@ -235,9 +237,11 @@ function render(container, ctx){
     `;
   }
 
+  // breakSentences() luôn được áp cho mọi thân đoạn dài — không phụ thuộc việc AI có tự chèn \n\n hay không,
+  // vì thực tế AI không chèn xuống dòng đều đặn dù đã yêu cầu trong schema.
   function sectionHtml(title, body){
     if(!body || !String(body).trim()) return '';
-    return `<div class="section"><h3>${esc(title)}</h3><div class="body">${escBold(body)}</div></div>`;
+    return `<div class="section"><h3>${esc(title)}</h3><div class="body">${escBold(breakSentences(body))}</div></div>`;
   }
 
   // Danh sách (mảng chuỗi) — bỏ qua hẳn cả section nếu mảng rỗng, thay vì hiện tiêu đề với danh sách trống.
@@ -259,6 +263,7 @@ function render(container, ctx){
         <div class="tag">Lượt 1 · Định Vị Cốt Lõi</div>
         <h1>Định vị thương hiệu của bạn</h1>
       </div>
+      ${state.saveError?`<div class="error-box" style="margin-bottom:14px;">${esc(state.saveError)}</div>`:''}
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên kênh Facebook/TikTok</label>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Lưu 1 lần ở đây — Viết Content sẽ tự lấy tên kênh này để ghép hashtag, khỏi phải nhập lại mỗi bài.</div>
@@ -333,7 +338,7 @@ function render(container, ctx){
       ${(()=>{
         const cc = r.cau_chuyen_ca_nhan;
         if(!cc || !cc.cau_chuyen) return '';
-        return `<div class="section"><h3>Câu chuyện cá nhân</h3><div class="body">${escBold(cc.cau_chuyen)}</div>
+        return `<div class="section"><h3>Câu chuyện cá nhân</h3><div class="body">${escBold(breakSentences(cc.cau_chuyen))}</div>
           ${cc.qua_so_sai && (cc.cau_hoi_lam_ro||[]).length ? `
             <div class="hint-box" style="margin-top:12px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu này rồi làm lại Định Vị để câu chuyện cụ thể hơn:
               <ul style="margin-top:8px;">${cc.cau_hoi_lam_ro.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
@@ -434,6 +439,8 @@ function render(container, ctx){
     if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results1'; draw(); };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
     if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; draw(); };
+    const regenBtn = container.querySelector('[data-action="regenerate-results"]');
+    if(regenBtn) regenBtn.onclick = regenerateResults;
 
     const goPaste = container.querySelector('[data-action="go-paste"]');
     if(goPaste) goPaste.onclick = ()=>{ state.screen='paste'; state.pasteError=null; draw(); };
@@ -667,7 +674,9 @@ function render(container, ctx){
 
   async function addBrand(){
     if(!state.newBrandName.trim()) return;
-    await ctx.supabase.from('brands').insert({ user_id: ctx.user.id, name: state.newBrandName.trim() });
+    const { error } = await ctx.supabase.from('brands').insert({ user_id: ctx.user.id, name: state.newBrandName.trim() });
+    if(error){ state.saveError = error.message; draw(); return; }
+    state.saveError = null;
     state.newBrandName = '';
     await loadBrands();
     draw();
@@ -675,7 +684,9 @@ function render(container, ctx){
 
   async function saveEditBrand(){
     if(!state.editingBrandId || !state.editBrandName.trim()) return;
-    await ctx.supabase.from('brands').update({ name: state.editBrandName.trim() }).eq('id', state.editingBrandId);
+    const { error } = await ctx.supabase.from('brands').update({ name: state.editBrandName.trim() }).eq('id', state.editingBrandId);
+    if(error){ state.saveError = error.message; draw(); return; }
+    state.saveError = null;
     state.editingBrandId = null;
     await loadBrands();
     draw();
@@ -683,9 +694,11 @@ function render(container, ctx){
 
   async function addAsset(){
     if(!state.newAsset.label.trim()) return;
-    await ctx.supabase.from('promo_assets').insert({
+    const { error } = await ctx.supabase.from('promo_assets').insert({
       user_id: ctx.user.id, label: state.newAsset.label, url: state.newAsset.url || null, kind: state.newAsset.kind,
     });
+    if(error){ state.saveError = error.message; draw(); return; }
+    state.saveError = null;
     state.newAsset = { label:'', url:'', kind:'san_pham_so' };
     await loadAssets();
     draw();
@@ -693,9 +706,11 @@ function render(container, ctx){
 
   async function addGroup(){
     if(!state.newGroup.label.trim()) return;
-    await ctx.supabase.from('promo_assets').insert({
+    const { error } = await ctx.supabase.from('promo_assets').insert({
       user_id: ctx.user.id, label: state.newGroup.label, url: state.newGroup.url || null, kind: 'cong_dong',
     });
+    if(error){ state.saveError = error.message; draw(); return; }
+    state.saveError = null;
     state.newGroup = { label:'', url:'' };
     await loadAssets();
     draw();
@@ -717,6 +732,21 @@ function render(container, ctx){
     const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null });
     if(!error && ctx.profile){ ctx.profile.channel_handle = state.channelHandle.trim() || null; }
     state.channelSaving = false; state.channelSaved = !error; state.error = error ? error.message : null;
+    draw();
+  }
+
+  // Tạo lại Lượt 1 (và Lượt 2 nếu đã có) bằng đúng câu trả lời đã lưu — không bắt trả lời lại 18 câu,
+  // dùng khi muốn lấy bản định vị mới nhất theo prompt hiện tại (vd sau khi sửa format/nội dung).
+  async function regenerateResults(){
+    const hadLuot2 = !!state.luot2;
+    state.regenLoading = true; state.error = null; state.screen = 'saving1'; draw();
+    await runLuot1();
+    if(state.error){ state.regenLoading = false; draw(); return; }
+    if(hadLuot2){
+      state.screen = 'saving2'; draw();
+      await runLuot2();
+    }
+    state.regenLoading = false;
     draw();
   }
 
