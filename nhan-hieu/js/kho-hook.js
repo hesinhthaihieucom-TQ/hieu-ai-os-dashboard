@@ -4,11 +4,31 @@ const CATEGORIES = {
   ket_qua_mong_muon: 'Kết quả mong muốn', tu_khoa_kich_hoat: 'Từ khoá kích hoạt chú ý',
 };
 
+const HOOK_GEN_CATEGORIES = [
+  { key:'to_mo_bo_ngo', label:'Tò mò bỏ ngỏ' },
+  { key:'canh_bao_mat_mat', label:'Cảnh báo / mất mát' },
+  { key:'nghich_ly', label:'Nghịch lý / phản trực giác' },
+  { key:'cau_hoi_goi_mo', label:'Câu hỏi gợi mở' },
+  { key:'con_so_cu_the', label:'Con số cụ thể' },
+  { key:'bi_mat_noi_bo', label:'Bí mật / nội bộ ngành' },
+  { key:'truoc_sau', label:'So sánh trước - sau' },
+  { key:'khan_hiem_thoi_han', label:'Khan hiếm / thời hạn' },
+  { key:'thu_nhan_ca_nhan', label:'Thú nhận cá nhân' },
+  { key:'loi_sai_pho_bien', label:'Lỗi sai phổ biến' },
+  { key:'ket_qua_gay_soc', label:'Kết quả gây sốc / bằng chứng xã hội' },
+  { key:'lat_nguoc_niem_tin', label:'Lật ngược niềm tin' },
+  { key:'chi_dich_danh', label:'Chỉ đích danh / hiệu ứng gương' },
+  { key:'kich_ban_gia_dinh', label:'Kịch bản giả định' },
+  { key:'su_that_phu_phang', label:'Sự thật phũ phàng' },
+];
+
 function render(container, ctx){
   const state = {
-    tab:'kho-toi', personal:[], shared:[], error:null, positioning:null,
+    tab:'tao-hook', personal:[], shared:[], error:null, positioning:null,
     newEntry:{ hook_text:'', category:'', note:'' },
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
+    genTopic:'', genCategory:HOOK_GEN_CATEGORIES[0].key, genQuickContext:'',
+    genLoading:false, genError:null, genResult:null, genSavedIdx:{},
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -44,12 +64,50 @@ function render(container, ctx){
       <div class="page-head"><h1>Kho Hook</h1></div>
       <div class="error-box">Chưa dùng được mục này: ${esc(state.error)}. Cần chạy file supabase/schema_v2.sql trong Supabase SQL Editor trước.</div>`;
     return `
-      <div class="page-head"><h1>Kho Hook</h1><p>Lưu lại các câu hook hay để tra cứu nhanh khi cần mở đầu bài.</p></div>
+      <div class="page-head"><h1>Kho Hook</h1><p>Nhập chủ đề, chọn loại hook, AI sinh ngay ví dụ đúng chủ đề — hoặc tra cứu kho có sẵn.</p></div>
       <div class="tab-row">
+        <div class="tab-btn ${state.tab==='tao-hook'?'active':''}" data-tab="tao-hook">Tạo Hook</div>
         <div class="tab-btn ${state.tab==='kho-toi'?'active':''}" data-tab="kho-toi">Kho của tôi (${state.personal.length})</div>
         <div class="tab-btn ${state.tab==='kho-chung'?'active':''}" data-tab="kho-chung">Kho chung (${state.shared.length})</div>
       </div>
-      ${state.tab==='kho-toi' ? khoToiTab() : khoChungTab()}
+      ${state.tab==='tao-hook' ? taoHookTab() : state.tab==='kho-toi' ? khoToiTab() : khoChungTab()}
+    `;
+  }
+
+  function taoHookTab(){
+    const hasPositioning = !!(state.positioning && state.positioning.luot1);
+    return `
+      <div class="card">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề muốn viết hook</label>
+        <textarea id="gen-topic" style="min-height:auto;height:52px;" placeholder="Ví dụ: sai lầm khiến dòng tiền cá nhân bị nghẽn">${esc(state.genTopic)}</textarea>
+
+        ${!hasPositioning ? `
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
+          <textarea id="gen-quick-context" style="min-height:auto;height:44px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.genQuickContext)}</textarea>
+        ` : ''}
+
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại hook</label>
+        <div class="chips">
+          ${HOOK_GEN_CATEGORIES.map(c=>`<div class="chip ${state.genCategory===c.key?'selected':''}" data-gen-cat="${c.key}">${esc(c.label)}</div>`).join('')}
+        </div>
+
+        <div class="btn-row"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button></div>
+        ${state.genError?`<div class="error-box">${esc(state.genError)}</div>`:''}
+      </div>
+
+      ${state.genResult ? `
+        <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">
+          ${state.genResult.map((h,i)=>`
+            <div class="section">
+              <div class="body" style="font-weight:600;">${esc(h)}</div>
+              <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+                <button class="btn btn-sm" data-save-gen="${i}" ${state.genSavedIdx[i]?'disabled':''}>${state.genSavedIdx[i]?'Đã lưu ✓':'Lưu vào Kho của tôi'}</button>
+                <span class="btn-ghost btn btn-sm" data-write-gen="${i}">Viết content từ hook này →</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
     `;
   }
 
@@ -129,6 +187,25 @@ function render(container, ctx){
 
   function bind(){
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
+
+    const gt = container.querySelector('#gen-topic'); if(gt) gt.oninput = ()=>state.genTopic = gt.value;
+    const gqc = container.querySelector('#gen-quick-context'); if(gqc) gqc.oninput = ()=>state.genQuickContext = gqc.value;
+    container.querySelectorAll('[data-gen-cat]').forEach(el=>{
+      el.onclick = ()=>{ state.genCategory = el.getAttribute('data-gen-cat'); draw(); };
+    });
+    const genHooksBtn = container.querySelector('[data-action="generate-hooks"]');
+    if(genHooksBtn) genHooksBtn.onclick = generateHooksByTopic;
+    container.querySelectorAll('[data-save-gen]').forEach(el=>{
+      el.onclick = ()=>{ saveGeneratedHook(Number(el.getAttribute('data-save-gen'))); };
+    });
+    container.querySelectorAll('[data-write-gen]').forEach(el=>{
+      el.onclick = ()=>{
+        const i = Number(el.getAttribute('data-write-gen'));
+        window.PendingTopic = state.genResult[i];
+        location.hash = 'viet-content';
+      };
+    });
+
     const h = container.querySelector('#ne-hook'); if(h) h.oninput = ()=>state.newEntry.hook_text = h.value;
     const c = container.querySelector('#ne-cat'); if(c) c.onchange = ()=>state.newEntry.category = c.value;
     const n = container.querySelector('#ne-note'); if(n) n.oninput = ()=>state.newEntry.note = n.value;
@@ -165,6 +242,31 @@ function render(container, ctx){
         location.hash = 'viet-content';
       };
     });
+  }
+
+  async function generateHooksByTopic(){
+    if(!state.genTopic.trim()) return;
+    state.genLoading = true; state.genError = null; state.genResult = null; state.genSavedIdx = {};
+    draw();
+    try{
+      const data = await callApi('/api/goi-y-hook-theo-chu-de', {
+        topic: state.genTopic,
+        category: state.genCategory,
+        positioning: (state.positioning && state.positioning.luot1) ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
+        quick_context: state.genQuickContext,
+      });
+      state.genResult = data.result.hooks;
+    } catch(e){ state.genError = e.message; }
+    state.genLoading = false; draw();
+  }
+
+  async function saveGeneratedHook(i){
+    const hookText = state.genResult[i];
+    const catLabel = (HOOK_GEN_CATEGORIES.find(c=>c.key===state.genCategory)||{}).label || state.genCategory;
+    await ctx.supabase.from('hooks_bank_personal').insert({
+      user_id: ctx.user.id, hook_text: hookText, category: catLabel, note: `Chủ đề: ${state.genTopic}`,
+    });
+    state.genSavedIdx[i] = true; draw();
   }
 
   async function generateIdeasFromSource(){

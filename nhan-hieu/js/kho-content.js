@@ -30,7 +30,9 @@ function render(container, ctx){
     state.personalBank = data || [];
   }
   async function loadShared(){
-    const { data } = await ctx.supabase.from('content_bank_shared').select('*').order('created_at', { ascending:false });
+    const { data } = await ctx.supabase.from('content_bank_shared').select('*')
+      .order('pin_order', { ascending:true, nullsFirst:false })
+      .order('created_at', { ascending:false });
     state.sharedBank = data || [];
   }
 
