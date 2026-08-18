@@ -13,9 +13,8 @@ const ASSET_KINDS = {
 
 function render(container, ctx){
   const state = {
-    screen:'loading', positioning:null, assets:[],
-    newAsset:{ label:'', url:'', kind:'san_pham_so' },
-    topic:'', milestone:'m1', quickContext:'',
+    screen:'loading', positioning:null, assets:[], calendarEntries:[],
+    postChoice:'', topicOther:'', milestone:'m1', quickContext:'',
     generating:false, error:null, result:null,
   };
 
@@ -25,7 +24,7 @@ function render(container, ctx){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
-    await loadAssets();
+    await Promise.all([loadAssets(), loadCalendarEntries()]);
     state.screen = 'main';
     draw();
   }
@@ -35,6 +34,18 @@ function render(container, ctx){
     state.assets = data || [];
   }
 
+  async function loadCalendarEntries(){
+    const { data } = await ctx.supabase.from('calendar_entries').select('*, posts(title,content)').eq('user_id', ctx.user.id).order('scheduled_date', { ascending:false }).limit(30);
+    state.calendarEntries = data || [];
+  }
+
+  function resolvedTopic(){
+    if(state.postChoice==='other') return state.topicOther;
+    const entry = state.calendarEntries.find(e=>e.id===state.postChoice);
+    if(!entry) return '';
+    return (entry.posts && entry.posts.content) ? entry.posts.content : (entry.title || '');
+  }
+
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
@@ -42,26 +53,25 @@ function render(container, ctx){
 
       <div class="card">
         <h3 style="margin-bottom:10px;">Tài sản quảng bá của bạn</h3>
-        ${state.assets.length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;">Chưa có tài sản nào — thêm sản phẩm số, link aff, hoặc link cộng đồng để AI gợi ý gắn đúng lúc.</div>`:''}
-        ${state.assets.map(a=>`
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-            <div><b>${esc(a.label)}</b> <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}</div>
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
-          </div>
-        `).join('')}
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
-          <textarea id="na-label" style="min-height:auto;height:40px;" placeholder="Tên tài sản, ví dụ: Khoá học Sổ Dòng Tiền">${esc(state.newAsset.label)}</textarea>
-          <textarea id="na-url" style="min-height:auto;height:40px;" placeholder="Link (không bắt buộc)">${esc(state.newAsset.url)}</textarea>
-          <select id="na-kind">
-            ${Object.entries(ASSET_KINDS).map(([k,v])=>`<option value="${k}" ${state.newAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
-          </select>
-          <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-asset">Thêm tài sản</button></div>
-        </div>
+        ${state.assets.length===0
+          ? `<div style="color:var(--ink-soft);font-size:13.5px;">Chưa có tài sản nào — thêm ở mục <a href="#dinh-vi">Định Vị</a> (sản phẩm số, link aff, link cộng đồng).</div>`
+          : state.assets.map(a=>`
+            <div style="padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+              <b>${esc(a.label)}</b> <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>
+            </div>
+          `).join('') + `<div style="margin-top:10px;"><a href="#dinh-vi" style="font-size:12.5px;color:var(--ink-soft);">Quản lý tài sản ở Định Vị →</a></div>`
+        }
       </div>
 
       <div class="card" style="margin-top:16px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy (chủ đề/nội dung ngắn gọn)</label>
-        <textarea id="db-topic" placeholder="Ví dụ: bài kể chuyện khách hàng thoát nợ 700 triệu nhờ tăng thu nhập">${esc(state.topic)}</textarea>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy</label>
+        <select id="db-post-select">
+          <option value="">— Chọn bài từ Lịch Đăng Bài —</option>
+          ${state.calendarEntries.map(e=>`<option value="${e.id}" ${state.postChoice===e.id?'selected':''}>${esc(new Date(e.scheduled_date).toLocaleDateString('vi-VN'))} — ${esc((e.posts && e.posts.title) || e.title || '(không tiêu đề)')}</option>`).join('')}
+          <option value="other" ${state.postChoice==='other'?'selected':''}>Khác (dán nội dung khác)</option>
+        </select>
+        ${state.postChoice==='other'?`<textarea id="db-topic-other" style="margin-top:8px;" placeholder="Dán chủ đề/nội dung bài đang đẩy...">${esc(state.topicOther)}</textarea>`:''}
+        ${state.calendarEntries.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có bài nào trong Lịch Đăng Bài — viết bài ở <a href="#viet-content">Viết Content</a> rồi đưa vào lịch trước.</div>`:''}
 
         ${!(state.positioning) ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
@@ -97,19 +107,11 @@ function render(container, ctx){
   }
 
   function bind(){
-    const nl = container.querySelector('#na-label'); if(nl) nl.oninput = ()=>state.newAsset.label = nl.value;
-    const nu = container.querySelector('#na-url'); if(nu) nu.oninput = ()=>state.newAsset.url = nu.value;
-    const nk = container.querySelector('#na-kind'); if(nk) nk.onchange = ()=>state.newAsset.kind = nk.value;
-    const addAssetBtn = container.querySelector('[data-action="add-asset"]');
-    if(addAssetBtn) addAssetBtn.onclick = addAsset;
-    container.querySelectorAll('[data-del-asset]').forEach(el=>{
-      el.onclick = async ()=>{
-        await ctx.supabase.from('promo_assets').delete().eq('id', el.getAttribute('data-del-asset'));
-        await loadAssets(); draw();
-      };
-    });
+    const postSelect = container.querySelector('#db-post-select');
+    if(postSelect) postSelect.onchange = ()=>{ state.postChoice = postSelect.value; draw(); };
+    const topicOtherEl = container.querySelector('#db-topic-other');
+    if(topicOtherEl) topicOtherEl.oninput = ()=>{ state.topicOther = topicOtherEl.value; };
 
-    const topicEl = container.querySelector('#db-topic'); if(topicEl) topicEl.oninput = ()=>state.topic = topicEl.value;
     const qcEl = container.querySelector('#db-quick-context'); if(qcEl) qcEl.oninput = ()=>state.quickContext = qcEl.value;
     container.querySelectorAll('[data-milestone]').forEach(el=>{
       el.onclick = ()=>{ state.milestone = el.getAttribute('data-milestone'); draw(); };
@@ -118,22 +120,13 @@ function render(container, ctx){
     if(genBtn) genBtn.onclick = generate;
   }
 
-  async function addAsset(){
-    if(!state.newAsset.label.trim()) return;
-    await ctx.supabase.from('promo_assets').insert({
-      user_id: ctx.user.id, label: state.newAsset.label, url: state.newAsset.url || null, kind: state.newAsset.kind,
-    });
-    state.newAsset = { label:'', url:'', kind:'san_pham_so' };
-    await loadAssets();
-    draw();
-  }
-
   async function generate(){
-    if(!state.topic.trim()) return;
+    const topic = resolvedTopic();
+    if(!topic.trim()) return;
     state.generating = true; state.error = null; state.result = null; draw();
     try{
       const data = await callApi('/api/goi-y-day-bai', {
-        topic: state.topic,
+        topic,
         milestone: state.milestone,
         assets: state.assets.map(a=>({ label:a.label, url:a.url })),
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,

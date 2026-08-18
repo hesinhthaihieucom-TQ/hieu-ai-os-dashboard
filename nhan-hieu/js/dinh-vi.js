@@ -44,13 +44,19 @@ function render(container, ctx){
   const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
     suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
     pasteText:'', pasteError:null, pasteLoading:false,
-    channelHandle:'', channelSaving:false, channelSaved:false };
+    channelHandle:'', channelSaving:false, channelSaved:false,
+    assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' } };
+  const ASSET_KINDS = {
+    san_pham_so: 'Sản phẩm số của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
+    aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
+  };
 
   function draw(){ container.innerHTML = screenHtml(); bind(); }
 
   async function boot(){
     draw();
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
+    await loadAssets();
     const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
     const isComplete = data && data.luot1 && data.luot1.ket_luan_dinh_vi;
@@ -201,6 +207,25 @@ function render(container, ctx){
         </div>
         ${state.channelSaved?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">Đã lưu ✓</div>`:''}
       </div>
+      <div class="card" style="margin-top:14px;">
+        <h3 style="margin-bottom:10px;">Tài sản quảng bá</h3>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Sản phẩm số, link aff, link cộng đồng — lưu 1 lần ở đây, dùng lại ở Viết Content và Đẩy Bài &amp; CTA Comment.</div>
+        ${state.assets.length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có tài sản nào.</div>`:''}
+        ${state.assets.map(a=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+            <div><b>${esc(a.label)}</b> <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}</div>
+            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
+          </div>
+        `).join('')}
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+          <textarea id="na-label" style="min-height:auto;height:40px;" placeholder="Tên tài sản, ví dụ: Khoá học Sổ Dòng Tiền">${esc(state.newAsset.label)}</textarea>
+          <textarea id="na-url" style="min-height:auto;height:40px;" placeholder="Link (không bắt buộc)">${esc(state.newAsset.url)}</textarea>
+          <select id="na-kind">
+            ${Object.entries(ASSET_KINDS).map(([k,v])=>`<option value="${k}" ${state.newAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
+          </select>
+          <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-asset">Thêm tài sản</button></div>
+        </div>
+      </div>
       <div class="section highlight"><h3>Kết luận định vị</h3><div class="body" style="font-family:'Playfair Display',serif;font-size:19px;font-style:italic;">${esc(r.ket_luan_dinh_vi)}</div></div>
       ${sectionHtml('Tổng quan thương hiệu', r.tong_quan_thuong_hieu)}
       ${sectionHtml('Hồ sơ chuyên môn', r.ho_so_chuyen_mon)}
@@ -284,6 +309,18 @@ function render(container, ctx){
     if(chInput) chInput.oninput = ()=>{ state.channelHandle = chInput.value; state.channelSaved = false; };
     const saveChBtn = container.querySelector('[data-action="save-channel-handle"]');
     if(saveChBtn) saveChBtn.onclick = saveChannelHandle;
+
+    const nl = container.querySelector('#na-label'); if(nl) nl.oninput = ()=>state.newAsset.label = nl.value;
+    const nu = container.querySelector('#na-url'); if(nu) nu.oninput = ()=>state.newAsset.url = nu.value;
+    const nk = container.querySelector('#na-kind'); if(nk) nk.onchange = ()=>state.newAsset.kind = nk.value;
+    const addAssetBtn = container.querySelector('[data-action="add-asset"]');
+    if(addAssetBtn) addAssetBtn.onclick = addAsset;
+    container.querySelectorAll('[data-del-asset]').forEach(el=>{
+      el.onclick = async ()=>{
+        await ctx.supabase.from('promo_assets').delete().eq('id', el.getAttribute('data-del-asset'));
+        await loadAssets(); draw();
+      };
+    });
 
     const submitPasteBtn = container.querySelector('[data-action="submit-paste"]');
     if(submitPasteBtn) submitPasteBtn.onclick = submitPaste;
@@ -429,6 +466,21 @@ function render(container, ctx){
       state.screen = prevScreen === 'paste' ? 'paste' : 'parsing';
       draw();
     }
+  }
+
+  async function loadAssets(){
+    const { data } = await ctx.supabase.from('promo_assets').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
+    state.assets = data || [];
+  }
+
+  async function addAsset(){
+    if(!state.newAsset.label.trim()) return;
+    await ctx.supabase.from('promo_assets').insert({
+      user_id: ctx.user.id, label: state.newAsset.label, url: state.newAsset.url || null, kind: state.newAsset.kind,
+    });
+    state.newAsset = { label:'', url:'', kind:'san_pham_so' };
+    await loadAssets();
+    draw();
   }
 
   async function saveChannelHandle(){
