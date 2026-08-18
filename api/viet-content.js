@@ -24,8 +24,9 @@ QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 
 QUY TẮC HASHTAG (BẮT BUỘC):
 - Xuất ĐÚNG 5 hashtag, không hơn không kém.
-- Nếu người dùng có cung cấp tên kênh Facebook/TikTok, 1 trong 5 hashtag PHẢI là tên kênh đó (viết liền không dấu cách).
-- Nếu người dùng có cung cấp tên thương hiệu/sản phẩm, thêm 1 hashtag riêng cho tên đó.
+- TẤT CẢ hashtag phải viết KHÔNG DẤU (bỏ hết dấu thanh và dấu chữ tiếng Việt, ví dụ "Tài Chính" → "TaiChinh"), viết liền không có khoảng trắng, không ký tự đặc biệt.
+- Nếu người dùng có cung cấp tên kênh Facebook/TikTok, 1 trong 5 hashtag PHẢI là tên kênh đó (không dấu, viết liền).
+- Nếu người dùng có cung cấp tên thương hiệu/sản phẩm cố định (khác tên kênh), thêm 1 hashtag riêng cho tên đó (không dấu, viết liền).
 - Các hashtag còn lại bám sát chủ đề bài + trục nội dung định vị.
 - Nếu không có tên kênh/thương hiệu nào được cung cấp, tự suy ra 1 hashtag đại diện thương hiệu từ bản sắc thương hiệu trong định vị.
 
@@ -64,6 +65,13 @@ const TOOL_POST = {
   },
 };
 
+function stripDiacritics(str) {
+  return (str || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+    .replace(/[^a-zA-Z0-9]/g, '');
+}
+
 async function callClaude({ apiKey, system, userContent, tool }) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -94,7 +102,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, quick_context, idea_text, channel_handle, product_name, group_name } = req.body || {};
+    const { positioning, quick_context, idea_text, channel_handle, brand_name, product_name, group_name } = req.body || {};
     const hasPositioning = !!(positioning && positioning.luot1);
     if (!hasPositioning && !(quick_context && quick_context.trim())) {
       res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi viết content.' }); return;
@@ -110,12 +118,14 @@ module.exports = async (req, res) => {
 Ý TƯỞNG / CHỦ ĐỀ CẦN VIẾT:\n${idea_text}
 
 TÊN KÊNH FACEBOOK/TIKTOK: ${channel_handle && channel_handle.trim() ? channel_handle.trim() : '(không cung cấp — tự suy ra hashtag thương hiệu từ định vị)'}
-SẢN PHẨM/DỊCH VỤ MUỐN NHẮC: ${product_name && product_name.trim() ? product_name.trim() : '(không có)'}
+TÊN THƯƠNG HIỆU/SẢN PHẨM CỐ ĐỊNH (khác tên kênh, nếu có): ${brand_name && brand_name.trim() ? brand_name.trim() : '(không có)'}
+SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY: ${product_name && product_name.trim() ? product_name.trim() : '(không có)'}
 GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}
 
 Hãy viết 1 bài hoàn chỉnh theo đúng khung 5 phần, giọng văn khớp định vị trên, đúng quy tắc CTA/bình luận ghim/hashtag đã nêu.`;
 
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_POST });
+    if (Array.isArray(result.hashtag)) result.hashtag = result.hashtag.map(stripDiacritics).filter(Boolean);
     res.status(200).json({ result });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi viết content.' });

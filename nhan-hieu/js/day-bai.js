@@ -13,8 +13,8 @@ const ASSET_KINDS = {
 
 function render(container, ctx){
   const state = {
-    screen:'loading', positioning:null, assets:[], calendarEntries:[],
-    postChoice:'', topicOther:'', milestone:'m1', quickContext:'',
+    screen:'loading', positioning:null, assets:[], calendarEntries:[], posts:[],
+    postSource:'lich', postChoice:'', topicOther:'', milestone:'m1', quickContext:'',
     generating:false, error:null, result:null,
   };
 
@@ -24,7 +24,7 @@ function render(container, ctx){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
-    await Promise.all([loadAssets(), loadCalendarEntries()]);
+    await Promise.all([loadAssets(), loadCalendarEntries(), loadPosts()]);
     state.screen = 'main';
     draw();
   }
@@ -39,8 +39,17 @@ function render(container, ctx){
     state.calendarEntries = data || [];
   }
 
+  async function loadPosts(){
+    const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(50);
+    state.posts = data || [];
+  }
+
   function resolvedTopic(){
-    if(state.postChoice==='other') return state.topicOther;
+    if(state.postSource==='other') return state.topicOther;
+    if(state.postSource==='kho'){
+      const post = state.posts.find(p=>p.id===state.postChoice);
+      return post ? (post.content || post.title || '') : '';
+    }
     const entry = state.calendarEntries.find(e=>e.id===state.postChoice);
     if(!entry) return '';
     return (entry.posts && entry.posts.content) ? entry.posts.content : (entry.title || '');
@@ -51,27 +60,30 @@ function render(container, ctx){
     return `
       <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — đúng theo mốc lượt xem bài đang lên.</p></div>
 
-      <div class="card">
-        <h3 style="margin-bottom:10px;">Tài sản quảng bá của bạn</h3>
-        ${state.assets.length===0
-          ? `<div style="color:var(--ink-soft);font-size:13.5px;">Chưa có tài sản nào — thêm ở mục <a href="#dinh-vi">Định Vị</a> (sản phẩm số, link aff, link cộng đồng).</div>`
-          : state.assets.map(a=>`
-            <div style="padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-              <b>${esc(a.label)}</b> <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>
-            </div>
-          `).join('') + `<div style="margin-top:10px;"><a href="#dinh-vi" style="font-size:12.5px;color:var(--ink-soft);">Quản lý tài sản ở Định Vị →</a></div>`
-        }
-      </div>
+      ${assetsCardHtml()}
 
       <div class="card" style="margin-top:16px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy</label>
-        <select id="db-post-select">
-          <option value="">— Chọn bài từ Lịch Đăng Bài —</option>
-          ${state.calendarEntries.map(e=>`<option value="${e.id}" ${state.postChoice===e.id?'selected':''}>${esc(new Date(e.scheduled_date).toLocaleDateString('vi-VN'))} — ${esc((e.posts && e.posts.title) || e.title || '(không tiêu đề)')}</option>`).join('')}
-          <option value="other" ${state.postChoice==='other'?'selected':''}>Khác (dán nội dung khác)</option>
-        </select>
-        ${state.postChoice==='other'?`<textarea id="db-topic-other" style="margin-top:8px;" placeholder="Dán chủ đề/nội dung bài đang đẩy...">${esc(state.topicOther)}</textarea>`:''}
-        ${state.calendarEntries.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có bài nào trong Lịch Đăng Bài — viết bài ở <a href="#viet-content">Viết Content</a> rồi đưa vào lịch trước.</div>`:''}
+        <div class="chips" style="margin-bottom:10px;">
+          <div class="chip ${state.postSource==='lich'?'selected':''}" data-post-source="lich">Từ Lịch Đăng Bài</div>
+          <div class="chip ${state.postSource==='kho'?'selected':''}" data-post-source="kho">Từ Kho Content (bài đã viết)</div>
+          <div class="chip ${state.postSource==='other'?'selected':''}" data-post-source="other">Khác (dán nội dung)</div>
+        </div>
+        ${state.postSource==='lich' ? `
+          <select id="db-post-select">
+            <option value="">— Chọn bài từ Lịch Đăng Bài —</option>
+            ${state.calendarEntries.map(e=>`<option value="${e.id}" ${state.postChoice===e.id?'selected':''}>${esc(new Date(e.scheduled_date).toLocaleDateString('vi-VN'))} — ${esc((e.posts && e.posts.title) || e.title || '(không tiêu đề)')}</option>`).join('')}
+          </select>
+          ${state.calendarEntries.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có bài nào trong Lịch Đăng Bài — chọn "Từ Kho Content" nếu bài đã viết từ lâu, hoặc viết bài ở <a href="#viet-content">Viết Content</a> rồi đưa vào lịch.</div>`:''}
+        ` : ''}
+        ${state.postSource==='kho' ? `
+          <select id="db-post-select-kho">
+            <option value="">— Chọn bài đã viết trong Kho Content —</option>
+            ${state.posts.map(p=>`<option value="${p.id}" ${state.postChoice===p.id?'selected':''}>${esc(p.title || '(không tiêu đề)')}</option>`).join('')}
+          </select>
+          ${state.posts.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có bài nào đã viết — sang <a href="#kho-content">Kho Content</a> hoặc <a href="#viet-content">Viết Content</a> trước.</div>`:''}
+        ` : ''}
+        ${state.postSource==='other'?`<textarea id="db-topic-other" style="margin-top:8px;" placeholder="Dán chủ đề/nội dung bài đang đẩy...">${esc(state.topicOther)}</textarea>`:''}
 
         ${!(state.positioning) ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
@@ -85,10 +97,32 @@ function render(container, ctx){
         <div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">${esc((MILESTONES.find(m=>m.key===state.milestone)||{}).hint||'')}</div>
 
         <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang gợi ý…':'Gợi ý đẩy bài'}</button></div>
+        <div class="hint-box" style="margin-top:10px;">Nên bấm "Gợi ý đẩy bài" mỗi khi đổi mốc lượt xem — AI cần khoảng 1 phút để ra bình luận và cách trả lời phù hợp, đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
       ${state.result ? resultHtml() : ''}
+    `;
+  }
+
+  function assetsCardHtml(){
+    return `
+      <div class="card">
+        <h3 style="margin-bottom:4px;">Tài sản quảng bá của bạn</h3>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Cố định 1 lần ở Định Vị, chọn nhanh ở đây khi đẩy bài.</p>
+        ${Object.entries(ASSET_KINDS).map(([kind,label])=>{
+          const items = state.assets.filter(a=>a.kind===kind);
+          return `
+            <div style="padding:8px 0;border-bottom:1px solid var(--line);">
+              <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">${esc(label)}</div>
+              ${items.length===0
+                ? `<div style="font-size:13px;color:var(--ink-soft);font-style:italic;">Chưa có</div>`
+                : items.map(a=>`<div style="font-size:13.5px;">${esc(a.label)}</div>`).join('')}
+            </div>
+          `;
+        }).join('')}
+        <div style="margin-top:10px;"><a href="#dinh-vi" style="font-size:12.5px;color:var(--ink-soft);">Thêm/sửa tài sản ở Định Vị →</a></div>
+      </div>
     `;
   }
 
@@ -107,8 +141,13 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-post-source]').forEach(el=>{
+      el.onclick = ()=>{ state.postSource = el.getAttribute('data-post-source'); state.postChoice = ''; draw(); };
+    });
     const postSelect = container.querySelector('#db-post-select');
     if(postSelect) postSelect.onchange = ()=>{ state.postChoice = postSelect.value; draw(); };
+    const postSelectKho = container.querySelector('#db-post-select-kho');
+    if(postSelectKho) postSelectKho.onchange = ()=>{ state.postChoice = postSelectKho.value; draw(); };
     const topicOtherEl = container.querySelector('#db-topic-other');
     if(topicOtherEl) topicOtherEl.oninput = ()=>{ state.topicOther = topicOtherEl.value; };
 

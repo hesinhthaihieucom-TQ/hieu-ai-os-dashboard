@@ -1,7 +1,7 @@
 (function(){
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
-    showExtra:false, channelHandle:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'' };
+    showExtra:false, channelHandle:'', brandName:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'' };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -10,6 +10,7 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
+    state.brandName = (ctx.profile && ctx.profile.brand_name) || '';
     if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
     await Promise.all([loadRecent(), loadAssets()]);
     state.screen='main';
@@ -61,6 +62,12 @@ function render(container, ctx){
               <textarea id="ex-channel" style="min-height:auto;height:40px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
               <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Lưu ở đây sẽ tự cập nhật vào Định Vị luôn, dùng chung cho các bài sau.</div>
             </div>
+            ${state.brandName ? `
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Thương hiệu/Tên sản phẩm</label>
+              <div style="font-size:13.5px;">${esc(state.brandName)} <a href="#dinh-vi" style="font-size:11.5px;color:var(--ink-soft);">(sửa ở Định Vị)</a></div>
+            </div>
+            ` : ''}
             <div>
               <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Sản phẩm/dịch vụ muốn nhắc (nếu có)</label>
               <select id="ex-product-select">
@@ -69,7 +76,7 @@ function render(container, ctx){
                 <option value="other" ${state.productChoice==='other'?'selected':''}>Khác (tự nhập)</option>
               </select>
               ${state.productChoice==='other'?`<textarea id="ex-product-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Sổ tay Dòng Tiền">${esc(state.productNameOther)}</textarea>`:''}
-              ${state.assets.length===0?`<div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào — thêm ở mục <a href="#day-bai">Đẩy Bài &amp; CTA Comment</a> để lần sau chọn nhanh.</div>`:''}
+              ${state.assets.length===0?`<div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào — thêm ở mục <a href="#dinh-vi">Định Vị</a> để lần sau chọn nhanh.</div>`:''}
             </div>
             <div>
               <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Group/cộng đồng muốn nhắc (nếu có)</label>
@@ -188,6 +195,7 @@ function render(container, ctx){
         quick_context: state.quickContext,
         idea_text: state.ideaText,
         channel_handle: state.channelHandle,
+        brand_name: state.brandName,
         product_name: resolvedProductName(),
         group_name: resolvedGroupName(),
       });

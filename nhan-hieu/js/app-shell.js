@@ -1,7 +1,6 @@
 const NAV = [
   { key:'dinh-vi', title:'Định Vị' },
   { key:'sua-kenh', title:'Sửa Kênh' },
-  { key:'giong-van', title:'Giọng Văn' },
   { key:'dinh-dang-content', title:'Dạng Content' },
   { key:'kho-content', title:'Kho Content' },
   { key:'kho-hook', title:'Kho Hook' },

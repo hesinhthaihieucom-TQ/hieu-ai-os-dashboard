@@ -44,7 +44,7 @@ function render(container, ctx){
   const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
     suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
     pasteText:'', pasteError:null, pasteLoading:false,
-    channelHandle:'', channelSaving:false, channelSaved:false,
+    channelHandle:'', brandName:'', channelSaving:false, channelSaved:false,
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' } };
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
@@ -56,6 +56,7 @@ function render(container, ctx){
   async function boot(){
     draw();
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
+    state.brandName = (ctx.profile && ctx.profile.brand_name) || '';
     await loadAssets();
     const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
@@ -203,6 +204,11 @@ function render(container, ctx){
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Lưu 1 lần ở đây — Viết Content sẽ tự lấy tên kênh này để ghép hashtag, khỏi phải nhập lại mỗi bài.</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <textarea id="channel-handle-input" style="min-height:auto;height:40px;flex:1;min-width:200px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
+        </div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Thương hiệu/Tên sản phẩm (nếu khác tên kênh)</label>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Điền nếu bạn có tên thương hiệu/sản phẩm riêng khác tên kênh — sẽ được ghép thêm 1 hashtag riêng khi Viết Content.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <textarea id="brand-name-input" style="min-height:auto;height:40px;flex:1;min-width:200px;" placeholder="Ví dụ: Sổ Dòng Tiền">${esc(state.brandName)}</textarea>
           <button class="btn btn-sm" data-action="save-channel-handle" ${state.channelSaving?'disabled':''}>${state.channelSaving?'Đang lưu…':'Lưu'}</button>
         </div>
         ${state.channelSaved?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">Đã lưu ✓</div>`:''}
@@ -307,6 +313,8 @@ function render(container, ctx){
 
     const chInput = container.querySelector('#channel-handle-input');
     if(chInput) chInput.oninput = ()=>{ state.channelHandle = chInput.value; state.channelSaved = false; };
+    const brandInput = container.querySelector('#brand-name-input');
+    if(brandInput) brandInput.oninput = ()=>{ state.brandName = brandInput.value; state.channelSaved = false; };
     const saveChBtn = container.querySelector('[data-action="save-channel-handle"]');
     if(saveChBtn) saveChBtn.onclick = saveChannelHandle;
 
@@ -486,8 +494,8 @@ function render(container, ctx){
   async function saveChannelHandle(){
     if(state.channelSaving) return;
     state.channelSaving = true; state.channelSaved = false; draw();
-    const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null });
-    if(!error && ctx.profile) ctx.profile.channel_handle = state.channelHandle.trim() || null;
+    const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null, new_brand: state.brandName.trim() || null });
+    if(!error && ctx.profile){ ctx.profile.channel_handle = state.channelHandle.trim() || null; ctx.profile.brand_name = state.brandName.trim() || null; }
     state.channelSaving = false; state.channelSaved = !error; state.error = error ? error.message : null;
     draw();
   }

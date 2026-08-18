@@ -10,6 +10,7 @@ function render(container, ctx){
     tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
     newEntry:{ title:'', content:'', source_type:'', tags:'' },
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
+    positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -18,6 +19,7 @@ function render(container, ctx){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
+    state.positioningId = pos ? pos.id : null;
     await Promise.all([loadPosts(), loadPersonal(), loadShared()]);
     draw();
   }
@@ -60,10 +62,13 @@ function render(container, ctx){
   function writeActionHtml(key){
     const isOpen = state.writeFor === key;
     return `
-      <div style="margin-top:12px;">
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <span class="btn-ghost btn btn-sm" data-write-toggle="${key}">${isOpen?'Đóng':'Viết bài từ đây →'}</span>
-        ${isOpen ? writePanelHtml() : ''}
+        <span class="btn-ghost btn btn-sm" data-apply-voice="${key}" ${state.applyingVoice===key?'disabled':''}>${state.applyingVoice===key?'Đang phân tích giọng văn…':'Dùng làm giọng mẫu'}</span>
       </div>
+      ${isOpen ? writePanelHtml() : ''}
+      ${state.voiceAppliedFor===key?`<div class="hint-box" style="margin-top:10px;">Đã cập nhật giọng điệu &amp; ngôn ngữ vào Định Vị theo bài này.</div>`:''}
+      ${state.applyVoiceErrorFor===key?`<div class="error-box" style="margin-top:10px;">${esc(state.applyVoiceError)}</div>`:''}
     `;
   }
 
@@ -182,6 +187,13 @@ function render(container, ctx){
       };
     });
 
+    container.querySelectorAll('[data-apply-voice]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-apply-voice');
+        applyVoice(key);
+      };
+    });
+
     const t = container.querySelector('#ne-title'); if(t) t.oninput = ()=>state.newEntry.title = t.value;
     const c = container.querySelector('#ne-content'); if(c) c.oninput = ()=>state.newEntry.content = c.value;
     const s = container.querySelector('#ne-source'); if(s) s.onchange = ()=>state.newEntry.source_type = s.value;
@@ -207,6 +219,31 @@ function render(container, ctx){
       state.writeIdeas = data.result.y_tuong;
     } catch(e){ state.writeError = e.message; }
     state.writeLoading = false; draw();
+  }
+
+  async function applyVoice(key){
+    const content = findSourceText(key);
+    if(!content.trim()) return;
+    state.applyingVoice = key; state.applyVoiceError = null; state.applyVoiceErrorFor = null; state.voiceAppliedFor = null; draw();
+    try{
+      const data = await callApi('/api/goi-y-giong-van', { sample_text: content });
+      if(state.positioning){
+        const newLuot1 = { ...state.positioning.luot1, giong_dieu_ngon_ngu: data.result.giong_dieu_ngon_ngu };
+        const { error } = await ctx.supabase.from('positioning_results').update({ luot1: newLuot1 }).eq('id', state.positioningId);
+        if(error) throw error;
+        state.positioning.luot1 = newLuot1;
+      } else {
+        const { data: row, error } = await ctx.supabase.from('positioning_results')
+          .upsert({ user_id: ctx.user.id, luot1: { giong_dieu_ngon_ngu: data.result.giong_dieu_ngon_ngu } }, { onConflict:'user_id' })
+          .select().single();
+        if(error) throw error;
+        state.positioning = row;
+        state.positioningId = row.id;
+      }
+      state.voiceAppliedFor = key;
+    } catch(e){ state.applyVoiceError = e.message; state.applyVoiceErrorFor = key; }
+    state.applyingVoice = null;
+    draw();
   }
 
   async function addPersonal(){
