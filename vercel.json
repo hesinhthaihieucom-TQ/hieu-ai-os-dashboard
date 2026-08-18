@@ -2,5 +2,15 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" }
+  ],
+  "headers": [
+    {
+      "source": "/nhan-hieu/js/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/nhan-hieu/style.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    }
   ]
 }
