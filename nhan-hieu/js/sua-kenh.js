@@ -30,7 +30,9 @@ function render(container, ctx){
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     if(state.screen==='wizard') return wizardHtml();
-    if(state.screen==='submitting') return `<div class="loading"><div class="spinner"></div><p>Đang phân tích ảnh kênh của bạn…</p>
+    if(state.screen==='submitting') return `<div class="loading">
+      ${state.error ? '' : `<div id="progress-bar-el">${progressBarHtml(0)}</div>`}
+      <p style="margin-top:14px;">Đang phân tích ảnh kênh của bạn…</p>
       <p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">AI cần khoảng 1-2 phút để xử lý — đừng thoát trang, cứ để chờ nhé.</p>
       ${state.error?`<div class="error-box">${esc(state.error)}</div><div class="btn-row"><button class="btn" data-action="retry">Thử lại</button></div>`:''}</div>`;
     if(state.screen==='result') return resultHtml();
@@ -222,6 +224,8 @@ function render(container, ctx){
 
   async function submit(){
     state.screen='submitting'; state.error=null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#progress-bar-el'), 90);
+    acquireWakeLock();
     try{
       const data = await callApi('/api/sua-kenh', {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
@@ -236,8 +240,12 @@ function render(container, ctx){
         const { data: inserted } = await ctx.supabase.from('channel_audits').insert(payload).select().single();
         if(inserted) state.auditId = inserted.id;
       }
+      stopProgress(); releaseWakeLock();
       state.screen='result'; draw();
-    } catch(e){ state.error = e.message; state.screen='wizard'; state.qIndex = STEPS.length-1; draw(); }
+    } catch(e){
+      stopProgress(); releaseWakeLock();
+      state.error = e.message; state.screen='wizard'; state.qIndex = STEPS.length-1; draw();
+    }
   }
 
   boot();

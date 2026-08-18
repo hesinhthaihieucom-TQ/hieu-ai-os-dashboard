@@ -49,6 +49,7 @@ function render(container, ctx){
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null };
+  let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
     aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
@@ -136,10 +137,22 @@ function render(container, ctx){
   }
 
   function loadingHtml(msg, showWaitHint){
-    return `<div class="loading"><div class="spinner"></div><p>${esc(msg)}</p>
+    return `<div class="loading">
+      ${state.error ? '' : (showWaitHint ? `<div id="progress-bar-el">${progressBarHtml(0)}</div>` : `<div class="spinner"></div>`)}
+      <p style="margin-top:14px;">${esc(msg)}</p>
       ${showWaitHint?`<p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">AI cần khoảng 1-2 phút để xử lý — đừng thoát trang, cứ để chờ nhé.</p>`:''}
       ${state.error?`<div class="error-box">${esc(state.error)}</div><div class="btn-row"><button class="btn" data-action="retry">Thử lại</button></div>`:''}
     </div>`;
+  }
+
+  // Gọi ngay sau draw() vừa hiện màn hình chờ (showWaitHint=true) — bắt đầu vòng tròn % + giữ màn
+  // hình không tự khoá. Luôn gọi stopHeavyProgress() (2 lần gọi cũng an toàn) khi tác vụ xong.
+  function startHeavyProgress(estimatedSeconds){
+    if(stopHeavyProgress) stopHeavyProgress();
+    const el = container.querySelector('#progress-bar-el');
+    const stopRing = animateProgressBar(el, estimatedSeconds);
+    acquireWakeLock();
+    stopHeavyProgress = ()=>{ stopRing(); releaseWakeLock(); stopHeavyProgress = null; };
   }
 
   function introHtml(){
@@ -591,7 +604,7 @@ function render(container, ctx){
 
   function onNext(){
     if(state.qIndex < QUESTIONS.length-1){ state.qIndex++; resetSuggestions(); draw(); }
-    else { state.screen='saving1'; draw(); runLuot1(); }
+    else { state.screen='saving1'; draw(); startHeavyProgress(90); runLuot1(); }
   }
 
   function resetSuggestions(){
@@ -639,18 +652,21 @@ function render(container, ctx){
     state.pasteLoading = true; state.pasteError = null;
     const prevScreen = state.screen;
     state.screen = 'parsing'; draw();
+    startHeavyProgress(60);
     try{
       const data = await callApi('/api/dinh-vi-parse', { raw_text: state.pasteText }, 280000);
       state.luot1 = data.luot1;
       state.luot2 = data.luot2 || null;
       await persist({ luot1: data.luot1, luot2: data.luot2 || null, format_suggestions: null });
       state.pasteLoading = false; state.error = null;
+      if(stopHeavyProgress) stopHeavyProgress();
       state.screen = 'results';
       draw();
     } catch(e){
       state.pasteLoading = false;
       state.error = e.message;
       state.pasteError = e.message;
+      if(stopHeavyProgress) stopHeavyProgress();
       state.screen = prevScreen === 'paste' ? 'paste' : 'parsing';
       draw();
     }
@@ -734,9 +750,15 @@ function render(container, ctx){
       const data = await callApi('/api/dinh-vi', { luot:1, answers: flattenAnswers() }, 280000);
       state.luot1 = data.result;
       await persist({ luot1: data.result, luot2: null, format_suggestions: null });
-      state.error = null; state.screen='results'; draw();
+      state.error = null;
+      if(stopHeavyProgress) stopHeavyProgress();
+      state.screen='results'; draw();
       runLuot2(); // chạy tiếp Lượt 2 ngầm ngay sau đó — hiện Lượt 1 trước, Lượt 2 tự điền vào cùng trang khi xong
-    } catch(e){ state.error = e.message; draw(); }
+    } catch(e){
+      state.error = e.message;
+      if(stopHeavyProgress) stopHeavyProgress();
+      draw();
+    }
   }
 
   async function runLuot2(){

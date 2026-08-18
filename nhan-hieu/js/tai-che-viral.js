@@ -123,6 +123,8 @@ function render(container, ctx){
     state.generating = true; state.error = null; state.result = null;
     state.savedTitleIdx = {}; state.savedPostIdx = {};
     draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 55, 'Đang phân tích');
+    acquireWakeLock();
     try{
       const data = await callApi('/api/tai-che-viral', {
         viral_text: state.viralText,
@@ -133,6 +135,7 @@ function render(container, ctx){
       }, 280000);
       state.result = data.result;
     } catch(e){ state.error = e.message; }
+    stopProgress(); releaseWakeLock();
     state.generating = false; draw();
   }
 

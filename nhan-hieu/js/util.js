@@ -43,6 +43,64 @@ function isoDate(d){
   return new Date(dt - tzOffset).toISOString().slice(0,10);
 }
 
+// % tiến trình ước lượng cho các màn chờ AI (1-2 phút) — API không stream nên không có % thật từ
+// server, tính theo thời gian đã trôi qua so với thời gian trung bình của tác vụ đó. Dừng dưới
+// 100% (cap) cho tới khi có kết quả thật, tránh cảm giác "treo" khi phải chờ lâu.
+//
+// animateProgressButton: chạy % ngay trên nút bấm đang có sẵn (đổi màu nền chạy dần + hiện số %
+// trong chữ) — dùng cho các nút "Đang viết…"/"Đang lên lịch…" đã tồn tại, không cần thêm gì mới.
+function animateProgressButton(btnEl, estimatedSeconds, baseLabel){
+  if(!btnEl) return ()=>{};
+  const startedAt = Date.now();
+  const cap = 96;
+  const tick = ()=>{
+    const elapsed = (Date.now() - startedAt) / 1000;
+    const pct = Math.min(cap, (elapsed / estimatedSeconds) * cap);
+    btnEl.style.background = `linear-gradient(to right, var(--accent) ${pct}%, #DCD8C9 ${pct}%)`;
+    btnEl.textContent = `${baseLabel} ${Math.round(pct)}%`;
+  };
+  tick();
+  const timer = setInterval(tick, 350);
+  return () => clearInterval(timer);
+}
+
+// progressBarHtml/animateProgressBar: thanh ngang cho các màn chờ toàn màn hình (không có nút nào
+// để bám vào lúc đó) — thay cho vòng xoay tĩnh, cũng chạy theo % ước lượng như trên.
+function progressBarHtml(percent){
+  const pct = Math.max(0, Math.min(100, percent));
+  return `<div style="width:100%;max-width:280px;margin:0 auto;height:8px;border-radius:999px;background:var(--line);overflow:hidden;">
+    <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:999px;"></div>
+  </div>
+  <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);font-weight:600;">${Math.round(pct)}%</div>`;
+}
+function animateProgressBar(el, estimatedSeconds){
+  if(!el) return ()=>{};
+  const startedAt = Date.now();
+  const cap = 96;
+  const tick = ()=>{
+    const elapsed = (Date.now() - startedAt) / 1000;
+    const pct = Math.min(cap, (elapsed / estimatedSeconds) * cap);
+    el.innerHTML = progressBarHtml(pct);
+  };
+  tick();
+  const timer = setInterval(tick, 350);
+  return () => clearInterval(timer);
+}
+
+// Giữ màn hình điện thoại không tự khoá trong lúc đang chờ AI (1-2 phút) — nếu màn hình khoá giữa
+// chừng, trình duyệt di động thường tạm dừng/ngắt kết nối mạng của trang đang chạy nền, khiến yêu
+// cầu đang chờ bị lỗi khi mở lại máy. Chỉ hỗ trợ trên trình duyệt có Wake Lock API (Safari 16.4+,
+// Chrome Android) — trình duyệt cũ hơn thì bỏ qua, không chặn tính năng chính.
+let _wakeLock = null;
+async function acquireWakeLock(){
+  try{
+    if('wakeLock' in navigator) _wakeLock = await navigator.wakeLock.request('screen');
+  } catch(e){ /* bị từ chối (vd tab không ở foreground) — bỏ qua */ }
+}
+function releaseWakeLock(){
+  if(_wakeLock){ try{ _wakeLock.release(); } catch(e){} _wakeLock = null; }
+}
+
 function startOfWeek(d){
   const dt = new Date(d);
   const day = dt.getDay(); // 0=Sun

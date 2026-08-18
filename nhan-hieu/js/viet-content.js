@@ -420,6 +420,8 @@ function render(container, ctx){
     state.score = null; state.scoring = false; state.scoreError = null;
     state.hookScore = null; state.hookScoring = false; state.hookScoreError = null;
     state.extrasLoading = false; state.extrasError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 38, 'Đang viết');
+    acquireWakeLock();
     try{
       const endpoint = state.khoGocSource ? '/api/viet-tu-kho-goc' : '/api/viet-content';
       const payload = {
@@ -440,8 +442,12 @@ function render(container, ctx){
       const data = await callApi(endpoint, payload, 280000);
       state.result = data.result;
       state.showScoreContent = false; state.showScoreHook = false; state.showExtras = false;
+      stopProgress(); releaseWakeLock();
       state.generating = false; draw();
-    } catch(e){ state.error = e.message; state.generating = false; draw(); }
+    } catch(e){
+      stopProgress(); releaseWakeLock();
+      state.error = e.message; state.generating = false; draw();
+    }
   }
 
   // Hashtag/gợi ý hình ảnh/dạng content/caption là bước "tiếp theo" sau khi đã có bài viết —

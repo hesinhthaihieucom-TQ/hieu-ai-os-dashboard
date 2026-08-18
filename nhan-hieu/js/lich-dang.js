@@ -172,6 +172,16 @@ function render(container, ctx){
                 </div>`;
               }
               if(suggestion){
+                // Đang cầm sẵn 1 bài cụ thể để xếp lịch (bấm "Đưa vào lịch" từ Viết Content) — ưu
+                // tiên xếp đúng bài đó vào đây khi bấm, thay vì chạy theo nhánh gợi ý AI của ô này
+                // (trước đây bấm vào sẽ lỡ nhảy sang Kho Content/Viết Content, mất luôn bài đang cầm).
+                if(state.pending){
+                  return `<div class="week-slot" data-empty="${dateStr}|${s.key}" style="cursor:pointer;border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
+                    <div class="slot-label">${s.label} · <span style="color:var(--gold);">Gợi ý AI</span></div>
+                    ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
+                    <div style="color:var(--accent);font-size:11.5px;font-weight:600;margin-top:6px;">Bấm để xếp bài đang chờ vào đây →</div>
+                  </div>`;
+                }
                 const matchedPost = suggestion.bai_co_san ? state.posts.find(p=>p.title===suggestion.bai_co_san) : null;
                 return `<div class="week-slot" style="border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
                   <div class="slot-label">${s.label} · <span style="color:var(--gold);">Gợi ý AI</span></div>
@@ -299,6 +309,8 @@ function render(container, ctx){
   async function fetchAiSchedule(){
     if(state.aiLoading) return;
     state.aiLoading = true; state.aiError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="ai-suggest"]'), 55, 'Đang lên lịch');
+    acquireWakeLock();
     try{
       const scheduledPostIds = new Set(state.entries.map(e=>e.post_id).filter(Boolean));
       const unscheduledPosts = state.posts.filter(p=>!scheduledPostIds.has(p.id)).slice(0, 15)
@@ -313,6 +325,7 @@ function render(container, ctx){
       state.aiSuggestions = data.result.lich;
       saveDraftForCurrentWeek();
     } catch(e){ state.aiError = e.message; }
+    stopProgress(); releaseWakeLock();
     state.aiLoading = false;
     draw();
   }
