@@ -74,6 +74,9 @@ function render(container, ctx){
           ` : `
             <div class="hint-box">Chưa có câu chuyện cá nhân trong kết quả <a href="#dinh-vi">Định Vị</a> — làm Định Vị (hoặc làm lại) trước, rồi quay lại đây bấm tạo lại.</div>
           `}
+          ${(!resolvedProductName() && !resolvedGroupName()) ? `
+            <div class="hint-box" style="margin-top:14px;">Bạn chưa chọn sản phẩm/group nào ở "Tuỳ chọn thêm" bên dưới — nếu có, CTA sẽ dẫn đúng về đó; nếu không, CTA sẽ chỉ mời bình luận tương tác chung (không hứa gửi tài liệu/quà gì, vì bài gốc trong kho là của người khác, không dùng lại lời hứa đó được).</div>
+          ` : ''}
         ` : `
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
         <textarea id="idea-input" placeholder="Ví dụ: 3 sai lầm khiến dòng tiền cá nhân bị nghẽn...">${esc(state.ideaText)}</textarea>
