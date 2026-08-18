@@ -186,6 +186,27 @@ function render(container, ctx){
     `;
   }
 
+  // Nút "Copy" dùng chung — tra theo key thay vì nhét thẳng text vào attribute HTML (tránh vỡ
+  // attribute khi text có dấu ngoặc kép/xuống dòng), luôn đọc đúng state.result mới nhất lúc bấm.
+  function copyBtnHtml(field, label){
+    return `<span class="btn-ghost btn btn-sm" style="padding:5px 12px;font-size:12px;" data-copy-field="${field}">${label||'Copy'}</span>`;
+  }
+  function resolveCopyText(field){
+    const r = state.result;
+    if(!r) return '';
+    if(field==='hashtag') return (r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ');
+    if(field==='caption_chinh') return (r.goi_y_caption && r.goi_y_caption.caption_chinh) || '';
+    if(field.startsWith('caption_platform:')){
+      const i = Number(field.split(':')[1]);
+      return (r.goi_y_caption && r.goi_y_caption.theo_nen_tang && r.goi_y_caption.theo_nen_tang[i] && r.goi_y_caption.theo_nen_tang[i].caption) || '';
+    }
+    if(field.startsWith('cmt_cta_san_pham:')){
+      const i = Number(field.split(':')[1]);
+      return (r.cmt_cta_san_pham && r.cmt_cta_san_pham[i]) || '';
+    }
+    return r[field] || '';
+  }
+
   // Hashtag/gợi ý hình ảnh/dạng content/caption — tách riêng khỏi core để chỉ tải khi người dùng
   // thực sự bấm xem (bước tiếp theo), đỡ tốn thêm 1 lượt gọi AI nếu họ không cần tới.
   function extrasSectionHtml(){
@@ -194,14 +215,21 @@ function render(container, ctx){
     if(state.extrasError) return `<div class="error-box">Không tạo được gợi ý bổ sung: ${esc(state.extrasError)}</div><div class="btn-row no-print" style="justify-content:flex-start;"><button class="btn btn-sm" data-action="retry-extras">Thử lại</button></div>`;
     if(!r.hashtag) return '';
     return `
-      <div class="section"><h3>Hashtag (5)</h3><div class="body">${(r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div></div>
+      <div class="section"><h3>Hashtag (5)</h3>
+        <div class="body">${(r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div>
+        <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('hashtag')}</div>
+      </div>
       <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
       ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (r.goi_y_caption.theo_nen_tang||[]).length)) ? `
         <div class="section"><h3>Caption gợi ý (khi đăng dạng video)</h3>
           <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:12.5px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
+          ${r.goi_y_caption.caption_chinh?`<div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('caption_chinh')}</div>`:''}
           ${(r.goi_y_caption.theo_nen_tang||[]).length ? `
             <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
-              ${r.goi_y_caption.theo_nen_tang.map(p=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;"><b>${esc(p.nen_tang)}:</b> ${esc(p.caption)}</div>`).join('')}
+              ${r.goi_y_caption.theo_nen_tang.map((p,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;">
+                <b>${esc(p.nen_tang)}:</b> ${esc(p.caption)}
+                <div class="btn-row no-print" style="margin-top:8px;justify-content:flex-start;">${copyBtnHtml('caption_platform:'+i)}</div>
+              </div>`).join('')}
             </div>
           ` : ''}
         </div>
@@ -226,21 +254,29 @@ function render(container, ctx){
           <ul>${r.cau_hoi_lam_ro.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
         </div>
       ` : ''}
-      <div class="section highlight"><h3>Hook &amp; Tiêu đề</h3>
-        <div class="body"><b>Tiêu đề:</b> ${esc(r.tieu_de)}</div>
-        <div class="body" style="margin-top:8px;"><b>Hook:</b> ${esc(r.hook)}</div>
+      <div class="section highlight">
+        <h3>Tiêu đề &amp; bài viết (sửa trực tiếp nếu muốn)</h3>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <input id="edit-tieu-de" value="${esc(r.tieu_de)}" style="flex:1;font-weight:700;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);">
+          ${copyBtnHtml('tieu_de')}
+        </div>
+        <textarea id="edit-bai-hoan-chinh" style="min-height:260px;background:var(--panel);">${esc(r.bai_hoan_chinh)}</textarea>
+        <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('bai_hoan_chinh', 'Copy bài viết')}</div>
+        ${r.tu_khoa_cta?`<div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">Từ khoá CTA: <span style="display:inline-block;margin-left:2px;padding:2px 9px;border-radius:999px;background:var(--gold);color:#1E2420;font-size:12px;font-weight:700;">${esc(r.tu_khoa_cta)}</span></div>`:''}
       </div>
-      <div class="section highlight"><h3>${esc(r.tieu_de)}</h3><div class="body">${esc(r.bai_hoan_chinh)}</div></div>
-      <div class="section"><h3>Cấu trúc bài</h3>
-        <div class="body"><b>Vấn đề:</b> ${esc(r.van_de)}</div>
-        <div class="body" style="margin-top:8px;"><b>Giá trị:</b> ${esc(r.gia_tri)}</div>
-        <div class="body" style="margin-top:8px;"><b>Niềm tin:</b> ${esc(r.niem_tin)}</div>
-        <div class="body" style="margin-top:8px;"><b>CTA:</b> ${esc(r.cta)}${r.tu_khoa_cta?` <span style="display:inline-block;margin-left:4px;padding:2px 9px;border-radius:999px;background:var(--gold);color:#1E2420;font-size:12px;font-weight:700;">${esc(r.tu_khoa_cta)}</span>`:''}</div>
+      <div class="section">
+        <h3>Bình luận ghim (sửa trực tiếp nếu muốn)</h3>
+        <textarea id="edit-cmt-ghim" style="min-height:auto;height:70px;">${esc(r.cau_cmt_ghim||'')}</textarea>
+        <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('cau_cmt_ghim')}</div>
       </div>
-      <div class="section"><h3>Bình luận ghim</h3><div class="body">${esc(r.cau_cmt_ghim||'')}</div></div>
       ${(r.cmt_cta_san_pham && r.cmt_cta_san_pham.length) ? `
         <div class="section"><h3>Bình luận CTA sản phẩm/group</h3>
-          <ul>${r.cmt_cta_san_pham.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>
+          ${r.cmt_cta_san_pham.map((c,i)=>`
+            <div style="padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <div style="font-size:14.5px;">${esc(c)}</div>
+              ${copyBtnHtml('cmt_cta_san_pham:'+i)}
+            </div>
+          `).join('')}
         </div>` : ''}
 
       <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Bước tiếp theo</div></div>
@@ -267,6 +303,26 @@ function render(container, ctx){
 
     const cancelKhoGocLink = container.querySelector('[data-action="cancel-kho-goc"]');
     if(cancelKhoGocLink) cancelKhoGocLink.onclick = ()=>{ state.khoGocSource = null; draw(); };
+
+    const editTieuDe = container.querySelector('#edit-tieu-de');
+    if(editTieuDe) editTieuDe.oninput = ()=>{ state.result.tieu_de = editTieuDe.value; };
+    const editBaiHoanChinh = container.querySelector('#edit-bai-hoan-chinh');
+    if(editBaiHoanChinh) editBaiHoanChinh.oninput = ()=>{ state.result.bai_hoan_chinh = editBaiHoanChinh.value; };
+    const editCmtGhim = container.querySelector('#edit-cmt-ghim');
+    if(editCmtGhim) editCmtGhim.oninput = ()=>{ state.result.cau_cmt_ghim = editCmtGhim.value; };
+
+    container.querySelectorAll('[data-copy-field]').forEach(el=>{
+      el.onclick = async ()=>{
+        const text = resolveCopyText(el.getAttribute('data-copy-field'));
+        if(!text) return;
+        try{
+          await navigator.clipboard.writeText(text);
+          const old = el.textContent;
+          el.textContent = 'Đã copy ✓';
+          setTimeout(()=>{ el.textContent = old; }, 1500);
+        } catch(e){}
+      };
+    });
 
     const quickContext = container.querySelector('#quick-context');
     if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };

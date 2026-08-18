@@ -17,6 +17,8 @@ Bài gốc được cung cấp là 1 bài đã kiểm chứng viral — GIỮ NG
 - Nếu người dùng KHÔNG cung cấp câu chuyện riêng, vẫn viết lại toàn bộ thân bài theo đúng giọng định vị (nếu có), không tự bịa câu chuyện thay họ, chỉ dựa trên góc nhìn/lập luận chung.
 - Output tiếng Việt, giữ nguyên thuật ngữ chuyên ngành (hook, CTA, content, insight...).
 
+NGOẠI LỆ — BÀI GỐC DẠNG SỐ (ví dụ "4 bước...", "3 sai lầm...", "5 dấu hiệu..."): các mục trong bài dạng này vốn có thể hoán đổi vị trí cho nhau (không theo mạch tường thuật bắt buộc phải đúng thứ tự như hook → vấn đề → cao trào → kết). Với riêng bài dạng số, được PHÉP: đổi số lượng mục (vd bài gốc 4 bước có thể viết lại thành 3 hoặc 5 bước nếu hợp lý hơn với câu chuyện/góc nhìn mới), đảo thứ tự các mục, và viết lại hẳn nội dung từng mục — miễn là vẫn đúng chủ đề và giữ y hệt câu hook mở đầu. Đây là cách hợp lệ để bài viết lại không bị rập khuôn y hệt bài gốc mỗi lần dùng.
+
 QUAN TRỌNG — TRÁNH LẶP CÂU CHỮ GIỮA CÁC LẦN VIẾT KHÁC NHAU:
 Câu chuyện cá nhân được cung cấp là 1 đoạn tóm tắt CỐ ĐỊNH, dùng lại cho NHIỀU bài viết khác nhau theo thời gian — nếu chép nguyên văn mỗi lần, mọi bài của người dùng sẽ có đúng 1 đoạn giống hệt nhau, đọc vào biết ngay là "copy dán". BẮT BUỘC: chỉ lấy ĐÚNG các CHI TIẾT/SỰ KIỆN thật trong câu chuyện đó (mốc thời gian, con số, cảm xúc, kết quả...), rồi diễn đạt lại bằng câu từ, góc kể, độ dài KHÁC ĐI mỗi lần — phù hợp mạch văn và hook của bài này — tuyệt đối không copy nguyên câu/đoạn từ câu chuyện gốc.
 
