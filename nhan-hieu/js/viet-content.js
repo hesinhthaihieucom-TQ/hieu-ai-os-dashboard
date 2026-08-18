@@ -2,7 +2,8 @@
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
-    score:null, scoring:false, scoreError:null, khoGocSource:null, cauChuyenRieng:'' };
+    score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
+    khoGocSource:null, cauChuyenRieng:'' };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -162,6 +163,26 @@ function render(container, ctx){
     `;
   }
 
+  // Chấm điểm hook RIÊNG với bộ rubric chuyên sâu (loại hook, cơ chế tâm lý, dự đoán mức dừng lại,
+  // 3 bản cải thiện) — khác với tiêu chí "Hook đúng người dừng lại" chỉ là 1/6 điểm nhỏ trong
+  // Chấm Điểm Content tổng, vốn chấm cả bài chứ không đào sâu riêng phần hook.
+  function hookScoreSectionHtml(){
+    if(state.hookScoring) return `<div class="section" style="text-align:center;color:var(--ink-soft);">Đang chấm điểm hook riêng…</div>`;
+    if(state.hookScoreError) return `<div class="error-box">Không chấm điểm hook được: ${esc(state.hookScoreError)}</div>`;
+    if(!state.hookScore) return '';
+    const h = state.hookScore;
+    return `
+      <div class="section highlight">
+        <h3>Chấm điểm Hook riêng</h3>
+        <div class="body" style="font-size:28px;font-weight:700;">${h.diem_tong}<span style="font-size:14px;">/100</span>
+          <span style="font-size:13px;font-weight:400;color:var(--ink-soft);margin-left:8px;">${esc(h.loai_hook)} · Dự đoán dừng lại: ${esc(h.du_doan_muc_do_dung_lai)}</span>
+        </div>
+      </div>
+      <div class="section"><h3>Điểm yếu của hook</h3><div class="body">${esc(h.diem_yeu)}</div></div>
+      <div class="btn-row no-print"><span class="btn-ghost btn" data-action="full-hook-score">Xem 3 bản cải thiện &amp; phân tích đầy đủ ở Chấm Điểm Hook →</span></div>
+    `;
+  }
+
   function resultHtml(){
     const r = state.result;
     return `
@@ -172,11 +193,15 @@ function render(container, ctx){
           <ul>${r.cau_hoi_lam_ro.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
         </div>
       ` : ''}
+      <div class="section highlight"><h3>Hook &amp; Tiêu đề</h3>
+        <div class="body"><b>Tiêu đề:</b> ${esc(r.tieu_de)}</div>
+        <div class="body" style="margin-top:8px;"><b>Hook:</b> ${esc(r.hook)}</div>
+      </div>
+      ${hookScoreSectionHtml()}
       <div class="section highlight"><h3>${esc(r.tieu_de)}</h3><div class="body">${esc(r.bai_hoan_chinh)}</div></div>
       ${scoreSectionHtml()}
       <div class="section"><h3>Cấu trúc bài</h3>
-        <div class="body"><b>Hook:</b> ${esc(r.hook)}</div>
-        <div class="body" style="margin-top:8px;"><b>Vấn đề:</b> ${esc(r.van_de)}</div>
+        <div class="body"><b>Vấn đề:</b> ${esc(r.van_de)}</div>
         <div class="body" style="margin-top:8px;"><b>Giá trị:</b> ${esc(r.gia_tri)}</div>
         <div class="body" style="margin-top:8px;"><b>Niềm tin:</b> ${esc(r.niem_tin)}</div>
         <div class="body" style="margin-top:8px;"><b>CTA:</b> ${esc(r.cta)}${r.tu_khoa_cta?` <span style="display:inline-block;margin-left:4px;padding:2px 9px;border-radius:999px;background:var(--gold);color:#1E2420;font-size:12px;font-weight:700;">${esc(r.tu_khoa_cta)}</span>`:''}</div>
@@ -188,6 +213,16 @@ function render(container, ctx){
         </div>` : ''}
       <div class="section"><h3>Hashtag (5)</h3><div class="body">${(r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div></div>
       <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
+      ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (r.goi_y_caption.theo_nen_tang||[]).length)) ? `
+        <div class="section"><h3>Caption gợi ý (khi đăng dạng video)</h3>
+          <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:12.5px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
+          ${(r.goi_y_caption.theo_nen_tang||[]).length ? `
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+              ${r.goi_y_caption.theo_nen_tang.map(p=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;"><b>${esc(p.nen_tang)}:</b> ${esc(p.caption)}</div>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
       <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
         <div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>
         <div class="body">${esc(r.ly_do_dinh_dang)}</div>
@@ -238,6 +273,12 @@ function render(container, ctx){
     const saveBtn = container.querySelector('[data-action="save"]');
     if(saveBtn) saveBtn.onclick = save;
 
+    const fullHookScoreBtn = container.querySelector('[data-action="full-hook-score"]');
+    if(fullHookScoreBtn) fullHookScoreBtn.onclick = ()=>{
+      window.PendingHookText = state.result.hook;
+      location.hash = 'cham-diem-hook';
+    };
+
     container.querySelectorAll('[data-schedule]').forEach(el=>{
       el.onclick = ()=>{
         const id = el.getAttribute('data-schedule');
@@ -257,7 +298,8 @@ function render(container, ctx){
   async function generate(){
     if(state.khoGocSource ? !state.khoGocSource.trim() : !state.ideaText.trim()) return;
     state.generating = true; state.error = null; state.result = null; state.savedId = null;
-    state.score = null; state.scoring = false; state.scoreError = null; draw();
+    state.score = null; state.scoring = false; state.scoreError = null;
+    state.hookScore = null; state.hookScoring = false; state.hookScoreError = null; draw();
     try{
       const endpoint = state.khoGocSource ? '/api/viet-tu-kho-goc' : '/api/viet-content';
       const payload = {
@@ -277,11 +319,12 @@ function render(container, ctx){
       const data = await callApi(endpoint, payload);
       state.result = data.result;
       state.generating = false; draw();
-      scoreResult();
+      scoreContent();
+      scoreHook();
     } catch(e){ state.error = e.message; state.generating = false; draw(); }
   }
 
-  async function scoreResult(){
+  async function scoreContent(){
     if(!state.result) return;
     state.scoring = true; state.scoreError = null; draw();
     try{
@@ -293,6 +336,22 @@ function render(container, ctx){
       await ctx.supabase.from('content_scores').insert({ user_id: ctx.user.id, content_text: state.result.bai_hoan_chinh, result: data.result });
     } catch(e){ state.scoreError = e.message; }
     state.scoring = false; draw();
+  }
+
+  // Chấm điểm riêng r.hook (khác content_text ở trên) bằng đúng rubric chuyên sâu của Chấm Điểm Hook,
+  // chạy song song với scoreContent() — không phụ thuộc nhau, lỗi 1 bên không chặn bên còn lại.
+  async function scoreHook(){
+    if(!state.result || !state.result.hook || !state.result.hook.trim()) return;
+    state.hookScoring = true; state.hookScoreError = null; draw();
+    try{
+      const data = await callApi('/api/cham-diem-hook', {
+        hook_text: state.result.hook,
+        positioning: state.positioning && state.positioning.luot1 ? { luot1: state.positioning.luot1 } : null,
+      });
+      state.hookScore = data.result;
+      await ctx.supabase.from('hook_scores').insert({ user_id: ctx.user.id, hook_text: state.result.hook, result: data.result });
+    } catch(e){ state.hookScoreError = e.message; }
+    state.hookScoring = false; draw();
   }
 
   async function save(){

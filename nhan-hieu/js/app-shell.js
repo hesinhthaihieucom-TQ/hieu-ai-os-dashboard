@@ -20,11 +20,13 @@ const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 const PAYMENT_PLANS = [
   { key:'1m', label:'1 tháng', amount:499000 },
-  { key:'6m', label:'6 tháng', amount:2390000, note:'~398.000đ/tháng, tiết kiệm ~20%' },
-  { key:'12m', label:'12 tháng', amount:3990000, note:'~332.500đ/tháng, tiết kiệm ~33%' },
+  { key:'6m', label:'6 tháng', amount:2390000, note:'~398.000đ/tháng, tiết kiệm ~20%', recommended:true },
+  { key:'12m', label:'12 tháng', amount:3990000, note:'~332.500đ/tháng, tiết kiệm ~33% — giữ giá lâu nhất trước khi web tăng giá', recommended:true },
   { key:'1m_hv', label:'1 tháng — đã học khoá Xây Nhân Hiệu', amount:299000, note:'Giá ưu đãi cho học viên E-learning/Zoom' },
 ];
-let selectedPaymentPlanKey = PAYMENT_PLANS[0].key;
+// Mặc định gợi ý gói 6 tháng thay vì gói 1 tháng — web sẽ còn cập nhật/mở rộng thêm (đặc biệt
+// các Kho Nội Dung), lúc đó giá sẽ tăng, nên chọn gói dài ngay bây giờ để giữ được mức giá hiện tại lâu hơn.
+let selectedPaymentPlanKey = '6m';
 
 function currentRouteFromHash(){
   const h = (location.hash || '').replace('#','');
@@ -103,8 +105,9 @@ function renderExpiredScreen(){
 
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
+        <div class="hint-box" style="margin-bottom:12px;">💡 Web sẽ còn cập nhật/mở rộng thêm — đặc biệt các Kho Nội Dung — nên giá sẽ tăng dần theo thời gian. Chọn gói 6 tháng hoặc 12 tháng ngay bây giờ để giữ được mức giá ưu đãi hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.</div>
         <div class="chips" id="plan-chips">
-          ${PAYMENT_PLANS.map(pl=>`<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ</div>`).join('')}
+          ${PAYMENT_PLANS.map(pl=>`<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ</div>`).join('')}
         </div>
         ${plan.note?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">${esc(plan.note)}</div>`:''}
 

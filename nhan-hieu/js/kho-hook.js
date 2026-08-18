@@ -51,7 +51,7 @@ function categoryLabel(key){
 
 function render(container, ctx){
   const state = {
-    tab:'tao-hook', personal:[], shared:[], error:null, positioning:null,
+    tab:'tao-hook', personal:[], shared:[], sharedContent:[], error:null, positioning:null,
     newEntry:{ hook_text:'', note:'' }, addingHook:false, addError:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
@@ -66,7 +66,7 @@ function render(container, ctx){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
-    await Promise.all([loadPersonal(), loadShared()]);
+    await Promise.all([loadPersonal(), loadShared(), loadSharedContent()]);
     draw();
   }
   async function loadPersonal(){
@@ -79,12 +79,29 @@ function render(container, ctx){
     if(error) state.error = error.message;
     state.shared = data || [];
   }
+  // Tiêu đề trong Kho Content chung thường CHÍNH LÀ 1 câu hook/headline đã viral — gộp vào Kho Hook
+  // chung để không phải mở 2 kho mới tìm được hết hook, không tạo bảng mới, chỉ đọc thêm cột có sẵn.
+  async function loadSharedContent(){
+    const { data, error } = await ctx.supabase.from('content_bank_shared').select('id,title,tags,created_at').order('created_at', { ascending:false });
+    if(error){ state.sharedContent = []; return; }
+    state.sharedContent = data || [];
+  }
+
+  // Kho chung hiển thị gộp cả 2 nguồn — đánh dấu nguồn gốc (_src) để biết bảng nào cần thao tác khi
+  // xem/viết bài từ đúng item, vì 2 bảng gốc (hooks_bank_shared / content_bank_shared) khác cột.
+  function combinedShared(){
+    return [
+      ...state.shared.map(h=>({ id:h.id, hook_text:h.hook_text, category:h.category, note:h.note, tags:h.tags, _src:'shared' })),
+      ...state.sharedContent.map(c=>({ id:c.id, hook_text:c.title, category:null, note:null, tags:c.tags, _src:'content' })),
+    ];
+  }
 
   function findSourceText(key){
     if(!key) return '';
     const [kind, id] = key.split(':');
     if(kind==='personal') return (state.personal.find(h=>h.id===id)||{}).hook_text || '';
     if(kind==='shared') return (state.shared.find(h=>h.id===id)||{}).hook_text || '';
+    if(kind==='content') return (state.sharedContent.find(c=>c.id===id)||{}).title || '';
     return '';
   }
 
@@ -97,7 +114,7 @@ function render(container, ctx){
       <div class="tab-row">
         <div class="tab-btn ${state.tab==='tao-hook'?'active':''}" data-tab="tao-hook">Tạo Hook</div>
         <div class="tab-btn ${state.tab==='kho-toi'?'active':''}" data-tab="kho-toi">Kho của tôi (${state.personal.length})</div>
-        <div class="tab-btn ${state.tab==='kho-chung'?'active':''}" data-tab="kho-chung">Kho chung (${state.shared.length})</div>
+        <div class="tab-btn ${state.tab==='kho-chung'?'active':''}" data-tab="kho-chung">Kho chung (${state.shared.length + state.sharedContent.length})</div>
       </div>
       ${state.tab==='tao-hook' ? taoHookTab() : state.tab==='kho-toi' ? khoToiTab() : khoChungTab()}
     `;
@@ -226,23 +243,24 @@ function render(container, ctx){
   }
 
   function khoChungTab(){
-    if(state.shared.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
+    const all = combinedShared();
+    if(all.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
 
     if(!state.chungPillar){
       return `
-        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng hook phù hợp — đỡ phải lướt qua cả kho.</div>
+        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng hook phù hợp — đỡ phải lướt qua cả kho. Gồm cả hook riêng và tiêu đề viral từ Kho Content chung.</div>
         <div class="chips">
           ${HOOK_PILLARS.map(p=>{
-            const count = state.shared.filter(h=>(h.tags||[]).includes(p.key)).length;
+            const count = all.filter(h=>(h.tags||[]).includes(p.key)).length;
             if(count===0) return '';
             return `<div class="chip" data-chung-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
           }).join('')}
-          <div class="chip" data-chung-pillar="all">Xem tất cả (${state.shared.length})</div>
+          <div class="chip" data-chung-pillar="all">Xem tất cả (${all.length})</div>
         </div>
       `;
     }
 
-    const items = state.chungPillar==='all' ? state.shared : state.shared.filter(h=>(h.tags||[]).includes(state.chungPillar));
+    const items = state.chungPillar==='all' ? all : all.filter(h=>(h.tags||[]).includes(state.chungPillar));
     const pillarLabel = state.chungPillar==='all' ? 'Tất cả' : (HOOK_PILLARS.find(p=>p.key===state.chungPillar)||{}).label;
     return `
       <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
@@ -251,9 +269,9 @@ function render(container, ctx){
       </div>
       ${items.map(h=>`
         <div class="section">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
           <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
-          ${writeActionHtml('shared:'+h.id)}
+          ${writeActionHtml(h._src+':'+h.id)}
         </div>
       `).join('')}
     `;

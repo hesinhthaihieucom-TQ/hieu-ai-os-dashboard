@@ -30,8 +30,26 @@ const TOOL_POST = {
         description: 'Chọn đúng 1 trong các dạng content phù hợp nhất với ngành và mục tiêu bài này.',
       },
       ly_do_dinh_dang: { type: 'string', description: 'Vì sao dạng content này phù hợp nhất cho bài này.' },
+      goi_y_caption: {
+        type: 'object',
+        description: 'Caption dùng khi đăng dạng VIDEO — khác với tiêu đề ghi trên ảnh/thumbnail. Nếu dinh_dang_de_xuat không phải dạng quay video, để caption_chinh rỗng "" và theo_nen_tang là mảng rỗng.',
+        properties: {
+          giu_nguyen_tieu_de: { type: 'boolean', description: 'true nếu nên dùng ĐÚNG tiêu đề ghi trên thumbnail làm caption luôn (tiêu đề đã đủ mạnh để đứng riêng); false nếu nên viết 1 caption khác đi, hiệu quả hơn.' },
+          caption_chinh: { type: 'string', description: 'Caption chính đề xuất — trùng tiêu đề nếu giu_nguyen_tieu_de=true, hoặc bản viết riêng nếu false. Rỗng "" nếu bài này không phải dạng video.' },
+          theo_nen_tang: {
+            type: 'array', minItems: 0, maxItems: 3,
+            items: {
+              type: 'object',
+              properties: { nen_tang: { type: 'string', enum: ['TikTok', 'YouTube', 'Zalo'] }, caption: { type: 'string' } },
+              required: ['nen_tang', 'caption'],
+            },
+            description: 'CHỈ liệt kê nền tảng nào thực sự nên dùng caption/hook khác đáng kể so với caption_chinh (TikTok: ngắn gọn, bắt trend, ít hashtag; YouTube: có thể dài hơn, chèn từ khoá SEO; Zalo: giọng gần gũi cá nhân hơn) — bỏ qua nền tảng nào dùng chung caption_chinh là đủ, không liệt kê cho có.',
+          },
+        },
+        required: ['giu_nguyen_tieu_de', 'caption_chinh', 'theo_nen_tang'],
+      },
     },
-    required: ['tieu_de','hook','van_de','gia_tri','niem_tin','cta','tu_khoa_cta','cau_cmt_ghim','cmt_cta_san_pham','bai_hoan_chinh','hashtag','goi_y_hinh_anh','dinh_dang_de_xuat','ly_do_dinh_dang'],
+    required: ['tieu_de','hook','van_de','gia_tri','niem_tin','cta','tu_khoa_cta','cau_cmt_ghim','cmt_cta_san_pham','bai_hoan_chinh','hashtag','goi_y_hinh_anh','dinh_dang_de_xuat','ly_do_dinh_dang','goi_y_caption'],
   },
 };
 
@@ -52,6 +70,12 @@ QUY TẮC BÌNH LUẬN GHIM:
 QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 - Nếu người dùng có cung cấp tên sản phẩm/dịch vụ và/hoặc tên group/cộng đồng, viết thêm 1-2 câu bình luận CTA (cmt_cta_san_pham) dẫn khéo về đúng sản phẩm hoặc group đó, giọng chia sẻ tự nhiên, không quảng cáo lộ liễu.
 - Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.
+
+QUY TẮC CAPTION VIDEO (goi_y_caption):
+- Nếu dạng content đề xuất (dinh_dang_de_xuat) là dạng quay video (Video Ngồi Nói, POV, Vlog, Text trên Video AI/thật + Caption...), phải điền đủ goi_y_caption.
+- Tự quyết định giu_nguyen_tieu_de: true nếu tiêu đề trên thumbnail đã đủ mạnh để dùng luôn làm caption; false nếu nên viết 1 caption riêng, khác đi, hiệu quả hơn khi đứng dưới video.
+- Chỉ thêm biến thể theo_nen_tang cho nền tảng thực sự nên viết khác caption_chinh — không liệt kê cho đủ 3 nền tảng nếu không cần thiết.
+- Nếu dạng content đề xuất KHÔNG phải dạng video (ảnh tĩnh, carousel, ghi chú...), để caption_chinh = "" và theo_nen_tang = mảng rỗng.
 
 QUY TẮC HASHTAG (BẮT BUỘC):
 - Xuất ĐÚNG 5 hashtag, không hơn không kém.

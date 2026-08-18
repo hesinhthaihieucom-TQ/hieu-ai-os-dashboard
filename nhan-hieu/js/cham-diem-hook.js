@@ -10,6 +10,13 @@ function render(container, ctx){
     state.positioning = pos || null;
     const { data: hist } = await ctx.supabase.from('hook_scores').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(5);
     state.history = hist || [];
+    if(window.PendingHookText){
+      state.text = window.PendingHookText;
+      window.PendingHookText = null;
+      draw();
+      score();
+      return;
+    }
     draw();
   }
 
