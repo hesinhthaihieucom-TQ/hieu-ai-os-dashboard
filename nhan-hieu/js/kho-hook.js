@@ -23,6 +23,18 @@ const HOOK_GEN_CATEGORIES = [
 ];
 const HOOK_GEN_LABEL_BY_KEY = Object.fromEntries(HOOK_GEN_CATEGORIES.map(c=>[c.key, c.label]));
 
+// Trục nội dung (content pillar) để lọc Kho chung theo chủ đề thay vì lướt hết cả kho — cùng
+// nhóm với Kho Content, xem thêm schema_v11_hook_tags.sql (backfill tags cho hook cũ).
+const HOOK_PILLARS = [
+  { key:'tai_chinh', label:'Tài chính' },
+  { key:'tam_linh', label:'Tâm linh' },
+  { key:'hon_nhan_gia_dinh', label:'Hôn nhân & Gia đình' },
+  { key:'phat_trien_ban_than', label:'Phát triển bản thân' },
+  { key:'kinh_doanh', label:'Kinh doanh' },
+  { key:'suc_khoe_lam_dep', label:'Sức khoẻ & Làm đẹp' },
+  { key:'xay_kenh', label:'Xây kênh & Content' },
+];
+
 const CONTENT_GOALS = [
   { key:'viral', label:'Viral (tối đa lượt xem)', desc:'Ưu tiên giật mắt, gây tò mò hoặc gây sốc mạnh để nhiều người dừng lại xem.' },
   { key:'uy_tin', label:'Uy tín (xây thẩm quyền)', desc:'Ưu tiên hook cho thấy bạn hiểu sâu, đáng tin — không câu view rẻ tiền.' },
@@ -45,6 +57,7 @@ function render(container, ctx){
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
+    chungPillar:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -214,17 +227,45 @@ function render(container, ctx){
 
   function khoChungTab(){
     if(state.shared.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
-    return state.shared.map(h=>`
-      <div class="section">
-        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
-        <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
-        ${writeActionHtml('shared:'+h.id)}
+
+    if(!state.chungPillar){
+      return `
+        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng hook phù hợp — đỡ phải lướt qua cả kho.</div>
+        <div class="chips">
+          ${HOOK_PILLARS.map(p=>{
+            const count = state.shared.filter(h=>(h.tags||[]).includes(p.key)).length;
+            if(count===0) return '';
+            return `<div class="chip" data-chung-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
+          }).join('')}
+          <div class="chip" data-chung-pillar="all">Xem tất cả (${state.shared.length})</div>
+        </div>
+      `;
+    }
+
+    const items = state.chungPillar==='all' ? state.shared : state.shared.filter(h=>(h.tags||[]).includes(state.chungPillar));
+    const pillarLabel = state.chungPillar==='all' ? 'Tất cả' : (HOOK_PILLARS.find(p=>p.key===state.chungPillar)||{}).label;
+    return `
+      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} hook)</div>
+        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="chung-back">← Chọn trục khác</span>
       </div>
-    `).join('');
+      ${items.map(h=>`
+        <div class="section">
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
+          <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+          ${writeActionHtml('shared:'+h.id)}
+        </div>
+      `).join('')}
+    `;
   }
 
   function bind(){
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
+    container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
+      el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
+    });
+    const chungBackLink = container.querySelector('[data-action="chung-back"]');
+    if(chungBackLink) chungBackLink.onclick = ()=>{ state.chungPillar = null; draw(); };
 
     const gt = container.querySelector('#gen-topic'); if(gt) gt.oninput = ()=>state.genTopic = gt.value;
     const gqc = container.querySelector('#gen-quick-context'); if(gqc) gqc.oninput = ()=>state.genQuickContext = gqc.value;

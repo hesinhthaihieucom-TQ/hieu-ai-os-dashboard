@@ -5,12 +5,29 @@ const SOURCE_MAP = {
   chuyen_gia_viet: 'Mẫu chuyên gia viết', tai_che_viral: 'Tái chế từ bài viral',
 };
 
+// Trục nội dung (content pillar) — nhóm các tag chi tiết trong data lại thành nhóm lớn dễ chọn,
+// tránh người dùng bị ngộp vì phải lướt qua cả kho chung chưa lọc.
+const PILLARS = [
+  { key:'tai_chinh', label:'Tài chính', tags:['tai_chinh','tich_san','tiet_kiem','tin_dung','dong_tien','no'] },
+  { key:'tam_linh', label:'Tâm linh', tags:['tam_linh','phong_thuy','than_so_hoc','phuoc_khi'] },
+  { key:'hon_nhan_gia_dinh', label:'Hôn nhân & Gia đình', tags:['hon_nhan','gia_dinh','tinh_yeu','nuoi_day_con'] },
+  { key:'phat_trien_ban_than', label:'Phát triển bản thân', tags:['phat_trien_ban_than','dong_luc','tu_duy','tam_ly','loi_song'] },
+  { key:'kinh_doanh', label:'Kinh doanh', tags:['kinh_doanh','ban_hang','chien_luoc'] },
+  { key:'suc_khoe_lam_dep', label:'Sức khoẻ & Làm đẹp', tags:['suc_khoe','cham_soc_da','lam_dep'] },
+  { key:'xay_kenh', label:'Xây kênh & Content', tags:['xay_kenh','content','hook','giao_tiep','quan_diem','video','pov','listicle','series','tiktok'] },
+];
+function pillarsForItem(item){
+  const tags = item.tags || [];
+  return PILLARS.filter(p=>p.tags.some(t=>tags.includes(t))).map(p=>p.key);
+}
+
 function render(container, ctx){
   const state = {
     tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
     newEntry:{ title:'', content:'', source_type:'', tags:'' },
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
+    chungPillar:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -96,7 +113,7 @@ function render(container, ctx){
   }
 
   function daVietTab(){
-    if(state.posts.length===0) return `<div class="card" style="color:var(--ink-soft);">Chưa có bài nào — sang mục Viết Content để tạo bài đầu tiên.</div>`;
+    if(state.posts.length===0) return `<div class="card" style="color:var(--ink-soft);">Chưa có bài nào — sang tab <b>Kho chung</b> chọn 1 bài mẫu phù hợp trục nội dung của bạn để viết bài đầu tiên.</div>`;
     return state.posts.map(p=>`
       <div class="section">
         <h3>${esc(p.title||'(không tiêu đề)')}</h3>
@@ -142,18 +159,46 @@ function render(container, ctx){
 
   function khoChungTab(){
     if(state.sharedBank.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`;
-    return state.sharedBank.map(b=>`
-      <div class="section">
-        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
-        <h3>${esc(b.title)}</h3>
-        <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;">${esc(b.content)}</div>
-        ${writeActionHtml('shared:'+b.id)}
+
+    if(!state.chungPillar){
+      return `
+        <div class="hint-box" style="margin-bottom:14px;">Chọn 1 trục nội dung bên dưới để xem đúng bài mẫu phù hợp — đỡ phải lướt qua cả kho.</div>
+        <div class="chips">
+          ${PILLARS.map(p=>{
+            const count = state.sharedBank.filter(b=>pillarsForItem(b).includes(p.key)).length;
+            if(count===0) return '';
+            return `<div class="chip" data-chung-pillar="${p.key}">${esc(p.label)} (${count})</div>`;
+          }).join('')}
+          <div class="chip" data-chung-pillar="all">Xem tất cả (${state.sharedBank.length})</div>
+        </div>
+      `;
+    }
+
+    const items = state.chungPillar==='all' ? state.sharedBank : state.sharedBank.filter(b=>pillarsForItem(b).includes(state.chungPillar));
+    const pillarLabel = state.chungPillar==='all' ? 'Tất cả' : (PILLARS.find(p=>p.key===state.chungPillar)||{}).label;
+    return `
+      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:13px;font-weight:600;color:var(--ink-soft);">Trục: ${esc(pillarLabel)} (${items.length} bài)</div>
+        <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="chung-back">← Chọn trục khác</span>
       </div>
-    `).join('');
+      ${items.map(b=>`
+        <div class="section">
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+          <h3>${esc(b.title)}</h3>
+          <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;">${esc(b.content)}</div>
+          ${writeActionHtml('shared:'+b.id)}
+        </div>
+      `).join('')}
+    `;
   }
 
   function bind(){
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
+    container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
+      el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
+    });
+    const chungBackLink = container.querySelector('[data-action="chung-back"]');
+    if(chungBackLink) chungBackLink.onclick = ()=>{ state.chungPillar = null; draw(); };
 
     container.querySelectorAll('[data-schedule]').forEach(el=>{
       el.onclick = ()=>{
