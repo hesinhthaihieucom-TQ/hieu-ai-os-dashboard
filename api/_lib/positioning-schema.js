@@ -1,4 +1,6 @@
-const XUONG_DONG = ' (viết nhiều ý ngắn xuống dòng riêng bằng \\n\\n giữa các ý, KHÔNG dồn thành 1 đoạn văn dài dính liền; bọc 1-2 cụm từ khoá quan trọng nhất trong dấu **...**).';
+// LƯU Ý: không mô tả ký tự xuống dòng bằng chữ "\n" trong text này — model hay hiểu nhầm và in ra
+// đúng 4 ký tự \,n,\,n theo nghĩa đen thay vì xuống dòng thật. Mô tả bằng lời thường để tránh lỗi đó.
+const XUONG_DONG = ' (mỗi ý viết thành 1 đoạn ngắn tách riêng bằng cách xuống dòng thật giữa các đoạn, giống như đang gõ Enter xuống dòng mới — KHÔNG dồn nhiều ý thành 1 khối văn dài dính liền nhau; bọc 1-2 cụm từ khoá quan trọng nhất trong dấu **...**).';
 
 const TOOL_LUOT1 = {
   name: 'xuat_dinh_vi_luot_1',

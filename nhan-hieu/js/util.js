@@ -10,8 +10,11 @@ function escBold(s){
 
 // Một số bản định vị cũ lưu "kết luận định vị" dạng cả đoạn dài nhiều câu dính liền nhau
 // (trước khi siết prompt chỉ còn đúng 1 câu) — tách xuống dòng theo từng câu cho dễ đọc.
+// AI đôi khi hiểu nhầm chỉ dẫn "xuống dòng bằng \n\n" theo nghĩa đen và in ra 4 ký tự
+// \, n, \, n thay vì 1 dòng mới thật — chuẩn hoá về xuống dòng thật trước khi tách câu.
 function breakSentences(s){
-  return String(s==null?'':s).replace(/([.!?]['"'"”]?)\s+(?=[A-ZÀ-Ỹ"'"“])/g, '$1\n\n');
+  const str = String(s==null?'':s).replace(/\\n+/g, '\n\n');
+  return str.replace(/([.!?]['"'"”]?)\s+(?=[A-ZÀ-Ỹ"'"“])/g, '$1\n\n');
 }
 
 // Lấy đúng câu đầu tiên — dùng khi cần hiển thị ngắn gọn dạng tiêu đề (vd bản cũ dài nhiều câu).
