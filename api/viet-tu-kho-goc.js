@@ -17,6 +17,8 @@ Bài gốc được cung cấp là 1 bài đã kiểm chứng viral — GIỮ NG
 - Nếu người dùng KHÔNG cung cấp câu chuyện riêng, vẫn viết lại toàn bộ thân bài theo đúng giọng định vị (nếu có), không tự bịa câu chuyện thay họ, chỉ dựa trên góc nhìn/lập luận chung.
 - Output tiếng Việt, giữ nguyên thuật ngữ chuyên ngành (hook, CTA, content, insight...).
 
+QUY TẮC VỀ SẢN PHẨM/CTA CỦA BÀI GỐC (BẮT BUỘC): bài gốc trong kho content là do tác giả KHÁC viết, nếu bài gốc có nhắc tên sản phẩm/khoá học/CTA dẫn về thứ gì đó của tác giả gốc, TUYỆT ĐỐI KHÔNG giữ lại tên sản phẩm/CTA đó trong bài viết lại — đây không phải sản phẩm của người dùng hiện tại. Thay bằng: sản phẩm/dịch vụ/group của CHÍNH người dùng hiện tại nếu họ có cung cấp (xem phần TÊN SẢN PHẨM/DỊCH VỤ và GROUP/CỘNG ĐỒNG bên dưới), hoặc nếu không cung cấp gì thì viết CTA chung theo đúng QUY TẮC CTA (mời để lại bình luận nhận tài liệu/tư vấn, không nhắc tên sản phẩm cụ thể nào).
+
 NGOẠI LỆ — BÀI GỐC DẠNG SỐ (ví dụ "4 bước...", "3 sai lầm...", "5 dấu hiệu..."): các mục trong bài dạng này vốn có thể hoán đổi vị trí cho nhau (không theo mạch tường thuật bắt buộc phải đúng thứ tự như hook → vấn đề → cao trào → kết). Với riêng bài dạng số, được PHÉP: đổi số lượng mục (vd bài gốc 4 bước có thể viết lại thành 3 hoặc 5 bước nếu hợp lý hơn với câu chuyện/góc nhìn mới), đảo thứ tự các mục, và viết lại hẳn nội dung từng mục — miễn là vẫn đúng chủ đề và giữ y hệt câu hook mở đầu. Đây là cách hợp lệ để bài viết lại không bị rập khuôn y hệt bài gốc mỗi lần dùng.
 
 QUAN TRỌNG — TRÁNH LẶP CÂU CHỮ GIỮA CÁC LẦN VIẾT KHÁC NHAU:
