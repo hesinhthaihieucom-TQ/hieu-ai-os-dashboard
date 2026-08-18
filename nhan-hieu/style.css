@@ -178,6 +178,12 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
 
   .main-inner{ padding:20px 16px 70px; }
   .week-grid{ grid-template-columns:repeat(7,140px); }
+
+  /* iOS Safari tự động phóng to (zoom) trang khi người dùng bấm vào 1 ô nhập có cỡ chữ < 16px —
+     đúng lúc đăng nhập (ô email/mật khẩu) là dễ gặp nhất. Sau khi phóng, mức zoom đó dính luôn
+     sang cả màn app chính (vẫn cùng 1 trang, không tải lại), che mất nút ☰ mở sidebar ở trên
+     cùng — phải kéo/pinch tay mới thấy lại. Ép mọi ô nhập tối thiểu 16px để tắt hẳn auto-zoom. */
+  .auth-shell input, input, textarea, select{ font-size:16px; }
 }
 
 @media print{

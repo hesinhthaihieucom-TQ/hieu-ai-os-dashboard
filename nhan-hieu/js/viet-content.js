@@ -1,6 +1,6 @@
 (function(){
 function render(container, ctx){
-  const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
+  const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], scheduledPostIds:new Set(), savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', extrasLoading:false, extrasError:null,
@@ -16,7 +16,7 @@ function render(container, ctx){
     state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
     if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
     else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
-    await Promise.all([loadRecent(), loadAssets(), loadBrands()]);
+    await Promise.all([loadRecent(), loadAssets(), loadBrands(), loadScheduledPostIds()]);
     state.screen='main';
     draw();
   }
@@ -51,6 +51,13 @@ function render(container, ctx){
   async function loadRecent(){
     const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(10);
     state.recentPosts = data || [];
+  }
+
+  // Đánh dấu bài nào đã được đưa vào Lịch Đăng Bài rồi — để không phải mở Lịch Đăng mới biết,
+  // và tránh lỡ tay đưa trùng 1 bài vào lịch nhiều lần mà không hay.
+  async function loadScheduledPostIds(){
+    const { data } = await ctx.supabase.from('calendar_entries').select('post_id').eq('user_id', ctx.user.id).not('post_id', 'is', null);
+    state.scheduledPostIds = new Set((data || []).map(e => e.post_id));
   }
 
   function html(){
@@ -136,12 +143,17 @@ function render(container, ctx){
       <div style="margin-top:28px;">
         <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Bài đã viết gần đây</h3>
         ${state.recentPosts.length===0?`<div style="color:var(--ink-soft);font-size:14px;">Chưa có bài nào được lưu.</div>`:''}
-        ${state.recentPosts.map(p=>`
+        ${state.recentPosts.map(p=>{
+          const scheduled = state.scheduledPostIds.has(p.id);
+          return `
           <div class="list-item">
-            <div class="txt"><b>${esc(p.title||'(không tiêu đề)')}</b><br><span style="color:var(--ink-soft);font-size:13px;">${esc((p.content||'').slice(0,120))}${(p.content||'').length>120?'…':''}</span></div>
-            <button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>
+            <div class="txt">
+              <b>${esc(p.title||'(không tiêu đề)')}</b>${scheduled?` <span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Đã có trong lịch</span>`:''}<br>
+              <span style="color:var(--ink-soft);font-size:13px;">${esc((p.content||'').slice(0,120))}${(p.content||'').length>120?'…':''}</span>
+            </div>
+            <button class="btn btn-sm" data-schedule="${p.id}">${scheduled?'Đưa vào lịch thêm →':'Đưa vào lịch →'}</button>
           </div>
-        `).join('')}
+        `;}).join('')}
       </div>
     `;
   }
@@ -425,7 +437,7 @@ function render(container, ctx){
       } else {
         payload.idea_text = state.ideaText;
       }
-      const data = await callApi(endpoint, payload);
+      const data = await callApi(endpoint, payload, 150000);
       state.result = data.result;
       state.showScoreContent = false; state.showScoreHook = false; state.showExtras = false;
       state.generating = false; draw();

@@ -4,11 +4,14 @@
     { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
-    "api/goi-y-lich.js": { "maxDuration": 60 },
-    "api/dinh-vi.js": { "maxDuration": 60 },
-    "api/dinh-vi-parse.js": { "maxDuration": 60 },
-    "api/sua-kenh.js": { "maxDuration": 60 },
-    "api/tai-che-viral.js": { "maxDuration": 60 }
+    "api/goi-y-lich.js": { "maxDuration": 120 },
+    "api/dinh-vi.js": { "maxDuration": 120 },
+    "api/dinh-vi-parse.js": { "maxDuration": 120 },
+    "api/sua-kenh.js": { "maxDuration": 120 },
+    "api/tai-che-viral.js": { "maxDuration": 120 },
+    "api/viet-content.js": { "maxDuration": 120 },
+    "api/viet-tu-kho-goc.js": { "maxDuration": 120 },
+    "api/viet-content-extras.js": { "maxDuration": 120 }
   },
   "headers": [
     {
