@@ -20,8 +20,8 @@ const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 const PAYMENT_PLANS = [
   { key:'1m', label:'1 tháng', amount:499000 },
-  { key:'6m', label:'6 tháng', amount:2390000, note:'~398.000đ/tháng, tiết kiệm ~20%', recommended:true },
-  { key:'12m', label:'12 tháng', amount:3990000, note:'~332.500đ/tháng, tiết kiệm ~33% — giữ giá lâu nhất trước khi web tăng giá', recommended:true },
+  { key:'6m', label:'6 tháng', amount:2390000, note:'~398.000đ/tháng — tiết kiệm 604.000đ (~20%) so với mua 6 tháng theo giá lẻ 1 tháng', recommended:true },
+  { key:'12m', label:'12 tháng', amount:3990000, note:'~332.500đ/tháng — tiết kiệm 1.998.000đ (~33%) so với mua 12 tháng theo giá lẻ 1 tháng — giữ giá lâu nhất trước khi web tăng giá', recommended:true },
   { key:'1m_hv', label:'1 tháng — đã học khoá Xây Nhân Hiệu', amount:299000, note:'Giá ưu đãi cho học viên E-learning/Zoom' },
 ];
 // Mặc định gợi ý gói 6 tháng thay vì gói 1 tháng — web sẽ còn cập nhật/mở rộng thêm (đặc biệt
@@ -105,7 +105,7 @@ function renderExpiredScreen(){
 
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
-        <div class="hint-box" style="margin-bottom:12px;">💡 Web sẽ còn cập nhật/mở rộng thêm — đặc biệt các Kho Nội Dung — nên giá sẽ tăng dần theo thời gian. Chọn gói 6 tháng hoặc 12 tháng ngay bây giờ để giữ được mức giá ưu đãi hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.</div>
+        <div class="hint-box" style="margin-bottom:12px;">💡 Web sẽ còn cập nhật/mở rộng thêm — đặc biệt Kho Content và Kho Hook viral — nên giá sẽ tăng dần theo thời gian. Chọn gói 6 tháng hoặc 12 tháng ngay bây giờ để giữ được mức giá ưu đãi hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.</div>
         <div class="chips" id="plan-chips">
           ${PAYMENT_PLANS.map(pl=>`<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ</div>`).join('')}
         </div>
@@ -117,10 +117,10 @@ function renderExpiredScreen(){
           </div>
           <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
             <div><b>Ngân hàng:</b> Vietinbank</div>
-            <div><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)}</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
             <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-            <div><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ</div>
-            <div><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${plan.amount}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(refCode)}">Copy</span></div>
           </div>
           <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung có mã <b>${esc(refCode)}</b> — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác. Chuyển xong đợi 1-2 phút rồi tải lại trang.</div>
         ` : `
@@ -139,6 +139,16 @@ function renderExpiredScreen(){
 
   root.querySelectorAll('[data-plan]').forEach(el=>{
     el.onclick = ()=>{ selectedPaymentPlanKey = el.getAttribute('data-plan'); renderExpiredScreen(); };
+  });
+  root.querySelectorAll('[data-copy-value]').forEach(el=>{
+    el.onclick = async ()=>{
+      try{
+        await navigator.clipboard.writeText(el.getAttribute('data-copy-value'));
+        const old = el.textContent;
+        el.textContent = 'Đã copy ✓';
+        setTimeout(()=>{ el.textContent = old; }, 1500);
+      } catch(e){}
+    };
   });
   const reloadBtn = root.querySelector('#reload-status-btn');
   if(reloadBtn) reloadBtn.onclick = async ()=>{ await loadProfile(); renderApp(); };
@@ -246,6 +256,7 @@ function renderApp(){
     window.startOnboardingTour(AppState.user.id, alreadySeen, async ()=>{
       const { error } = await supabaseClient.rpc('mark_onboarding_seen');
       if(!error && AppState.profile) AppState.profile.onboarding_seen = true;
+      if(window.maybeShowInstallPrompt) window.maybeShowInstallPrompt();
     });
   }
 

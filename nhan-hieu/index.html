@@ -15,6 +15,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>
+  // Bắt sự kiện cài PWA CÀNG SỚM CÀNG TỐT — trình duyệt chỉ bắn đúng 1 lần, bắt muộn (vd sau khi
+  // các script khác load xong) có thể lỡ mất, khiến install-prompt.js không có gì để bật lên.
+  window.__deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.__deferredInstallPrompt = e;
+  });
+</script>
 </head>
 <body>
 <div id="app"></div>
@@ -22,6 +31,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/util.js"></script>
 <script src="js/onboarding-tour.js"></script>
+<script src="js/install-prompt.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/dinh-vi.js"></script>
 <script src="js/sua-kenh.js"></script>
