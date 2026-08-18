@@ -11,6 +11,7 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
+    state.cauChuyenRieng = (ctx.profile && ctx.profile.cau_chuyen_rieng) || '';
     if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
     else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
     await Promise.all([loadRecent(), loadAssets(), loadBrands()]);
@@ -62,8 +63,13 @@ function render(container, ctx){
           <div class="hint-box">Đang viết từ 1 bài trong <b>Kho Content</b> — sẽ <b>giữ nguyên hook, tiêu đề và cấu trúc gốc</b> (đây là cấu trúc đã kiểm chứng viral), chỉ cá nhân hoá ~20% bằng câu chuyện của bạn. <span style="cursor:pointer;text-decoration:underline;" data-action="cancel-kho-goc">Huỷ, viết bài mới thay vì giữ nguyên →</span></div>
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bài gốc (tham khảo, sẽ không đổi hook/tiêu đề)</label>
           <div class="body" style="max-height:160px;overflow-y:auto;background:var(--accent-soft);padding:12px;border-radius:8px;font-size:13px;">${esc(state.khoGocSource)}</div>
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện/trải nghiệm riêng của bạn (để chèn ~20% vào bài, thay cho phần chất liệu thật)</label>
-          <textarea id="cau-chuyen-input" placeholder="Ví dụ: 3 năm trước mình từng...">${esc(state.cauChuyenRieng)}</textarea>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện riêng của bạn (chèn ~20% vào bài)</label>
+          ${state.cauChuyenRieng ? `
+            <div class="body" style="background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:8px;font-size:13px;">${esc(state.cauChuyenRieng)}</div>
+            <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Lấy từ <a href="#dinh-vi">Định Vị</a> — sửa ở đó nếu muốn dùng câu chuyện khác.</div>
+          ` : `
+            <div class="hint-box">Chưa có câu chuyện nào được lưu — sang <a href="#dinh-vi">Định Vị</a> điền mục "Câu chuyện của bạn" trước, rồi quay lại đây bấm tạo lại.</div>
+          `}
         ` : `
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
         <textarea id="idea-input" placeholder="Ví dụ: 3 sai lầm khiến dòng tiền cá nhân bị nghẽn...">${esc(state.ideaText)}</textarea>
@@ -200,10 +206,8 @@ function render(container, ctx){
     const ideaInput = container.querySelector('#idea-input');
     if(ideaInput) ideaInput.oninput = ()=>{ state.ideaText = ideaInput.value; };
 
-    const cauChuyenInput = container.querySelector('#cau-chuyen-input');
-    if(cauChuyenInput) cauChuyenInput.oninput = ()=>{ state.cauChuyenRieng = cauChuyenInput.value; };
     const cancelKhoGocLink = container.querySelector('[data-action="cancel-kho-goc"]');
-    if(cancelKhoGocLink) cancelKhoGocLink.onclick = ()=>{ state.khoGocSource = null; state.cauChuyenRieng = ''; draw(); };
+    if(cancelKhoGocLink) cancelKhoGocLink.onclick = ()=>{ state.khoGocSource = null; draw(); };
 
     const quickContext = container.querySelector('#quick-context');
     if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };

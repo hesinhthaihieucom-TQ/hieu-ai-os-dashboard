@@ -45,6 +45,7 @@ function render(container, ctx){
     suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
     pasteText:'', pasteError:null, pasteLoading:false,
     channelHandle:'', channelSaving:false, channelSaved:false,
+    cauChuyenRieng:'', storySaving:false, storySaved:false,
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' },
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'' };
@@ -58,6 +59,7 @@ function render(container, ctx){
   async function boot(){
     draw();
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
+    state.cauChuyenRieng = (ctx.profile && ctx.profile.cau_chuyen_rieng) || '';
     await Promise.all([loadAssets(), loadBrands()]);
     const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
@@ -207,19 +209,19 @@ function render(container, ctx){
 
   function sectionHtml(title, body){
     if(!body || !String(body).trim()) return '';
-    return `<div class="section"><h3>${esc(title)}</h3><div class="body">${esc(body)}</div></div>`;
+    return `<div class="section"><h3>${esc(title)}</h3><div class="body">${escBold(body)}</div></div>`;
   }
 
   // Danh sách (mảng chuỗi) — bỏ qua hẳn cả section nếu mảng rỗng, thay vì hiện tiêu đề với danh sách trống.
   function listSectionHtml(title, items, highlight){
     const list = (items||[]).filter(x=>x && String(x).trim());
     if(list.length===0) return '';
-    return `<div class="section${highlight?' highlight':''}"><h3>${esc(title)}</h3><ul>${list.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
+    return `<div class="section${highlight?' highlight':''}"><h3>${esc(title)}</h3><ul>${list.map(x=>`<li>${escBold(x)}</li>`).join('')}</ul></div>`;
   }
 
   // Ghép các cặp nhãn/giá trị, bỏ qua cặp nào rỗng — dùng cho các section gồm nhiều dòng con.
   function pairsBodyHtml(pairs){
-    return pairs.filter(([,v])=>v && String(v).trim()).map(([label,v])=>`<b>${esc(label)}:</b> ${esc(v)}`).join('<br>');
+    return pairs.filter(([,v])=>v && String(v).trim()).map(([label,v])=>`<b>${esc(label)}:</b> ${escBold(v)}`).join('<br>');
   }
 
   function results1Html(){
@@ -307,6 +309,13 @@ function render(container, ctx){
           <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-asset">Thêm tài sản</button></div>
         </div>
       </div>
+      <div class="card" style="margin-top:14px;">
+        <h3 style="margin-bottom:6px;">Câu chuyện của bạn</h3>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Kể 1 câu chuyện/trải nghiệm thật cụ thể của bạn (có mốc thời gian, con số, cảm xúc, kết quả) — lưu 1 lần ở đây, dùng lại khi viết bài giữ nguyên cấu trúc từ Kho Content, khỏi phải nhập lại mỗi lần viết.</div>
+        <textarea id="story-input" placeholder="Ví dụ: 3 năm trước mình từng...">${esc(state.cauChuyenRieng)}</textarea>
+        <div class="btn-row" style="margin-top:8px;"><button class="btn btn-sm" data-action="save-story" ${state.storySaving?'disabled':''}>${state.storySaving?'Đang lưu…':'Lưu'}</button></div>
+        ${state.storySaved?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">Đã lưu ✓</div>`:''}
+      </div>
       <div class="section highlight"><h3>Kết luận định vị</h3><div class="body" style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;line-height:1.6;">${escBold(breakSentences(r.ket_luan_dinh_vi))}</div></div>
       ${sectionHtml('Tổng quan thương hiệu', r.tong_quan_thuong_hieu)}
       ${sectionHtml('Hồ sơ chuyên môn', r.ho_so_chuyen_mon)}
@@ -315,8 +324,8 @@ function render(container, ctx){
       ${sectionHtml('Bản sắc thương hiệu', r.ban_sac_thuong_hieu)}
       ${sectionHtml('Giọng điệu & ngôn ngữ', r.giong_dieu_ngon_ngu)}
       ${(r.hook_mo_dau && (r.hook_mo_dau.kieu_hook || (r.hook_mo_dau.vi_du||[]).length)) ? `
-      <div class="section"><h3>Hook mở đầu</h3>${r.hook_mo_dau.kieu_hook?`<div class="body">${esc(r.hook_mo_dau.kieu_hook)}</div>`:''}
-        <ul>${(r.hook_mo_dau.vi_du||[]).filter(Boolean).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
+      <div class="section"><h3>Hook mở đầu</h3>${r.hook_mo_dau.kieu_hook?`<div class="body">${escBold(r.hook_mo_dau.kieu_hook)}</div>`:''}
+        <ul>${(r.hook_mo_dau.vi_du||[]).filter(Boolean).map(h=>`<li>${escBold(h)}</li>`).join('')}</ul></div>
       ` : ''}
       ${sectionHtml('Triết lý thương hiệu', r.triet_ly_thuong_hieu)}
       ${sectionHtml('Không theo đuổi', r.khong_theo_duoi)}
@@ -356,10 +365,10 @@ function render(container, ctx){
         return body ? `<div class="section"><h3>Nỗi đau & rào cản (4 tầng)</h3><div class="body">${body}</div></div>` : '';
       })()}
       ${sectionHtml('Khao khát & mục tiêu', r2.khao_khat_muc_tieu)}
-      <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${esc(r2.insight_cot_loi)}</div></div>
+      <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${escBold(r2.insight_cot_loi)}</div></div>
       <div class="section">
         <h3>Hệ trục nội dung</h3>
-        ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${esc(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
+        ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
         <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
           <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
           <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
@@ -411,7 +420,7 @@ function render(container, ctx){
     if(startBtn) startBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; state.luot1=null; state.luot2=null; draw(); };
 
     const viewResultsBtn = container.querySelector('[data-action="view-results"]');
-    if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = state.luot2 ? 'results2' : 'results1'; draw(); };
+    if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results1'; draw(); };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
     if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; draw(); };
 
@@ -428,6 +437,11 @@ function render(container, ctx){
     if(chInput) chInput.oninput = ()=>{ state.channelHandle = chInput.value; state.channelSaved = false; };
     const saveChBtn = container.querySelector('[data-action="save-channel-handle"]');
     if(saveChBtn) saveChBtn.onclick = saveChannelHandle;
+
+    const storyInput = container.querySelector('#story-input');
+    if(storyInput) storyInput.oninput = ()=>{ state.cauChuyenRieng = storyInput.value; state.storySaved = false; };
+    const saveStoryBtn = container.querySelector('[data-action="save-story"]');
+    if(saveStoryBtn) saveStoryBtn.onclick = saveStory;
 
     const newBrandInput = container.querySelector('#new-brand-input');
     if(newBrandInput) newBrandInput.oninput = ()=>state.newBrandName = newBrandInput.value;
@@ -682,6 +696,15 @@ function render(container, ctx){
     const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null });
     if(!error && ctx.profile){ ctx.profile.channel_handle = state.channelHandle.trim() || null; }
     state.channelSaving = false; state.channelSaved = !error; state.error = error ? error.message : null;
+    draw();
+  }
+
+  async function saveStory(){
+    if(state.storySaving) return;
+    state.storySaving = true; state.storySaved = false; draw();
+    const { error } = await ctx.supabase.rpc('update_my_story', { new_story: state.cauChuyenRieng.trim() || null });
+    if(!error && ctx.profile){ ctx.profile.cau_chuyen_rieng = state.cauChuyenRieng.trim() || null; }
+    state.storySaving = false; state.storySaved = !error; state.error = error ? error.message : null;
     draw();
   }
 
