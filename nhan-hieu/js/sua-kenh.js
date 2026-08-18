@@ -1,11 +1,9 @@
 (function(){
-const COVER_W = 820, COVER_H = 312;
-
 const STEPS = [
   { key:'platform', title:'Nền tảng chính bạn đang dùng', type:'choice', options:['Facebook','TikTok'] },
   { key:'anh_dai_dien', title:'HM1 — Ảnh đại diện', type:'image', helper:'Chụp màn hình ảnh đại diện hiện tại trên kênh của bạn.' },
   { key:'anh_bia', title:'HM2 — Ảnh bìa', type:'image', helper:'Chụp màn hình ảnh bìa hiện tại trên kênh của bạn.' },
-  { key:'profile_day_du', title:'HM3 — Profile đầy đủ', type:'image', helper:'Chụp màn hình phần giới thiệu/thông tin cá nhân (nghề nghiệp, vị trí, link, highlight...) — giống ảnh mẫu bên dưới.', hasExample:true },
+  { key:'profile_day_du', title:'HM3 — Profile đầy đủ', type:'image', multi:true, helper:'Cần đủ 2 ảnh: 1 ảnh phần giới thiệu ngắn ở đầu trang, 1 ảnh phần công việc/liên kết/highlight bên dưới — giống 2 ảnh mẫu bên dưới.', hasExample:true },
   { key:'bio', title:'HM4 — Bio', type:'text', helper:'Copy nguyên văn bio hiện tại của bạn vào đây.' },
   { key:'bai_ghim', title:'HM5 — Bài ghim', type:'image', helper:'Chụp màn hình bài ghim hiện tại trên kênh (nếu có).' },
 ];
@@ -13,10 +11,10 @@ const STEPS = [
 function render(container, ctx){
   const state = {
     screen:'loading', qIndex:0, answers:{ platform:'Facebook' }, positioning:null, quickContext:'',
-    result:null, error:null, submitting:false, coverColor:null, coverTitle:null,
+    result:null, error:null, submitting:false, coverPromptCopied:false,
   };
 
-  function draw(){ container.innerHTML = html(); bind(); paintCoverIfNeeded(); }
+  function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
     draw();
@@ -33,6 +31,7 @@ function render(container, ctx){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     if(state.screen==='wizard') return wizardHtml();
     if(state.screen==='submitting') return `<div class="loading"><div class="spinner"></div><p>Đang phân tích ảnh kênh của bạn…</p>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">AI cần khoảng 1-2 phút để xử lý — đừng thoát trang, cứ để chờ nhé.</p>
       ${state.error?`<div class="error-box">${esc(state.error)}</div><div class="btn-row"><button class="btn" data-action="retry">Thử lại</button></div>`:''}</div>`;
     if(state.screen==='result') return resultHtml();
     return '';
@@ -47,6 +46,24 @@ function render(container, ctx){
       inputHtml = `<div class="chips">${step.options.map(o=>`<div class="chip ${val===o?'selected':''}" data-choice="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
     } else if(step.type==='text'){
       inputHtml = `<textarea id="step-text" placeholder="Dán nội dung vào đây...">${esc(val||'')}</textarea>`;
+    } else if(step.type==='image' && step.multi){
+      const imgs = Array.isArray(val) ? val : [];
+      inputHtml = `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          ${imgs.map((src,i)=>`
+            <div style="position:relative;">
+              <img src="${src}" style="width:160px;height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;">
+              <span style="position:absolute;top:6px;right:6px;background:#fff;border-radius:999px;padding:2px 8px;font-size:11.5px;color:var(--danger);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);" data-action="clear-image-multi" data-idx="${i}">Xoá</span>
+            </div>
+          `).join('')}
+        </div>
+        ${imgs.length < 2 ? `<input type="file" accept="image/*" id="step-upload" style="margin-top:12px;">` : `<div style="margin-top:10px;font-size:12.5px;color:var(--ink-soft);">Đã đủ 2 ảnh — xoá 1 ảnh nếu muốn thay.</div>`}
+        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này (chụp đủ cả 2 phần: giới thiệu ngắn ở đầu trang, và phần công việc/liên kết/cộng đồng bên dưới):</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <img src="assets/sua-kenh-vi-du-1.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
+            <img src="assets/sua-kenh-vi-du-2.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
+          </div></div>` : ''}
+      `;
     } else if(step.type==='image'){
       inputHtml = `
         <input type="file" accept="image/*" id="step-upload">
@@ -96,13 +113,13 @@ function render(container, ctx){
     const r = state.result;
     return `
       <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Kết quả audit kênh</h1></div>
-      <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:16px;">/50</span></div></div>
+      <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:16px;">/100</span></div></div>
       <div class="section"><h3>Điểm mạnh</h3><ul>${r.top_diem_manh.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="section"><h3>Điểm nghẽn</h3><ul>${r.top_diem_nghen.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${r.thu_tu_uu_tien.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
       ${r.hang_muc.map(hm=>`
         <div class="section">
-          <h3>${esc(hm.ma)} · ${esc(hm.ten)} — ${hm.diem}/10 · ${PRIORITY_LABEL[hm.uu_tien]||''}</h3>
+          <h3>${esc(hm.ma)} · ${esc(hm.ten)} — ${hm.diem}/20 · ${PRIORITY_LABEL[hm.uu_tien]||''}</h3>
           <div class="body"><b>Hiện tại:</b> ${esc(hm.hien_tai)}</div>
           <div class="body" style="margin-top:8px;"><b>Lệch định vị:</b> ${esc(hm.lech_dinh_vi)}</div>
           <div class="body" style="margin-top:8px;"><b>Cần sửa:</b> ${esc(hm.can_sua)}</div>
@@ -112,36 +129,18 @@ function render(container, ctx){
       <div class="section">
         <h3>Gợi ý ảnh bìa phù hợp</h3>
         <div class="body" style="margin-bottom:12px;">${esc(r.goi_y_anh_bia.ly_do)}</div>
-        <canvas id="cover-canvas" width="${COVER_W}" height="${COVER_H}" style="width:100%;max-width:480px;border-radius:8px;border:1px solid var(--line);display:block;"></canvas>
+        <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;">${esc(r.goi_y_anh_bia.prompt_anh_bia)}</div>
         <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
-          <button class="btn btn-sm" data-action="download-cover">Tải ảnh bìa PNG</button>
-          <a class="btn-ghost btn btn-sm" href="#tao-anh">Chỉnh tiếp trong Tạo Ảnh Thương Hiệu →</a>
+          <button class="btn btn-sm" data-action="copy-cover-prompt">${state.coverPromptCopied?'Đã copy ✓':'Copy prompt'}</button>
+          <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Dán vào ChatGPT để tạo ảnh →</a>
         </div>
+        <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Dán nguyên văn prompt trên vào ChatGPT (hoặc công cụ tạo ảnh AI bất kỳ) để ra ảnh bìa.</div>
       </div>
       <div class="btn-row no-print">
         <button class="btn-ghost btn" data-action="redo">Audit lại</button>
         <a class="btn" href="#dinh-dang-content">Tiếp tục: Dạng Content →</a>
       </div>
     `;
-  }
-
-  function paintCoverIfNeeded(){
-    if(state.screen!=='result' || !window.TaoAnhEngine) return;
-    const canvas = container.querySelector('#cover-canvas');
-    if(!canvas) return;
-    const bg = state.answers.anh_bia ? loadedCoverImage() : null;
-    window.TaoAnhEngine.paintDesign(canvas.getContext('2d'), COVER_W, COVER_H, {
-      layoutKey:'bottom-center', fontKey:'oswald', colorKey: state.result.goi_y_anh_bia.mau_nhan,
-      title: state.result.goi_y_anh_bia.tieu_de, handle:'', bgImage: state._coverImgEl || null,
-    });
-  }
-
-  function loadedCoverImage(){
-    if(state._coverImgEl) return state._coverImgEl;
-    const img = new Image();
-    img.onload = () => { state._coverImgEl = img; paintCoverIfNeeded(); };
-    img.src = state.answers.anh_bia;
-    return null;
   }
 
   function bind(){
@@ -168,7 +167,13 @@ function render(container, ctx){
           const c = document.createElement('canvas');
           c.width = w; c.height = h;
           c.getContext('2d').drawImage(img, 0, 0, w, h);
-          state.answers[step.key] = c.toDataURL('image/jpeg', 0.82);
+          const dataUrl = c.toDataURL('image/jpeg', 0.82);
+          if(step.multi){
+            const imgs = Array.isArray(state.answers[step.key]) ? state.answers[step.key] : [];
+            state.answers[step.key] = [...imgs, dataUrl].slice(0, 2);
+          } else {
+            state.answers[step.key] = dataUrl;
+          }
           draw();
         };
         img.src = reader.result;
@@ -177,6 +182,14 @@ function render(container, ctx){
     };
     const clearImg = container.querySelector('[data-action="clear-image"]');
     if(clearImg) clearImg.onclick = ()=>{ state.answers[step.key] = null; draw(); };
+    container.querySelectorAll('[data-action="clear-image-multi"]').forEach(el=>{
+      el.onclick = ()=>{
+        const idx = Number(el.getAttribute('data-idx'));
+        const imgs = Array.isArray(state.answers[step.key]) ? state.answers[step.key] : [];
+        state.answers[step.key] = imgs.filter((_,i)=>i!==idx);
+        draw();
+      };
+    });
 
     const backLink = container.querySelector('[data-action="back"]');
     if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); draw(); };
@@ -189,13 +202,10 @@ function render(container, ctx){
     if(retryBtn) retryBtn.onclick = submit;
     const redoBtn = container.querySelector('[data-action="redo"]');
     if(redoBtn) redoBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; draw(); };
-    const downloadBtn = container.querySelector('[data-action="download-cover"]');
-    if(downloadBtn) downloadBtn.onclick = ()=>{
-      const canvas = container.querySelector('#cover-canvas');
-      const a = document.createElement('a');
-      a.download = 'anh-bia.png';
-      a.href = canvas.toDataURL('image/png');
-      a.click();
+    const copyPromptBtn = container.querySelector('[data-action="copy-cover-prompt"]');
+    if(copyPromptBtn) copyPromptBtn.onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(state.result.goi_y_anh_bia.prompt_anh_bia); } catch(e){}
+      state.coverPromptCopied = true; draw();
     };
   }
 

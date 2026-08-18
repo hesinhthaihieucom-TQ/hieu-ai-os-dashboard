@@ -7,7 +7,7 @@ const MILESTONES = [
   { key:'m5', label:'Trên 1 triệu view', hint:'Tối đa hoá chuyển đổi' },
 ];
 const ASSET_KINDS = {
-  san_pham_so: 'Sản phẩm số của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
+  san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
   aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
 };
 

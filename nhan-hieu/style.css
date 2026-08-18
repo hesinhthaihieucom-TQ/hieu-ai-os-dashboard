@@ -97,6 +97,8 @@ a{ color:inherit; }
 .section .body.protected{ user-select:none; -webkit-user-select:none; -moz-user-select:none; }
 .section.highlight{ background:var(--accent); color:#fff; }
 .section.highlight h3{ color:#DCEAE4; }
+.section.highlight .body{ color:#fff; }
+.section.highlight .body b{ color:var(--gold); }
 
 textarea, select{
   width:100%; margin-top:12px; font-family:'Be Vietnam Pro',sans-serif; font-size:15px; line-height:1.55;

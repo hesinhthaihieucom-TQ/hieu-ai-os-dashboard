@@ -19,6 +19,7 @@ function render(container, ctx){
       <div class="card">
         <textarea id="hook-input" style="min-height:70px;" placeholder="Ví dụ: Vì sao bạn viết đều mà vẫn không ai nhớ đến?">${esc(state.text)}</textarea>
         <div class="btn-row"><button class="btn" data-action="score" ${state.loading?'disabled':''}>${state.loading?'Đang chấm…':'Chấm điểm hook này'}</button></div>
+        <div class="hint-box" style="margin-top:10px;">AI cần khoảng 30-40 giây để phân tích và ra 3 bản cải thiện.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
       ${state.result ? resultHtml() : ''}

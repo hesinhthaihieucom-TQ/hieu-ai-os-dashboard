@@ -28,7 +28,7 @@ const TOOL_AUDIT = {
           properties: {
             ma: { type: 'string', description: 'Ví dụ: HM1' },
             ten: { type: 'string' },
-            diem: { type: 'integer', minimum: 0, maximum: 10 },
+            diem: { type: 'integer', minimum: 0, maximum: 20 },
             hien_tai: { type: 'string', description: 'Đang thể hiện thế nào, chỉ đúng chỗ — dựa trên ảnh/thông tin thật được cung cấp.' },
             lech_dinh_vi: { type: 'string', description: 'Lệch định vị ở điểm nào.' },
             can_sua: { type: 'string', description: 'Cần sửa gì, sửa như thế nào — cụ thể, dùng ngay được.' },
@@ -38,19 +38,21 @@ const TOOL_AUDIT = {
           required: ['ma','ten','diem','hien_tai','lech_dinh_vi','can_sua','viet_lai','uu_tien'],
         },
       },
-      tong_diem: { type: 'integer', description: 'Tổng điểm /50.' },
+      tong_diem: { type: 'integer', description: 'Tổng điểm /100 — bằng tổng điểm của 5 hạng mục (mỗi hạng mục /20).' },
       top_diem_manh: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 3 },
       top_diem_nghen: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 3 },
       thu_tu_uu_tien: { type: 'array', items: { type: 'string' }, description: 'Thứ tự nên sửa trước — theo tên hạng mục.' },
       goi_y_anh_bia: {
         type: 'object',
-        description: 'Gợi ý 1 ảnh bìa mới phù hợp định vị, dùng để tạo trực tiếp bằng công cụ Tạo Ảnh Thương Hiệu.',
+        description: 'Gợi ý 1 ảnh bìa mới phù hợp định vị, dưới dạng 1 prompt sẵn sàng dán vào công cụ tạo ảnh AI (ChatGPT/DALL-E) để tạo trực tiếp.',
         properties: {
-          tieu_de: { type: 'string', description: 'Câu tiêu đề ngắn cho ảnh bìa, bọc 1-2 từ khoá muốn nhấn trong dấu **...**.' },
-          mau_nhan: { type: 'string', enum: ['yellow','pink','blue','orange','green'], description: 'Màu nhấn phù hợp bản sắc thương hiệu.' },
-          ly_do: { type: 'string', description: 'Vì sao tiêu đề và màu này phù hợp định vị.' },
+          prompt_anh_bia: {
+            type: 'string',
+            description: 'Prompt đầy đủ, chi tiết, viết bằng tiếng Anh (để tương thích tốt nhất với công cụ tạo ảnh) mô tả: chủ thể/bối cảnh, tông màu chủ đạo phù hợp bản sắc thương hiệu, phong cách hình ảnh, tỉ lệ ảnh bìa Facebook 820x312px, và có ghi chú rõ nếu cần chừa khoảng trống cho chữ tiêu đề. Sẵn sàng copy-paste dùng ngay, không cần chỉnh sửa thêm.',
+          },
+          ly_do: { type: 'string', description: 'Vì sao concept ảnh bìa này phù hợp định vị — viết tiếng Việt.' },
         },
-        required: ['tieu_de','mau_nhan','ly_do'],
+        required: ['prompt_anh_bia','ly_do'],
       },
     },
     required: ['hang_muc','tong_diem','top_diem_manh','top_diem_nghen','thu_tu_uu_tien','goi_y_anh_bia'],
@@ -116,14 +118,14 @@ module.exports = async (req, res) => {
 
     let hasAnyImage = false;
     imageFields.forEach(({ key, label }) => {
-      const dataUrl = ch[key];
-      if (dataUrl) {
-        const block = imageBlockFromDataUrl(dataUrl);
-        if (block) {
-          hasAnyImage = true;
-          contentBlocks.push({ type: 'text', text: `Ảnh cho ${label}:` });
-          contentBlocks.push(block);
-        }
+      const raw = ch[key];
+      const dataUrls = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+      if (dataUrls.length) {
+        contentBlocks.push({ type: 'text', text: `Ảnh cho ${label}${dataUrls.length > 1 ? ` (${dataUrls.length} ảnh)` : ''}:` });
+        dataUrls.forEach((dataUrl) => {
+          const block = imageBlockFromDataUrl(dataUrl);
+          if (block) { hasAnyImage = true; contentBlocks.push(block); }
+        });
       } else {
         contentBlocks.push({ type: 'text', text: `${label}: (không có ảnh)` });
       }

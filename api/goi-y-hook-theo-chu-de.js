@@ -4,7 +4,7 @@ const { requireUser } = require('./_lib/auth');
 const { HOOK_CATEGORIES } = require('./_lib/hook-categories');
 
 const CONTENT_GOALS = {
-  viral: 'Viral (tối đa lượt xem) — ưu tiên giật mắt, gây tò mò/gây sốc mạnh, chấp nhận kịch tính hơn để nhiều người dừng lại xem.',
+  viral: 'Viral (tối đa lượt xem) — ưu tiên giật mắt, gây tò mò/gây sốc mạnh, chấp nhận kịch tính hơn để nhiều người dừng lại xem. BẮT BUỘC: cả 5 hook đều phải mở đầu bằng 1 con số cụ thể (ví dụ: "3 dấu hiệu...", "90% người...", "7 điều...", "1 câu nói...") — con số luôn là từ/cụm từ đầu tiên của hook, không đặt ở giữa hay cuối câu.',
   uy_tin: 'Uy tín (xây thẩm quyền) — ưu tiên thể hiện chiều sâu hiểu biết, đáng tin, không giật tít rẻ tiền.',
   case_study: 'Case study (chứng minh kết quả) — ưu tiên dẫn vào 1 kết quả/số liệu/câu chuyện thật cụ thể, có thể kiểm chứng.',
 };

@@ -1,7 +1,7 @@
 (function(){
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
-    showExtra:false, channelHandle:'', brandName:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
+    showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -11,9 +11,8 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
-    state.brandName = (ctx.profile && ctx.profile.brand_name) || '';
     if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
-    await Promise.all([loadRecent(), loadAssets()]);
+    await Promise.all([loadRecent(), loadAssets(), loadBrands()]);
     state.screen='main';
     draw();
   }
@@ -21,6 +20,17 @@ function render(container, ctx){
   async function loadAssets(){
     const { data } = await ctx.supabase.from('promo_assets').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
     state.assets = data || [];
+  }
+
+  async function loadBrands(){
+    const { data } = await ctx.supabase.from('brands').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
+    state.brands = data || [];
+    if(state.brands.length===1) state.brandChoice = state.brands[0].id;
+  }
+
+  function resolvedBrandName(){
+    const b = state.brands.find(x=>x.id===state.brandChoice);
+    return b ? b.name : '';
   }
 
   function resolvedProductName(){
@@ -63,17 +73,21 @@ function render(container, ctx){
               <textarea id="ex-channel" style="min-height:auto;height:40px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
               <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Lưu ở đây sẽ tự cập nhật vào Định Vị luôn, dùng chung cho các bài sau.</div>
             </div>
-            ${state.brandName ? `
+            ${state.brands.length ? `
             <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Thương hiệu/Tên sản phẩm</label>
-              <div style="font-size:13.5px;">${esc(state.brandName)} <a href="#dinh-vi" style="font-size:11.5px;color:var(--ink-soft);">(sửa ở Định Vị)</a></div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Thương hiệu dùng cho bài này</label>
+              <select id="ex-brand-select">
+                <option value="">— Không ghép thương hiệu —</option>
+                ${state.brands.map(b=>`<option value="${b.id}" ${state.brandChoice===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}
+              </select>
+              <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Thêm/sửa thương hiệu ở <a href="#dinh-vi">Định Vị</a>.</div>
             </div>
             ` : ''}
             <div>
               <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Sản phẩm/dịch vụ muốn nhắc (nếu có)</label>
               <select id="ex-product-select">
                 <option value="">— Không nhắc —</option>
-                ${state.assets.filter(a=>['san_pham_so','aff_cua_toi','aff_nguoi_khac'].includes(a.kind)).map(a=>`<option value="${a.id}" ${state.productChoice===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}
+                ${state.assets.filter(a=>['san_pham_so','khoa_hoc','aff_cua_toi','aff_nguoi_khac'].includes(a.kind)).map(a=>`<option value="${a.id}" ${state.productChoice===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}
                 <option value="other" ${state.productChoice==='other'?'selected':''}>Khác (tự nhập)</option>
               </select>
               ${state.productChoice==='other'?`<textarea id="ex-product-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Sổ tay Dòng Tiền">${esc(state.productNameOther)}</textarea>`:''}
@@ -180,6 +194,9 @@ function render(container, ctx){
     if(exChannel) exChannel.oninput = ()=>{ state.channelHandle = exChannel.value; };
     exChannel && exChannel.addEventListener('blur', saveChannelHandleIfChanged);
 
+    const exBrandSelect = container.querySelector('#ex-brand-select');
+    if(exBrandSelect) exBrandSelect.onchange = ()=>{ state.brandChoice = exBrandSelect.value; };
+
     const exProductSelect = container.querySelector('#ex-product-select');
     if(exProductSelect) exProductSelect.onchange = ()=>{ state.productChoice = exProductSelect.value; draw(); };
     const exProductOther = container.querySelector('#ex-product-other');
@@ -222,7 +239,7 @@ function render(container, ctx){
         quick_context: state.quickContext,
         idea_text: state.ideaText,
         channel_handle: state.channelHandle,
-        brand_name: state.brandName,
+        brand_name: resolvedBrandName(),
         product_name: resolvedProductName(),
         group_name: resolvedGroupName(),
       });

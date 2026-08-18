@@ -46,6 +46,7 @@ function render(container, ctx){
         </div>
 
         <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang phân tích…':'Phân tích &amp; Tái chế'}</button></div>
+        <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để phân tích và tái chế xong — đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 

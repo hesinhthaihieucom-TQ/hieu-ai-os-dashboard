@@ -137,7 +137,7 @@ function renderExpiredScreen(){
   if(btn) btn.onclick = async ()=>{ await supabaseClient.auth.signOut(); };
 }
 
-function renderAuthScreen(err){
+function renderAuthScreen(err, successMsg){
   const root = document.getElementById('app');
   const isLogin = AppState.authMode === 'login';
   root.innerHTML = `
@@ -155,9 +155,11 @@ function renderAuthScreen(err){
         <input id="af-email" type="email" placeholder="ban@email.com">
         <label>Mật khẩu</label>
         <input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự">
+        ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu">` : ''}
         <button class="btn btn-full" id="af-submit">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
-        ${!isLogin ? `<div class="hint-box">Sau khi đăng ký, kiểm tra email để xác nhận tài khoản (nếu được bật) rồi quay lại đăng nhập.</div>` : ''}
+        ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+        ${(!isLogin && !err && !successMsg) ? `<div class="hint-box">Sau khi đăng ký, kiểm tra email để xác nhận tài khoản (nếu được bật) rồi quay lại đăng nhập.</div>` : ''}
       </div>
     </div>
   `;
@@ -170,15 +172,23 @@ function renderAuthScreen(err){
     const email = root.querySelector('#af-email').value.trim();
     const pass = root.querySelector('#af-pass').value;
     const btn = root.querySelector('#af-submit');
-    btn.disabled = true; btn.textContent = 'Đang xử lý…';
     try{
       if(isLogin){
+        btn.disabled = true; btn.textContent = 'Đang xử lý…';
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
         if(error) throw error;
       } else {
+        const confirmPass = root.querySelector('#af-pass-confirm').value;
+        if(pass !== confirmPass){ renderAuthScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+        btn.disabled = true; btn.textContent = 'Đang xử lý…';
         const full_name = root.querySelector('#af-name').value.trim();
-        const { error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name } } });
+        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name } } });
         if(error) throw error;
+        if(!data.session){
+          AppState.authMode = 'login';
+          renderAuthScreen(null, 'Đăng ký thành công! Nếu tài khoản cần xác nhận email, kiểm tra hộp thư rồi quay lại đăng nhập bằng email/mật khẩu vừa tạo.');
+        }
+        // Nếu có session ngay (không bật xác nhận email), onAuthStateChange sẽ tự đưa vào app.
       }
     } catch(e){
       renderAuthScreen(e.message);

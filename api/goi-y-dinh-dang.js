@@ -9,7 +9,8 @@ ${FORMAT_GUIDE}
 NGUYÊN TẮC:
 - Dựa vào định vị đã chốt (ngành, trục nội dung, hình ảnh nên xây, style) để chọn ra 2-3 dạng phù hợp NHẤT — không phải liệt kê hết.
 - Ưu tiên dạng khớp cả ngành lẫn mức độ thoải mái xuất hiện trước camera của người dùng nếu có trong dữ liệu.
-- Giải thích ngắn gọn, cụ thể vì sao dạng đó phù hợp với đúng định vị này — không nói chung chung.`;
+- Giải thích ngắn gọn, cụ thể vì sao dạng đó phù hợp với đúng định vị này — không nói chung chung.
+- Trong đoạn giải thích (ly_do), bọc 2-4 cụm từ khoá quan trọng nhất trong dấu **...** (ví dụ: **talking head kết hợp storytelling**) để người đọc lướt nhanh vẫn nắm được ý chính — không bọc cả câu, chỉ bọc đúng cụm từ cốt lõi.`;
 
 const TOOL_GOI_Y = {
   name: 'xuat_goi_y_dinh_dang',

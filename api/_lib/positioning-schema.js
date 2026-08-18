@@ -21,7 +21,7 @@ const TOOL_LUOT1 = {
       },
       triet_ly_thuong_hieu: { type: 'string', description: 'Tin gì / không đồng tình gì / bảo vệ khách hàng khỏi điều gì / muốn họ thay đổi nhận thức nào.' },
       khong_theo_duoi: { type: 'string', description: 'Liệt kê rõ những gì nội dung của kênh này KHÔNG nên làm: không sáo rỗng, không phóng đại, không bán lộ, không câu view bằng nỗi đau, không chạy trend lệch định vị — cụ thể hoá theo đúng bối cảnh người dùng.' },
-      ket_luan_dinh_vi: { type: 'string', description: 'Một câu định vị sắc, dạng: "Nếu tóm gọn, kênh của bạn nên được định vị là…". Phần định vị nêu ra PHẢI là 1 ngách cụ thể (ví dụ "Tài chính gia đình", "Tâm linh tài chính", "Tài chính hôn nhân"...), không được chỉ nêu tên 1 ngành lớn chung chung như "Tài chính" hay "Tâm linh".' },
+      ket_luan_dinh_vi: { type: 'string', description: 'CHỈ ĐÚNG 1 CÂU DUY NHẤT, tối đa 30 từ, dạng: "Nếu tóm gọn, kênh của bạn nên được định vị là…". Phần định vị nêu ra PHẢI là 1 ngách cụ thể (ví dụ "Tài chính gia đình", "Tâm linh tài chính", "Tài chính hôn nhân"...), không được chỉ nêu tên 1 ngành lớn chung chung như "Tài chính" hay "Tâm linh". TUYỆT ĐỐI KHÔNG thêm câu thứ 2, không thêm "phiên bản khác", không giải thích thêm, không xuống dòng — chỉ 1 câu duy nhất. Có thể bọc đúng 1 cụm từ ngách trong dấu **...** để nhấn mạnh, ví dụ: kênh nên định vị là **Tài chính gia đình**.' },
       dau_an_hinh_anh: {
         type: 'object',
         description: 'Dấu ấn hình ảnh thương hiệu cụ thể để quay/chụp ngay.',

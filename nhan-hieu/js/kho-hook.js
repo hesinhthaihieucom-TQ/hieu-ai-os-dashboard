@@ -118,6 +118,7 @@ function render(container, ctx){
         </div>
 
         <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button></div>
+        <div class="hint-box" style="margin-top:10px;">AI cần khoảng 30-40 giây để ra 5 hook + 3 tiêu đề thumbnail.</div>
         ${state.genError?`<div class="error-box">${esc(state.genError)}</div>`:''}
       </div>
 
