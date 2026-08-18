@@ -44,11 +44,7 @@ function startOfWeek(d){
   return dt;
 }
 
-async function callApi(path, body, timeoutMs){
-  // Đường dẫn tương đối (bỏ dấu "/" đầu) để hoạt động đúng dù web được host ở
-  // gốc domain (Vercel) hay dưới 1 thư mục con qua reverse proxy (vd Cloudflare Worker
-  // tại hesinhthaihieu.com/webxaynhanhieu) — trình duyệt sẽ tự nối theo đúng thư mục hiện tại.
-  const relativePath = path.replace(/^\//, '');
+async function callApiOnce(relativePath, body, timeoutMs){
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData && sessionData.session ? sessionData.session.access_token : null;
   // Không có timeout thì nếu server treo/không phản hồi (vd hết hạn hàm serverless mà kết nối
@@ -56,9 +52,8 @@ async function callApi(path, body, timeoutMs){
   // không báo lỗi, không có cách nào tự thoát. Đặt trần thời gian để luôn có phản hồi cho người dùng.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs || 90000);
-  let resp;
   try{
-    resp = await fetch(relativePath, {
+    return await fetch(relativePath, {
       method:'POST',
       headers:{
         'content-type':'application/json',
@@ -72,6 +67,21 @@ async function callApi(path, body, timeoutMs){
     throw new Error('Không kết nối được tới server — kiểm tra lại mạng và thử lại.');
   } finally {
     clearTimeout(timer);
+  }
+}
+
+async function callApi(path, body, timeoutMs){
+  // Đường dẫn tương đối (bỏ dấu "/" đầu) để hoạt động đúng dù web được host ở
+  // gốc domain (Vercel) hay dưới 1 thư mục con qua reverse proxy (vd Cloudflare Worker
+  // tại hesinhthaihieu.com/webxaynhanhieu) — trình duyệt sẽ tự nối theo đúng thư mục hiện tại.
+  const relativePath = path.replace(/^\//, '');
+  let resp = await callApiOnce(relativePath, body, timeoutMs);
+  if(resp.status === 401){
+    // Access token đôi khi hết hạn ngay trước lúc gọi mà SDK chưa kịp tự làm mới (hay gặp sau khi
+    // tab đứng yên/nằm nền 1 lúc) — chủ động làm mới phiên rồi thử lại đúng 1 lần, tránh báo "cần
+    // đăng nhập" oan trong khi người dùng vẫn đang đăng nhập bình thường.
+    await supabaseClient.auth.refreshSession();
+    resp = await callApiOnce(relativePath, body, timeoutMs);
   }
   const data = await resp.json();
   if(!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
