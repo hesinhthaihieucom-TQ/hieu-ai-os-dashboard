@@ -24,7 +24,7 @@ const HOOK_GEN_CATEGORIES = [
 const HOOK_GEN_LABEL_BY_KEY = Object.fromEntries(HOOK_GEN_CATEGORIES.map(c=>[c.key, c.label]));
 
 // Trục nội dung (content pillar) để lọc Kho chung theo chủ đề thay vì lướt hết cả kho — cùng
-// nhóm với Kho Content, xem thêm schema_v11_hook_tags.sql (backfill tags cho hook cũ).
+// nhóm với Kho Content, xem thêm supabase/schema_full.sql (backfill tags cho hook cũ).
 const HOOK_PILLARS = [
   { key:'tai_chinh', label:'Tài chính' },
   { key:'tam_linh', label:'Tâm linh' },
@@ -108,7 +108,7 @@ function render(container, ctx){
   function html(){
     if(state.error) return `
       <div class="page-head"><h1>Kho Hook</h1></div>
-      <div class="error-box">Chưa dùng được mục này: ${esc(state.error)}. Cần chạy file supabase/schema_v2.sql trong Supabase SQL Editor trước.</div>`;
+      <div class="error-box">Chưa dùng được mục này: ${esc(state.error)}. Cần chạy file supabase/schema_full.sql trong Supabase SQL Editor trước.</div>`;
     return `
       <div class="page-head"><h1>Kho Hook</h1><p>Nhập chủ đề, chọn loại hook, AI sinh ngay ví dụ đúng chủ đề — hoặc tra cứu kho có sẵn.</p></div>
       <div class="tab-row">
