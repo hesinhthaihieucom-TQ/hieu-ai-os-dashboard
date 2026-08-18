@@ -232,7 +232,13 @@ function renderApp(){
 
   root.querySelector('#signout-btn').onclick = async ()=>{ await supabaseClient.auth.signOut(); };
 
-  if(window.startOnboardingTour && AppState.user) window.startOnboardingTour(AppState.user.id);
+  if(window.startOnboardingTour && AppState.user){
+    const alreadySeen = !!(AppState.profile && AppState.profile.onboarding_seen);
+    window.startOnboardingTour(AppState.user.id, alreadySeen, async ()=>{
+      const { error } = await supabaseClient.rpc('mark_onboarding_seen');
+      if(!error && AppState.profile) AppState.profile.onboarding_seen = true;
+    });
+  }
 
   const content = root.querySelector('#main-content');
   const mod = window.Modules && window.Modules[AppState.route];

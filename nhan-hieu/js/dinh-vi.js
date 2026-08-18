@@ -336,7 +336,7 @@ function render(container, ctx){
       <div class="section">
         <h3>Lộ trình dẫn về dòng tiền</h3>
         <div style="display:flex;flex-wrap:wrap;align-items:stretch;gap:0;">
-          ${(r2.lo_trinh_dan_ve_dong_tien||[]).map((b,i,arr)=>`
+          ${(Array.isArray(r2.lo_trinh_dan_ve_dong_tien)?r2.lo_trinh_dan_ve_dong_tien:[]).map((b,i,arr)=>`
             <div style="display:flex;align-items:center;">
               <div style="min-width:140px;max-width:180px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);">
                 <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Bước ${i+1}</div>

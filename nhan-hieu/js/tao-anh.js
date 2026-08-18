@@ -229,7 +229,7 @@ function render(container, ctx){
 
   function html(){
     return `
-      <div class="page-head"><h1>Tạo Ảnh Thương Hiệu</h1><p>Tải ảnh nền, chọn bố cục / font / màu bạn thích, điền tiêu đề — ảnh thương hiệu ra ngay, tải PNG dùng luôn.</p></div>
+      <div class="page-head"><h1>Tạo Ảnh Thương Hiệu</h1><p>Dùng để tạo ảnh có chữ đăng content (dạng "Text trên ảnh") — tải ảnh nền, chọn bố cục / font / màu, điền tiêu đề, tải PNG đăng ngay.</p></div>
       <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
         <div class="card" style="flex:1;min-width:300px;">
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ảnh nền</label>

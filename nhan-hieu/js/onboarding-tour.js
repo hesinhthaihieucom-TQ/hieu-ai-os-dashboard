@@ -1,6 +1,8 @@
 (function(){
-// Hướng dẫn từng bước sau khi đăng ký — làm tối cả web, trỏ sáng vào từng mục sidebar,
-// kèm 1 ô giải thích ngắn. Chỉ hiện 1 lần/tài khoản (lưu cờ vào localStorage).
+// Hướng dẫn từng bước sau khi đăng nhập lần đầu — làm tối cả web, che phần nội dung chính
+// bằng 1 trang chào mừng, trỏ sáng vào từng mục sidebar kèm giải thích ngắn.
+// Chỉ hiện đúng 1 lần/tài khoản (đánh dấu ở server qua profiles.onboarding_seen, không phải
+// theo trình duyệt) — dùng localStorage chỉ để tránh nháy lại trong lúc chờ gọi API đánh dấu.
 
 const STEPS = [
   { key:'dinh-vi', text:'Bắt đầu từ đây — trả lời 18 câu hỏi để AI định vị thương hiệu của bạn. Mọi bước sau đều dựa vào kết quả này.' },
@@ -14,32 +16,45 @@ const STEPS = [
   { key:'cham-diem-hook', text:'Dán 1 câu hook — AI phân tích và gợi ý 3 bản cải thiện.' },
   { key:'lich-dang', text:'Xếp lịch đăng cả tuần — AI tự gợi ý, ưu tiên dùng luôn các bài bạn đã viết.' },
   { key:'day-bai', text:'Sau khi đăng, quay lại đây để biết nên bình luận gì và gắn tài sản nào theo từng mốc lượt xem.' },
-  { key:'tao-anh', text:'Tạo ảnh bìa/thumbnail thương hiệu ngay trên web, không cần công cụ thiết kế.' },
+  { key:'tao-anh', text:'Tạo ảnh có chữ để đăng content (không phải ảnh bìa) — chọn bố cục, font, màu ngay trên web.' },
 ];
 
 const STORAGE_PREFIX = 'xnh_onboarding_seen_';
 
-function hasSeenTour(userId){
-  try { return localStorage.getItem(STORAGE_PREFIX + userId) === '1'; } catch(e){ return true; }
+function hasSeenTourLocally(userId){
+  try { return localStorage.getItem(STORAGE_PREFIX + userId) === '1'; } catch(e){ return false; }
 }
-function markTourSeen(userId){
+function markTourSeenLocally(userId){
   try { localStorage.setItem(STORAGE_PREFIX + userId, '1'); } catch(e){}
 }
 
-function startOnboardingTour(userId){
-  if(!userId || hasSeenTour(userId)) return;
+// alreadySeen: cờ profiles.onboarding_seen lấy từ server (nguồn sự thật chính).
+// onSeen: callback để gọi RPC đánh dấu đã xem ở server khi tour kết thúc/bị bỏ qua.
+function startOnboardingTour(userId, alreadySeen, onSeen){
+  if(!userId || alreadySeen || hasSeenTourLocally(userId)) return;
   if(document.getElementById('onboarding-tour-overlay')) return;
   const availableSteps = STEPS.filter(s => document.querySelector(`.sidebar-item[data-key="${s.key}"]`));
   if(availableSteps.length === 0) return;
+  const sidebarEl = document.querySelector('.sidebar');
+  const sidebarWidth = sidebarEl ? sidebarEl.getBoundingClientRect().width : 260;
 
   let idx = 0;
   const overlay = document.createElement('div');
   overlay.id = 'onboarding-tour-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none;';
+  overlay.innerHTML = `
+    <div id="ot-welcome" style="position:fixed;top:0;left:${sidebarWidth}px;right:0;bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
+      <div style="max-width:420px;padding:0 24px;">
+        <div style="font-family:'Playfair Display',serif;font-size:30px;color:#fff;margin-bottom:12px;">Chào mừng đến với Xây Nhân Hiệu!</div>
+        <div style="font-size:14.5px;color:#DCEAE4;line-height:1.6;">Cùng xem nhanh từng bước ở sidebar bên trái trước khi bắt đầu nhé.</div>
+      </div>
+    </div>
+  `;
   document.body.appendChild(overlay);
 
   function finish(){
-    markTourSeen(userId);
+    markTourSeenLocally(userId);
+    if(typeof onSeen === 'function') onSeen();
     overlay.remove();
     window.removeEventListener('hashchange', finish);
   }
@@ -51,7 +66,8 @@ function startOnboardingTour(userId){
     if(!target){ idx++; if(idx < availableSteps.length) renderStep(); else finish(); return; }
     const r = target.getBoundingClientRect();
     const pad = 6;
-    overlay.innerHTML = `
+    const welcomeHtml = overlay.querySelector('#ot-welcome').outerHTML;
+    overlay.innerHTML = welcomeHtml + `
       <div style="position:fixed;top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;
         border-radius:10px;box-shadow:0 0 0 9999px rgba(20,24,20,.78);pointer-events:none;transition:all .2s ease;"></div>
       <div style="position:fixed;top:${Math.min(r.top, window.innerHeight-220)}px;left:${Math.min(r.left+r.width+16, window.innerWidth-320)}px;

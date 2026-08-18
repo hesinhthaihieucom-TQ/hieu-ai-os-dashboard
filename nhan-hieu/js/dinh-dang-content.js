@@ -185,6 +185,7 @@ function render(container, ctx){
           <div class="k" style="margin-top:14px;">Cách làm</div>
           <ul>${f.cach_lam.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
           <div class="body" style="margin-top:10px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Kết luận:</b> ${esc(f.ket_luan)}</div>
+          ${(f.id==='text-anh-ai' || f.id==='text-anh-that') ? `<div class="btn-row" style="margin-top:14px;"><a class="btn-ghost btn" href="#tao-anh">Tạo ảnh ngay →</a></div>` : ''}
         </div>
       `).join('')}
     `;
