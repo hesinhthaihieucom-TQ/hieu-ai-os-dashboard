@@ -107,9 +107,10 @@ function render(container, ctx){
       ` : ''}
       ${state.writeError?`<div class="error-box" style="margin-top:10px;">${esc(state.writeError)}</div>`:''}
       <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
-        <button class="btn btn-sm" data-write-keep="1">Giữ nguyên nội dung này</button>
+        <button class="btn btn-sm" data-write-keep="1">Giữ nguyên cấu trúc, thêm câu chuyện của tôi →</button>
         <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
-      </div>`;
+      </div>
+      <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Bài trong kho là cấu trúc đã được kiểm chứng viral — nên giữ nguyên hook/tiêu đề, chỉ cá nhân hoá ~20% bằng câu chuyện của bạn, thay vì viết lại hoàn toàn khác.</div>`;
   }
 
   function daVietTab(){
@@ -217,7 +218,7 @@ function render(container, ctx){
     });
     const keepBtn = container.querySelector('[data-write-keep]');
     if(keepBtn) keepBtn.onclick = ()=>{
-      window.PendingTopic = findSourceText(state.writeFor);
+      window.PendingKhoGoc = findSourceText(state.writeFor);
       location.hash = 'viet-content';
     };
     const genBtn = container.querySelector('[data-write-generate]');

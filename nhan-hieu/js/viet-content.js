@@ -2,7 +2,7 @@
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
-    score:null, scoring:false, scoreError:null };
+    score:null, scoring:false, scoreError:null, khoGocSource:null, cauChuyenRieng:'' };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -11,7 +11,8 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
-    if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
+    if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
+    else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
     await Promise.all([loadRecent(), loadAssets(), loadBrands()]);
     state.screen='main';
     draw();
@@ -57,8 +58,16 @@ function render(container, ctx){
       <p>Nhập chủ đề/ý tưởng, hoặc bấm "Viết →" từ 1 ý tưởng ở bước khác — AI sẽ viết bài đầy đủ.</p></div>
       ${!state.positioning ? `<div class="hint-box">Chưa có Định Vị đã lưu — vẫn viết được bình thường, nhưng nếu <a href="#dinh-vi">làm Định Vị trước</a>, bài viết sẽ đúng giọng văn và đối tượng của bạn hơn.</div>` : ''}
       <div class="card">
+        ${state.khoGocSource ? `
+          <div class="hint-box">Đang viết từ 1 bài trong <b>Kho Content</b> — sẽ <b>giữ nguyên hook, tiêu đề và cấu trúc gốc</b> (đây là cấu trúc đã kiểm chứng viral), chỉ cá nhân hoá ~20% bằng câu chuyện của bạn. <span style="cursor:pointer;text-decoration:underline;" data-action="cancel-kho-goc">Huỷ, viết bài mới thay vì giữ nguyên →</span></div>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bài gốc (tham khảo, sẽ không đổi hook/tiêu đề)</label>
+          <div class="body" style="max-height:160px;overflow-y:auto;background:var(--accent-soft);padding:12px;border-radius:8px;font-size:13px;">${esc(state.khoGocSource)}</div>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện/trải nghiệm riêng của bạn (để chèn ~20% vào bài, thay cho phần chất liệu thật)</label>
+          <textarea id="cau-chuyen-input" placeholder="Ví dụ: 3 năm trước mình từng...">${esc(state.cauChuyenRieng)}</textarea>
+        ` : `
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
         <textarea id="idea-input" placeholder="Ví dụ: 3 sai lầm khiến dòng tiền cá nhân bị nghẽn...">${esc(state.ideaText)}</textarea>
+        `}
         ${!state.positioning ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc, giúp bài viết sát hơn)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
@@ -104,7 +113,7 @@ function render(container, ctx){
             </div>
           </div>
         ` : ''}
-        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':'Viết bài'}</button></div>
+        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button></div>
         <div class="hint-box" style="margin-top:10px;">AI viết xong sẽ tự chấm điểm &amp; gợi ý bản tối ưu hơn ngay bên dưới — tổng thời gian khoảng 1-2 phút, đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
@@ -184,6 +193,11 @@ function render(container, ctx){
     const ideaInput = container.querySelector('#idea-input');
     if(ideaInput) ideaInput.oninput = ()=>{ state.ideaText = ideaInput.value; };
 
+    const cauChuyenInput = container.querySelector('#cau-chuyen-input');
+    if(cauChuyenInput) cauChuyenInput.oninput = ()=>{ state.cauChuyenRieng = cauChuyenInput.value; };
+    const cancelKhoGocLink = container.querySelector('[data-action="cancel-kho-goc"]');
+    if(cancelKhoGocLink) cancelKhoGocLink.onclick = ()=>{ state.khoGocSource = null; state.cauChuyenRieng = ''; draw(); };
+
     const quickContext = container.querySelector('#quick-context');
     if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
 
@@ -230,19 +244,26 @@ function render(container, ctx){
   }
 
   async function generate(){
-    if(!state.ideaText.trim()) return;
+    if(state.khoGocSource ? !state.khoGocSource.trim() : !state.ideaText.trim()) return;
     state.generating = true; state.error = null; state.result = null; state.savedId = null;
     state.score = null; state.scoring = false; state.scoreError = null; draw();
     try{
-      const data = await callApi('/api/viet-content', {
+      const endpoint = state.khoGocSource ? '/api/viet-tu-kho-goc' : '/api/viet-content';
+      const payload = {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
-        idea_text: state.ideaText,
         channel_handle: state.channelHandle,
         brand_name: resolvedBrandName(),
         product_name: resolvedProductName(),
         group_name: resolvedGroupName(),
-      });
+      };
+      if(state.khoGocSource){
+        payload.source_text = state.khoGocSource;
+        payload.cau_chuyen_rieng = state.cauChuyenRieng;
+      } else {
+        payload.idea_text = state.ideaText;
+      }
+      const data = await callApi(endpoint, payload);
       state.result = data.result;
       state.generating = false; draw();
       scoreResult();
