@@ -1,7 +1,7 @@
 (function(){
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], savedId:null,
-    showExtra:false, channelHandle:'', productName:'', groupName:'' };
+    showExtra:false, channelHandle:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'' };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -9,10 +9,27 @@ function render(container, ctx){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
+    state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
     if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
-    await loadRecent();
+    await Promise.all([loadRecent(), loadAssets()]);
     state.screen='main';
     draw();
+  }
+
+  async function loadAssets(){
+    const { data } = await ctx.supabase.from('promo_assets').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
+    state.assets = data || [];
+  }
+
+  function resolvedProductName(){
+    if(state.productChoice==='other') return state.productNameOther;
+    if(state.productChoice) return (state.assets.find(a=>a.id===state.productChoice)||{}).label || '';
+    return '';
+  }
+  function resolvedGroupName(){
+    if(state.groupChoice==='other') return state.groupNameOther;
+    if(state.groupChoice) return (state.assets.find(a=>a.id===state.groupChoice)||{}).label || '';
+    return '';
   }
 
   async function loadRecent(){
@@ -40,16 +57,28 @@ function render(container, ctx){
         ${state.showExtra ? `
           <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
             <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Tên kênh Facebook/TikTok (nếu có)</label>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Tên kênh Facebook/TikTok</label>
               <textarea id="ex-channel" style="min-height:auto;height:40px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
+              <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Lưu ở đây sẽ tự cập nhật vào Định Vị luôn, dùng chung cho các bài sau.</div>
             </div>
             <div>
               <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Sản phẩm/dịch vụ muốn nhắc (nếu có)</label>
-              <textarea id="ex-product" style="min-height:auto;height:40px;" placeholder="Ví dụ: Sổ tay Dòng Tiền">${esc(state.productName)}</textarea>
+              <select id="ex-product-select">
+                <option value="">— Không nhắc —</option>
+                ${state.assets.filter(a=>['san_pham_so','aff_cua_toi','aff_nguoi_khac'].includes(a.kind)).map(a=>`<option value="${a.id}" ${state.productChoice===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}
+                <option value="other" ${state.productChoice==='other'?'selected':''}>Khác (tự nhập)</option>
+              </select>
+              ${state.productChoice==='other'?`<textarea id="ex-product-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Sổ tay Dòng Tiền">${esc(state.productNameOther)}</textarea>`:''}
+              ${state.assets.length===0?`<div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào — thêm ở mục <a href="#day-bai">Đẩy Bài &amp; CTA Comment</a> để lần sau chọn nhanh.</div>`:''}
             </div>
             <div>
               <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Group/cộng đồng muốn nhắc (nếu có)</label>
-              <textarea id="ex-group" style="min-height:auto;height:40px;" placeholder="Ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.groupName)}</textarea>
+              <select id="ex-group-select">
+                <option value="">— Không nhắc —</option>
+                ${state.assets.filter(a=>a.kind==='cong_dong').map(a=>`<option value="${a.id}" ${state.groupChoice===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}
+                <option value="other" ${state.groupChoice==='other'?'selected':''}>Khác (tự nhập)</option>
+              </select>
+              ${state.groupChoice==='other'?`<textarea id="ex-group-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.groupNameOther)}</textarea>`:''}
             </div>
           </div>
         ` : ''}
@@ -116,10 +145,17 @@ function render(container, ctx){
 
     const exChannel = container.querySelector('#ex-channel');
     if(exChannel) exChannel.oninput = ()=>{ state.channelHandle = exChannel.value; };
-    const exProduct = container.querySelector('#ex-product');
-    if(exProduct) exProduct.oninput = ()=>{ state.productName = exProduct.value; };
-    const exGroup = container.querySelector('#ex-group');
-    if(exGroup) exGroup.oninput = ()=>{ state.groupName = exGroup.value; };
+    exChannel && exChannel.addEventListener('blur', saveChannelHandleIfChanged);
+
+    const exProductSelect = container.querySelector('#ex-product-select');
+    if(exProductSelect) exProductSelect.onchange = ()=>{ state.productChoice = exProductSelect.value; draw(); };
+    const exProductOther = container.querySelector('#ex-product-other');
+    if(exProductOther) exProductOther.oninput = ()=>{ state.productNameOther = exProductOther.value; };
+
+    const exGroupSelect = container.querySelector('#ex-group-select');
+    if(exGroupSelect) exGroupSelect.onchange = ()=>{ state.groupChoice = exGroupSelect.value; draw(); };
+    const exGroupOther = container.querySelector('#ex-group-other');
+    if(exGroupOther) exGroupOther.oninput = ()=>{ state.groupNameOther = exGroupOther.value; };
 
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
@@ -136,6 +172,13 @@ function render(container, ctx){
     });
   }
 
+  async function saveChannelHandleIfChanged(){
+    const current = (ctx.profile && ctx.profile.channel_handle) || '';
+    if(state.channelHandle === current) return;
+    const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null });
+    if(!error && ctx.profile) ctx.profile.channel_handle = state.channelHandle.trim() || null;
+  }
+
   async function generate(){
     if(!state.ideaText.trim()) return;
     state.generating = true; state.error = null; state.result = null; state.savedId = null; draw();
@@ -145,8 +188,8 @@ function render(container, ctx){
         quick_context: state.quickContext,
         idea_text: state.ideaText,
         channel_handle: state.channelHandle,
-        product_name: state.productName,
-        group_name: state.groupName,
+        product_name: resolvedProductName(),
+        group_name: resolvedGroupName(),
       });
       state.result = data.result;
       state.generating = false; draw();

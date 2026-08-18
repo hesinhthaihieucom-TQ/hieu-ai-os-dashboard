@@ -21,11 +21,15 @@ const HOOK_GEN_CATEGORIES = [
   { key:'kich_ban_gia_dinh', label:'Kịch bản giả định' },
   { key:'su_that_phu_phang', label:'Sự thật phũ phàng' },
 ];
+const HOOK_GEN_LABEL_BY_KEY = Object.fromEntries(HOOK_GEN_CATEGORIES.map(c=>[c.key, c.label]));
+function categoryLabel(key){
+  return HOOK_GEN_LABEL_BY_KEY[key] || CATEGORIES[key] || key || '';
+}
 
 function render(container, ctx){
   const state = {
     tab:'tao-hook', personal:[], shared:[], error:null, positioning:null,
-    newEntry:{ hook_text:'', category:'', note:'' },
+    newEntry:{ hook_text:'', note:'' }, addingHook:false, addError:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     genTopic:'', genCategory:HOOK_GEN_CATEGORIES[0].key, genQuickContext:'',
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
@@ -163,20 +167,17 @@ function render(container, ctx){
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Câu hook</label>
         <textarea id="ne-hook" style="min-height:auto;height:56px;">${esc(state.newEntry.hook_text)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại hook</label>
-        <select id="ne-cat">
-          <option value="">— Chọn —</option>
-          ${Object.entries(CATEGORIES).map(([k,v])=>`<option value="${k}" ${state.newEntry.category===k?'selected':''}>${esc(v)}</option>`).join('')}
-        </select>
+        <div style="margin-top:6px;font-size:12px;color:var(--ink-soft);">Không cần chọn loại hook — hệ thống tự nhận diện khi bạn lưu.</div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ghi chú (tuỳ chọn)</label>
         <textarea id="ne-note" style="min-height:auto;height:44px;">${esc(state.newEntry.note)}</textarea>
-        <div class="btn-row"><button class="btn" data-action="add">Thêm vào kho của tôi</button></div>
+        <div class="btn-row"><button class="btn" data-action="add" ${state.addingHook?'disabled':''}>${state.addingHook?'Đang nhận diện loại hook…':'Thêm vào kho của tôi'}</button></div>
+        ${state.addError?`<div class="error-box">${esc(state.addError)}</div>`:''}
       </div>
       <div style="margin-top:20px;">
         ${state.personal.length===0?`<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`:''}
         ${state.personal.map(h=>`
           <div class="section">
-            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(CATEGORIES[h.category]||h.category||'')}</div>
+            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
             <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
             <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
               <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
@@ -192,7 +193,7 @@ function render(container, ctx){
     if(state.shared.length===0) return `<div class="card" style="color:var(--ink-soft);">Kho chung chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
     return state.shared.map(h=>`
       <div class="section">
-        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(CATEGORIES[h.category]||h.category||'')}</div>
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}</div>
         <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
         ${writeActionHtml('shared:'+h.id)}
       </div>
@@ -228,7 +229,6 @@ function render(container, ctx){
     });
 
     const h = container.querySelector('#ne-hook'); if(h) h.oninput = ()=>state.newEntry.hook_text = h.value;
-    const c = container.querySelector('#ne-cat'); if(c) c.onchange = ()=>state.newEntry.category = c.value;
     const n = container.querySelector('#ne-note'); if(n) n.oninput = ()=>state.newEntry.note = n.value;
     const addBtn = container.querySelector('[data-action="add"]');
     if(addBtn) addBtn.onclick = addHook;
@@ -305,12 +305,22 @@ function render(container, ctx){
   }
 
   async function addHook(){
-    if(!state.newEntry.hook_text.trim()) return;
+    if(!state.newEntry.hook_text.trim() || state.addingHook) return;
+    state.addingHook = true; state.addError = null; draw();
+    let category = null;
+    try{
+      const data = await callApi('/api/phan-loai-hook', { hook_text: state.newEntry.hook_text });
+      category = categoryLabel(data.result.category);
+    } catch(e){
+      // Không phân loại được (vd lỗi mạng) — vẫn lưu hook, chỉ thiếu nhãn loại, không chặn người dùng.
+      state.addError = `Không tự nhận diện được loại hook (${e.message}) — đã lưu hook, bạn có thể bỏ qua.`;
+    }
     await ctx.supabase.from('hooks_bank_personal').insert({
       user_id: ctx.user.id, hook_text: state.newEntry.hook_text,
-      category: state.newEntry.category || null, note: state.newEntry.note || null,
+      category, note: state.newEntry.note || null,
     });
-    state.newEntry = { hook_text:'', category:'', note:'' };
+    state.newEntry = { hook_text:'', note:'' };
+    state.addingHook = false;
     await loadPersonal();
     draw();
   }

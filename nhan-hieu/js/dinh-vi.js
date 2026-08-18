@@ -43,12 +43,14 @@ function isAnswered(q, val){
 function render(container, ctx){
   const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
     suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
-    pasteText:'', pasteError:null, pasteLoading:false };
+    pasteText:'', pasteError:null, pasteLoading:false,
+    channelHandle:'', channelSaving:false, channelSaved:false };
 
   function draw(){ container.innerHTML = screenHtml(); bind(); }
 
   async function boot(){
     draw();
+    state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
     const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
     const isComplete = data && data.luot1 && data.luot1.ket_luan_dinh_vi;
@@ -190,6 +192,15 @@ function render(container, ctx){
         <div class="tag">Lượt 1 · Định Vị Cốt Lõi</div>
         <h1>Định vị thương hiệu của bạn</h1>
       </div>
+      <div class="card">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên kênh Facebook/TikTok</label>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Lưu 1 lần ở đây — Viết Content sẽ tự lấy tên kênh này để ghép hashtag, khỏi phải nhập lại mỗi bài.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <textarea id="channel-handle-input" style="min-height:auto;height:40px;flex:1;min-width:200px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
+          <button class="btn btn-sm" data-action="save-channel-handle" ${state.channelSaving?'disabled':''}>${state.channelSaving?'Đang lưu…':'Lưu'}</button>
+        </div>
+        ${state.channelSaved?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">Đã lưu ✓</div>`:''}
+      </div>
       <div class="section highlight"><h3>Kết luận định vị</h3><div class="body" style="font-family:'Playfair Display',serif;font-size:19px;font-style:italic;">${esc(r.ket_luan_dinh_vi)}</div></div>
       ${sectionHtml('Tổng quan thương hiệu', r.tong_quan_thuong_hieu)}
       ${sectionHtml('Hồ sơ chuyên môn', r.ho_so_chuyen_mon)}
@@ -268,6 +279,11 @@ function render(container, ctx){
 
     const pasteInput = container.querySelector('#paste-input');
     if(pasteInput) pasteInput.oninput = ()=>{ state.pasteText = pasteInput.value; };
+
+    const chInput = container.querySelector('#channel-handle-input');
+    if(chInput) chInput.oninput = ()=>{ state.channelHandle = chInput.value; state.channelSaved = false; };
+    const saveChBtn = container.querySelector('[data-action="save-channel-handle"]');
+    if(saveChBtn) saveChBtn.onclick = saveChannelHandle;
 
     const submitPasteBtn = container.querySelector('[data-action="submit-paste"]');
     if(submitPasteBtn) submitPasteBtn.onclick = submitPaste;
@@ -413,6 +429,15 @@ function render(container, ctx){
       state.screen = prevScreen === 'paste' ? 'paste' : 'parsing';
       draw();
     }
+  }
+
+  async function saveChannelHandle(){
+    if(state.channelSaving) return;
+    state.channelSaving = true; state.channelSaved = false; draw();
+    const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null });
+    if(!error && ctx.profile) ctx.profile.channel_handle = state.channelHandle.trim() || null;
+    state.channelSaving = false; state.channelSaved = !error; state.error = error ? error.message : null;
+    draw();
   }
 
   async function runLuot1(){
