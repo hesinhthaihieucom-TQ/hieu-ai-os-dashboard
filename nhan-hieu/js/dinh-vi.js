@@ -131,6 +131,9 @@ function render(container, ctx){
         <button class="btn-ghost btn" data-action="redo-from-done">Làm lại từ đầu (trả lời lại 18 câu)</button>
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
+      <div style="text-align:center;margin-top:18px;">
+        <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Có bản kết quả Định Vị khác muốn dùng thay? Dán vào đây thay vì trả lời lại 18 câu →</span>
+      </div>
     `;
   }
 
@@ -446,7 +449,7 @@ function render(container, ctx){
     if(goPaste) goPaste.onclick = ()=>{ state.screen='paste'; state.pasteError=null; draw(); };
 
     const backToIntro = container.querySelector('[data-action="back-to-intro"]');
-    if(backToIntro) backToIntro.onclick = ()=>{ state.screen='intro'; draw(); };
+    if(backToIntro) backToIntro.onclick = ()=>{ state.screen = state.luot1 ? 'done' : 'intro'; draw(); };
 
     const pasteInput = container.querySelector('#paste-input');
     if(pasteInput) pasteInput.oninput = ()=>{ state.pasteText = pasteInput.value; };
