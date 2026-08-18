@@ -1,0 +1,17 @@
+{
+  "name": "Xây Nhân Hiệu",
+  "short_name": "Xây Nhân Hiệu",
+  "description": "Hệ sinh thái Hiểu Kênh — Định vị, viết content, đăng bài bằng AI.",
+  "start_url": "/nhan-hieu/",
+  "scope": "/nhan-hieu/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4EC",
+  "theme_color": "#14201B",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

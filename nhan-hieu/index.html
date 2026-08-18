@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <title>Xây Nhân Hiệu</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14201B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Xây Nhân Hiệu">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -30,5 +38,12 @@
 <script src="js/quan-tri.js"></script>
 <script src="js/placeholders.js"></script>
 <script src="js/app-shell.js"></script>
+<script>
+  // Đăng ký service worker để trình duyệt cho phép "Thêm vào màn hình chính" như 1 app thật —
+  // sw.js không cache gì cả (network passthrough), tránh lặp lại bug cache JS/CSS cũ từng gặp.
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  }
+</script>
 </body>
 </html>
