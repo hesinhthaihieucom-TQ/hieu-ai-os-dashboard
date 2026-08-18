@@ -309,7 +309,7 @@ function render(container, ctx){
         weekly_goal: state.weeklyGoal,
         posts_per_day: state.postsPerDay,
         existing_posts: unscheduledPosts,
-      }, 150000);
+      }, 280000);
       state.aiSuggestions = data.result.lich;
       saveDraftForCurrentWeek();
     } catch(e){ state.aiError = e.message; }

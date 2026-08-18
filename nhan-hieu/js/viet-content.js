@@ -437,7 +437,7 @@ function render(container, ctx){
       } else {
         payload.idea_text = state.ideaText;
       }
-      const data = await callApi(endpoint, payload, 150000);
+      const data = await callApi(endpoint, payload, 280000);
       state.result = data.result;
       state.showScoreContent = false; state.showScoreHook = false; state.showExtras = false;
       state.generating = false; draw();

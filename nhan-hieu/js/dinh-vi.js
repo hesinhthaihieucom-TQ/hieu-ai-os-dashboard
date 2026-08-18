@@ -640,7 +640,7 @@ function render(container, ctx){
     const prevScreen = state.screen;
     state.screen = 'parsing'; draw();
     try{
-      const data = await callApi('/api/dinh-vi-parse', { raw_text: state.pasteText }, 180000);
+      const data = await callApi('/api/dinh-vi-parse', { raw_text: state.pasteText }, 280000);
       state.luot1 = data.luot1;
       state.luot2 = data.luot2 || null;
       await persist({ luot1: data.luot1, luot2: data.luot2 || null, format_suggestions: null });
@@ -731,7 +731,7 @@ function render(container, ctx){
 
   async function runLuot1(){
     try{
-      const data = await callApi('/api/dinh-vi', { luot:1, answers: flattenAnswers() }, 180000);
+      const data = await callApi('/api/dinh-vi', { luot:1, answers: flattenAnswers() }, 280000);
       state.luot1 = data.result;
       await persist({ luot1: data.result, luot2: null, format_suggestions: null });
       state.error = null; state.screen='results'; draw();
@@ -742,7 +742,7 @@ function render(container, ctx){
   async function runLuot2(){
     state.luot2Loading = true; state.luot2Error = null; draw();
     try{
-      const data = await callApi('/api/dinh-vi', { luot:2, answers: flattenAnswers(), luot1: state.luot1 }, 180000);
+      const data = await callApi('/api/dinh-vi', { luot:2, answers: flattenAnswers(), luot1: state.luot1 }, 280000);
       state.luot2 = data.result;
       await persist({ luot1: state.luot1, luot2: data.result });
       state.luot2Error = null;

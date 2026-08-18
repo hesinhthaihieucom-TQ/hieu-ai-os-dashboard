@@ -227,7 +227,7 @@ function render(container, ctx){
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
         channel: state.answers,
-      }, 180000);
+      }, 280000);
       state.result = data.result;
       const payload = { user_id: ctx.user.id, input: state.answers, result: data.result };
       if(state.auditId){
