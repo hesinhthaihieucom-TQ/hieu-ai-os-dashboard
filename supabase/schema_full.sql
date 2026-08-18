@@ -245,11 +245,26 @@ create table if not exists sepay_transactions (
   transfer_amount bigint,
   content text,
   ref_code_found text,
-  matched_profile_id uuid references profiles(id),
+  matched_profile_id uuid references profiles(id) on delete set null,
   days_granted integer,
   status text not null default 'pending',
   created_at timestamptz not null default now()
 );
+-- Nếu bảng đã tồn tại từ trước (thiếu on delete set null), sửa lại constraint để sau này xoá
+-- 1 profile (vd tài khoản test) không bị chặn bởi lịch sử giao dịch cũ — chỉ mất liên kết, vẫn
+-- giữ nguyên dữ liệu giao dịch (transfer_amount, ref_code_found...) làm lịch sử đối soát.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.table_constraints
+    where constraint_name = 'sepay_transactions_matched_profile_id_fkey'
+      and table_name = 'sepay_transactions'
+  ) then
+    alter table sepay_transactions drop constraint sepay_transactions_matched_profile_id_fkey;
+  end if;
+  alter table sepay_transactions add constraint sepay_transactions_matched_profile_id_fkey
+    foreign key (matched_profile_id) references profiles(id) on delete set null;
+end $$;
 
 -- ============================================================
 -- 9. ROW LEVEL SECURITY
