@@ -47,7 +47,7 @@ function render(container, ctx){
     channelHandle:'', channelSaving:false, channelSaved:false,
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
-    brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null, regenLoading:false };
+    brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null };
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
     aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
@@ -127,7 +127,6 @@ function render(container, ctx){
       </div>
       <div class="btn-row" style="justify-content:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
-        <button class="btn-ghost btn" data-action="regenerate-results" ${state.regenLoading?'disabled':''}>${state.regenLoading?'Đang tạo lại…':'Tạo lại kết quả (giữ câu trả lời)'}</button>
         <button class="btn-ghost btn" data-action="redo-from-done">Làm lại từ đầu (trả lời lại 18 câu)</button>
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
@@ -442,8 +441,6 @@ function render(container, ctx){
     if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results1'; draw(); };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
     if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; draw(); };
-    const regenBtn = container.querySelector('[data-action="regenerate-results"]');
-    if(regenBtn) regenBtn.onclick = regenerateResults;
 
     const goPaste = container.querySelector('[data-action="go-paste"]');
     if(goPaste) goPaste.onclick = ()=>{ state.screen='paste'; state.pasteError=null; draw(); };
@@ -735,22 +732,6 @@ function render(container, ctx){
     const { error } = await ctx.supabase.rpc('update_my_channel_handle', { new_handle: state.channelHandle.trim() || null });
     if(!error && ctx.profile){ ctx.profile.channel_handle = state.channelHandle.trim() || null; }
     state.channelSaving = false; state.channelSaved = !error; state.error = error ? error.message : null;
-    draw();
-  }
-
-  // Tạo lại Lượt 1 (và Lượt 2 nếu đã có) bằng đúng câu trả lời đã lưu — không bắt trả lời lại 18 câu,
-  // dùng khi muốn lấy bản định vị mới nhất theo prompt hiện tại (vd sau khi sửa format/nội dung).
-  async function regenerateResults(){
-    const hadLuot2 = !!state.luot2;
-    state.regenLoading = true; state.error = null; state.screen = 'saving1'; draw();
-    await runLuot1(); // đặt screen='results1' khi xong — luôn xem Lượt 1 trước
-    if(state.error){ state.regenLoading = false; draw(); return; }
-    if(hadLuot2){
-      state.screen = 'saving2'; draw();
-      await runLuot2(); // đặt screen='results2' — đưa lại về results1, chỉ làm mới dữ liệu ngầm
-      if(!state.error) state.screen = 'results1';
-    }
-    state.regenLoading = false;
     draw();
   }
 
