@@ -10,7 +10,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], transactions:[], q:'', error:null, busyId:null };
+  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', error:null, busyId:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -19,7 +19,7 @@ function render(container, ctx){
     if(!ctx.profile || ctx.profile.role !== 'admin'){
       state.screen = 'denied'; draw(); return;
     }
-    await Promise.all([load(), loadTransactions()]);
+    await Promise.all([load(), loadTransactions(), loadRevenue()]);
     state.screen = 'main';
     draw();
   }
@@ -33,6 +33,19 @@ function render(container, ctx){
   async function loadTransactions(){
     const { data } = await ctx.supabase.from('sepay_transactions').select('*').order('created_at', { ascending:false }).limit(20);
     state.transactions = data || [];
+  }
+
+  // Tính tổng doanh thu từ TOÀN BỘ giao dịch đã khớp (không giới hạn 20 dòng như danh sách hiển
+  // thị bên trên) — chỉ lấy 2 cột cần thiết cho nhẹ, cộng dồn ở client.
+  async function loadRevenue(){
+    const { data } = await ctx.supabase.from('sepay_transactions').select('transfer_amount, created_at').eq('status', 'matched');
+    const rows = data || [];
+    state.revenueTotal = rows.reduce((sum, r) => sum + (r.transfer_amount || 0), 0);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    state.revenueThisMonth = rows
+      .filter(r => new Date(r.created_at).getTime() >= startOfMonth)
+      .reduce((sum, r) => sum + (r.transfer_amount || 0), 0);
   }
 
   function filtered(){
@@ -50,6 +63,11 @@ function render(container, ctx){
 
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán.</p></div>
+
+      <div class="source-grid" style="margin-bottom:12px;">
+        <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueTotal.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
+      </div>
 
       <div class="source-grid" style="margin-bottom:20px;">
         <div class="source-card"><div class="ic">${counts.active||0}</div><div class="label">Đang hoạt động</div></div>
