@@ -306,9 +306,9 @@ function render(container, ctx){
         </div>` : ''}
 
       <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Bước tiếp theo</div></div>
-      <div class="btn-row no-print" style="justify-content:flex-start;flex-wrap:wrap;">
-        ${!state.khoGocSource ? `<button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>` : ''}
-        ${!state.khoGocSource ? `<button class="btn-ghost btn btn-sm" data-action="toggle-score-hook">${state.hookScore?'✓ ':''}Chấm điểm Hook →</button>` : ''}
+      <div class="btn-row no-print" style="justify-content:flex-start;flex-wrap:wrap;align-items:center;">
+        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>${!state.score?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}</span>` : ''}
+        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-hook">${state.hookScore?'✓ ':''}Chấm điểm Hook →</button>${!state.hookScore?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}</span>` : ''}
         <button class="btn-ghost btn btn-sm" data-action="toggle-extras">${state.result.hashtag?'✓ ':''}Hashtag, hình ảnh, dạng content &amp; caption →</button>
       </div>
       ${state.showScoreContent ? scoreSectionHtml() : ''}

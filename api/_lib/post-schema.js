@@ -51,7 +51,7 @@ const TOOL_POST_EXTRAS = {
         description: 'Caption dùng khi đăng dạng VIDEO — khác với tiêu đề ghi trên ảnh/thumbnail. LUÔN điền đầy đủ mục này, KỂ CẢ khi dinh_dang_de_xuat không phải dạng video — người dùng có thể tự chọn quay video (vd Video Ngồi Nói) dù không phải dạng AI đề xuất, nên không được để trống chỉ vì lý do đó.',
         properties: {
           giu_nguyen_tieu_de: { type: 'boolean', description: 'true nếu nên dùng ĐÚNG tiêu đề ghi trên thumbnail làm caption luôn (tiêu đề đã đủ mạnh để đứng riêng); false nếu nên viết 1 caption khác đi, hiệu quả hơn.' },
-          caption_chinh: { type: 'string', description: 'Caption chính đề xuất — trùng tiêu đề nếu giu_nguyen_tieu_de=true, hoặc bản viết riêng nếu false. LUÔN điền, không để rỗng.' },
+          caption_chinh: { type: 'string', minLength: 1, description: 'Caption chính đề xuất — trùng tiêu đề nếu giu_nguyen_tieu_de=true, hoặc bản viết riêng nếu false. BẮT BUỘC có nội dung, tuyệt đối không được là chuỗi rỗng.' },
           theo_nen_tang: {
             type: 'array', minItems: 0, maxItems: 3,
             items: {
