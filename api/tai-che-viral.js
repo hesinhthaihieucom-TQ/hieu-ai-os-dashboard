@@ -67,7 +67,7 @@ const TOOL_MOT_BAI = {
   },
 };
 
-async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {
+async function callClaudeOnce({ apiKey, system, userContent, tool, maxTokens }) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
@@ -81,7 +81,16 @@ async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {
     }),
   });
   if (!resp.ok) throw new Error(`Anthropic API lỗi (${resp.status}): ${await resp.text()}`);
-  const data = await resp.json();
+  return resp.json();
+}
+
+// Bài dài/chủ đề phức tạp thỉnh thoảng vẫn vượt maxTokens dù đã đặt khá cao — thay vì báo lỗi ngay
+// bắt người dùng tự bấm lại, tự động thử lại 1 lần với giới hạn gấp đôi trước khi thật sự báo lỗi.
+async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {
+  let data = await callClaudeOnce({ apiKey, system, userContent, tool, maxTokens });
+  if (data.stop_reason === 'max_tokens') {
+    data = await callClaudeOnce({ apiKey, system, userContent, tool, maxTokens: maxTokens * 2 });
+  }
   if (data.stop_reason === 'max_tokens') {
     throw new Error('AI sinh kết quả dài quá giới hạn cho phép — thử lại giúp mình.');
   }
