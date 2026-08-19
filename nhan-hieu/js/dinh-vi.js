@@ -128,7 +128,7 @@ function render(container, ctx){
       </div>
       <div class="btn-row" style="justify-content:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
-        <button class="btn-ghost btn" data-action="redo-from-done">Làm lại từ đầu (trả lời lại 18 câu)</button>
+        <button class="btn-ghost btn" data-action="redo-from-done">Sửa lại câu trả lời (giữ nguyên câu cũ, điền thêm/sửa)</button>
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
       <div style="text-align:center;margin-top:18px;">
@@ -168,7 +168,7 @@ function render(container, ctx){
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
       </div>
       <div class="btn-row">
-        <button class="btn" data-action="start">${hasSaved?'Làm lại từ đầu':'Bắt đầu'}</button>
+        <button class="btn" data-action="start">${hasSaved?'Sửa lại câu trả lời':'Bắt đầu'}</button>
         ${hasSaved?`<button class="btn-ghost btn" data-action="view-saved">Xem định vị đã lưu</button>`:''}
       </div>
       <div style="text-align:center;margin-top:18px;">
@@ -474,12 +474,14 @@ function render(container, ctx){
     const q = QUESTIONS[state.qIndex];
 
     const startBtn = container.querySelector('[data-action="start"]');
-    if(startBtn) startBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; state.luot1=null; state.luot2=null; draw(); };
+    // Giữ nguyên state.answers khi bấm lại — người dùng đang SỬA câu trả lời cũ, không phải xoá
+    // trắng làm lại từ đầu; mỗi câu hỏi tự hiện lại đúng câu trả lời trước đó để điền thêm/sửa.
+    if(startBtn) startBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.luot1=null; state.luot2=null; draw(); };
 
     const viewResultsBtn = container.querySelector('[data-action="view-results"]');
     if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results'; draw(); };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
-    if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.answers={}; draw(); };
+    if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; draw(); };
 
     const goPaste = container.querySelector('[data-action="go-paste"]');
     if(goPaste) goPaste.onclick = ()=>{ state.screen='paste'; state.pasteError=null; draw(); };
