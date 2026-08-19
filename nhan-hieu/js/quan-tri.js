@@ -121,12 +121,19 @@ function render(container, ctx){
                 : `<span style="color:var(--ink-soft);">Khách thường (giá thường)</span>`}
               — tự khai lúc đăng ký, chưa xác minh. Đối chiếu email với danh sách học viên thật rồi bấm nút bên dưới nếu cần sửa lại.
             </div>
+            <div class="body" style="margin-top:4px;font-size:12.5px;">
+              ${p.has_paid
+                ? `<span style="color:var(--accent);font-weight:600;">💰 Đã trả phí — dùng trần 200 lượt AI/tháng</span>`
+                : `<span style="color:var(--ink-soft);">Chưa trả phí — vẫn ở trần dùng thử (50 lượt trọn đời)</span>`}
+              — bấm "Gia hạn" KHÔNG tự bật cờ này, nếu kích hoạt tay cho khách chuyển khoản thật thì nhớ bấm thêm nút bên dưới.
+            </div>
             <div class="btn-row" style="margin-top:12px;justify-content:flex-start;">
               <button class="btn btn-sm" data-extend="${p.id}|30" ${state.busyId===p.id?'disabled':''}>+30 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|180" ${state.busyId===p.id?'disabled':''}>+180 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|365" ${state.busyId===p.id?'disabled':''}>+365 ngày</button>
               <button class="btn-ghost btn btn-sm" data-revoke="${p.id}" ${state.busyId===p.id?'disabled':''}>Thu hồi ngay</button>
               <button class="btn-ghost btn btn-sm" data-toggle-student="${p.id}|${!p.is_student}" ${state.busyId===p.id?'disabled':''}>${p.is_student?'Bỏ đánh dấu học viên':'Đánh dấu là học viên'}</button>
+              <button class="btn-ghost btn btn-sm" data-toggle-paid="${p.id}|${!p.has_paid}" ${state.busyId===p.id?'disabled':''}>${p.has_paid?'Bỏ đánh dấu đã trả phí':'💰 Đánh dấu đã trả phí'}</button>
             </div>
             <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
               ${state.confirmDeleteId===p.id ? `
@@ -162,6 +169,12 @@ function render(container, ctx){
         toggleStudent(id, next === 'true');
       };
     });
+    container.querySelectorAll('[data-toggle-paid]').forEach(el=>{
+      el.onclick = ()=>{
+        const [id, next] = el.getAttribute('data-toggle-paid').split('|');
+        toggleHasPaid(id, next === 'true');
+      };
+    });
 
     container.querySelectorAll('[data-ask-delete]').forEach(el=>{
       el.onclick = ()=>{ state.confirmDeleteId = el.getAttribute('data-ask-delete'); draw(); };
@@ -188,6 +201,18 @@ function render(container, ctx){
   async function toggleStudent(id, isStudent){
     state.busyId = id; draw();
     const { error } = await ctx.supabase.from('profiles').update({ is_student: isStudent }).eq('id', id);
+    if(error) state.error = error.message; else state.error = null;
+    await load();
+    state.busyId = null;
+    draw();
+  }
+
+  // Dùng khi kích hoạt TAY cho khách đã chuyển khoản thật (vd lúc webhook SePay bị lỗi/trễ đồng bộ)
+  // — "Gia hạn" chỉ cộng ngày dùng (access_until), không tự bật has_paid, nên nếu không bấm thêm nút
+  // này, khách vẫn bị tính lượt AI theo trần dùng thử (50 lượt trọn đời) dù đã có hạn dùng dài hơn.
+  async function toggleHasPaid(id, hasPaid){
+    state.busyId = id; draw();
+    const { error } = await ctx.supabase.from('profiles').update({ has_paid: hasPaid }).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
     state.busyId = null;
