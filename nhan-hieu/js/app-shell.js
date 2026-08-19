@@ -229,8 +229,12 @@ function paymentCardHtml(){
   const plan = plans.find(pl => pl.key === selectedPaymentPlanKey) || plans.find(pl => pl.recommended) || plans[0];
   selectedPaymentPlanKey = plan.key; // đồng bộ lại key — các bảng giá dùng key khác nhau (vd 6m vs 6m_hv vs 6m_flash)
 
+  // VietinBank CHỈ báo biến động số dư về SePay nếu nội dung chuyển khoản bắt đầu bằng từ khoá
+  // "SEVQR" (yêu cầu riêng của SePay cho VietinBank, xem mục Ngân hàng > VietinBank trong SePay) —
+  // thiếu tiền tố này thì webhook sẽ KHÔNG BAO GIỜ được gọi dù tiền vẫn vào tài khoản bình thường.
+  const transferContent = refCode ? `SEVQR ${refCode}` : null;
   const qrUrl = refCode
-    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(refCode)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
 
   return `
@@ -275,9 +279,9 @@ function paymentCardHtml(){
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
         <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${plan.amount}">Copy</span></div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(refCode)}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
       </div>
-      <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung có mã <b>${esc(refCode)}</b> — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác. Chuyển xong đợi 1-2 phút rồi tải lại trang.</div>
+      <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu thì ngân hàng mới báo về hệ thống được) — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác. Chuyển xong đợi 1-2 phút rồi tải lại trang.</div>
     ` : `
       <div class="error-box" style="margin-top:14px;">Chưa có mã tài khoản để đối chiếu tự động. Nhắn email đăng ký (${esc((AppState.user&&AppState.user.email)||'')}) qua Zalo/Fanpage để được kích hoạt thủ công.</div>
     `}
@@ -308,8 +312,9 @@ function topupCardHtml(){
   if(!p || !p.has_paid) return '';
   const refCode = p.ref_code;
   const { used, limit } = paidMonthlyUsage(p);
+  const transferContent = refCode ? `SEVQR ${refCode}` : null;
   const qrUrl = refCode
-    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${PAID_TOPUP_PACK.amount}&addInfo=${encodeURIComponent(refCode)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${PAID_TOPUP_PACK.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
   return `
     <div class="card" style="max-width:460px;margin-top:16px;">
@@ -322,9 +327,9 @@ function topupCardHtml(){
         </div>
         <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${PAID_TOPUP_PACK.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${PAID_TOPUP_PACK.amount}">Copy</span></div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(refCode)}">Copy</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
         </div>
-        <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung có mã <b>${esc(refCode)}</b> — lượt được cộng thẳng trong vài phút, dùng được ngay, không ảnh hưởng tới hạn gói đang có.</div>
+        <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu thì ngân hàng mới báo về hệ thống được) — lượt được cộng thẳng trong vài phút, dùng được ngay, không ảnh hưởng tới hạn gói đang có.</div>
       ` : ''}
     </div>
   `;
