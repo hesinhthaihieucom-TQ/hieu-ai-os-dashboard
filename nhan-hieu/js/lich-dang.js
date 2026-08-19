@@ -168,13 +168,17 @@ function render(container, ctx){
               const suggestion = !e ? suggestionFor(thu, s.key) : null;
 
               // Ngày đã qua mà không có bài: không còn gì để hành động (không thể xếp lịch cho quá
-              // khứ) — ẩn bớt gợi ý/khung "+" mời bấm, chỉ để 1 ô mờ nhỏ cho đỡ trống lưới, tránh cả
-              // tuần đã qua vẫn hiện dày đặc lời mời hành động gây rối/nản.
+              // khứ) — ẩn bớt gợi ý/khung "+" mời bấm. CHỈ gắn nhãn "Đã bỏ lỡ" khi slot đó thực sự
+              // từng nằm trong kế hoạch (AI có gợi ý cho đúng slot này) — nếu lịch chỉ định 1 bài/
+              // ngày, 2 buổi còn lại chưa bao giờ được lên kế hoạch, không được tính là "bỏ lỡ".
               if(isPast && !e){
-                return `<div class="week-slot" style="opacity:.4;min-height:auto;padding:6px;text-align:center;">
-                  <div class="slot-label">${s.label}</div>
-                  <div style="font-size:10.5px;color:var(--ink-soft);margin-top:2px;">Đã bỏ lỡ</div>
-                </div>`;
+                if(suggestion){
+                  return `<div class="week-slot" style="opacity:.55;min-height:auto;padding:6px;text-align:center;border-color:var(--danger);">
+                    <div class="slot-label">${s.label}</div>
+                    <div style="font-size:10.5px;color:var(--danger);margin-top:2px;">Đã bỏ lỡ</div>
+                  </div>`;
+                }
+                return `<div class="week-slot" style="opacity:.2;min-height:auto;padding:6px;border-style:none;"></div>`;
               }
 
               if(state.pickerFor && state.pickerFor.date===dateStr && state.pickerFor.slot===s.key){
