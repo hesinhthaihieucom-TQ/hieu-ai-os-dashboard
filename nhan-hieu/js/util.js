@@ -53,14 +53,23 @@ function animateProgressButton(btnEl, estimatedSeconds, baseLabel){
   if(!btnEl) return ()=>{};
   const startedAt = Date.now();
   const cap = 96;
+  let dots = 0;
   const tick = ()=>{
     const elapsed = (Date.now() - startedAt) / 1000;
     const pct = Math.min(cap, (elapsed / estimatedSeconds) * cap);
     btnEl.style.background = `linear-gradient(to right, var(--accent) ${pct}%, #DCD8C9 ${pct}%)`;
-    btnEl.textContent = `${baseLabel} ${Math.round(pct)}%`;
+    // Số % đứng yên ở 96% khi AI mất lâu hơn ước tính (vẫn xảy ra bình thường, nhất là bài dài) dễ
+    // bị hiểu nhầm là treo máy — sau khi vượt quá thời gian ước tính, đổi sang chữ chạy dấu chấm để
+    // báo vẫn đang xử lý chứ không đứng yên.
+    if(elapsed > estimatedSeconds * 1.25){
+      dots = (dots + 1) % 4;
+      btnEl.textContent = `${baseLabel} — vẫn đang xử lý${'.'.repeat(dots)}`;
+    } else {
+      btnEl.textContent = `${baseLabel} ${Math.round(pct)}%`;
+    }
   };
   tick();
-  const timer = setInterval(tick, 350);
+  const timer = setInterval(tick, 500);
   return () => clearInterval(timer);
 }
 
@@ -129,7 +138,7 @@ async function callApiOnce(relativePath, body, timeoutMs){
       signal: controller.signal,
     });
   } catch(e){
-    if(e.name === 'AbortError') throw new Error('Yêu cầu mất quá lâu (quá 90 giây) — server có thể đang quá tải, thử lại giúp mình.');
+    if(e.name === 'AbortError') throw new Error(`Yêu cầu mất quá lâu (quá ${Math.round((timeoutMs||90000)/1000)} giây) — server có thể đang quá tải, thử lại giúp mình.`);
     throw new Error('Không kết nối được tới server — kiểm tra lại mạng và thử lại.');
   } finally {
     clearTimeout(timer);
