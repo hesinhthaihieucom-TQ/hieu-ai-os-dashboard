@@ -52,6 +52,37 @@ function trialQuotaHint(){
   const color = remaining<=3 ? 'var(--danger)' : '#C7CBBC';
   return `<span style="color:${color};">🎁 Dùng thử: còn ${remaining}/${TRIAL_AI_LIMIT} lượt AI</span><br>`;
 }
+function sidebarFootHtml(){
+  return `
+    ${esc((AppState.user && AppState.user.email) || '')}<br>
+    ${(AppState.profile && AppState.profile.role !== 'admin' && AppState.profile.access_until)
+      ? `Hạn dùng: ${esc(new Date(AppState.profile.access_until).toLocaleDateString('vi-VN'))}<br>` : ''}
+    ${trialQuotaHint()}
+  `;
+}
+// Danh sách đúng 13 endpoint có tính lượt (khớp checkAndConsumeTrialQuota ở từng file api/*.js) —
+// dùng để nhận biết lệnh gọi nào vừa thành công cần tăng số đếm hiển thị ngay, không cần đợi tải
+// lại trang mới thấy số mới (trước đây sidebar chỉ cập nhật lúc load lại profile).
+const GATED_API_PATHS = [
+  'api/dinh-vi', 'api/dinh-vi-parse', 'api/viet-content', 'api/viet-tu-kho-goc', 'api/tai-che-viral',
+  'api/goi-y-lich', 'api/cham-diem-content', 'api/cham-diem-hook', 'api/sua-kenh',
+  'api/goi-y-hook-theo-chu-de', 'api/cai-thien-hook', 'api/goi-y-day-bai', 'api/goi-y-tu-nguon',
+];
+window.onGatedApiSuccess = function(relativePath){
+  const p = AppState.profile;
+  if(!p) return;
+  const path = relativePath.split('?')[0];
+  if(!GATED_API_PATHS.includes(path)) return;
+  if(!p.has_paid){
+    p.trial_ai_uses = (p.trial_ai_uses||0) + 1;
+  } else {
+    const month = new Date().toISOString().slice(0,7);
+    if(p.paid_ai_month !== month){ p.paid_ai_month = month; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
+    p.paid_ai_uses = (p.paid_ai_uses||0) + 1;
+  }
+  const el = document.getElementById('sidebar-foot-info');
+  if(el) el.innerHTML = sidebarFootHtml();
+};
 // Giá thường và giá học viên (đã học khoá Xây Nhân Hiệu) tách 2 bảng riêng thay vì gộp chung 1
 // danh sách dài — is_student được hỏi ngay lúc đăng ký (xem renderAuthScreen) nên tới màn thanh
 // toán chỉ cần hiện đúng 1 bảng phù hợp, không bắt người dùng tự lọc giữa 2 loại giá.
@@ -430,10 +461,7 @@ function renderApp(){
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
         <div class="sidebar-foot">
-          ${esc((AppState.user && AppState.user.email) || '')}<br>
-          ${(AppState.profile && AppState.profile.role !== 'admin' && AppState.profile.access_until)
-            ? `Hạn dùng: ${esc(new Date(AppState.profile.access_until).toLocaleDateString('vi-VN'))}<br>` : ''}
-          ${trialQuotaHint()}
+          <div id="sidebar-foot-info">${sidebarFootHtml()}</div>
           <span class="signout" id="signout-btn">Đăng xuất</span>
         </div>
       </div>

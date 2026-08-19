@@ -5,7 +5,7 @@ function render(container, ctx){
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', extrasLoading:false, extrasError:null,
     showScoreContent:false, showScoreHook:false, showExtras:false, saving:false, pendingSourceRef:null,
-    viralPromptFor:null, viralViews:'', viralSubmitting:false, viralDoneFor:null };
+    viralPromptFor:null, viralViews:'', viralSubmitting:false, viralDoneFor:null, dinhDangOverride:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -272,13 +272,23 @@ function render(container, ctx){
           ` : ''}
         </div>
       ` : ''}
-      <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
-        <div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>
-        <div class="body">${esc(breakSentences(r.ly_do_dinh_dang))}</div>
-      </div>
-      <div class="btn-row no-print" style="margin-top:-6px;margin-bottom:10px;">
-        <a class="btn-ghost btn" href="#dinh-dang-content">Xem cách làm dạng này →</a>
-      </div>
+      ${(() => {
+        const currentName = state.dinhDangOverride || r.dinh_dang_de_xuat;
+        const currentFormat = window.CONTENT_FORMATS ? window.CONTENT_FORMATS.find(f=>f.name===currentName) : null;
+        return `
+        <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
+          ${window.CONTENT_FORMATS ? `
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">AI gợi ý dạng này — không hợp ý bạn thì chọn dạng khác:</label>
+            <select id="dinh-dang-override" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:10px;">
+              ${window.CONTENT_FORMATS.map(f=>`<option value="${esc(f.name)}" ${f.name===currentName?'selected':''}>${esc(f.name)}</option>`).join('')}
+            </select>
+          ` : `<div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>`}
+          <div class="body">${esc(breakSentences(r.ly_do_dinh_dang))}</div>
+        </div>
+        <div class="btn-row no-print" style="margin-top:-6px;margin-bottom:10px;">
+          ${currentFormat ? `<span class="btn-ghost btn" data-jump-format="${currentFormat.id}">Xem cách làm dạng này →</span>` : `<a class="btn-ghost btn" href="#dinh-dang-content">Xem cách làm dạng này →</a>`}
+        </div>
+      `;})()}
     `;
   }
 
@@ -404,6 +414,14 @@ function render(container, ctx){
 
     const retryExtrasBtn = container.querySelector('[data-action="retry-extras"]');
     if(retryExtrasBtn) retryExtrasBtn.onclick = loadExtras;
+
+    const dinhDangSelect = container.querySelector('#dinh-dang-override');
+    if(dinhDangSelect) dinhDangSelect.onchange = ()=>{ state.dinhDangOverride = dinhDangSelect.value; draw(); };
+    const jumpFormatEl = container.querySelector('[data-jump-format]');
+    if(jumpFormatEl) jumpFormatEl.onclick = ()=>{
+      window.PendingFormatJump = jumpFormatEl.getAttribute('data-jump-format');
+      location.hash = 'dinh-dang-content';
+    };
 
     const toggleScoreContentBtn = container.querySelector('[data-action="toggle-score-content"]');
     if(toggleScoreContentBtn) toggleScoreContentBtn.onclick = ()=>{

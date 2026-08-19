@@ -117,6 +117,15 @@ function render(container, ctx){
     }
     draw();
     if(pos && pos.luot1 && !pos.format_suggestions) fetchSuggestions();
+    // Đến từ nút "Xem cách làm dạng này" ở Viết Content (đã chọn đúng dạng cụ thể) — cuộn thẳng
+    // tới đúng dạng đó thay vì luôn về dạng đầu tiên của danh sách.
+    if(window.PendingFormatJump){
+      const id = window.PendingFormatJump; window.PendingFormatJump = null;
+      setTimeout(()=>{
+        const target = container.querySelector(`#fmt-${id}`);
+        if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 50);
+    }
   }
 
   async function fetchSuggestions(){
