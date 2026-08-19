@@ -152,7 +152,10 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
 .ta-preview{ position:sticky; top:16px; }
 @media (max-width:820px){
   .ta-layout{ grid-template-columns:1fr; }
-  .ta-preview{ position:static; justify-self:start; }
+  /* Trên điện thoại không đủ chỗ hiện 2 cột — quay lại đúng trải nghiệm cũ: ảnh xem trước hiện
+     NGAY ĐẦU (order:-1, đứng trước cột cài đặt dù đứng sau trong HTML), cập nhật live khi chỉnh
+     bên dưới, khỏi phải kéo xuống cuối mới thấy kết quả. */
+  .ta-preview{ position:static; justify-self:start; order:-1; }
 }
 
 @media (max-width:820px){

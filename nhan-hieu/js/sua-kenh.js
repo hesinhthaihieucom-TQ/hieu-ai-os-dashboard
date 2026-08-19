@@ -136,12 +136,13 @@ function render(container, ctx){
         <div class="section">
           <h3>Gợi ý ảnh bìa phù hợp</h3>
           <div class="body" style="margin-bottom:12px;">${esc(cover.ly_do)}</div>
+          <div class="hint-box" style="margin-bottom:12px;">Ảnh bìa này dùng chính <b>ảnh thật của bạn</b> làm gốc, không phải ảnh người lạ AI tự vẽ — làm đúng thứ tự: <b>① Tải lên 1 ảnh chân dung rõ mặt của bạn vào ChatGPT trước</b>, sau đó <b>② dán nguyên văn prompt bên dưới</b> để AI biến ảnh đó thành ảnh bìa mới, có sẵn chữ tiêu đề luôn — không cần tự ghép chữ thêm.</div>
           <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;">${esc(cover.prompt_anh_bia)}</div>
           <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
             <button class="btn btn-sm" data-action="copy-cover-prompt">${state.coverPromptCopied?'Đã copy ✓':'Copy prompt'}</button>
-            <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Dán vào ChatGPT để tạo ảnh →</a>
+            <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Mở ChatGPT →</a>
           </div>
-          <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Dán nguyên văn prompt trên vào ChatGPT (hoặc công cụ tạo ảnh AI bất kỳ) để ra ảnh bìa.</div>
+          <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Nhớ tải ảnh chân dung của bạn lên ChatGPT trước khi dán prompt.</div>
         </div>
       ` : ''}
       <div class="btn-row no-print">

@@ -83,12 +83,16 @@ function planSavingsLabel(pl){
     const pct = Math.round((saved / retailMonthly) * 100);
     return `rẻ hơn ${saved.toLocaleString('vi-VN')}đ (~${pct}%)`;
   }
-  const months = pl.key === '6m_hv' ? 6 : pl.key === '12m_hv' ? 12 : null;
-  if(!months) return '';
+  // Áp dụng chung cho MỌI gói 6/12 tháng (thường/học viên/flash sale) — luôn so với đúng 1 mốc
+  // duy nhất: giá lẻ 1 tháng x số tháng, để số "tiết kiệm" nhất quán dù xem bảng giá nào.
+  const match = /^(\d+)m/.exec(pl.key);
+  const months = match ? parseInt(match[1], 10) : null;
+  if(!months || months <= 1) return '';
   const retailTotal = retailMonthly * months;
+  if(pl.amount >= retailTotal) return '';
   const saved = retailTotal - pl.amount;
   const pct = Math.round((saved / retailTotal) * 100);
-  return `tiết kiệm ${saved.toLocaleString('vi-VN')}đ (~${pct}%) so với mua lẻ`;
+  return `tiết kiệm ${saved.toLocaleString('vi-VN')}đ (~${pct}%) so với giá lẻ 1 tháng`;
 }
 // Mặc định gợi ý gói 6 tháng thay vì gói 1 tháng — web sẽ còn cập nhật/mở rộng thêm (đặc biệt
 // Kho Content và Kho Hook viral), lúc đó giá sẽ tăng, nên chọn gói dài ngay bây giờ để giữ được
@@ -174,12 +178,27 @@ function paymentCardHtml(){
       Kho này được <b>cập nhật liên tục</b> và <b>mở rộng vô hạn theo từng tuần</b> — càng dùng lâu càng có nhiều để khai thác.<br><br>
       Web cũng sẽ <b>tăng giá dần theo thời gian</b>, nên chọn <b>gói 6 hoặc 12 tháng ngay bây giờ</b> để giữ mức giá hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.
     </div>
-    <div class="chips" id="plan-chips">
-      ${plans.map(pl=>{
-        const savings = isStudent ? planSavingsLabel(pl) : '';
-        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
-      }).join('')}
-    </div>
+    ${(() => {
+      function chipHtml(pl){
+        const savings = planSavingsLabel(pl);
+        // Gói flash sale: hiện thêm giá gốc gạch ngang ngay trong chip — thấy ngay đang được giảm
+        // bao nhiêu mà không cần bấm chọn mới thấy, tăng cảm giác "hời" ngay từ cái nhìn đầu tiên.
+        const originalPlan = pl.flash ? REGULAR_PLANS.find(r => r.key === pl.key.replace('_flash','')) : null;
+        const priceHtml = originalPlan
+          ? `<s style="opacity:.65;font-weight:400;">${originalPlan.amount.toLocaleString('vi-VN')}đ</s> ${pl.amount.toLocaleString('vi-VN')}đ`
+          : `${pl.amount.toLocaleString('vi-VN')}đ`;
+        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${priceHtml}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+      }
+      const flashPlans = plans.filter(pl => pl.flash);
+      const basePlans = plans.filter(pl => !pl.flash);
+      return `
+        <div class="chips" id="plan-chips">
+          ${flashPlans.map(chipHtml).join('')}
+          ${flashPlans.length ? `<div style="flex-basis:100%;font-size:12px;color:var(--ink-soft);margin:4px 2px 0;">— Sau hôm nay, chỉ còn giá thường bên dưới —</div>` : ''}
+          ${basePlans.map(chipHtml).join('')}
+        </div>
+      `;
+    })()}
     ${plan.note?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">${esc(plan.note)}</div>`:''}
 
     ${qrUrl ? `

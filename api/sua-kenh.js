@@ -23,7 +23,12 @@ Người lạ phải hiểu bạn trong 5-10 giây đầu tiên. Bio phải tr�
 4. BẰNG GÌ — kinh nghiệm/phương pháp/góc nhìn hoặc lợi thế của bạn.
 5. HÀNH ĐỘNG — follow/comment/inbox/nhận tài liệu/đăng ký... nên làm tiếp theo.
 Ví dụ đúng công thức: "Tôi giúp người mới xây kênh cá nhân có định vị rõ, content nền và dòng tiền đầu tiên bằng AI + lộ trình thực hành."
-Ghi nhớ nhanh: Rõ người — rõ kết quả — rõ lý do tin — rõ bước tiếp theo.`;
+Ghi nhớ nhanh: Rõ người — rõ kết quả — rõ lý do tin — rõ bước tiếp theo.
+GIỚI HẠN CỨNG: bio viết lại KHÔNG ĐƯỢC VƯỢT QUÁ 101 KÝ TỰ (đếm cả khoảng trắng) — ưu tiên cắt bớt ý phụ, giữ đúng công thức, còn hơn viết dài mà vượt giới hạn.
+
+NGUYÊN TẮC PROMPT ẢNH BÌA (goi_y_anh_bia — bắt buộc):
+- Đây là ảnh bìa CỦA CHÍNH người dùng, không phải ảnh minh hoạ chung chung — prompt phải dựa trên ẢNH THẬT họ sẽ tải lên công cụ tạo ảnh (ChatGPT/DALL-E), TUYỆT ĐỐI KHÔNG tự mô tả/bịa ra ngoại hình 1 người mới (không viết kiểu "a Vietnamese woman in her 30s..."). Luôn mở đầu prompt bằng cụm chỉ rõ dùng ảnh vừa tải lên làm gốc, ví dụ "Using the uploaded photo of this person as reference, transform it into...", rồi mới mô tả bối cảnh/tông màu/phong cách phù hợp định vị.
+- Phải yêu cầu AI VẼ LUÔN chữ tiêu đề tiếng Việt cụ thể (ghi rõ đúng nội dung chữ cần hiện) trực tiếp lên ảnh — KHÔNG được chỉ mô tả "chừa khoảng trống để điền chữ sau", vì người dùng cần ảnh ra là dùng được ngay, không phải tự ghép chữ thêm.`;
 
 const TOOL_AUDIT = {
   name: 'xuat_audit_kenh',
@@ -45,7 +50,7 @@ const TOOL_AUDIT = {
             hien_tai: { type: 'string', description: 'Đang thể hiện thế nào, chỉ đúng chỗ — dựa trên ảnh/thông tin thật được cung cấp. TỐI ĐA 1 câu ngắn.' },
             lech_dinh_vi: { type: 'string', description: 'Lệch định vị ở điểm nào. TỐI ĐA 1 câu ngắn.' },
             can_sua: { type: 'string', description: 'Cần sửa gì, sửa như thế nào — cụ thể, dùng ngay được. TỐI ĐA 1-2 câu ngắn, không lan man.' },
-            viet_lai: { type: 'string', description: 'Bản viết lại/đề xuất cụ thể (mô tả ảnh mới nên chụp thế nào...) — ngắn gọn, không lan man. Riêng hạng mục Bio (HM4): bắt buộc viết theo đúng CÔNG THỨC VIẾT BIO ở trên (Ai — Giúp ai — Kết quả gì — Bằng gì — Hành động), gộp thành 1 đoạn bio hoàn chỉnh sẵn sàng copy dùng ngay, ngắn gọn tự nhiên (không quá 2-3 câu).' },
+            viet_lai: { type: 'string', description: 'Bản viết lại/đề xuất cụ thể (mô tả ảnh mới nên chụp thế nào...) — ngắn gọn, không lan man. Riêng hạng mục Bio (HM4): bắt buộc viết theo đúng CÔNG THỨC VIẾT BIO ở trên (Ai — Giúp ai — Kết quả gì — Bằng gì — Hành động), gộp thành 1 đoạn bio hoàn chỉnh sẵn sàng copy dùng ngay, ngắn gọn tự nhiên, TUYỆT ĐỐI KHÔNG VƯỢT QUÁ 101 KÝ TỰ (đếm cả khoảng trắng).' },
             uu_tien: { type: 'string', enum: ['do','vang','xanh'], description: 'do=sửa ngay, vang=sửa sớm, xanh=cải thiện dần.' },
           },
           required: ['ma','ten','diem','hien_tai','lech_dinh_vi','can_sua','viet_lai','uu_tien'],
@@ -61,7 +66,7 @@ const TOOL_AUDIT = {
         properties: {
           prompt_anh_bia: {
             type: 'string',
-            description: 'Prompt đầy đủ, chi tiết, viết bằng tiếng Anh (để tương thích tốt nhất với công cụ tạo ảnh) mô tả: chủ thể/bối cảnh, tông màu chủ đạo phù hợp bản sắc thương hiệu, phong cách hình ảnh, tỉ lệ ảnh bìa Facebook 820x312px, và có ghi chú rõ nếu cần chừa khoảng trống cho chữ tiêu đề. Sẵn sàng copy-paste dùng ngay, không cần chỉnh sửa thêm.',
+            description: 'Prompt đầy đủ, chi tiết, viết bằng tiếng Anh (để tương thích tốt nhất với công cụ tạo ảnh). BẮT BUỘC mở đầu bằng cụm chỉ rõ dùng ẢNH THẬT người dùng vừa tải lên làm gốc (ví dụ "Using the uploaded photo of this person as reference, transform it into...") — TUYỆT ĐỐI KHÔNG tự mô tả/bịa ngoại hình 1 người mới. Sau đó mô tả bối cảnh/tông màu chủ đạo phù hợp bản sắc thương hiệu, phong cách hình ảnh, tỉ lệ ảnh bìa Facebook 820x312px, và BẮT BUỘC yêu cầu AI vẽ luôn chữ tiêu đề tiếng Việt cụ thể (ghi rõ đúng nội dung chữ) trực tiếp lên ảnh — KHÔNG được chỉ chừa khoảng trống để điền chữ sau. Sẵn sàng copy-paste dùng ngay, không cần chỉnh sửa thêm.',
           },
           ly_do: { type: 'string', description: 'Vì sao concept ảnh bìa này phù hợp định vị — viết tiếng Việt. TỐI ĐA 1 câu ngắn.' },
         },
