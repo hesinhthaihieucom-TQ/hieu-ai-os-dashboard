@@ -24,7 +24,7 @@ function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
-    choosingKhoFor:null, confirmRemoveId:null, confirmResetWeek:false,
+    choosingKhoFor:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -125,12 +125,8 @@ function render(container, ctx){
         ` : ''}
         <div class="btn-row">
           <button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button>
-          ${(state.aiSuggestions || state.weeklyGoal) ? (state.confirmResetWeek ? `
-            <span style="font-size:12.5px;color:var(--danger);font-weight:600;align-self:center;">Xoá gợi ý AI cả tuần này?
-              <span style="text-decoration:underline;cursor:pointer;margin-left:6px;" data-action="confirm-reset-week">Xác nhận</span>
-              <span class="btn-ghost btn btn-sm" style="margin-left:6px;" data-action="cancel-reset-week">Huỷ</span>
-            </span>
-          ` : `<span class="btn-ghost btn btn-sm" data-action="reset-week">Reset tuần</span>`) : ''}
+          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span>
+          ${(state.aiSuggestions || state.weeklyGoal) ? `<span class="btn-ghost btn btn-sm" data-action="reset-week">Reset tuần</span>` : ''}
         </div>
         <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu theo tài khoản — xem lại được trên mọi thiết bị, không mất khi thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để xếp xong cả tuần — đừng thoát trang khi đang đợi.</div>
@@ -197,14 +193,7 @@ function render(container, ctx){
                   <b style="font-size:12.5px;">${esc(e.title||'')}</b>
                   ${e.format?`<div style="color:var(--ink-soft);font-size:11px;margin-top:2px;">${esc(e.format)}</div>`:''}
                   ${linkedPost?`<span style="display:block;margin-top:6px;color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" data-view-post="${e.id}">Xem bài →</span>`:''}
-                  ${state.confirmRemoveId===e.id ? `
-                    <div style="margin-top:6px;font-size:11px;color:var(--danger);">Xoá bài này?
-                      <span style="text-decoration:underline;cursor:pointer;font-weight:600;margin-left:4px;" data-confirm-remove="${e.id}">Có</span>
-                      <span style="text-decoration:underline;cursor:pointer;margin-left:6px;color:var(--ink-soft);" data-cancel-remove="1">Không</span>
-                    </div>
-                  ` : `
-                    <span style="display:block;margin-top:6px;color:var(--danger);font-size:11px;cursor:pointer;" data-ask-remove="${e.id}">Xoá</span>
-                  `}
+                  <span style="display:block;margin-top:6px;color:var(--danger);font-size:11px;cursor:pointer;" data-remove="${e.id}">Xoá</span>
                 </div>`;
               }
               if(suggestion){
@@ -264,11 +253,10 @@ function render(container, ctx){
     const next = container.querySelector('[data-action="next-week"]');
     if(next) next.onclick = async ()=>{ state.weekStart.setDate(state.weekStart.getDate()+7); await Promise.all([applyDraftForCurrentWeek(), loadEntries()]); draw(); };
     const resetBtn = container.querySelector('[data-action="reset-week"]');
-    if(resetBtn) resetBtn.onclick = ()=>{ state.confirmResetWeek = true; draw(); };
-    const cancelResetBtn = container.querySelector('[data-action="cancel-reset-week"]');
-    if(cancelResetBtn) cancelResetBtn.onclick = ()=>{ state.confirmResetWeek = false; draw(); };
-    const confirmResetBtn = container.querySelector('[data-action="confirm-reset-week"]');
-    if(confirmResetBtn) confirmResetBtn.onclick = ()=>{ state.confirmResetWeek = false; resetWeekDraft(); };
+    if(resetBtn) resetBtn.onclick = async ()=>{
+      if(!(await confirmModal('Xoá gợi ý AI và mục tiêu của cả tuần này? Không khôi phục được.'))) return;
+      resetWeekDraft();
+    };
     const cancelPending = container.querySelector('[data-action="cancel-pending"]');
     if(cancelPending) cancelPending.onclick = ()=>{ state.pending = null; draw(); };
 
@@ -352,15 +340,11 @@ function render(container, ctx){
         if(post) openTextModal(post.title, post.content);
       };
     });
-    container.querySelectorAll('[data-ask-remove]').forEach(el=>{
-      el.onclick = ()=>{ state.confirmRemoveId = el.getAttribute('data-ask-remove'); draw(); };
-    });
-    const cancelRemove = container.querySelector('[data-cancel-remove]');
-    if(cancelRemove) cancelRemove.onclick = ()=>{ state.confirmRemoveId = null; draw(); };
-    container.querySelectorAll('[data-confirm-remove]').forEach(el=>{
+    container.querySelectorAll('[data-remove]').forEach(el=>{
       el.onclick = async ()=>{
-        await ctx.supabase.from('calendar_entries').delete().eq('id', el.getAttribute('data-confirm-remove'));
-        state.confirmRemoveId = null;
+        const id = el.getAttribute('data-remove');
+        if(!(await confirmModal('Xoá bài đã xếp ở ô này?'))) return;
+        await ctx.supabase.from('calendar_entries').delete().eq('id', id);
         await loadEntries();
         draw();
       };

@@ -26,7 +26,7 @@ function render(container, ctx){
       <div class="page-head"><h1>Chấm Điểm Hook</h1><p>Dán 1 câu hook — AI phân tích cơ chế tâm lý, dự đoán mức độ dừng lại, và gợi ý 3 bản cải thiện.</p></div>
       <div class="card">
         <textarea id="hook-input" style="min-height:70px;" placeholder="Ví dụ: Vì sao bạn viết đều mà vẫn không ai nhớ đến?">${esc(state.text)}</textarea>
-        <div class="btn-row"><button class="btn" data-action="score" ${state.loading?'disabled':''}>${state.loading?'Đang chấm…':'Chấm điểm hook này'}</button></div>
+        <div class="btn-row"><button class="btn" data-action="score" ${state.loading?'disabled':''}>${state.loading?'Đang chấm…':'Chấm điểm hook này'}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span></div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 30-40 giây để phân tích và ra 3 bản cải thiện.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
@@ -47,7 +47,7 @@ function render(container, ctx){
       <div class="section"><h3>Dự đoán mức độ dừng lại: ${esc(r.du_doan_muc_do_dung_lai)}</h3><div class="body">${esc(r.giai_thich_du_doan)}</div></div>
       <div class="section"><h3>Điểm yếu</h3><div class="body">${esc(r.diem_yeu)}</div></div>
       <div class="section"><h3>3 bản cải thiện</h3><ul>${r.ban_cai_thien.map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
-      <div class="btn-row"><span class="btn-ghost btn" data-action="improve" ${state.improving?'disabled':''}>${state.improving?'Đang viết lại…':'Viết lại 5 hook mới theo góp ý này →'}</span></div>
+      <div class="btn-row"><span class="btn-ghost btn" data-action="improve" ${state.improving?'disabled':''}>${state.improving?'Đang viết lại…':'Viết lại 5 hook mới theo góp ý này →'}</span> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span></div>
       ${state.improveError?`<div class="error-box">${esc(state.improveError)}</div>`:''}
       ${state.improved ? `
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">

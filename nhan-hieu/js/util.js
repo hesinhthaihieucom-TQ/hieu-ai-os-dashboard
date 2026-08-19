@@ -15,6 +15,31 @@ function openImageLightbox(src, alt){
   document.body.appendChild(overlay);
 }
 
+// Popup xác nhận trước khi xoá dữ liệu đã lưu — rõ ràng, khó bấm nhầm hơn kiểu "bấm 2 lần" trước
+// đây. Trả về Promise<boolean> — true nếu người dùng bấm xác nhận, false nếu huỷ/bấm ra ngoài/Esc.
+function confirmModal(message, confirmLabel){
+  return new Promise((resolve)=>{
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.4);text-align:center;" onclick="event.stopPropagation();">
+        <div style="font-size:15px;line-height:1.6;color:var(--ink);margin-bottom:20px;">${esc(message)}</div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <span class="btn-ghost btn btn-sm" data-confirm-cancel="1">Huỷ</span>
+          <button class="btn btn-sm" style="background:var(--danger);" data-confirm-ok="1">${esc(confirmLabel||'Xác nhận xoá')}</button>
+        </div>
+      </div>
+    `;
+    function close(result){ overlay.remove(); document.removeEventListener('keydown', onKey); resolve(result); }
+    function onKey(e){ if(e.key==='Escape') close(false); }
+    overlay.onclick = ()=>close(false);
+    overlay.querySelector('[data-confirm-cancel]').onclick = ()=>close(false);
+    overlay.querySelector('[data-confirm-ok]').onclick = ()=>close(true);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(overlay);
+  });
+}
+
 // Xem nhanh nội dung đầy đủ 1 bài đã lưu (VD từ ô đã xếp lịch) mà không cần rời khỏi trang hiện
 // tại — có nút copy để tiện dán đi làm ảnh/đăng ngay. Đóng bằng bấm ra ngoài hoặc Esc.
 function openTextModal(title, body){

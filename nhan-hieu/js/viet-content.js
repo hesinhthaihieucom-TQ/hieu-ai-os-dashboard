@@ -142,6 +142,7 @@ function render(container, ctx){
         ` : ''}
         <div class="btn-row" style="align-items:center;">
           <button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button>
+          ${!state.generating?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
           ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="retry-generate">Thử lại ngay</span>`:''}
         </div>
         <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng <b>30-45 giây</b> — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần.<br><br>Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm <b>"Thử lại ngay"</b> nếu chờ quá lâu không thấy gì, <b>không cần nhập lại chủ đề</b>.</div>

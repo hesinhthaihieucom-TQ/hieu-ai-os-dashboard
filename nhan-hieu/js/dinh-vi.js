@@ -50,7 +50,7 @@ function render(container, ctx){
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
-    reconstructingAnswers:false, confirmDelAssetId:null, confirmDelBrandId:null };
+    reconstructingAnswers:false };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
@@ -79,18 +79,10 @@ function render(container, ctx){
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
         <div><b>${esc(a.label)}</b>${a.kind!=='cong_dong'?` <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>`:''}${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}</div>
-        ${state.confirmDelAssetId===a.id ? `
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span style="color:var(--danger);font-size:12px;font-weight:600;">Xoá vĩnh viễn?</span>
-            <span style="color:var(--danger);text-decoration:underline;cursor:pointer;font-size:12px;" data-confirm-del-asset="${a.id}">Xác nhận xoá</span>
-            <span class="btn-ghost btn btn-sm" data-cancel-del-asset="1">Huỷ</span>
-          </div>
-        ` : `
-          <div style="display:flex;gap:12px;">
-            <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-del-asset="${a.id}">Xoá</span>
-          </div>
-        `}
+        <div style="display:flex;gap:12px;">
+          <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
+        </div>
       </div>
     `;
   }
@@ -197,7 +189,7 @@ function render(container, ctx){
       <div class="card">
         <textarea id="paste-input" style="min-height:260px;" placeholder="Dán nguyên văn kết quả định vị vào đây...">${esc(state.pasteText)}</textarea>
         <div class="btn-row">
-          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button>
+          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>
           <button class="btn-ghost btn" data-action="back-to-intro">← Quay lại</button>
         </div>
         ${state.pasteError?`<div class="error-box">${esc(state.pasteError)}</div>`:''}
@@ -257,7 +249,7 @@ function render(container, ctx){
       </div>
       <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
         ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
-        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>
+        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:11px;color:var(--ink-soft);">(tốn 2 lượt AI)</span>':''}
       </div>
     `;
   }
@@ -316,18 +308,10 @@ function render(container, ctx){
           return `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
             <b>${esc(b.name)}</b>
-            ${state.confirmDelBrandId===b.id ? `
-              <div style="display:flex;gap:8px;align-items:center;">
-                <span style="color:var(--danger);font-size:12px;font-weight:600;">Xoá vĩnh viễn?</span>
-                <span style="color:var(--danger);text-decoration:underline;cursor:pointer;font-size:12px;" data-confirm-del-brand="${b.id}">Xác nhận xoá</span>
-                <span class="btn-ghost btn btn-sm" data-cancel-del-brand="1">Huỷ</span>
-              </div>
-            ` : `
-              <div style="display:flex;gap:12px;">
-                <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-brand="${b.id}">Sửa</span>
-                <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-del-brand="${b.id}">Xoá</span>
-              </div>
-            `}
+            <div style="display:flex;gap:12px;">
+              <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-brand="${b.id}">Sửa</span>
+              <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-brand="${b.id}">Xoá</span>
+            </div>
           </div>
         `;
         }).join('')}
@@ -561,15 +545,11 @@ function render(container, ctx){
         draw();
       };
     });
-    container.querySelectorAll('[data-ask-del-brand]').forEach(el=>{
-      el.onclick = ()=>{ state.confirmDelBrandId = el.getAttribute('data-ask-del-brand'); draw(); };
-    });
-    const cancelDelBrand = container.querySelector('[data-cancel-del-brand]');
-    if(cancelDelBrand) cancelDelBrand.onclick = ()=>{ state.confirmDelBrandId = null; draw(); };
-    container.querySelectorAll('[data-confirm-del-brand]').forEach(el=>{
+    container.querySelectorAll('[data-del-brand]').forEach(el=>{
       el.onclick = async ()=>{
-        await ctx.supabase.from('brands').delete().eq('id', el.getAttribute('data-confirm-del-brand'));
-        state.confirmDelBrandId = null;
+        const id = el.getAttribute('data-del-brand');
+        if(!(await confirmModal('Xoá vĩnh viễn thương hiệu này? Không khôi phục được.'))) return;
+        await ctx.supabase.from('brands').delete().eq('id', id);
         await loadBrands(); draw();
       };
     });
@@ -590,15 +570,11 @@ function render(container, ctx){
     const ngu = container.querySelector('#ng-url'); if(ngu) ngu.oninput = ()=>state.newGroup.url = ngu.value;
     const addGroupBtn = container.querySelector('[data-action="add-group"]');
     if(addGroupBtn) addGroupBtn.onclick = addGroup;
-    container.querySelectorAll('[data-ask-del-asset]').forEach(el=>{
-      el.onclick = ()=>{ state.confirmDelAssetId = el.getAttribute('data-ask-del-asset'); draw(); };
-    });
-    const cancelDelAsset = container.querySelector('[data-cancel-del-asset]');
-    if(cancelDelAsset) cancelDelAsset.onclick = ()=>{ state.confirmDelAssetId = null; draw(); };
-    container.querySelectorAll('[data-confirm-del-asset]').forEach(el=>{
+    container.querySelectorAll('[data-del-asset]').forEach(el=>{
       el.onclick = async ()=>{
-        await ctx.supabase.from('promo_assets').delete().eq('id', el.getAttribute('data-confirm-del-asset'));
-        state.confirmDelAssetId = null;
+        const id = el.getAttribute('data-del-asset');
+        if(!(await confirmModal('Xoá vĩnh viễn mục này? Không khôi phục được.'))) return;
+        await ctx.supabase.from('promo_assets').delete().eq('id', id);
         await loadAssets(); draw();
       };
     });

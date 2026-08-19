@@ -59,7 +59,6 @@ function render(container, ctx){
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
     chungPillar:'all', khoToiPillar:'all', posts:[],
-    confirmDelId:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -182,7 +181,7 @@ function render(container, ctx){
           <span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="toggle-all-cats">${state.genShowAllCats?'Chỉ xem loại phù hợp mục tiêu này':'Xem tất cả 15 loại hook →'}</span>
         </div>
 
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span></div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 30-40 giây để ra 5 hook + 3 tiêu đề thumbnail.</div>
         ${state.genError?`<div class="error-box">${esc(state.genError)}</div>`:''}
       </div>
@@ -248,6 +247,7 @@ function render(container, ctx){
       <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
         <button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button>
         <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
+        <span style="font-size:11px;color:var(--ink-soft);align-self:center;">("Tạo 5 ý tưởng" tốn 1 lượt AI)</span>
       </div>`;
   }
 
@@ -330,14 +330,7 @@ function render(container, ctx){
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-          ${state.confirmDelId===h.id ? `
-            <span style="font-size:12px;color:var(--danger);font-weight:600;">Xoá vĩnh viễn? Không khôi phục được.
-              <span style="color:var(--danger);text-decoration:underline;cursor:pointer;margin-left:6px;" data-confirm-del="${h.id}">Xác nhận xoá</span>
-              <span class="btn-ghost btn btn-sm" style="margin-left:6px;" data-cancel-del="1">Huỷ</span>
-            </span>
-          ` : `
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-del="${h.id}">Xoá</span>
-          `}
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
           ${h.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>':h.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>':''}
         </div>
         ${writeActionHtml('personal:'+h.id)}
@@ -417,15 +410,11 @@ function render(container, ctx){
     const v2 = container.querySelector('#ne-likes'); if(v2) v2.oninput = ()=>state.newEntry.viralLikes = v2.value;
     const addBtn = container.querySelector('[data-action="add"]');
     if(addBtn) addBtn.onclick = addHook;
-    container.querySelectorAll('[data-ask-del]').forEach(el=>{
-      el.onclick = ()=>{ state.confirmDelId = el.getAttribute('data-ask-del'); draw(); };
-    });
-    const cancelDel = container.querySelector('[data-cancel-del]');
-    if(cancelDel) cancelDel.onclick = ()=>{ state.confirmDelId = null; draw(); };
-    container.querySelectorAll('[data-confirm-del]').forEach(el=>{
+    container.querySelectorAll('[data-del]').forEach(el=>{
       el.onclick = async ()=>{
-        await ctx.supabase.from('hooks_bank_personal').delete().eq('id', el.getAttribute('data-confirm-del'));
-        state.confirmDelId = null;
+        const id = el.getAttribute('data-del');
+        if(!(await confirmModal('Xoá vĩnh viễn hook này khỏi Kho của tôi? Không khôi phục được.'))) return;
+        await ctx.supabase.from('hooks_bank_personal').delete().eq('id', id);
         await loadPersonal(); draw();
       };
     });

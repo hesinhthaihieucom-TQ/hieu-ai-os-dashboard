@@ -104,7 +104,7 @@ function render(container, ctx){
         </div>
         <div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">${esc((MILESTONES.find(m=>m.key===state.milestone)||{}).hint||'')}</div>
 
-        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang gợi ý…':'Gợi ý đẩy bài'}</button></div>
+        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang gợi ý…':'Gợi ý đẩy bài'}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span></div>
         <div class="hint-box" style="margin-top:10px;">Nên bấm "Gợi ý đẩy bài" mỗi khi đổi mốc lượt xem — AI cần khoảng 1 phút để ra bình luận và cách trả lời phù hợp, đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
