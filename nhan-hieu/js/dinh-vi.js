@@ -50,7 +50,7 @@ function render(container, ctx){
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
-    reconstructingAnswers:false };
+    reconstructingAnswers:false, confirmDelAssetId:null, confirmDelBrandId:null };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
@@ -79,10 +79,18 @@ function render(container, ctx){
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
         <div><b>${esc(a.label)}</b>${a.kind!=='cong_dong'?` <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>`:''}${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}</div>
-        <div style="display:flex;gap:12px;">
-          <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
-        </div>
+        ${state.confirmDelAssetId===a.id ? `
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="color:var(--danger);font-size:12px;font-weight:600;">Xoá vĩnh viễn?</span>
+            <span style="color:var(--danger);text-decoration:underline;cursor:pointer;font-size:12px;" data-confirm-del-asset="${a.id}">Xác nhận xoá</span>
+            <span class="btn-ghost btn btn-sm" data-cancel-del-asset="1">Huỷ</span>
+          </div>
+        ` : `
+          <div style="display:flex;gap:12px;">
+            <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
+            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-del-asset="${a.id}">Xoá</span>
+          </div>
+        `}
       </div>
     `;
   }
@@ -308,10 +316,18 @@ function render(container, ctx){
           return `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
             <b>${esc(b.name)}</b>
-            <div style="display:flex;gap:12px;">
-              <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-brand="${b.id}">Sửa</span>
-              <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-brand="${b.id}">Xoá</span>
-            </div>
+            ${state.confirmDelBrandId===b.id ? `
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span style="color:var(--danger);font-size:12px;font-weight:600;">Xoá vĩnh viễn?</span>
+                <span style="color:var(--danger);text-decoration:underline;cursor:pointer;font-size:12px;" data-confirm-del-brand="${b.id}">Xác nhận xoá</span>
+                <span class="btn-ghost btn btn-sm" data-cancel-del-brand="1">Huỷ</span>
+              </div>
+            ` : `
+              <div style="display:flex;gap:12px;">
+                <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-brand="${b.id}">Sửa</span>
+                <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-del-brand="${b.id}">Xoá</span>
+              </div>
+            `}
           </div>
         `;
         }).join('')}
@@ -433,7 +449,7 @@ function render(container, ctx){
           const dt = r2.dong_tien_phu_hop || {};
           const list = (dt.danh_sach||[]).filter(d=>d && d.ten);
           if(!dt.uu_tien && list.length===0) return '';
-          return `<div class="section"><h3>Dòng tiền phù hợp</h3>${dt.uu_tien?`<div class="body" style="margin-bottom:10px;">${esc(dt.uu_tien)}</div>`:''}
+          return `<div class="section"><h3>Dòng tiền phù hợp</h3>${dt.uu_tien?`<div class="body" style="margin-bottom:10px;">${esc(breakSentences(dt.uu_tien))}</div>`:''}
           ${list.length?`<ul>${list.map(d=>`<li><b>${esc(d.ten)}</b>${d.thoi_han?` (${esc(d.thoi_han)})`:''}${d.ly_do?` — ${esc(d.ly_do)}`:''}</li>`).join('')}</ul>`:''}</div>`;
         })()}
         <div class="section">
@@ -545,9 +561,15 @@ function render(container, ctx){
         draw();
       };
     });
-    container.querySelectorAll('[data-del-brand]').forEach(el=>{
+    container.querySelectorAll('[data-ask-del-brand]').forEach(el=>{
+      el.onclick = ()=>{ state.confirmDelBrandId = el.getAttribute('data-ask-del-brand'); draw(); };
+    });
+    const cancelDelBrand = container.querySelector('[data-cancel-del-brand]');
+    if(cancelDelBrand) cancelDelBrand.onclick = ()=>{ state.confirmDelBrandId = null; draw(); };
+    container.querySelectorAll('[data-confirm-del-brand]').forEach(el=>{
       el.onclick = async ()=>{
-        await ctx.supabase.from('brands').delete().eq('id', el.getAttribute('data-del-brand'));
+        await ctx.supabase.from('brands').delete().eq('id', el.getAttribute('data-confirm-del-brand'));
+        state.confirmDelBrandId = null;
         await loadBrands(); draw();
       };
     });
@@ -568,9 +590,15 @@ function render(container, ctx){
     const ngu = container.querySelector('#ng-url'); if(ngu) ngu.oninput = ()=>state.newGroup.url = ngu.value;
     const addGroupBtn = container.querySelector('[data-action="add-group"]');
     if(addGroupBtn) addGroupBtn.onclick = addGroup;
-    container.querySelectorAll('[data-del-asset]').forEach(el=>{
+    container.querySelectorAll('[data-ask-del-asset]').forEach(el=>{
+      el.onclick = ()=>{ state.confirmDelAssetId = el.getAttribute('data-ask-del-asset'); draw(); };
+    });
+    const cancelDelAsset = container.querySelector('[data-cancel-del-asset]');
+    if(cancelDelAsset) cancelDelAsset.onclick = ()=>{ state.confirmDelAssetId = null; draw(); };
+    container.querySelectorAll('[data-confirm-del-asset]').forEach(el=>{
       el.onclick = async ()=>{
-        await ctx.supabase.from('promo_assets').delete().eq('id', el.getAttribute('data-del-asset'));
+        await ctx.supabase.from('promo_assets').delete().eq('id', el.getAttribute('data-confirm-del-asset'));
+        state.confirmDelAssetId = null;
         await loadAssets(); draw();
       };
     });

@@ -35,6 +35,7 @@ function render(container, ctx){
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(),
+    confirmDelPersonalId:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -299,7 +300,14 @@ function render(container, ctx){
         <h3>${esc(b.title)}</h3>
         ${contentBodyHtml('personal:'+b.id, b.content)}
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
+          ${state.confirmDelPersonalId===b.id ? `
+            <span style="font-size:12px;color:var(--danger);font-weight:600;">Xoá vĩnh viễn? Không khôi phục được.
+              <span style="color:var(--danger);text-decoration:underline;cursor:pointer;margin-left:6px;" data-confirm-del-personal="${b.id}">Xác nhận xoá</span>
+              <span class="btn-ghost btn btn-sm" style="margin-left:6px;" data-cancel-del-personal="1">Huỷ</span>
+            </span>
+          ` : `
+            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-del-personal="${b.id}">Xoá</span>
+          `}
           ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>':b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>':''}
         </div>
         ${writeActionHtml('personal:'+b.id)}
@@ -397,9 +405,15 @@ function render(container, ctx){
     const v2 = container.querySelector('#ne-likes'); if(v2) v2.oninput = ()=>state.newEntry.viralLikes = v2.value;
     const addBtn = container.querySelector('[data-action="add-personal"]');
     if(addBtn) addBtn.onclick = addPersonal;
-    container.querySelectorAll('[data-del-personal]').forEach(el=>{
+    container.querySelectorAll('[data-ask-del-personal]').forEach(el=>{
+      el.onclick = ()=>{ state.confirmDelPersonalId = el.getAttribute('data-ask-del-personal'); draw(); };
+    });
+    const cancelDelPersonal = container.querySelector('[data-cancel-del-personal]');
+    if(cancelDelPersonal) cancelDelPersonal.onclick = ()=>{ state.confirmDelPersonalId = null; draw(); };
+    container.querySelectorAll('[data-confirm-del-personal]').forEach(el=>{
       el.onclick = async ()=>{
-        await ctx.supabase.from('content_bank_personal').delete().eq('id', el.getAttribute('data-del-personal'));
+        await ctx.supabase.from('content_bank_personal').delete().eq('id', el.getAttribute('data-confirm-del-personal'));
+        state.confirmDelPersonalId = null;
         await loadPersonal(); draw();
       };
     });
