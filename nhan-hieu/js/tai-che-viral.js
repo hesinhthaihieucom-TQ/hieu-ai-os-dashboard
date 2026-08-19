@@ -33,7 +33,7 @@ function render(container, ctx){
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">1. Dán nguyên văn bài/video đang viral</label>
         <textarea id="viral-text" style="min-height:180px;" placeholder="Dán caption, kịch bản video, hoặc bài viết đang viral bạn muốn học theo...">${esc(state.viralText)}</textarea>
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="analyze" ${state.analyzing?'disabled':''}>${state.analyzing?'Đang phân tích…':(state.phanTich?'Phân tích lại':'Phân tích bài viral')}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="analyze" ${state.analyzing?'disabled':''}>${state.analyzing?'Đang phân tích…':(state.phanTich?'Phân tích lại':'Phân tích bài viral')}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>
         <div class="hint-box" style="margin-top:10px;">Chỉ mổ xẻ vì sao bài gốc viral trước — chọn tái chế thành gì sau khi có kết quả.</div>
         ${state.analyzeError?`<div class="error-box">${esc(state.analyzeError)}</div>`:''}
       </div>
@@ -92,13 +92,13 @@ function render(container, ctx){
     if(!state.recycleMode) return '';
     if(state.recycleMode==='tieu_de'){
       return `
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="fetch-titles" ${state.titlesLoading?'disabled':''}>${state.titlesLoading?'Đang tạo…':(state.titles?'Tạo lại 10 tiêu đề':'Tạo 10 tiêu đề mới →')}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="fetch-titles" ${state.titlesLoading?'disabled':''}>${state.titlesLoading?'Đang tạo…':(state.titles?'Tạo lại 10 tiêu đề':'Tạo 10 tiêu đề mới →')}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>
         ${state.titlesError?`<div class="error-box" style="margin-top:10px;">${esc(state.titlesError)}</div>`:''}
       `;
     }
     const done = state.posts.length >= TOTAL_POSTS;
     return `
-      ${!done ? `<div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="next-post" ${state.postsLoading?'disabled':''}>${state.postsLoading?'Đang viết…':(state.posts.length===0?'Viết bài đầu tiên →':`Viết bài tiếp theo (${state.posts.length+1}/${TOTAL_POSTS}) →`)}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span></div>` : `<div class="hint-box" style="margin-top:14px;">Đã viết đủ ${TOTAL_POSTS} bài — xem bên dưới, bấm "Lưu vào Kho Content" cho bài nào bạn ưng ý.</div>`}
+      ${!done ? `<div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="next-post" ${state.postsLoading?'disabled':''}>${state.postsLoading?'Đang viết…':(state.posts.length===0?'Viết bài đầu tiên →':`Viết bài tiếp theo (${state.posts.length+1}/${TOTAL_POSTS}) →`)}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>` : `<div class="hint-box" style="margin-top:14px;">Đã viết đủ ${TOTAL_POSTS} bài — xem bên dưới, bấm "Lưu vào Kho Content" cho bài nào bạn ưng ý.</div>`}
       ${state.postsError?`<div class="error-box" style="margin-top:10px;">${esc(state.postsError)}</div>`:''}
     `;
   }

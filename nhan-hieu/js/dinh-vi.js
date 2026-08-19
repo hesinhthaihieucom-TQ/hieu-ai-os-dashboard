@@ -189,7 +189,7 @@ function render(container, ctx){
       <div class="card">
         <textarea id="paste-input" style="min-height:260px;" placeholder="Dán nguyên văn kết quả định vị vào đây...">${esc(state.pasteText)}</textarea>
         <div class="btn-row">
-          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button> <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>
+          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span>
           <button class="btn-ghost btn" data-action="back-to-intro">← Quay lại</button>
         </div>
         ${state.pasteError?`<div class="error-box">${esc(state.pasteError)}</div>`:''}
