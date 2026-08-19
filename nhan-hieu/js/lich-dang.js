@@ -40,6 +40,7 @@ function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
+    choosingKhoFor:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -101,9 +102,26 @@ function render(container, ctx){
     return state.aiSuggestions.find(s=> s.thu===dayIndex && s.slot===slotKey) || null;
   }
 
+  // Thanh "hoàn thành tuần" — chỉ đếm những ngày ĐÃ QUA (chưa tính hôm nay, hôm nay vẫn còn có thể
+  // hành động) để người dùng thấy đúng thành quả đã làm được, không bị nhắc nhở về những ô trống
+  // trong tương lai chưa tới hạn.
+  function weekCompletionHtml(days, todayStr){
+    const pastDays = days.filter(d=>isoDate(d) < todayStr);
+    if(!pastDays.length) return '';
+    const doneCount = state.entries.filter(e=>e.scheduled_date < todayStr).length;
+    if(doneCount > 0){
+      return `<div class="hint-box" style="margin-bottom:16px;background:var(--accent-soft);border-color:var(--accent);display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🎉</span>
+        <span><b>Bạn đã hoàn thành ${doneCount} bài</b> trong những ngày đã qua tuần này — cứ vậy phát huy!</span>
+      </div>`;
+    }
+    return `<div class="hint-box" style="margin-bottom:16px;">Chưa có bài nào được đăng trong những ngày đã qua tuần này — bắt đầu ngay hôm nay để không bỏ lỡ tuần này nhé.</div>`;
+  }
+
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     const days = weekDays();
+    const todayStr = isoDate(new Date());
     const weekLabel = `${fmtDate(days[0])} – ${fmtDate(days[6])}`;
     return `
       <div class="page-head"><div class="tag">Bước 5 · Lịch Đăng Bài</div><h1>Lịch đăng bài theo tuần</h1></div>
@@ -137,15 +155,27 @@ function render(container, ctx){
         <b style="font-family:'IBM Plex Mono',monospace;font-size:13px;">${esc(weekLabel)}</b>
         <span style="cursor:pointer;color:var(--ink-soft);" data-action="next-week">Tuần sau →</span>
       </div>
+      ${weekCompletionHtml(days, todayStr)}
       <div class="week-grid">
         ${days.map((d,dayIndex)=>{
           const dateStr = isoDate(d);
           const thu = (d.getDay()+6)%7; // 0=Mon..6=Sun, matches AI schema
+          const isPast = dateStr < todayStr;
           return `<div class="week-col">
             <div class="day">${DAY_NAMES[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</div>
             ${SLOTS.map(s=>{
               const e = entryFor(dateStr, s.key);
               const suggestion = !e ? suggestionFor(thu, s.key) : null;
+
+              // Ngày đã qua mà không có bài: không còn gì để hành động (không thể xếp lịch cho quá
+              // khứ) — ẩn bớt gợi ý/khung "+" mời bấm, chỉ để 1 ô mờ nhỏ cho đỡ trống lưới, tránh cả
+              // tuần đã qua vẫn hiện dày đặc lời mời hành động gây rối/nản.
+              if(isPast && !e){
+                return `<div class="week-slot" style="opacity:.4;min-height:auto;padding:6px;text-align:center;">
+                  <div class="slot-label">${s.label}</div>
+                  <div style="font-size:10.5px;color:var(--ink-soft);margin-top:2px;">Đã bỏ lỡ</div>
+                </div>`;
+              }
 
               if(state.pickerFor && state.pickerFor.date===dateStr && state.pickerFor.slot===s.key){
                 return `<div class="week-slot filled">
@@ -165,7 +195,7 @@ function render(container, ctx){
               }
               if(e){
                 return `<div class="week-slot filled">
-                  <div class="slot-label">${s.label}</div>
+                  <div class="slot-label">${s.label} ${isPast?'· <span style="color:var(--accent);">✓ Đã đăng</span>':''}</div>
                   <b style="font-size:12.5px;">${esc(e.title||'')}</b>
                   ${e.format?`<div style="color:var(--ink-soft);font-size:11px;margin-top:2px;">${esc(e.format)}</div>`:''}
                   <span style="display:block;margin-top:6px;color:var(--danger);font-size:11px;cursor:pointer;" data-remove="${e.id}">Xoá</span>
@@ -188,11 +218,14 @@ function render(container, ctx){
                   ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
                   <b style="font-size:12px;">${esc(matchedPost ? matchedPost.title : (suggestion.chu_de || 'Chưa chọn bài cụ thể'))}</b>
                   <div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${matchedPost ? 'Bài đã viết sẵn' : (suggestion.dinh_dang ? esc(suggestion.dinh_dang) : 'Chọn bài mẫu đúng trục ở Kho Content Viral')}</div>
-                  <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                  <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;">
                     ${matchedPost
                       ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>`
-                      : `<span class="btn-ghost btn btn-sm" data-write-for-slot="kho-content|${dateStr}|${s.key}">Tìm trong Kho Content →</span>
-                         <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-hook|${dateStr}|${s.key}">Tìm trong Kho Hook →</span>`
+                      : state.choosingKhoFor===`${dateStr}|${s.key}`
+                        ? `<span style="font-size:11px;color:var(--ink-soft);">Tìm ở kho nào?</span>
+                           <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-content|${dateStr}|${s.key}">Kho Content</span>
+                           <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-hook|${dateStr}|${s.key}">Kho Hook</span>`
+                        : `<span class="btn-ghost btn btn-sm" data-choose-kho="${dateStr}|${s.key}">Viết bài theo ý mình →</span>`
                     }
                     <span style="align-self:center;color:var(--ink-soft);font-size:11px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
                   </div>
@@ -262,6 +295,9 @@ function render(container, ctx){
         await loadEntries();
         draw();
       };
+    });
+    container.querySelectorAll('[data-choose-kho]').forEach(el=>{
+      el.onclick = ()=>{ state.choosingKhoFor = el.getAttribute('data-choose-kho'); draw(); };
     });
     container.querySelectorAll('[data-write-for-slot]').forEach(el=>{
       el.onclick = ()=>{

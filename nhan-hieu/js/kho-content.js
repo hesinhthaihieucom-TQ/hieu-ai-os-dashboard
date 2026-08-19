@@ -163,7 +163,7 @@ function render(container, ctx){
 
   function writePanelHtml(){
     const hasPositioning = !!(state.positioning && state.positioning.luot1);
-    if(state.writeLoading) return `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Đang sinh ý tưởng…</div>`;
+    if(state.writeLoading) return `<div class="btn-row" style="margin-top:10px;justify-content:flex-start;"><button class="btn-ghost btn btn-sm" data-write-generate="1" disabled>Đang sinh ý tưởng…</button></div>`;
     if(state.writeIdeas){
       return `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
         ${state.writeIdeas.map((idea,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--accent-soft);">
@@ -376,6 +376,7 @@ function render(container, ctx){
 
   async function generateIdeasFromSource(){
     state.writeLoading = true; state.writeError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-write-generate]'), 25, 'Đang sinh ý tưởng');
     try{
       const data = await callApi('/api/goi-y-tu-nguon', {
         source_text: findSourceText(state.writeFor),
@@ -384,6 +385,7 @@ function render(container, ctx){
       });
       state.writeIdeas = data.result.y_tuong;
     } catch(e){ state.writeError = e.message; }
+    stopProgress();
     state.writeLoading = false; draw();
   }
 
@@ -391,6 +393,7 @@ function render(container, ctx){
     const content = findSourceText(key);
     if(!content.trim()) return;
     state.applyingVoice = key; state.applyVoiceError = null; state.applyVoiceErrorFor = null; state.voiceAppliedFor = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector(`[data-apply-voice="${key}"]`), 20, 'Đang phân tích');
     try{
       const data = await callApi('/api/goi-y-giong-van', { sample_text: content });
       if(state.positioning){
@@ -408,6 +411,7 @@ function render(container, ctx){
       }
       state.voiceAppliedFor = key;
     } catch(e){ state.applyVoiceError = e.message; state.applyVoiceErrorFor = key; }
+    stopProgress();
     state.applyingVoice = null;
     draw();
   }

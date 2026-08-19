@@ -171,6 +171,7 @@ function render(container, ctx){
     const topic = resolvedTopic();
     if(!topic.trim()) return;
     state.generating = true; state.error = null; state.result = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 30, 'Đang gợi ý');
     try{
       const preferredAsset = state.assets.find(a=>a.id===state.selectedAssetId);
       const data = await callApi('/api/goi-y-day-bai', {
@@ -183,6 +184,7 @@ function render(container, ctx){
       });
       state.result = data.result;
     } catch(e){ state.error = e.message; }
+    stopProgress();
     state.generating = false; draw();
   }
 

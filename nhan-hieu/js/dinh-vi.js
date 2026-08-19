@@ -429,8 +429,8 @@ function render(container, ctx){
         ${listSectionHtml('Cảnh báo', r2.canh_bao)}
       ` : state.luot2Loading ? `
         <div class="section" style="text-align:center;color:var(--ink-soft);margin-top:24px;">
-          <div class="spinner" style="margin:0 auto 12px;"></div>
           Đang xây tiếp Chiến lược &amp; Dòng tiền…
+          <div id="progress-bar-el-luot2" style="margin-top:12px;">${progressBarHtml(0)}</div>
         </div>
       ` : `
         <div class="section" style="text-align:center;margin-top:24px;">
@@ -763,12 +763,14 @@ function render(container, ctx){
 
   async function runLuot2(){
     state.luot2Loading = true; state.luot2Error = null; draw();
+    const stopL2Progress = animateProgressBar(container.querySelector('#progress-bar-el-luot2'), 60);
     try{
       const data = await callApi('/api/dinh-vi', { luot:2, answers: flattenAnswers(), luot1: state.luot1 }, 280000);
       state.luot2 = data.result;
       await persist({ luot1: state.luot1, luot2: data.result });
       state.luot2Error = null;
     } catch(e){ state.luot2Error = e.message; }
+    stopL2Progress();
     state.luot2Loading = false;
     state.screen = 'results';
     draw();

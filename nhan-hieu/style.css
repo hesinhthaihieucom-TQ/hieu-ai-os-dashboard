@@ -181,7 +181,12 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
   .app-layout{ margin-top:62px; }
 
   .main-inner{ padding:20px 16px 70px; }
-  .week-grid{ grid-template-columns:repeat(7,140px); }
+  /* Trên di động, 7 cột ngang buộc phải kéo sang mới xem hết tuần — xếp mỗi ngày 1 hàng dọc, ngày
+     làm nhãn cột trái + 3 buổi (sáng/trưa/tối) nằm ngang cùng hàng đó, không cần cuộn ngang nữa. */
+  .week-grid{ grid-template-columns:1fr; overflow-x:visible; gap:8px; }
+  .week-col{ display:grid; grid-template-columns:64px repeat(3,1fr); gap:8px; align-items:stretch; min-width:0; }
+  .week-col .day{ display:flex; align-items:center; margin-bottom:0; font-size:10.5px; line-height:1.3; }
+  .week-slot{ min-height:auto; }
 
   /* iOS Safari tự động phóng to (zoom) trang khi người dùng bấm vào 1 ô nhập có cỡ chữ < 16px —
      đúng lúc đăng nhập (ô email/mật khẩu) là dễ gặp nhất. Sau khi phóng, mức zoom đó dính luôn

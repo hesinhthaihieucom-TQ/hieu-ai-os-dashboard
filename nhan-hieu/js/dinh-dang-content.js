@@ -121,11 +121,13 @@ function render(container, ctx){
 
   async function fetchSuggestions(){
     state.suggestLoading = true; state.suggestError = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#progress-bar-el-fmt'), 25);
     try{
       const data = await callApi('/api/goi-y-dinh-dang', { positioning: { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } });
       state.suggestions = data.result.goi_y;
       await ctx.supabase.from('positioning_results').update({ format_suggestions: state.suggestions }).eq('user_id', ctx.user.id);
     } catch(e){ state.suggestError = e.message; }
+    stopProgress();
     state.suggestLoading = false;
     draw();
   }
@@ -151,7 +153,7 @@ function render(container, ctx){
       return `<div class="hint-box" style="margin-bottom:20px;">Hoàn thành <a href="#dinh-vi">Định Vị</a> trước để được gợi ý đúng 2-3 dạng content phù hợp nhất với trục nội dung của bạn.</div>`;
     }
     if(state.suggestLoading){
-      return `<div class="loading" style="padding:30px 0;"><div class="spinner"></div><p>Đang chọn dạng phù hợp với định vị của bạn…</p></div>`;
+      return `<div class="loading" style="padding:30px 0;"><p>Đang chọn dạng phù hợp với định vị của bạn…</p><div id="progress-bar-el-fmt" style="margin-top:12px;">${progressBarHtml(0)}</div></div>`;
     }
     if(state.suggestError){
       return `<div class="error-box" style="margin-bottom:20px;">${esc(state.suggestError)}</div><div class="btn-row" style="margin-bottom:20px;"><button class="btn" data-action="retry-suggest">Thử lại</button></div>`;

@@ -203,7 +203,7 @@ function render(container, ctx){
 
   function writePanelHtml(){
     const hasPositioning = !!(state.positioning && state.positioning.luot1);
-    if(state.writeLoading) return `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Đang sinh ý tưởng…</div>`;
+    if(state.writeLoading) return `<div class="btn-row" style="margin-top:10px;justify-content:flex-start;"><button class="btn-ghost btn btn-sm" data-write-generate="1" disabled>Đang sinh ý tưởng…</button></div>`;
     if(state.writeIdeas){
       return `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
         ${state.writeIdeas.map((idea,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--accent-soft);">
@@ -425,6 +425,7 @@ function render(container, ctx){
     if(!state.genTopic.trim()) return;
     state.genLoading = true; state.genError = null; state.genResult = null; state.genThumbTitles = null; state.genSavedIdx = {};
     draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="generate-hooks"]'), 35, 'Đang sinh hook');
     try{
       const data = await callApi('/api/goi-y-hook-theo-chu-de', {
         topic: state.genTopic,
@@ -436,6 +437,7 @@ function render(container, ctx){
       state.genResult = data.result.hooks;
       state.genThumbTitles = data.result.tieu_de_thumbnail;
     } catch(e){ state.genError = e.message; }
+    stopProgress();
     state.genLoading = false; draw();
   }
 
@@ -450,6 +452,7 @@ function render(container, ctx){
 
   async function generateIdeasFromSource(){
     state.writeLoading = true; state.writeError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-write-generate]'), 25, 'Đang sinh ý tưởng');
     try{
       const data = await callApi('/api/goi-y-tu-nguon', {
         source_text: findSourceText(state.writeFor),
@@ -458,6 +461,7 @@ function render(container, ctx){
       });
       state.writeIdeas = data.result.y_tuong;
     } catch(e){ state.writeError = e.message; }
+    stopProgress();
     state.writeLoading = false; draw();
   }
 
