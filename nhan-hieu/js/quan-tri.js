@@ -1,4 +1,17 @@
 (function(){
+// Khớp đúng TRIAL_AI_LIMIT/PAID_MONTHLY_AI_LIMIT ở api/_lib/trial-quota.js + nhan-hieu/js/app-shell.js
+// — chỉ để HIỂN THỊ cho admin theo dõi, không phải nơi chặn thật (chặn thật luôn ở server).
+function aiUsageLabel(p){
+  if(p.has_paid){
+    const month = new Date().toISOString().slice(0,7);
+    const sameMonth = p.paid_ai_month === month;
+    const used = sameMonth ? (p.paid_ai_uses||0) : 0;
+    const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
+    return `${used}/${200+bonus} lượt AI (tháng này)`;
+  }
+  return `${p.trial_ai_uses||0}/50 lượt AI (dùng thử, trọn đời)`;
+}
+
 function statusOf(p){
   if(p.role==='admin') return { label:'Admin', cls:'admin' };
   if(!p.access_until) return { label:'Chưa kích hoạt', cls:'none' };
@@ -117,6 +130,7 @@ function render(container, ctx){
               color:${st.cls==='active'?'var(--accent)':st.cls==='soon'?'var(--gold)':st.cls==='expired'?'var(--danger)':'var(--ink-soft)'};">${esc(st.label)}</span>
           </div>
           <div class="body" style="margin-top:8px;font-size:13px;">Hạn dùng: ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
+          ${p.role!=='admin' ? `<div class="body" style="margin-top:2px;font-size:13px;">Đã dùng: ${esc(aiUsageLabel(p))}</div>` : ''}
           ${p.ref_code ? `<div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">Mã tham chiếu chuyển khoản: <span style="font-family:'IBM Plex Mono',monospace;">${esc(p.ref_code)}</span></div>` : ''}
           ${p.role!=='admin' ? `
             <div class="body" style="margin-top:6px;font-size:12.5px;">
