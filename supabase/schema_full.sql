@@ -25,6 +25,10 @@ alter table profiles add column if not exists is_student boolean not null defaul
 -- Đánh dấu học viên đã dùng ưu đãi 1 tháng đầu (399.200đ) chưa — dùng rồi thì các lần mua gói 1
 -- tháng sau đó về giá thường 499.000đ, không lặp lại ưu đãi này (gói 6/12 tháng không bị ảnh hưởng).
 alter table profiles add column if not exists first_month_discount_used boolean not null default false;
+-- Giới hạn lượt dùng AI trong thời gian DÙNG THỬ (chưa thanh toán lần nào) — xem api/_lib/trial-quota.js.
+-- has_paid được đánh dấu true bởi api/sepay-webhook.js ngay khi khớp được 1 giao dịch thành công.
+alter table profiles add column if not exists has_paid boolean not null default false;
+alter table profiles add column if not exists trial_ai_uses integer not null default 0;
 
 update profiles p set email = u.email from auth.users u where p.id = u.id and p.email is null;
 

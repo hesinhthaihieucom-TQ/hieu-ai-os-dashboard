@@ -20,6 +20,17 @@ const NAV = [
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
+// Khớp đúng TRIAL_AI_LIMIT ở api/_lib/trial-quota.js — chỉ để HIỂN THỊ cảnh báo sớm cho người
+// dùng thử biết ngay từ đầu (đặc biệt lúc chưa quen app hay bấm thử lung tung), việc CHẶN thật sự
+// luôn nằm ở server, không phải ở số hiển thị này.
+const TRIAL_AI_LIMIT = 15;
+function trialQuotaHint(){
+  const p = AppState.profile;
+  if(!p || p.role==='admin' || p.has_paid) return '';
+  const remaining = Math.max(0, TRIAL_AI_LIMIT - (p.trial_ai_uses||0));
+  const color = remaining<=3 ? 'var(--danger)' : '#C7CBBC';
+  return `<span style="color:${color};">🎁 Dùng thử: còn ${remaining}/${TRIAL_AI_LIMIT} lượt AI</span><br>`;
+}
 // Giá thường và giá học viên (đã học khoá Xây Nhân Hiệu) tách 2 bảng riêng thay vì gộp chung 1
 // danh sách dài — is_student được hỏi ngay lúc đăng ký (xem renderAuthScreen) nên tới màn thanh
 // toán chỉ cần hiện đúng 1 bảng phù hợp, không bắt người dùng tự lọc giữa 2 loại giá.
@@ -336,6 +347,7 @@ function renderApp(){
           ${esc((AppState.user && AppState.user.email) || '')}<br>
           ${(AppState.profile && AppState.profile.role !== 'admin' && AppState.profile.access_until)
             ? `Hạn dùng: ${esc(new Date(AppState.profile.access_until).toLocaleDateString('vi-VN'))}<br>` : ''}
+          ${trialQuotaHint()}
           <span class="signout" id="signout-btn">Đăng xuất</span>
         </div>
       </div>

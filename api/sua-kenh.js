@@ -1,6 +1,7 @@
 // Serverless function — SOI KÊNH AI: audit hình ảnh/profile kênh thật so với định vị đã chốt.
 // Chỉ còn 5 hạng mục hình ảnh (HM1-HM5) — phần nội dung/trục/hook đã tách sang các module khác.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là SOI KÊNH AI — trợ lý chuyên audit HÌNH ẢNH/PROFILE kênh mạng xã hội, dựa trên định vị thương hiệu đã chốt.
 
@@ -102,6 +103,9 @@ module.exports = async (req, res) => {
 
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }

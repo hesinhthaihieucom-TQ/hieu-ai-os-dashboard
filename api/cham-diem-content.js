@@ -1,6 +1,7 @@
 // Serverless function — chấm điểm 1 bài content theo rubric tổng hợp từ:
 // checklist "Sửa bài AI viết theo chiến lược" (Buổi 3) + tiêu chí HM7-HM9 (SOI KÊNH AI).
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là biên tập viên chấm điểm content cho người xây thương hiệu cá nhân tại Việt Nam.
 
@@ -77,6 +78,9 @@ module.exports = async (req, res) => {
 
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }

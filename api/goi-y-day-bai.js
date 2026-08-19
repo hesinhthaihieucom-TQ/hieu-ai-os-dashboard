@@ -2,6 +2,7 @@
 // câu bình luận tự đăng (kích người khác cmt theo / dẫn CTA), gợi ý trả lời bình luận người khác,
 // và nên gắn tài sản quảng bá nào (sản phẩm số, aff, cộng đồng) phù hợp với đúng giai đoạn đó.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 
 const MILESTONES = {
   m1: { label:'Trước 1.000 view đầu tiên', desc:'Giai đoạn khơi mào — mục tiêu duy nhất là kích người xem để lại bình luận đầu tiên, tuyệt đối chưa nên gắn link bán hàng vì dễ làm giảm reach.' },
@@ -69,6 +70,9 @@ module.exports = async (req, res) => {
 
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }

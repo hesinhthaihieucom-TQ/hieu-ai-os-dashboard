@@ -2,6 +2,7 @@
 // Yêu cầu biến môi trường ANTHROPIC_API_KEY được cấu hình trong Vercel Project Settings.
 
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 
 const QUESTION_LABELS = {
   a1: 'Đang làm gì (bao lâu, giỏi/kẹt phần nào)',
@@ -96,6 +97,9 @@ module.exports = async (req, res) => {
     res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' });
     return;
   }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

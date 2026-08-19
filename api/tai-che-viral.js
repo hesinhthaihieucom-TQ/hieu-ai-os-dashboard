@@ -6,6 +6,7 @@
 //   stage="mot_bai"   — sinh ĐÚNG 1 bài mới/lần, gọi lặp lại 5 lần phía client ("Bài tiếp theo →"),
 //                       biết các ý đã viết trước đó để không lặp góc độ.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 
 const ANALYZE_PROMPT = `Bạn là chuyên gia phân tích tâm lý học content viral, giỏi mổ xẻ vì sao 1 bài viết/video thành công.
 
@@ -112,6 +113,9 @@ module.exports = async (req, res) => {
 
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }

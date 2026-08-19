@@ -106,7 +106,9 @@ module.exports = async (req, res) => {
           const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
             ? new Date(profile.access_until) : new Date();
           const next = new Date(base.getTime() + days * 86400000);
-          const patchBody = { access_until: next.toISOString() };
+          // has_paid=true tắt hẳn giới hạn lượt AI dùng thử (xem api/_lib/trial-quota.js) — ngay
+          // khi khớp được 1 giao dịch thật, không còn giới hạn nào áp dụng nữa.
+          const patchBody = { access_until: next.toISOString(), has_paid: true };
           // Ưu đãi tháng đầu chỉ áp dụng đúng 1 lần — đánh dấu đã dùng để lần mua gói 1 tháng sau
           // đó tự động về giá thường (gói 6/12 tháng học viên không bị ảnh hưởng bởi cờ này).
           if (transferAmount === FIRST_MONTH_DISCOUNT_AMOUNT) patchBody.first_month_discount_used = true;

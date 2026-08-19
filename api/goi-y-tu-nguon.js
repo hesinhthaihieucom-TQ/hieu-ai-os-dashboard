@@ -1,6 +1,7 @@
 // Serverless function — từ 1 nội dung/hook có sẵn (chọn trong Kho Content hoặc Kho Hook),
 // sinh 5 ý tưởng biến thể mới bám đúng trục nội dung đã định vị.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý sinh ý tưởng content cho người xây thương hiệu cá nhân tại Việt Nam.
 
@@ -48,6 +49,9 @@ module.exports = async (req, res) => {
 
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }

@@ -1,6 +1,7 @@
 // Serverless function — gợi ý lịch đăng bài 7 ngày, dựa trên trục nội dung, dạng content phù hợp,
 // giờ đăng tối ưu, và mục tiêu tuần này người dùng nhập.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 const { FORMAT_GUIDE } = require('./_lib/formats');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý lập lịch đăng bài cho người xây thương hiệu cá nhân tại Việt Nam.
@@ -101,6 +102,9 @@ module.exports = async (req, res) => {
 
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }

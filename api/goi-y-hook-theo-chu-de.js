@@ -1,6 +1,7 @@
 // Serverless function — sinh hook mẫu theo đúng 1 chủ đề + 1 loại hook người dùng chọn.
 // Thay cho việc lục kho hook chung cố định, để luôn ra hook mới, sát chủ đề, đúng kiểu tâm lý muốn dùng.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
 const { HOOK_CATEGORIES } = require('./_lib/hook-categories');
 
 const CONTENT_GOALS = {
@@ -63,6 +64,9 @@ module.exports = async (req, res) => {
 
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
+
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
