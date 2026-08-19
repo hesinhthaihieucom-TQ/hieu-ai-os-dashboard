@@ -472,17 +472,21 @@ function render(container, ctx){
     let category = null;
     let tags = [];
     let classifyWarning = null;
-    try{
-      const data = await callApi('/api/phan-loai-hook', { hook_text: entry.hook_text });
-      category = categoryLabel(data.result.category);
-    } catch(e){
+    // 2 lệnh phân loại (loại hook + trục nội dung) độc lập nhau — chạy song song thay vì chờ lần
+    // lượt từng cái, giảm gần một nửa thời gian chờ khi thêm hook.
+    const [hookResult, trucResult] = await Promise.allSettled([
+      callApi('/api/phan-loai-hook', { hook_text: entry.hook_text }),
+      callApi('/api/phan-loai-truc', { title: entry.hook_text, content: entry.note || '' }),
+    ]);
+    if(hookResult.status==='fulfilled'){
+      category = categoryLabel(hookResult.value.result.category);
+    } else {
       // Không phân loại được (vd lỗi mạng) — vẫn lưu hook, chỉ thiếu nhãn loại, không chặn người dùng.
-      classifyWarning = `Không tự nhận diện được loại hook (${e.message}) — đã lưu hook, bạn có thể bỏ qua.`;
+      classifyWarning = `Không tự nhận diện được loại hook (${hookResult.reason.message}) — đã lưu hook, bạn có thể bỏ qua.`;
     }
-    try{
-      const data = await callApi('/api/phan-loai-truc', { title: entry.hook_text, content: entry.note || '' });
-      if(data.result && data.result.truc) tags = [data.result.truc];
-    } catch(e){ /* không phân loại được trục — vẫn lưu, không chặn người dùng */ }
+    if(trucResult.status==='fulfilled' && trucResult.value.result && trucResult.value.result.truc){
+      tags = [trucResult.value.result.truc];
+    }
 
     const { data: row, error } = await ctx.supabase.from('hooks_bank_personal').insert({
       user_id: ctx.user.id, hook_text: entry.hook_text,
