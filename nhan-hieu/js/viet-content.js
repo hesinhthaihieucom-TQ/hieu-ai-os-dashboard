@@ -165,7 +165,7 @@ function render(container, ctx){
           ${!state.generating?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 3 lượt AI)</span>`:''}
           ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="retry-generate">Thử lại ngay</span>`:''}
         </div>
-        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng <b>30-45 giây</b> — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần.<br><br>Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm <b>"Thử lại ngay"</b> nếu chờ quá lâu không thấy gì, <b>không cần nhập lại chủ đề</b>.</div>
+        <div class="hint-box" id="generate-wait-hint" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng <b>30-45 giây</b> — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần.<br><br>Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm <b>"Thử lại ngay"</b> nếu chờ quá lâu không thấy gì, <b>không cần nhập lại chủ đề</b>.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
@@ -537,6 +537,10 @@ function render(container, ctx){
     state.hookScore = null; state.hookScoring = false; state.hookScoreError = null;
     state.extrasLoading = false; state.extrasError = null; draw();
     const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 38, 'Đang viết');
+    const stopWaitHint = startWaitReassurance(container.querySelector('#generate-wait-hint'), [
+      { atSeconds: 60, html: 'Đã hơn 1 phút — bài này cần AI xử lý nhiều bước hơn bình thường (đọc định vị, viết đúng giọng văn, kiểm tra cấu trúc...) nên có thể lâu hơn dự kiến 1 chút. Cứ tiếp tục chờ, thường sẽ xong trong khoảng 1 phút nữa.' },
+      { atSeconds: 120, html: 'Vẫn đang xử lý — nếu quá <b>2 phút</b> mà chưa ra kết quả, bấm <b>"Thử lại ngay"</b> ở trên, <b>không cần nhập lại chủ đề</b>.' },
+    ]);
     acquireWakeLock();
     try{
       const endpoint = state.khoGocSource ? '/api/viet-tu-kho-goc' : '/api/viet-content';
@@ -556,14 +560,14 @@ function render(container, ctx){
         payload.idea_text = state.ideaText;
       }
       const data = await callApi(endpoint, payload, 280000);
-      stopProgress(); releaseWakeLock();
+      stopProgress(); stopWaitHint(); releaseWakeLock();
       if(myRequestId !== generateRequestId) return; // đã huỷ/bấm lại — bỏ qua kết quả trễ này, dừng interval của riêng lượt này là đủ
       state.result = data.result;
       state.showScoreContent = false; state.showScoreHook = false; state.showExtras = false;
       state.generating = false; draw();
       persistDraft();
     } catch(e){
-      stopProgress(); releaseWakeLock();
+      stopProgress(); stopWaitHint(); releaseWakeLock();
       if(myRequestId !== generateRequestId) return;
       state.error = e.message; state.generating = false; draw();
     }

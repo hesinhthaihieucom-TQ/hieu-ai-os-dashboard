@@ -140,6 +140,28 @@ function animateProgressButton(btnEl, estimatedSeconds, baseLabel){
   return () => clearInterval(timer);
 }
 
+// Đổi nội dung 1 hint-box theo mốc thời gian đã chờ thực tế — chủ động giải thích lý do đang chờ
+// lâu thay vì im lặng, đỡ cảm giác "treo máy" khi AI xử lý lâu hơn ước tính (bài dài, nhiều bước,
+// server đang tải cao...). "stages" là mảng {atSeconds, html} tăng dần, hiện đúng mốc gần nhất đã
+// qua. Dùng chung với animateProgressButton (chạy song song, không thay thế).
+function startWaitReassurance(el, stages){
+  if(!el) return ()=>{};
+  const startedAt = Date.now();
+  let shown = -1;
+  const tick = ()=>{
+    const elapsed = (Date.now() - startedAt) / 1000;
+    let idx = -1;
+    stages.forEach((s, i) => { if(elapsed >= s.atSeconds) idx = i; });
+    if(idx !== shown && idx >= 0){
+      shown = idx;
+      el.innerHTML = stages[idx].html;
+    }
+  };
+  tick();
+  const timer = setInterval(tick, 1000);
+  return () => clearInterval(timer);
+}
+
 // progressBarHtml/animateProgressBar: thanh ngang cho các màn chờ toàn màn hình (không có nút nào
 // để bám vào lúc đó) — thay cho vòng xoay tĩnh, cũng chạy theo % ước lượng như trên.
 function progressBarHtml(percent){
