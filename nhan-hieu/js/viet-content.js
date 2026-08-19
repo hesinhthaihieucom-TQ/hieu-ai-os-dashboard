@@ -139,9 +139,9 @@ function render(container, ctx){
         ` : ''}
         <div class="btn-row" style="align-items:center;">
           <button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button>
-          ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="cancel-generate">Huỷ, thử lại</span>`:''}
+          ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="retry-generate">Thử lại ngay</span>`:''}
         </div>
-        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng 30-45 giây — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần. Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — quay lại màn hình này hoặc bấm "Huỷ, thử lại" nếu chờ quá lâu không thấy gì.</div>
+        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng 30-45 giây — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần. Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm "Thử lại ngay" nếu chờ quá lâu không thấy gì, không cần nhập lại chủ đề.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
@@ -371,8 +371,11 @@ function render(container, ctx){
 
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
-    const cancelGenBtn = container.querySelector('[data-action="cancel-generate"]');
-    if(cancelGenBtn) cancelGenBtn.onclick = cancelGenerate;
+    // "Thử lại ngay" gọi thẳng generate() lần nữa — KHÔNG cần bấm huỷ rồi bấm viết bài riêng 2 bước;
+    // ý tưởng/nguồn đang có sẵn trong state nên không mất gì, generateRequestId tự vô hiệu hoá lượt
+    // cũ đang treo (nếu sau đó nó vẫn âm thầm trả lời thì bị bỏ qua, xem generate()).
+    const retryGenBtn = container.querySelector('[data-action="retry-generate"]');
+    if(retryGenBtn) retryGenBtn.onclick = generate;
 
     const saveBtn = container.querySelector('[data-action="save"]');
     if(saveBtn) saveBtn.onclick = save;
@@ -428,14 +431,6 @@ function render(container, ctx){
   // mỗi lượt generate() để lượt CŨ trả về sau khi đã bấm "Huỷ, thử lại" sẽ tự bỏ qua, không ghi đè
   // lên lượt mới hoặc bật lại trạng thái đang chạy đã bị huỷ.
   let generateRequestId = 0;
-
-  function cancelGenerate(){
-    generateRequestId++;
-    releaseWakeLock();
-    state.generating = false;
-    state.error = 'Đã huỷ — bấm "Viết bài" để thử lại.';
-    draw();
-  }
 
   async function generate(){
     if(state.khoGocSource ? !state.khoGocSource.content.trim() : !state.ideaText.trim()) return;
