@@ -81,6 +81,84 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure handle_new_user();
 
+-- consume_ai_quota / refund_ai_quota: kiểm tra + trừ lượt AI ATOMIC bằng "select ... for update"
+-- (khoá đúng dòng profile của user đó trong lúc xử lý) — trước đây api/_lib/trial-quota.js làm
+-- riêng 2 bước (đọc số hiện tại rồi ghi số mới) qua 2 lệnh HTTP tách rời, nên nếu người dùng bấm
+-- rất nhiều request AI CÙNG LÚC (kể cả vô tình bấm dồn dập hay cố tình script để lách giới hạn),
+-- nhiều request có thể cùng đọc được số cũ trước khi request nào kịp ghi lại, khiến tất cả cùng
+-- "thấy" còn dưới trần và đều được duyệt — vượt quá giới hạn thật sự cho phép. Khoá "for update"
+-- buộc các request cùng 1 user phải xếp hàng xử lý lần lượt, không thể lách qua khe hở đó.
+-- CHỈ cấp quyền gọi cho service_role (server dùng SUPABASE_SERVICE_ROLE_KEY) — không cấp cho
+-- authenticated/anon vì hàm nhận thẳng p_user_id, nếu lộ ra người dùng có thể tự sửa lượt người khác.
+create or replace function public.consume_ai_quota(p_user_id uuid, p_trial_limit int, p_paid_limit int)
+returns jsonb as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text := to_char(now(), 'YYYY-MM');
+  v_current_uses int;
+  v_bonus int;
+  v_effective_limit int;
+  v_is_admin boolean;
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then
+    return jsonb_build_object('allowed', true); -- không tìm thấy profile: fail open, không chặn oan
+  end if;
+
+  v_is_admin := (v_profile.role = 'admin');
+
+  if not v_profile.has_paid then
+    if (not v_is_admin) and v_profile.trial_ai_uses >= p_trial_limit then
+      return jsonb_build_object('allowed', false, 'effective_limit', p_trial_limit, 'mode', 'trial');
+    end if;
+    update profiles set trial_ai_uses = trial_ai_uses + 1 where id = p_user_id;
+    return jsonb_build_object('allowed', true);
+  end if;
+
+  if v_profile.paid_ai_month = v_month then
+    v_current_uses := v_profile.paid_ai_uses;
+    v_bonus := coalesce(v_profile.paid_ai_bonus, 0);
+  else
+    v_current_uses := 0;
+    v_bonus := 0;
+  end if;
+  v_effective_limit := p_paid_limit + v_bonus;
+
+  if (not v_is_admin) and v_current_uses >= v_effective_limit then
+    return jsonb_build_object('allowed', false, 'effective_limit', v_effective_limit, 'mode', 'paid');
+  end if;
+
+  if v_profile.paid_ai_month = v_month then
+    update profiles set paid_ai_uses = paid_ai_uses + 1 where id = p_user_id;
+  else
+    update profiles set paid_ai_uses = 1, paid_ai_month = v_month, paid_ai_bonus = 0 where id = p_user_id;
+  end if;
+  return jsonb_build_object('allowed', true);
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.consume_ai_quota(uuid, int, int) from public, authenticated, anon;
+grant execute on function public.consume_ai_quota(uuid, int, int) to service_role;
+
+create or replace function public.refund_ai_quota(p_user_id uuid)
+returns void as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text := to_char(now(), 'YYYY-MM');
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then return; end if;
+  if not v_profile.has_paid then
+    update profiles set trial_ai_uses = greatest(0, trial_ai_uses - 1) where id = p_user_id;
+    return;
+  end if;
+  if v_profile.paid_ai_month = v_month then
+    update profiles set paid_ai_uses = greatest(0, paid_ai_uses - 1) where id = p_user_id;
+  end if;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.refund_ai_quota(uuid) from public, authenticated, anon;
+grant execute on function public.refund_ai_quota(uuid) to service_role;
+
 create or replace function public.is_admin()
 returns boolean as $$
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');

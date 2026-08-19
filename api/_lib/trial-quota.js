@@ -4,8 +4,13 @@
 // - ĐÃ thanh toán ít nhất 1 lần (has_paid=true, đánh dấu bởi api/sepay-webhook.js): giới hạn THEO
 //   THÁNG (paid_ai_uses + paid_ai_month, trần PAID_MONTHLY_AI_LIMIT) — không giới hạn trọn đời như
 //   trial vì họ đã trả tiền, chỉ chặn trường hợp dùng bất thường trong 1 tháng, tự reset mỗi tháng.
-// Dùng SUPABASE_SERVICE_ROLE_KEY (bỏ qua RLS) vì cần đọc/ghi profile của user hiện tại từ phía
-// server, RLS hiện tại khoá hẳn user tự update profile của chính mình.
+// Admin vẫn được ĐẾM lượt như bình thường (phục vụ thống kê) nhưng KHÔNG BAO GIỜ bị chặn.
+//
+// Việc kiểm tra + trừ lượt chạy ATOMIC trong 1 hàm Postgres (consume_ai_quota/refund_ai_quota,
+// dùng "select ... for update" khoá đúng dòng profile) thay vì đọc-rồi-ghi qua 2 lệnh HTTP tách
+// rời — tránh race condition khi nhiều request AI của cùng 1 user chạy dồn dập/song song có thể
+// cùng "lọt qua" trần trước khi kịp cập nhật số mới cho nhau. Dùng SUPABASE_SERVICE_ROLE_KEY vì
+// đây là hàm chỉ service_role được gọi (xem grant trong supabase/schema_full.sql).
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 const TRIAL_AI_LIMIT = 50;
 const PAID_MONTHLY_AI_LIMIT = 150;
@@ -14,21 +19,16 @@ const PAID_MONTHLY_AI_LIMIT = 150;
 // mức nền — trần 150 đã đủ cho use-case bình thường kể cả khách đăng nhiều bài/ngày.
 const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
 
-function currentMonthKey() {
-  return new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-}
-
-async function supabaseAdmin(path, opts = {}) {
+async function supabaseRpc(fn, args) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    ...opts,
+  return fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
     headers: {
       'content-type': 'application/json',
       apikey: serviceKey,
       Authorization: `Bearer ${serviceKey}`,
-      Prefer: opts.prefer || 'return=representation',
-      ...(opts.headers || {}),
     },
+    body: JSON.stringify(args),
   });
 }
 
@@ -41,43 +41,16 @@ async function supabaseAdmin(path, opts = {}) {
 async function checkAndConsumeTrialQuota(userId) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
   try {
-    const resp = await supabaseAdmin(`profiles?id=eq.${userId}&select=has_paid,trial_ai_uses,role,paid_ai_uses,paid_ai_month,paid_ai_bonus`);
-    if (!resp.ok) return null;
-    const rows = await resp.json();
-    const profile = rows[0];
-    if (!profile) return null;
-    // Admin vẫn được ĐẾM lượt như bình thường (để chủ web tự có số liệu dùng thực tế, tính toán
-    // rủi ro/giá sau này) nhưng KHÔNG BAO GIỜ bị chặn dù đếm vượt trần — admin là tài khoản chủ
-    // dùng để quản trị/kiểm tra app, phải luôn dùng được.
-    const isAdmin = profile.role === 'admin';
-
-    if (!profile.has_paid) {
-      if (!isAdmin && profile.trial_ai_uses >= TRIAL_AI_LIMIT) {
-        return `Bạn đã dùng hết ${TRIAL_AI_LIMIT} lượt AI miễn phí trong thời gian dùng thử — vào mục "Nâng cấp / Mua gói" để dùng tiếp không giới hạn.`;
-      }
-      await supabaseAdmin(`profiles?id=eq.${userId}`, {
-        method: 'PATCH', prefer: 'return=minimal',
-        body: JSON.stringify({ trial_ai_uses: profile.trial_ai_uses + 1 }),
-      });
-      return null;
-    }
-
-    const month = currentMonthKey();
-    const sameMonth = profile.paid_ai_month === month;
-    const currentUses = sameMonth ? (profile.paid_ai_uses || 0) : 0;
-    const bonus = sameMonth ? (profile.paid_ai_bonus || 0) : 0;
-    const effectiveLimit = PAID_MONTHLY_AI_LIMIT + bonus;
-    if (!isAdmin && currentUses >= effectiveLimit) {
-      return `Bạn đã dùng hết ${effectiveLimit} lượt AI trong tháng này — lượt sẽ tự làm mới vào đầu tháng sau, hoặc vào mục "Nâng cấp / Mua gói" để mua thêm lượt dùng ngay.`;
-    }
-    // Sang tháng mới thì reset cả bonus (bonus chỉ có giá trị trong đúng tháng đã mua).
-    const patchBody = { paid_ai_uses: currentUses + 1, paid_ai_month: month };
-    if (!sameMonth) patchBody.paid_ai_bonus = 0;
-    await supabaseAdmin(`profiles?id=eq.${userId}`, {
-      method: 'PATCH', prefer: 'return=minimal',
-      body: JSON.stringify(patchBody),
+    const resp = await supabaseRpc('consume_ai_quota', {
+      p_user_id: userId, p_trial_limit: TRIAL_AI_LIMIT, p_paid_limit: PAID_MONTHLY_AI_LIMIT,
     });
-    return null;
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (data.allowed) return null;
+    if (data.mode === 'trial') {
+      return `Bạn đã dùng hết ${TRIAL_AI_LIMIT} lượt AI miễn phí trong thời gian dùng thử — vào mục "Nâng cấp / Mua gói" để dùng tiếp không giới hạn.`;
+    }
+    return `Bạn đã dùng hết ${data.effective_limit} lượt AI trong tháng này — lượt sẽ tự làm mới vào đầu tháng sau, hoặc vào mục "Nâng cấp / Mua gói" để mua thêm lượt dùng ngay.`;
   } catch (e) {
     return null;
   }
@@ -89,26 +62,7 @@ async function checkAndConsumeTrialQuota(userId) {
 async function refundTrialQuota(userId) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
   try {
-    const resp = await supabaseAdmin(`profiles?id=eq.${userId}&select=has_paid,trial_ai_uses,role,paid_ai_uses,paid_ai_month`);
-    if (!resp.ok) return;
-    const rows = await resp.json();
-    const profile = rows[0];
-    if (!profile) return;
-
-    if (!profile.has_paid) {
-      await supabaseAdmin(`profiles?id=eq.${userId}`, {
-        method: 'PATCH', prefer: 'return=minimal',
-        body: JSON.stringify({ trial_ai_uses: Math.max(0, profile.trial_ai_uses - 1) }),
-      });
-      return;
-    }
-
-    const month = currentMonthKey();
-    if (profile.paid_ai_month !== month) return; // đã sang tháng mới, không còn gì để hoàn lại
-    await supabaseAdmin(`profiles?id=eq.${userId}`, {
-      method: 'PATCH', prefer: 'return=minimal',
-      body: JSON.stringify({ paid_ai_uses: Math.max(0, (profile.paid_ai_uses || 0) - 1) }),
-    });
+    await supabaseRpc('refund_ai_quota', { p_user_id: userId });
   } catch (e) {}
 }
 
