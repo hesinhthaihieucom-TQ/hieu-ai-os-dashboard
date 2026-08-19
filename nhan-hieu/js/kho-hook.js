@@ -68,6 +68,13 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
     await Promise.all([loadPersonal(), loadShared(), loadSharedContent()]);
+    // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung trong
+    // Kho Hook Viral thay vì bắt người dùng tự lọc lại từ đầu (khớp cách kho-content.js đã làm).
+    if(window.PendingPillar){
+      state.tab = 'kho-chung';
+      state.chungPillar = window.PendingPillar;
+      window.PendingPillar = null;
+    }
     draw();
   }
   async function loadPersonal(){

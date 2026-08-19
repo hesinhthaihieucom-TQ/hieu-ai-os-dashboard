@@ -191,7 +191,8 @@ function render(container, ctx){
                   <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
                     ${matchedPost
                       ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>`
-                      : `<span class="btn-ghost btn btn-sm" data-write-for-slot="${dateStr}|${s.key}">Tìm bài phù hợp trong Kho Content →</span>`
+                      : `<span class="btn-ghost btn btn-sm" data-write-for-slot="kho-content|${dateStr}|${s.key}">Tìm trong Kho Content →</span>
+                         <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-hook|${dateStr}|${s.key}">Tìm trong Kho Hook →</span>`
                     }
                     <span style="align-self:center;color:var(--ink-soft);font-size:11px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
                   </div>
@@ -264,14 +265,15 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-write-for-slot]').forEach(el=>{
       el.onclick = ()=>{
-        const [dateStr, slotKey] = el.getAttribute('data-write-for-slot').split('|');
+        const [dest, dateStr, slotKey] = el.getAttribute('data-write-for-slot').split('|');
         const thu = (new Date(dateStr).getDay()+6)%7;
         const s = suggestionFor(thu, slotKey);
-        // Chưa có bài viết sẵn cho slot này — luôn trỏ về Kho Content Viral để tự chọn bài mẫu.
-        // Khớp được đúng trục AI gợi ý thì lọc sẵn luôn; không khớp được (mô tả trục lạ, AI viết
-        // khác cách) thì vẫn vào Kho Content Viral ở màn chọn trục, không rơi về Viết Content nữa.
+        // Chưa có bài viết sẵn cho slot này — trỏ về Kho Content Viral HOẶC Kho Hook Viral tuỳ lựa
+        // chọn của người dùng, để tự chọn bài/hook mẫu. Khớp được đúng trục AI gợi ý thì lọc sẵn
+        // luôn; không khớp được (mô tả trục lạ, AI viết khác cách) thì vẫn vào màn chọn trục, không
+        // rơi về Viết Content nữa.
         window.PendingPillar = matchPillarKey(s && s.truc_noi_dung) || 'all';
-        location.hash = 'kho-content';
+        location.hash = dest;
       };
     });
 
