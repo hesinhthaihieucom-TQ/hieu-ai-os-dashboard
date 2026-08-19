@@ -169,16 +169,28 @@ function render(container, ctx){
     return key==='all' ? items : key==='none' ? items.filter(x=>pillarsForItem(x).length===0) : items.filter(x=>pillarsForItem(x).includes(key));
   }
 
+  // Chỉ 1 giọng mẫu áp dụng tại 1 thời điểm (chọn mới sẽ thay thế cũ) — kiểm tra đúng bài/hook này
+  // có phải nguồn giọng mẫu ĐANG DÙNG không, để hiện dấu cố định thay vì nút bấm mù mờ như mọi mục.
+  function isCurrentVoiceSample(key){
+    const ref = sourceRefForKey(key);
+    if(!ref || !state.positioning) return false;
+    return state.positioning.voice_sample_source_table===ref.table && state.positioning.voice_sample_source_id===ref.id;
+  }
+
   function writeActionHtml(key){
     const isOpen = state.writeFor === key;
+    const isCurrentVoice = isCurrentVoiceSample(key);
     return `
       <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <span class="btn-ghost btn btn-sm" data-write-toggle="${key}">${isOpen?'Đóng':'Viết bài từ đây →'}</span>
-        <span class="btn-ghost btn btn-sm" data-apply-voice="${key}" ${state.applyingVoice===key?'disabled':''}>${state.applyingVoice===key?'Đang phân tích giọng văn…':'Dùng làm giọng mẫu'}</span>
+        ${isCurrentVoice
+          ? `<span style="color:var(--accent);font-size:12.5px;font-weight:600;">✓ Đang là giọng mẫu</span>`
+          : `<span class="btn-ghost btn btn-sm" data-apply-voice="${key}" ${state.applyingVoice===key?'disabled':''}>${state.applyingVoice===key?'Đang phân tích giọng văn…':'Dùng làm giọng mẫu'}</span>`
+        }
         ${usageBadgeHtml(key)}
       </div>
       ${isOpen ? writePanelHtml() : ''}
-      ${state.voiceAppliedFor===key?`<div class="hint-box" style="margin-top:10px;">Đã cập nhật giọng điệu &amp; ngôn ngữ vào Định Vị theo bài này.</div>`:''}
+      ${state.voiceAppliedFor===key?`<div class="hint-box" style="margin-top:10px;">Đã cập nhật giọng điệu &amp; ngôn ngữ vào Định Vị theo bài này — đây giờ là giọng mẫu đang dùng, thay thế giọng mẫu trước đó (nếu có).</div>`:''}
       ${state.applyVoiceErrorFor===key?`<div class="error-box" style="margin-top:10px;">${esc(state.applyVoiceError)}</div>`:''}
     `;
   }
@@ -418,16 +430,27 @@ function render(container, ctx){
     if(!content.trim()) return;
     state.applyingVoice = key; state.applyVoiceError = null; state.applyVoiceErrorFor = null; state.voiceAppliedFor = null; draw();
     const stopProgress = animateProgressButton(container.querySelector(`[data-apply-voice="${key}"]`), 20, 'Đang phân tích');
+    // Ghi lại đúng mục nào đang là giọng mẫu hiện tại (thay thế mục cũ, chỉ 1 giọng áp dụng tại 1
+    // thời điểm) — để hiện đúng dấu "✓ Đang là giọng mẫu" trên đúng bài đó, không hiện mù mờ như
+    // nhau ở mọi bài trong kho.
+    const ref = sourceRefForKey(key);
     try{
       const data = await callApi('/api/goi-y-giong-van', { sample_text: content });
       if(state.positioning){
         const newLuot1 = { ...state.positioning.luot1, giong_dieu_ngon_ngu: data.result.giong_dieu_ngon_ngu };
-        const { error } = await ctx.supabase.from('positioning_results').update({ luot1: newLuot1 }).eq('id', state.positioningId);
+        const { error } = await ctx.supabase.from('positioning_results').update({
+          luot1: newLuot1, voice_sample_source_table: ref ? ref.table : null, voice_sample_source_id: ref ? ref.id : null,
+        }).eq('id', state.positioningId);
         if(error) throw error;
         state.positioning.luot1 = newLuot1;
+        state.positioning.voice_sample_source_table = ref ? ref.table : null;
+        state.positioning.voice_sample_source_id = ref ? ref.id : null;
       } else {
         const { data: row, error } = await ctx.supabase.from('positioning_results')
-          .upsert({ user_id: ctx.user.id, luot1: { giong_dieu_ngon_ngu: data.result.giong_dieu_ngon_ngu } }, { onConflict:'user_id' })
+          .upsert({
+            user_id: ctx.user.id, luot1: { giong_dieu_ngon_ngu: data.result.giong_dieu_ngon_ngu },
+            voice_sample_source_table: ref ? ref.table : null, voice_sample_source_id: ref ? ref.id : null,
+          }, { onConflict:'user_id' })
           .select().single();
         if(error) throw error;
         state.positioning = row;

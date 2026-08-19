@@ -105,6 +105,11 @@ create table if not exists positioning_results (
 create unique index if not exists positioning_results_user_unique on positioning_results(user_id);
 alter table positioning_results add column if not exists format_suggestions jsonb;
 alter table positioning_results add column if not exists chosen_formats jsonb not null default '[]'::jsonb;
+-- Ghi lại bài/hook nào trong Kho đang được dùng làm "giọng mẫu" hiện tại (nút "Dùng làm giọng mẫu")
+-- — để hiện đúng dấu "✓ Đang là giọng mẫu" trên đúng mục đó, tránh hiểu nhầm mọi mục đều bấm được
+-- như nhau trong khi thực ra chỉ 1 giọng đang áp dụng tại 1 thời điểm (chọn mới sẽ thay thế cũ).
+alter table positioning_results add column if not exists voice_sample_source_table text;
+alter table positioning_results add column if not exists voice_sample_source_id uuid;
 
 -- ============================================================
 -- 3. SỬA KÊNH
