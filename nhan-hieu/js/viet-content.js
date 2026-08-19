@@ -100,7 +100,7 @@ function render(container, ctx){
           ${state.khoGocSource.title ? `<label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tiêu đề gốc</label>
           <div class="body" style="background:var(--accent-soft);padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;">${esc(state.khoGocSource.title)}</div>` : ''}
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bài gốc (tham khảo — hook và cấu trúc sẽ giữ, câu từ ở các đoạn khác sẽ đổi)</label>
-          <div class="body" style="max-height:160px;overflow-y:auto;background:var(--accent-soft);padding:12px;border-radius:8px;font-size:13px;">${esc(state.khoGocSource.content)}</div>
+          <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-size:13px;">${esc(excerpt(state.khoGocSource.content, 180))}</div>
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện riêng của bạn (AI sẽ diễn đạt lại theo giọng bài này, không copy nguyên văn)</label>
           ${state.cauChuyenRieng ? `
             <div class="body" style="background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:8px;font-size:13px;">${esc(state.cauChuyenRieng)}</div>
