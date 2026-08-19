@@ -402,25 +402,39 @@ function render(container, ctx){
     const downloadBtn = container.querySelector('[data-action="download"]');
     if(downloadBtn) downloadBtn.onclick = () => {
       const canvas = container.querySelector('#ta-canvas');
-      // Thẻ <a download> với data URL không đáng tin cậy trên Safari iOS/PWA (thường chỉ mở ảnh ra
-      // xem chứ không lưu được thật) — ưu tiên Web Share API (mở đúng bảng chia sẻ "Lưu ảnh" của
-      // hệ điều hành) nếu máy hỗ trợ, chỉ dùng lại cách tải file cũ làm phương án dự phòng.
-      canvas.toBlob(async (blob) => {
-        if(!blob) return;
-        const file = new File([blob], 'anh-thuong-hieu.png', { type:'image/png' });
-        if(navigator.canShare && navigator.canShare({ files:[file] })){
-          try{ await navigator.share({ files:[file], title:'Ảnh thương hiệu' }); return; }
-          catch(e){ if(e && e.name==='AbortError') return; }
-        }
-        const url = URL.createObjectURL(blob);
+      if(navigator.canShare){
+        // Máy có hỗ trợ Web Share API (chủ yếu mobile) — mở đúng bảng chia sẻ "Lưu ảnh" của hệ điều
+        // hành. Cần toBlob (bất đồng bộ) để tạo File, nhưng share() trên mobile vẫn tôn trọng thao
+        // tác bấm dù có độ trễ nhỏ này.
+        canvas.toBlob(async (blob) => {
+          if(!blob) return;
+          const file = new File([blob], 'anh-thuong-hieu.png', { type:'image/png' });
+          if(navigator.canShare({ files:[file] })){
+            try{ await navigator.share({ files:[file], title:'Ảnh thương hiệu' }); return; }
+            catch(e){ if(e && e.name==='AbortError') return; }
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.download = 'anh-thuong-hieu.png';
+          a.href = url;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(()=>URL.revokeObjectURL(url), 30000);
+        }, 'image/png');
+      } else {
+        // Desktop (không có Share API) — tải bằng toDataURL, ĐỒNG BỘ và bấm ngay trong cùng 1 lúc
+        // với thao tác click của người dùng. Trước đây dùng toBlob (bất đồng bộ) rồi mới a.click()
+        // trong callback — một số trình duyệt desktop (đặc biệt Safari) coi thao tác bấm đã "hết
+        // hạn" sau khoảng trễ bất đồng bộ đó và ÂM THẦM chặn tải xuống, không báo lỗi gì cả.
+        const dataUrl = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.download = 'anh-thuong-hieu.png';
-        a.href = url;
+        a.href = dataUrl;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setTimeout(()=>URL.revokeObjectURL(url), 30000);
-      }, 'image/png');
+      }
     };
   }
 
