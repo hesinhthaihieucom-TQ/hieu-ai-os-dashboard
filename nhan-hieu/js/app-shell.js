@@ -376,6 +376,12 @@ function renderExpiredScreen(){
 }
 
 let signupIsStudent = null;
+// Giữ lại đúng những gì người dùng đã gõ (tên/email/mật khẩu) qua các lần renderAuthScreen() re-render
+// (đổi tab đăng nhập/đăng ký, chọn "đã học/chưa học", báo lỗi validate...) — TRƯỚC ĐÂY mỗi lần render
+// lại là các input bị XOÁ TRẮNG hoàn toàn (không có "value=" nào cả), nên chỉ cần bấm nhầm thứ tự (vd
+// gõ hết form rồi mới chọn "Chưa" ở cuối) là mất sạch, bấm "Tạo tài khoản" với ô email trống sẽ ra lỗi
+// khó hiểu "Anonymous sign-ins are disabled" (Supabase hiểu signUp với email rỗng là đăng ký ẩn danh).
+let authFields = { name:'', email:'', pass:'', passConfirm:'' };
 
 function renderAuthScreen(err, successMsg){
   const root = document.getElementById('app');
@@ -390,12 +396,12 @@ function renderAuthScreen(err, successMsg){
         <div class="auth-tab ${!isLogin?'active':''}" data-mode="signup">Đăng ký</div>
       </div>
       <div class="card">
-        ${!isLogin ? `<label>Họ tên</label><input id="af-name" type="text" placeholder="Tên của bạn">` : ''}
+        ${!isLogin ? `<label>Họ tên</label><input id="af-name" type="text" placeholder="Tên của bạn" value="${esc(authFields.name)}">` : ''}
         <label>Email</label>
-        <input id="af-email" type="email" placeholder="ban@email.com">
+        <input id="af-email" type="email" placeholder="ban@email.com" value="${esc(authFields.email)}">
         <label>Mật khẩu</label>
-        <input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự">
-        ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu">` : ''}
+        <input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.pass)}">
+        ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(authFields.passConfirm)}">` : ''}
         ${!isLogin ? `
           <label>Bạn đã học khoá Xây Nhân Hiệu chưa?</label>
           <div class="chips" id="af-student-chips" style="margin-bottom:14px;">
@@ -414,6 +420,11 @@ function renderAuthScreen(err, successMsg){
     el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderAuthScreen(); };
   });
 
+  const nameEl = root.querySelector('#af-name'); if(nameEl) nameEl.oninput = ()=>{ authFields.name = nameEl.value; };
+  root.querySelector('#af-email').oninput = (e)=>{ authFields.email = e.target.value; };
+  root.querySelector('#af-pass').oninput = (e)=>{ authFields.pass = e.target.value; };
+  const confirmEl = root.querySelector('#af-pass-confirm'); if(confirmEl) confirmEl.oninput = ()=>{ authFields.passConfirm = confirmEl.value; };
+
   root.querySelectorAll('#af-student-chips [data-student]').forEach(el=>{
     el.onclick = ()=>{ signupIsStudent = (el.getAttribute('data-student') === 'yes'); renderAuthScreen(); };
   });
@@ -429,6 +440,7 @@ function renderAuthScreen(err, successMsg){
         if(error) throw error;
       } else {
         const confirmPass = root.querySelector('#af-pass-confirm').value;
+        if(!email){ renderAuthScreen('Vui lòng nhập email.'); return; }
         if(pass !== confirmPass){ renderAuthScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
         if(signupIsStudent === null){ renderAuthScreen('Vui lòng chọn bạn đã học khoá Xây Nhân Hiệu hay chưa.'); return; }
         btn.disabled = true; btn.textContent = 'Đang xử lý…';
@@ -443,6 +455,8 @@ function renderAuthScreen(err, successMsg){
         }).catch(()=>{});
         if(!data.session){
           AppState.authMode = 'login';
+          signupIsStudent = null;
+          authFields = { name:'', email:'', pass:'', passConfirm:'' };
           renderAuthScreen(null, 'Đăng ký thành công! Nếu tài khoản cần xác nhận email, kiểm tra hộp thư rồi quay lại đăng nhập bằng email/mật khẩu vừa tạo.');
         }
         // Nếu có session ngay (không bật xác nhận email), onAuthStateChange sẽ tự đưa vào app.
