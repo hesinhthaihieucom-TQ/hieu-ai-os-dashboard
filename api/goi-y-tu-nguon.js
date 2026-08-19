@@ -1,7 +1,7 @@
 // Serverless function — từ 1 nội dung/hook có sẵn (chọn trong Kho Content hoặc Kho Hook),
 // sinh 5 ý tưởng biến thể mới bám đúng trục nội dung đã định vị.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý sinh ý tưởng content cho người xây thương hiệu cá nhân tại Việt Nam.
 
@@ -77,6 +77,7 @@ Hãy sinh 5 ý tưởng content mới lấy cảm hứng từ nguồn trên, bá
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_IDEAS });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi sinh ý tưởng.' });
   }
 };

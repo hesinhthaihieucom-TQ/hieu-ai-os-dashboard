@@ -1,7 +1,7 @@
 // Serverless function — SOI KÊNH AI: audit hình ảnh/profile kênh thật so với định vị đã chốt.
 // Chỉ còn 5 hạng mục hình ảnh (HM1-HM5) — phần nội dung/trục/hook đã tách sang các module khác.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là SOI KÊNH AI — trợ lý chuyên audit HÌNH ẢNH/PROFILE kênh mạng xã hội, dựa trên định vị thương hiệu đã chốt.
 
@@ -157,6 +157,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, contentBlocks, tool: TOOL_AUDIT });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi audit kênh.' });
   }
 };

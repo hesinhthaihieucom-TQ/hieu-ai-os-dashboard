@@ -4,7 +4,7 @@
 // không sao chép nguyên văn như bản trước đây từng làm (giữ 80%, chỉ thay 20% — quá giống bài
 // gốc, đọc như đăng lại y nguyên).
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock, contextBlockOf } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, chuyên viết lại 1 bài trong "kho content" (bài viral có sẵn) thành bản của riêng người dùng.
@@ -131,6 +131,7 @@ Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyê
     result.bai_hoan_chinh = assemblePost(result);
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi cá nhân hoá bài từ kho.' });
   }
 };

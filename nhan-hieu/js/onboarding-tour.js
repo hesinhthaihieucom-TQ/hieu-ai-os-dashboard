@@ -65,10 +65,27 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
   }
   window.addEventListener('hashchange', finish);
 
+  // Màn chốt sau bước cuối — cảnh báo rõ trước khi họ bấm lung tung: mỗi hành động AI (viết bài,
+  // chấm điểm, sinh hook...) trong lúc dùng thử sẽ trừ vào số lượt miễn phí có hạn.
+  function renderClosingWarning(){
+    overlay.innerHTML = `
+      <div style="position:fixed;inset:0;background:rgba(20,24,20,.82);display:flex;align-items:center;justify-content:center;pointer-events:auto;">
+        <div style="max-width:380px;background:#fff;border-radius:14px;padding:26px 24px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+          <div style="font-size:34px;margin-bottom:10px;">🎁</div>
+          <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:10px;">Lưu ý trước khi bắt đầu</div>
+          <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:18px;">Bạn có <b>50 lượt dùng AI miễn phí</b> trong thời gian dùng thử. Mỗi lần bấm để AI viết bài, chấm điểm, sinh hook... sẽ trừ 1 lượt — nên làm kỹ, tránh bấm thử lung tung kẻo hết lượt sớm nhé!</div>
+          <button id="ot-start" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;">Đã hiểu, bắt đầu dùng →</button>
+        </div>
+      </div>
+    `;
+    const startBtn = overlay.querySelector('#ot-start');
+    if(startBtn) startBtn.onclick = finish;
+  }
+
   function renderStep(){
     const step = availableSteps[idx];
     const target = document.querySelector(`.sidebar-item[data-key="${step.key}"]`);
-    if(!target){ idx++; if(idx < availableSteps.length) renderStep(); else finish(); return; }
+    if(!target){ idx++; if(idx < availableSteps.length) renderStep(); else renderClosingWarning(); return; }
     const r = target.getBoundingClientRect();
     const pad = 6;
     const welcomeHtml = overlay.querySelector('#ot-welcome').outerHTML;
@@ -82,16 +99,16 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
         <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:14px;">${step.text}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span id="ot-skip" style="font-size:12.5px;color:#5B5F55;cursor:pointer;">Bỏ qua hướng dẫn</span>
-          <button id="ot-next" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">${idx===availableSteps.length-1?'Xong':'Tiếp theo →'}</button>
+          <button id="ot-next" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">${idx===availableSteps.length-1?'Tiếp →':'Tiếp theo →'}</button>
         </div>
       </div>
     `;
     const skipBtn = overlay.querySelector('#ot-skip');
-    if(skipBtn) skipBtn.onclick = finish;
+    if(skipBtn) skipBtn.onclick = renderClosingWarning;
     const nextBtn = overlay.querySelector('#ot-next');
     if(nextBtn) nextBtn.onclick = ()=>{
       idx++;
-      if(idx < availableSteps.length) renderStep(); else finish();
+      if(idx < availableSteps.length) renderStep(); else renderClosingWarning();
     };
   }
 

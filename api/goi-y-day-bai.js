@@ -2,7 +2,7 @@
 // câu bình luận tự đăng (kích người khác cmt theo / dẫn CTA), gợi ý trả lời bình luận người khác,
 // và nên gắn tài sản quảng bá nào (sản phẩm số, aff, cộng đồng) phù hợp với đúng giai đoạn đó.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 
 const MILESTONES = {
   m1: { label:'Trước 1.000 view đầu tiên', desc:'Giai đoạn khơi mào — mục tiêu duy nhất là kích người xem để lại bình luận đầu tiên, tuyệt đối chưa nên gắn link bán hàng vì dễ làm giảm reach.' },
@@ -102,6 +102,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_DAY_BAI });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi gợi ý đẩy bài.' });
   }
 };

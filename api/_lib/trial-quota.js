@@ -51,4 +51,22 @@ async function checkAndConsumeTrialQuota(userId) {
   }
 }
 
-module.exports = { checkAndConsumeTrialQuota, TRIAL_AI_LIMIT };
+// Gọi trong catch block của endpoint, SAU checkAndConsumeTrialQuota, khi bản thân lệnh gọi AI/luồng
+// xử lý bị lỗi (Anthropic lỗi, thiếu dữ liệu đầu vào...) — trả lại đúng 1 lượt vừa trừ oan vì người
+// dùng không thực sự nhận được kết quả. Không dùng cho lỗi 401/402 (chưa từng trừ lượt ở các case đó).
+async function refundTrialQuota(userId) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+  try {
+    const resp = await supabaseAdmin(`profiles?id=eq.${userId}&select=has_paid,trial_ai_uses,role`);
+    if (!resp.ok) return;
+    const rows = await resp.json();
+    const profile = rows[0];
+    if (!profile || profile.has_paid || profile.role === 'admin') return;
+    await supabaseAdmin(`profiles?id=eq.${userId}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: JSON.stringify({ trial_ai_uses: Math.max(0, profile.trial_ai_uses - 1) }),
+    });
+  } catch (e) {}
+}
+
+module.exports = { checkAndConsumeTrialQuota, refundTrialQuota, TRIAL_AI_LIMIT };

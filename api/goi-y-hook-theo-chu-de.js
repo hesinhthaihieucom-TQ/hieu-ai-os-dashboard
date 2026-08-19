@@ -1,7 +1,7 @@
 // Serverless function — sinh hook mẫu theo đúng 1 chủ đề + 1 loại hook người dùng chọn.
 // Thay cho việc lục kho hook chung cố định, để luôn ra hook mới, sát chủ đề, đúng kiểu tâm lý muốn dùng.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 const { HOOK_CATEGORIES } = require('./_lib/hook-categories');
 
 const CONTENT_GOALS = {
@@ -90,6 +90,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_HOOK });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi sinh hook.' });
   }
 };

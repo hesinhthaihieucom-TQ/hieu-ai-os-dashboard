@@ -3,7 +3,7 @@
 // Chỉ trả về nội dung CHÍNH của bài — hashtag/gợi ý hình ảnh/dạng content/caption được hỏi riêng
 // ở /api/viet-content-extras (chạy sau, không chặn hiển thị bài viết chính).
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock, contextBlockOf } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, viết đúng giọng văn và định vị đã chốt của họ.
@@ -84,6 +84,7 @@ Hãy viết 1 bài hoàn chỉnh theo đúng khung 5 phần, giọng văn khớp
     result.bai_hoan_chinh = assemblePost(result);
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi viết content.' });
   }
 };

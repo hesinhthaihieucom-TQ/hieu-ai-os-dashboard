@@ -2,7 +2,7 @@
 // Yêu cầu biến môi trường ANTHROPIC_API_KEY được cấu hình trong Vercel Project Settings.
 
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 
 const QUESTION_LABELS = {
   a1: 'Đang làm gì (bao lâu, giỏi/kẹt phần nào)',
@@ -125,6 +125,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_LUOT1 });
     res.status(200).json({ luot: 1, result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi tạo định vị.' });
   }
 };

@@ -1,7 +1,7 @@
 // Serverless function — chấm điểm 1 bài content theo rubric tổng hợp từ:
 // checklist "Sửa bài AI viết theo chiến lược" (Buổi 3) + tiêu chí HM7-HM9 (SOI KÊNH AI).
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là biên tập viên chấm điểm content cho người xây thương hiệu cá nhân tại Việt Nam.
 
@@ -94,6 +94,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_SCORE });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi chấm điểm.' });
   }
 };

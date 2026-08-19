@@ -1,6 +1,6 @@
 // Serverless function — chấm điểm 1 câu hook: cơ chế tâm lý, đúng tệp không, dự đoán mức dừng lại.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là chuyên gia chấm hook cho content mạng xã hội tại Việt Nam.
 
@@ -78,6 +78,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_SCORE });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi chấm điểm hook.' });
   }
 };

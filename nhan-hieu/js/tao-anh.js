@@ -251,7 +251,7 @@ function render(container, ctx){
     return `
       <div class="page-head"><h1>Tạo Ảnh Thương Hiệu</h1><p>Dùng để tạo ảnh có chữ đăng content (dạng "Text trên ảnh") — tải ảnh nền, chọn bố cục / font / màu, điền tiêu đề, tải PNG đăng ngay.</p></div>
       <div style="display:flex;gap:24px;flex-wrap:wrap-reverse;align-items:flex-start;">
-        <div class="card" style="flex:1;min-width:300px;">
+        <div class="card" style="flex:1;min-width:260px;">
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ảnh nền</label>
           <input type="file" accept="image/*" id="ta-upload">
 
@@ -298,7 +298,7 @@ function render(container, ctx){
         </div>
         <div style="flex:0 0 auto;position:sticky;top:16px;">
           <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Xem trước — cập nhật ngay khi bạn chọn</div>
-          <canvas id="ta-canvas" width="${CANVAS_W}" height="${sizeObj().h}" style="width:320px;max-width:80vw;height:auto;aspect-ratio:${CANVAS_W}/${sizeObj().h};border-radius:12px;border:1px solid var(--line);background:#ddd;"></canvas>
+          <canvas id="ta-canvas" width="${CANVAS_W}" height="${sizeObj().h}" style="width:280px;max-width:80vw;height:auto;aspect-ratio:${CANVAS_W}/${sizeObj().h};border-radius:12px;border:1px solid var(--line);background:#ddd;"></canvas>
         </div>
       </div>
     `;

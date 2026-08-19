@@ -1,7 +1,7 @@
 // Serverless function — gợi ý lịch đăng bài 7 ngày, dựa trên trục nội dung, dạng content phù hợp,
 // giờ đăng tối ưu, và mục tiêu tuần này người dùng nhập.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 const { FORMAT_GUIDE } = require('./_lib/formats');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý lập lịch đăng bài cho người xây thương hiệu cá nhân tại Việt Nam.
@@ -147,6 +147,7 @@ Hãy xuất lịch 7 ngày, đúng ${postsPerDay} bài/ngày.`;
     const result = await callClaude({ apiKey, system, userContent, tool: buildToolLich(postsPerDay), maxTokens });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi gợi ý lịch.' });
   }
 };

@@ -2,7 +2,7 @@
 // Chấm Điểm Hook chỉ ra (khác api/goi-y-hook-theo-chu-de.js — endpoint đó cần chọn 1 trong 15 loại
 // hook cố định theo chủ đề mới, còn đây chỉ sửa đúng lỗi của 1 hook có sẵn, giữ nguyên chủ đề gốc).
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là chuyên gia viết hook (câu mở đầu) cho content mạng xã hội tại Việt Nam, chuyên sửa hook yếu thành hook mạnh.
 
@@ -73,6 +73,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_HOOK });
     res.status(200).json({ result });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi sửa hook.' });
   }
 };

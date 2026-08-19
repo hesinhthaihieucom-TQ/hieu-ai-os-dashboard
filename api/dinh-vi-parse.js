@@ -1,6 +1,7 @@
 // Serverless function — chuyển kết quả Định Vị đã có sẵn (dán từ ĐỊNH VỊ AI/ChatGPT trước đây)
 // thành đúng cấu trúc luot1 (+ luot2 nếu có) thay vì bắt học viên làm lại wizard 26 câu.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 const { TOOL_LUOT1, TOOL_LUOT2 } = require('./_lib/positioning-schema');
 const { ANSWER_FIELDS } = require('./_lib/positioning-answer-fields');
 
@@ -65,6 +66,9 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
+  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
@@ -78,6 +82,7 @@ module.exports = async (req, res) => {
     const parsed = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_PARSE });
     res.status(200).json({ luot1: parsed.luot1, luot2: parsed.co_luot_2 ? parsed.luot2 : null, answers: parsed.answers || {} });
   } catch (err) {
+    await refundTrialQuota(user.id);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi xử lý nội dung dán vào.' });
   }
 };

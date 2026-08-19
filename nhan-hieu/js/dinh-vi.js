@@ -164,6 +164,7 @@ function render(container, ctx){
         <div class="tag">Bước 1 · Định Vị</div>
         <h1>Tìm ra định vị thương hiệu chuẩn nhất</h1>
         <p>Trả lời thật 18 câu hỏi trong 5 nhóm — mất khoảng 10-12 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>
+        <p style="color:var(--accent);font-size:13.5px;font-weight:600;margin-top:6px;">💡 Nên trả lời kỹ, thật ngay từ đầu — mỗi lần bấm "Sửa lại câu trả lời" để làm lại sẽ tính thêm 1 lượt AI trong số lượt dùng thử của bạn.</p>
       </div>
       <div class="source-grid">
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
