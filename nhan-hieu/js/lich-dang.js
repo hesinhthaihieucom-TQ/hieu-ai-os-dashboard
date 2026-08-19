@@ -20,22 +20,6 @@ function matchPillarKey(text){
   return null;
 }
 
-// Lưu tạm gợi ý AI + các ô nhập (mục tiêu tuần, số bài/ngày...) theo từng tuần cụ thể — trước đây
-// mất sạch mỗi khi rời trang rồi quay lại (component bị dựng lại từ đầu), giờ chỉ mất khi người
-// dùng bấm "Reset tuần" rõ ràng. Lưu theo localStorage (đủ dùng, không cần đồng bộ nhiều thiết bị).
-const DRAFT_PREFIX = 'xnh_lich_draft_';
-function draftKey(userId, weekStart){ return DRAFT_PREFIX + userId + '_' + isoDate(weekStart); }
-function loadDraft(userId, weekStart){
-  try{ const raw = localStorage.getItem(draftKey(userId, weekStart)); return raw ? JSON.parse(raw) : null; }
-  catch(e){ return null; }
-}
-function saveDraft(userId, weekStart, draft){
-  try{ localStorage.setItem(draftKey(userId, weekStart), JSON.stringify(draft)); } catch(e){}
-}
-function clearDraft(userId, weekStart){
-  try{ localStorage.removeItem(draftKey(userId, weekStart)); } catch(e){}
-}
-
 function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
@@ -50,29 +34,33 @@ function render(container, ctx){
     if(window.PendingPost){ state.pending = window.PendingPost; window.PendingPost = null; }
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
-    applyDraftForCurrentWeek();
-    await Promise.all([loadEntries(), loadPosts()]);
+    await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts()]);
     state.screen='main';
     draw();
   }
 
-  function applyDraftForCurrentWeek(){
-    const draft = loadDraft(ctx.user.id, state.weekStart);
-    state.aiSuggestions = draft ? draft.aiSuggestions : null;
-    state.weeklyGoal = draft ? (draft.weeklyGoal || '') : '';
-    state.postsPerDay = draft ? (draft.postsPerDay || 1) : 1;
-    state.quickContext = draft ? (draft.quickContext || '') : '';
+  // Gợi ý AI + mục tiêu tuần lưu ở bảng weekly_ai_drafts (Supabase) — trước đây lưu localStorage
+  // nên tạo lịch trên điện thoại xong mở web lại không thấy gì, giờ đồng bộ theo tài khoản.
+  async function applyDraftForCurrentWeek(){
+    const { data: draft } = await ctx.supabase.from('weekly_ai_drafts').select('*')
+      .eq('user_id', ctx.user.id).eq('week_start', isoDate(state.weekStart)).maybeSingle();
+    state.aiSuggestions = draft ? draft.ai_suggestions : null;
+    state.weeklyGoal = draft ? (draft.weekly_goal || '') : '';
+    state.postsPerDay = draft ? (draft.posts_per_day || 1) : 1;
+    state.quickContext = draft ? (draft.quick_context || '') : '';
   }
 
-  function saveDraftForCurrentWeek(){
-    saveDraft(ctx.user.id, state.weekStart, {
-      aiSuggestions: state.aiSuggestions, weeklyGoal: state.weeklyGoal,
-      postsPerDay: state.postsPerDay, quickContext: state.quickContext,
-    });
+  async function saveDraftForCurrentWeek(){
+    await ctx.supabase.from('weekly_ai_drafts').upsert({
+      user_id: ctx.user.id, week_start: isoDate(state.weekStart),
+      ai_suggestions: state.aiSuggestions, weekly_goal: state.weeklyGoal,
+      posts_per_day: state.postsPerDay, quick_context: state.quickContext,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,week_start' });
   }
 
-  function resetWeekDraft(){
-    clearDraft(ctx.user.id, state.weekStart);
+  async function resetWeekDraft(){
+    await ctx.supabase.from('weekly_ai_drafts').delete().eq('user_id', ctx.user.id).eq('week_start', isoDate(state.weekStart));
     state.aiSuggestions = null; state.weeklyGoal = ''; state.postsPerDay = 1; state.quickContext = '';
     draw();
   }
@@ -258,9 +246,9 @@ function render(container, ctx){
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
 
     const prev = container.querySelector('[data-action="prev-week"]');
-    if(prev) prev.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()-7); applyDraftForCurrentWeek(); loadEntries().then(draw); };
+    if(prev) prev.onclick = async ()=>{ state.weekStart.setDate(state.weekStart.getDate()-7); await Promise.all([applyDraftForCurrentWeek(), loadEntries()]); draw(); };
     const next = container.querySelector('[data-action="next-week"]');
-    if(next) next.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()+7); applyDraftForCurrentWeek(); loadEntries().then(draw); };
+    if(next) next.onclick = async ()=>{ state.weekStart.setDate(state.weekStart.getDate()+7); await Promise.all([applyDraftForCurrentWeek(), loadEntries()]); draw(); };
     const resetBtn = container.querySelector('[data-action="reset-week"]');
     if(resetBtn) resetBtn.onclick = resetWeekDraft;
     const cancelPending = container.querySelector('[data-action="cancel-pending"]');

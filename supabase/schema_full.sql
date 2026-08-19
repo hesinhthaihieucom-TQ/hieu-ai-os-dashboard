@@ -208,6 +208,19 @@ create table if not exists calendar_entries (
   created_at timestamptz not null default now()
 );
 
+-- Gợi ý AI + mục tiêu tuần ở Lịch Đăng Bài — trước đây lưu localStorage (chỉ máy nào tạo mới thấy),
+-- khách tạo lịch trên điện thoại xong mở web lại không thấy gì. Lưu ở đây để đồng bộ mọi thiết bị.
+create table if not exists weekly_ai_drafts (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  week_start date not null,
+  ai_suggestions jsonb,
+  weekly_goal text,
+  quick_context text,
+  posts_per_day integer,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, week_start)
+);
+
 -- ============================================================
 -- 6. KHO HOOK + CHẤM ĐIỂM
 -- ============================================================
@@ -321,6 +334,7 @@ alter table hook_scores enable row level security;
 alter table promo_assets enable row level security;
 alter table brands enable row level security;
 alter table sepay_transactions enable row level security;
+alter table weekly_ai_drafts enable row level security;
 
 -- profiles: user tự xem được chính mình; KHÔNG có quyền tự update (phải qua RPC ở trên) —
 -- nếu không, ai đăng nhập cũng tự set access_until/role của chính họ qua console trình duyệt.
@@ -339,7 +353,7 @@ declare
 begin
   foreach t in array array[
     'positioning_results','channel_audits','content_bank_personal','ideas','posts','calendar_entries',
-    'hooks_bank_personal','content_scores','hook_scores','promo_assets','brands'
+    'hooks_bank_personal','content_scores','hook_scores','promo_assets','brands','weekly_ai_drafts'
   ]
   loop
     execute format('drop policy if exists "%1$s_owner_all" on %1$s', t);
