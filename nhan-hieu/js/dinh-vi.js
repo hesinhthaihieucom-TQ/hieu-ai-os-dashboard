@@ -127,9 +127,10 @@ function render(container, ctx){
         <h1>Bạn đã hoàn thành Định Vị! 🎉</h1>
         <p>Kết quả đã lưu và đang được dùng cho toàn bộ các bước khác (Sửa Kênh, Viết Content, Lịch Đăng...).</p>
       </div>
-      <div class="btn-row" style="justify-content:center;margin-top:14px;">
+      <div class="btn-row" style="justify-content:center;align-items:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
         <button class="btn-ghost btn" data-action="redo-from-done" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':'Sửa lại câu trả lời'}</button>
+        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
       <div style="text-align:center;margin-top:18px;">
