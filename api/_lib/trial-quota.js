@@ -4,7 +4,7 @@
 // Dùng SUPABASE_SERVICE_ROLE_KEY (bỏ qua RLS) vì cần đọc/ghi profile của user hiện tại từ phía
 // server, RLS hiện tại khoá hẳn user tự update profile của chính mình.
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
-const TRIAL_AI_LIMIT = 15;
+const TRIAL_AI_LIMIT = 50;
 
 async function supabaseAdmin(path, opts = {}) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -29,11 +29,13 @@ async function supabaseAdmin(path, opts = {}) {
 async function checkAndConsumeTrialQuota(userId) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
   try {
-    const resp = await supabaseAdmin(`profiles?id=eq.${userId}&select=has_paid,trial_ai_uses`);
+    const resp = await supabaseAdmin(`profiles?id=eq.${userId}&select=has_paid,trial_ai_uses,role`);
     if (!resp.ok) return null;
     const rows = await resp.json();
     const profile = rows[0];
-    if (!profile || profile.has_paid) return null;
+    // Admin (kể cả chưa từng "thanh toán" thật) không bao giờ bị giới hạn — đây là tài khoản chủ
+    // dùng để quản trị/kiểm tra app, không phải khách dùng thử.
+    if (!profile || profile.has_paid || profile.role === 'admin') return null;
 
     if (profile.trial_ai_uses >= TRIAL_AI_LIMIT) {
       return `Bạn đã dùng hết ${TRIAL_AI_LIMIT} lượt AI miễn phí trong thời gian dùng thử — vào mục "Nâng cấp / Mua gói" để dùng tiếp không giới hạn.`;

@@ -2,7 +2,7 @@
 // Cho người ĐANG CÒN HẠN (chưa hết dùng thử/gói) chủ động vào mua sớm — dùng lại đúng bảng giá/QR
 // ở app-shell.js (paymentCardHtml/bindPaymentCard), tránh phải đợi tới lúc hết hạn mới thấy được
 // giá. Cần thiết cho các đợt ưu đãi có thời hạn (vd "chốt trong buổi Zoom hôm nay") vì người mới
-// đăng ký còn nguyên 3 ngày dùng thử, không tự thấy màn thanh toán bắt buộc.
+// đăng ký còn nguyên 7 ngày dùng thử, không tự thấy màn thanh toán bắt buộc.
 function render(container, ctx){
   function draw(){
     container.innerHTML = `

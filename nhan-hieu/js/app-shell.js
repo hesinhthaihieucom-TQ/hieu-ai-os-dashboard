@@ -23,7 +23,7 @@ const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'L
 // Khớp đúng TRIAL_AI_LIMIT ở api/_lib/trial-quota.js — chỉ để HIỂN THỊ cảnh báo sớm cho người
 // dùng thử biết ngay từ đầu (đặc biệt lúc chưa quen app hay bấm thử lung tung), việc CHẶN thật sự
 // luôn nằm ở server, không phải ở số hiển thị này.
-const TRIAL_AI_LIMIT = 15;
+const TRIAL_AI_LIMIT = 50;
 function trialQuotaHint(){
   const p = AppState.profile;
   if(!p || p.role==='admin' || p.has_paid) return '';
@@ -225,7 +225,7 @@ function renderExpiredScreen(){
   root.innerHTML = `
     <div class="auth-shell" style="max-width:460px;">
       <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
-      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 3 ngày đã kết thúc'}</h1>
+      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 7 ngày đã kết thúc'}</h1>
       <div class="sub">${hadAccessBefore
         ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Chuyển khoản để tiếp tục dùng ngay.`
         : 'Chuyển khoản theo đúng hướng dẫn bên dưới — hệ thống tự kích hoạt trong vài phút, không cần chờ ai xác nhận.'}</div>
