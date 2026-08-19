@@ -144,6 +144,16 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
 
 .topbar-mobile{ display:none; }
 .sidebar-overlay{ display:none; }
+
+/* Tạo Ảnh — 2 cột cố định (không dùng flex-wrap, tránh lỗi chồng đè khi item "sticky" rơi vào
+   dòng flex riêng). Cột phải (preview) luôn giữ đúng 280px và dính khi cuộn trên desktop. */
+.ta-layout{ display:grid; grid-template-columns:1fr 280px; gap:24px; align-items:start; }
+.ta-preview{ position:sticky; top:16px; }
+@media (max-width:820px){
+  .ta-layout{ grid-template-columns:1fr; }
+  .ta-preview{ position:static; justify-self:start; }
+}
+
 @media (max-width:820px){
   .app-layout{ flex-direction:column; }
 
