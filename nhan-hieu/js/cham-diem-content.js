@@ -42,8 +42,8 @@ function render(container, ctx){
           <div class="body" style="margin-top:8px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Gợi ý sửa:</b> ${esc(t.goi_y_sua)}</div>
         </div>
       `).join('')}
-      <div class="section"><h3>Câu/đoạn yếu nhất</h3><div class="body">${esc(r.cau_yeu_nhat)}</div></div>
-      <div class="section"><h3>Bản sửa đề xuất</h3><div class="body">${esc(r.ban_sua_de_xuat)}</div></div>
+      <div class="section"><h3>Câu/đoạn yếu nhất</h3><div class="body">${esc(breakSentences(r.cau_yeu_nhat))}</div></div>
+      <div class="section"><h3>Bản sửa đề xuất</h3><div class="body">${esc(breakSentences(r.ban_sua_de_xuat))}</div></div>
       <div class="section"><h3>Kết luận</h3><div class="body">${esc(r.ket_luan)}</div></div>
       <div class="btn-row"><span class="btn-ghost btn" data-action="rewrite">Viết lại theo góp ý này →</span></div>
     `;

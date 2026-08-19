@@ -186,7 +186,7 @@ function render(container, ctx){
           <div class="body" style="margin-top:8px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Gợi ý sửa:</b> ${esc(t.goi_y_sua)}</div>
         </div>
       `).join('')}
-      <div class="section"><h3>Bản sửa đề xuất (tối ưu hơn)</h3><div class="body">${esc(s.ban_sua_de_xuat)}</div></div>
+      <div class="section"><h3>Bản sửa đề xuất (tối ưu hơn)</h3><div class="body">${esc(breakSentences(s.ban_sua_de_xuat))}</div></div>
       <div class="btn-row no-print"><a class="btn-ghost btn" href="#cham-diem-content">Xem chi tiết đầy đủ ở Chấm Điểm Content →</a></div>
     `;
   }
@@ -261,7 +261,7 @@ function render(container, ctx){
       ` : ''}
       <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
         <div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>
-        <div class="body">${esc(r.ly_do_dinh_dang)}</div>
+        <div class="body">${esc(breakSentences(r.ly_do_dinh_dang))}</div>
       </div>
       <div class="btn-row no-print" style="margin-top:-6px;margin-bottom:10px;">
         <a class="btn-ghost btn" href="#dinh-dang-content">Xem cách làm dạng này →</a>

@@ -124,7 +124,7 @@ function render(container, ctx){
       ${state.posts.map((p,i)=>`
         <div class="section">
           <h3>${esc(p.tieu_de)}</h3>
-          <div class="body">${esc(p.noi_dung)}</div>
+          <div class="body">${esc(breakSentences(p.noi_dung))}</div>
           <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
             <button class="btn btn-sm" data-save-post="${i}" ${state.savedPostIdx[i]?'disabled':''}>${state.savedPostIdx[i]?'Đã lưu vào Kho Content ✓':'Lưu vào Kho Content'}</button>
           </div>
