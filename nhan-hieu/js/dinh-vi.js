@@ -725,6 +725,12 @@ function render(container, ctx){
       const data = await callApi('/api/dinh-vi-parse', { raw_text: state.pasteText }, 280000);
       state.luot1 = data.luot1;
       state.luot2 = data.luot2 || null;
+      // AI suy luận ngược lại 13 câu trả lời dạng textarea từ văn bản đã dán, để khi bấm "Sửa lại
+      // câu trả lời" sau này không bị trống trơn — chỉ merge, không ghi đè câu đã có sẵn (dù hiếm
+      // khi xảy ra vì đây là lần dán đầu tiên).
+      if(data.answers){
+        state.answers = { ...data.answers, ...state.answers };
+      }
       await persist({ luot1: data.luot1, luot2: data.luot2 || null, format_suggestions: null });
       state.pasteLoading = false; state.error = null;
       if(stopHeavyProgress) stopHeavyProgress();
