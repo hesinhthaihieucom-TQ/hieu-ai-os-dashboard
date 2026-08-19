@@ -22,7 +22,7 @@ const AMOUNT_TO_DAYS = {
 // Số tiền coi là "đã dùng ưu đãi tháng đầu" — sau lần này học viên mua gói 1 tháng sẽ trả giá thường.
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 
-// "Mua thêm lượt" — dành cho khách ĐÃ TRẢ PHÍ dùng vượt trần 150 lượt/tháng (xem
+// "Mua thêm lượt" — dành cho khách ĐÃ TRẢ PHÍ dùng vượt trần 200 lượt/tháng (xem
 // api/_lib/trial-quota.js). Số tiền này KHÔNG được trùng bất kỳ số tiền nào ở AMOUNT_TO_DAYS.
 // Cộng thẳng vào paid_ai_bonus của đúng tháng hiện tại, KHÔNG đụng access_until/has_paid.
 const AMOUNT_TO_TOPUP_LUOT = {
