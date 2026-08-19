@@ -308,7 +308,7 @@ function render(container, ctx){
   }
 
   function khoChungTab(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Kho bài mẫu <b>đã được kiểm chứng viral</b>, do đội ngũ tuyển chọn và cập nhật liên tục — dùng làm khung sườn (hook + cấu trúc) để viết lại theo giọng văn và câu chuyện thật của bạn, không phải để sao chép nguyên văn. Đây là cách nhanh nhất để bài mới của bạn có nền tảng đã được thị trường kiểm chứng thay vì viết từ số 0.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Kho bài mẫu <b>đã được kiểm chứng viral</b>, do đội ngũ tuyển chọn và cập nhật liên tục — dùng làm <b>khung sườn (hook + cấu trúc)</b> để viết lại theo giọng văn và câu chuyện thật của bạn, không phải để sao chép nguyên văn.<br><br>Đây là <b>cách nhanh nhất</b> để bài mới của bạn có nền tảng đã được thị trường kiểm chứng thay vì viết từ số 0.</div>`;
     if(state.sharedBank.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Content Viral chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`;
 
     const items = filterByPillar(state.sharedBank, state.chungPillar);

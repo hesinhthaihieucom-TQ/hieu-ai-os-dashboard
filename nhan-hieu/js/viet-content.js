@@ -144,7 +144,7 @@ function render(container, ctx){
           <button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button>
           ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="retry-generate">Thử lại ngay</span>`:''}
         </div>
-        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng 30-45 giây — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần. Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm "Thử lại ngay" nếu chờ quá lâu không thấy gì, không cần nhập lại chủ đề.</div>
+        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng <b>30-45 giây</b> — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần.<br><br>Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm <b>"Thử lại ngay"</b> nếu chờ quá lâu không thấy gì, <b>không cần nhập lại chủ đề</b>.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 

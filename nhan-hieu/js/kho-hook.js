@@ -339,7 +339,7 @@ function render(container, ctx){
 
   function khoChungTab(){
     const all = combinedShared();
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook <b>đã được kiểm chứng viral</b> — câu mở đầu đã khiến rất nhiều người dừng lại xem — do đội ngũ tuyển chọn và cập nhật liên tục. Dùng làm mẫu để viết hook riêng cho chủ đề của bạn, không phải để copy nguyên văn.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook <b>đã được kiểm chứng viral</b> — câu mở đầu đã khiến rất nhiều người dừng lại xem — do đội ngũ tuyển chọn và cập nhật liên tục.<br><br>Dùng làm <b>mẫu</b> để viết hook riêng cho chủ đề của bạn, <b>không phải để copy nguyên văn</b>.</div>`;
     if(all.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Hook Viral chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
 
     const items = filterByPillar(all, state.chungPillar);

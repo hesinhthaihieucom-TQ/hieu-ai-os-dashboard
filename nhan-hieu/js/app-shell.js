@@ -62,8 +62,8 @@ function buildStudentPlans(profile){
 const FLASH_SALE_CUTOFF = new Date('2026-08-20T00:00:00+07:00');
 function isFlashSaleActive(){ return new Date() < FLASH_SALE_CUTOFF; }
 const FLASH_SALE_PLANS = [
-  { key:'6m_flash', label:'6 tháng — Ưu đãi hôm nay', amount:1890000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong hôm nay — giảm thẳng 500.000đ so với giá thường (2.390.000đ).', recommended:true, flash:true },
-  { key:'12m_flash', label:'12 tháng — Ưu đãi hôm nay', amount:2790000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong hôm nay — giảm thẳng 1.200.000đ so với giá thường (3.990.000đ).', recommended:true, flash:true },
+  { key:'6m_flash', label:'6 tháng — Ưu đãi 19/8', amount:1890000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19/8 — giảm thẳng 500.000đ so với giá thường (2.390.000đ).', recommended:true, flash:true },
+  { key:'12m_flash', label:'12 tháng — Ưu đãi 19/8', amount:2790000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19/8 — giảm thẳng 1.200.000đ so với giá thường (3.990.000đ).', recommended:true, flash:true },
 ];
 function currentPaymentPlans(){
   const base = (AppState.profile && AppState.profile.is_student) ? buildStudentPlans(AppState.profile) : REGULAR_PLANS;
@@ -194,7 +194,7 @@ function paymentCardHtml(){
       return `
         <div class="chips" id="plan-chips">
           ${flashPlans.map(chipHtml).join('')}
-          ${flashPlans.length ? `<div style="flex-basis:100%;font-size:12px;color:var(--ink-soft);margin:4px 2px 0;">— Sau hôm nay, chỉ còn giá thường bên dưới —</div>` : ''}
+          ${flashPlans.length ? `<div style="flex-basis:100%;font-size:12px;color:var(--ink-soft);margin:4px 2px 0;">— Sau ngày 19/8, chỉ còn giá thường bên dưới —</div>` : ''}
           ${basePlans.map(chipHtml).join('')}
         </div>
       `;
