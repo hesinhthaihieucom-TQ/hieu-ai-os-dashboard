@@ -61,6 +61,17 @@ function render(container, ctx){
     chungPillar:'all', khoToiPillar:'all', posts:[],
   };
 
+  // Giữ lại hook vừa tạo (tab "Tạo Hook") khi chuyển sang tab/trang khác rồi quay lại — trước đây
+  // mất trắng vì không lưu gì cả, phải bấm tạo lại tốn thêm lượt AI oan.
+  const DRAFT_KEY = 'kho-hook-tao-hook';
+  function draftPayload(){
+    return {
+      genTopic: state.genTopic, genGoal: state.genGoal, genCategory: state.genCategory, genQuickContext: state.genQuickContext,
+      genResult: state.genResult, genThumbTitles: state.genThumbTitles, genSavedIdx: state.genSavedIdx, genThumbSavedIdx: state.genThumbSavedIdx,
+    };
+  }
+  function persistGenDraft(){ saveModuleDraft(ctx, DRAFT_KEY, draftPayload()); }
+
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
@@ -74,6 +85,9 @@ function render(container, ctx){
       state.tab = 'kho-chung';
       state.chungPillar = window.PendingPillar;
       window.PendingPillar = null;
+    } else {
+      const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+      if(draft) Object.assign(state, draft);
     }
     draw();
   }
@@ -370,8 +384,8 @@ function render(container, ctx){
       };
     });
 
-    const gt = container.querySelector('#gen-topic'); if(gt) gt.oninput = ()=>state.genTopic = gt.value;
-    const gqc = container.querySelector('#gen-quick-context'); if(gqc) gqc.oninput = ()=>state.genQuickContext = gqc.value;
+    const gt = container.querySelector('#gen-topic'); if(gt) gt.oninput = ()=>{ state.genTopic = gt.value; persistGenDraft(); };
+    const gqc = container.querySelector('#gen-quick-context'); if(gqc) gqc.oninput = ()=>{ state.genQuickContext = gqc.value; persistGenDraft(); };
     container.querySelectorAll('[data-gen-goal]').forEach(el=>{
       el.onclick = ()=>{
         state.genGoal = el.getAttribute('data-gen-goal');
@@ -458,7 +472,7 @@ function render(container, ctx){
 
   async function generateHooksByTopic(){
     if(!state.genTopic.trim()) return;
-    state.genLoading = true; state.genError = null; state.genResult = null; state.genThumbTitles = null; state.genSavedIdx = {};
+    state.genLoading = true; state.genError = null; state.genResult = null; state.genThumbTitles = null; state.genSavedIdx = {}; state.genThumbSavedIdx = {};
     draw();
     const stopProgress = animateProgressButton(container.querySelector('[data-action="generate-hooks"]'), 35, 'Đang sinh hook');
     try{
@@ -471,6 +485,7 @@ function render(container, ctx){
       });
       state.genResult = data.result.hooks;
       state.genThumbTitles = data.result.tieu_de_thumbnail;
+      persistGenDraft();
     } catch(e){ state.genError = e.message; }
     stopProgress();
     state.genLoading = false; draw();
@@ -482,6 +497,7 @@ function render(container, ctx){
       user_id: ctx.user.id, hook_text: title, note: 'Tiêu đề ghi lên ảnh/thumbnail',
     });
     state.genThumbSavedIdx[i] = true; draw();
+    persistGenDraft();
   }
 
   async function saveGeneratedHook(i){
@@ -491,6 +507,7 @@ function render(container, ctx){
       user_id: ctx.user.id, hook_text: hookText, category: catLabel, note: `Chủ đề: ${state.genTopic}`,
     });
     state.genSavedIdx[i] = true; draw();
+    persistGenDraft();
   }
 
   async function generateIdeasFromSource(){

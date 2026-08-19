@@ -14,6 +14,11 @@ function render(container, ctx){
     result:null, error:null, submitting:false, coverPromptCopied:false,
   };
 
+  // Giữ lại ảnh/câu trả lời đang làm dở (chụp màn hình lại rất mất công nếu bị mất) khi chuyển
+  // trang rồi quay lại — chỉ áp dụng lúc CHƯA audit xong (đã xong thì channel_audits là nguồn thật).
+  const DRAFT_KEY = 'sua-kenh-wizard';
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { qIndex: state.qIndex, answers: state.answers, quickContext: state.quickContext }); }
+
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
@@ -23,7 +28,15 @@ function render(container, ctx){
 
     const { data: audit } = await ctx.supabase.from('channel_audits').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(1).maybeSingle();
     if(audit){ state.auditId = audit.id; state.answers = { ...state.answers, ...(audit.input||{}) }; state.result = audit.result; state.screen='result'; }
-    else state.screen='wizard';
+    else {
+      state.screen='wizard';
+      const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+      if(draft){
+        state.answers = { ...state.answers, ...(draft.answers||{}) };
+        state.qIndex = Math.min(draft.qIndex||0, STEPS.length-1);
+        state.quickContext = draft.quickContext || '';
+      }
+    }
     draw();
   }
 
@@ -157,12 +170,12 @@ function render(container, ctx){
     const step = STEPS[state.qIndex];
 
     container.querySelectorAll('[data-choice]').forEach(el=>{
-      el.onclick = ()=>{ state.answers[step.key] = el.getAttribute('data-choice'); draw(); };
+      el.onclick = ()=>{ state.answers[step.key] = el.getAttribute('data-choice'); draw(); persistDraft(); };
     });
     const textInput = container.querySelector('#step-text');
-    if(textInput) textInput.oninput = ()=>{ state.answers[step.key] = textInput.value; };
+    if(textInput) textInput.oninput = ()=>{ state.answers[step.key] = textInput.value; persistDraft(); };
     const quickContext = container.querySelector('#quick-context');
-    if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
+    if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; persistDraft(); };
     const upload = container.querySelector('#step-upload');
     if(upload) upload.onchange = ()=>{
       const file = upload.files[0];
@@ -185,24 +198,26 @@ function render(container, ctx){
             state.answers[step.key] = dataUrl;
           }
           draw();
+          persistDraft();
         };
         img.src = reader.result;
       };
       reader.readAsDataURL(file);
     };
     const clearImg = container.querySelector('[data-action="clear-image"]');
-    if(clearImg) clearImg.onclick = ()=>{ state.answers[step.key] = null; draw(); };
+    if(clearImg) clearImg.onclick = ()=>{ state.answers[step.key] = null; draw(); persistDraft(); };
     container.querySelectorAll('[data-action="clear-image-multi"]').forEach(el=>{
       el.onclick = ()=>{
         const idx = Number(el.getAttribute('data-idx'));
         const imgs = Array.isArray(state.answers[step.key]) ? state.answers[step.key] : [];
         state.answers[step.key] = imgs.filter((_,i)=>i!==idx);
         draw();
+        persistDraft();
       };
     });
 
     const backLink = container.querySelector('[data-action="back"]');
-    if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); draw(); };
+    if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); draw(); persistDraft(); };
     const skipLink = container.querySelector('[data-action="skip"]');
     if(skipLink) skipLink.onclick = ()=> onNext();
     const nextBtn = container.querySelector('[data-action="next"]');
@@ -220,7 +235,7 @@ function render(container, ctx){
   }
 
   function onNext(){
-    if(state.qIndex < STEPS.length-1){ state.qIndex++; state.error=null; draw(); }
+    if(state.qIndex < STEPS.length-1){ state.qIndex++; state.error=null; draw(); persistDraft(); }
     else submit();
   }
 
@@ -243,6 +258,7 @@ function render(container, ctx){
         if(inserted) state.auditId = inserted.id;
       }
       stopProgress(); releaseWakeLock();
+      clearModuleDraft(ctx, DRAFT_KEY);
       state.screen='result'; draw();
     } catch(e){
       stopProgress(); releaseWakeLock();

@@ -52,6 +52,11 @@ function render(container, ctx){
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
     reconstructingAnswers:false, reconstructFailed:false };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
+
+  // Giữ lại câu trả lời đang làm dở (18 câu, dễ mất công gõ) khi chuyển trang rồi quay lại — khác
+  // với positioning_results (chỉ lưu khi đã CHỐT xong Lượt 1), draft này lưu MỌI lúc đang trả lời dở.
+  const WIZARD_DRAFT_KEY = 'dinh-vi-wizard';
+  function persistWizardDraft(){ saveModuleDraft(ctx, WIZARD_DRAFT_KEY, { qIndex: state.qIndex, answers: state.answers }); }
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
     aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
@@ -104,6 +109,16 @@ function render(container, ctx){
       state.screen = isComplete ? 'done' : 'intro';
     } else {
       state.screen = 'intro';
+    }
+    // Chưa hoàn thành Định Vị (đang ở intro, chưa có luot1) — thử khôi phục câu trả lời đang làm dở
+    // từ lần trước, để không bắt trả lời lại từ câu 1 chỉ vì lỡ chuyển sang trang khác.
+    if(state.screen === 'intro'){
+      const draft = await loadModuleDraft(ctx, WIZARD_DRAFT_KEY);
+      if(draft && draft.answers && Object.keys(draft.answers).length){
+        state.answers = { ...state.answers, ...draft.answers };
+        state.qIndex = Math.min(draft.qIndex || 0, QUESTIONS.length - 1);
+        state.screen = 'wizard';
+      }
     }
     draw();
   }
@@ -605,7 +620,7 @@ function render(container, ctx){
     if(viewSaved) viewSaved.onclick = ()=>{ state.screen = 'results'; draw(); };
 
     const backLink = container.querySelector('[data-action="back"]');
-    if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); resetSuggestions(); draw(); };
+    if(backLink) backLink.onclick = ()=>{ state.qIndex = Math.max(0, state.qIndex-1); resetSuggestions(); draw(); persistWizardDraft(); };
 
     const suggestBtn = container.querySelector('[data-action="suggest"]');
     if(suggestBtn) suggestBtn.onclick = fetchSuggestions;
@@ -671,7 +686,7 @@ function render(container, ctx){
   }
 
   function onNext(){
-    if(state.qIndex < QUESTIONS.length-1){ state.qIndex++; resetSuggestions(); draw(); }
+    if(state.qIndex < QUESTIONS.length-1){ state.qIndex++; resetSuggestions(); draw(); persistWizardDraft(); }
     else { state.screen='saving1'; draw(); startHeavyProgress(90); runLuot1(); }
   }
 
@@ -863,6 +878,7 @@ function render(container, ctx){
       const data = await callApi('/api/dinh-vi', { luot:1, answers: flattenAnswers() }, 280000);
       state.luot1 = data.result;
       await persist({ luot1: data.result, luot2: null, format_suggestions: null });
+      clearModuleDraft(ctx, WIZARD_DRAFT_KEY);
       state.error = null;
       if(stopHeavyProgress) stopHeavyProgress();
       state.screen='results'; draw();
