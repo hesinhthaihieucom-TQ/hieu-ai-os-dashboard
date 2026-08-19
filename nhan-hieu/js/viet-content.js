@@ -137,8 +137,11 @@ function render(container, ctx){
             </div>
           </div>
         ` : ''}
-        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button></div>
-        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng 30-45 giây — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần.</div>
+        <div class="btn-row" style="align-items:center;">
+          <button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button>
+          ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="cancel-generate">Huỷ, thử lại</span>`:''}
+        </div>
+        <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng 30-45 giây — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần. Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — quay lại màn hình này hoặc bấm "Huỷ, thử lại" nếu chờ quá lâu không thấy gì.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
@@ -368,6 +371,8 @@ function render(container, ctx){
 
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
+    const cancelGenBtn = container.querySelector('[data-action="cancel-generate"]');
+    if(cancelGenBtn) cancelGenBtn.onclick = cancelGenerate;
 
     const saveBtn = container.querySelector('[data-action="save"]');
     if(saveBtn) saveBtn.onclick = save;
@@ -418,8 +423,24 @@ function render(container, ctx){
     if(!error && ctx.profile) ctx.profile.channel_handle = state.channelHandle.trim() || null;
   }
 
+  // Đt điện thoại tự khoá màn hình / chuyển app khi đang chờ có thể khiến trình duyệt tạm dừng chạy
+  // nền rất lâu (đặc biệt Safari iOS) — request cũ đôi khi vẫn âm thầm hoàn tất sau đó. Đánh số hiệu
+  // mỗi lượt generate() để lượt CŨ trả về sau khi đã bấm "Huỷ, thử lại" sẽ tự bỏ qua, không ghi đè
+  // lên lượt mới hoặc bật lại trạng thái đang chạy đã bị huỷ.
+  let generateRequestId = 0;
+
+  function cancelGenerate(){
+    generateRequestId++;
+    releaseWakeLock();
+    state.generating = false;
+    state.error = 'Đã huỷ — bấm "Viết bài" để thử lại.';
+    draw();
+  }
+
   async function generate(){
     if(state.khoGocSource ? !state.khoGocSource.content.trim() : !state.ideaText.trim()) return;
+    generateRequestId++;
+    const myRequestId = generateRequestId;
     state.generating = true; state.error = null; state.result = null; state.savedId = null;
     state.score = null; state.scoring = false; state.scoreError = null;
     state.hookScore = null; state.hookScoring = false; state.hookScoreError = null;
@@ -444,12 +465,14 @@ function render(container, ctx){
         payload.idea_text = state.ideaText;
       }
       const data = await callApi(endpoint, payload, 280000);
+      stopProgress(); releaseWakeLock();
+      if(myRequestId !== generateRequestId) return; // đã huỷ/bấm lại — bỏ qua kết quả trễ này, dừng interval của riêng lượt này là đủ
       state.result = data.result;
       state.showScoreContent = false; state.showScoreHook = false; state.showExtras = false;
-      stopProgress(); releaseWakeLock();
       state.generating = false; draw();
     } catch(e){
       stopProgress(); releaseWakeLock();
+      if(myRequestId !== generateRequestId) return;
       state.error = e.message; state.generating = false; draw();
     }
   }
