@@ -78,6 +78,27 @@ function render(container, ctx){
     return '';
   }
 
+  // Bảng gốc thật trong DB ứng với từng loại key — dùng để ghi lại "bài mới viết từ đâu" khi lưu ở
+  // Viết Content (posts.source_table/source_id), rồi đếm ngược lại ở đây để hiện "✓ Đã dùng N lần".
+  const SOURCE_TABLE_BY_KIND = { post:'posts', personal:'content_bank_personal', shared:'content_bank_shared' };
+  function sourceRefForKey(key){
+    if(!key) return null;
+    const [kind, id] = key.split(':');
+    const table = SOURCE_TABLE_BY_KIND[kind];
+    return table ? { table, id } : null;
+  }
+  // Đếm số bài trong "Bài đã viết" đã trỏ nguồn về đúng key này — chỉ cần đọc lại state.posts đã
+  // tải sẵn, không cần gọi DB thêm.
+  function usageCountFor(key){
+    const ref = sourceRefForKey(key);
+    if(!ref) return 0;
+    return state.posts.filter(p=>p.source_table===ref.table && p.source_id===ref.id).length;
+  }
+  function usageBadgeHtml(key){
+    const n = usageCountFor(key);
+    return n>0 ? `<span style="color:var(--accent);font-size:12px;font-weight:600;">✓ Đã dùng viết bài ${n} lần</span>` : '';
+  }
+
   // Tiêu đề lưu riêng cột "title" trong DB, tách khỏi "content" (thân bài) — cần lấy đúng cột này
   // khi đưa bài sang Viết Content, nếu không AI sẽ không biết đâu là tiêu đề gốc do admin đặt.
   function findSourceTitle(key){
@@ -154,6 +175,7 @@ function render(container, ctx){
       <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <span class="btn-ghost btn btn-sm" data-write-toggle="${key}">${isOpen?'Đóng':'Viết bài từ đây →'}</span>
         <span class="btn-ghost btn btn-sm" data-apply-voice="${key}" ${state.applyingVoice===key?'disabled':''}>${state.applyingVoice===key?'Đang phân tích giọng văn…':'Dùng làm giọng mẫu'}</span>
+        ${usageBadgeHtml(key)}
       </div>
       ${isOpen ? writePanelHtml() : ''}
       ${state.voiceAppliedFor===key?`<div class="hint-box" style="margin-top:10px;">Đã cập nhật giọng điệu &amp; ngôn ngữ vào Định Vị theo bài này.</div>`:''}
@@ -333,6 +355,7 @@ function render(container, ctx){
     const keepBtn = container.querySelector('[data-write-keep]');
     if(keepBtn) keepBtn.onclick = ()=>{
       window.PendingKhoGoc = { title: findSourceTitle(state.writeFor), content: findSourceText(state.writeFor), tags: findSourceTags(state.writeFor) };
+      window.PendingSourceRef = sourceRefForKey(state.writeFor);
       location.hash = 'viet-content';
     };
     const genBtn = container.querySelector('[data-write-generate]');
@@ -343,6 +366,7 @@ function render(container, ctx){
       el.onclick = ()=>{
         const i = Number(el.getAttribute('data-use-idea'));
         window.PendingTopic = state.writeIdeas[i];
+        window.PendingSourceRef = sourceRefForKey(state.writeFor);
         location.hash = 'viet-content';
       };
     });

@@ -116,6 +116,25 @@ QUY TẮC HASHTAG (BẮT BUỘC):
 - Các hashtag còn lại bám sát chủ đề bài + trục nội dung định vị.
 - Nếu không có tên kênh/thương hiệu nào được cung cấp, tự suy ra 1 hashtag đại diện thương hiệu từ bản sắc thương hiệu trong định vị.`;
 
+// Chỉ gửi phần luot2 THỰC SỰ cần cho việc viết văn phong 1 bài — bỏ các phần chiến lược kinh
+// doanh/dòng tiền (dong_tien_phu_hop, lo_trinh_dan_ve_dong_tien, script_gioi_thieu_30s, can_sua_ngay,
+// canh_bao) không ảnh hưởng câu chữ của bài, giảm bớt dung lượng input gửi AI mỗi lần viết bài —
+// dùng chung cho viet-content.js/viet-tu-kho-goc.js/viet-content-extras.js thay vì gửi cả luot2.
+function trimLuot2ForWriting(luot2) {
+  if (!luot2) return null;
+  const { chan_dung_khach_hang, noi_dau_rao_can, khao_khat_muc_tieu, insight_cot_loi, he_truc_noi_dung } = luot2;
+  return { chan_dung_khach_hang, noi_dau_rao_can, khao_khat_muc_tieu, insight_cot_loi, he_truc_noi_dung };
+}
+
+function contextBlockOf(positioning, quick_context) {
+  if (positioning && positioning.luot1) {
+    const trimmedLuot2 = trimLuot2ForWriting(positioning.luot2);
+    return `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${trimmedLuot2 ? JSON.stringify(trimmedLuot2, null, 2) : ''}`;
+  }
+  if (quick_context && quick_context.trim()) return `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
+  return 'BỐI CẢNH: (không có)';
+}
+
 function extraFieldsBlock({ channel_handle, brand_name, product_name, group_name }) {
   return `TÊN KÊNH FACEBOOK/TIKTOK: ${channel_handle && channel_handle.trim() ? channel_handle.trim() : '(không cung cấp — tự suy ra hashtag thương hiệu từ định vị)'}
 TÊN THƯƠNG HIỆU/SẢN PHẨM CỐ ĐỊNH (khác tên kênh, nếu có): ${brand_name && brand_name.trim() ? brand_name.trim() : '(không có)'}
@@ -123,4 +142,4 @@ SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY: ${product_name && produc
 GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}`;
 }
 
-module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock };
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf };

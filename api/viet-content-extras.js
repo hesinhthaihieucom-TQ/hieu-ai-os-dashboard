@@ -4,7 +4,7 @@
 // dung cần dùng ngay — dùng chung cho cả 2 nguồn (viết mới / viết từ Kho Content).
 const { requireUser } = require('./_lib/auth');
 const { FORMAT_GUIDE } = require('./_lib/formats');
-const { TOOL_POST_EXTRAS, stripDiacritics, HASHTAG_CAPTION_RULES, extraFieldsBlock } = require('./_lib/post-schema');
+const { TOOL_POST_EXTRAS, stripDiacritics, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý content cho người xây thương hiệu cá nhân tại Việt Nam. Nhiệm vụ: dựa trên 1 bài viết ĐÃ HOÀN CHỈNH, gợi ý hashtag, ý tưởng hình ảnh/video minh hoạ, dạng content phù hợp nhất và caption gợi ý — không viết lại nội dung bài.
 
@@ -46,9 +46,7 @@ module.exports = async (req, res) => {
     const { positioning, quick_context, post_text, channel_handle, brand_name, product_name, group_name } = req.body || {};
     if (!post_text || !post_text.trim()) { res.status(400).json({ error: 'Thiếu nội dung bài viết để gợi ý bổ sung.' }); return; }
 
-    const contextBlock = positioning && positioning.luot1
-      ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}`
-      : (quick_context && quick_context.trim() ? `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}` : 'BỐI CẢNH: (không có)');
+    const contextBlock = contextBlockOf(positioning, quick_context);
 
     const userContent = `${contextBlock}
 

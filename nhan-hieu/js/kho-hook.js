@@ -58,7 +58,7 @@ function render(container, ctx){
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
-    chungPillar:'all', khoToiPillar:'all',
+    chungPillar:'all', khoToiPillar:'all', posts:[],
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -67,7 +67,7 @@ function render(container, ctx){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
-    await Promise.all([loadPersonal(), loadShared(), loadSharedContent()]);
+    await Promise.all([loadPersonal(), loadShared(), loadSharedContent(), loadPosts()]);
     // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung trong
     // Kho Hook Viral thay vì bắt người dùng tự lọc lại từ đầu (khớp cách kho-content.js đã làm).
     if(window.PendingPillar){
@@ -81,6 +81,12 @@ function render(container, ctx){
     const { data, error } = await ctx.supabase.from('hooks_bank_personal').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
     if(error) state.error = error.message;
     state.personal = data || [];
+  }
+  // Chỉ cần source_table/source_id để đếm "✓ Đã dùng viết bài N lần" cho từng hook — không cần load
+  // cả nội dung bài.
+  async function loadPosts(){
+    const { data } = await ctx.supabase.from('posts').select('id,source_table,source_id').eq('user_id', ctx.user.id);
+    state.posts = data || [];
   }
   async function loadShared(){
     const { data, error } = await ctx.supabase.from('hooks_bank_shared').select('*').order('created_at', { ascending:false });
@@ -111,6 +117,25 @@ function render(container, ctx){
     if(kind==='shared') return (state.shared.find(h=>h.id===id)||{}).hook_text || '';
     if(kind==='content') return (state.sharedContent.find(c=>c.id===id)||{}).title || '';
     return '';
+  }
+
+  // Bảng gốc thật trong DB ứng với từng loại key — dùng để ghi lại "bài mới viết từ đâu" khi lưu ở
+  // Viết Content (posts.source_table/source_id), rồi đếm ngược lại ở đây để hiện "✓ Đã dùng N lần".
+  const SOURCE_TABLE_BY_KIND = { personal:'hooks_bank_personal', shared:'hooks_bank_shared', content:'content_bank_shared' };
+  function sourceRefForKey(key){
+    if(!key) return null;
+    const [kind, id] = key.split(':');
+    const table = SOURCE_TABLE_BY_KIND[kind];
+    return table ? { table, id } : null;
+  }
+  function usageCountFor(key){
+    const ref = sourceRefForKey(key);
+    if(!ref) return 0;
+    return state.posts.filter(p=>p.source_table===ref.table && p.source_id===ref.id).length;
+  }
+  function usageBadgeHtml(key){
+    const n = usageCountFor(key);
+    return n>0 ? `<span style="color:var(--accent);font-size:12px;font-weight:600;">✓ Đã dùng viết bài ${n} lần</span>` : '';
   }
 
   function html(){
@@ -194,10 +219,11 @@ function render(container, ctx){
   function writeActionHtml(key){
     const isOpen = state.writeFor === key;
     return `
-      <div style="margin-top:10px;">
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <span class="btn-ghost btn btn-sm" data-write-toggle="${key}">${isOpen?'Đóng':'Viết bài từ hook này →'}</span>
-        ${isOpen ? writePanelHtml() : ''}
+        ${usageBadgeHtml(key)}
       </div>
+      ${isOpen ? writePanelHtml() : ''}
     `;
   }
 
@@ -406,6 +432,7 @@ function render(container, ctx){
     const keepBtn = container.querySelector('[data-write-keep]');
     if(keepBtn) keepBtn.onclick = ()=>{
       window.PendingTopic = findSourceText(state.writeFor);
+      window.PendingSourceRef = sourceRefForKey(state.writeFor);
       location.hash = 'viet-content';
     };
     const genBtn = container.querySelector('[data-write-generate]');
@@ -416,6 +443,7 @@ function render(container, ctx){
       el.onclick = ()=>{
         const i = Number(el.getAttribute('data-use-idea'));
         window.PendingTopic = state.writeIdeas[i];
+        window.PendingSourceRef = sourceRefForKey(state.writeFor);
         location.hash = 'viet-content';
       };
     });

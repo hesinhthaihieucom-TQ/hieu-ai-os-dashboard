@@ -4,7 +4,7 @@
 // không sao chép nguyên văn như bản trước đây từng làm (giữ 80%, chỉ thay 20% — quá giống bài
 // gốc, đọc như đăng lại y nguyên).
 const { requireUser } = require('./_lib/auth');
-const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock } = require('./_lib/post-schema');
+const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock, contextBlockOf } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, chuyên viết lại 1 bài trong "kho content" (bài viral có sẵn) thành bản của riêng người dùng.
 
@@ -94,9 +94,7 @@ module.exports = async (req, res) => {
     }
     if (!source_text || !source_text.trim()) { res.status(400).json({ error: 'Thiếu bài gốc từ Kho Content.' }); return; }
 
-    const contextBlock = hasPositioning
-      ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}`
-      : `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
+    const contextBlock = contextBlockOf(positioning, quick_context);
 
     const userContent = `${contextBlock}
 

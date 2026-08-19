@@ -167,6 +167,12 @@ create table if not exists posts (
 -- "Bài đã viết" theo trục cho dễ tìm, giống cách Kho Content Viral đang nhóm. Bài viết từ ý
 -- tưởng mới (không xuất phát từ Kho) sẽ không có tags, xếp vào nhóm "Chưa phân loại".
 alter table posts add column if not exists tags text[];
+-- Ghi lại bài viết này bắt nguồn từ mục nào trong Kho Content/Kho Hook (nếu có) — dùng để hiện
+-- dấu "✓ Đã dùng viết bài N lần" ngay trên mục đó trong Kho, biết được hook/bài mẫu nào mình đã
+-- dùng rồi. source_table là 1 trong: posts, content_bank_personal, content_bank_shared,
+-- hooks_bank_personal, hooks_bank_shared — không dùng khoá ngoại thật vì trỏ tới nhiều bảng khác nhau.
+alter table posts add column if not exists source_table text;
+alter table posts add column if not exists source_id uuid;
 
 create table if not exists calendar_entries (
   id uuid primary key default gen_random_uuid(),

@@ -3,7 +3,7 @@
 // Chỉ trả về nội dung CHÍNH của bài — hashtag/gợi ý hình ảnh/dạng content/caption được hỏi riêng
 // ở /api/viet-content-extras (chạy sau, không chặn hiển thị bài viết chính).
 const { requireUser } = require('./_lib/auth');
-const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock } = require('./_lib/post-schema');
+const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock, contextBlockOf } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, viết đúng giọng văn và định vị đã chốt của họ.
 
@@ -52,9 +52,7 @@ module.exports = async (req, res) => {
     }
     if (!idea_text || !idea_text.trim()) { res.status(400).json({ error: 'Thiếu ý tưởng/chủ đề để viết.' }); return; }
 
-    const contextBlock = hasPositioning
-      ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${positioning.luot2 ? JSON.stringify(positioning.luot2, null, 2) : ''}`
-      : `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
+    const contextBlock = contextBlockOf(positioning, quick_context);
 
     const userContent = `${contextBlock}
 

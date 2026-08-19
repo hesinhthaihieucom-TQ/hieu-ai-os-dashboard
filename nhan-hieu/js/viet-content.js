@@ -4,7 +4,7 @@ function render(container, ctx){
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', extrasLoading:false, extrasError:null,
-    showScoreContent:false, showScoreHook:false, showExtras:false, saving:false };
+    showScoreContent:false, showScoreHook:false, showExtras:false, saving:false, pendingSourceRef:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -16,6 +16,9 @@ function render(container, ctx){
     state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
     if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
     else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
+    // Ghi lại bài mới này bắt nguồn từ mục nào trong Kho Content/Kho Hook (nếu đi từ đó sang) — để
+    // hiện "✓ Đã dùng viết bài N lần" ngay trên mục đó khi quay lại Kho.
+    if(window.PendingSourceRef){ state.pendingSourceRef = window.PendingSourceRef; window.PendingSourceRef = null; }
     // Đến từ nút "Viết lại theo góp ý" ở Chấm Điểm Content — idea_text đã có sẵn nội dung + lỗi cần
     // sửa, chạy luôn không bắt người dùng bấm lại, cho cảm giác liền mạch giữa 2 trang.
     const autoGenerate = !!window.PendingRewriteAuto; window.PendingRewriteAuto = null;
@@ -547,6 +550,8 @@ function render(container, ctx){
       content: r.bai_hoan_chinh,
       structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, tu_khoa_cta:r.tu_khoa_cta, cau_cmt_ghim:r.cau_cmt_ghim, cmt_cta_san_pham:r.cmt_cta_san_pham, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: r.dinh_dang_de_xuat },
       tags,
+      source_table: state.pendingSourceRef ? state.pendingSourceRef.table : null,
+      source_id: state.pendingSourceRef ? state.pendingSourceRef.id : null,
     }).select().single();
     state.saving = false;
     if(error){ state.error = error.message; draw(); return; }
