@@ -49,7 +49,8 @@ function render(container, ctx){
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
-    editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null };
+    editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
+    reconstructingAnswers:false };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
@@ -128,7 +129,7 @@ function render(container, ctx){
       </div>
       <div class="btn-row" style="justify-content:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
-        <button class="btn-ghost btn" data-action="redo-from-done">Sửa lại câu trả lời</button>
+        <button class="btn-ghost btn" data-action="redo-from-done" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':'Sửa lại câu trả lời'}</button>
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
       <div style="text-align:center;margin-top:18px;">
@@ -168,7 +169,7 @@ function render(container, ctx){
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
       </div>
       <div class="btn-row">
-        <button class="btn" data-action="start">${hasSaved?'Sửa lại câu trả lời':'Bắt đầu'}</button>
+        <button class="btn" data-action="start" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':(hasSaved?'Sửa lại câu trả lời':'Bắt đầu')}</button>
         ${hasSaved?`<button class="btn-ghost btn" data-action="view-saved">Xem định vị đã lưu</button>`:''}
       </div>
       <div style="text-align:center;margin-top:18px;">
@@ -476,12 +477,18 @@ function render(container, ctx){
     const startBtn = container.querySelector('[data-action="start"]');
     // Giữ nguyên state.answers khi bấm lại — người dùng đang SỬA câu trả lời cũ, không phải xoá
     // trắng làm lại từ đầu; mỗi câu hỏi tự hiện lại đúng câu trả lời trước đó để điền thêm/sửa.
-    if(startBtn) startBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; state.luot1=null; state.luot2=null; draw(); };
+    if(startBtn) startBtn.onclick = async ()=>{
+      await maybeReconstructAnswers();
+      state.screen='wizard'; state.qIndex=0; state.luot1=null; state.luot2=null; draw();
+    };
 
     const viewResultsBtn = container.querySelector('[data-action="view-results"]');
     if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results'; draw(); };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
-    if(redoFromDoneBtn) redoFromDoneBtn.onclick = ()=>{ state.screen='wizard'; state.qIndex=0; draw(); };
+    if(redoFromDoneBtn) redoFromDoneBtn.onclick = async ()=>{
+      await maybeReconstructAnswers();
+      state.screen='wizard'; state.qIndex=0; draw();
+    };
 
     const goPaste = container.querySelector('[data-action="go-paste"]');
     if(goPaste) goPaste.onclick = ()=>{ state.screen='paste'; state.pasteError=null; draw(); };
@@ -692,6 +699,27 @@ function render(container, ctx){
       } else out[q.id] = val || '';
     });
     return out;
+  }
+
+  // Tài khoản từng dán kết quả có sẵn TRƯỚC KHI tính năng suy luận-lúc-dán ra đời (hoặc vì lý do
+  // nào đó answers bị rỗng) sẽ không có gì để điền vào wizard khi bấm sửa — dùng lại chính luot1/
+  // luot2 đã lưu để AI suy luận ngược ngay lúc này, không bắt phải dán lại văn bản gốc (thường
+  // không còn giữ). Chỉ chạy khi answers thực sự rỗng, không ghi đè answers thật đã có.
+  function hasAnyRealAnswer(){
+    return Object.values(state.answers||{}).some(v=>{
+      if(typeof v === 'string') return v.trim().length>0;
+      if(v && typeof v==='object') return (v.chosen&&v.chosen.length>0) || (v.other&&v.other.trim().length>0);
+      return false;
+    });
+  }
+  async function maybeReconstructAnswers(){
+    if(hasAnyRealAnswer() || !state.luot1) return;
+    state.reconstructingAnswers = true; draw();
+    try{
+      const data = await callApi('/api/dinh-vi-reconstruct-answers', { luot1: state.luot1, luot2: state.luot2 });
+      if(data.answers) state.answers = { ...data.answers, ...state.answers };
+    } catch(e){ /* lỗi thì thôi, vẫn cho vào sửa bình thường (trống như trước), không chặn người dùng */ }
+    state.reconstructingAnswers = false;
   }
 
   async function saveTruc(){

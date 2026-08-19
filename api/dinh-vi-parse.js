@@ -2,6 +2,7 @@
 // thành đúng cấu trúc luot1 (+ luot2 nếu có) thay vì bắt học viên làm lại wizard 26 câu.
 const { requireUser } = require('./_lib/auth');
 const { TOOL_LUOT1, TOOL_LUOT2 } = require('./_lib/positioning-schema');
+const { ANSWER_FIELDS } = require('./_lib/positioning-answer-fields');
 
 const SYSTEM_PROMPT = `Bạn là công cụ TRÍCH XUẤT dữ liệu, không phải công cụ sáng tạo. Người dùng dán vào 1 đoạn văn bản là kết quả định vị thương hiệu cá nhân họ đã làm trước đây (thường từ 1 trợ lý ChatGPT khác gọi là "ĐỊNH VỊ AI").
 
@@ -14,25 +15,6 @@ NGUYÊN TẮC BẮT BUỘC:
 - 2 mục "dau_an_hinh_anh" và "cau_chuyen_ca_nhan" là mục MỚI, các bản định vị làm TRƯỚC ĐÂY chắc chắn KHÔNG có nội dung tương ứng — đây là chuyện BÌNH THƯỜNG, không phải lỗi. Nếu văn bản gốc không có nội dung khớp 2 mục này: điền mọi sub-field text trong dau_an_hinh_anh = "" và canh_mo_dau = mảng rỗng; điền cau_chuyen = "", qua_so_sai = false, cau_hoi_lam_ro = mảng rỗng. TUYỆT ĐỐI KHÔNG vì 2 mục mới này thiếu mà suy ra các mục CƠ BẢN khác (tong_quan_thuong_hieu, ho_so_chuyen_mon, loi_the_canh_tranh, hinh_anh_nen_xay, ban_sac_triet_ly_thuong_hieu, giong_dieu_ngon_ngu, khong_theo_duoi, ket_luan_dinh_vi...) cũng "không có trong dữ liệu gốc" — các mục đó vẫn phải trích xuất đầy đủ bình thường nếu văn bản gốc có nội dung tương ứng, dù diễn đạt khác cấu trúc hiện tại.
 - Ngoài luot1/luot2, hãy SUY LUẬN NGƯỢC lại câu trả lời gốc (13 câu, field "answers") mà người dùng có thể đã trả lời để dẫn tới đúng kết quả định vị này — diễn đạt lại thành 1 đoạn văn tự nhiên như chính người dùng viết, DÙNG ĐÚNG thông tin/ý đã có trong văn bản gốc, KHÔNG bịa thêm chi tiết mới không suy ra được. Câu nào không tìm được thông tin tương ứng trong văn bản gốc thì để chuỗi rỗng "" — không cố gò ép suy diễn khi không có căn cứ.
 - Output tiếng Việt, giữ nguyên thuật ngữ chuyên ngành có trong văn bản gốc.`;
-
-// Chỉ suy luận ngược 13 câu dạng textarea (câu trả lời dài, có giá trị chép lại nhất) — bỏ qua 5
-// câu dạng chọn (chips/radio) vì khó khớp đúng 1 trong các lựa chọn có sẵn từ văn bản tự do, để
-// người dùng tự chọn lại nhanh cho chắc, không suy diễn sai lệch.
-const ANSWER_FIELDS = {
-  a1: 'Công việc/lĩnh vực hiện tại, đã làm bao lâu, giỏi nhất ở đâu, đang kẹt ở đâu.',
-  a2: 'Mục đích xây thương hiệu cá nhân, sản phẩm/dịch vụ/khoá học muốn dẫn người xem về.',
-  b1: 'Biến cố hoặc hành trình để lại bài học sâu sắc, có thể làm "linh hồn" cho kênh.',
-  b2: 'Điều người khác hay tìm đến hỏi/khen nhiều nhất, chủ đề có thể nói rất lâu.',
-  b3: 'Việc thích làm đến mức không thấy mệt, và việc không thích/dễ tụt năng lượng.',
-  b4: 'Điều từng tự ti hoặc bị chê.',
-  c4: 'Chất liệu hình ảnh có thể quay dễ dàng mỗi ngày.',
-  d1: 'Người làm nội dung tương tự đang làm tốt điều gì, khác biệt ở điểm nào.',
-  d2: 'Câu nói 10 giây để người lạ nhớ được mình là ai.',
-  d3: 'Điều tin sâu sắc nhất về lĩnh vực đang làm, không phải ai cũng đồng ý.',
-  e1: 'Công việc làm nhiều nhất mỗi ngày, đồ vật/không gian luôn xuất hiện cùng.',
-  e2: 'Phong cách ăn mặc/xuất hiện có nhất quán không, đặc điểm gì.',
-  e3: 'Điểm chung về hình ảnh của những người có thương hiệu mạnh mà ngưỡng mộ.',
-};
 
 const TOOL_PARSE = {
   name: 'xuat_ket_qua_da_trich_xuat',
