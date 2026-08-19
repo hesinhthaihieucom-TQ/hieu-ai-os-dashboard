@@ -32,7 +32,7 @@ function render(container, ctx){
       </div>
       ${state.result ? resultHtml() : ''}
       ${state.history.length ? `<div style="margin-top:28px;"><h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Lịch sử chấm gần đây</h3>
-        ${state.history.map(h=>`<div class="list-item"><div class="txt"><div class="meta">${new Date(h.created_at).toLocaleDateString('vi-VN')} · ${h.result.diem_tong}/100</div>${esc(h.hook_text)}</div></div>`).join('')}
+        ${state.history.map(h=>`<div class="list-item"><div class="txt"><div class="meta">${new Date(h.created_at).toLocaleDateString('vi-VN')} · ${h.result.diem_tong}/100</div>${esc(h.hook_text)}</div><span style="color:var(--danger);cursor:pointer;font-size:12px;white-space:nowrap;" data-del-history="${h.id}">Xoá</span></div>`).join('')}
       </div>` : ''}
     `;
   }
@@ -73,6 +73,15 @@ function render(container, ctx){
     if(improveBtn) improveBtn.onclick = improve;
     container.querySelectorAll('[data-save-improved]').forEach(el=>{
       el.onclick = ()=>saveImprovedHook(Number(el.getAttribute('data-save-improved')));
+    });
+    container.querySelectorAll('[data-del-history]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-del-history');
+        if(!(await confirmModal('Xoá mục này khỏi lịch sử chấm điểm?'))) return;
+        await ctx.supabase.from('hook_scores').delete().eq('id', id);
+        state.history = state.history.filter(h=>h.id!==id);
+        draw();
+      };
     });
   }
 

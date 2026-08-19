@@ -25,7 +25,7 @@ function render(container, ctx){
       </div>
       ${state.result ? resultHtml() : ''}
       ${state.history.length ? `<div style="margin-top:28px;"><h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Lịch sử chấm gần đây</h3>
-        ${state.history.map(h=>`<div class="list-item"><div class="txt"><div class="meta">${new Date(h.created_at).toLocaleDateString('vi-VN')} · ${h.result.diem_tong}/100</div>${esc((h.content_text||'').slice(0,100))}…</div></div>`).join('')}
+        ${state.history.map(h=>`<div class="list-item"><div class="txt"><div class="meta">${new Date(h.created_at).toLocaleDateString('vi-VN')} · ${h.result.diem_tong}/100</div>${esc((h.content_text||'').slice(0,100))}…</div><span style="color:var(--danger);cursor:pointer;font-size:12px;white-space:nowrap;" data-del-history="${h.id}">Xoá</span></div>`).join('')}
       </div>` : ''}
     `;
   }
@@ -56,6 +56,15 @@ function render(container, ctx){
     if(btn) btn.onclick = score;
     const rewriteBtn = container.querySelector('[data-action="rewrite"]');
     if(rewriteBtn) rewriteBtn.onclick = rewrite;
+    container.querySelectorAll('[data-del-history]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-del-history');
+        if(!(await confirmModal('Xoá mục này khỏi lịch sử chấm điểm?'))) return;
+        await ctx.supabase.from('content_scores').delete().eq('id', id);
+        state.history = state.history.filter(h=>h.id!==id);
+        draw();
+      };
+    });
   }
 
   async function score(){
