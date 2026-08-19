@@ -24,7 +24,7 @@ function render(container, ctx){
       <div class="page-head"><h1>Chấm Điểm Content</h1><p>Dán bài viết vào — AI chấm theo 6 tiêu chí: hook, chất liệu thật, giá trị, CTA, có bị "AI hoá" không${state.positioning&&state.positioning.luot1?', và khớp giọng điệu định vị':''}.</p></div>
       <div class="card">
         <textarea id="score-input" placeholder="Dán nguyên văn bài viết cần chấm vào đây...">${esc(state.text)}</textarea>
-        <div class="btn-row"><button class="btn" data-action="score" ${state.loading?'disabled':''}>${state.loading?'Đang chấm…':'Chấm điểm bài này'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>
+        <div class="btn-row"><button class="btn" data-action="score" ${state.loading?'disabled':''}>${state.loading?'Đang chấm…':'Chấm điểm bài này'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 2 lượt AI)</span></div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để chấm đủ 6 tiêu chí — đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
         ${!state.positioning || !state.positioning.luot1 ? `<div class="hint-box">Chưa có Định Vị — vẫn chấm được, nhưng sẽ bỏ qua tiêu chí "khớp giọng điệu".</div>` : ''}

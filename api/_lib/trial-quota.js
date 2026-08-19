@@ -19,6 +19,25 @@ const PAID_MONTHLY_AI_LIMIT = 150;
 // mức nền — trần 150 đã đủ cho use-case bình thường kể cả khách đăng nhiều bài/ngày.
 const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
 
+// Trọng số lượt theo TỪNG hành động — phản ánh đúng chi phí Anthropic thực tế của hành động đó
+// (hành động càng nhiều token/prompt dài thì tốn càng nhiều lượt), thay vì trước đây tính đồng giá
+// 1 lượt/hành động dù chi phí thực tế lệch nhau tới ~6-7 lần giữa hành động rẻ nhất và đắt nhất.
+const AI_WEIGHTS = {
+  'cai-thien-hook': 1,
+  'cham-diem-hook': 1,
+  'goi-y-hook-theo-chu-de': 1,
+  'goi-y-day-bai': 1,
+  'goi-y-tu-nguon': 1,
+  'cham-diem-content': 2,
+  'goi-y-lich': 2,
+  'viet-content': 3,
+  'viet-tu-kho-goc': 3,
+  'tai-che-viral': 3,
+  'sua-kenh': 4,
+  'dinh-vi': 5,
+  'dinh-vi-parse': 6,
+};
+
 async function supabaseRpc(fn, args) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
@@ -38,11 +57,12 @@ async function supabaseRpc(fn, args) {
 // các việc đó rất rẻ và là 1 phần tự nhiên của thao tác chính đã tính lượt rồi.
 // Lỗi đọc/ghi (sự cố hạ tầng) thì KHÔNG chặn người dùng — thà để dùng thừa 1 vài lượt còn hơn chặn
 // oan người dùng thật vì server sự cố.
-async function checkAndConsumeTrialQuota(userId) {
+async function checkAndConsumeTrialQuota(userId, actionKey) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  const weight = AI_WEIGHTS[actionKey] || 1;
   try {
     const resp = await supabaseRpc('consume_ai_quota', {
-      p_user_id: userId, p_trial_limit: TRIAL_AI_LIMIT, p_paid_limit: PAID_MONTHLY_AI_LIMIT,
+      p_user_id: userId, p_trial_limit: TRIAL_AI_LIMIT, p_paid_limit: PAID_MONTHLY_AI_LIMIT, p_weight: weight,
     });
     if (!resp.ok) return null;
     const data = await resp.json();
@@ -59,11 +79,12 @@ async function checkAndConsumeTrialQuota(userId) {
 // Gọi trong catch block của endpoint, SAU checkAndConsumeTrialQuota, khi bản thân lệnh gọi AI/luồng
 // xử lý bị lỗi (Anthropic lỗi, thiếu dữ liệu đầu vào...) — trả lại đúng 1 lượt vừa trừ oan vì người
 // dùng không thực sự nhận được kết quả. Không dùng cho lỗi 401/402 (chưa từng trừ lượt ở các case đó).
-async function refundTrialQuota(userId) {
+async function refundTrialQuota(userId, actionKey) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+  const weight = AI_WEIGHTS[actionKey] || 1;
   try {
-    await supabaseRpc('refund_ai_quota', { p_user_id: userId });
+    await supabaseRpc('refund_ai_quota', { p_user_id: userId, p_weight: weight });
   } catch (e) {}
 }
 
-module.exports = { checkAndConsumeTrialQuota, refundTrialQuota, TRIAL_AI_LIMIT, PAID_MONTHLY_AI_LIMIT, PAID_TOPUP_PACK };
+module.exports = { checkAndConsumeTrialQuota, refundTrialQuota, TRIAL_AI_LIMIT, PAID_MONTHLY_AI_LIMIT, PAID_TOPUP_PACK, AI_WEIGHTS };

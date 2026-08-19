@@ -125,7 +125,7 @@ function render(container, ctx){
         ` : ''}
         <div class="btn-row">
           <button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button>
-          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span>
+          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 2 lượt AI)</span>
           ${(state.aiSuggestions || state.weeklyGoal) ? `<span class="btn-ghost btn btn-sm" data-action="reset-week">Reset tuần</span>` : ''}
         </div>
         <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu theo tài khoản — xem lại được trên mọi thiết bị, không mất khi thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>

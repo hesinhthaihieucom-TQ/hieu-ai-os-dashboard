@@ -79,7 +79,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  const quotaError = await checkAndConsumeTrialQuota(user.id, 'cham-diem-content');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_SCORE });
     res.status(200).json({ result });
   } catch (err) {
-    await refundTrialQuota(user.id);
+    await refundTrialQuota(user.id, 'cham-diem-content');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi chấm điểm.' });
   }
 };

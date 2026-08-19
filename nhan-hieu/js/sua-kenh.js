@@ -103,7 +103,7 @@ function render(container, ctx){
         <div style="display:flex;gap:10px;">
           ${step.type!=='choice' ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;align-self:center;" data-action="skip">Bỏ qua</span>` : ''}
           <button class="btn" data-action="next">${state.qIndex===STEPS.length-1?'Audit kênh của tôi':'Tiếp tục'}</button>
-          ${state.qIndex===STEPS.length-1?`<span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span>`:''}
+          ${state.qIndex===STEPS.length-1?`<span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 4 lượt AI)</span>`:''}
         </div>
       </div>
       ${state.error?`<div class="error-box" style="margin-top:16px;">${esc(state.error)}</div>`:''}
@@ -147,7 +147,7 @@ function render(container, ctx){
         </div>
       ` : ''}
       <div class="btn-row no-print">
-        <button class="btn-ghost btn" data-action="redo">Audit lại</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span>
+        <button class="btn-ghost btn" data-action="redo">Audit lại</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 4 lượt AI)</span>
         <a class="btn" href="#dinh-dang-content">Tiếp tục: Dạng Content →</a>
       </div>
     `;

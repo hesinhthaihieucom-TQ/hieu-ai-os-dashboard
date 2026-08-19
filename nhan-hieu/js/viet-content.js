@@ -162,7 +162,7 @@ function render(container, ctx){
         ` : ''}
         <div class="btn-row" style="align-items:center;">
           <button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button>
-          ${!state.generating?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
+          ${!state.generating?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 3 lượt AI)</span>`:''}
           ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="retry-generate">Thử lại ngay</span>`:''}
         </div>
         <div class="hint-box" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng <b>30-45 giây</b> — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần.<br><br>Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm <b>"Thử lại ngay"</b> nếu chờ quá lâu không thấy gì, <b>không cần nhập lại chủ đề</b>.</div>
@@ -352,7 +352,7 @@ function render(container, ctx){
 
       <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Bước tiếp theo</div></div>
       <div class="btn-row no-print" style="justify-content:flex-start;flex-wrap:wrap;align-items:center;">
-        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>${!state.score?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}</span>` : ''}
+        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>${!state.score?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 2 lượt AI)</span>`:''}</span>` : ''}
         ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-hook">${state.hookScore?'✓ ':''}Chấm điểm Hook →</button>${!state.hookScore?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}</span>` : ''}
         <button class="btn-ghost btn btn-sm" data-action="toggle-extras">${state.result.hashtag?'✓ ':''}Hashtag, hình ảnh, dạng content &amp; caption →</button>
       </div>

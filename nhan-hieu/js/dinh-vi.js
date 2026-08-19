@@ -130,7 +130,7 @@ function render(container, ctx){
       <div class="btn-row" style="justify-content:center;align-items:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
         <button class="btn-ghost btn" data-action="redo-from-done" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':'Sửa lại câu trả lời'}</button>
-        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
+        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 5 lượt AI)</span>`:''}
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
       <div style="text-align:center;margin-top:18px;">
@@ -165,14 +165,14 @@ function render(container, ctx){
         <div class="tag">Bước 1 · Định Vị</div>
         <h1>Tìm ra định vị thương hiệu chuẩn nhất</h1>
         <p>Trả lời thật 18 câu hỏi trong 5 nhóm — mất khoảng 10-12 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>
-        <p style="color:var(--accent);font-size:13.5px;font-weight:600;margin-top:6px;">💡 Nên trả lời kỹ, thật ngay từ đầu — mỗi lần bấm "Sửa lại câu trả lời" để làm lại sẽ tính thêm 1 lượt AI trong số lượt dùng thử của bạn.</p>
+        <p style="color:var(--accent);font-size:13.5px;font-weight:600;margin-top:6px;">💡 Nên trả lời kỹ, thật ngay từ đầu — mỗi lần bấm "Sửa lại câu trả lời" để làm lại sẽ tính thêm 5 lượt AI trong số lượt dùng thử của bạn.</p>
       </div>
       <div class="source-grid">
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
       </div>
       <div class="btn-row" style="align-items:center;">
         <button class="btn" data-action="start" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':(hasSaved?'Sửa lại câu trả lời':'Bắt đầu')}</button>
-        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
+        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 5 lượt AI)</span>`:''}
         ${hasSaved?`<button class="btn-ghost btn" data-action="view-saved">Xem định vị đã lưu</button>`:''}
       </div>
       <div style="text-align:center;margin-top:18px;">
@@ -191,7 +191,7 @@ function render(container, ctx){
       <div class="card">
         <textarea id="paste-input" style="min-height:260px;" placeholder="Dán nguyên văn kết quả định vị vào đây...">${esc(state.pasteText)}</textarea>
         <div class="btn-row">
-          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span>
+          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 6 lượt AI)</span>
           <button class="btn-ghost btn" data-action="back-to-intro">← Quay lại</button>
         </div>
         ${state.pasteError?`<div class="error-box">${esc(state.pasteError)}</div>`:''}
@@ -251,7 +251,7 @@ function render(container, ctx){
       </div>
       <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
         ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
-        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>':''}
+        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:11px;color:var(--ink-soft);">(tốn 5 lượt AI)</span>':''}
       </div>
     `;
   }

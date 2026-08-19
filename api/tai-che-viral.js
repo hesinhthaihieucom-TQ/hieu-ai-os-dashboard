@@ -114,7 +114,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  const quotaError = await checkAndConsumeTrialQuota(user.id, 'tai-che-viral');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -158,7 +158,7 @@ module.exports = async (req, res) => {
 
     res.status(400).json({ error: 'Thiếu hoặc sai "stage" (phan_tich | tieu_de | mot_bai).' });
   } catch (err) {
-    await refundTrialQuota(user.id);
+    await refundTrialQuota(user.id, 'tai-che-viral');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi phân tích/tái chế content.' });
   }
 };

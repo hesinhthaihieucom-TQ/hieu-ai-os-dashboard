@@ -50,7 +50,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id);
+  const quotaError = await checkAndConsumeTrialQuota(user.id, 'goi-y-tu-nguon');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -77,7 +77,7 @@ Hãy sinh 5 ý tưởng content mới lấy cảm hứng từ nguồn trên, bá
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_IDEAS });
     res.status(200).json({ result });
   } catch (err) {
-    await refundTrialQuota(user.id);
+    await refundTrialQuota(user.id, 'goi-y-tu-nguon');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi sinh ý tưởng.' });
   }
 };

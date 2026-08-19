@@ -88,9 +88,15 @@ create trigger on_auth_user_created
 -- nhiều request có thể cùng đọc được số cũ trước khi request nào kịp ghi lại, khiến tất cả cùng
 -- "thấy" còn dưới trần và đều được duyệt — vượt quá giới hạn thật sự cho phép. Khoá "for update"
 -- buộc các request cùng 1 user phải xếp hàng xử lý lần lượt, không thể lách qua khe hở đó.
+-- p_weight: số "lượt" thực trừ cho 1 lần gọi — hành động càng tốn chi phí AI thật (token/max_tokens
+-- càng cao) thì trọng số càng lớn, thay vì mọi hành động đều trừ đều 1 lượt như nhau dù chi phí
+-- thật chênh nhau tới 6-7 lần giữa hành động rẻ nhất và đắt nhất (xem AI_WEIGHTS ở
+-- api/_lib/trial-quota.js) — nhờ vậy trần lượt/tháng phản ánh đúng trần CHI PHÍ hơn là trần SỐ
+-- LẦN BẤM, công bằng hơn cho khách chỉ dùng các mục rẻ.
 -- CHỈ cấp quyền gọi cho service_role (server dùng SUPABASE_SERVICE_ROLE_KEY) — không cấp cho
 -- authenticated/anon vì hàm nhận thẳng p_user_id, nếu lộ ra người dùng có thể tự sửa lượt người khác.
-create or replace function public.consume_ai_quota(p_user_id uuid, p_trial_limit int, p_paid_limit int)
+drop function if exists public.consume_ai_quota(uuid, int, int);
+create or replace function public.consume_ai_quota(p_user_id uuid, p_trial_limit int, p_paid_limit int, p_weight int default 1)
 returns jsonb as $$
 declare
   v_profile profiles%rowtype;
@@ -108,10 +114,10 @@ begin
   v_is_admin := (v_profile.role = 'admin');
 
   if not v_profile.has_paid then
-    if (not v_is_admin) and v_profile.trial_ai_uses >= p_trial_limit then
+    if (not v_is_admin) and v_profile.trial_ai_uses + p_weight > p_trial_limit then
       return jsonb_build_object('allowed', false, 'effective_limit', p_trial_limit, 'mode', 'trial');
     end if;
-    update profiles set trial_ai_uses = trial_ai_uses + 1 where id = p_user_id;
+    update profiles set trial_ai_uses = trial_ai_uses + p_weight where id = p_user_id;
     return jsonb_build_object('allowed', true);
   end if;
 
@@ -124,22 +130,23 @@ begin
   end if;
   v_effective_limit := p_paid_limit + v_bonus;
 
-  if (not v_is_admin) and v_current_uses >= v_effective_limit then
+  if (not v_is_admin) and v_current_uses + p_weight > v_effective_limit then
     return jsonb_build_object('allowed', false, 'effective_limit', v_effective_limit, 'mode', 'paid');
   end if;
 
   if v_profile.paid_ai_month = v_month then
-    update profiles set paid_ai_uses = paid_ai_uses + 1 where id = p_user_id;
+    update profiles set paid_ai_uses = paid_ai_uses + p_weight where id = p_user_id;
   else
-    update profiles set paid_ai_uses = 1, paid_ai_month = v_month, paid_ai_bonus = 0 where id = p_user_id;
+    update profiles set paid_ai_uses = p_weight, paid_ai_month = v_month, paid_ai_bonus = 0 where id = p_user_id;
   end if;
   return jsonb_build_object('allowed', true);
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
-revoke all on function public.consume_ai_quota(uuid, int, int) from public, authenticated, anon;
-grant execute on function public.consume_ai_quota(uuid, int, int) to service_role;
+revoke all on function public.consume_ai_quota(uuid, int, int, int) from public, authenticated, anon;
+grant execute on function public.consume_ai_quota(uuid, int, int, int) to service_role;
 
-create or replace function public.refund_ai_quota(p_user_id uuid)
+drop function if exists public.refund_ai_quota(uuid);
+create or replace function public.refund_ai_quota(p_user_id uuid, p_weight int default 1)
 returns void as $$
 declare
   v_profile profiles%rowtype;
@@ -148,16 +155,16 @@ begin
   select * into v_profile from profiles where id = p_user_id for update;
   if not found then return; end if;
   if not v_profile.has_paid then
-    update profiles set trial_ai_uses = greatest(0, trial_ai_uses - 1) where id = p_user_id;
+    update profiles set trial_ai_uses = greatest(0, trial_ai_uses - p_weight) where id = p_user_id;
     return;
   end if;
   if v_profile.paid_ai_month = v_month then
-    update profiles set paid_ai_uses = greatest(0, paid_ai_uses - 1) where id = p_user_id;
+    update profiles set paid_ai_uses = greatest(0, paid_ai_uses - p_weight) where id = p_user_id;
   end if;
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
-revoke all on function public.refund_ai_quota(uuid) from public, authenticated, anon;
-grant execute on function public.refund_ai_quota(uuid) to service_role;
+revoke all on function public.refund_ai_quota(uuid, int) from public, authenticated, anon;
+grant execute on function public.refund_ai_quota(uuid, int) to service_role;
 
 create or replace function public.is_admin()
 returns boolean as $$

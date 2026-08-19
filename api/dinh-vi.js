@@ -105,7 +105,7 @@ module.exports = async (req, res) => {
   // lần gọi Lượt 1; lần gọi Lượt 2 (luot===2) không đụng gì tới quota cả — kể cả khi nó lỗi, người
   // dùng vẫn đã có kết quả Lượt 1 dùng được ngay, không phải mất trắng lượt vừa trừ.
   if (luot !== 2) {
-    const quotaError = await checkAndConsumeTrialQuota(user.id);
+    const quotaError = await checkAndConsumeTrialQuota(user.id, 'dinh-vi');
     if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
   }
 
@@ -131,7 +131,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_LUOT1 });
     res.status(200).json({ luot: 1, result });
   } catch (err) {
-    if (luot !== 2) await refundTrialQuota(user.id);
+    if (luot !== 2) await refundTrialQuota(user.id, 'dinh-vi');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi tạo định vị.' });
   }
 };

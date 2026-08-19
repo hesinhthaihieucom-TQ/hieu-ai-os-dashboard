@@ -63,22 +63,30 @@ function sidebarFootHtml(){
 // Danh sách đúng 13 endpoint có tính lượt (khớp checkAndConsumeTrialQuota ở từng file api/*.js) —
 // dùng để nhận biết lệnh gọi nào vừa thành công cần tăng số đếm hiển thị ngay, không cần đợi tải
 // lại trang mới thấy số mới (trước đây sidebar chỉ cập nhật lúc load lại profile).
-const GATED_API_PATHS = [
-  'api/dinh-vi', 'api/dinh-vi-parse', 'api/viet-content', 'api/viet-tu-kho-goc', 'api/tai-che-viral',
-  'api/goi-y-lich', 'api/cham-diem-content', 'api/cham-diem-hook', 'api/sua-kenh',
-  'api/goi-y-hook-theo-chu-de', 'api/cai-thien-hook', 'api/goi-y-day-bai', 'api/goi-y-tu-nguon',
-];
+// Trọng số phải khớp đúng với AI_WEIGHTS ở api/_lib/trial-quota.js (bên server mới là nơi THỰC SỰ
+// trừ lượt) — bảng này chỉ dùng để cập nhật ngay số lượt hiển thị ở sidebar cho mượt, không cần
+// đợi tải lại trang mới thấy số mới.
+const GATED_API_WEIGHTS = {
+  'api/cai-thien-hook': 1, 'api/cham-diem-hook': 1, 'api/goi-y-hook-theo-chu-de': 1,
+  'api/goi-y-day-bai': 1, 'api/goi-y-tu-nguon': 1,
+  'api/cham-diem-content': 2, 'api/goi-y-lich': 2,
+  'api/viet-content': 3, 'api/viet-tu-kho-goc': 3, 'api/tai-che-viral': 3,
+  'api/sua-kenh': 4,
+  'api/dinh-vi': 5,
+  'api/dinh-vi-parse': 6,
+};
 window.onGatedApiSuccess = function(relativePath){
   const p = AppState.profile;
   if(!p) return;
   const path = relativePath.split('?')[0];
-  if(!GATED_API_PATHS.includes(path)) return;
+  const weight = GATED_API_WEIGHTS[path];
+  if(!weight) return;
   if(!p.has_paid){
-    p.trial_ai_uses = (p.trial_ai_uses||0) + 1;
+    p.trial_ai_uses = (p.trial_ai_uses||0) + weight;
   } else {
     const month = new Date().toISOString().slice(0,7);
     if(p.paid_ai_month !== month){ p.paid_ai_month = month; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
-    p.paid_ai_uses = (p.paid_ai_uses||0) + 1;
+    p.paid_ai_uses = (p.paid_ai_uses||0) + weight;
   }
   const el = document.getElementById('sidebar-foot-info');
   if(el) el.innerHTML = sidebarFootHtml();
