@@ -128,7 +128,7 @@ function render(container, ctx){
       </div>
       <div class="btn-row" style="justify-content:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
-        <button class="btn-ghost btn" data-action="redo-from-done">Sửa lại câu trả lời (giữ nguyên câu cũ, điền thêm/sửa)</button>
+        <button class="btn-ghost btn" data-action="redo-from-done">Sửa lại câu trả lời</button>
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
       <div style="text-align:center;margin-top:18px;">
