@@ -48,7 +48,8 @@ function render(container, ctx){
     channelHandle:'', channelSaving:false, channelSaved:false,
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
-    brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null };
+    brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
+    editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
@@ -389,18 +390,42 @@ function render(container, ctx){
         ${sectionHtml('Khao khát & mục tiêu', r2.khao_khat_muc_tieu)}
         <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${escBold(r2.insight_cot_loi)}</div></div>
         <div class="section">
-          <h3>Hệ trục nội dung</h3>
-          ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
-          <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
-            <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
-            <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin-bottom:0;">Hệ trục nội dung</h3>
+            ${!state.editingTruc ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-truc">✏️ Không hài lòng? Tự sửa</span>` : ''}
           </div>
-          <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
-          ${r2.he_truc_noi_dung.tru_phu.map(t=>`
-            <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
-              <b>${esc(t.ten)}</b><br><span style="font-size:13px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
+          ${state.editingTruc ? `
+            <div style="margin-top:14px;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Trục chính</label>
+              <textarea id="edit-truc-chinh" style="min-height:auto;height:44px;">${esc(state.editTrucChinh)}</textarea>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 8px;">Trục phụ (bổ trợ)</label>
+              ${state.editTruPhu.map((t,i)=>`
+                <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;flex-wrap:wrap;">
+                  <input data-edit-truphu-ten="${i}" value="${esc(t.ten)}" placeholder="Tên trục phụ" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+                  <input data-edit-truphu-vaitro="${i}" value="${esc(t.vai_tro)}" placeholder="Vai trò" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+                  <span data-edit-truphu-remove="${i}" style="align-self:center;color:var(--danger);cursor:pointer;font-size:12px;">Xoá</span>
+                </div>
+              `).join('')}
+              <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="add-truphu">+ Thêm trục phụ</span>
+              ${state.editTrucError?`<div class="error-box" style="margin-top:10px;">${esc(state.editTrucError)}</div>`:''}
+              <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
+                <button class="btn btn-sm" data-action="save-truc" ${state.editTrucSaving?'disabled':''}>${state.editTrucSaving?'Đang lưu…':'Lưu'}</button>
+                <span class="btn-ghost btn btn-sm" data-action="cancel-edit-truc">Huỷ</span>
+              </div>
             </div>
-          `).join('')}
+          ` : `
+            ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
+            <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
+              <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
+              <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
+            ${r2.he_truc_noi_dung.tru_phu.map(t=>`
+              <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
+                <b>${esc(t.ten)}</b><br><span style="font-size:13px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
+              </div>
+            `).join('')}
+          `}
         </div>
         ${(()=>{
           const dt = r2.dong_tien_phu_hop || {};
@@ -461,6 +486,33 @@ function render(container, ctx){
 
     const backToIntro = container.querySelector('[data-action="back-to-intro"]');
     if(backToIntro) backToIntro.onclick = ()=>{ state.screen = state.luot1 ? 'done' : 'intro'; draw(); };
+
+    const editTrucBtn = container.querySelector('[data-action="edit-truc"]');
+    if(editTrucBtn) editTrucBtn.onclick = ()=>{
+      const truc = (state.luot2 && state.luot2.he_truc_noi_dung) || { truc_chinh:'', tru_phu:[] };
+      state.editTrucChinh = truc.truc_chinh || '';
+      state.editTruPhu = (truc.tru_phu || []).map(t=>({ ten:t.ten||'', vai_tro:t.vai_tro||'' }));
+      state.editTrucError = null;
+      state.editingTruc = true;
+      draw();
+    };
+    const cancelEditTrucBtn = container.querySelector('[data-action="cancel-edit-truc"]');
+    if(cancelEditTrucBtn) cancelEditTrucBtn.onclick = ()=>{ state.editingTruc = false; draw(); };
+    const addTruPhuBtn = container.querySelector('[data-action="add-truphu"]');
+    if(addTruPhuBtn) addTruPhuBtn.onclick = ()=>{ state.editTruPhu.push({ ten:'', vai_tro:'' }); draw(); };
+    container.querySelectorAll('[data-edit-truphu-remove]').forEach(el=>{
+      el.onclick = ()=>{ state.editTruPhu.splice(Number(el.getAttribute('data-edit-truphu-remove')), 1); draw(); };
+    });
+    const editTrucChinhInput = container.querySelector('#edit-truc-chinh');
+    if(editTrucChinhInput) editTrucChinhInput.oninput = ()=>{ state.editTrucChinh = editTrucChinhInput.value; };
+    container.querySelectorAll('[data-edit-truphu-ten]').forEach(el=>{
+      el.oninput = ()=>{ state.editTruPhu[Number(el.getAttribute('data-edit-truphu-ten'))].ten = el.value; };
+    });
+    container.querySelectorAll('[data-edit-truphu-vaitro]').forEach(el=>{
+      el.oninput = ()=>{ state.editTruPhu[Number(el.getAttribute('data-edit-truphu-vaitro'))].vai_tro = el.value; };
+    });
+    const saveTrucBtn = container.querySelector('[data-action="save-truc"]');
+    if(saveTrucBtn) saveTrucBtn.onclick = saveTruc;
 
     const pasteInput = container.querySelector('#paste-input');
     if(pasteInput) pasteInput.oninput = ()=>{ state.pasteText = pasteInput.value; };
@@ -638,6 +690,20 @@ function render(container, ctx){
       } else out[q.id] = val || '';
     });
     return out;
+  }
+
+  async function saveTruc(){
+    if(!state.editTrucChinh.trim() || state.editTrucSaving) return;
+    state.editTrucSaving = true; state.editTrucError = null; draw();
+    try{
+      const cleanTruPhu = state.editTruPhu.filter(t=>t.ten.trim() || t.vai_tro.trim());
+      const newLuot2 = { ...state.luot2, he_truc_noi_dung: { ...state.luot2.he_truc_noi_dung, truc_chinh: state.editTrucChinh.trim(), tru_phu: cleanTruPhu } };
+      await persist({ luot1: state.luot1, luot2: newLuot2 });
+      state.luot2 = newLuot2;
+      state.editingTruc = false;
+    } catch(e){ state.editTrucError = e.message; }
+    state.editTrucSaving = false;
+    draw();
   }
 
   async function persist(fields){
