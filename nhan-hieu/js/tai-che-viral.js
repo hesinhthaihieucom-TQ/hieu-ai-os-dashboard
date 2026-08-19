@@ -35,7 +35,9 @@ function render(container, ctx){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
       <div class="page-head"><h1>Phân Tích &amp; Tái Chế Content Viral</h1>
-      <p>Dán 1 bài/video đang viral, để AI mổ xẻ đúng lý do nó thành công — rồi áp dụng chính cấu trúc tâm lý đó cho chủ đề của bạn.</p></div>
+      <p>Dán 1 bài/video đang viral, để AI mổ xẻ đúng lý do nó thành công — rồi áp dụng chính cấu trúc tâm lý đó cho chủ đề của bạn.</p>
+      ${(state.phanTich || state.viralText) ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
+      </div>
 
       ${!state.positioning ? `
         <div class="hint-box">Chưa có Định Vị đã lưu — vẫn dùng được bình thường, nhưng nếu <a href="#dinh-vi">làm Định Vị trước</a>, kết quả sẽ đúng giọng văn và đối tượng của bạn hơn.</div>
@@ -151,6 +153,16 @@ function render(container, ctx){
 
     const analyzeBtn = container.querySelector('[data-action="analyze"]');
     if(analyzeBtn) analyzeBtn.onclick = analyzeViral;
+
+    const resetDraftBtn = container.querySelector('[data-action="reset-draft"]');
+    if(resetDraftBtn) resetDraftBtn.onclick = async ()=>{
+      if(!(await confirmModal('Xoá bài đang làm dở và làm bài mới? Không khôi phục lại được.'))) return;
+      await clearModuleDraft(ctx, DRAFT_KEY);
+      state.viralText=''; state.topic=''; state.phanTich=null;
+      state.recycleMode=null; state.titles=null; state.savedTitleIdx={};
+      state.posts=[]; state.savedPostIdx={}; state.analyzeError=null; state.titlesError=null; state.postsError=null;
+      draw();
+    };
 
     container.querySelectorAll('[data-recycle-mode]').forEach(el=>{
       el.onclick = ()=>{

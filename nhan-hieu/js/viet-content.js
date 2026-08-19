@@ -90,7 +90,9 @@ function render(container, ctx){
 
     return `
       <div class="page-head"><div class="tag">Bước 4 · Viết Content</div><h1>Viết bài tự động</h1>
-      <p>Nhập chủ đề/ý tưởng, hoặc bấm "Viết →" từ 1 ý tưởng ở bước khác — AI sẽ viết bài đầy đủ.</p></div>
+      <p>Nhập chủ đề/ý tưởng, hoặc bấm "Viết →" từ 1 ý tưởng ở bước khác — AI sẽ viết bài đầy đủ.</p>
+      ${(state.result || state.ideaText || state.khoGocSource) ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
+      </div>
       ${!state.positioning ? `<div class="hint-box">Chưa có Định Vị đã lưu — vẫn viết được bình thường, nhưng nếu <a href="#dinh-vi">làm Định Vị trước</a>, bài viết sẽ đúng giọng văn và đối tượng của bạn hơn.</div>` : ''}
       <div class="card">
         ${state.khoGocSource ? `
@@ -192,7 +194,7 @@ function render(container, ctx){
                   ${state.viralError?`<div style="margin-top:6px;font-size:11.5px;color:var(--danger);">${esc(state.viralError)}</div>`:''}
                 </div>
               ` : `
-                <span style="display:inline-block;margin-top:6px;color:var(--ink-soft);font-size:12px;cursor:pointer;text-decoration:underline;" data-ask-viral="${p.id}">Bài này đã đạt 200k+ view thật? Đóng góp vào Kho Viral →</span>
+                <span style="display:inline-block;margin-top:8px;padding:6px 12px;background:#FBF0DC;border:1px solid var(--gold);border-radius:20px;color:var(--gold);font-weight:700;font-size:12.5px;cursor:pointer;" data-ask-viral="${p.id}">🔥 Bài này viral (200k+ view) thật? Đóng góp vào Kho Viral →</span>
               `}
             </div>
             <button class="btn btn-sm" data-schedule="${p.id}">${scheduled?'Đưa vào lịch thêm →':'Đưa vào lịch →'}</button>
@@ -478,6 +480,16 @@ function render(container, ctx){
     });
     const cancelViralBtn = container.querySelector('[data-cancel-viral]');
     if(cancelViralBtn) cancelViralBtn.onclick = ()=>{ state.viralPromptFor = null; state.viralError = null; draw(); };
+    const resetDraftBtn = container.querySelector('[data-action="reset-draft"]');
+    if(resetDraftBtn) resetDraftBtn.onclick = async ()=>{
+      if(!(await confirmModal('Xoá bài đang làm dở và làm bài mới? Không khôi phục lại được.'))) return;
+      await clearModuleDraft(ctx, DRAFT_KEY);
+      state.ideaText=''; state.khoGocSource=null; state.pendingSourceRef=null;
+      state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
+      state.result=null; state.savedId=null; state.score=null; state.hookScore=null; state.dinhDangOverride=null;
+      state.error=null; state.showScoreContent=false; state.showScoreHook=false; state.showExtras=false;
+      draw();
+    };
     container.querySelectorAll('[data-confirm-viral]').forEach(el=>{
       el.onclick = async ()=>{
         const id = el.getAttribute('data-confirm-viral');

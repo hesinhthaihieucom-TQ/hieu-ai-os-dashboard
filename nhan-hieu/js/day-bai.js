@@ -70,7 +70,9 @@ function render(container, ctx){
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
-      <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — đúng theo mốc lượt xem bài đang lên.</p></div>
+      <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — đúng theo mốc lượt xem bài đang lên.</p>
+      ${state.result ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
+      </div>
 
       <div class="hint-box" style="margin-bottom:16px;">
         <b>Vì sao bước này quan trọng?</b> Facebook không chỉ đo lượt xem để quyết định có đẩy bài đi tiếp hay không — nó đo mức độ NGƯỜI TA Ở LẠI TƯƠNG TÁC sau khi xem: bình luận, được trả lời, bình luận tiếp. Bài có <b>bình luận qua lại</b> (đặc biệt là tác giả tự trả lời) được thuật toán hiểu là "nội dung đáng bàn luận" và tiếp tục đẩy cho nhóm người xem mới, thay vì chỉ đứng yên hoặc chết dần sau vài giờ đầu.
@@ -159,6 +161,14 @@ function render(container, ctx){
   }
 
   function bind(){
+    const resetDraftBtn = container.querySelector('[data-action="reset-draft"]');
+    if(resetDraftBtn) resetDraftBtn.onclick = async ()=>{
+      if(!(await confirmModal('Xoá kết quả đang làm dở và làm mới? Không khôi phục lại được.'))) return;
+      await clearModuleDraft(ctx, DRAFT_KEY);
+      state.postSource='lich'; state.postChoice=''; state.topicOther=''; state.milestone='m1';
+      state.quickContext=''; state.selectedAssetId=''; state.result=null; state.error=null;
+      draw();
+    };
     container.querySelectorAll('[data-post-source]').forEach(el=>{
       el.onclick = ()=>{ state.postSource = el.getAttribute('data-post-source'); state.postChoice = ''; draw(); };
     });
