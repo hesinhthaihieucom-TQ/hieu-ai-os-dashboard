@@ -45,11 +45,14 @@ async function checkAndConsumeTrialQuota(userId) {
     if (!resp.ok) return null;
     const rows = await resp.json();
     const profile = rows[0];
-    // Admin không bao giờ bị giới hạn — đây là tài khoản chủ dùng để quản trị/kiểm tra app.
-    if (!profile || profile.role === 'admin') return null;
+    if (!profile) return null;
+    // Admin vẫn được ĐẾM lượt như bình thường (để chủ web tự có số liệu dùng thực tế, tính toán
+    // rủi ro/giá sau này) nhưng KHÔNG BAO GIỜ bị chặn dù đếm vượt trần — admin là tài khoản chủ
+    // dùng để quản trị/kiểm tra app, phải luôn dùng được.
+    const isAdmin = profile.role === 'admin';
 
     if (!profile.has_paid) {
-      if (profile.trial_ai_uses >= TRIAL_AI_LIMIT) {
+      if (!isAdmin && profile.trial_ai_uses >= TRIAL_AI_LIMIT) {
         return `Bạn đã dùng hết ${TRIAL_AI_LIMIT} lượt AI miễn phí trong thời gian dùng thử — vào mục "Nâng cấp / Mua gói" để dùng tiếp không giới hạn.`;
       }
       await supabaseAdmin(`profiles?id=eq.${userId}`, {
@@ -64,7 +67,7 @@ async function checkAndConsumeTrialQuota(userId) {
     const currentUses = sameMonth ? (profile.paid_ai_uses || 0) : 0;
     const bonus = sameMonth ? (profile.paid_ai_bonus || 0) : 0;
     const effectiveLimit = PAID_MONTHLY_AI_LIMIT + bonus;
-    if (currentUses >= effectiveLimit) {
+    if (!isAdmin && currentUses >= effectiveLimit) {
       return `Bạn đã dùng hết ${effectiveLimit} lượt AI trong tháng này — lượt sẽ tự làm mới vào đầu tháng sau, hoặc vào mục "Nâng cấp / Mua gói" để mua thêm lượt dùng ngay.`;
     }
     // Sang tháng mới thì reset cả bonus (bonus chỉ có giá trị trong đúng tháng đã mua).
@@ -90,7 +93,7 @@ async function refundTrialQuota(userId) {
     if (!resp.ok) return;
     const rows = await resp.json();
     const profile = rows[0];
-    if (!profile || profile.role === 'admin') return;
+    if (!profile) return;
 
     if (!profile.has_paid) {
       await supabaseAdmin(`profiles?id=eq.${userId}`, {

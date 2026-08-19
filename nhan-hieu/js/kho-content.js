@@ -483,7 +483,9 @@ function render(container, ctx){
     } catch(e){ /* không phân loại được (vd lỗi mạng) — vẫn lưu, chỉ thiếu trục, không chặn người dùng */ }
 
     const { data: row, error } = await ctx.supabase.from('content_bank_personal').insert({
-      user_id: ctx.user.id, title: entry.title, content: entry.content,
+      // Nội dung dán vào thường dính liền không xuống dòng — tự tách đoạn theo câu (miễn phí, không
+      // qua AI) để dễ đọc lại sau này, không bắt người dùng tự chỉnh tay trước khi lưu.
+      user_id: ctx.user.id, title: entry.title, content: breakSentences(entry.content),
       source_type: entry.source_type || null, tags,
       is_viral: entry.isViral===true, viral_views: entry.isViral===true ? (entry.viralViews||null) : null,
       viral_likes: entry.isViral===true ? (entry.viralLikes||null) : null,

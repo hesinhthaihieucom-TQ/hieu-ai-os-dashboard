@@ -34,7 +34,14 @@ function paidMonthlyUsage(p){
 }
 function trialQuotaHint(){
   const p = AppState.profile;
-  if(!p || p.role==='admin') return '';
+  if(!p) return '';
+  // Admin không bao giờ bị chặn (server luôn cho qua), nhưng vẫn được ĐẾM — hiện dạng thống kê
+  // nhẹ nhàng (không cảnh báo đỏ) để chủ web tự theo dõi mức dùng thật của chính mình.
+  if(p.role==='admin'){
+    const used = p.has_paid ? paidMonthlyUsage(p).used : (p.trial_ai_uses||0);
+    const period = p.has_paid ? 'tháng này' : 'từ trước tới nay';
+    return `<span style="color:#8A8F82;">📊 Admin — đã dùng ${used} lượt AI ${period} (không giới hạn)</span><br>`;
+  }
   if(p.has_paid){
     const { used, limit } = paidMonthlyUsage(p);
     const remaining = Math.max(0, limit - used);
