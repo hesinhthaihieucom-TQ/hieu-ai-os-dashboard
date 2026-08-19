@@ -29,6 +29,15 @@ alter table profiles add column if not exists first_month_discount_used boolean 
 -- has_paid được đánh dấu true bởi api/sepay-webhook.js ngay khi khớp được 1 giao dịch thành công.
 alter table profiles add column if not exists has_paid boolean not null default false;
 alter table profiles add column if not exists trial_ai_uses integer not null default 0;
+-- Giới hạn lượt dùng AI theo THÁNG cho khách ĐÃ TRẢ PHÍ (has_paid=true) — khác trial_ai_uses (đếm
+-- trọn đời, chỉ áp dụng lúc chưa trả phí). paid_ai_month lưu 'YYYY-MM' của tháng đang tính, tự
+-- reset về 0 khi sang tháng mới (so khác paid_ai_month hiện tại) — xem api/_lib/trial-quota.js.
+alter table profiles add column if not exists paid_ai_uses integer not null default 0;
+alter table profiles add column if not exists paid_ai_month text;
+-- Lượt cộng thêm khi mua gói "Mua thêm lượt" (api/sepay-webhook.js, nhóm số tiền riêng ngoài
+-- AMOUNT_TO_DAYS) — cộng vào trần PAID_MONTHLY_AI_LIMIT của paid_ai_month hiện tại, tự về 0 khi
+-- sang tháng mới (reset cùng lúc với paid_ai_uses, xem api/_lib/trial-quota.js).
+alter table profiles add column if not exists paid_ai_bonus integer not null default 0;
 
 update profiles p set email = u.email from auth.users u where p.id = u.id and p.email is null;
 
@@ -273,9 +282,11 @@ create table if not exists sepay_transactions (
   ref_code_found text,
   matched_profile_id uuid references profiles(id) on delete set null,
   days_granted integer,
+  topup_luot_granted integer,
   status text not null default 'pending',
   created_at timestamptz not null default now()
 );
+alter table sepay_transactions add column if not exists topup_luot_granted integer;
 -- Nếu bảng đã tồn tại từ trước (thiếu on delete set null), sửa lại constraint để sau này xoá
 -- 1 profile (vd tài khoản test) không bị chặn bởi lịch sử giao dịch cũ — chỉ mất liên kết, vẫn
 -- giữ nguyên dữ liệu giao dịch (transfer_amount, ref_code_found...) làm lịch sử đối soát.

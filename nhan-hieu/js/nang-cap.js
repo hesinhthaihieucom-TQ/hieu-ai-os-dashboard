@@ -10,8 +10,10 @@ function render(container, ctx){
       <div class="card" style="max-width:460px;">
         ${window.paymentCardHtml()}
       </div>
+      ${window.topupCardHtml()}
     `;
     window.bindPaymentCard(container, draw);
+    window.bindTopupCard(container);
   }
   draw();
 }

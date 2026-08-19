@@ -22,6 +22,13 @@ const AMOUNT_TO_DAYS = {
 // Số tiền coi là "đã dùng ưu đãi tháng đầu" — sau lần này học viên mua gói 1 tháng sẽ trả giá thường.
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 
+// "Mua thêm lượt" — dành cho khách ĐÃ TRẢ PHÍ dùng vượt trần 150 lượt/tháng (xem
+// api/_lib/trial-quota.js). Số tiền này KHÔNG được trùng bất kỳ số tiền nào ở AMOUNT_TO_DAYS.
+// Cộng thẳng vào paid_ai_bonus của đúng tháng hiện tại, KHÔNG đụng access_until/has_paid.
+const AMOUNT_TO_TOPUP_LUOT = {
+  150000: 100,
+};
+
 function timingSafeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
   let diff = 0;
@@ -94,14 +101,16 @@ module.exports = async (req, res) => {
     let status = 'unmatched_code';
     let matchedProfileId = null;
     let daysGranted = null;
+    let topupLuotGranted = null;
 
     if (refCode) {
-      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until`);
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
       if (profile) {
         const days = AMOUNT_TO_DAYS[transferAmount];
+        const topupLuot = AMOUNT_TO_TOPUP_LUOT[transferAmount];
         if (days) {
           const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
             ? new Date(profile.access_until) : new Date();
@@ -122,6 +131,25 @@ module.exports = async (req, res) => {
             daysGranted = days;
           } else {
             status = 'unmatched_amount'; // update thất bại, giữ nguyên để admin soát lại
+          }
+        } else if (topupLuot) {
+          // Cộng thẳng vào lượt bonus của THÁNG HIỆN TẠI — nếu profile đang ở tháng cũ (paid_ai_month
+          // khác tháng nay) thì coi bonus/uses hiện có là đã hết hạn, cộng lượt mới vào tháng mới.
+          const month = new Date().toISOString().slice(0, 7);
+          const sameMonth = profile.paid_ai_month === month;
+          const patchBody = sameMonth
+            ? { paid_ai_bonus: (profile.paid_ai_bonus || 0) + topupLuot }
+            : { paid_ai_month: month, paid_ai_uses: 0, paid_ai_bonus: topupLuot };
+          const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patchBody),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProfileId = profile.id;
+            topupLuotGranted = topupLuot;
+          } else {
+            status = 'unmatched_amount';
           }
         } else {
           status = 'unmatched_amount';
@@ -144,6 +172,7 @@ module.exports = async (req, res) => {
         ref_code_found: refCode,
         matched_profile_id: matchedProfileId,
         days_granted: daysGranted,
+        topup_luot_granted: topupLuotGranted,
         status,
       }),
     });

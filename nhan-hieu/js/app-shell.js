@@ -19,13 +19,28 @@ const NAV = [
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
-// Khớp đúng TRIAL_AI_LIMIT ở api/_lib/trial-quota.js — chỉ để HIỂN THỊ cảnh báo sớm cho người
-// dùng thử biết ngay từ đầu (đặc biệt lúc chưa quen app hay bấm thử lung tung), việc CHẶN thật sự
-// luôn nằm ở server, không phải ở số hiển thị này.
+// Khớp đúng TRIAL_AI_LIMIT/PAID_MONTHLY_AI_LIMIT/PAID_TOPUP_PACK ở api/_lib/trial-quota.js — chỉ
+// để HIỂN THỊ cảnh báo sớm cho người dùng biết ngay từ đầu, việc CHẶN thật sự luôn nằm ở server,
+// không phải ở số hiển thị này.
 const TRIAL_AI_LIMIT = 50;
+const PAID_MONTHLY_AI_LIMIT = 150;
+const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
+function paidMonthlyUsage(p){
+  const month = new Date().toISOString().slice(0,7);
+  const sameMonth = p.paid_ai_month === month;
+  const used = sameMonth ? (p.paid_ai_uses||0) : 0;
+  const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
+  return { used, limit: PAID_MONTHLY_AI_LIMIT + bonus };
+}
 function trialQuotaHint(){
   const p = AppState.profile;
-  if(!p || p.role==='admin' || p.has_paid) return '';
+  if(!p || p.role==='admin') return '';
+  if(p.has_paid){
+    const { used, limit } = paidMonthlyUsage(p);
+    const remaining = Math.max(0, limit - used);
+    const color = remaining<=10 ? 'var(--danger)' : '#C7CBBC';
+    return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt AI tháng này</span><br>`;
+  }
   const remaining = Math.max(0, TRIAL_AI_LIMIT - (p.trial_ai_uses||0));
   const color = remaining<=3 ? 'var(--danger)' : '#C7CBBC';
   return `<span style="color:${color};">🎁 Dùng thử: còn ${remaining}/${TRIAL_AI_LIMIT} lượt AI</span><br>`;
@@ -227,6 +242,49 @@ function bindPaymentCard(root, redraw){
     el.onclick = ()=>{ selectedPaymentPlanKey = el.getAttribute('data-plan'); redraw(); };
   });
   root.querySelectorAll('[data-copy-value]').forEach(el=>{
+    el.onclick = async ()=>{
+      try{
+        await navigator.clipboard.writeText(el.getAttribute('data-copy-value'));
+        const old = el.textContent;
+        el.textContent = 'Đã copy ✓';
+        setTimeout(()=>{ el.textContent = old; }, 1500);
+      } catch(e){}
+    };
+  });
+}
+
+// Chỉ dành cho khách ĐÃ TRẢ PHÍ (has_paid) — trần 150 lượt/tháng đã đủ rộng cho use-case bình
+// thường, gói này để dành riêng cho khách dùng vượt mức (nhiều kênh, tần suất cao...), không hiện
+// cho khách dùng thử (họ nên mua gói chính thức, không phải mua thêm lượt).
+function topupCardHtml(){
+  const p = AppState.profile;
+  if(!p || !p.has_paid) return '';
+  const refCode = p.ref_code;
+  const { used, limit } = paidMonthlyUsage(p);
+  const qrUrl = refCode
+    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${PAID_TOPUP_PACK.amount}&addInfo=${encodeURIComponent(refCode)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+    : null;
+  return `
+    <div class="card" style="max-width:460px;margin-top:16px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Mua thêm lượt AI</label>
+      <div class="hint-box" style="margin-bottom:12px;">Tháng này bạn đã dùng <b>${used}/${limit} lượt</b>. Nếu cần dùng nhiều hơn mức bình thường (nhiều kênh, tần suất đăng cao...), mua thêm <b>+${PAID_TOPUP_PACK.luot} lượt</b> dùng ngay trong tháng, không cần chờ đầu tháng sau.</div>
+      ${qrUrl ? `
+        <div style="text-align:center;">
+          <img src="${qrUrl}" alt="Mã VietQR mua thêm lượt" style="max-width:220px;width:100%;border-radius:12px;border:1px solid var(--line);">
+          <div style="margin-top:8px;"><a href="${qrUrl}" download="vietqr-mua-them-luot.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a></div>
+        </div>
+        <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${PAID_TOPUP_PACK.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${PAID_TOPUP_PACK.amount}">Copy</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(refCode)}">Copy</span></div>
+        </div>
+        <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung có mã <b>${esc(refCode)}</b> — lượt được cộng thẳng trong vài phút, dùng được ngay, không ảnh hưởng tới hạn gói đang có.</div>
+      ` : ''}
+    </div>
+  `;
+}
+function bindTopupCard(root){
+  root.querySelectorAll('[data-copy-value]').forEach(el=>{
+    if(el.onclick) return; // đã bind bởi bindPaymentCard trong cùng màn hình, khỏi gán trùng
     el.onclick = async ()=>{
       try{
         await navigator.clipboard.writeText(el.getAttribute('data-copy-value'));
