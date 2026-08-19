@@ -1,4 +1,5 @@
 const NAV = [
+  { key:'trang-chu', title:'Trang chủ' },
   { key:'dinh-vi', title:'Định Vị' },
   { key:'sua-kenh', title:'Sửa Kênh' },
   { key:'dinh-dang-content', title:'Dạng Content' },
@@ -16,7 +17,7 @@ const NAV = [
   { key:'quan-tri-hub', title:'Quản trị', adminOnly:true },
 ];
 
-const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 // Khớp đúng TRIAL_AI_LIMIT/PAID_MONTHLY_AI_LIMIT/PAID_TOPUP_PACK ở api/_lib/trial-quota.js — chỉ
@@ -162,7 +163,7 @@ let selectedPaymentPlanKey = isFlashSaleActive() ? '6m_flash' : '6m';
 
 function currentRouteFromHash(){
   const h = (location.hash || '').replace('#','');
-  return NAV.some(n=>n.key===h) ? h : 'dinh-vi';
+  return NAV.some(n=>n.key===h) ? h : 'trang-chu';
 }
 
 async function initApp(){
@@ -463,7 +464,7 @@ function renderApp(){
     <div class="app-layout">
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
+        <div class="sidebar-brand" id="sidebar-brand-home" style="cursor:pointer;">
           <img src="assets/logo-hieu-kenh-badge.svg" class="brand-logo" alt="" onerror="this.style.display='none'">
           <div class="brand-text">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU<br>HIỂU KÊNH</small></div>
         </div>
@@ -480,11 +481,17 @@ function renderApp(){
   const isAdmin = AppState.profile && AppState.profile.role === 'admin';
   const visibleNav = NAV.filter(n=> !n.adminOnly || isAdmin);
   const nav = root.querySelector('#sidebar-nav');
-  nav.innerHTML = visibleNav.map((n,i)=>`
+  // "Trang chủ" không tính vào số thứ tự — giữ nguyên số bước 1,2,3... khớp với "Bước N" đã in
+  // sẵn trên từng trang (Định Vị=1, Sửa Kênh=2...), tránh lệch số gây hiểu lầm là 2 hệ đếm khác nhau.
+  let stepNum = 0;
+  nav.innerHTML = visibleNav.map((n)=>{
+    const isHome = n.key==='trang-chu';
+    if(!isHome) stepNum++;
+    return `
     <div class="sidebar-item ${AppState.route===n.key?'active':''}" data-key="${n.key}">
-      <span class="num">${i+1}</span><span>${esc(n.title)}</span>
+      <span class="num">${isHome?'🏠':stepNum}</span><span>${esc(n.title)}</span>
     </div>
-  `).join('');
+  `;}).join('');
 
   const sidebar = root.querySelector('#sidebar');
   const overlay = root.querySelector('#sidebar-overlay');
@@ -492,6 +499,7 @@ function renderApp(){
   const menuBtn = root.querySelector('#menu-toggle-btn');
   if(menuBtn) menuBtn.onclick = ()=>{ sidebar.classList.add('open'); overlay.classList.add('open'); };
   overlay.onclick = closeDrawer;
+  root.querySelector('#sidebar-brand-home').onclick = ()=>{ location.hash = 'trang-chu'; closeDrawer(); };
 
   nav.querySelectorAll('.sidebar-item').forEach(el=>{
     el.onclick = ()=>{
