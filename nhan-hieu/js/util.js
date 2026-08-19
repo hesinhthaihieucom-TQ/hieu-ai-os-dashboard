@@ -2,6 +2,19 @@ function esc(s){
   return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
 
+// Phóng to 1 ảnh minh hoạ nhỏ (VD ảnh mẫu ở Dạng Content) thành lightbox toàn màn hình — dùng
+// chung cho mọi module cần xem ảnh rõ hơn, đóng bằng cách bấm ra ngoài hoặc nhấn Esc.
+function openImageLightbox(src, alt){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.88);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;';
+  overlay.innerHTML = `<img src="${esc(src)}" alt="${esc(alt||'')}" style="max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.4);">`;
+  function close(){ overlay.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e){ if(e.key==='Escape') close(); }
+  overlay.onclick = close;
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(overlay);
+}
+
 // Escape rồi in đậm các đoạn được AI bọc trong **...** — dùng cho các đoạn giải thích dài
 // để nhấn từ khoá quan trọng, đỡ phải đọc hết cả đoạn mới nắm được ý chính.
 function escBold(s){

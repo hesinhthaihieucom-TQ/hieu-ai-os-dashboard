@@ -13,8 +13,7 @@ const NAV = [
   { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
   { key:'nang-cap', title:'🔥 Nâng cấp / Mua gói' },
-  { key:'quan-tri', title:'Quản trị thành viên', adminOnly:true },
-  { key:'quan-tri-kho', title:'Quản trị Kho nội dung', adminOnly:true },
+  { key:'quan-tri-hub', title:'Quản trị', adminOnly:true },
 ];
 
 const AppState = { user:null, profile:null, route:'dinh-vi', authMode:'login' };
@@ -186,6 +185,9 @@ function paymentCardHtml(){
     ${qrUrl ? `
       <div style="text-align:center;margin-top:18px;">
         <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
+        <div style="margin-top:8px;">
+          <a href="${qrUrl}" download="vietqr-thanh-toan.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
+        </div>
       </div>
       <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
         <div><b>Ngân hàng:</b> Vietinbank</div>

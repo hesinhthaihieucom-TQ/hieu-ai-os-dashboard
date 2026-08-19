@@ -189,7 +189,7 @@ function render(container, ctx){
         return `
         <div class="section" id="fmt-${f.id}" style="${isChosen?'border-color:var(--accent);':''}">
           <div style="display:flex;gap:18px;flex-wrap:wrap;">
-            <img src="${imgSrc(f.id)}" alt="Ví dụ ${esc(f.name)}" style="width:130px;border-radius:8px;border:1px solid var(--line);flex-shrink:0;object-fit:cover;">
+            <img src="${imgSrc(f.id)}" alt="Ví dụ ${esc(f.name)}" data-zoom-src="${imgSrc(f.id)}" data-zoom-alt="Ví dụ ${esc(f.name)}" title="Bấm để xem ảnh lớn" style="width:130px;border-radius:8px;border:1px solid var(--line);flex-shrink:0;object-fit:cover;cursor:zoom-in;">
             <div style="flex:1;min-width:200px;">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
                 <h3>${esc(f.name)}</h3>
@@ -199,8 +199,8 @@ function render(container, ctx){
             </div>
           </div>
           <div class="sub-grid" style="margin-top:14px;">
-            <div><div class="k">Ngành phù hợp</div><div class="v">${f.nganh_phu_hop.map(esc).join('; ')}</div></div>
-            <div><div class="k">Không phù hợp</div><div class="v">${f.nganh_khong_hop.map(esc).join('; ')}</div></div>
+            <div><div class="k">Ngành phù hợp</div><div class="v">${f.nganh_phu_hop.map(n=>`<b>${esc(n)}</b>`).join('<br>')}</div></div>
+            <div><div class="k">Không phù hợp</div><div class="v">${f.nganh_khong_hop.map(n=>`<b>${esc(n)}</b>`).join('<br>')}</div></div>
           </div>
           <div class="k" style="margin-top:14px;">Khi nào dùng</div>
           <div class="v">${esc(f.khi_nao_dung)}</div>
@@ -230,6 +230,9 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-choose]').forEach(el=>{
       el.onclick = () => toggleChosen(el.getAttribute('data-choose'));
+    });
+    container.querySelectorAll('[data-zoom-src]').forEach(img=>{
+      img.onclick = () => openImageLightbox(img.getAttribute('data-zoom-src'), img.getAttribute('data-zoom-alt'));
     });
   }
 
