@@ -15,6 +15,35 @@ function openImageLightbox(src, alt){
   document.body.appendChild(overlay);
 }
 
+// Xem nhanh nội dung đầy đủ 1 bài đã lưu (VD từ ô đã xếp lịch) mà không cần rời khỏi trang hiện
+// tại — có nút copy để tiện dán đi làm ảnh/đăng ngay. Đóng bằng bấm ra ngoài hoặc Esc.
+function openTextModal(title, body){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4);" onclick="event.stopPropagation();">
+      <div style="padding:18px 20px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <h3 style="margin:0;font-size:16px;">${esc(title||'Bài viết')}</h3>
+        <span data-close-text-modal="1" style="cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;">&times;</span>
+      </div>
+      <div style="padding:16px 20px;overflow-y:auto;white-space:pre-line;font-size:14.5px;line-height:1.7;">${esc(body||'')}</div>
+      <div style="padding:12px 20px;border-top:1px solid var(--line);">
+        <button class="btn btn-sm" data-copy-text-modal="1">Copy nội dung</button>
+      </div>
+    </div>
+  `;
+  function close(){ overlay.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e){ if(e.key==='Escape') close(); }
+  overlay.onclick = close;
+  overlay.querySelector('[data-close-text-modal]').onclick = close;
+  const copyBtn = overlay.querySelector('[data-copy-text-modal]');
+  copyBtn.onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(body||''); copyBtn.textContent = 'Đã copy ✓'; setTimeout(()=>{ copyBtn.textContent = 'Copy nội dung'; }, 1500); } catch(e){}
+  };
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(overlay);
+}
+
 // Escape rồi in đậm các đoạn được AI bọc trong **...** — dùng cho các đoạn giải thích dài
 // để nhấn từ khoá quan trọng, đỡ phải đọc hết cả đoạn mới nắm được ý chính.
 function escBold(s){

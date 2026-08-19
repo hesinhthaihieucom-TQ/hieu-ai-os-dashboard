@@ -132,7 +132,7 @@ function render(container, ctx){
             </span>
           ` : `<span class="btn-ghost btn btn-sm" data-action="reset-week">Reset tuần</span>`) : ''}
         </div>
-        <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu tạm trên máy — không mất khi bạn thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>
+        <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu theo tài khoản — xem lại được trên mọi thiết bị, không mất khi thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để xếp xong cả tuần — đừng thoát trang khi đang đợi.</div>
         ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
@@ -191,10 +191,12 @@ function render(container, ctx){
                 </div>`;
               }
               if(e){
+                const linkedPost = e.post_id ? state.posts.find(p=>p.id===e.post_id) : null;
                 return `<div class="week-slot filled">
                   <div class="slot-label">${s.label} · <span style="color:var(--accent);">${isPast?'✓ Đã đăng':'✓ Đã chọn bài'}</span></div>
                   <b style="font-size:12.5px;">${esc(e.title||'')}</b>
                   ${e.format?`<div style="color:var(--ink-soft);font-size:11px;margin-top:2px;">${esc(e.format)}</div>`:''}
+                  ${linkedPost?`<span style="display:block;margin-top:6px;color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" data-view-post="${e.id}">Xem bài →</span>`:''}
                   ${state.confirmRemoveId===e.id ? `
                     <div style="margin-top:6px;font-size:11px;color:var(--danger);">Xoá bài này?
                       <span style="text-decoration:underline;cursor:pointer;font-weight:600;margin-left:4px;" data-confirm-remove="${e.id}">Có</span>
@@ -341,6 +343,13 @@ function render(container, ctx){
         state.pickerFor = null;
         await loadEntries();
         draw();
+      };
+    });
+    container.querySelectorAll('[data-view-post]').forEach(el=>{
+      el.onclick = ()=>{
+        const entry = state.entries.find(x=>x.id===el.getAttribute('data-view-post'));
+        const post = entry && entry.post_id ? state.posts.find(p=>p.id===entry.post_id) : null;
+        if(post) openTextModal(post.title, post.content);
       };
     });
     container.querySelectorAll('[data-ask-remove]').forEach(el=>{
