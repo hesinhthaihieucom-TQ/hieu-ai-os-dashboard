@@ -18,12 +18,24 @@ function render(container, ctx){
     selectedAssetId:'', generating:false, error:null, result:null,
   };
 
+  const DRAFT_KEY = 'day-bai';
+  function draftPayload(){
+    return {
+      postSource: state.postSource, postChoice: state.postChoice, topicOther: state.topicOther,
+      milestone: state.milestone, quickContext: state.quickContext, selectedAssetId: state.selectedAssetId,
+      result: state.result,
+    };
+  }
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, draftPayload()); }
+
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
+    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+    if(draft) Object.assign(state, draft);
     await Promise.all([loadAssets(), loadCalendarEntries(), loadPosts()]);
     state.screen = 'main';
     draw();
@@ -183,6 +195,7 @@ function render(container, ctx){
         quick_context: state.quickContext,
       });
       state.result = data.result;
+      persistDraft();
     } catch(e){ state.error = e.message; }
     stopProgress();
     state.generating = false; draw();

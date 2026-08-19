@@ -9,12 +9,23 @@ function render(container, ctx){
 
   function draw(){ container.innerHTML = html(); bind(); }
 
+  const DRAFT_KEY = 'viet-content';
+  function draftPayload(){
+    return {
+      ideaText: state.ideaText, khoGocSource: state.khoGocSource, cauChuyenRieng: state.cauChuyenRieng,
+      pendingSourceRef: state.pendingSourceRef, result: state.result, savedId: state.savedId,
+      score: state.score, hookScore: state.hookScore, dinhDangOverride: state.dinhDangOverride,
+    };
+  }
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, draftPayload()); }
+
   async function boot(){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
     state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
     state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
+    const hasPending = !!(window.PendingKhoGoc || window.PendingTopic);
     if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
     else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
     // Ghi lại bài mới này bắt nguồn từ mục nào trong Kho Content/Kho Hook (nếu đi từ đó sang) — để
@@ -23,6 +34,12 @@ function render(container, ctx){
     // Đến từ nút "Viết lại theo góp ý" ở Chấm Điểm Content — idea_text đã có sẵn nội dung + lỗi cần
     // sửa, chạy luôn không bắt người dùng bấm lại, cho cảm giác liền mạch giữa 2 trang.
     const autoGenerate = !!window.PendingRewriteAuto; window.PendingRewriteAuto = null;
+    // Không có nguồn mới rõ ràng (Pending*) truyền sang — khôi phục lại đúng bài/kết quả đang làm
+    // dở lần trước, tránh mất trắng chỉ vì lỡ chuyển sang trang khác rồi quay lại.
+    if(!hasPending && !autoGenerate){
+      const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+      if(draft) Object.assign(state, draft);
+    }
     await Promise.all([loadRecent(), loadAssets(), loadBrands(), loadScheduledPostIds()]);
     state.screen='main';
     draw();
@@ -521,6 +538,7 @@ function render(container, ctx){
       state.result = data.result;
       state.showScoreContent = false; state.showScoreHook = false; state.showExtras = false;
       state.generating = false; draw();
+      persistDraft();
     } catch(e){
       stopProgress(); releaseWakeLock();
       if(myRequestId !== generateRequestId) return;
@@ -545,6 +563,7 @@ function render(container, ctx){
       });
       state.result = { ...state.result, ...data.result };
       state.extrasError = null;
+      persistDraft();
     } catch(e){ state.extrasError = e.message; }
     state.extrasLoading = false; draw();
   }
@@ -560,6 +579,7 @@ function render(container, ctx){
       });
       state.score = data.result;
       await ctx.supabase.from('content_scores').insert({ user_id: ctx.user.id, content_text: state.result.bai_hoan_chinh, result: data.result });
+      persistDraft();
     } catch(e){ state.scoreError = e.message; }
     stopProgress();
     state.scoring = false; draw();
@@ -578,6 +598,7 @@ function render(container, ctx){
       });
       state.hookScore = data.result;
       await ctx.supabase.from('hook_scores').insert({ user_id: ctx.user.id, hook_text: state.result.hook, result: data.result });
+      persistDraft();
     } catch(e){ state.hookScoreError = e.message; }
     stopProgress();
     state.hookScoring = false; draw();
@@ -612,6 +633,7 @@ function render(container, ctx){
     if(state.ideaId) await ctx.supabase.from('ideas').update({ used:true }).eq('id', state.ideaId);
     await loadRecent();
     draw();
+    persistDraft();
   }
 
   boot();

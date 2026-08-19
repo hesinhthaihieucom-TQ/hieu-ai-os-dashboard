@@ -57,7 +57,7 @@ function render(container, ctx){
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
     genShowAllCats:false,
-    genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{},
+    genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{}, genThumbSavedIdx:{},
     chungPillar:'all', khoToiPillar:'all', posts:[],
   };
 
@@ -208,6 +208,7 @@ function render(container, ctx){
               <div class="body" style="font-weight:700;text-transform:uppercase;">${esc(t)}</div>
               <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
                 <span class="btn-ghost btn btn-sm" data-use-thumb="${i}">Dùng làm tiêu đề ảnh →</span>
+                <button class="btn btn-sm" data-save-thumb="${i}" ${state.genThumbSavedIdx[i]?'disabled':''}>${state.genThumbSavedIdx[i]?'Đã lưu ✓':'Lưu vào Kho Hook'}</button>
               </div>
             </div>
           `).join('')}
@@ -403,6 +404,9 @@ function render(container, ctx){
         location.hash = 'tao-anh';
       };
     });
+    container.querySelectorAll('[data-save-thumb]').forEach(el=>{
+      el.onclick = ()=>{ saveThumbTitleAsHook(Number(el.getAttribute('data-save-thumb'))); };
+    });
 
     const h = container.querySelector('#ne-hook'); if(h) h.oninput = ()=>state.newEntry.hook_text = h.value;
     const n = container.querySelector('#ne-note'); if(n) n.oninput = ()=>state.newEntry.note = n.value;
@@ -470,6 +474,14 @@ function render(container, ctx){
     } catch(e){ state.genError = e.message; }
     stopProgress();
     state.genLoading = false; draw();
+  }
+
+  async function saveThumbTitleAsHook(i){
+    const title = (state.genThumbTitles[i] || '').replace(/\*\*/g, ''); // bỏ dấu ** đánh dấu màu nhấn (chỉ dùng khi ghi lên ảnh), giữ hook sạch chữ
+    await ctx.supabase.from('hooks_bank_personal').insert({
+      user_id: ctx.user.id, hook_text: title, note: 'Tiêu đề ghi lên ảnh/thumbnail',
+    });
+    state.genThumbSavedIdx[i] = true; draw();
   }
 
   async function saveGeneratedHook(i){

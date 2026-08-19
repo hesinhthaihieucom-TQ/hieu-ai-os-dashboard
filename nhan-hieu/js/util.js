@@ -241,3 +241,23 @@ async function callApi(path, body, timeoutMs){
   if(window.onGatedApiSuccess) window.onGatedApiSuccess(relativePath);
   return data;
 }
+
+// Lưu/đọc/xoá trạng thái đang làm dở của 1 module (kết quả AI, input đang nhập...) vào bảng
+// module_drafts — giữ nguyên khi rời trang rồi quay lại, chỉ mất khi module tự gọi clearModuleDraft
+// (bấm Reset/"làm cái khác"...). key gợi ý dùng đúng route key của module (vd 'viet-content').
+async function loadModuleDraft(ctx, key){
+  try{
+    const { data } = await ctx.supabase.from('module_drafts').select('data').eq('user_id', ctx.user.id).eq('module_key', key).maybeSingle();
+    return data ? data.data : null;
+  } catch(e){ return null; }
+}
+async function saveModuleDraft(ctx, key, data){
+  try{
+    await ctx.supabase.from('module_drafts').upsert({
+      user_id: ctx.user.id, module_key: key, data, updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,module_key' });
+  } catch(e){}
+}
+async function clearModuleDraft(ctx, key){
+  try{ await ctx.supabase.from('module_drafts').delete().eq('user_id', ctx.user.id).eq('module_key', key); } catch(e){}
+}

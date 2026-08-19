@@ -10,6 +10,12 @@ function render(container, ctx){
     state.positioning = pos || null;
     const { data: hist } = await ctx.supabase.from('content_scores').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(5);
     state.history = hist || [];
+    // Khôi phục lại kết quả chấm gần nhất khi quay lại trang — bài/hook đã chấm sẵn có trong lịch
+    // sử rồi nên không cần bảng lưu riêng, chỉ cần lấy đúng bản mới nhất làm trạng thái hiện tại.
+    if(state.history.length){
+      state.text = state.history[0].content_text || '';
+      state.result = state.history[0].result || null;
+    }
     draw();
   }
 

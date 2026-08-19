@@ -299,6 +299,19 @@ create table if not exists weekly_ai_drafts (
   primary key (user_id, week_start)
 );
 
+-- Lưu trạng thái/kết quả đang làm dở ở CÁC MODULE tốn lượt AI (Viết Content, Tái Chế Viral,
+-- Chấm Điểm Content/Hook, Đẩy Bài...) — trước đây mất sạch ngay khi rời trang vì mỗi module tự
+-- dựng lại state từ đầu lúc mount, kể cả khi vừa tốn lượt AI để có được kết quả đó. 1 bảng dùng
+-- chung cho mọi module (khoá theo user_id + module_key), mỗi module tự quyết định lưu field nào
+-- vào "data" (jsonb tự do) — chỉ mất khi module tự xoá draft (bấm Reset/"viết bài khác"...).
+create table if not exists module_drafts (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  module_key text not null,
+  data jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, module_key)
+);
+
 -- ============================================================
 -- 6. KHO HOOK + CHẤM ĐIỂM
 -- ============================================================
@@ -413,6 +426,7 @@ alter table promo_assets enable row level security;
 alter table brands enable row level security;
 alter table sepay_transactions enable row level security;
 alter table weekly_ai_drafts enable row level security;
+alter table module_drafts enable row level security;
 
 -- profiles: user tự xem được chính mình; KHÔNG có quyền tự update (phải qua RPC ở trên) —
 -- nếu không, ai đăng nhập cũng tự set access_until/role của chính họ qua console trình duyệt.
@@ -431,7 +445,7 @@ declare
 begin
   foreach t in array array[
     'positioning_results','channel_audits','content_bank_personal','ideas','posts','calendar_entries',
-    'hooks_bank_personal','content_scores','hook_scores','promo_assets','brands','weekly_ai_drafts'
+    'hooks_bank_personal','content_scores','hook_scores','promo_assets','brands','weekly_ai_drafts','module_drafts'
   ]
   loop
     execute format('drop policy if exists "%1$s_owner_all" on %1$s', t);

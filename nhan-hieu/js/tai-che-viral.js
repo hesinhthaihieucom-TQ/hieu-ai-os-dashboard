@@ -9,6 +9,15 @@ function render(container, ctx){
     postsLoading:false, postsError:null, posts:[], savedPostIdx:{},
   };
   const TOTAL_POSTS = 5;
+  const DRAFT_KEY = 'tai-che-viral';
+  function draftPayload(){
+    return {
+      viralText: state.viralText, topic: state.topic, phanTich: state.phanTich,
+      recycleMode: state.recycleMode, titles: state.titles, savedTitleIdx: state.savedTitleIdx,
+      posts: state.posts, savedPostIdx: state.savedPostIdx,
+    };
+  }
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, draftPayload()); }
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -16,6 +25,8 @@ function render(container, ctx){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
+    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+    if(draft) Object.assign(state, draft);
     state.screen = 'main';
     draw();
   }
@@ -147,6 +158,7 @@ function render(container, ctx){
         state.titles = null; state.titlesError = null; state.savedTitleIdx = {};
         state.posts = []; state.postsError = null; state.savedPostIdx = {};
         draw();
+        persistDraft();
       };
     });
 
@@ -180,6 +192,7 @@ function render(container, ctx){
     try{
       const data = await callApi('/api/tai-che-viral', { viral_text: state.viralText, stage:'phan_tich' }, 60000);
       state.phanTich = data.result.phan_tich;
+      persistDraft();
     } catch(e){ state.analyzeError = e.message; }
     stopProgress(); releaseWakeLock();
     state.analyzing = false; draw();
@@ -198,6 +211,7 @@ function render(container, ctx){
       }, 90000);
       state.titles = data.result.tieu_de_moi;
       state.savedTitleIdx = {};
+      persistDraft();
     } catch(e){ state.titlesError = e.message; }
     stopProgress(); releaseWakeLock();
     state.titlesLoading = false; draw();
@@ -217,6 +231,7 @@ function render(container, ctx){
         previous_ideas: state.posts.map(p=>p.tieu_de),
       }, 90000);
       state.posts.push({ tieu_de: data.result.tieu_de, noi_dung: data.result.noi_dung });
+      persistDraft();
     } catch(e){ state.postsError = e.message; }
     stopProgress(); releaseWakeLock();
     state.postsLoading = false; draw();

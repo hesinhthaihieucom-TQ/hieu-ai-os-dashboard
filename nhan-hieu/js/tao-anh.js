@@ -218,7 +218,7 @@ function render(container, ctx){
   const pendingTitle = window.PendingImageTitle;
   window.PendingImageTitle = null;
   const state = { bgImage:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE, size:'doc',
-    imgZoom:1, imgOffsetX:0, imgOffsetY:0 };
+    imgZoom:1, imgOffsetX:0, imgOffsetY:0, titleSavedAsHook:false };
 
   function sizeObj(){ return SIZES.find(s=>s.key===state.size) || SIZES[1]; }
 
@@ -290,6 +290,9 @@ function render(container, ctx){
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:18px 0 6px;">Tiêu đề chính</label>
           <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Bọc từ khoá muốn tô màu nhấn trong dấu **...**, ví dụ: Facebook đang **trả lương** ảnh cao gấp đôi video?</div>
           <textarea id="ta-title" style="min-height:80px;">${esc(state.title)}</textarea>
+          <div style="margin-top:6px;">
+            <button class="btn-ghost btn btn-sm" data-action="save-title-as-hook" ${state.titleSavedAsHook?'disabled':''}>${state.titleSavedAsHook?'Đã lưu vào Kho Hook ✓':'Lưu tiêu đề này vào Kho Hook'}</button>
+          </div>
 
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Handle thương hiệu</label>
           <input type="text" id="ta-handle" value="${esc(state.handle)}" placeholder="@tenban" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
@@ -367,7 +370,17 @@ function render(container, ctx){
     container.querySelectorAll('[data-color]').forEach(el=>{ el.onclick = () => { state.color = el.getAttribute('data-color'); draw(); }; });
 
     const titleInput = container.querySelector('#ta-title');
-    if(titleInput) titleInput.oninput = () => { state.title = titleInput.value; paintAll(); };
+    if(titleInput) titleInput.oninput = () => { state.title = titleInput.value; state.titleSavedAsHook = false; paintAll(); };
+
+    const saveTitleHookBtn = container.querySelector('[data-action="save-title-as-hook"]');
+    if(saveTitleHookBtn) saveTitleHookBtn.onclick = async () => {
+      if(state.titleSavedAsHook || !state.title.trim()) return;
+      const hookText = state.title.replace(/\*\*/g, ''); // bỏ dấu ** đánh dấu màu nhấn, giữ hook sạch chữ
+      await ctx.supabase.from('hooks_bank_personal').insert({
+        user_id: ctx.user.id, hook_text: hookText, note: 'Tiêu đề Tạo Ảnh Thương Hiệu',
+      });
+      state.titleSavedAsHook = true; draw();
+    };
 
     const handleInput = container.querySelector('#ta-handle');
     if(handleInput) handleInput.oninput = () => { state.handle = handleInput.value; paintAll(); };
