@@ -4,7 +4,8 @@ function render(container, ctx){
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', extrasLoading:false, extrasError:null,
-    showScoreContent:false, showScoreHook:false, showExtras:false, saving:false, pendingSourceRef:null };
+    showScoreContent:false, showScoreHook:false, showExtras:false, saving:false, pendingSourceRef:null,
+    viralPromptFor:null, viralViews:'', viralSubmitting:false, viralDoneFor:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -161,6 +162,17 @@ function render(container, ctx){
             <div class="txt">
               <b>${esc(p.title||'(không tiêu đề)')}</b>${scheduled?` <span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Đã có trong lịch</span>`:''}<br>
               <span style="color:var(--ink-soft);font-size:13px;">${esc((p.content||'').slice(0,120))}${(p.content||'').length>120?'…':''}</span>
+              ${state.viralDoneFor===p.id ? `
+                <div style="margin-top:6px;font-size:12px;color:var(--accent);">✓ Đã gửi đề xuất lên Kho Viral, đang chờ admin duyệt</div>
+              ` : state.viralPromptFor===p.id ? `
+                <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input type="number" id="viral-views-${p.id}" placeholder="Số view (vd 250000)" style="width:150px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+                  <button class="btn btn-sm" data-confirm-viral="${p.id}" ${state.viralSubmitting?'disabled':''}>${state.viralSubmitting?'Đang gửi…':'Gửi'}</button>
+                  <span class="btn-ghost btn btn-sm" data-cancel-viral="1">Huỷ</span>
+                </div>
+              ` : `
+                <span style="display:inline-block;margin-top:6px;color:var(--gold);font-size:12px;cursor:pointer;font-weight:600;" data-ask-viral="${p.id}">🔥 Bài này viral (200k+ view)? Đóng góp vào Kho Viral</span>
+              `}
             </div>
             <button class="btn btn-sm" data-schedule="${p.id}">${scheduled?'Đưa vào lịch thêm →':'Đưa vào lịch →'}</button>
           </div>
@@ -419,6 +431,28 @@ function render(container, ctx){
         const id = el.getAttribute('data-schedule');
         window.PendingPost = state.recentPosts.find(p=>p.id===id);
         location.hash = 'lich-dang';
+      };
+    });
+
+    container.querySelectorAll('[data-ask-viral]').forEach(el=>{
+      el.onclick = ()=>{ state.viralPromptFor = el.getAttribute('data-ask-viral'); draw(); };
+    });
+    const cancelViralBtn = container.querySelector('[data-cancel-viral]');
+    if(cancelViralBtn) cancelViralBtn.onclick = ()=>{ state.viralPromptFor = null; draw(); };
+    container.querySelectorAll('[data-confirm-viral]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-confirm-viral');
+        const post = state.recentPosts.find(p=>p.id===id);
+        if(!post || state.viralSubmitting) return;
+        const viewsInput = container.querySelector(`#viral-views-${id}`);
+        const views = viewsInput && viewsInput.value.trim() ? viewsInput.value.trim() : null;
+        state.viralSubmitting = true; draw();
+        await ctx.supabase.from('content_bank_personal').insert({
+          user_id: ctx.user.id, title: post.title || '(không tiêu đề)', content: post.content, tags: post.tags || [],
+          is_viral: true, viral_views: views, share_status: 'pending',
+        });
+        state.viralSubmitting = false; state.viralPromptFor = null; state.viralDoneFor = id;
+        draw();
       };
     });
   }

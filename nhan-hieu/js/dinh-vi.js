@@ -50,7 +50,7 @@ function render(container, ctx){
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
-    reconstructingAnswers:false };
+    reconstructingAnswers:false, reconstructFailed:false };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
   const ASSET_KINDS = {
     san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
@@ -169,8 +169,9 @@ function render(container, ctx){
       <div class="source-grid">
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
       </div>
-      <div class="btn-row">
+      <div class="btn-row" style="align-items:center;">
         <button class="btn" data-action="start" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':(hasSaved?'Sửa lại câu trả lời':'Bắt đầu')}</button>
+        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
         ${hasSaved?`<button class="btn-ghost btn" data-action="view-saved">Xem định vị đã lưu</button>`:''}
       </div>
       <div style="text-align:center;margin-top:18px;">
@@ -249,7 +250,7 @@ function render(container, ctx){
       </div>
       <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
         ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
-        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:11px;color:var(--ink-soft);">(tốn 2 lượt AI)</span>':''}
+        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>':''}
       </div>
     `;
   }
@@ -719,11 +720,15 @@ function render(container, ctx){
   }
   async function maybeReconstructAnswers(){
     if(hasAnyRealAnswer() || !state.luot1) return;
-    state.reconstructingAnswers = true; draw();
+    state.reconstructingAnswers = true; state.reconstructFailed = false; draw();
     try{
       const data = await callApi('/api/dinh-vi-reconstruct-answers', { luot1: state.luot1, luot2: state.luot2 });
       if(data.answers) state.answers = { ...data.answers, ...state.answers };
     } catch(e){ /* lỗi thì thôi, vẫn cho vào sửa bình thường (trống như trước), không chặn người dùng */ }
+    // Gọi xong (dù lỗi hay AI trả về toàn chuỗi rỗng vì không suy luận được) mà vẫn không có câu
+    // trả lời nào — báo rõ cho người dùng biết đây là "không khôi phục được", không phải bug làm
+    // mất dữ liệu, và kết quả Định Vị đã lưu (luot1/luot2) vẫn nguyên vẹn, không mất gì.
+    state.reconstructFailed = !hasAnyRealAnswer();
     state.reconstructingAnswers = false;
   }
 
