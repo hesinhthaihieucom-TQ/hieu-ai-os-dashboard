@@ -1,11 +1,11 @@
 (function(){
 const STEPS = [
   { key:'platform', title:'Nền tảng chính bạn đang dùng', type:'choice', options:['Facebook','TikTok'] },
-  { key:'anh_dai_dien', title:'HM1 — Ảnh đại diện', type:'image', helper:'Chụp màn hình ảnh đại diện hiện tại trên kênh của bạn.' },
-  { key:'anh_bia', title:'HM2 — Ảnh bìa', type:'image', helper:'Chụp màn hình ảnh bìa hiện tại trên kênh của bạn.' },
-  { key:'profile_day_du', title:'HM3 — Profile đầy đủ', type:'image', multi:true, helper:'Cần đủ 2 ảnh: 1 ảnh phần giới thiệu ngắn ở đầu trang, 1 ảnh phần công việc/liên kết/highlight bên dưới — giống 2 ảnh mẫu bên dưới.', hasExample:true },
-  { key:'bio', title:'HM4 — Bio', type:'text', helper:'Copy nguyên văn bio hiện tại của bạn vào đây.' },
-  { key:'bai_ghim', title:'HM5 — Bài ghim', type:'image', helper:'Chụp màn hình bài ghim hiện tại trên kênh (nếu có).' },
+  { key:'anh_dai_dien', title:'Ảnh đại diện', type:'image', helper:'Chụp màn hình ảnh đại diện hiện tại trên kênh của bạn.' },
+  { key:'anh_bia', title:'Ảnh bìa', type:'image', helper:'Chụp màn hình ảnh bìa hiện tại trên kênh của bạn.' },
+  { key:'profile_day_du', title:'Profile đầy đủ', type:'image', multi:true, helper:'Cần đủ 2 ảnh: 1 ảnh phần giới thiệu ngắn ở đầu trang, 1 ảnh phần công việc/liên kết/highlight bên dưới — giống 2 ảnh mẫu bên dưới.', hasExample:true },
+  { key:'bio', title:'Bio', type:'text', helper:'Copy nguyên văn bio hiện tại của bạn vào đây.' },
+  { key:'bai_ghim', title:'Bài ghim', type:'image', helper:'Chụp màn hình bài ghim hiện tại trên kênh (nếu có).' },
 ];
 
 function render(container, ctx){
@@ -125,7 +125,7 @@ function render(container, ctx){
       <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${(r.thu_tu_uu_tien||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
       ${hangMuc.map(hm=>`
         <div class="section">
-          <h3>${esc(hm.ma)} · ${esc(hm.ten)} — ${hm.diem}/20 · ${PRIORITY_LABEL[hm.uu_tien]||''}</h3>
+          <h3>${esc(hm.ten)} — ${hm.diem}/20 · ${PRIORITY_LABEL[hm.uu_tien]||''}</h3>
           <div class="body"><b>Hiện tại:</b> ${esc(hm.hien_tai)}</div>
           <div class="body" style="margin-top:8px;"><b>Lệch định vị:</b> ${esc(hm.lech_dinh_vi)}</div>
           <div class="body" style="margin-top:8px;"><b>Cần sửa:</b> ${esc(hm.can_sua)}</div>
