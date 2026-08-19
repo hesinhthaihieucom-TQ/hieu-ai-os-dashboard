@@ -214,7 +214,7 @@ function renderExpiredScreen(){
   root.innerHTML = `
     <div class="auth-shell" style="max-width:460px;">
       <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
-      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 7 ngày đã kết thúc'}</h1>
+      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 3 ngày đã kết thúc'}</h1>
       <div class="sub">${hadAccessBefore
         ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Chuyển khoản để tiếp tục dùng ngay.`
         : 'Chuyển khoản theo đúng hướng dẫn bên dưới — hệ thống tự kích hoạt trong vài phút, không cần chờ ai xác nhận.'}</div>

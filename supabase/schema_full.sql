@@ -44,15 +44,17 @@ begin
   end if;
 end $$;
 
--- Trigger tạo profile khi có user mới đăng ký: lưu email, cấp 7 ngày dùng thử, sinh ref_code,
+-- Trigger tạo profile khi có user mới đăng ký: lưu email, cấp 3 ngày dùng thử, sinh ref_code,
 -- và lưu luôn is_student (hỏi ngay lúc đăng ký) — dùng để quyết định hiển thị bảng giá nào ở
 -- màn hình thanh toán, không hỏi lại lúc đó nữa.
+-- LƯU Ý: dùng thử rút từ 7 xuống 3 ngày (2026-08-19) — chi phí AI (Anthropic API) phát sinh ngay từ
+-- lúc dùng thử, trong khi chưa có doanh thu, nên rút ngắn để giảm rủi ro chi phí trước khi khách trả tiền.
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.profiles (id, full_name, email, access_until, ref_code, is_student)
   values (
-    new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days',
+    new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '3 days',
     public.generate_ref_code(), coalesce((new.raw_user_meta_data->>'is_student')::boolean, false)
   );
   return new;
