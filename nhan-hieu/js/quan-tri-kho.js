@@ -1,7 +1,8 @@
 (function(){
 function render(container, ctx){
   const isAdmin = !!(ctx.profile && ctx.profile.role === 'admin');
-  const state = { screen:'loading', pendingContent:[], pendingHooks:[], profilesById:{}, actingId:null, error:null };
+  const state = { screen:'loading', pendingContent:[], pendingHooks:[], profilesById:{}, actingId:null, error:null,
+    fixingLineBreaks:false, fixResult:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -47,6 +48,13 @@ function render(container, ctx){
     return `
       <div class="page-head"><h1>Quản trị Kho nội dung</h1><p>Duyệt content/hook do người dùng đề xuất đẩy từ Kho của tôi lên Kho chung — chỉ hiển thị công khai sau khi được duyệt ở đây.</p></div>
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
+
+      <div class="card" style="margin-bottom:20px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Dọn xuống dòng cho bài cũ trong Kho</label>
+        <div class="hint-box" style="margin-bottom:10px;">Chạy lại hàm tách đoạn tự động (miễn phí, không qua AI) cho các bài đã lưu từ trước khi tính năng này ra đời — chỉ sửa bài nào thực sự đang dính liền chữ, không đụng bài đã ổn. Bấm 1 lần là đủ, chạy lại nhiều lần cũng không sao (không tách trùng).</div>
+        <button class="btn btn-sm" data-action="fix-linebreaks" ${state.fixingLineBreaks?'disabled':''}>${state.fixingLineBreaks?'Đang dọn…':'Dọn xuống dòng cho Kho Content'}</button>
+        ${state.fixResult?`<div style="margin-top:10px;font-size:13px;color:var(--accent);">${esc(state.fixResult)}</div>`:''}
+      </div>
       ${total===0 ? `<div class="card" style="color:var(--ink-soft);">Không có đề xuất nào đang chờ duyệt.</div>` : ''}
 
       ${state.pendingContent.length ? `
@@ -97,6 +105,42 @@ function render(container, ctx){
     container.querySelectorAll('[data-reject-hook]').forEach(el=>{
       el.onclick = ()=>rejectItem('hooks_bank_personal', el.getAttribute('data-reject-hook'));
     });
+    const fixBtn = container.querySelector('[data-action="fix-linebreaks"]');
+    if(fixBtn) fixBtn.onclick = fixLineBreaksBulk;
+  }
+
+  // Chạy 1 lần cho bài lưu TRƯỚC KHI kho-content.js tự tách đoạn lúc lưu — chỉ sửa được Kho chung
+  // (content_bank_shared, có quyền ghi admin) và đúng Kho của tôi của chính tài khoản đang đăng
+  // nhập (content_bank_personal chỉ cho chủ sở hữu ghi theo RLS, không sửa được của user khác).
+  async function fixLineBreaksBulk(){
+    if(state.fixingLineBreaks) return;
+    state.fixingLineBreaks = true; state.fixResult = null; draw();
+    let sharedChecked = 0, sharedFixed = 0, personalChecked = 0, personalFixed = 0;
+    try{
+      const { data: shared } = await ctx.supabase.from('content_bank_shared').select('id,content');
+      for(const row of (shared||[])){
+        sharedChecked++;
+        const fixed = breakSentences(row.content||'');
+        if(fixed !== row.content){
+          await ctx.supabase.from('content_bank_shared').update({ content: fixed }).eq('id', row.id);
+          sharedFixed++;
+        }
+      }
+      const { data: personal } = await ctx.supabase.from('content_bank_personal').select('id,content').eq('user_id', ctx.user.id);
+      for(const row of (personal||[])){
+        personalChecked++;
+        const fixed = breakSentences(row.content||'');
+        if(fixed !== row.content){
+          await ctx.supabase.from('content_bank_personal').update({ content: fixed }).eq('id', row.id);
+          personalFixed++;
+        }
+      }
+      state.fixResult = `Xong — Kho chung: sửa ${sharedFixed}/${sharedChecked} bài. Kho của tôi (tài khoản này): sửa ${personalFixed}/${personalChecked} bài.`;
+    } catch(e){
+      state.fixResult = `Có lỗi xảy ra: ${e.message}`;
+    }
+    state.fixingLineBreaks = false;
+    draw();
   }
 
   async function approveContent(id){
