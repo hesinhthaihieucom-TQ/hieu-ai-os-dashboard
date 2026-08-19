@@ -12,6 +12,7 @@ const NAV = [
   { key:'day-bai', title:'Đẩy Bài & CTA Comment' },
   { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
+  { key:'nang-cap', title:'🔥 Nâng cấp / Mua gói' },
   { key:'quan-tri', title:'Quản trị thành viên', adminOnly:true },
   { key:'quan-tri-kho', title:'Quản trị Kho nội dung', adminOnly:true },
 ];
@@ -44,8 +45,19 @@ function buildStudentPlans(profile){
     : { key:'1m_hv', label:'1 tháng (ưu đãi tháng đầu)', amount:399200, note:'Chỉ áp dụng cho đúng tháng đầu tiên — từ tháng thứ 2 nếu vẫn mua theo tháng sẽ về giá thường 499.000đ (chọn gói 6/12 tháng bên dưới để giữ giá học viên lâu hơn).' };
   return [oneMonth, ...STUDENT_PLANS_LONG];
 }
+// Ưu đãi "chốt ngay trong buổi Zoom hướng dẫn" 19/8 — giảm thẳng 500k (gói 6 tháng) / 1.2 triệu
+// (gói 12 tháng) cho ai thanh toán TRONG NGÀY hôm đó, không phân biệt học viên hay không. Tự động
+// hết hạn sau mốc thời gian dưới đây (không cần quay lại xoá tay) — LƯU Ý: 2 số tiền này đã kiểm
+// tra KHÔNG trùng với bất kỳ gói nào khác (thường/học viên) để webhook SePay nhận đúng gói.
+const FLASH_SALE_CUTOFF = new Date('2026-08-20T00:00:00+07:00');
+function isFlashSaleActive(){ return new Date() < FLASH_SALE_CUTOFF; }
+const FLASH_SALE_PLANS = [
+  { key:'6m_flash', label:'6 tháng — Ưu đãi hôm nay', amount:1890000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong hôm nay — giảm thẳng 500.000đ so với giá thường (2.390.000đ).', recommended:true, flash:true },
+  { key:'12m_flash', label:'12 tháng — Ưu đãi hôm nay', amount:2790000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong hôm nay — giảm thẳng 1.200.000đ so với giá thường (3.990.000đ).', recommended:true, flash:true },
+];
 function currentPaymentPlans(){
-  return (AppState.profile && AppState.profile.is_student) ? buildStudentPlans(AppState.profile) : REGULAR_PLANS;
+  const base = (AppState.profile && AppState.profile.is_student) ? buildStudentPlans(AppState.profile) : REGULAR_PLANS;
+  return isFlashSaleActive() ? [...FLASH_SALE_PLANS, ...base] : base;
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
 // - Gói 1 tháng: so với giá thường CÙNG 1 tháng (499.000đ) — không hiện gì nếu đã hết ưu đãi
@@ -71,7 +83,7 @@ function planSavingsLabel(pl){
 // Mặc định gợi ý gói 6 tháng thay vì gói 1 tháng — web sẽ còn cập nhật/mở rộng thêm (đặc biệt
 // Kho Content và Kho Hook viral), lúc đó giá sẽ tăng, nên chọn gói dài ngay bây giờ để giữ được
 // mức giá hiện tại lâu hơn. Key khác nhau giữa 2 bảng (6m vs 6m_hv) nên set lại đúng lúc render.
-let selectedPaymentPlanKey = '6m';
+let selectedPaymentPlanKey = isFlashSaleActive() ? '6m_flash' : '6m';
 
 function currentRouteFromHash(){
   const h = (location.hash || '').replace('#','');
@@ -129,71 +141,58 @@ function hasActiveAccess(){
   return new Date(p.access_until).getTime() > Date.now();
 }
 
-function renderExpiredScreen(){
-  const root = document.getElementById('app');
+// Tách riêng phần "card" chọn gói + QR + thông tin chuyển khoản để dùng lại được ở CẢ MÀN HÌNH
+// BẮT BUỘC thanh toán (hết hạn/hết dùng thử — renderExpiredScreen) LẪN màn hình "Nâng cấp / Mua
+// gói" cho người ĐANG CÒN HẠN chủ động vào mua sớm (vd để chốt ưu đãi trong buổi Zoom hôm nay) —
+// tránh phải đợi hết hạn mới thấy được bảng giá.
+function paymentCardHtml(){
   const p = AppState.profile;
-  const hadAccessBefore = !!(p && p.access_until);
   const refCode = p && p.ref_code;
   const isStudent = !!(p && p.is_student);
   const plans = currentPaymentPlans();
   const plan = plans.find(pl => pl.key === selectedPaymentPlanKey) || plans.find(pl => pl.recommended) || plans[0];
-  selectedPaymentPlanKey = plan.key; // đồng bộ lại key — 2 bảng giá (thường/học viên) dùng key khác nhau (vd 6m vs 6m_hv)
+  selectedPaymentPlanKey = plan.key; // đồng bộ lại key — các bảng giá dùng key khác nhau (vd 6m vs 6m_hv vs 6m_flash)
 
   const qrUrl = refCode
     ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(refCode)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
 
-  root.innerHTML = `
-    <div class="auth-shell" style="max-width:460px;">
-      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
-      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 7 ngày đã kết thúc'}</h1>
-      <div class="sub">${hadAccessBefore
-        ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Chuyển khoản để tiếp tục dùng ngay.`
-        : 'Chuyển khoản theo đúng hướng dẫn bên dưới — hệ thống tự kích hoạt trong vài phút, không cần chờ ai xác nhận.'}</div>
-
-      <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
-        <div class="hint-box" style="margin-bottom:12px;line-height:1.7;">
-          💡 <b>Đặc biệt Kho Content và Kho Hook viral</b> — nơi giúp bạn viết content dễ dàng từ các content đang có tín hiệu tốt trên thị trường.<br><br>
-          Kho này được <b>cập nhật liên tục</b> và <b>mở rộng vô hạn theo từng tuần</b> — càng dùng lâu càng có nhiều để khai thác.<br><br>
-          Web cũng sẽ <b>tăng giá dần theo thời gian</b>, nên chọn <b>gói 6 hoặc 12 tháng ngay bây giờ</b> để giữ mức giá hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.
-        </div>
-        <div class="chips" id="plan-chips">
-          ${plans.map(pl=>{
-            const savings = isStudent ? planSavingsLabel(pl) : '';
-            return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
-          }).join('')}
-        </div>
-        ${plan.note?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">${esc(plan.note)}</div>`:''}
-
-        ${qrUrl ? `
-          <div style="text-align:center;margin-top:18px;">
-            <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
-          </div>
-          <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
-            <div><b>Ngân hàng:</b> Vietinbank</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
-            <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${plan.amount}">Copy</span></div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(refCode)}">Copy</span></div>
-          </div>
-          <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung có mã <b>${esc(refCode)}</b> — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác. Chuyển xong đợi 1-2 phút rồi tải lại trang.</div>
-        ` : `
-          <div class="error-box" style="margin-top:14px;">Chưa có mã tài khoản để đối chiếu tự động. Nhắn email đăng ký (${esc((AppState.user&&AppState.user.email)||'')}) qua Zalo/Fanpage để được kích hoạt thủ công.</div>
-        `}
-
-        <div class="btn-row" style="margin-top:16px;justify-content:center;">
-          <button class="btn-ghost btn" id="reload-status-btn">Tôi đã chuyển khoản — tải lại trạng thái</button>
-        </div>
-        <div class="btn-row" style="margin-top:6px;justify-content:center;">
-          <span class="signout" id="signout-btn-expired" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
-        </div>
-      </div>
+  return `
+    <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
+    <div class="hint-box" style="margin-bottom:12px;line-height:1.7;">
+      💡 <b>Đặc biệt Kho Content và Kho Hook viral</b> — nơi giúp bạn viết content dễ dàng từ các content đang có tín hiệu tốt trên thị trường.<br><br>
+      Kho này được <b>cập nhật liên tục</b> và <b>mở rộng vô hạn theo từng tuần</b> — càng dùng lâu càng có nhiều để khai thác.<br><br>
+      Web cũng sẽ <b>tăng giá dần theo thời gian</b>, nên chọn <b>gói 6 hoặc 12 tháng ngay bây giờ</b> để giữ mức giá hiện tại lâu hơn, thay vì phải mua lại theo giá mới mỗi tháng.
     </div>
-  `;
+    <div class="chips" id="plan-chips">
+      ${plans.map(pl=>{
+        const savings = isStudent ? planSavingsLabel(pl) : '';
+        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+      }).join('')}
+    </div>
+    ${plan.note?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">${esc(plan.note)}</div>`:''}
 
+    ${qrUrl ? `
+      <div style="text-align:center;margin-top:18px;">
+        <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
+      </div>
+      <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+        <div><b>Ngân hàng:</b> Vietinbank</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+        <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${plan.amount}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(refCode)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(refCode)}">Copy</span></div>
+      </div>
+      <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung có mã <b>${esc(refCode)}</b> — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác. Chuyển xong đợi 1-2 phút rồi tải lại trang.</div>
+    ` : `
+      <div class="error-box" style="margin-top:14px;">Chưa có mã tài khoản để đối chiếu tự động. Nhắn email đăng ký (${esc((AppState.user&&AppState.user.email)||'')}) qua Zalo/Fanpage để được kích hoạt thủ công.</div>
+    `}
+  `;
+}
+// redraw: hàm vẽ lại màn hình đang gọi (khác nhau giữa renderExpiredScreen và module Nâng Cấp)
+function bindPaymentCard(root, redraw){
   root.querySelectorAll('[data-plan]').forEach(el=>{
-    el.onclick = ()=>{ selectedPaymentPlanKey = el.getAttribute('data-plan'); renderExpiredScreen(); };
+    el.onclick = ()=>{ selectedPaymentPlanKey = el.getAttribute('data-plan'); redraw(); };
   });
   root.querySelectorAll('[data-copy-value]').forEach(el=>{
     el.onclick = async ()=>{
@@ -205,6 +204,34 @@ function renderExpiredScreen(){
       } catch(e){}
     };
   });
+}
+
+function renderExpiredScreen(){
+  const root = document.getElementById('app');
+  const p = AppState.profile;
+  const hadAccessBefore = !!(p && p.access_until);
+
+  root.innerHTML = `
+    <div class="auth-shell" style="max-width:460px;">
+      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 7 ngày đã kết thúc'}</h1>
+      <div class="sub">${hadAccessBefore
+        ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Chuyển khoản để tiếp tục dùng ngay.`
+        : 'Chuyển khoản theo đúng hướng dẫn bên dưới — hệ thống tự kích hoạt trong vài phút, không cần chờ ai xác nhận.'}</div>
+
+      <div class="card">
+        ${paymentCardHtml()}
+        <div class="btn-row" style="margin-top:16px;justify-content:center;">
+          <button class="btn-ghost btn" id="reload-status-btn">Tôi đã chuyển khoản — tải lại trạng thái</button>
+        </div>
+        <div class="btn-row" style="margin-top:6px;justify-content:center;">
+          <span class="signout" id="signout-btn-expired" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  bindPaymentCard(root, renderExpiredScreen);
   const reloadBtn = root.querySelector('#reload-status-btn');
   if(reloadBtn) reloadBtn.onclick = async ()=>{ await loadProfile(); renderApp(); };
   const btn = root.querySelector('#signout-btn-expired');
@@ -235,14 +262,13 @@ function renderAuthScreen(err, successMsg){
         ${!isLogin ? `
           <label>Bạn đã học khoá Xây Nhân Hiệu chưa?</label>
           <div class="chips" id="af-student-chips" style="margin-bottom:14px;">
-            <div class="chip ${signupIsStudent===true?'selected':''}" data-student="yes">🎓 Đã học rồi — giá ưu đãi học viên</div>
-            <div class="chip ${signupIsStudent===false?'selected':''}" data-student="no">Chưa — giá thường</div>
+            <div class="chip ${signupIsStudent===true?'selected':''}" data-student="yes">Đã học rồi</div>
+            <div class="chip ${signupIsStudent===false?'selected':''}" data-student="no">Chưa</div>
           </div>
         ` : ''}
         <button class="btn btn-full" id="af-submit">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
-        ${(!isLogin && !err && !successMsg) ? `<div class="hint-box">Sau khi đăng ký, kiểm tra email để xác nhận tài khoản (nếu được bật) rồi quay lại đăng nhập.</div>` : ''}
       </div>
     </div>
   `;
