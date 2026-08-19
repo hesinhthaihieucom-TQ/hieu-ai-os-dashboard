@@ -51,7 +51,11 @@ function render(container, ctx){
   function filtered(){
     const q = state.q.trim().toLowerCase();
     if(!q) return state.profiles;
-    return state.profiles.filter(p => (p.email||'').toLowerCase().includes(q) || (p.full_name||'').toLowerCase().includes(q));
+    return state.profiles.filter(p =>
+      (p.email||'').toLowerCase().includes(q) ||
+      (p.full_name||'').toLowerCase().includes(q) ||
+      (p.ref_code||'').toLowerCase().includes(q)
+    );
   }
 
   function html(){
@@ -77,7 +81,7 @@ function render(container, ctx){
       </div>
 
       <div class="card" style="margin-bottom:20px;">
-        <input id="q-search" type="text" placeholder="Tìm theo email hoặc tên..." value="${esc(state.q)}"
+        <input id="q-search" type="text" placeholder="Tìm theo email, tên, hoặc mã tham chiếu chuyển khoản..." value="${esc(state.q)}"
           style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
       </div>
 
