@@ -217,8 +217,19 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
 function render(container, ctx){
   const pendingTitle = window.PendingImageTitle;
   window.PendingImageTitle = null;
-  const state = { bgImage:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE, size:'doc',
+  const state = { bgImage:null, bgImageDataUrl:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE, size:'doc',
     imgZoom:1, imgOffsetX:0, imgOffsetY:0, titleSavedAsHook:false };
+
+  // Giữ lại ảnh đã tải lên + toàn bộ tuỳ chỉnh (layout/font/màu/tiêu đề...) khi chuyển trang rồi
+  // quay lại — trước đây mất trắng, phải tải ảnh lên lại từ đầu mỗi lần.
+  const DRAFT_KEY = 'tao-anh';
+  function persistDraft(){
+    saveModuleDraft(ctx, DRAFT_KEY, {
+      bgImageDataUrl: state.bgImageDataUrl, layout: state.layout, font: state.font, color: state.color,
+      title: state.title, handle: state.handle, size: state.size,
+      imgZoom: state.imgZoom, imgOffsetX: state.imgOffsetX, imgOffsetY: state.imgOffsetY,
+    });
+  }
 
   function sizeObj(){ return SIZES.find(s=>s.key===state.size) || SIZES[1]; }
 
@@ -342,8 +353,10 @@ function render(container, ctx){
         const img = new Image();
         img.onload = () => {
           state.bgImage = img;
+          state.bgImageDataUrl = reader.result;
           state.imgZoom = 1; state.imgOffsetX = 0; state.imgOffsetY = 0;
           draw();
+          persistDraft();
         };
         img.src = reader.result;
       };
@@ -356,21 +369,22 @@ function render(container, ctx){
       const pct = container.querySelector('#ta-zoom-pct');
       if(pct) pct.textContent = Math.round(state.imgZoom*100)+'%';
       paintAll();
+      persistDraft();
     };
     const offsetXInput = container.querySelector('#ta-img-offset-x');
-    if(offsetXInput) offsetXInput.oninput = () => { state.imgOffsetX = Number(offsetXInput.value); paintAll(); };
+    if(offsetXInput) offsetXInput.oninput = () => { state.imgOffsetX = Number(offsetXInput.value); paintAll(); persistDraft(); };
     const offsetYInput = container.querySelector('#ta-img-offset-y');
-    if(offsetYInput) offsetYInput.oninput = () => { state.imgOffsetY = Number(offsetYInput.value); paintAll(); };
+    if(offsetYInput) offsetYInput.oninput = () => { state.imgOffsetY = Number(offsetYInput.value); paintAll(); persistDraft(); };
     const resetTransformBtn = container.querySelector('[data-action="reset-image-transform"]');
-    if(resetTransformBtn) resetTransformBtn.onclick = () => { state.imgZoom = 1; state.imgOffsetX = 0; state.imgOffsetY = 0; draw(); };
+    if(resetTransformBtn) resetTransformBtn.onclick = () => { state.imgZoom = 1; state.imgOffsetX = 0; state.imgOffsetY = 0; draw(); persistDraft(); };
 
-    container.querySelectorAll('[data-size]').forEach(el=>{ el.onclick = () => { state.size = el.getAttribute('data-size'); draw(); }; });
-    container.querySelectorAll('[data-layout]').forEach(el=>{ el.onclick = () => { state.layout = el.getAttribute('data-layout'); draw(); }; });
-    container.querySelectorAll('[data-font]').forEach(el=>{ el.onclick = () => { state.font = el.getAttribute('data-font'); draw(); }; });
-    container.querySelectorAll('[data-color]').forEach(el=>{ el.onclick = () => { state.color = el.getAttribute('data-color'); draw(); }; });
+    container.querySelectorAll('[data-size]').forEach(el=>{ el.onclick = () => { state.size = el.getAttribute('data-size'); draw(); persistDraft(); }; });
+    container.querySelectorAll('[data-layout]').forEach(el=>{ el.onclick = () => { state.layout = el.getAttribute('data-layout'); draw(); persistDraft(); }; });
+    container.querySelectorAll('[data-font]').forEach(el=>{ el.onclick = () => { state.font = el.getAttribute('data-font'); draw(); persistDraft(); }; });
+    container.querySelectorAll('[data-color]').forEach(el=>{ el.onclick = () => { state.color = el.getAttribute('data-color'); draw(); persistDraft(); }; });
 
     const titleInput = container.querySelector('#ta-title');
-    if(titleInput) titleInput.oninput = () => { state.title = titleInput.value; state.titleSavedAsHook = false; paintAll(); };
+    if(titleInput) titleInput.oninput = () => { state.title = titleInput.value; state.titleSavedAsHook = false; paintAll(); persistDraft(); };
 
     const saveTitleHookBtn = container.querySelector('[data-action="save-title-as-hook"]');
     if(saveTitleHookBtn) saveTitleHookBtn.onclick = async () => {
@@ -383,7 +397,7 @@ function render(container, ctx){
     };
 
     const handleInput = container.querySelector('#ta-handle');
-    if(handleInput) handleInput.oninput = () => { state.handle = handleInput.value; paintAll(); };
+    if(handleInput) handleInput.oninput = () => { state.handle = handleInput.value; paintAll(); persistDraft(); };
 
     const downloadBtn = container.querySelector('[data-action="download"]');
     if(downloadBtn) downloadBtn.onclick = () => {
@@ -411,6 +425,28 @@ function render(container, ctx){
   }
 
   draw();
+
+  // Không có tiêu đề mới truyền sang (Pending*) — khôi phục bản đang làm dở lần trước, đỡ phải tải
+  // ảnh lên lại và chỉnh lại layout/màu/font từ đầu chỉ vì lỡ chuyển sang trang khác.
+  if(!pendingTitle){
+    loadModuleDraft(ctx, DRAFT_KEY).then(draft => {
+      if(!draft) return;
+      Object.assign(state, {
+        layout: draft.layout || state.layout, font: draft.font || state.font, color: draft.color || state.color,
+        title: draft.title || state.title, handle: draft.handle || state.handle, size: draft.size || state.size,
+        imgZoom: draft.imgZoom != null ? draft.imgZoom : state.imgZoom,
+        imgOffsetX: draft.imgOffsetX != null ? draft.imgOffsetX : state.imgOffsetX,
+        imgOffsetY: draft.imgOffsetY != null ? draft.imgOffsetY : state.imgOffsetY,
+      });
+      if(draft.bgImageDataUrl){
+        const img = new Image();
+        img.onload = () => { state.bgImage = img; state.bgImageDataUrl = draft.bgImageDataUrl; draw(); };
+        img.src = draft.bgImageDataUrl;
+      } else {
+        draw();
+      }
+    });
+  }
 }
 
 window.Modules = window.Modules || {};
