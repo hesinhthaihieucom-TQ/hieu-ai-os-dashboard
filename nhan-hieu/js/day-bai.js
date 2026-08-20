@@ -188,6 +188,25 @@ function render(container, ctx){
   function copyBtnHtml(field){
     return `<span class="btn-ghost btn btn-sm" style="padding:4px 10px;font-size:11.5px;" data-copy-field="${field}">Copy</span>`;
   }
+  // Tích "đã làm" cho TỪNG hành động riêng trong 1 mốc (bình luận tự đăng, trả lời từ khoá, từng gợi
+  // ý trả lời, gắn tài sản) — không phải tích chung cả mốc, vì 1 mốc có nhiều việc cần làm ở nhiều
+  // thời điểm khác nhau (vd bình luận tự đăng làm ngay, trả lời từ khoá chỉ làm khi có người bình
+  // luận đúng chữ). Lưu vào m.done (object key theo action), ghi thẳng vào posts.day_bai_plan luôn.
+  function doneToggleHtml(mocKey, actionKey, isDone){
+    return `<span data-toggle-done="${mocKey}:${actionKey}" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap;${isDone?'color:var(--accent);font-weight:700;':'color:var(--ink-soft);'}">
+      <span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${isDone?'var(--accent)':'var(--ink-soft)'};background:${isDone?'var(--accent)':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${isDone?`<span style="color:#fff;font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>
+      ${isDone?'Đã làm':'Đánh dấu đã làm'}
+    </span>`;
+  }
+  function toggleDone(mocKey, actionKey){
+    const m = ((state.result && state.result.moc) || []).find(x=>x.moc===mocKey);
+    if(!m) return;
+    m.done = m.done || {};
+    m.done[actionKey] = !m.done[actionKey];
+    draw();
+    persistDraft();
+    savePlanSilently();
+  }
   function resolveCopyText(field){
     const mocList = (state.result && state.result.moc) || [];
     const [mocKey, kind, idx] = field.split(':');
@@ -212,6 +231,7 @@ function render(container, ctx){
       <div class="card" style="padding:0;overflow:hidden;">
         ${mocList.map((m,i)=>{
           const isOpen = state.expandedMoc===m.moc;
+          const done = m.done || {};
           return `
           <div style="${i>0?'border-top:1px solid var(--line);':''}">
             <div data-toggle-moc="${m.moc}" style="padding:14px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -228,14 +248,20 @@ function render(container, ctx){
               <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">📌 Bình luận tự đăng / ghim</div>
               <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
                 <div style="font-size:14.5px;color:var(--ink);line-height:1.55;">${esc(m.cmt_tu_dang)}</div>
-                ${copyBtnHtml(m.moc+':cmt')}
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                  ${copyBtnHtml(m.moc+':cmt')}
+                  ${doneToggleHtml(m.moc, 'cmt', !!done.cmt)}
+                </div>
               </div>
 
               ${m.tra_loi_tu_khoa_cta ? `
               <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">🔑 Trả lời khi có người để lại đúng từ khoá (nhớ gửi — đây là lời hứa với người đọc)</div>
               <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
                 <div style="font-size:14.5px;color:var(--ink);line-height:1.55;font-weight:600;">${esc(m.tra_loi_tu_khoa_cta)}</div>
-                ${copyBtnHtml(m.moc+':keyword')}
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                  ${copyBtnHtml(m.moc+':keyword')}
+                  ${doneToggleHtml(m.moc, 'keyword', !!done.keyword)}
+                </div>
               </div>
               ` : ''}
 
@@ -243,12 +269,18 @@ function render(container, ctx){
               ${(m.goi_y_tra_loi_cmt||[]).map((c,ci)=>`
                 <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
                   <div style="font-size:14px;color:var(--ink);line-height:1.5;">${esc(c)}</div>
-                  ${copyBtnHtml(m.moc+':reply:'+ci)}
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                    ${copyBtnHtml(m.moc+':reply:'+ci)}
+                    ${doneToggleHtml(m.moc, 'reply'+ci, !!done['reply'+ci])}
+                  </div>
                 </div>
               `).join('')}
 
               <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin:14px 0 6px;">🎯 Tài sản nên gắn</div>
-              <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b style="color:var(--ink);">${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b style="color:var(--ink);">${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
+                ${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? doneToggleHtml(m.moc, 'asset', !!done.asset) : ''}
+              </div>
             </div>
             ` : ''}
           </div>
@@ -292,6 +324,14 @@ function render(container, ctx){
         const key = el.getAttribute('data-toggle-moc');
         state.expandedMoc = state.expandedMoc===key ? null : key;
         draw();
+      };
+    });
+
+    container.querySelectorAll('[data-toggle-done]').forEach(el=>{
+      el.onclick = (ev)=>{
+        ev.stopPropagation(); // tránh bấm trúng luôn header đóng/mở accordion phía ngoài
+        const [mocKey, actionKey] = el.getAttribute('data-toggle-done').split(':');
+        toggleDone(mocKey, actionKey);
       };
     });
 
