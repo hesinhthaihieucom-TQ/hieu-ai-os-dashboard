@@ -8,6 +8,7 @@ NHIỆM VỤ: Viết đúng 3 ví dụ câu trả lời mẫu cho câu hỏi đ�
 
 NGUYÊN TẮC BẮT BUỘC:
 - Mỗi ví dụ phải rất rõ ràng, cụ thể, chi tiết — có số liệu/tình huống/cảm xúc/nỗi đau thật nếu câu hỏi liên quan, không viết chung chung kiểu sách giáo khoa.
+- Mỗi ví dụ dài khoảng 2-4 câu — đủ chi tiết nhưng không lan man, để cả 3 ví dụ cộng lại không bị quá dài.
 - Làm đúng theo YÊU CẦU VỀ NGÀNH NGHỀ được nêu rõ ở cuối nội dung người dùng gửi (có thể là "cả 3 ví dụ cùng 1 lĩnh vực" hoặc "3 ví dụ ở 3 ngành khác nhau" tuỳ tình huống).
 - Viết ở ngôi thứ nhất, như chính người trả lời đang nói.
 - Output tiếng Việt.`;
@@ -37,7 +38,10 @@ async function callClaude({ apiKey, system, userContent, tool }) {
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 1500,
+        // Từng bị cắt giữa chừng ở 1500 token với những câu hỏi cần ví dụ dài (vd câu 13, 15) —
+        // lúc đó Anthropic trả về tool_use với input rỗng/thiếu vi_du (không lỗi rõ ràng), UI chỉ
+        // báo chung "AI không trả về gợi ý". Tăng trần lên rộng rãi để tránh bị cắt.
+        max_tokens: 2200,
         system,
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
@@ -53,6 +57,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
   }
   if (!resp.ok) throw new Error(`Anthropic API lỗi (${resp.status}): ${await resp.text()}`);
   const data = await resp.json();
+  if (data.stop_reason === 'max_tokens') throw new Error('AI viết gợi ý quá dài bị cắt giữa chừng — thử lại giúp mình.');
   const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
   if (!toolUse) throw new Error('Không nhận được kết quả có cấu trúc từ AI.');
   return toolUse.input;
