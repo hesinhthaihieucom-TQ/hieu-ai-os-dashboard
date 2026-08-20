@@ -78,6 +78,17 @@ function render(container, ctx){
     if(state.groupChoice) return (state.assets.find(a=>a.id===state.groupChoice)||{}).label || '';
     return '';
   }
+  // Trước đây chỉ gửi TÊN sản phẩm/group cho AI, không có link — nên bình luận CTA dẫn sản phẩm
+  // chỉ nhắc tên suông, người đọc không có link để bấm ngay. "Khác" (productChoice==='other') không
+  // có link đã lưu sẵn nên trả rỗng — AI vẫn viết CTA nhắc tên, người dùng tự thêm link tay.
+  function resolvedProductUrl(){
+    if(state.productChoice && state.productChoice!=='other') return (state.assets.find(a=>a.id===state.productChoice)||{}).url || '';
+    return '';
+  }
+  function resolvedGroupUrl(){
+    if(state.groupChoice && state.groupChoice!=='other') return (state.assets.find(a=>a.id===state.groupChoice)||{}).url || '';
+    return '';
+  }
 
   async function loadRecent(){
     const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(10);
@@ -644,7 +655,9 @@ function render(container, ctx){
         channel_handle: state.channelHandle,
         brand_name: resolvedBrandName(),
         product_name: resolvedProductName(),
+        product_url: resolvedProductUrl(),
         group_name: resolvedGroupName(),
+        group_url: resolvedGroupUrl(),
       });
       state.result = { ...state.result, ...data.result };
       state.extrasError = null;

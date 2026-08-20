@@ -121,6 +121,8 @@ QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — đây là bình luận 
 // viết bài chính không bị chậm/nặng thêm chỉ vì có chọn các mục đó (xem ghi chú ở TOOL_POST_CORE).
 const HASHTAG_CAPTION_RULES = `QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 - Nếu người dùng có cung cấp tên sản phẩm/dịch vụ và/hoặc tên group/cộng đồng, viết thêm 1-2 câu bình luận CTA (cmt_cta_san_pham) dẫn khéo về đúng sản phẩm hoặc group đó, giọng chia sẻ tự nhiên, không quảng cáo lộ liễu.
+- BẮT BUỘC: nếu có LINK kèm theo (xem LINK SẢN PHẨM/DỊCH VỤ ĐÓ, LINK GROUP/CỘNG ĐỒNG ĐÓ), phải CHÈN THẲNG đúng link đó vào trong câu bình luận — không chỉ nhắc tên suông rồi để người đọc tự tìm. Chèn tự nhiên, ví dụ "...mình để link ở đây nha: <link>" hoặc "...tham gia tại <link>".
+- Nếu có tên sản phẩm/group nhưng KHÔNG có link kèm theo, vẫn viết bình luận nhắc tên như bình thường, không tự bịa ra link.
 - Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.
 
 QUY TẮC CAPTION VIDEO (goi_y_caption):
@@ -137,6 +139,7 @@ QUY TẮC HASHTAG (BẮT BUỘC — lưu ý về thuật toán, tránh kỳ vọ
 - TẤT CẢ hashtag phải viết KHÔNG DẤU (bỏ hết dấu thanh và dấu chữ tiếng Việt, ví dụ "Tài Chính" → "TaiChinh"), viết liền không có khoảng trắng, không ký tự đặc biệt.
 - Nếu người dùng có cung cấp tên kênh Facebook/TikTok, 1 trong 5 hashtag PHẢI là tên kênh đó (không dấu, viết liền).
 - Nếu người dùng có cung cấp tên thương hiệu/sản phẩm cố định (khác tên kênh), thêm 1 hashtag riêng cho tên đó (không dấu, viết liền).
+- Nếu người dùng có cung cấp SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY và/hoặc GROUP/CỘNG ĐỒNG MUỐN NHẮC (riêng cho bài này, khác thương hiệu cố định ở trên), PHẢI có thêm hashtag cho tên đó — nếu cả 2 đều có mà không đủ chỗ trong 5 hashtag, ưu tiên sản phẩm/dịch vụ trước, group sau.
 - Các hashtag còn lại bám sát chủ đề bài + trục nội dung định vị.
 - Nếu không có tên kênh/thương hiệu nào được cung cấp, tự suy ra 1 hashtag đại diện thương hiệu từ bản sắc thương hiệu trong định vị.`;
 
@@ -159,11 +162,13 @@ function contextBlockOf(positioning, quick_context) {
   return 'BỐI CẢNH: (không có)';
 }
 
-function extraFieldsBlock({ channel_handle, brand_name, product_name, group_name }) {
+function extraFieldsBlock({ channel_handle, brand_name, product_name, product_url, group_name, group_url }) {
   return `TÊN KÊNH FACEBOOK/TIKTOK: ${channel_handle && channel_handle.trim() ? channel_handle.trim() : '(không cung cấp — tự suy ra hashtag thương hiệu từ định vị)'}
 TÊN THƯƠNG HIỆU/SẢN PHẨM CỐ ĐỊNH (khác tên kênh, nếu có): ${brand_name && brand_name.trim() ? brand_name.trim() : '(không có)'}
 SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY: ${product_name && product_name.trim() ? product_name.trim() : '(không có)'}
-GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}`;
+LINK SẢN PHẨM/DỊCH VỤ ĐÓ: ${product_url && product_url.trim() ? product_url.trim() : '(không có link)'}
+GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}
+LINK GROUP/CỘNG ĐỒNG ĐÓ: ${group_url && group_url.trim() ? group_url.trim() : '(không có link)'}`;
 }
 
 // Mẫu CTA/bình luận ghim người dùng đã lưu ở Kho CTA (cta_bank_personal), chọn ra làm tham khảo
