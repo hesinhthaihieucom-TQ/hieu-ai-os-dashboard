@@ -283,6 +283,15 @@ function render(container, ctx){
         <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('hashtag')}</div>
       </div>
       <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
+      ${(r.cmt_cta_san_pham && r.cmt_cta_san_pham.length) ? `
+        <div class="section"><h3>Bình luận CTA sản phẩm/group</h3>
+          ${r.cmt_cta_san_pham.map((c,i)=>`
+            <div style="padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <div style="font-size:14.5px;">${esc(c)}</div>
+              ${copyBtnHtml('cmt_cta_san_pham:'+i)}
+            </div>
+          `).join('')}
+        </div>` : ''}
       ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (r.goi_y_caption.theo_nen_tang||[]).length)) ? `
         <div class="section"><h3>Caption gợi ý (khi đăng dạng video)</h3>
           <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:12.5px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
@@ -342,16 +351,6 @@ function render(container, ctx){
         <textarea id="edit-cmt-ghim" style="min-height:auto;height:70px;">${esc(r.cau_cmt_ghim||'')}</textarea>
         <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('cau_cmt_ghim')}</div>
       </div>
-      ${(r.cmt_cta_san_pham && r.cmt_cta_san_pham.length) ? `
-        <div class="section"><h3>Bình luận CTA sản phẩm/group</h3>
-          ${r.cmt_cta_san_pham.map((c,i)=>`
-            <div style="padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;">
-              <div style="font-size:14.5px;">${esc(c)}</div>
-              ${copyBtnHtml('cmt_cta_san_pham:'+i)}
-            </div>
-          `).join('')}
-        </div>` : ''}
-
       <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Bước tiếp theo</div></div>
       <div class="btn-row no-print" style="justify-content:flex-start;flex-wrap:wrap;align-items:center;">
         ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>${!state.score?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 2 lượt AI)</span>`:''}</span>` : ''}
@@ -548,11 +547,13 @@ function render(container, ctx){
     acquireWakeLock();
     try{
       const endpoint = state.khoGocSource ? '/api/viet-tu-kho-goc' : '/api/viet-content';
+      // channel_handle/brand_name KHÔNG gửi ở đây — bước viết bài chính (CORE) không dùng tới 2 mục
+      // này (chỉ hashtag/CTA sản phẩm ở bước "Hashtag, hình ảnh..." bên dưới mới cần), gửi thừa từng
+      // khiến bước viết chính bị nặng/chậm hơn không cần thiết. product_name/group_name vẫn gửi vì
+      // riêng luồng "viết từ Kho Content" cần biết để không giữ lại lời hứa sản phẩm của bài gốc.
       const payload = {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
-        channel_handle: state.channelHandle,
-        brand_name: resolvedBrandName(),
         product_name: resolvedProductName(),
         group_name: resolvedGroupName(),
         custom_instructions: state.customInstructions,

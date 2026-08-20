@@ -23,12 +23,13 @@ const TOOL_POST_CORE = {
       cta: { type: 'string', description: 'Câu CTA đầy đủ, chốt bằng đúng 1 từ khoá kích hoạt 2 chữ theo mẫu "Để lại bình luận chữ \'...\' và mình sẽ gửi bạn ...".' },
       tu_khoa_cta: { type: 'string', description: 'Đúng từ khoá 2 chữ dùng trong CTA (tách riêng để hiển thị nổi bật), ví dụ "Dòng tiền".' },
       cau_cmt_ghim: { type: 'string', description: 'Câu bình luận ghim — đánh thẳng vào nỗi đau/nỗi sợ/mong muốn của người đọc để kích hoạt hành động, không phải chỉ nhắc lại CTA cho có (xem QUY TẮC BÌNH LUẬN GHIM).' },
-      cmt_cta_san_pham: {
-        type: 'array', items: { type: 'string' }, minItems: 0, maxItems: 2,
-        description: 'Câu bình luận CTA dẫn về sản phẩm/group cụ thể nếu người dùng có cung cấp; mảng rỗng nếu không có.',
-      },
     },
-    required: ['tieu_de','hook','van_de','gia_tri','niem_tin','cta','tu_khoa_cta','cau_cmt_ghim','cmt_cta_san_pham'],
+    // cmt_cta_san_pham (bình luận CTA dẫn sản phẩm/group) đã chuyển sang TOOL_POST_EXTRAS — đây là
+    // field DUY NHẤT ở CORE từng cần tên kênh/thương hiệu/sản phẩm/group, khiến bước "Viết bài" bị
+    // chậm/dễ treo hẳn khi người dùng có chọn các mục đó ở "Tuỳ chọn thêm" (đúng lúc AI phải vừa viết
+    // bài vừa suy nghĩ thêm câu CTA sản phẩm). CORE giờ không cần các trường đó nữa, luôn nhanh như
+    // nhau bất kể có chọn thương hiệu/sản phẩm/group hay không.
+    required: ['tieu_de','hook','van_de','gia_tri','niem_tin','cta','tu_khoa_cta','cau_cmt_ghim'],
   },
 };
 
@@ -40,6 +41,10 @@ const TOOL_POST_EXTRAS = {
     properties: {
       hashtag: { type: 'array', items: { type: 'string' }, minItems: 5, maxItems: 5, description: 'Đúng 5 hashtag theo quy tắc hashtag đã nêu.' },
       goi_y_hinh_anh: { type: 'string', description: '1 ý tưởng hình ảnh/video minh hoạ cho bài này, khớp dấu ấn hình ảnh trong định vị.' },
+      cmt_cta_san_pham: {
+        type: 'array', items: { type: 'string' }, minItems: 0, maxItems: 2,
+        description: 'Câu bình luận CTA dẫn về sản phẩm/group cụ thể nếu người dùng có cung cấp (xem QUY TẮC CMT CTA SẢN PHẨM/GROUP); mảng rỗng nếu không có.',
+      },
       dinh_dang_de_xuat: {
         type: 'string',
         enum: FORMAT_NAMES,
@@ -65,7 +70,7 @@ const TOOL_POST_EXTRAS = {
         required: ['giu_nguyen_tieu_de', 'caption_chinh', 'theo_nen_tang'],
       },
     },
-    required: ['hashtag','goi_y_hinh_anh','dinh_dang_de_xuat','ly_do_dinh_dang','goi_y_caption'],
+    required: ['hashtag','goi_y_hinh_anh','cmt_cta_san_pham','dinh_dang_de_xuat','ly_do_dinh_dang','goi_y_caption'],
   },
 };
 
@@ -94,13 +99,16 @@ QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — đây là cú hích cu�
   • Xoáy vào cái giá phải trả nếu CỨ ĐỂ NGUYÊN tình trạng hiện tại, không hành động gì.
   • Gọi đúng tên nỗi ngại/lý do trì hoãn phổ biến nhất của người đọc, rồi trấn an bằng đúng 1 câu ngắn gọn.
   • Tạo cảm giác cấp bách thật (vì sao nên làm ngay lúc đọc bài này, không phải "để đó tính sau").
-- Vẫn phải nhắc đúng từ khoá CTA để người đọc biết gõ gì, nhưng viết như 1 câu tác giả buột miệng nói thêm — có cảm xúc thật, KHÔNG được viết kiểu thông báo hành chính ("Bình luận '...' để nhận ngay...").
+- Vẫn phải nhắc đúng từ khoá CTA để người đọc biết gõ gì, nhưng viết như 1 câu tác giả buột miệng nói thêm — có cảm xúc thật, KHÔNG được viết kiểu thông báo hành chính ("Bình luận '...' để nhận ngay...").`;
 
-QUY TẮC CMT CTA SẢN PHẨM/GROUP:
+// QUY TẮC CMT CTA SẢN PHẨM/GROUP nằm ở EXTRAS (không phải CORE) vì đây là field DUY NHẤT phụ thuộc
+// tên kênh/thương hiệu/sản phẩm/group người dùng chọn ở "Tuỳ chọn thêm" — tách ra khỏi CORE để bước
+// viết bài chính không bị chậm/nặng thêm chỉ vì có chọn các mục đó (xem ghi chú ở TOOL_POST_CORE).
+const HASHTAG_CAPTION_RULES = `QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 - Nếu người dùng có cung cấp tên sản phẩm/dịch vụ và/hoặc tên group/cộng đồng, viết thêm 1-2 câu bình luận CTA (cmt_cta_san_pham) dẫn khéo về đúng sản phẩm hoặc group đó, giọng chia sẻ tự nhiên, không quảng cáo lộ liễu.
-- Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.`;
+- Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.
 
-const HASHTAG_CAPTION_RULES = `QUY TẮC CAPTION VIDEO (goi_y_caption):
+QUY TẮC CAPTION VIDEO (goi_y_caption):
 - LUÔN điền đầy đủ goi_y_caption cho MỌI bài, bất kể dinh_dang_de_xuat AI chọn là gì — người dùng có thể tự quyết định quay video (vd Video Ngồi Nói) dù đó không phải dạng AI đề xuất là phù hợp nhất, nên không được bỏ trống vì lý do "bài này hợp ảnh tĩnh hơn".
 - Tự quyết định giu_nguyen_tieu_de: true nếu tiêu đề trên thumbnail đã đủ mạnh để dùng luôn làm caption; false nếu nên viết 1 caption riêng, khác đi, hiệu quả hơn khi đứng dưới video.
 - Chỉ thêm biến thể theo_nen_tang cho nền tảng thực sự nên viết khác caption_chinh đáng kể — không liệt kê cho đủ 3 nền tảng nếu không cần thiết. Khi có thêm, PHẢI viết đúng đặc thù thuật toán/hành vi người dùng từng nền tảng, không chỉ đổi giọng văn qua loa:

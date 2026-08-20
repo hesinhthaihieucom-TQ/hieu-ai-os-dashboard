@@ -105,7 +105,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, quick_context, source_text, source_title, cau_chuyen_rieng, channel_handle, brand_name, product_name, group_name, custom_instructions } = req.body || {};
+    const { positioning, quick_context, source_text, source_title, cau_chuyen_rieng, product_name, group_name, custom_instructions } = req.body || {};
     const hasPositioning = !!(positioning && positioning.luot1);
     if (!hasPositioning && !(quick_context && quick_context.trim())) {
       res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi viết.' }); return;
@@ -123,7 +123,7 @@ ${source_text.trim()}
 
 CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): ${cau_chuyen_rieng && cau_chuyen_rieng.trim() ? cau_chuyen_rieng.trim() : '(không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)'}
 
-${extraFieldsBlock({ channel_handle, brand_name, product_name, group_name })}
+${extraFieldsBlock({ product_name, group_name })}
 ${customInstructionsBlock(custom_instructions)}
 Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`;
 
