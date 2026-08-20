@@ -23,6 +23,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - BẮT BUỘC (đây là bước hay bị bỏ sót nhất — không làm là phá vỡ lời hứa với người đọc): mọi mốc có từ khoá kích hoạt PHẢI có sẵn 1 mẫu trả lời DÀNH RIÊNG cho người bình luận đúng từ khoá đó (tra_loi_tu_khoa_cta) — mẫu này PHẢI CHỨA THẲNG link thật của tài sản được chọn ở mốc đó (lấy đúng URL trong danh sách tài sản quảng bá được cung cấp, TUYỆT ĐỐI không bịa link). Đây không phải 1 trong 3 mẫu trả lời chung ở goi_y_tra_loi_cmt — mẫu trả lời chung dùng cho bình luận khen/hỏi/nghi ngờ thông thường, còn mẫu này dùng RIÊNG để hoàn thành đúng lời hứa đã đưa ra trong CTA. Mốc chưa có từ khoá/CTA (vd m1) thì để rỗng.
 - Có thể có NHIỀU tài sản quảng bá được cung cấp (không chỉ 1) — hãy CHỦ ĐỘNG PHÂN BỔ tài sản phù hợp cho từng mốc theo đúng mức độ cam kết tăng dần (mốc đầu: chưa gắn gì hoặc tài sản ít cam kết nhất; mốc cuối: tài sản giá trị/chuyển đổi cao nhất) — không bắt buộc phải dùng hết tất cả tài sản, và có thể dùng lại cùng 1 tài sản ở nhiều mốc liền kề nếu hợp lý, nhưng KHÔNG được gắn tài sản nào ngoài danh sách được cung cấp.
 - Nếu người dùng không chỉ định tài sản nào (danh sách rỗng), tự chọn tuỳ theo có tài sản nào trong kho hay không — nếu kho cũng rỗng, để trống và giải thích rõ vì sao chưa nên gắn gì ở mốc đó.
+- Nếu tài sản được chọn có "câu CTA mẫu đã lưu" (xem danh sách tài sản), ưu tiên bám theo TINH THẦN/GIỌNG ĐIỆU câu mẫu đó khi viết cmt_tu_dang/tra_loi_tu_khoa_cta cho đúng tài sản đó — biến tấu lại câu chữ cho hợp mốc này, TUYỆT ĐỐI không copy y nguyên.
 - Gợi ý trả lời bình luận (goi_y_tra_loi_cmt) phải là các mẫu câu tự nhiên, đúng giọng, dùng được cho nhiều loại bình luận khác nhau (khen, hỏi, nghi ngờ...) — riêng cho từng mốc, không lặp lại y hệt giữa các mốc.
 - Output tiếng Việt.`;
 
@@ -118,7 +119,7 @@ module.exports = async (req, res) => {
     if (!topic || !topic.trim()) { res.status(400).json({ error: 'Thiếu nội dung/chủ đề bài đang đẩy.' }); return; }
 
     const assetsList = Array.isArray(assets) && assets.length
-      ? assets.map(a => `- ${a.label}${a.url ? ` (${a.url})` : ''}`).join('\n')
+      ? assets.map(a => `- ${a.label}${a.url ? ` (${a.url})` : ''}${a.cta_mau ? ` — câu CTA mẫu đã lưu: "${a.cta_mau}"` : ''}`).join('\n')
       : '(chưa có tài sản quảng bá nào được lưu)';
 
     const contextBlock = positioning && positioning.luot1

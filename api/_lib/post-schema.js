@@ -123,6 +123,7 @@ const HASHTAG_CAPTION_RULES = `QUY TẮC CMT CTA SẢN PHẨM/GROUP:
 - Nếu người dùng có cung cấp tên sản phẩm/dịch vụ và/hoặc tên group/cộng đồng, viết thêm 1-2 câu bình luận CTA (cmt_cta_san_pham) dẫn khéo về đúng sản phẩm hoặc group đó, giọng chia sẻ tự nhiên, không quảng cáo lộ liễu.
 - BẮT BUỘC: nếu có LINK kèm theo (xem LINK SẢN PHẨM/DỊCH VỤ ĐÓ, LINK GROUP/CỘNG ĐỒNG ĐÓ), phải CHÈN THẲNG đúng link đó vào trong câu bình luận — không chỉ nhắc tên suông rồi để người đọc tự tìm. Chèn tự nhiên, ví dụ "...mình để link ở đây nha: <link>" hoặc "...tham gia tại <link>".
 - Nếu có tên sản phẩm/group nhưng KHÔNG có link kèm theo, vẫn viết bình luận nhắc tên như bình thường, không tự bịa ra link.
+- Nếu người dùng có để sẵn CÂU CTA MẪU ĐÃ LƯU cho đúng sản phẩm/group đó, ưu tiên bám theo TINH THẦN/GIỌNG ĐIỆU câu mẫu đó — biến tấu lại câu chữ cho hợp bài hiện tại, TUYỆT ĐỐI không copy y nguyên (mẫu đó có thể đã dùng cho bài khác trước đây).
 - Nếu người dùng KHÔNG cung cấp sản phẩm/group nào, trả về mảng rỗng cho cmt_cta_san_pham — không tự bịa ra sản phẩm/group.
 
 QUY TẮC CAPTION VIDEO (goi_y_caption):
@@ -162,22 +163,19 @@ function contextBlockOf(positioning, quick_context) {
   return 'BỐI CẢNH: (không có)';
 }
 
-function extraFieldsBlock({ channel_handle, brand_name, product_name, product_url, group_name, group_url }) {
+// product_cta_mau/group_cta_mau: câu CTA mẫu lưu RIÊNG cho đúng tài sản đó ở Định Vị (thay cho Kho
+// CTA chung cũ, đã bỏ 2026-08-20 theo phản hồi chị Quỳnh — CTA nên gắn liền với từng sản phẩm/group
+// cụ thể, không phải 1 kho chung tách rời). Dùng làm tham khảo giọng điệu cho cmt_cta_san_pham, KHÔNG
+// copy y nguyên (xem QUY TẮC CMT CTA SẢN PHẨM/GROUP ở HASHTAG_CAPTION_RULES).
+function extraFieldsBlock({ channel_handle, brand_name, product_name, product_url, product_cta_mau, group_name, group_url, group_cta_mau }) {
   return `TÊN KÊNH FACEBOOK/TIKTOK: ${channel_handle && channel_handle.trim() ? channel_handle.trim() : '(không cung cấp — tự suy ra hashtag thương hiệu từ định vị)'}
 TÊN THƯƠNG HIỆU/SẢN PHẨM CỐ ĐỊNH (khác tên kênh, nếu có): ${brand_name && brand_name.trim() ? brand_name.trim() : '(không có)'}
 SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY: ${product_name && product_name.trim() ? product_name.trim() : '(không có)'}
 LINK SẢN PHẨM/DỊCH VỤ ĐÓ: ${product_url && product_url.trim() ? product_url.trim() : '(không có link)'}
+CÂU CTA MẪU ĐÃ LƯU CHO SẢN PHẨM/DỊCH VỤ ĐÓ: ${product_cta_mau && product_cta_mau.trim() ? `"${product_cta_mau.trim()}"` : '(không có, tự viết mới)'}
 GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}
-LINK GROUP/CỘNG ĐỒNG ĐÓ: ${group_url && group_url.trim() ? group_url.trim() : '(không có link)'}`;
-}
-
-// Mẫu CTA/bình luận ghim người dùng đã lưu ở Kho CTA (cta_bank_personal), chọn ra làm tham khảo
-// phong cách cho bài này — KHÔNG được copy y nguyên (đây là mẫu CŨ, dùng cho bài KHÁC), chỉ lấy
-// tinh thần/giọng điệu để viết bản mới hợp đúng bài hiện tại.
-function ctaReferenceBlock(cta_reference) {
-  if (!cta_reference || !cta_reference.text || !cta_reference.text.trim()) return '';
-  const label = cta_reference.kind === 'binh_luan_ghim' ? 'bình luận ghim' : 'CTA';
-  return `\nMẪU ${label.toUpperCase()} NGƯỜI DÙNG ĐÃ LƯU (tham khảo TINH THẦN/GIỌNG ĐIỆU, TUYỆT ĐỐI KHÔNG copy y nguyên câu chữ — mẫu này viết cho 1 bài khác, phải biến tấu lại cho khớp đúng nội dung/từ khoá của bài hiện tại): "${cta_reference.text.trim()}"\n`;
+LINK GROUP/CỘNG ĐỒNG ĐÓ: ${group_url && group_url.trim() ? group_url.trim() : '(không có link)'}
+CÂU CTA MẪU ĐÃ LƯU CHO GROUP/CỘNG ĐỒNG ĐÓ: ${group_cta_mau && group_cta_mau.trim() ? `"${group_cta_mau.trim()}"` : '(không có, tự viết mới)'}`;
 }
 
 // Yêu cầu tự do riêng cho 1 bài cụ thể (vd "viết ngắn hơn", "giọng hài hước", "nhấn số liệu") — KHÁC
@@ -188,4 +186,4 @@ function customInstructionsBlock(custom_instructions) {
   return `\nYÊU CẦU RIÊNG CHO BÀI NÀY (ưu tiên tuân theo, miễn không phá vỡ các nguyên tắc bắt buộc đã nêu ở trên): ${custom_instructions.trim()}\n`;
 }
 
-module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock, ctaReferenceBlock };
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock };

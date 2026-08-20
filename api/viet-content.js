@@ -4,7 +4,7 @@
 // ở /api/viet-content-extras (chạy sau, không chặn hiển thị bài viết chính).
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
-const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, contextBlockOf, customInstructionsBlock, ctaReferenceBlock } = require('./_lib/post-schema');
+const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, contextBlockOf, customInstructionsBlock } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, viết đúng giọng văn và định vị đã chốt của họ.
 
@@ -65,7 +65,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, quick_context, idea_text, custom_instructions, cta_reference } = req.body || {};
+    const { positioning, quick_context, idea_text, custom_instructions } = req.body || {};
     const hasPositioning = !!(positioning && positioning.luot1);
     if (!hasPositioning && !(quick_context && quick_context.trim())) {
       res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi viết content.' }); return;
@@ -78,7 +78,6 @@ module.exports = async (req, res) => {
 
 Ý TƯỞNG / CHỦ ĐỀ CẦN VIẾT:\n${idea_text}
 ${customInstructionsBlock(custom_instructions)}
-${ctaReferenceBlock(cta_reference)}
 
 Hãy viết 1 bài hoàn chỉnh theo đúng khung 5 phần, giọng văn khớp định vị trên, đúng quy tắc CTA/bình luận ghim đã nêu.`;
 

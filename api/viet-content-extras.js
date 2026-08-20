@@ -57,7 +57,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, quick_context, post_text, channel_handle, brand_name, product_name, product_url, group_name, group_url } = req.body || {};
+    const { positioning, quick_context, post_text, channel_handle, brand_name, product_name, product_url, product_cta_mau, group_name, group_url, group_cta_mau } = req.body || {};
     if (!post_text || !post_text.trim()) { res.status(400).json({ error: 'Thiếu nội dung bài viết để gợi ý bổ sung.' }); return; }
 
     const contextBlock = contextBlockOf(positioning, quick_context);
@@ -66,7 +66,7 @@ module.exports = async (req, res) => {
 
 BÀI VIẾT ĐÃ HOÀN CHỈNH:\n${post_text.trim()}
 
-${extraFieldsBlock({ channel_handle, brand_name, product_name, product_url, group_name, group_url })}
+${extraFieldsBlock({ channel_handle, brand_name, product_name, product_url, product_cta_mau, group_name, group_url, group_cta_mau })}
 
 Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption gợi ý cho đúng bài này.`;
 

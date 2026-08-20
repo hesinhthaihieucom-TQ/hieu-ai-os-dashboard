@@ -5,8 +5,7 @@ function render(container, ctx){
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', customInstructions:'', extrasLoading:false, extrasError:null,
     showScoreContent:false, showScoreHook:false, showExtras:false, saving:false, pendingSourceRef:null,
-    viralPromptFor:null, viralViews:'', viralSubmitting:false, viralDoneFor:null, viralError:null, dinhDangOverride:null,
-    ctaBank:[], ctaReferenceId:'', savedCtaFor:false, savedCmtGhimFor:false };
+    viralPromptFor:null, viralViews:'', viralSubmitting:false, viralDoneFor:null, viralError:null, dinhDangOverride:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -41,7 +40,7 @@ function render(container, ctx){
       const draft = await loadModuleDraft(ctx, DRAFT_KEY);
       if(draft) Object.assign(state, draft);
     }
-    await Promise.all([loadRecent(), loadAssets(), loadBrands(), loadScheduledPostIds(), loadCtaBank()]);
+    await Promise.all([loadRecent(), loadAssets(), loadBrands(), loadScheduledPostIds()]);
     state.screen='main';
     draw();
     if(autoGenerate) generate();
@@ -50,11 +49,6 @@ function render(container, ctx){
   async function loadAssets(){
     const { data } = await ctx.supabase.from('promo_assets').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
     state.assets = data || [];
-  }
-
-  async function loadCtaBank(){
-    const { data } = await ctx.supabase.from('cta_bank_personal').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
-    state.ctaBank = data || [];
   }
 
   async function loadBrands(){
@@ -87,6 +81,16 @@ function render(container, ctx){
   }
   function resolvedGroupUrl(){
     if(state.groupChoice && state.groupChoice!=='other') return (state.assets.find(a=>a.id===state.groupChoice)||{}).url || '';
+    return '';
+  }
+  // Câu CTA mẫu RIÊNG cho đúng tài sản đang chọn (nhập ở Định Vị) — thay cho Kho CTA chung cũ, AI
+  // dùng làm tham khảo giọng điệu khi viết cmt_cta_san_pham cho đúng sản phẩm/group này.
+  function resolvedProductCtaMau(){
+    if(state.productChoice && state.productChoice!=='other') return (state.assets.find(a=>a.id===state.productChoice)||{}).cta_mau || '';
+    return '';
+  }
+  function resolvedGroupCtaMau(){
+    if(state.groupChoice && state.groupChoice!=='other') return (state.assets.find(a=>a.id===state.groupChoice)||{}).cta_mau || '';
     return '';
   }
 
@@ -177,15 +181,8 @@ function render(container, ctx){
               </select>
               ${state.groupChoice==='other'?`<textarea id="ex-group-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.groupNameOther)}</textarea>`:''}
             </div>
-            ${state.ctaBank.length ? `
-            <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Viết CTA/bình luận ghim theo tinh thần 1 mẫu đã lưu (không bắt buộc)</label>
-              <select id="ex-cta-ref-select">
-                <option value="">— Để AI tự viết mới —</option>
-                ${state.ctaBank.map(e=>`<option value="${e.id}" ${state.ctaReferenceId===e.id?'selected':''}>[${e.kind==='cta'?'CTA':'Bình luận ghim'}] ${esc(excerpt(e.text, 60))}</option>`).join('')}
-              </select>
-              <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">AI sẽ biến tấu theo tinh thần mẫu này cho hợp bài mới, không copy y nguyên. Xem/thêm mẫu ở <a href="#kho-cta">Kho CTA</a>.</div>
-            </div>
+            ${resolvedProductCtaMau() || resolvedGroupCtaMau() ? `
+            <div style="font-size:11.5px;color:var(--ink-soft);">💡 AI sẽ bám theo giọng điệu câu CTA mẫu đã lưu cho ${resolvedProductCtaMau() && resolvedGroupCtaMau() ? 'sản phẩm và group này' : resolvedProductCtaMau() ? 'sản phẩm này' : 'group này'} (biến tấu lại cho hợp bài mới, không copy y nguyên) — sửa câu mẫu ở <a href="#dinh-vi">Định Vị</a>.</div>
             ` : ''}
           </div>
         ` : ''}
@@ -281,13 +278,6 @@ function render(container, ctx){
   function copyBtnHtml(field, label){
     return `<span class="btn-ghost btn btn-sm" style="padding:5px 12px;font-size:12px;" data-copy-field="${field}">${label||'Copy'}</span>`;
   }
-  // "cta" đọc từ ô sửa tiêu đề/bài viết không tách riêng được (CTA nằm trong bai_hoan_chinh) — lưu
-  // đúng câu r.cta AI đã sinh (chưa gộp vào bài); "binh_luan_ghim" đọc từ ô sửa trực tiếp #edit-cmt-ghim
-  // để lưu đúng bản người dùng vừa chỉnh, không lưu bản AI gốc nếu đã sửa tay.
-  function saveToCtaBankBtnHtml(kind){
-    const already = kind==='cta' ? state.savedCtaFor : state.savedCmtGhimFor;
-    return `<span class="btn-ghost btn btn-sm" style="padding:5px 12px;font-size:12px;" data-save-cta-bank="${kind}">${already?'Đã lưu vào Kho ✓':'💾 Lưu vào Kho'}</span>`;
-  }
   function resolveCopyText(field){
     const r = state.result;
     if(!r) return '';
@@ -379,12 +369,11 @@ function render(container, ctx){
         <textarea id="edit-bai-hoan-chinh" style="min-height:260px;background:var(--panel);">${esc(r.bai_hoan_chinh)}</textarea>
         <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('bai_hoan_chinh', 'Copy bài viết')}</div>
         ${r.tu_khoa_cta?`<div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">Từ khoá CTA: <span style="display:inline-block;margin-left:2px;padding:2px 9px;border-radius:999px;background:var(--gold);color:#1E2420;font-size:12px;font-weight:700;">${esc(r.tu_khoa_cta)}</span></div>`:''}
-        ${r.cta?`<div class="btn-row no-print" style="margin-top:8px;justify-content:flex-start;">${saveToCtaBankBtnHtml('cta')}</div>`:''}
       </div>
       <div class="section">
         <h3>Bình luận ghim (sửa trực tiếp nếu muốn)</h3>
         <textarea id="edit-cmt-ghim" style="min-height:auto;height:70px;">${esc(r.cau_cmt_ghim||'')}</textarea>
-        <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('cau_cmt_ghim')}${saveToCtaBankBtnHtml('binh_luan_ghim')}</div>
+        <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('cau_cmt_ghim')}</div>
       </div>
       ${(!r.hashtag && !state.showExtras) ? `
         <div class="section highlight" style="text-align:center;">
@@ -440,19 +429,6 @@ function render(container, ctx){
       };
     });
 
-    container.querySelectorAll('[data-save-cta-bank]').forEach(el=>{
-      el.onclick = async ()=>{
-        const kind = el.getAttribute('data-save-cta-bank');
-        const text = kind==='cta' ? state.result.cta : state.result.cau_cmt_ghim;
-        if(!text || !text.trim()) return;
-        const { error } = await ctx.supabase.from('cta_bank_personal').insert({ user_id: ctx.user.id, text: text.trim(), kind });
-        if(error) return;
-        if(kind==='cta') state.savedCtaFor = true; else state.savedCmtGhimFor = true;
-        await loadCtaBank();
-        draw();
-      };
-    });
-
     const quickContext = container.querySelector('#quick-context');
     if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
     const customInstructions = container.querySelector('#custom-instructions');
@@ -477,9 +453,6 @@ function render(container, ctx){
     if(exGroupSelect) exGroupSelect.onchange = ()=>{ state.groupChoice = exGroupSelect.value; draw(); };
     const exGroupOther = container.querySelector('#ex-group-other');
     if(exGroupOther) exGroupOther.oninput = ()=>{ state.groupNameOther = exGroupOther.value; };
-
-    const exCtaRefSelect = container.querySelector('#ex-cta-ref-select');
-    if(exCtaRefSelect) exCtaRefSelect.onchange = ()=>{ state.ctaReferenceId = exCtaRefSelect.value; };
 
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
@@ -596,7 +569,6 @@ function render(container, ctx){
     generateRequestId++;
     const myRequestId = generateRequestId;
     state.generating = true; state.error = null; state.result = null; state.savedId = null;
-    state.savedCtaFor = false; state.savedCmtGhimFor = false;
     state.score = null; state.scoring = false; state.scoreError = null;
     state.hookScore = null; state.hookScoring = false; state.hookScoreError = null;
     state.extrasLoading = false; state.extrasError = null; draw();
@@ -612,14 +584,12 @@ function render(container, ctx){
       // này (chỉ hashtag/CTA sản phẩm ở bước "Hashtag, hình ảnh..." bên dưới mới cần), gửi thừa từng
       // khiến bước viết chính bị nặng/chậm hơn không cần thiết. product_name/group_name vẫn gửi vì
       // riêng luồng "viết từ Kho Content" cần biết để không giữ lại lời hứa sản phẩm của bài gốc.
-      const ctaRef = state.ctaReferenceId ? state.ctaBank.find(e=>e.id===state.ctaReferenceId) : null;
       const payload = {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
         product_name: resolvedProductName(),
         group_name: resolvedGroupName(),
         custom_instructions: state.customInstructions,
-        cta_reference: ctaRef ? { kind: ctaRef.kind, text: ctaRef.text } : null,
       };
       if(state.khoGocSource){
         payload.source_text = state.khoGocSource.content;
@@ -656,8 +626,10 @@ function render(container, ctx){
         brand_name: resolvedBrandName(),
         product_name: resolvedProductName(),
         product_url: resolvedProductUrl(),
+        product_cta_mau: resolvedProductCtaMau(),
         group_name: resolvedGroupName(),
         group_url: resolvedGroupUrl(),
+        group_cta_mau: resolvedGroupCtaMau(),
       });
       state.result = { ...state.result, ...data.result };
       state.extrasError = null;

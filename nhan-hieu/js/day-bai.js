@@ -358,7 +358,7 @@ function render(container, ctx){
       const preferredAssets = state.assets.filter(a=>state.selectedAssetIds.has(a.id)).map(a=>a.label);
       const data = await callApi('/api/goi-y-day-bai', {
         topic,
-        assets: state.assets.map(a=>({ label:a.label, url:a.url })),
+        assets: state.assets.map(a=>({ label:a.label, url:a.url, cta_mau:a.cta_mau })),
         preferred_assets: preferredAssets,
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,

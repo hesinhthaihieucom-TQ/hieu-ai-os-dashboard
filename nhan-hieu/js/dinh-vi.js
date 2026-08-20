@@ -76,8 +76,8 @@ function render(container, ctx){
     suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null, suggestCounts:{},
     pasteText:'', pasteError:null, pasteLoading:false,
     channelHandle:'', channelSaving:false, channelSaved:false,
-    assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
-    editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
+    assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so', cta_mau:'' }, newGroup:{ label:'', url:'', cta_mau:'' },
+    editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so', cta_mau:'' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
     reconstructingAnswers:false, reconstructFailed:false,
@@ -105,6 +105,7 @@ function render(container, ctx){
           ${a.kind!=='cong_dong' ? `<select id="ea-kind">
             ${Object.entries(ASSET_KINDS).filter(([k])=>k!=='cong_dong').map(([k,v])=>`<option value="${k}" ${state.editAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
           </select>` : ''}
+          <textarea id="ea-cta-mau" style="min-height:auto;height:48px;" placeholder="Câu CTA mẫu cho tài sản này (không bắt buộc) — AI sẽ ưu tiên bám theo giọng điệu câu này khi nhắc tới tài sản này">${esc(state.editAsset.cta_mau||'')}</textarea>
           <div class="btn-row" style="justify-content:flex-start;">
             <button class="btn btn-sm" data-action="save-edit-asset">Lưu</button>
             <span class="btn-ghost btn btn-sm" data-action="cancel-edit-asset">Huỷ</span>
@@ -114,7 +115,7 @@ function render(container, ctx){
     }
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-        <div><b>${esc(a.label)}</b>${a.kind!=='cong_dong'?` <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>`:''}${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}</div>
+        <div><b>${esc(a.label)}</b>${a.kind!=='cong_dong'?` <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>`:''}${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}${a.cta_mau?`<br><span style="color:var(--ink-soft);font-size:12px;font-style:italic;">CTA mẫu: "${esc(a.cta_mau)}"</span>`:''}</div>
         <div style="display:flex;gap:12px;">
           <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
           <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
@@ -382,6 +383,7 @@ function render(container, ctx){
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
           <textarea id="ng-label" style="min-height:auto;height:40px;" placeholder="Tên group, ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.newGroup.label)}</textarea>
           <textarea id="ng-url" style="min-height:auto;height:40px;" placeholder="Link group">${esc(state.newGroup.url)}</textarea>
+          <textarea id="ng-cta-mau" style="min-height:auto;height:48px;" placeholder="Câu CTA mẫu mời vào group này (không bắt buộc)">${esc(state.newGroup.cta_mau)}</textarea>
           <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-group">Thêm group</button></div>
         </div>
       </div>
@@ -396,6 +398,7 @@ function render(container, ctx){
           <select id="na-kind">
             ${Object.entries(ASSET_KINDS).filter(([k])=>k!=='cong_dong').map(([k,v])=>`<option value="${k}" ${state.newAsset.kind===k?'selected':''}>${esc(v)}</option>`).join('')}
           </select>
+          <textarea id="na-cta-mau" style="min-height:auto;height:48px;" placeholder="Câu CTA mẫu cho tài sản này (không bắt buộc) — AI sẽ ưu tiên bám theo giọng điệu câu này">${esc(state.newAsset.cta_mau)}</textarea>
           <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-asset">Thêm tài sản</button></div>
         </div>
       </div>
@@ -632,11 +635,13 @@ function render(container, ctx){
     const nl = container.querySelector('#na-label'); if(nl) nl.oninput = ()=>state.newAsset.label = nl.value;
     const nu = container.querySelector('#na-url'); if(nu) nu.oninput = ()=>state.newAsset.url = nu.value;
     const nk = container.querySelector('#na-kind'); if(nk) nk.onchange = ()=>state.newAsset.kind = nk.value;
+    const nctam = container.querySelector('#na-cta-mau'); if(nctam) nctam.oninput = ()=>state.newAsset.cta_mau = nctam.value;
     const addAssetBtn = container.querySelector('[data-action="add-asset"]');
     if(addAssetBtn) addAssetBtn.onclick = addAsset;
 
     const ngl = container.querySelector('#ng-label'); if(ngl) ngl.oninput = ()=>state.newGroup.label = ngl.value;
     const ngu = container.querySelector('#ng-url'); if(ngu) ngu.oninput = ()=>state.newGroup.url = ngu.value;
+    const ngctam = container.querySelector('#ng-cta-mau'); if(ngctam) ngctam.oninput = ()=>state.newGroup.cta_mau = ngctam.value;
     const addGroupBtn = container.querySelector('[data-action="add-group"]');
     if(addGroupBtn) addGroupBtn.onclick = addGroup;
     container.querySelectorAll('[data-del-asset]').forEach(el=>{
@@ -653,13 +658,14 @@ function render(container, ctx){
         const a = state.assets.find(x=>x.id===id);
         if(!a) return;
         state.editingAssetId = id;
-        state.editAsset = { label:a.label||'', url:a.url||'', kind:a.kind||'san_pham_so' };
+        state.editAsset = { label:a.label||'', url:a.url||'', kind:a.kind||'san_pham_so', cta_mau:a.cta_mau||'' };
         draw();
       };
     });
     const ealEl = container.querySelector('#ea-label'); if(ealEl) ealEl.oninput = ()=>state.editAsset.label = ealEl.value;
     const eauEl = container.querySelector('#ea-url'); if(eauEl) eauEl.oninput = ()=>state.editAsset.url = eauEl.value;
     const eakEl = container.querySelector('#ea-kind'); if(eakEl) eakEl.onchange = ()=>state.editAsset.kind = eakEl.value;
+    const eactam = container.querySelector('#ea-cta-mau'); if(eactam) eactam.oninput = ()=>state.editAsset.cta_mau = eactam.value;
     const saveEditBtn = container.querySelector('[data-action="save-edit-asset"]');
     if(saveEditBtn) saveEditBtn.onclick = saveEditAsset;
     const cancelEditBtn = container.querySelector('[data-action="cancel-edit-asset"]');
@@ -923,10 +929,11 @@ function render(container, ctx){
     if(!state.newAsset.label.trim()) return;
     const { error } = await ctx.supabase.from('promo_assets').insert({
       user_id: ctx.user.id, label: state.newAsset.label, url: state.newAsset.url || null, kind: state.newAsset.kind,
+      cta_mau: state.newAsset.cta_mau.trim() || null,
     });
     if(error){ state.saveError = error.message; draw(); return; }
     state.saveError = null;
-    state.newAsset = { label:'', url:'', kind:'san_pham_so' };
+    state.newAsset = { label:'', url:'', kind:'san_pham_so', cta_mau:'' };
     await loadAssets();
     draw();
   }
@@ -935,10 +942,11 @@ function render(container, ctx){
     if(!state.newGroup.label.trim()) return;
     const { error } = await ctx.supabase.from('promo_assets').insert({
       user_id: ctx.user.id, label: state.newGroup.label, url: state.newGroup.url || null, kind: 'cong_dong',
+      cta_mau: state.newGroup.cta_mau.trim() || null,
     });
     if(error){ state.saveError = error.message; draw(); return; }
     state.saveError = null;
-    state.newGroup = { label:'', url:'' };
+    state.newGroup = { label:'', url:'', cta_mau:'' };
     await loadAssets();
     draw();
   }
@@ -947,6 +955,7 @@ function render(container, ctx){
     if(!state.editingAssetId || !state.editAsset.label.trim()) return;
     await ctx.supabase.from('promo_assets').update({
       label: state.editAsset.label, url: state.editAsset.url || null, kind: state.editAsset.kind,
+      cta_mau: state.editAsset.cta_mau.trim() || null,
     }).eq('id', state.editingAssetId);
     state.editingAssetId = null;
     await loadAssets();

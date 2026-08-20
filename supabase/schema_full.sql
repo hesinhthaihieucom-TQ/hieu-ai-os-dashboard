@@ -403,11 +403,12 @@ create table if not exists hook_scores (
   created_at timestamptz not null default now()
 );
 
--- Kho CTA & Bình luận ghim (2026-08-20, theo yêu cầu chị Quỳnh) — nơi lưu lại câu CTA/bình luận
--- ghim đã có sẵn (dán tay từ trước, hoặc lưu từ kết quả AI vừa viết) để dùng làm MẪU THAM KHẢO cho
--- AI viết bài sau này (biến tấu theo tinh thần cũ, không phải copy y nguyên) — xem cta_reference ở
--- api/viet-content.js. Cố tình KHÔNG dùng chung bảng/UI với hooks_bank_personal — Kho Hook đã khá
--- đồ sộ (tab tạo hook, kho chung, duyệt admin...), còn đây chỉ cần lưu/xem lại đơn giản.
+-- Kho CTA & Bình luận ghim (2026-08-20, RÚT LẠI cùng ngày) — từng là nơi lưu câu CTA/bình luận ghim
+-- CHUNG (không gắn 1 sản phẩm/group cụ thể nào) làm mẫu tham khảo cho AI viết bài. Theo phản hồi chị
+-- Quỳnh: CTA nên gắn liền với TỪNG tài sản cụ thể (xem promo_assets.cta_mau bên dưới) chứ không phải
+-- 1 kho chung tách rời — đã bỏ UI (kho-cta.js, mục sidebar, cta_reference ở api/viet-content.js).
+-- GIỮ LẠI bảng này (không xoá) chỉ để không mất dữ liệu người dùng đã lỡ lưu trước đó — không còn
+-- được đọc/ghi ở bất kỳ đâu trong app nữa.
 create table if not exists cta_bank_personal (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -428,6 +429,10 @@ create table if not exists promo_assets (
   kind text, -- 'san_pham_so' | 'khoa_hoc' | 'aff_nguoi_khac' | 'aff_cua_toi' | 'cong_dong' | 'khac'
   created_at timestamptz not null default now()
 );
+-- Câu CTA mẫu RIÊNG cho đúng tài sản này (tuỳ chọn) — thay cho Kho CTA chung cũ (xem ghi chú ở
+-- cta_bank_personal phía trên). Khi Viết Content/Đẩy Bài chọn đúng tài sản này, AI ưu tiên bám theo
+-- tinh thần/giọng điệu câu mẫu đây (biến tấu lại, không copy y nguyên) thay vì tự nghĩ từ đầu.
+alter table promo_assets add column if not exists cta_mau text;
 
 create table if not exists brands (
   id uuid primary key default gen_random_uuid(),
