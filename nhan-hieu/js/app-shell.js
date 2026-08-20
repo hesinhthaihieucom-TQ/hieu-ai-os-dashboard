@@ -85,7 +85,7 @@ const GATED_API_WEIGHTS = {
   'api/cham-diem-content': 2, 'api/goi-y-lich': 2,
   'api/viet-content': 3, 'api/viet-tu-kho-goc': 3, 'api/tai-che-viral': 3,
   'api/sua-kenh': 4,
-  'api/dinh-vi': 5,
+  'api/dinh-vi': 8,
   'api/dinh-vi-parse': 6,
 };
 window.onGatedApiSuccess = function(relativePath){

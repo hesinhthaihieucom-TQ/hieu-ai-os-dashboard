@@ -7,8 +7,17 @@ const ACTION_WEIGHTS_DISPLAY = [
   { label:'Chấm điểm Content / AI gợi ý lịch tuần', weight:2 },
   { label:'Viết Content (bài mới hoặc từ Kho gốc) / Tái Chế Content Viral', weight:3 },
   { label:'Sửa Kênh (audit kênh)', weight:4 },
-  { label:'Định Vị (làm hoặc sửa lại 18 câu)', weight:5 },
+  { label:'Định Vị (làm hoặc sửa lại 18 câu)', weight:8 },
   { label:'Định Vị — dán kết quả có sẵn', weight:6 },
+];
+
+// Các mục cho người dùng tự đặt "mục tiêu tháng này" — dùng đúng trọng số ở trên (weight) để cộng
+// dồn ra tổng lượt cần, so với lượt CÒN LẠI (không phải tổng trần) để cảnh báo đúng thực tế.
+const GOAL_ITEMS = [
+  { key:'viet', label:'Viết Content (bài)', weight:3 },
+  { key:'cham', label:'Chấm điểm Content (lần)', weight:2 },
+  { key:'hook', label:'Tạo/Chấm điểm/Cải thiện Hook (lần)', weight:1 },
+  { key:'suakenh', label:'Sửa Kênh (lần)', weight:4 },
 ];
 
 function render(container, ctx){
@@ -17,37 +26,35 @@ function render(container, ctx){
     avatarPreview: (ctx.profile && ctx.profile.avatar_url) || null,
     avatarSaving:false, nameSaving:false, nameSaved:false,
     newPassword:'', confirmPassword:'', passwordSaving:false, passwordError:null, passwordSaved:false,
+    goals: { viet:0, cham:0, hook:0, suakenh:0 },
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
-  function limitLabel(){
+  function remainingInfo(){
     const p = ctx.profile;
-    if(!p) return '';
+    if(!p) return { used:0, limit:50, remaining:50, isTrial:true };
     if(p.has_paid){
       const month = new Date().toISOString().slice(0,7);
       const sameMonth = p.paid_ai_month === month;
       const used = sameMonth ? (p.paid_ai_uses||0) : 0;
       const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
       const limit = 250 + bonus;
-      return `Đã dùng <b>${used}/${limit}</b> lượt AI tháng này — còn <b>${Math.max(0,limit-used)}</b> lượt.`;
+      return { used, limit, remaining: Math.max(0, limit-used), isTrial:false };
     }
     const used = p.trial_ai_uses || 0;
-    return `Đã dùng <b>${used}/50</b> lượt AI dùng thử (trọn đời) — còn <b>${Math.max(0,50-used)}</b> lượt.`;
+    return { used, limit:50, remaining: Math.max(0, 50-used), isTrial:true };
   }
 
-  // Ví dụ cụ thể để người dùng tự ước lượng lịch làm việc trong tháng — dùng đúng trọng số thật ở
-  // trên, không phải số tuỳ tiện.
-  function planningExamples(){
-    const limit = (ctx.profile && ctx.profile.has_paid) ? (250 + (ctx.profile.paid_ai_bonus||0)) : 50;
-    const onlyContent = Math.floor(limit / 3);
-    const contentPlusScore = Math.floor(limit / 5);
-    const fullWorkflow = Math.floor(limit / 6);
-    return [
-      { desc:`Chỉ Viết Content (3 lượt/bài), không làm gì khác`, count:`~${onlyContent} bài/tháng` },
-      { desc:`Viết Content + Chấm điểm Content mỗi bài (3+2=5 lượt/bài)`, count:`~${contentPlusScore} bài/tháng` },
-      { desc:`Viết Content + Chấm điểm + tạo Hook mỗi bài (3+2+1=6 lượt/bài)`, count:`~${fullWorkflow} bài/tháng` },
-    ];
+  function limitLabel(){
+    const { used, limit, isTrial } = remainingInfo();
+    return isTrial
+      ? `Đã dùng <b>${used}/${limit}</b> lượt AI dùng thử (trọn đời) — còn <b>${Math.max(0,limit-used)}</b> lượt.`
+      : `Đã dùng <b>${used}/${limit}</b> lượt AI tháng này — còn <b>${Math.max(0,limit-used)}</b> lượt.`;
+  }
+
+  function goalTotal(){
+    return GOAL_ITEMS.reduce((sum,g)=> sum + (Number(state.goals[g.key])||0) * g.weight, 0);
   }
 
   function html(){
@@ -100,19 +107,39 @@ function render(container, ctx){
           </div>
         `).join('')}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:18px 0 8px;">Ví dụ để dễ hình dung — với số lượt hiện tại của bạn</label>
-        ${planningExamples().map(e=>`
-          <div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-            <span>${esc(e.desc)}</span>
-            <span style="font-weight:700;white-space:nowrap;">${esc(e.count)}</span>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:18px 0 4px;">Đặt mục tiêu tháng này — tự tính xem có đủ lượt không</label>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Điền dự định của bạn, hệ thống tự cộng lượt cần dùng và báo ngay nếu vượt quá số lượt bạn còn.</div>
+        ${GOAL_ITEMS.map(g=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;">
+            <span style="font-size:13.5px;">${esc(g.label)} <span style="color:var(--ink-soft);font-size:12px;">(${g.weight} lượt/lần)</span></span>
+            <input type="number" min="0" data-goal="${g.key}" value="${state.goals[g.key]}" style="width:70px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;text-align:center;">
           </div>
         `).join('')}
-        <div style="margin-top:12px;font-size:12.5px;color:var(--ink-soft);">Đây chỉ là ví dụ tham khảo — bạn có thể trộn nhiều hành động khác nhau tuỳ nhu cầu thực tế. Hết lượt trước khi hết tháng thì vào mục <a href="#nang-cap">Nâng cấp / Mua gói</a> để mua thêm.</div>
+        ${(() => {
+          const { remaining } = remainingInfo();
+          const total = goalTotal();
+          const over = total > remaining;
+          return `
+            <div style="margin-top:12px;padding:12px;border-radius:8px;background:${over?'#FBEAE4':'var(--accent-soft)'};">
+              <b style="color:${over?'var(--danger)':'var(--accent)'};">Tổng cần: ${total} lượt</b> — bạn còn ${remaining} lượt.
+              ${over ? `<div style="margin-top:4px;color:var(--danger);font-size:13px;">⚠️ Vượt quá ${total-remaining} lượt so với số bạn còn — nên giảm bớt mục tiêu, hoặc <a href="#nang-cap">mua thêm lượt</a>.</div>` : `<div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Đủ dùng, còn dư ${remaining-total} lượt.</div>`}
+            </div>
+          `;
+        })()}
       </div>
     `;
   }
 
   function bind(){
+    container.querySelectorAll('[data-goal]').forEach(el=>{
+      el.oninput = ()=>{
+        const key = el.getAttribute('data-goal');
+        state.goals[key] = Number(el.value)||0;
+        draw();
+        const newEl = container.querySelector(`[data-goal="${key}"]`);
+        if(newEl) newEl.focus();
+      };
+    });
     const upload = container.querySelector('#tk-avatar-upload');
     if(upload) upload.onchange = ()=>{
       const file = upload.files[0];

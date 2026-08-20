@@ -34,7 +34,7 @@ const AI_WEIGHTS = {
   'viet-tu-kho-goc': 3,
   'tai-che-viral': 3,
   'sua-kenh': 4,
-  'dinh-vi': 5,
+  'dinh-vi': 8,
   'dinh-vi-parse': 6,
 };
 
