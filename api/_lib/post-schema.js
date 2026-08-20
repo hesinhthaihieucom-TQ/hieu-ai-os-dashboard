@@ -90,6 +90,13 @@ function stripDiacritics(str) {
     .replace(/[^a-zA-Z0-9]/g, '');
 }
 
+// Từ hướng dẫn content riêng của chị Quỳnh (2026-08-20) — danh sách cụm mở đầu/chuyển đoạn đặc
+// trưng của AI, đọc vào là lộ ngay không phải người thật viết. Áp cho mọi endpoint VIẾT bài mới
+// (không áp cho viet-tu-kho-goc.js phần giữ nguyên hook gốc — hook gốc giữ y hệt theo đúng thiết kế).
+const ANTI_AI_CLICHE_RULES = `QUY TẮC TRÁNH GIỌNG "NGHE NHƯ AI" (BẮT BUỘC):
+- TUYỆT ĐỐI KHÔNG mở đầu hoặc chuyển đoạn bằng các cụm kể chuyện sáo rỗng sau (đặc trưng giọng AI, đọc vào lộ ngay): "Có một giai đoạn...", "Ngày trước mình...", "Mình từng...", "Có một thời điểm...", "Hồi đó...", "Có một lần...", "Mình nhận ra một điều...", "Có một sự thật...", "Điều lạ là...", "Nhìn bên ngoài...", "Có lúc...", "Có thời điểm...", "Có giai đoạn...", "Có một khoảng thời gian...", "Đã từng...".
+- Nếu cần lồng trải nghiệm cá nhân, viết theo kiểu ĐANG NÓI VỀ 1 NHẬN THỨC đã đúc kết, không phải kể chuyện theo trình tự thời gian. Ví dụ: thay vì "Mình từng nghĩ cuộc đời sẽ tự thay đổi...", viết "Mình đã mất khá lâu mới hiểu rằng, biết nhiều không đồng nghĩa với việc cuộc đời sẽ thay đổi."`;
+
 const CTA_COMMENT_RULES = `QUY TẮC CTA (BẮT BUỘC):
 - CTA luôn phải chốt bằng 1 từ khoá kích hoạt cụ thể gồm ĐÚNG 2 CHỮ (ví dụ: "Dòng tiền", "Sổ tay", "Bí kíp", "Bắt đầu"...), theo mẫu: "Để lại bình luận chữ '<từ khoá 2 chữ>' và mình sẽ gửi bạn <thứ nhận được cụ thể>." — không dùng CTA chung chung kiểu "inbox mình nhé" hay "để lại bình luận bên dưới" mà không có từ khoá.
 - Từ khoá phải khớp chủ đề bài và thứ người đọc sẽ nhận được (tài liệu, link, ưu đãi, tư vấn...).
@@ -158,4 +165,4 @@ function customInstructionsBlock(custom_instructions) {
   return `\nYÊU CẦU RIÊNG CHO BÀI NÀY (ưu tiên tuân theo, miễn không phá vỡ các nguyên tắc bắt buộc đã nêu ở trên): ${custom_instructions.trim()}\n`;
 }
 
-module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock };
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock };

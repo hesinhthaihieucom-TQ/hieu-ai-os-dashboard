@@ -5,7 +5,7 @@
 // gốc, đọc như đăng lại y nguyên).
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
-const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock } = require('./_lib/post-schema');
+const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, chuyên viết lại 1 bài trong "kho content" (bài viral có sẵn) thành bản của riêng người dùng.
 
@@ -36,6 +36,9 @@ KIỂM TRA ĐỘ CỤ THỂ CỦA CÂU CHUYỆN RIÊNG (bắt buộc):
   nhiêu?", "Lúc đó bạn cảm thấy thế nào?", "Ai/việc gì khiến bạn nhận ra điều này?", "Kết quả cuối cùng ra
   sao?") — vẫn cứ viết bài như bình thường, KHÔNG chặn kết quả, chỉ thêm gợi ý để lần sau họ kể rõ hơn.
 - Nếu câu chuyện đã đủ cụ thể, đặt cau_chuyen_qua_chung_chung = false và để cau_hoi_lam_ro là mảng rỗng.
+
+${ANTI_AI_CLICHE_RULES}
+(Quy tắc này áp cho các đoạn PARAPHRASE lại — riêng câu hook vẫn phải giữ y hệt bài gốc theo đúng nguyên tắc ở trên, kể cả khi hook gốc dùng 1 trong các cụm bị cấm.)
 
 ${CTA_COMMENT_RULES}`;
 
