@@ -27,7 +27,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{} };
+  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, justMarkedId:null };
 
   const PLAN_TABS = [
     { key:'all', label:'Tất cả' },
@@ -64,7 +64,7 @@ function render(container, ctx){
   // Tính tổng doanh thu từ TOÀN BỘ giao dịch đã khớp (không giới hạn 20 dòng như danh sách hiển
   // thị bên trên) — chỉ lấy 2 cột cần thiết cho nhẹ, cộng dồn ở client.
   async function loadRevenue(){
-    const { data } = await ctx.supabase.from('sepay_transactions').select('transfer_amount, created_at').eq('status', 'matched');
+    const { data } = await ctx.supabase.from('sepay_transactions').select('transfer_amount, created_at, matched_profile_id').eq('status', 'matched');
     const rows = data || [];
     state.revenueTotal = rows.reduce((sum, r) => sum + (r.transfer_amount || 0), 0);
     const now = new Date();
@@ -72,6 +72,12 @@ function render(container, ctx){
     state.revenueThisMonth = rows
       .filter(r => new Date(r.created_at).getTime() >= startOfMonth)
       .reduce((sum, r) => sum + (r.transfer_amount || 0), 0);
+    // Tổng đã ghi nhận riêng từng người — hiện ngay trên thẻ của họ, để "Ghi nhận vào doanh thu"
+    // có kết quả nhìn thấy được lâu dài chứ không chỉ 1 thông báo thoáng qua rồi biến mất.
+    state.revenueByProfile = rows.reduce((acc, r) => {
+      if(r.matched_profile_id) acc[r.matched_profile_id] = (acc[r.matched_profile_id]||0) + (r.transfer_amount||0);
+      return acc;
+    }, {});
   }
 
   function filtered(){
@@ -184,10 +190,13 @@ function render(container, ctx){
               <button class="btn-ghost btn btn-sm" data-toggle-student="${p.id}|${!p.is_student}" ${state.busyId===p.id?'disabled':''}>${p.is_student?'Bỏ đánh dấu học viên':'Đánh dấu là học viên'}</button>
               <button class="btn-ghost btn btn-sm" data-toggle-paid="${p.id}|${!p.has_paid}" ${state.busyId===p.id?'disabled':''}>${p.has_paid?'Bỏ đánh dấu đã trả phí':'💰 Đánh dấu đã trả phí'}</button>
             </div>
-            <div class="body" style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">"Gia hạn"/"Đánh dấu đã trả phí" ở trên KHÔNG tự tính vào doanh thu — nếu kích hoạt tay cho khách chuyển khoản thật, nhập đúng số tiền đã nhận rồi bấm ghi nhận bên dưới để cộng vào doanh thu.</div>
+            <div class="body" style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">"Gia hạn"/"Đánh dấu đã trả phí" ở trên KHÔNG tự tính vào doanh thu — nếu kích hoạt tay cho khách chuyển khoản thật, nhập đúng số tiền đã nhận rồi bấm ghi nhận bên dưới để cộng vào doanh thu.
+              ${state.revenueByProfile[p.id] ? ` <b style="color:var(--accent);">Đã ghi nhận: ${state.revenueByProfile[p.id].toLocaleString('vi-VN')}đ</b>` : ''}
+            </div>
             <div class="btn-row" style="margin-top:6px;justify-content:flex-start;align-items:center;">
               <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualAmount[p.id]||'')}">
               <button class="btn-ghost btn btn-sm" data-mark-revenue="${p.id}" ${state.busyId===p.id?'disabled':''}>Ghi nhận vào doanh thu</button>
+              ${state.justMarkedId===p.id ? `<span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Đã ghi nhận thành công</span>` : ''}
             </div>
             <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
               ${state.confirmDeleteId===p.id ? `
@@ -300,6 +309,8 @@ function render(container, ctx){
       await callApi('/api/admin-mark-manual-payment', { user_id: id, amount });
       state.manualAmount[id] = '';
       state.error = null;
+      state.justMarkedId = id;
+      setTimeout(()=>{ if(state.justMarkedId===id){ state.justMarkedId = null; draw(); } }, 4000);
     } catch(e){ state.error = e.message; }
     await loadRevenue();
     state.busyId = null;
