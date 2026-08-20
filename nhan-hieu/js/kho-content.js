@@ -10,6 +10,10 @@ const SOURCE_MAP = {
 };
 const SOURCE_OPTIONS = ['ca_nhan', 'case_hoc_vien', 'cau_hoi_kh', 'xu_huong', 'quan_diem_nguoc_dong', 'bai_mau'];
 
+// select mặc định trong style.css bị width:100%/padding:14px (dùng cho form nhập liệu dài) — ép lại
+// gọn như 1 chip để dùng làm bộ lọc trục/trạng thái, đỡ chiếm cả hàng ngang dài như trước.
+const COMPACT_SELECT_STYLE = 'width:auto;min-width:150px;margin-top:0;padding:8px 30px 8px 12px;font-size:13px;border-radius:999px;';
+
 // Trục nội dung (content pillar) — nhóm các tag chi tiết trong data lại thành nhóm lớn dễ chọn,
 // tránh người dùng bị ngộp vì phải lướt qua cả kho chung chưa lọc. Khớp key với api/_lib/pillars.js.
 const PILLARS = [
@@ -192,14 +196,14 @@ function render(container, ctx){
     }).join('');
     const noneCount = items.filter(x=>pillarsForItem(x).length===0).length;
     const noneOption = noneCount ? `<option value="none" ${currentKey==='none'?'selected':''}>Chưa phân loại (${noneCount})</option>` : '';
-    return `<select data-${dataAttr}>
+    return `<select data-${dataAttr} style="${COMPACT_SELECT_STYLE}">
       <option value="all" ${currentKey==='all'?'selected':''}>Tất cả trục (${items.length})</option>
       ${options}${noneOption}
     </select>`;
   }
   function statusSelectHtml(items, currentStatus){
     const postedCount = items.filter(p=>p.posted).length;
-    return `<select data-daviet-status>
+    return `<select data-daviet-status style="${COMPACT_SELECT_STYLE}">
       <option value="all" ${currentStatus==='all'?'selected':''}>Tất cả trạng thái (${items.length})</option>
       <option value="posted" ${currentStatus==='posted'?'selected':''}>Đã đăng (${postedCount})</option>
       <option value="not_posted" ${currentStatus==='not_posted'?'selected':''}>Chưa đăng (${items.length-postedCount})</option>
