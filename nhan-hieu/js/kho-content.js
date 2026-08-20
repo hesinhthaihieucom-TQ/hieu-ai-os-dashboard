@@ -35,6 +35,7 @@ function render(container, ctx){
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(),
+    editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -57,6 +58,17 @@ function render(container, ctx){
   async function loadPosts(){
     const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
     state.posts = data || [];
+  }
+
+  async function savePostEdit(id){
+    if(!state.editDraft || !state.editDraft.title.trim()){ state.editSaveError = 'Nhập tiêu đề trước khi lưu.'; draw(); return; }
+    state.editSaving = true; draw();
+    const { error } = await ctx.supabase.from('posts').update({ title: state.editDraft.title.trim(), content: state.editDraft.content }).eq('id', id);
+    state.editSaving = false;
+    if(error){ state.editSaveError = error.message; draw(); return; }
+    state.editingPostId = null; state.editDraft = null; state.editSaveError = null;
+    await loadPosts();
+    draw();
   }
   async function loadPersonal(){
     const { data } = await ctx.supabase.from('content_bank_personal').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
@@ -225,14 +237,36 @@ function render(container, ctx){
     if(state.posts.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Chưa có bài nào — sang tab <b>Kho Content Viral</b> chọn 1 bài mẫu phù hợp trục nội dung của bạn để viết bài đầu tiên.</div>`;
 
     const items = filterByPillar(state.posts, state.daVietPillar);
-    return hint + pillarChipsHtml(state.posts, state.daVietPillar, 'daviet-pillar') + items.map(p=>`
+    return hint + pillarChipsHtml(state.posts, state.daVietPillar, 'daviet-pillar') + items.map(p=>{
+      const isEditing = state.editingPostId === p.id;
+      return `
       <div class="section">
-        <h3>${esc(p.title||'(không tiêu đề)')}</h3>
-        ${contentBodyHtml('post:'+p.id, p.content)}
-        <div class="btn-row" style="margin-top:14px;"><button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button></div>
+        ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}</h3>`}
+        ${isEditing ? editPostHtml(p) : contentBodyHtml('post:'+p.id, p.content)}
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>
+          ${!isEditing ? `<span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>` : ''}
+        </div>
         ${writeActionHtml('post:'+p.id)}
       </div>
-    `).join('');
+    `;}).join('');
+  }
+
+  function editPostHtml(p){
+    const draft = state.editDraft || { title:p.title||'', content:p.content||'' };
+    return `
+      <div>
+        <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tiêu đề</label>
+        <textarea id="edit-title" style="min-height:auto;height:40px;">${esc(draft.title)}</textarea>
+        <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:10px 0 4px;">Nội dung</label>
+        <textarea id="edit-content" style="min-height:220px;">${esc(draft.content)}</textarea>
+        ${state.editSaveError?`<div class="error-box" style="margin-top:8px;">${esc(state.editSaveError)}</div>`:''}
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-sm" data-edit-save="${p.id}" ${state.editSaving?'disabled':''}>${state.editSaving?'Đang lưu…':'Lưu'}</button>
+          <span class="btn-ghost btn btn-sm" data-edit-cancel="1">Huỷ</span>
+        </div>
+      </div>
+    `;
   }
 
   function sharePromptHtml(){
@@ -341,6 +375,28 @@ function render(container, ctx){
         if(state.expandedIds.has(key)) state.expandedIds.delete(key); else state.expandedIds.add(key);
         draw();
       };
+    });
+
+    container.querySelectorAll('[data-edit-post]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-edit-post');
+        const p = state.posts.find(x=>x.id===id);
+        if(!p) return;
+        state.editingPostId = id;
+        state.editDraft = { title: p.title||'', content: p.content||'' };
+        state.editSaveError = null;
+        draw();
+      };
+    });
+    const editTitle = container.querySelector('#edit-title');
+    if(editTitle) editTitle.oninput = ()=>{ state.editDraft.title = editTitle.value; };
+    const editContent = container.querySelector('#edit-content');
+    if(editContent) editContent.oninput = ()=>{ state.editDraft.content = editContent.value; };
+    container.querySelectorAll('[data-edit-cancel]').forEach(el=>{
+      el.onclick = ()=>{ state.editingPostId = null; state.editDraft = null; state.editSaveError = null; draw(); };
+    });
+    container.querySelectorAll('[data-edit-save]').forEach(el=>{
+      el.onclick = ()=>{ savePostEdit(el.getAttribute('data-edit-save')); };
     });
 
     container.querySelectorAll('[data-ne-viral]').forEach(el=>{
