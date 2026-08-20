@@ -22,7 +22,7 @@ function matchPillarKey(text){
 
 function render(container, ctx){
   const state = {
-    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'',
+    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null, expandedEntryId:null,
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
   };
@@ -177,10 +177,10 @@ function render(container, ctx){
                   ${suggestion?`<div style="font-size:11px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
                   <select data-picker-select style="width:100%;margin-top:4px;font-size:12px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
-                    ${state.posts.map(p=>`<option value="${p.id}" title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}</option>`).join('')}
+                    ${state.posts.map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}</option>`).join('')}
                   </select>
                   <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
-                  <input type="text" data-picker-custom placeholder="Tên bài tự điền..." style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
+                  <input type="text" data-picker-custom placeholder="Tên bài tự điền..." value="${e && !e.post_id ? esc(e.title||'') : ''}" style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
                   <div style="display:flex;gap:6px;margin-top:6px;">
                     <button class="btn btn-sm" data-picker-save="${dateStr}|${s.key}">Lưu</button>
                     <span style="align-self:center;font-size:11px;color:var(--ink-soft);cursor:pointer;" data-picker-cancel="1">Huỷ</span>
@@ -189,6 +189,14 @@ function render(container, ctx){
               }
               if(e){
                 const linkedPost = e.post_id ? state.posts.find(p=>p.id===e.post_id) : null;
+                // Bài đã tích "đã đăng thật" — thu gọn lại chỉ còn 1 dòng, bấm vào mới hiện lại đầy đủ
+                // (checkbox/Sửa/Xoá) để sửa nếu cần — tránh mỗi ô đã xong việc vẫn chiếm hết chỗ nhìn rối.
+                if(e.posted && state.expandedEntryId !== e.id){
+                  return `<div class="week-slot filled" style="min-height:auto;padding:10px;text-align:center;cursor:pointer;" data-expand-entry="${e.id}">
+                    <div class="slot-label">${s.label}</div>
+                    <div style="margin-top:4px;color:var(--accent);font-size:11.5px;font-weight:600;">✓ Đã đăng</div>
+                  </div>`;
+                }
                 return `<div class="week-slot filled">
                   <div class="slot-label">${s.label} · <span style="color:${e.posted?'var(--accent)':'var(--ink-soft)'};">${e.posted?'✓ Đã đăng':'Đã chọn bài'}</span></div>
                   <b style="font-size:12.5px;">${esc(e.title||'')}</b>
@@ -196,8 +204,11 @@ function render(container, ctx){
                   <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;cursor:pointer;color:var(--ink-soft);">
                     <input type="checkbox" data-toggle-posted="${e.id}" ${e.posted?'checked':''} style="margin:0;">Đã đăng thật
                   </label>
-                  ${linkedPost?`<span style="display:block;margin-top:6px;color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" data-view-post="${e.id}">Xem bài →</span>`:''}
-                  <span style="display:block;margin-top:6px;color:var(--danger);font-size:11px;cursor:pointer;" data-remove="${e.id}">Xoá</span>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+                    ${linkedPost?`<span style="color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" data-view-post="${e.id}">Xem bài →</span>`:''}
+                    <span style="color:var(--ink-soft);font-size:11px;cursor:pointer;" data-edit-slot="${dateStr}|${s.key}">Sửa</span>
+                    <span style="color:var(--danger);font-size:11px;cursor:pointer;" data-remove="${e.id}">Xoá</span>
+                  </div>
                 </div>`;
               }
               if(suggestion){
@@ -316,7 +327,7 @@ function render(container, ctx){
     });
 
     container.querySelectorAll('[data-picker-cancel]').forEach(el=>{
-      el.onclick = ()=>{ state.pickerFor = null; draw(); };
+      el.onclick = ()=>{ state.pickerFor = null; state.editingEntryId = null; draw(); };
     });
     container.querySelectorAll('[data-picker-save]').forEach(el=>{
       el.onclick = async ()=>{
@@ -326,21 +337,42 @@ function render(container, ctx){
         const postId = select ? select.value : '';
         const post = state.posts.find(p=>p.id===postId);
         const customTitle = customInput ? customInput.value.trim() : '';
-        await ctx.supabase.from('calendar_entries').insert({
-          user_id: ctx.user.id, post_id: post ? post.id : null, scheduled_date: dateStr, slot: slotKey,
+        const fields = {
+          post_id: post ? post.id : null,
           title: post ? post.title : (customTitle || 'Bài mới'),
           format: post && post.structure ? (post.structure.format||null) : null,
           cta: post && post.structure ? (post.structure.cta||null) : null,
-        });
+        };
+        // "Sửa" mở lại picker cho 1 ô ĐÃ có bài — cập nhật đúng dòng cũ thay vì tạo thêm 1 dòng mới
+        // trùng slot/ngày (state.editingEntryId chỉ được gán khi bấm "Sửa", xem data-edit-slot).
+        if(state.editingEntryId){
+          await ctx.supabase.from('calendar_entries').update(fields).eq('id', state.editingEntryId);
+        } else {
+          await ctx.supabase.from('calendar_entries').insert({ user_id: ctx.user.id, scheduled_date: dateStr, slot: slotKey, ...fields });
+        }
         state.pickerFor = null;
+        state.editingEntryId = null;
         await loadEntries();
         draw();
       };
+    });
+    container.querySelectorAll('[data-edit-slot]').forEach(el=>{
+      el.onclick = ()=>{
+        const [dateStr, slotKey] = el.getAttribute('data-edit-slot').split('|');
+        const entry = entryFor(dateStr, slotKey);
+        state.editingEntryId = entry ? entry.id : null;
+        state.pickerFor = { date:dateStr, slot:slotKey };
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-expand-entry]').forEach(el=>{
+      el.onclick = ()=>{ state.expandedEntryId = el.getAttribute('data-expand-entry'); draw(); };
     });
     container.querySelectorAll('[data-toggle-posted]').forEach(el=>{
       el.onchange = async ()=>{
         const id = el.getAttribute('data-toggle-posted');
         await ctx.supabase.from('calendar_entries').update({ posted: el.checked }).eq('id', id);
+        if(el.checked && state.expandedEntryId === id) state.expandedEntryId = null;
         await loadEntries();
         draw();
       };

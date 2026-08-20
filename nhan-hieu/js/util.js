@@ -52,8 +52,9 @@ function openTextModal(title, body){
         <span data-close-text-modal="1" style="cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;">&times;</span>
       </div>
       <div style="padding:16px 20px;overflow-y:auto;white-space:pre-line;font-size:14.5px;line-height:1.7;">${esc(body||'')}</div>
-      <div style="padding:12px 20px;border-top:1px solid var(--line);">
+      <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;">
         <button class="btn btn-sm" data-copy-text-modal="1">Copy nội dung</button>
+        ${title?`<span class="btn-ghost btn btn-sm" data-copy-title-modal="1">Copy tiêu đề</span>`:''}
       </div>
     </div>
   `;
@@ -64,6 +65,10 @@ function openTextModal(title, body){
   const copyBtn = overlay.querySelector('[data-copy-text-modal]');
   copyBtn.onclick = async ()=>{
     try{ await navigator.clipboard.writeText(body||''); copyBtn.textContent = 'Đã copy ✓'; setTimeout(()=>{ copyBtn.textContent = 'Copy nội dung'; }, 1500); } catch(e){}
+  };
+  const copyTitleBtn = overlay.querySelector('[data-copy-title-modal]');
+  if(copyTitleBtn) copyTitleBtn.onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(title||''); copyTitleBtn.textContent = 'Đã copy ✓'; setTimeout(()=>{ copyTitleBtn.textContent = 'Copy tiêu đề'; }, 1500); } catch(e){}
   };
   document.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
