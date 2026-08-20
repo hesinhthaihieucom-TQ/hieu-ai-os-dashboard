@@ -142,4 +142,12 @@ SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY: ${product_name && produc
 GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}`;
 }
 
-module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf };
+// Yêu cầu tự do riêng cho 1 bài cụ thể (vd "viết ngắn hơn", "giọng hài hước", "nhấn số liệu") — KHÁC
+// với Định Vị (áp dụng cho MỌI bài) và câu chuyện riêng (chỉ dùng khi viết từ Kho Content). Ưu tiên
+// tuân theo nhưng không được phá vỡ khung 5 phần/quy tắc CTA bắt buộc đã nêu ở trên.
+function customInstructionsBlock(custom_instructions) {
+  if (!custom_instructions || !custom_instructions.trim()) return '';
+  return `\nYÊU CẦU RIÊNG CHO BÀI NÀY (ưu tiên tuân theo, miễn không phá vỡ các nguyên tắc bắt buộc đã nêu ở trên): ${custom_instructions.trim()}\n`;
+}
+
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock };

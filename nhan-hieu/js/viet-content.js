@@ -3,7 +3,7 @@ function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], scheduledPostIds:new Set(), savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
-    khoGocSource:null, cauChuyenRieng:'', extrasLoading:false, extrasError:null,
+    khoGocSource:null, cauChuyenRieng:'', customInstructions:'', extrasLoading:false, extrasError:null,
     showScoreContent:false, showScoreHook:false, showExtras:false, saving:false, pendingSourceRef:null,
     viralPromptFor:null, viralViews:'', viralSubmitting:false, viralDoneFor:null, viralError:null, dinhDangOverride:null };
 
@@ -12,7 +12,7 @@ function render(container, ctx){
   const DRAFT_KEY = 'viet-content';
   function draftPayload(){
     return {
-      ideaText: state.ideaText, khoGocSource: state.khoGocSource, cauChuyenRieng: state.cauChuyenRieng,
+      ideaText: state.ideaText, khoGocSource: state.khoGocSource, cauChuyenRieng: state.cauChuyenRieng, customInstructions: state.customInstructions,
       pendingSourceRef: state.pendingSourceRef, result: state.result, savedId: state.savedId,
       score: state.score, hookScore: state.hookScore, dinhDangOverride: state.dinhDangOverride,
     };
@@ -115,6 +115,8 @@ function render(container, ctx){
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
         <textarea id="idea-input" placeholder="Ví dụ: 3 sai lầm khiến dòng tiền cá nhân bị nghẽn...">${esc(state.ideaText)}</textarea>
         `}
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Yêu cầu riêng cho bài này (không bắt buộc)</label>
+        <textarea id="custom-instructions" style="min-height:auto;height:52px;" placeholder="Ví dụ: viết ngắn gọn hơn, nhấn mạnh số liệu cụ thể, giọng hài hước hơn, không dùng từ &quot;chắc chắn&quot;...">${esc(state.customInstructions)}</textarea>
         ${!state.positioning ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc, giúp bài viết sát hơn)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
@@ -397,6 +399,8 @@ function render(container, ctx){
 
     const quickContext = container.querySelector('#quick-context');
     if(quickContext) quickContext.oninput = ()=>{ state.quickContext = quickContext.value; };
+    const customInstructions = container.querySelector('#custom-instructions');
+    if(customInstructions) customInstructions.oninput = ()=>{ state.customInstructions = customInstructions.value; persistDraft(); };
 
     const toggleExtra = container.querySelector('[data-action="toggle-extra"]');
     if(toggleExtra) toggleExtra.onclick = ()=>{ state.showExtra = !state.showExtra; draw(); };
@@ -551,6 +555,7 @@ function render(container, ctx){
         brand_name: resolvedBrandName(),
         product_name: resolvedProductName(),
         group_name: resolvedGroupName(),
+        custom_instructions: state.customInstructions,
       };
       if(state.khoGocSource){
         payload.source_text = state.khoGocSource.content;
