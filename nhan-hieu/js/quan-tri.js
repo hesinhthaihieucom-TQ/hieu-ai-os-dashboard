@@ -23,7 +23,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', error:null, busyId:null, confirmDeleteId:null };
+  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', error:null, busyId:null, confirmDeleteId:null, manualAmount:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -153,6 +153,11 @@ function render(container, ctx){
               <button class="btn-ghost btn btn-sm" data-toggle-student="${p.id}|${!p.is_student}" ${state.busyId===p.id?'disabled':''}>${p.is_student?'Bỏ đánh dấu học viên':'Đánh dấu là học viên'}</button>
               <button class="btn-ghost btn btn-sm" data-toggle-paid="${p.id}|${!p.has_paid}" ${state.busyId===p.id?'disabled':''}>${p.has_paid?'Bỏ đánh dấu đã trả phí':'💰 Đánh dấu đã trả phí'}</button>
             </div>
+            <div class="body" style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">"Gia hạn"/"Đánh dấu đã trả phí" ở trên KHÔNG tự tính vào doanh thu — nếu kích hoạt tay cho khách chuyển khoản thật, nhập đúng số tiền đã nhận rồi bấm ghi nhận bên dưới để cộng vào doanh thu.</div>
+            <div class="btn-row" style="margin-top:6px;justify-content:flex-start;align-items:center;">
+              <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualAmount[p.id]||'')}">
+              <button class="btn-ghost btn btn-sm" data-mark-revenue="${p.id}" ${state.busyId===p.id?'disabled':''}>Ghi nhận vào doanh thu</button>
+            </div>
             <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
               ${state.confirmDeleteId===p.id ? `
                 <span style="font-size:12.5px;color:var(--danger);font-weight:600;">Xoá vĩnh viễn tài khoản này? Không khôi phục được.</span>
@@ -192,6 +197,12 @@ function render(container, ctx){
         const [id, next] = el.getAttribute('data-toggle-paid').split('|');
         toggleHasPaid(id, next === 'true');
       };
+    });
+    container.querySelectorAll('[data-manual-amount]').forEach(el=>{
+      el.oninput = ()=>{ state.manualAmount[el.getAttribute('data-manual-amount')] = el.value; };
+    });
+    container.querySelectorAll('[data-mark-revenue]').forEach(el=>{
+      el.onclick = ()=>{ markRevenue(el.getAttribute('data-mark-revenue')); };
     });
 
     container.querySelectorAll('[data-ask-delete]').forEach(el=>{
@@ -233,6 +244,23 @@ function render(container, ctx){
     const { error } = await ctx.supabase.from('profiles').update({ has_paid: hasPaid }).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
+    state.busyId = null;
+    draw();
+  }
+
+  // Ghi nhận 1 khoản kích hoạt tay vào sepay_transactions (qua serverless function, vì bảng này chỉ
+  // cho service_role ghi) — để nó được cộng vào "Tổng doanh thu"/"Doanh thu tháng này" ở trên, thứ
+  // mà "Gia hạn"/"Đánh dấu đã trả phí" một mình không làm được.
+  async function markRevenue(id){
+    const amount = Number(state.manualAmount[id]);
+    if(!amount || amount <= 0){ state.error = 'Nhập đúng số tiền đã nhận trước khi ghi nhận.'; draw(); return; }
+    state.busyId = id; draw();
+    try{
+      await callApi('/api/admin-mark-manual-payment', { user_id: id, amount });
+      state.manualAmount[id] = '';
+      state.error = null;
+    } catch(e){ state.error = e.message; }
+    await loadRevenue();
     state.busyId = null;
     draw();
   }
