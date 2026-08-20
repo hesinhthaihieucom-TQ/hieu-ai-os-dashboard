@@ -50,7 +50,8 @@ function render(container, ctx){
     editingAssetId:null, editAsset:{ label:'', url:'', kind:'san_pham_so' },
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
-    reconstructingAnswers:false, reconstructFailed:false };
+    reconstructingAnswers:false, reconstructFailed:false,
+    storyBoSung:[], storyUpdating:false, storyUpdateError:null };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
 
   // Giữ lại câu trả lời đang làm dở (18 câu, dễ mất công gõ) khi chuyển trang rồi quay lại — khác
@@ -375,8 +376,19 @@ function render(container, ctx){
         if(!cc || !cc.cau_chuyen) return '';
         return `<div class="section"><h3>Câu chuyện cá nhân</h3><div class="body">${escBold(breakSentences(cc.cau_chuyen))}</div>
           ${cc.qua_so_sai && (cc.cau_hoi_lam_ro||[]).length ? `
-            <div class="hint-box" style="margin-top:12px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu này rồi làm lại Định Vị để câu chuyện cụ thể hơn:
-              <ul style="margin-top:8px;">${cc.cau_hoi_lam_ro.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
+            <div class="hint-box" style="margin-top:12px;">
+              <div style="margin-bottom:10px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu dưới đây rồi bấm <b>"Cập nhật câu chuyện"</b>, không cần làm lại cả Định Vị:</div>
+              ${cc.cau_hoi_lam_ro.map((q,i)=>`
+                <div style="margin-bottom:10px;">
+                  <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">${esc(q)}</label>
+                  <textarea data-story-bs="${i}" style="min-height:auto;height:48px;background:var(--panel);">${esc(state.storyBoSung[i]||'')}</textarea>
+                </div>
+              `).join('')}
+              ${state.storyUpdateError?`<div class="error-box" style="margin-bottom:10px;">${esc(state.storyUpdateError)}</div>`:''}
+              <div class="btn-row" style="margin-top:4px;justify-content:flex-start;">
+                <button class="btn btn-sm" data-action="update-story" ${state.storyUpdating?'disabled':''}>${state.storyUpdating?'Đang cập nhật…':'Cập nhật câu chuyện'}</button>
+                <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI — rẻ hơn nhiều so với làm lại cả Định Vị)</span>
+              </div>
             </div>
           ` : ''}
         </div>`;
@@ -513,6 +525,12 @@ function render(container, ctx){
 
     const backToIntro = container.querySelector('[data-action="back-to-intro"]');
     if(backToIntro) backToIntro.onclick = ()=>{ state.screen = state.luot1 ? 'done' : 'intro'; draw(); };
+
+    container.querySelectorAll('[data-story-bs]').forEach(el=>{
+      el.oninput = ()=>{ state.storyBoSung[Number(el.getAttribute('data-story-bs'))] = el.value; };
+    });
+    const updateStoryBtn = container.querySelector('[data-action="update-story"]');
+    if(updateStoryBtn) updateStoryBtn.onclick = updateStory;
 
     const editTrucBtn = container.querySelector('[data-action="edit-truc"]');
     if(editTrucBtn) editTrucBtn.onclick = ()=>{
@@ -746,6 +764,29 @@ function render(container, ctx){
     // mất dữ liệu, và kết quả Định Vị đã lưu (luot1/luot2) vẫn nguyên vẹn, không mất gì.
     state.reconstructFailed = !hasAnyRealAnswer();
     state.reconstructingAnswers = false;
+  }
+
+  // Cập nhật CHỈ mục câu chuyện cá nhân — không đụng phần còn lại của định vị đã chốt, không cần
+  // đi lại 18 câu hỏi/chạy lại Lượt 1 (2026-08-20, theo phản hồi chị Quỳnh: "cho người ta làm lại
+  // đúng cái câu chuyện của người ta thôi").
+  async function updateStory(){
+    if(state.storyUpdating) return;
+    const cc = state.luot1 && state.luot1.cau_chuyen_ca_nhan;
+    if(!cc) return;
+    const cauHoi = cc.cau_hoi_lam_ro || [];
+    const boSung = cauHoi.map((q,i)=>({ cau_hoi:q, tra_loi:(state.storyBoSung[i]||'').trim() })).filter(a=>a.tra_loi);
+    if(!boSung.length){ state.storyUpdateError = 'Trả lời ít nhất 1 câu ở trên trước đã.'; draw(); return; }
+    state.storyUpdating = true; state.storyUpdateError = null; draw();
+    try{
+      const data = await callApi('/api/dinh-vi-cap-nhat-cau-chuyen', {
+        cau_chuyen_hien_tai: cc.cau_chuyen, cau_hoi_lam_ro: cauHoi, bo_sung: boSung,
+      });
+      const newLuot1 = { ...state.luot1, cau_chuyen_ca_nhan: data.result };
+      await persist({ luot1: newLuot1, luot2: state.luot2 });
+      state.luot1 = newLuot1;
+      state.storyBoSung = [];
+    } catch(e){ state.storyUpdateError = e.message; }
+    state.storyUpdating = false; draw();
   }
 
   async function saveTruc(){

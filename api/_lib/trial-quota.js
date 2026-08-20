@@ -32,6 +32,9 @@ const AI_WEIGHTS = {
   'goi-y-day-bai': 2,
   'goi-y-tu-nguon': 1,
   'hoi-dap': 1,
+  // Cập nhật CHỈ câu chuyện cá nhân (không đụng phần còn lại của định vị) — rẻ hơn hẳn chạy lại
+  // toàn bộ Lượt 1 (8 lượt), đúng tinh thần "sửa đúng đúng phần bị thiếu, không bắt làm lại từ đầu".
+  'dinh-vi-cap-nhat-cau-chuyen': 1,
   'cham-diem-content': 2,
   'goi-y-lich': 2,
   'viet-content': 3,

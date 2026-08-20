@@ -82,7 +82,7 @@ function sidebarFootHtml(){
 // đợi tải lại trang mới thấy số mới.
 const GATED_API_WEIGHTS = {
   'api/cai-thien-hook': 1, 'api/cham-diem-hook': 1, 'api/goi-y-hook-theo-chu-de': 1,
-  'api/goi-y-tu-nguon': 1, 'api/hoi-dap': 1,
+  'api/goi-y-tu-nguon': 1, 'api/hoi-dap': 1, 'api/dinh-vi-cap-nhat-cau-chuyen': 1,
   'api/cham-diem-content': 2, 'api/goi-y-lich': 2, 'api/goi-y-day-bai': 2,
   'api/viet-content': 3, 'api/viet-tu-kho-goc': 3, 'api/tai-che-viral': 3,
   'api/sua-kenh': 4,
