@@ -222,19 +222,24 @@ function render(container, ctx){
             </div>
             ${isOpen ? `
             <div style="padding:0 18px 18px;">
-              <div class="body" style="font-style:italic;color:var(--ink-soft);margin-bottom:10px;">${esc(m.chien_luoc_moc_nay)}</div>
-              <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Bình luận tự đăng / ghim</div>
-              <div class="body" style="margin-bottom:6px;">${esc(m.cmt_tu_dang)}</div>
-              <div class="btn-row no-print" style="margin:0 0 12px;justify-content:flex-start;">${copyBtnHtml(m.moc+':cmt')}</div>
-              <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Gợi ý trả lời bình luận người khác</div>
+              <div style="font-style:italic;color:var(--ink-soft);font-size:12.5px;line-height:1.55;margin-bottom:14px;">${esc(m.chien_luoc_moc_nay)}</div>
+
+              <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">📌 Bình luận tự đăng / ghim</div>
+              <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                <div style="font-size:14.5px;color:var(--ink);line-height:1.55;">${esc(m.cmt_tu_dang)}</div>
+                ${copyBtnHtml(m.moc+':cmt')}
+              </div>
+
+              <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">💬 Gợi ý trả lời bình luận người khác</div>
               ${(m.goi_y_tra_loi_cmt||[]).map((c,ci)=>`
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;">
-                  <div style="font-size:14px;">${esc(c)}</div>
+                <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                  <div style="font-size:14px;color:var(--ink);line-height:1.5;">${esc(c)}</div>
                   ${copyBtnHtml(m.moc+':reply:'+ci)}
                 </div>
               `).join('')}
-              <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:10px 0 4px;">Tài sản nên gắn</div>
-              <div class="body">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b>${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
+
+              <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin:14px 0 6px;">🎯 Tài sản nên gắn</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b style="color:var(--ink);">${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
             </div>
             ` : ''}
           </div>
