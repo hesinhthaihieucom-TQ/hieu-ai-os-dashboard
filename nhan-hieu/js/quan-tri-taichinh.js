@@ -108,7 +108,7 @@ function render(container, ctx){
           <tbody>
             ${state.monthlyRows.map(row => `
               <tr style="border-bottom:1px solid var(--line);">
-                <td style="padding:10px 14px;font-weight:600;">${esc(row.month)}${row.month < LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(chưa có log lượt)</span>` : ''}</td>
+                <td style="padding:10px 14px;font-weight:600;">${esc(row.month)}${row.month < LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(chưa có log lượt)</span>` : (row.month === LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--danger);font-size:11px;">(chỉ tính từ ${esc(LOG_START)} trở đi — thiếu số liệu đầu tháng)</span>` : '')}</td>
                 <td style="padding:10px 14px;">${row.revenue.toLocaleString('vi-VN')}đ</td>
                 <td style="padding:10px 14px;">${row.luot.toLocaleString('vi-VN')}</td>
                 <td style="padding:10px 14px;">${row.cost.toLocaleString('vi-VN')}đ</td>

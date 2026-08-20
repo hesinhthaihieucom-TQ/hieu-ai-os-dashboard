@@ -193,14 +193,16 @@ function render(container, ctx){
                 // chỉ giữ ĐÚNG 1 chỗ báo trạng thái đã đăng (nhãn trên đầu ô), bỏ hẳn checkbox riêng
                 // bên dưới để khỏi lặp 2 nút cùng ý nghĩa. Nhãn trên đầu bấm vào là tự bật/tắt trạng
                 // thái đã đăng — không cần checkbox riêng nữa.
-                return `<div class="week-slot filled">
-                  <div class="slot-label">${s.label} · <span data-toggle-posted="${e.id}" style="cursor:pointer;color:${e.posted?'var(--accent)':'var(--ink-soft)'};text-decoration:underline;text-decoration-style:dotted;" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}">${e.posted?'✓ Đã đăng':'Đã chọn bài'}</span></div>
-                  <b style="font-size:12.5px;">${esc(e.title||'')}</b>
-                  ${e.format?`<div style="color:var(--ink-soft);font-size:11px;margin-top:2px;">${esc(e.format)}</div>`:''}
+                // Ô đã đăng dùng nền đậm khác hẳn ô mới chọn bài (nền nhạt mặc định) — phân biệt
+                // ngay bằng mắt trên lịch cả tuần, không phải đọc chữ mới biết bài nào xong rồi.
+                return `<div class="week-slot filled" ${e.posted?'style="background:var(--accent);border-color:var(--accent);"':''}>
+                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} · <span data-toggle-posted="${e.id}" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;${e.posted?'color:#fff;font-weight:700;opacity:1;':'color:var(--ink-soft);'}" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}">${e.posted?'✓ Đã đăng':'Đã chọn bài'}</span></div>
+                  <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
+                  ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
                   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-                    ${linkedPost?`<span style="color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" data-view-post="${e.id}">Xem bài →</span>`:''}
-                    <span style="color:var(--ink-soft);font-size:11px;cursor:pointer;" data-edit-slot="${dateStr}|${s.key}">Sửa</span>
-                    <span style="color:var(--danger);font-size:11px;cursor:pointer;" data-remove="${e.id}">Xoá</span>
+                    ${linkedPost?`<span style="font-size:11px;cursor:pointer;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}" data-view-post="${e.id}">Xem bài →</span>`:''}
+                    <span style="font-size:11px;cursor:pointer;${e.posted?'color:#fff;opacity:.85;':'color:var(--ink-soft);'}" data-edit-slot="${dateStr}|${s.key}">Sửa</span>
+                    <span style="font-size:11px;cursor:pointer;${e.posted?'color:#fff;':'color:var(--danger);'}" data-remove="${e.id}">Xoá</span>
                   </div>
                 </div>`;
               }
