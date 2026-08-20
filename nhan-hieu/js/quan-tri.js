@@ -155,6 +155,15 @@ function render(container, ctx){
           ${p.role!=='admin' ? `<div class="body" style="margin-top:2px;font-size:13px;">Đã dùng: ${esc(aiUsageLabel(p))}</div>` : ''}
           ${p.ref_code ? `<div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">Nội dung chuyển khoản đúng: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
           ${p.role!=='admin' ? `
+            <div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">
+              Gói: <b>${esc((PLAN_TABS.find(t=>t.key===planKeyOf(p))||{}).label||'Chưa rõ')}</b>
+              — kích hoạt trước khi có bộ lọc này thì cần gắn nhãn lại tay:
+              <span style="text-decoration:underline;cursor:pointer;margin-left:4px;" data-set-plan="${p.id}|30">1 tháng</span> ·
+              <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|180">6 tháng</span> ·
+              <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|365">12 tháng</span>
+            </div>
+          ` : ''}
+          ${p.role!=='admin' ? `
             <div class="body" style="margin-top:6px;font-size:12.5px;">
               ${p.is_student
                 ? `<span style="color:var(--accent);font-weight:600;">🎓 Học viên (giá ưu đãi)</span>`
@@ -163,7 +172,7 @@ function render(container, ctx){
             </div>
             <div class="body" style="margin-top:4px;font-size:12.5px;">
               ${p.has_paid
-                ? `<span style="color:var(--accent);font-weight:600;">💰 Đã trả phí — dùng trần 200 lượt AI/tháng</span>`
+                ? `<span style="color:var(--accent);font-weight:600;">💰 Đã trả phí — dùng trần 250 lượt AI/tháng</span>`
                 : `<span style="color:var(--ink-soft);">Chưa trả phí — vẫn ở trần dùng thử (50 lượt trọn đời)</span>`}
               — bấm "Gia hạn" KHÔNG tự bật cờ này, nếu kích hoạt tay cho khách chuyển khoản thật thì nhớ bấm thêm nút bên dưới.
             </div>
@@ -201,6 +210,12 @@ function render(container, ctx){
 
     container.querySelectorAll('[data-plan-filter]').forEach(el=>{
       el.onclick = ()=>{ state.planFilter = el.getAttribute('data-plan-filter'); draw(); };
+    });
+    container.querySelectorAll('[data-set-plan]').forEach(el=>{
+      el.onclick = ()=>{
+        const [id, days] = el.getAttribute('data-set-plan').split('|');
+        setPlanOnly(id, Number(days));
+      };
     });
 
     container.querySelectorAll('[data-extend]').forEach(el=>{
@@ -297,6 +312,17 @@ function render(container, ctx){
     const base = (p.access_until && new Date(p.access_until).getTime() > Date.now()) ? new Date(p.access_until) : new Date();
     const next = new Date(base.getTime() + days*86400000);
     const { error } = await ctx.supabase.from('profiles').update({ access_until: next.toISOString(), last_plan_days: days }).eq('id', id);
+    if(error) state.error = error.message; else state.error = null;
+    await load();
+    state.busyId = null;
+    draw();
+  }
+
+  // Chỉ gắn nhãn gói (last_plan_days) để lọc/đếm cho đúng — KHÔNG đụng access_until, dùng cho các
+  // tài khoản đã kích hoạt tay TRƯỚC KHI có tính năng lọc theo gói (nên đang hiện "Chưa rõ gói").
+  async function setPlanOnly(id, days){
+    state.busyId = id; draw();
+    const { error } = await ctx.supabase.from('profiles').update({ last_plan_days: days }).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
     state.busyId = null;
