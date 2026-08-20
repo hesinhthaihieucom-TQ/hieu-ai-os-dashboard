@@ -63,6 +63,11 @@ function render(container, ctx){
       if(adminIds.has(r.user_id)) return;
       bucket(new Date(r.created_at).toISOString().slice(0,7)).luot += (r.weight||0);
     });
+    // ai_usage_log của THÁNG HIỆN TẠI luôn thiếu (mới bắt đầu ghi giữa tháng LOG_START) — thay vì
+    // hiện thiếu/0 kèm chú thích, dùng thẳng số ở thẻ tổng quan phía trên (state.totalLuot, đã khớp
+    // đúng cách "Đã dùng: x/y" ở từng tài khoản) cho đúng tháng này — theo phản hồi chị Quỳnh: đã có
+    // sẵn số đúng rồi thì dùng luôn, không cần bày thêm chú thích "thiếu dữ liệu".
+    bucket(month).luot = state.totalLuot;
 
     state.monthlyRows = Object.values(byMonth)
       .sort((a,b)=> b.month.localeCompare(a.month))
@@ -108,7 +113,7 @@ function render(container, ctx){
           <tbody>
             ${state.monthlyRows.map(row => `
               <tr style="border-bottom:1px solid var(--line);">
-                <td style="padding:10px 14px;font-weight:600;">${esc(row.month)}${row.month < LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(chưa có log lượt)</span>` : (row.month === LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--danger);font-size:11px;">(chỉ tính từ ${esc(LOG_START)} trở đi — thiếu số liệu đầu tháng)</span>` : '')}</td>
+                <td style="padding:10px 14px;font-weight:600;">${esc(row.month)}${row.month < LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(chưa có log lượt)</span>` : ''}</td>
                 <td style="padding:10px 14px;">${row.revenue.toLocaleString('vi-VN')}đ</td>
                 <td style="padding:10px 14px;">${row.luot.toLocaleString('vi-VN')}</td>
                 <td style="padding:10px 14px;">${row.cost.toLocaleString('vi-VN')}đ</td>
