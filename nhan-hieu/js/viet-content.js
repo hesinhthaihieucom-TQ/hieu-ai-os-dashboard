@@ -351,20 +351,29 @@ function render(container, ctx){
         <textarea id="edit-cmt-ghim" style="min-height:auto;height:70px;">${esc(r.cau_cmt_ghim||'')}</textarea>
         <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('cau_cmt_ghim')}</div>
       </div>
-      <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Bước tiếp theo</div></div>
+      ${(!r.hashtag && !state.showExtras) ? `
+        <div class="section highlight" style="text-align:center;">
+          <h3>👉 Bước tiếp theo (cần làm trước khi lưu)</h3>
+          <div class="body" style="margin-bottom:12px;">Tạo nốt hashtag, gợi ý hình ảnh, CTA sản phẩm/group và caption — bài lưu vào thư viện sẽ thiếu mấy phần này nếu bỏ qua bước này.</div>
+          <button class="btn" data-action="toggle-extras">Tạo Hashtag, hình ảnh, dạng content &amp; caption →</button>
+        </div>
+      ` : ''}
+      ${state.showExtras || r.hashtag ? extrasSectionHtml() : ''}
+
+      <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Tuỳ chọn thêm</div></div>
       <div class="btn-row no-print" style="justify-content:flex-start;flex-wrap:wrap;align-items:center;">
         ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>${!state.score?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 2 lượt AI)</span>`:''}</span>` : ''}
         ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-hook">${state.hookScore?'✓ ':''}Chấm điểm Hook →</button>${!state.hookScore?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}</span>` : ''}
-        <button class="btn-ghost btn btn-sm" data-action="toggle-extras">${state.result.hashtag?'✓ ':''}Hashtag, hình ảnh, dạng content &amp; caption →</button>
       </div>
       ${state.showScoreContent ? scoreSectionHtml() : ''}
       ${state.showScoreHook ? hookScoreSectionHtml() : ''}
-      ${state.showExtras ? extrasSectionHtml() : ''}
 
-      <div class="btn-row no-print" style="margin-top:20px;">
-        <button class="btn" data-action="save" ${state.saving?'disabled':''}>${state.savedId?'Đã lưu vào thư viện ✓':state.saving?'Đang lưu…':'Lưu vào thư viện bài viết'}</button>
-        ${state.savedId?`<a class="btn-ghost btn" href="#lich-dang">Đưa vào Lịch Đăng Bài →</a>`:''}
-        ${state.savedId?`<a class="btn-ghost btn" href="#day-bai">Đẩy Bài &amp; CTA Comment →</a>`:''}
+      <div class="btn-row no-print" style="margin-top:20px;align-items:center;">
+        ${r.hashtag ? `
+          <button class="btn" data-action="save" ${state.saving?'disabled':''}>${state.savedId?'Đã lưu vào thư viện ✓':state.saving?'Đang lưu…':'Lưu vào thư viện bài viết'}</button>
+          ${state.savedId?`<a class="btn-ghost btn" href="#lich-dang">Đưa vào Lịch Đăng Bài →</a>`:''}
+          ${state.savedId?`<a class="btn-ghost btn" href="#day-bai">Đẩy Bài &amp; CTA Comment →</a>`:''}
+        ` : `<span style="font-size:13px;color:var(--ink-soft);">Tạo Hashtag, hình ảnh, dạng content &amp; caption ở trên trước đã, rồi mới lưu được bài.</span>`}
       </div>
     `;
   }
