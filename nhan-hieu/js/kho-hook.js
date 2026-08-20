@@ -54,7 +54,7 @@ function render(container, ctx){
     tab:'tao-hook', personal:[], shared:[], sharedContent:[], error:null, positioning:null,
     newEntry:{ hook_text:'', note:'', isViral:null, viralViews:'', viralLikes:'' }, addingHook:false, addError:null,
     sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
-    writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
+    writeFor:null, copiedFor:null,
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{}, genThumbSavedIdx:{},
@@ -242,27 +242,17 @@ function render(container, ctx){
     `;
   }
 
+  // Trước đây có thêm nút "Tạo 5 ý tưởng mới từ đây" gọi AI (api/goi-y-tu-nguon) — bỏ vì bước AI
+  // phụ này làm người dùng phải chờ thêm 1 lần nữa (sau khi vẫn còn phải chờ AI viết bài ở Viết
+  // Content), tốn thêm lượt oan cho 1 bước không bắt buộc. Giờ chỉ còn 2 lối đơn giản, không tốn
+  // lượt, không phải chờ: chuyển thẳng sang Viết Content với hook này, hoặc copy để tự dán ở đâu
+  // cũng được (kể cả ngoài app).
   function writePanelHtml(){
-    const hasPositioning = !!(state.positioning && state.positioning.luot1);
-    if(state.writeLoading) return `<div class="btn-row" style="margin-top:10px;justify-content:flex-start;"><button class="btn-ghost btn btn-sm" data-write-generate="1" disabled>Đang sinh ý tưởng…</button></div>`;
-    if(state.writeIdeas){
-      return `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
-        ${state.writeIdeas.map((idea,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--accent-soft);">
-          <div style="font-size:13px;">${esc(idea)}</div>
-          <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;" data-use-idea="${i}">Dùng ý tưởng này →</span>
-        </div>`).join('')}
-      </div>`;
-    }
     return `
-      ${!hasPositioning ? `
-        <div class="hint-box" style="margin-top:10px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — điền nhanh ngành/đối tượng bên dưới để vẫn sinh được ý tưởng đúng hướng, hoặc giữ nguyên hook để viết luôn.</div>
-        <textarea id="write-quick-context" style="min-height:auto;height:44px;margin-top:8px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.writeQuickContext)}</textarea>
-      ` : ''}
-      ${state.writeError?`<div class="error-box" style="margin-top:10px;">${esc(state.writeError)}</div>`:''}
+      <div class="hint-box" style="margin-top:10px;">Bấm "Copy hook này" rồi sang <a href="#viet-content">Viết Content</a>, dán vào ô ý tưởng bài viết — hoặc bấm "Viết bài ngay" để tự động chuyển sang đó với hook này luôn.</div>
       <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
-        <button class="btn btn-sm" data-write-keep="1">Giữ nguyên hook này</button>
-        <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
-        <span style="font-size:11px;color:var(--ink-soft);align-self:center;">("Tạo 5 ý tưởng" tốn 1 lượt AI)</span>
+        <button class="btn btn-sm" data-write-keep="1">Viết bài ngay →</button>
+        <button class="btn-ghost btn btn-sm" data-copy-hook="1">${state.copiedFor===state.writeFor?'Đã copy ✓':'Copy hook này'}</button>
       </div>`;
   }
 
@@ -446,7 +436,7 @@ function render(container, ctx){
       el.onclick = ()=>{
         const key = el.getAttribute('data-write-toggle');
         state.writeFor = state.writeFor===key ? null : key;
-        state.writeIdeas = null; state.writeError = null; state.writeLoading = false; state.writeQuickContext = '';
+        state.copiedFor = null;
         draw();
       };
     });
@@ -456,18 +446,10 @@ function render(container, ctx){
       window.PendingSourceRef = sourceRefForKey(state.writeFor);
       location.hash = 'viet-content';
     };
-    const genBtn = container.querySelector('[data-write-generate]');
-    if(genBtn) genBtn.onclick = generateIdeasFromSource;
-    const wqc = container.querySelector('#write-quick-context');
-    if(wqc) wqc.oninput = ()=>{ state.writeQuickContext = wqc.value; };
-    container.querySelectorAll('[data-use-idea]').forEach(el=>{
-      el.onclick = ()=>{
-        const i = Number(el.getAttribute('data-use-idea'));
-        window.PendingTopic = state.writeIdeas[i];
-        window.PendingSourceRef = sourceRefForKey(state.writeFor);
-        location.hash = 'viet-content';
-      };
-    });
+    const copyBtn = container.querySelector('[data-copy-hook]');
+    if(copyBtn) copyBtn.onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(findSourceText(state.writeFor)); state.copiedFor = state.writeFor; draw(); } catch(e){}
+    };
   }
 
   async function generateHooksByTopic(){
@@ -508,21 +490,6 @@ function render(container, ctx){
     });
     state.genSavedIdx[i] = true; draw();
     persistGenDraft();
-  }
-
-  async function generateIdeasFromSource(){
-    state.writeLoading = true; state.writeError = null; draw();
-    const stopProgress = animateProgressButton(container.querySelector('[data-write-generate]'), 25, 'Đang sinh ý tưởng');
-    try{
-      const data = await callApi('/api/goi-y-tu-nguon', {
-        source_text: findSourceText(state.writeFor),
-        positioning: (state.positioning && state.positioning.luot1) ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
-        quick_context: state.writeQuickContext,
-      });
-      state.writeIdeas = data.result.y_tuong;
-    } catch(e){ state.writeError = e.message; }
-    stopProgress();
-    state.writeLoading = false; draw();
   }
 
   async function addHook(){
