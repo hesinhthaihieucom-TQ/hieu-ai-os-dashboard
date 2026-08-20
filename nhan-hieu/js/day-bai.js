@@ -194,6 +194,7 @@ function render(container, ctx){
     const m = mocList.find(x=>x.moc===mocKey);
     if(!m) return '';
     if(kind==='cmt') return m.cmt_tu_dang || '';
+    if(kind==='keyword') return m.tra_loi_tu_khoa_cta || '';
     if(kind==='reply') return (m.goi_y_tra_loi_cmt || [])[Number(idx)] || '';
     return '';
   }
@@ -229,6 +230,14 @@ function render(container, ctx){
                 <div style="font-size:14.5px;color:var(--ink);line-height:1.55;">${esc(m.cmt_tu_dang)}</div>
                 ${copyBtnHtml(m.moc+':cmt')}
               </div>
+
+              ${m.tra_loi_tu_khoa_cta ? `
+              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">🔑 Trả lời khi có người để lại đúng từ khoá (nhớ gửi — đây là lời hứa với người đọc)</div>
+              <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                <div style="font-size:14.5px;color:var(--ink);line-height:1.55;font-weight:600;">${esc(m.tra_loi_tu_khoa_cta)}</div>
+                ${copyBtnHtml(m.moc+':keyword')}
+              </div>
+              ` : ''}
 
               <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">💬 Gợi ý trả lời bình luận người khác</div>
               ${(m.goi_y_tra_loi_cmt||[]).map((c,ci)=>`
