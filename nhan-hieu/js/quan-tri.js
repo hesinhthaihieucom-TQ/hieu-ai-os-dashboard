@@ -10,7 +10,7 @@ function aiUsageLabel(p){
     // Chuyển sang trả phí là ĐỔI SANG bộ đếm khác (paid_ai_uses, theo tháng) chứ không xoá trial_ai_uses
     // — số lượt dùng thử cũ vẫn còn nguyên trong DB, chỉ không còn bị tính vào trần nào cả, không
     // "mất" — vẫn hiện lại đây để đối chiếu, tránh nhìn như dữ liệu biến mất.
-    const paidLabel = `${used}/${200+bonus} lượt AI (tháng này)`;
+    const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (tháng này)`;
     return p.trial_ai_uses ? `${paidLabel} · đã dùng ${p.trial_ai_uses} lượt lúc còn dùng thử (không tính vào đây nữa)` : paidLabel;
   }
   return `${p.trial_ai_uses||0}/50 lượt AI (dùng thử, trọn đời)`;
@@ -187,6 +187,9 @@ function render(container, ctx){
               <button class="btn btn-sm" data-extend="${p.id}|30" ${state.busyId===p.id?'disabled':''}>+30 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|180" ${state.busyId===p.id?'disabled':''}>+180 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|365" ${state.busyId===p.id?'disabled':''}>+365 ngày</button>
+              <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-30" ${state.busyId===p.id?'disabled':''}>Hoàn tác -30</button>
+              <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-180" ${state.busyId===p.id?'disabled':''}>Hoàn tác -180</button>
+              <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-365" ${state.busyId===p.id?'disabled':''}>Hoàn tác -365</button>
               <button class="btn-ghost btn btn-sm" data-revoke="${p.id}" ${state.busyId===p.id?'disabled':''}>Thu hồi ngay</button>
               <button class="btn-ghost btn btn-sm" data-toggle-student="${p.id}|${!p.is_student}" ${state.busyId===p.id?'disabled':''}>${p.is_student?'Bỏ đánh dấu học viên':'Đánh dấu là học viên'}</button>
               <button class="btn-ghost btn btn-sm" data-toggle-paid="${p.id}|${!p.has_paid}" ${state.busyId===p.id?'disabled':''}>${p.has_paid?'Bỏ đánh dấu đã trả phí':'💰 Đánh dấu đã trả phí'}</button>
@@ -323,7 +326,11 @@ function render(container, ctx){
     const p = state.profiles.find(x=>x.id===id);
     const base = (p.access_until && new Date(p.access_until).getTime() > Date.now()) ? new Date(p.access_until) : new Date();
     const next = new Date(base.getTime() + days*86400000);
-    const { error } = await ctx.supabase.from('profiles').update({ access_until: next.toISOString(), last_plan_days: days }).eq('id', id);
+    // days âm = nút "Hoàn tác" (lỡ bấm nhầm) — chỉ chỉnh lại hạn dùng, không đổi nhãn gói vì đây
+    // không phải 1 lần mua gói mới.
+    const patch = { access_until: next.toISOString() };
+    if(days > 0) patch.last_plan_days = days;
+    const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
     state.busyId = null;
