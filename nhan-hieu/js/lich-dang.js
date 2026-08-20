@@ -177,8 +177,9 @@ function render(container, ctx){
                   ${suggestion?`<div style="font-size:11px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
                   <select data-picker-select style="width:100%;margin-top:4px;font-size:12px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
-                    ${state.posts.map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}</option>`).join('')}
+                    ${state.posts.filter(p=>!p.posted || (e && e.post_id===p.id)).map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}${p.posted?' (đã đăng)':''}</option>`).join('')}
                   </select>
+                  <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng rồi không hiện ở đây nữa, đỡ chọn nhầm.</div>
                   <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
                   <input type="text" data-picker-custom placeholder="Tên bài tự điền..." value="${e && !e.post_id ? esc(e.title||'') : ''}" style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
                   <div style="display:flex;gap:6px;margin-top:6px;">
@@ -366,6 +367,12 @@ function render(container, ctx){
         const entry = state.entries.find(x=>x.id===id);
         const nextPosted = !(entry && entry.posted);
         await ctx.supabase.from('calendar_entries').update({ posted: nextPosted }).eq('id', id);
+        // Đồng bộ ngược sang đúng bài trong Kho Content (nếu ô này gắn 1 bài đã viết cụ thể) — để
+        // Kho Content chia được đã đăng/chưa đăng, và picker chọn bài tự loại bài đã đăng rồi.
+        if(entry && entry.post_id){
+          await ctx.supabase.from('posts').update({ posted: nextPosted }).eq('id', entry.post_id);
+          await loadPosts();
+        }
         await loadEntries();
         draw();
       };

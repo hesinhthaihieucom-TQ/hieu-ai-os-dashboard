@@ -295,6 +295,11 @@ alter table posts add column if not exists source_id uuid;
 -- goi_y_tra_loi_cmt: [...], tai_san_de_xuat: {label, ly_do} }, ...] } — xem TOOL_DAY_BAI_ALL ở
 -- api/goi-y-day-bai.js.
 alter table posts add column if not exists day_bai_plan jsonb;
+-- Đồng bộ trạng thái "đã đăng" ngược từ Lịch Đăng Bài (2026-08-20, theo yêu cầu chị Quỳnh) — khi
+-- tích "đã đăng thật" ở 1 ô lịch có gắn post_id, cột này trên đúng bài đó cũng tự bật theo (xem
+-- data-toggle-posted ở nhan-hieu/js/lich-dang.js) để: (1) Kho Content chia được đã đăng/chưa đăng,
+-- (2) picker chọn bài để xếp lịch tự loại bài đã đăng rồi, đỡ chọn nhầm/chọn trùng.
+alter table posts add column if not exists posted boolean not null default false;
 
 create table if not exists calendar_entries (
   id uuid primary key default gen_random_uuid(),

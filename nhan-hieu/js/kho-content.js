@@ -35,6 +35,7 @@ function render(container, ctx){
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(),
+    daVietStatus:'all', daVietSearch:'',
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
   };
 
@@ -181,6 +182,30 @@ function render(container, ctx){
     return key==='all' ? items : key==='none' ? items.filter(x=>pillarsForItem(x).length===0) : items.filter(x=>pillarsForItem(x).includes(key));
   }
 
+  // Bộ lọc dạng list (thay vì chip) cho "Bài đã viết" — dùng khi số bài nhiều lên, chip dễ tràn dòng
+  // khó nhìn hơn hẳn 1 danh sách xổ xuống. Chỉ áp riêng tab này (2026-08-20, theo phản hồi chị Quỳnh).
+  function pillarSelectHtml(items, currentKey, dataAttr){
+    const options = PILLARS.map(p=>{
+      const count = items.filter(x=>pillarsForItem(x).includes(p.key)).length;
+      if(count===0) return '';
+      return `<option value="${p.key}" ${currentKey===p.key?'selected':''}>${esc(p.label)} (${count})</option>`;
+    }).join('');
+    const noneCount = items.filter(x=>pillarsForItem(x).length===0).length;
+    const noneOption = noneCount ? `<option value="none" ${currentKey==='none'?'selected':''}>Chưa phân loại (${noneCount})</option>` : '';
+    return `<select data-${dataAttr}>
+      <option value="all" ${currentKey==='all'?'selected':''}>Tất cả trục (${items.length})</option>
+      ${options}${noneOption}
+    </select>`;
+  }
+  function statusSelectHtml(items, currentStatus){
+    const postedCount = items.filter(p=>p.posted).length;
+    return `<select data-daviet-status>
+      <option value="all" ${currentStatus==='all'?'selected':''}>Tất cả trạng thái (${items.length})</option>
+      <option value="posted" ${currentStatus==='posted'?'selected':''}>Đã đăng (${postedCount})</option>
+      <option value="not_posted" ${currentStatus==='not_posted'?'selected':''}>Chưa đăng (${items.length-postedCount})</option>
+    </select>`;
+  }
+
   // Chỉ 1 giọng mẫu áp dụng tại 1 thời điểm (chọn mới sẽ thay thế cũ) — kiểm tra đúng bài/hook này
   // có phải nguồn giọng mẫu ĐANG DÙNG không, để hiện dấu cố định thay vì nút bấm mù mờ như mọi mục.
   function isCurrentVoiceSample(key){
@@ -233,15 +258,30 @@ function render(container, ctx){
   }
 
   function daVietTab(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Toàn bộ bài bạn đã viết và lưu lại — xem lại, sửa tiếp, hoặc đưa vào Lịch Đăng Bài từ đây. AI tự xếp đúng trục nội dung ngay khi bạn lưu bài.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Toàn bộ bài bạn đã viết và lưu lại — xem lại, sửa tiếp, hoặc đưa vào Lịch Đăng Bài từ đây. AI tự xếp đúng trục nội dung ngay khi bạn lưu bài. Tích "đã đăng thật" ở Lịch Đăng Bài sẽ tự cập nhật trạng thái đã đăng cho đúng bài này.</div>`;
     if(state.posts.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Chưa có bài nào — sang tab <b>Kho Content Viral</b> chọn 1 bài mẫu phù hợp trục nội dung của bạn để viết bài đầu tiên.</div>`;
 
-    const items = filterByPillar(state.posts, state.daVietPillar);
-    return hint + pillarChipsHtml(state.posts, state.daVietPillar, 'daviet-pillar') + items.map(p=>{
+    const filterBar = `
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+        ${pillarSelectHtml(state.posts, state.daVietPillar, 'daviet-pillar')}
+        ${statusSelectHtml(state.posts, state.daVietStatus)}
+        <input type="text" data-daviet-search value="${esc(state.daVietSearch)}" placeholder="Tìm theo tên bài..." style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+      </div>
+    `;
+
+    let items = filterByPillar(state.posts, state.daVietPillar);
+    if(state.daVietStatus==='posted') items = items.filter(p=>p.posted);
+    else if(state.daVietStatus==='not_posted') items = items.filter(p=>!p.posted);
+    const q = state.daVietSearch.trim().toLowerCase();
+    if(q) items = items.filter(p=>(p.title||'').toLowerCase().includes(q));
+
+    if(items.length===0) return hint + filterBar + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp bộ lọc.</div>`;
+
+    return hint + filterBar + items.map(p=>{
       const isEditing = state.editingPostId === p.id;
       return `
       <div class="section">
-        ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}</h3>`}
+        ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
         ${isEditing ? editPostHtml(p) : contentBodyHtml('post:'+p.id, p.content)}
         <div class="btn-row" style="margin-top:14px;">
           <button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>
@@ -364,9 +404,20 @@ function render(container, ctx){
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
     });
-    container.querySelectorAll('[data-daviet-pillar]').forEach(el=>{
-      el.onclick = ()=>{ state.daVietPillar = el.getAttribute('data-daviet-pillar'); draw(); };
-    });
+    const daVietPillarSelect = container.querySelector('[data-daviet-pillar]');
+    if(daVietPillarSelect) daVietPillarSelect.onchange = ()=>{ state.daVietPillar = daVietPillarSelect.value; draw(); };
+    const daVietStatusSelect = container.querySelector('[data-daviet-status]');
+    if(daVietStatusSelect) daVietStatusSelect.onchange = ()=>{ state.daVietStatus = daVietStatusSelect.value; draw(); };
+    const daVietSearchInput = container.querySelector('[data-daviet-search]');
+    if(daVietSearchInput) daVietSearchInput.oninput = ()=>{
+      state.daVietSearch = daVietSearchInput.value;
+      const pos = daVietSearchInput.selectionStart;
+      draw();
+      // draw() vẽ lại toàn bộ innerHTML nên mất focus — lấy lại đúng ô + vị trí con trỏ, giống
+      // pattern data-goal ở tai-khoan.js, không thì gõ mỗi chữ lại phải bấm chuột vào ô lần nữa.
+      const newEl = container.querySelector('[data-daviet-search]');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
     container.querySelectorAll('[data-khotoi-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.khoToiPillar = el.getAttribute('data-khotoi-pillar'); draw(); };
     });
