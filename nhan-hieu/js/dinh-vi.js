@@ -1,8 +1,8 @@
 (function(){
 const QUESTIONS = [
   {id:'a1', group:'A', type:'textarea', q:'Hiện tại bạn đang làm công việc/lĩnh vực gì? Đã làm bao lâu? Việc gì bạn giỏi nhất, việc gì đang thấy kẹt?', placeholder:'Ví dụ: Mình làm coach tài chính cá nhân được 3 năm, giỏi phần lên kế hoạch dòng tiền, còn kẹt ở phần marketing bản thân...'},
-  {id:'a2', group:'A', type:'textarea', q:'Bạn muốn xây dựng thương hiệu cá nhân để làm gì, và có sản phẩm/dịch vụ/khoá học nào muốn dẫn người xem về không?', placeholder:'Nếu chưa có sản phẩm, ghi "chưa có"'},
-  {id:'a3', group:'A', type:'chips', multi:false, allowOther:true, q:'Vấn đề bạn đang gặp phải là gì?', options:['Chưa có kênh','Không rõ mình là ai','Đăng lung tung, không nhất quán','Không biết bắt đầu từ đâu']},
+  {id:'a2', group:'A', type:'textarea', q:'Bạn muốn thương hiệu cá nhân này giúp bạn đạt được điều gì cụ thể? ("Để kiếm tiền" là chưa đủ rõ — kiếm tiền bằng cách nào: bán sản phẩm/dịch vụ gì, có thêm bao nhiêu khách, được mời hợp tác, hay xây uy tín để chuyển hướng nghề nghiệp?)', placeholder:'Ví dụ: Để mỗi tháng có thêm 15-20 khách mua gói tư vấn 1:1, hoặc để được nhãn hàng mời hợp tác quảng cáo, hoặc để xây uy tín rồi ra mắt khoá học riêng...', helper:'Tên sản phẩm/dịch vụ/khoá học cụ thể (nếu có) sẽ nhập ở phần "Tài sản quảng bá" sau khi có kết quả Định Vị — ở đây chỉ cần nói rõ mục tiêu.'},
+  {id:'a3', group:'A', type:'chips', multi:true, allowOther:true, q:'Vấn đề bạn đang gặp phải là gì?', options:['Chưa có kênh','Không rõ mình là ai','Đăng lung tung, không nhất quán','Không biết bắt đầu từ đâu']},
   {id:'b1', group:'B', type:'textarea', q:'Bạn từng trải qua biến cố hoặc hành trình nào để lại bài học sâu sắc? Câu chuyện đó có thể trở thành "linh hồn" cho kênh của bạn không?', helper:'Nếu là chuyện nhạy cảm (bệnh nặng, trầm cảm, mất mát...), mình sẽ giúp bạn kể lại có trách nhiệm — không câu view, không hù doạ.'},
   {id:'b2', group:'B', type:'textarea', q:'Người khác thường tìm đến bạn để hỏi về điều gì, khen bạn nhiều nhất về điều gì, hoặc chủ đề nào bạn có thể nói rất lâu mà không hết ý?'},
   {id:'b3', group:'B', type:'textarea', q:'Bạn thích làm việc gì đến mức không thấy mệt? Và không thích làm gì / việc gì khiến bạn dễ tụt năng lượng?'},
@@ -252,13 +252,14 @@ function render(container, ctx){
     let suggestHtml = '';
     if(q.type==='textarea'){
       inputHtml = `<textarea id="qinput" placeholder="${esc(q.placeholder||'Trả lời thật, càng cụ thể càng tốt...')}">${esc(val||'')}</textarea>
-        <div style="margin-top:10px;">
-          <span style="color:var(--accent);font-size:13px;cursor:pointer;font-weight:600;" data-action="suggest">${state.suggestLoading?'Đang nghĩ ví dụ…':'💡 Gợi ý câu trả lời cụ thể'}</span>
+        <div class="hint-box" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="font-size:12.5px;line-height:1.5;">✍️ Trả lời càng chi tiết, càng nhiều dữ liệu thật (mốc thời gian, con số, cảm xúc, tình huống cụ thể...) thì Định Vị và content sau này AI viết ra sẽ càng đúng, càng hay — đừng trả lời qua loa cho xong.</div>
+          <button class="btn btn-sm" style="flex-shrink:0;" data-action="suggest" ${state.suggestLoading?'disabled':''}>${state.suggestLoading?'Đang nghĩ ví dụ…':'💡 Xem gợi ý cụ thể'}</button>
         </div>`;
       if(state.suggestForQ===state.qIndex){
         if(state.suggestError){
           suggestHtml = `<div class="error-box">${esc(state.suggestError)}</div>`;
-        } else if(state.suggestions){
+        } else if(state.suggestions && state.suggestions.length){
           suggestHtml = `<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
             ${state.suggestions.map((s,i)=>`
               <div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--accent-soft);">
@@ -748,7 +749,12 @@ function render(container, ctx){
     state.suggestLoading = true; draw();
     try{
       const data = await callApi('/api/dinh-vi-goi-y', { question: q.q, previousAnswers: flattenAnswers() });
-      state.suggestions = data.result.vi_du;
+      const viDu = data && data.result && data.result.vi_du;
+      // AI ép dùng tool nên bình thường luôn có 3 ví dụ — nhưng nếu vì lý do gì đó (vd model trả
+      // rỗng) mà không có, phải báo lỗi rõ chứ không được im lặng không hiện gì, kẻo người dùng
+      // tưởng nút bị đứng/không hoạt động rồi bỏ cuộc không xem gợi ý nữa.
+      if(!viDu || !viDu.length) throw new Error('AI không trả về gợi ý — thử bấm lại giúp mình.');
+      state.suggestions = viDu;
       state.suggestForQ = state.qIndex;
       state.suggestError = null;
     } catch(e){
