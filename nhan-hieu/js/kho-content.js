@@ -245,6 +245,7 @@ function render(container, ctx){
         ${isEditing ? editPostHtml(p) : contentBodyHtml('post:'+p.id, p.content)}
         <div class="btn-row" style="margin-top:14px;">
           <button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>
+          <span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">${p.day_bai_plan?'✓ ':''}Đẩy bài &amp; CTA Comment →</span>
           ${!isEditing ? `<span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>` : ''}
           ${!isEditing ? `<span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-delete-post="${p.id}">Xoá bài</span>` : ''}
         </div>
@@ -420,6 +421,13 @@ function render(container, ctx){
       el.onclick = ()=>{
         window.PendingPost = state.posts.find(p=>p.id===el.getAttribute('data-schedule'));
         location.hash = 'lich-dang';
+      };
+    });
+
+    container.querySelectorAll('[data-day-bai]').forEach(el=>{
+      el.onclick = ()=>{
+        window.PendingPost = state.posts.find(p=>p.id===el.getAttribute('data-day-bai'));
+        location.hash = 'day-bai';
       };
     });
 

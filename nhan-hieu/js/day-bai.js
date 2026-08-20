@@ -1,11 +1,12 @@
 (function(){
 const MILESTONES = [
-  { key:'m1', label:'Trước 1.000 view', hint:'Kích cmt đầu tiên, chưa gắn link' },
-  { key:'m2', label:'Đạt 10.000 view', hint:'Bắt đầu dẫn nhẹ' },
-  { key:'m3', label:'Đạt 100.000 view', hint:'Dẫn về tài sản có giá trị hơn' },
-  { key:'m4', label:'Đạt 1 triệu view', hint:'CTA mạnh, chuyển đổi' },
-  { key:'m5', label:'Trên 1 triệu view', hint:'Tối đa hoá chuyển đổi' },
+  { key:'m1', label:'Trước 1.000 view' },
+  { key:'m2', label:'Đạt 10.000 view' },
+  { key:'m3', label:'Đạt 100.000 view' },
+  { key:'m4', label:'Đạt 1 triệu view' },
+  { key:'m5', label:'Trên 1 triệu view' },
 ];
+const MILESTONE_LABEL = Object.fromEntries(MILESTONES.map(m=>[m.key, m.label]));
 const ASSET_KINDS = {
   san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
   aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
@@ -14,15 +15,16 @@ const ASSET_KINDS = {
 function render(container, ctx){
   const state = {
     screen:'loading', positioning:null, assets:[], calendarEntries:[], posts:[],
-    postSource:'lich', postChoice:'', topicOther:'', milestone:'m1', quickContext:'',
-    selectedAssetId:'', generating:false, error:null, result:null,
+    postSource:'lich', postChoice:'', topicOther:'', quickContext:'',
+    selectedAssetIds: new Set(), generating:false, error:null, result:null,
+    saving:false, savedNotice:false,
   };
 
   const DRAFT_KEY = 'day-bai';
   function draftPayload(){
     return {
       postSource: state.postSource, postChoice: state.postChoice, topicOther: state.topicOther,
-      milestone: state.milestone, quickContext: state.quickContext, selectedAssetId: state.selectedAssetId,
+      quickContext: state.quickContext, selectedAssetIds: Array.from(state.selectedAssetIds),
       result: state.result,
     };
   }
@@ -34,9 +36,15 @@ function render(container, ctx){
     draw();
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
-    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
-    if(draft) Object.assign(state, draft);
+    const hasPending = !!window.PendingPost;
+    if(window.PendingPost){
+      state.postSource = 'kho'; state.postChoice = window.PendingPost.id; window.PendingPost = null;
+    } else {
+      const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+      if(draft) Object.assign(state, draft, { selectedAssetIds: new Set(draft.selectedAssetIds || []) });
+    }
     await Promise.all([loadAssets(), loadCalendarEntries(), loadPosts()]);
+    if(hasPending) loadSavedPlanIfAny();
     state.screen = 'main';
     draw();
   }
@@ -47,13 +55,42 @@ function render(container, ctx){
   }
 
   async function loadCalendarEntries(){
-    const { data } = await ctx.supabase.from('calendar_entries').select('*, posts(title,content)').eq('user_id', ctx.user.id).order('scheduled_date', { ascending:false }).limit(30);
+    const { data } = await ctx.supabase.from('calendar_entries').select('*, posts(title,content,day_bai_plan)').eq('user_id', ctx.user.id).order('scheduled_date', { ascending:false }).limit(30);
     state.calendarEntries = data || [];
   }
 
   async function loadPosts(){
     const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(50);
     state.posts = data || [];
+  }
+
+  // post_id THẬT sự đứng sau lựa chọn hiện tại (nếu có) — dùng để lưu/đọc day_bai_plan. Nguồn "Khác
+  // (dán nội dung)" không gắn với bài nào trong Kho Content nên không có post_id, không lưu được.
+  function resolvedPostId(){
+    if(state.postSource==='kho') return state.postChoice || null;
+    if(state.postSource==='lich'){
+      const entry = state.calendarEntries.find(e=>e.id===state.postChoice);
+      return entry ? (entry.post_id || null) : null;
+    }
+    return null;
+  }
+
+  function resolvedExistingPlan(){
+    if(state.postSource==='kho'){
+      const post = state.posts.find(p=>p.id===state.postChoice);
+      return post ? (post.day_bai_plan || null) : null;
+    }
+    if(state.postSource==='lich'){
+      const entry = state.calendarEntries.find(e=>e.id===state.postChoice);
+      return (entry && entry.posts) ? (entry.posts.day_bai_plan || null) : null;
+    }
+    return null;
+  }
+
+  // Khi vừa chọn 1 bài đã có sẵn kế hoạch đẩy bài đã lưu — hiện lại luôn, không bắt chạy AI lại.
+  function loadSavedPlanIfAny(){
+    const existing = resolvedExistingPlan();
+    if(existing){ state.result = existing; state.savedNotice = false; }
   }
 
   function resolvedTopic(){
@@ -70,14 +107,14 @@ function render(container, ctx){
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
-      <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — đúng theo mốc lượt xem bài đang lên.</p>
+      <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — cho ĐỦ CẢ 5 mốc lượt xem cùng lúc, 1 lần bấm.</p>
       ${state.result ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
       </div>
 
       <div class="hint-box" style="margin-bottom:16px;">
         <b>Vì sao bước này quan trọng?</b> Facebook không chỉ đo lượt xem để quyết định có đẩy bài đi tiếp hay không — nó đo mức độ NGƯỜI TA Ở LẠI TƯƠNG TÁC sau khi xem: bình luận, được trả lời, bình luận tiếp. Bài có <b>bình luận qua lại</b> (đặc biệt là tác giả tự trả lời) được thuật toán hiểu là "nội dung đáng bàn luận" và tiếp tục đẩy cho nhóm người xem mới, thay vì chỉ đứng yên hoặc chết dần sau vài giờ đầu.
         <br><br>
-        Về phía người xem: ở mốc view còn thấp, người xem lạ chưa đủ tin tưởng — <b>CTA mạnh</b> (bán/dẫn link) lúc này dễ bị lướt qua hoặc phản tác dụng. Đợi bài đủ view/bình luận (có <b>"bằng chứng xã hội"</b>) rồi mới tăng dần độ mạnh của CTA sẽ tự nhiên và chuyển đổi tốt hơn hẳn — đây là lý do mỗi mốc lượt xem bên dưới có <b>1 chiến lược bình luận khác nhau</b>, không dùng chung 1 kiểu CTA cho mọi giai đoạn.
+        Về phía người xem: ở mốc view còn thấp, người xem lạ chưa đủ tin tưởng — <b>CTA mạnh</b> (bán/dẫn link) lúc này dễ bị lướt qua hoặc phản tác dụng. Đợi bài đủ view/bình luận (có <b>"bằng chứng xã hội"</b>) rồi mới tăng dần độ mạnh của CTA sẽ tự nhiên và chuyển đổi tốt hơn hẳn — đây là lý do mỗi mốc lượt xem có <b>1 chiến lược bình luận khác nhau</b>, không dùng chung 1 kiểu CTA cho mọi giai đoạn.
       </div>
 
       <div class="card">
@@ -97,11 +134,11 @@ function render(container, ctx){
         ${state.postSource==='kho' ? `
           <select id="db-post-select-kho">
             <option value="">— Chọn bài đã viết trong Kho Content —</option>
-            ${state.posts.map(p=>`<option value="${p.id}" ${state.postChoice===p.id?'selected':''}>${esc(p.title || '(không tiêu đề)')}</option>`).join('')}
+            ${state.posts.map(p=>`<option value="${p.id}" ${state.postChoice===p.id?'selected':''}>${esc(p.title || '(không tiêu đề)')}${p.day_bai_plan?' ✓ đã có kế hoạch':''}</option>`).join('')}
           </select>
           ${state.posts.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có bài nào đã viết — sang <a href="#kho-content">Kho Content</a> hoặc <a href="#viet-content">Viết Content</a> trước.</div>`:''}
         ` : ''}
-        ${state.postSource==='other'?`<textarea id="db-topic-other" style="margin-top:8px;" placeholder="Dán chủ đề/nội dung bài đang đẩy...">${esc(state.topicOther)}</textarea>`:''}
+        ${state.postSource==='other'?`<textarea id="db-topic-other" style="margin-top:8px;" placeholder="Dán chủ đề/nội dung bài đang đẩy...">${esc(state.topicOther)}</textarea><div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Nguồn này không gắn với bài nào trong Kho Content nên không lưu lại được kế hoạch — chỉ dùng để xem nhanh.</div>`:''}
 
         ${!(state.positioning) ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
@@ -112,14 +149,8 @@ function render(container, ctx){
       ${assetsCardHtml()}
 
       <div class="card" style="margin-top:16px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;">Mốc lượt xem hiện tại</label>
-        <div class="chips">
-          ${MILESTONES.map(m=>`<div class="chip ${state.milestone===m.key?'selected':''}" data-milestone="${m.key}">${esc(m.label)}</div>`).join('')}
-        </div>
-        <div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">${esc((MILESTONES.find(m=>m.key===state.milestone)||{}).hint||'')}</div>
-
-        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang gợi ý…':'Gợi ý đẩy bài'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>
-        <div class="hint-box" style="margin-top:10px;">Nên bấm "Gợi ý đẩy bài" mỗi khi đổi mốc lượt xem — AI cần khoảng 1 phút để ra bình luận và cách trả lời phù hợp, đừng thoát trang khi đang đợi.</div>
+        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang gợi ý…':'Đẩy bài (đủ 5 mốc)'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 2 lượt AI — ra đủ 5 mốc trong 1 lần, không phải bấm lại từng mốc)</span></div>
+        <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1-2 phút để ra đủ cả 5 mốc, đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
 
@@ -131,31 +162,69 @@ function render(container, ctx){
     return `
       <div class="card" style="margin-top:16px;">
         <h3 style="margin-bottom:4px;">Tài sản muốn đẩy cho bài này</h3>
-        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 tài sản cụ thể muốn gắn cho bài đang đẩy, hoặc để AI tự gợi ý theo mốc view.</p>
-        <select id="db-asset-select">
-          <option value="">— Để AI tự gợi ý —</option>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 hoặc nhiều tài sản muốn dùng — AI sẽ tự phân bổ hợp lý qua 5 mốc (mốc đầu ít cam kết, mốc cuối giá trị cao hơn). Không chọn gì thì để AI tự chọn từ kho.</p>
+        ${state.assets.length===0?`<div style="font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào.</div>`: `
+        <div style="display:flex;flex-direction:column;gap:6px;">
           ${Object.entries(ASSET_KINDS).map(([kind,label])=>{
             const items = state.assets.filter(a=>a.kind===kind);
             if(items.length===0) return '';
-            return `<optgroup label="${esc(label)}">${items.map(a=>`<option value="${a.id}" ${state.selectedAssetId===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}</optgroup>`;
+            return `<div style="font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-top:6px;">${esc(label)}</div>` +
+              items.map(a=>`
+                <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;">
+                  <input type="checkbox" data-asset-check="${a.id}" ${state.selectedAssetIds.has(a.id)?'checked':''}>
+                  ${esc(a.label)}
+                </label>
+              `).join('');
           }).join('')}
-        </select>
-        ${state.assets.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào.</div>`:''}
+        </div>
+        `}
         <div style="margin-top:10px;"><a href="#dinh-vi" style="font-size:12.5px;color:var(--ink-soft);">Thêm/sửa tài sản ở Định Vị →</a></div>
       </div>
     `;
   }
 
+  // Nút "Copy" dùng chung — tra theo key thay vì nhét thẳng text vào attribute HTML (tránh vỡ
+  // attribute khi text có dấu ngoặc kép/xuống dòng), luôn đọc đúng state.result mới nhất lúc bấm.
+  function copyBtnHtml(field){
+    return `<span class="btn-ghost btn btn-sm" style="padding:4px 10px;font-size:11.5px;" data-copy-field="${field}">Copy</span>`;
+  }
+  function resolveCopyText(field){
+    const mocList = (state.result && state.result.moc) || [];
+    const [mocKey, kind, idx] = field.split(':');
+    const m = mocList.find(x=>x.moc===mocKey);
+    if(!m) return '';
+    if(kind==='cmt') return m.cmt_tu_dang || '';
+    if(kind==='reply') return (m.goi_y_tra_loi_cmt || [])[Number(idx)] || '';
+    return '';
+  }
+
   function resultHtml(){
-    const r = state.result;
+    const mocList = (state.result && state.result.moc) || [];
+    const postId = resolvedPostId();
     return `
-      <div class="section highlight"><h3>Trọng tâm mốc này</h3><div class="body">${esc(r.chien_luoc_moc_nay)}</div></div>
-      <div class="section"><h3>Bình luận tự đăng / ghim</h3><div class="body">${esc(r.cmt_tu_dang)}</div></div>
-      <div class="section"><h3>Gợi ý trả lời bình luận người khác</h3>
-        <ul>${r.goi_y_tra_loi_cmt.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>
-      </div>
-      <div class="section"><h3>Tài sản nên gắn</h3>
-        <div class="body">${r.tai_san_de_xuat.label ? `<b>${esc(r.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc(r.tai_san_de_xuat.ly_do)}</div>
+      <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Kết quả</div></div>
+      ${mocList.map(m=>`
+        <div class="section">
+          <h3>${esc(MILESTONE_LABEL[m.moc] || m.moc)}</h3>
+          <div class="body" style="font-style:italic;color:var(--ink-soft);margin-bottom:8px;">${esc(m.chien_luoc_moc_nay)}</div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Bình luận tự đăng / ghim</div>
+          <div class="body" style="margin-bottom:6px;">${esc(m.cmt_tu_dang)}</div>
+          <div class="btn-row no-print" style="margin:0 0 10px;justify-content:flex-start;">${copyBtnHtml(m.moc+':cmt')}</div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Gợi ý trả lời bình luận người khác</div>
+          ${(m.goi_y_tra_loi_cmt||[]).map((c,i)=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;">
+              <div style="font-size:14px;">${esc(c)}</div>
+              ${copyBtnHtml(m.moc+':reply:'+i)}
+            </div>
+          `).join('')}
+          <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:10px 0 4px;">Tài sản nên gắn</div>
+          <div class="body">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b>${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
+        </div>
+      `).join('')}
+      <div class="btn-row" style="margin-top:16px;">
+        ${postId ? `
+          <button class="btn" data-action="save-plan" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':(state.savedNotice?'Đã lưu vào Kho Content ✓':'Lưu vào Kho Content')}</button>
+        ` : `<span style="font-size:12.5px;color:var(--ink-soft);">Nguồn "Khác (dán nội dung)" không lưu được — chọn bài từ Lịch Đăng Bài/Kho Content để lưu lại.</span>`}
       </div>
     `;
   }
@@ -165,50 +234,83 @@ function render(container, ctx){
     if(resetDraftBtn) resetDraftBtn.onclick = async ()=>{
       if(!(await confirmModal('Xoá kết quả đang làm dở và làm mới? Không khôi phục lại được.'))) return;
       await clearModuleDraft(ctx, DRAFT_KEY);
-      state.postSource='lich'; state.postChoice=''; state.topicOther=''; state.milestone='m1';
-      state.quickContext=''; state.selectedAssetId=''; state.result=null; state.error=null;
+      state.postSource='lich'; state.postChoice=''; state.topicOther='';
+      state.quickContext=''; state.selectedAssetIds=new Set(); state.result=null; state.error=null; state.savedNotice=false;
       draw();
     };
     container.querySelectorAll('[data-post-source]').forEach(el=>{
-      el.onclick = ()=>{ state.postSource = el.getAttribute('data-post-source'); state.postChoice = ''; draw(); };
+      el.onclick = ()=>{ state.postSource = el.getAttribute('data-post-source'); state.postChoice = ''; state.savedNotice=false; draw(); };
     });
     const postSelect = container.querySelector('#db-post-select');
-    if(postSelect) postSelect.onchange = ()=>{ state.postChoice = postSelect.value; draw(); };
+    if(postSelect) postSelect.onchange = ()=>{ state.postChoice = postSelect.value; state.savedNotice=false; loadSavedPlanIfAny(); draw(); };
     const postSelectKho = container.querySelector('#db-post-select-kho');
-    if(postSelectKho) postSelectKho.onchange = ()=>{ state.postChoice = postSelectKho.value; draw(); };
+    if(postSelectKho) postSelectKho.onchange = ()=>{ state.postChoice = postSelectKho.value; state.savedNotice=false; loadSavedPlanIfAny(); draw(); };
     const topicOtherEl = container.querySelector('#db-topic-other');
     if(topicOtherEl) topicOtherEl.oninput = ()=>{ state.topicOther = topicOtherEl.value; };
 
     const qcEl = container.querySelector('#db-quick-context'); if(qcEl) qcEl.oninput = ()=>state.quickContext = qcEl.value;
-    const assetSelect = container.querySelector('#db-asset-select');
-    if(assetSelect) assetSelect.onchange = ()=>{ state.selectedAssetId = assetSelect.value; };
-    container.querySelectorAll('[data-milestone]').forEach(el=>{
-      el.onclick = ()=>{ state.milestone = el.getAttribute('data-milestone'); draw(); };
+    container.querySelectorAll('[data-asset-check]').forEach(el=>{
+      el.onchange = ()=>{
+        const id = el.getAttribute('data-asset-check');
+        if(el.checked) state.selectedAssetIds.add(id); else state.selectedAssetIds.delete(id);
+      };
     });
+
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
+
+    const savePlanBtn = container.querySelector('[data-action="save-plan"]');
+    if(savePlanBtn) savePlanBtn.onclick = savePlan;
+
+    container.querySelectorAll('[data-copy-field]').forEach(el=>{
+      el.onclick = async ()=>{
+        const text = resolveCopyText(el.getAttribute('data-copy-field'));
+        if(!text) return;
+        try{
+          await navigator.clipboard.writeText(text);
+          const old = el.textContent;
+          el.textContent = 'Đã copy ✓';
+          setTimeout(()=>{ el.textContent = old; }, 1500);
+        } catch(e){}
+      };
+    });
   }
 
   async function generate(){
     const topic = resolvedTopic();
     if(!topic.trim()) return;
-    state.generating = true; state.error = null; state.result = null; draw();
-    const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 30, 'Đang gợi ý');
+    state.generating = true; state.error = null; state.result = null; state.savedNotice = false; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 60, 'Đang gợi ý');
     try{
-      const preferredAsset = state.assets.find(a=>a.id===state.selectedAssetId);
+      const preferredAssets = state.assets.filter(a=>state.selectedAssetIds.has(a.id)).map(a=>a.label);
       const data = await callApi('/api/goi-y-day-bai', {
         topic,
-        milestone: state.milestone,
         assets: state.assets.map(a=>({ label:a.label, url:a.url })),
-        preferred_asset: preferredAsset ? preferredAsset.label : null,
+        preferred_assets: preferredAssets,
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
-      });
+      }, 280000);
       state.result = data.result;
       persistDraft();
     } catch(e){ state.error = e.message; }
     stopProgress();
     state.generating = false; draw();
+  }
+
+  async function savePlan(){
+    const postId = resolvedPostId();
+    if(!postId || !state.result || state.saving) return;
+    state.saving = true; draw();
+    const { error } = await ctx.supabase.from('posts').update({ day_bai_plan: state.result }).eq('id', postId);
+    state.saving = false;
+    if(error){ state.error = error.message; draw(); return; }
+    state.savedNotice = true;
+    // Cập nhật lại state.posts/calendarEntries tại chỗ để dấu "✓ đã có kế hoạch" hiện đúng ngay,
+    // không cần tải lại trang.
+    const post = state.posts.find(p=>p.id===postId);
+    if(post) post.day_bai_plan = state.result;
+    state.calendarEntries.forEach(e=>{ if(e.posts && e.post_id===postId) e.posts.day_bai_plan = state.result; });
+    draw();
   }
 
   boot();

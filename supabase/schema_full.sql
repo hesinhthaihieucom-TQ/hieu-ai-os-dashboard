@@ -288,6 +288,13 @@ alter table posts add column if not exists tags text[];
 -- hooks_bank_personal, hooks_bank_shared — không dùng khoá ngoại thật vì trỏ tới nhiều bảng khác nhau.
 alter table posts add column if not exists source_table text;
 alter table posts add column if not exists source_id uuid;
+-- Kế hoạch "Đẩy Bài" (2026-08-20, theo yêu cầu chị Quỳnh) — gợi ý bình luận/tài sản cho ĐỦ 5 mốc
+-- lượt xem, sinh ra 1 LẦN DUY NHẤT (thay vì trước đây phải bấm lại tốn lượt cho từng mốc riêng) rồi
+-- lưu thẳng vào đúng bài này để mở lại xem/copy ở Kho Content bất cứ lúc nào, không cần chạy AI lại.
+-- Shape: { generated_at, assets_used: [{id,label}], moc: [{ moc, chien_luoc_moc_nay, cmt_tu_dang,
+-- goi_y_tra_loi_cmt: [...], tai_san_de_xuat: {label, ly_do} }, ...] } — xem TOOL_DAY_BAI_ALL ở
+-- api/goi-y-day-bai.js.
+alter table posts add column if not exists day_bai_plan jsonb;
 
 create table if not exists calendar_entries (
   id uuid primary key default gen_random_uuid(),

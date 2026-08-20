@@ -26,7 +26,10 @@ const AI_WEIGHTS = {
   'cai-thien-hook': 1,
   'cham-diem-hook': 1,
   'goi-y-hook-theo-chu-de': 1,
-  'goi-y-day-bai': 1,
+  // 2026-08-20: nâng 1 -> 2 vì đổi sang sinh ĐỦ 5 MỐC trong 1 lần gọi (trước đây 1 lượt/1 mốc,
+  // đổi mốc 5 lần tốn 5 lượt) — output giờ lớn hơn hẳn (max_tokens 2000 -> 5000), ngang mức
+  // cham-diem-content/goi-y-lich (cũng ra nhiều mục cùng lúc trong 1 lần gọi).
+  'goi-y-day-bai': 2,
   'goi-y-tu-nguon': 1,
   'hoi-dap': 1,
   'cham-diem-content': 2,
