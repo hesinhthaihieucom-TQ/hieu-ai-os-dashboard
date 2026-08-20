@@ -92,11 +92,12 @@ function render(container, ctx){
 
   // Thanh "hoàn thành tuần" — chỉ đếm những ngày ĐÃ QUA (chưa tính hôm nay, hôm nay vẫn còn có thể
   // hành động) để người dùng thấy đúng thành quả đã làm được, không bị nhắc nhở về những ô trống
-  // trong tương lai chưa tới hạn.
+  // trong tương lai chưa tới hạn. Đếm theo "posted" (người dùng tự tích xác nhận), KHÔNG còn suy tự
+  // động từ việc ngày đã qua — xếp lịch không có nghĩa là đã thực sự đăng.
   function weekCompletionHtml(days, todayStr){
     const pastDays = days.filter(d=>isoDate(d) < todayStr);
     if(!pastDays.length) return '';
-    const doneCount = state.entries.filter(e=>e.scheduled_date < todayStr).length;
+    const doneCount = state.entries.filter(e=>e.scheduled_date < todayStr && e.posted).length;
     if(doneCount > 0){
       return `<div class="hint-box" style="margin-bottom:16px;background:var(--accent-soft);border-color:var(--accent);display:flex;align-items:center;gap:10px;">
         <span style="font-size:22px;">🎉</span>
@@ -189,9 +190,12 @@ function render(container, ctx){
               if(e){
                 const linkedPost = e.post_id ? state.posts.find(p=>p.id===e.post_id) : null;
                 return `<div class="week-slot filled">
-                  <div class="slot-label">${s.label} · <span style="color:var(--accent);">${isPast?'✓ Đã đăng':'✓ Đã chọn bài'}</span></div>
+                  <div class="slot-label">${s.label} · <span style="color:${e.posted?'var(--accent)':'var(--ink-soft)'};">${e.posted?'✓ Đã đăng':'Đã chọn bài'}</span></div>
                   <b style="font-size:12.5px;">${esc(e.title||'')}</b>
                   ${e.format?`<div style="color:var(--ink-soft);font-size:11px;margin-top:2px;">${esc(e.format)}</div>`:''}
+                  <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;cursor:pointer;color:var(--ink-soft);">
+                    <input type="checkbox" data-toggle-posted="${e.id}" ${e.posted?'checked':''} style="margin:0;">Đã đăng thật
+                  </label>
                   ${linkedPost?`<span style="display:block;margin-top:6px;color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" data-view-post="${e.id}">Xem bài →</span>`:''}
                   <span style="display:block;margin-top:6px;color:var(--danger);font-size:11px;cursor:pointer;" data-remove="${e.id}">Xoá</span>
                 </div>`;
@@ -329,6 +333,14 @@ function render(container, ctx){
           cta: post && post.structure ? (post.structure.cta||null) : null,
         });
         state.pickerFor = null;
+        await loadEntries();
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-toggle-posted]').forEach(el=>{
+      el.onchange = async ()=>{
+        const id = el.getAttribute('data-toggle-posted');
+        await ctx.supabase.from('calendar_entries').update({ posted: el.checked }).eq('id', id);
         await loadEntries();
         draw();
       };

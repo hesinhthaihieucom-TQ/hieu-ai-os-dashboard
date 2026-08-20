@@ -300,6 +300,9 @@ create table if not exists calendar_entries (
   cta text,
   created_at timestamptz not null default now()
 );
+-- Trước đây tự suy "đã đăng" chỉ bằng cách so ngày xếp lịch với hôm nay (qua ngày là coi như đã
+-- đăng) — sai vì xếp lịch không có nghĩa là đã thực sự đăng. Giờ người dùng phải tự tích xác nhận.
+alter table calendar_entries add column if not exists posted boolean not null default false;
 
 -- Gợi ý AI + mục tiêu tuần ở Lịch Đăng Bài — trước đây lưu localStorage (chỉ máy nào tạo mới thấy),
 -- khách tạo lịch trên điện thoại xong mở web lại không thấy gì. Lưu ở đây để đồng bộ mọi thiết bị.
