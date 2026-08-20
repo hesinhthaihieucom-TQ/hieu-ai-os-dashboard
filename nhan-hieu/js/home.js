@@ -6,6 +6,14 @@ const STEPS = [
   { key:'lich-dang', label:'Lên lịch đăng bài', desc:'Xếp bài vào lịch tuần, đăng đều đặn thay vì nhớ ngày tự đăng tay.' },
 ];
 
+const IMPORTANT_NOTES = [
+  { icon:'🎯', text:'<b>Định Vị luôn làm trước tiên</b> — mọi bài viết/kết quả AI ở các bước sau đều dựa vào kết quả Định Vị, nên trả lời thật kỹ ngay từ đầu.' },
+  { icon:'💾', text:'<b>Không lo mất dữ liệu khi chuyển trang</b> — mọi tiến trình đang làm dở (câu trả lời, bài đang viết, ảnh đã tải lên...) tự động lưu lại, quay lại vẫn còn nguyên.' },
+  { icon:'⚡', text:'<b>Lượt AI tính theo độ phức tạp</b> — hành động càng nhiều bước AI xử lý thì càng tốn nhiều lượt hơn, không đồng giá. Xem chi tiết và tự lên kế hoạch dùng ở mục <b>Tài khoản</b> (bấm vào ảnh đại diện/tên ở cuối sidebar).' },
+  { icon:'⏱️', text:'<b>AI cần khoảng 30 giây - 2 phút để xử lý</b> mỗi lần — đừng thoát app hay khoá màn hình giữa chừng, cứ để chờ.' },
+  { icon:'🌐', text:'<b>Kho chung vs Kho của tôi</b> — Kho Content/Kho Hook có phần "chung" (nội dung viral, dùng chung mọi người) và phần "của tôi" (riêng tư, chỉ bạn thấy).' },
+];
+
 const EXPLORE = [
   { key:'kho-content', label:'Kho Content' },
   { key:'kho-hook', label:'Kho Hook' },
@@ -62,6 +70,16 @@ function render(container, ctx){
             <button class="${isNext?'btn':'btn-ghost btn'} btn-sm" data-key="${s.key}">${isDone?'Xem lại →':(isNext?'Bắt đầu →':'→')}</button>
           </div>
         `;}).join('')}
+      </div>
+
+      <div class="card" style="margin-top:20px;background:var(--accent-soft);">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Lưu ý quan trọng</h3>
+        ${IMPORTANT_NOTES.map(n=>`
+          <div style="display:flex;gap:10px;padding:8px 0;font-size:13.5px;line-height:1.55;">
+            <span style="flex-shrink:0;">${n.icon}</span>
+            <span>${n.text}</span>
+          </div>
+        `).join('')}
       </div>
 
       <div style="margin-top:24px;">
