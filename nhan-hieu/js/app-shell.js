@@ -15,6 +15,7 @@ const NAV = [
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
   { key:'nang-cap', title:'🔥 Nâng cấp / Mua gói' },
   { key:'quan-tri-hub', title:'Quản trị', adminOnly:true },
+  { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
@@ -53,9 +54,20 @@ function trialQuotaHint(){
   const color = remaining<=3 ? 'var(--danger)' : '#C7CBBC';
   return `<span style="color:${color};">🎁 Dùng thử: còn ${remaining}/${TRIAL_AI_LIMIT} lượt AI</span><br>`;
 }
+// Chỉ hiện ảnh đại diện + tên hiển thị ở đây (không hiện email nữa) — email/thông tin đăng nhập,
+// đổi mật khẩu, đổi ảnh... chuyển hết vào mục "Tài khoản" (bấm vào đúng khối này để vào).
 function sidebarFootHtml(){
+  const p = AppState.profile;
+  const name = (p && p.full_name && p.full_name.trim()) || 'Chưa đặt tên';
+  const initial = name.charAt(0).toUpperCase();
+  const avatarHtml = (p && p.avatar_url)
+    ? `<img src="${p.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${esc(initial)}</div>`;
   return `
-    ${esc((AppState.user && AppState.user.email) || '')}<br>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      ${avatarHtml}
+      <div style="min-width:0;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+    </div>
     ${(AppState.profile && AppState.profile.role !== 'admin' && AppState.profile.access_until)
       ? `Hạn dùng: ${esc(new Date(AppState.profile.access_until).toLocaleDateString('vi-VN'))}<br>` : ''}
     ${trialQuotaHint()}
@@ -263,7 +275,7 @@ function paymentCardHtml(){
       return `
         <div class="chips" id="plan-chips">
           ${flashPlans.map(chipHtml).join('')}
-          ${flashPlans.length ? `<div style="flex-basis:100%;font-size:12px;color:var(--ink-soft);margin:4px 2px 0;">— Sau ngày 19/8, chỉ còn giá thường bên dưới —</div>` : ''}
+          ${flashPlans.length ? `<div style="flex-basis:100%;font-size:12px;color:var(--ink-soft);margin:4px 2px 0;">— Sau ngày 20/8, chỉ còn giá thường bên dưới —</div>` : ''}
           ${basePlans.map(chipHtml).join('')}
         </div>
       `;
@@ -492,7 +504,7 @@ function renderApp(){
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
         <div class="sidebar-foot">
-          <div id="sidebar-foot-info">${sidebarFootHtml()}</div>
+          <div id="sidebar-foot-info" style="cursor:pointer;" title="Bấm để vào Tài khoản">${sidebarFootHtml()}</div>
           <span class="signout" id="signout-btn">Đăng xuất</span>
         </div>
       </div>
@@ -501,7 +513,7 @@ function renderApp(){
   `;
 
   const isAdmin = AppState.profile && AppState.profile.role === 'admin';
-  const visibleNav = NAV.filter(n=> !n.adminOnly || isAdmin);
+  const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin));
   const nav = root.querySelector('#sidebar-nav');
   // "Trang chủ" không tính vào số thứ tự — giữ nguyên số bước 1,2,3... khớp với "Bước N" đã in
   // sẵn trên từng trang (Định Vị=1, Sửa Kênh=2...), tránh lệch số gây hiểu lầm là 2 hệ đếm khác nhau.
@@ -531,6 +543,8 @@ function renderApp(){
   });
 
   root.querySelector('#signout-btn').onclick = async ()=>{ await supabaseClient.auth.signOut(); };
+  const footInfo = root.querySelector('#sidebar-foot-info');
+  if(footInfo) footInfo.onclick = ()=>{ location.hash = 'tai-khoan'; };
 
   if(window.startOnboardingTour && AppState.user){
     const alreadySeen = !!(AppState.profile && AppState.profile.onboarding_seen);

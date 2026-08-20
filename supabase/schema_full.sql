@@ -19,6 +19,9 @@ alter table profiles add column if not exists ref_code text;
 alter table profiles add column if not exists channel_handle text;
 alter table profiles add column if not exists brand_name text; -- cũ (v9), không còn dùng ở UI nhưng vẫn giữ cột, xem bảng "brands"
 alter table profiles add column if not exists onboarding_seen boolean not null default false;
+-- Ảnh đại diện hiện ở cuối sidebar — lưu thẳng dạng data URL đã nén nhỏ (giống cách channel_audits
+-- lưu ảnh chụp màn hình kênh) thay vì dùng Supabase Storage riêng, cho đơn giản.
+alter table profiles add column if not exists avatar_url text;
 -- Học viên khoá Xây Nhân Hiệu được giảm 20% ở gói 6/12 tháng (lâu dài) và gói 1 tháng (chỉ tháng
 -- đầu tiên — xem cột first_month_discount_used) so với giá thường.
 alter table profiles add column if not exists is_student boolean not null default false;
