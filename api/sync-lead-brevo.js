@@ -24,11 +24,22 @@ module.exports = async (req, res) => {
     };
     if (listIdEnv) body.listIds = [Number(listIdEnv)];
 
-    const resp = await fetch('https://api.brevo.com/v3/contacts', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'api-key': apiKey },
-      body: JSON.stringify(body),
-    });
+    // fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Brevo bị kẹt, request có thể treo tới
+    // tận khi Vercel tự ngắt hàm (300s), làm chậm phản hồi luồng đăng ký dù lỗi ở đây không chặn gì
+    // (xem ghi chú ở đầu file). Đặt trần 12s giống các fetch() nội bộ khác.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    let resp;
+    try {
+      resp = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'api-key': apiKey },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
     if (!resp.ok) {
       console.error('Đồng bộ Brevo lỗi:', resp.status, await resp.text());
     }

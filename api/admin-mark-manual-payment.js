@@ -10,6 +10,18 @@ const { requireUser } = require('./_lib/auth');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
+// fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Supabase bị kẹt, request có thể treo tới
+// tận khi Vercel tự ngắt hàm (300s). Đặt trần 12s giống supabaseRpc ở trial-quota.js.
+async function fetchWithTimeout(url, opts = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    return await fetch(url, { ...opts, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
@@ -23,7 +35,7 @@ module.exports = async (req, res) => {
   if (!callingUser) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
   try {
-    const profResp = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${callingUser.id}&select=role`, {
+    const profResp = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${callingUser.id}&select=role`, {
       headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
     });
     const profRows = profResp.ok ? await profResp.json() : [];
@@ -37,7 +49,7 @@ module.exports = async (req, res) => {
     const transferAmount = Number(amount);
     if (!transferAmount || transferAmount <= 0) { res.status(400).json({ error: 'Số tiền không hợp lệ.' }); return; }
 
-    const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/sepay_transactions`, {
+    const insertResp = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/sepay_transactions`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -63,6 +75,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ success: true });
   } catch (err) {
+    if (err.name === 'AbortError') { res.status(504).json({ error: 'Kết nối Supabase quá lâu, thử lại giúp mình.' }); return; }
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi ghi nhận doanh thu.' });
   }
 };

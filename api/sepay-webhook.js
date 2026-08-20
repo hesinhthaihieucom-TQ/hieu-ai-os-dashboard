@@ -45,19 +45,28 @@ function extractRefCode(content) {
   return m ? m[0].toUpperCase() : null;
 }
 
+// fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Supabase bị kẹt, request có thể treo tới
+// tận khi Vercel tự ngắt hàm (300s), khiến SePay coi webhook là timeout và gửi lại giao dịch (retry),
+// có nguy cơ xử lý trùng. Đặt trần 12s giống supabaseRpc ở trial-quota.js.
 async function supabaseAdmin(path, opts = {}) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    ...opts,
-    headers: {
-      'content-type': 'application/json',
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      Prefer: opts.prefer || 'return=representation',
-      ...(opts.headers || {}),
-    },
-  });
-  return resp;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    return await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      ...opts,
+      headers: {
+        'content-type': 'application/json',
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Prefer: opts.prefer || 'return=representation',
+        ...(opts.headers || {}),
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 module.exports = async (req, res) => {

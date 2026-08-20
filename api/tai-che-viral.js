@@ -69,18 +69,32 @@ const TOOL_MOT_BAI = {
 };
 
 async function callClaudeOnce({ apiKey, system, userContent, tool, maxTokens }) {
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-5',
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: 'user', content: userContent }],
-      tools: [tool],
-      tool_choice: { type: 'tool', name: tool.name },
-    }),
-  });
+  // fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Anthropic bị treo/chậm bất thường,
+  // request có thể "treo" tới tận khi Vercel tự ngắt hàm (300s) mới có phản hồi, thay vì báo lỗi
+  // sớm để người dùng biết mà thử lại. Đặt trần 90s riêng cho lệnh gọi AI.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 90000);
+  let resp;
+  try {
+    resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-5',
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content: userContent }],
+        tools: [tool],
+        tool_choice: { type: 'tool', name: tool.name },
+      }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — có thể đang quá tải, thử lại giúp mình.');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!resp.ok) throw new Error(`Anthropic API lỗi (${resp.status}): ${await resp.text()}`);
   return resp.json();
 }
