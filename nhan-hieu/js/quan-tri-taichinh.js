@@ -11,6 +11,14 @@ const RATE_PER_LUOT = 1000;
 // lỗi, chỉ là chưa có log lịch sử. Bảng theo tháng ghi rõ chú thích này.
 const LOG_START = '2026-08-20';
 
+// Cộng n tháng vào 1 mã tháng "YYYY-MM" — dùng để rải đều doanh thu gói dài hạn qua các tháng
+// gói đó thực sự bao phủ, thay vì dồn hết vào đúng tháng khách trả tiền (xem amortizeRevenue()).
+function monthKeyAdd(monthKey, n){
+  const [y, m] = monthKey.split('-').map(Number);
+  const d = new Date(y, m - 1 + n, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
 function render(container, ctx){
   const state = { screen:'loading', totalLuot:0, revenueTotal:0, revenueThisMonth:0, monthlyRows:[], error:null };
 
@@ -29,7 +37,7 @@ function render(container, ctx){
   async function load(){
     const [{ data: profiles }, { data: txRows }, usageResult] = await Promise.all([
       ctx.supabase.from('profiles').select('id, role, has_paid, trial_ai_uses, paid_ai_uses, paid_ai_month'),
-      ctx.supabase.from('sepay_transactions').select('transfer_amount, created_at, status').eq('status', 'matched'),
+      ctx.supabase.from('sepay_transactions').select('transfer_amount, created_at, status, days_granted').eq('status', 'matched'),
       ctx.supabase.from('ai_usage_log').select('user_id, weight, created_at'),
     ]);
 
@@ -58,7 +66,17 @@ function render(container, ctx){
 
     const byMonth = {};
     function bucket(m){ if(!byMonth[m]) byMonth[m] = { month:m, revenue:0, luot:0 }; return byMonth[m]; }
-    tx.forEach(r=>{ bucket(new Date(r.created_at).toISOString().slice(0,7)).revenue += (r.transfer_amount||0); });
+    // Rải đều doanh thu mỗi giao dịch qua số tháng gói đó bao phủ (vd gói 6 tháng → chia đều 6
+    // tháng liên tiếp bắt đầu từ tháng khách trả tiền) — trước đây dồn hết vào đúng 1 tháng, khiến
+    // tháng khách mua gói dài hạn bị đội lợi nhuận ảo lên rất cao, còn các tháng sau đó (vẫn tốn
+    // chi phí lượt của khách đó) lại bị kéo lợi nhuận âm ảo dù khách vẫn đang sinh lời đều. Giao
+    // dịch không rõ gói (days_granted rỗng, vd nạp thêm lượt lẻ) vẫn tính vào đúng 1 tháng như cũ.
+    tx.forEach(r=>{
+      const startMonth = new Date(r.created_at).toISOString().slice(0,7);
+      const months = r.days_granted ? Math.max(1, Math.round(r.days_granted / 30)) : 1;
+      const perMonth = Math.round((r.transfer_amount||0) / months);
+      for(let i=0;i<months;i++){ bucket(monthKeyAdd(startMonth, i)).revenue += perMonth; }
+    });
     usageRows.forEach(r=>{
       if(adminIds.has(r.user_id)) return;
       bucket(new Date(r.created_at).toISOString().slice(0,7)).luot += (r.weight||0);
@@ -97,6 +115,7 @@ function render(container, ctx){
       <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:24px;">Ước tính dùng giá trung bình ~${RATE_PER_LUOT.toLocaleString('vi-VN')}đ/lượt (dùng thử: tính trọn đời, trả phí: tính tháng này) — so với <b>Tổng doanh thu</b> ở trên. Không chính xác 100% như xem trên Anthropic Console, chỉ để theo dõi xu hướng nhanh. Lợi nhuận có thể âm ở một tháng cụ thể nếu tháng đó nhiều người dùng lượt nhưng chưa có doanh thu mới tương ứng (vd khách dùng thử chưa trả phí) — không phải lỗi tính toán.</div>
 
       <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo từng tháng</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:10px;">Cột "Doanh thu" ở bảng này là doanh thu <b>phân bổ</b> theo số tháng gói bao phủ (khác với "Doanh thu tháng này" ở thẻ trên — đó là tiền thực nhận trong tháng) — để lợi nhuận từng tháng phản ánh đúng thực tế hơn khi có khách mua gói 6-12 tháng.</div>
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       ${state.monthlyRows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có dữ liệu.</div>` : `
       <div class="card" style="overflow-x:auto;padding:0;">
@@ -104,7 +123,7 @@ function render(container, ctx){
           <thead>
             <tr style="text-align:left;border-bottom:1px solid var(--line);">
               <th style="padding:10px 14px;">Tháng</th>
-              <th style="padding:10px 14px;">Doanh thu</th>
+              <th style="padding:10px 14px;">Doanh thu (phân bổ)</th>
               <th style="padding:10px 14px;">Lượt dùng</th>
               <th style="padding:10px 14px;">Chi phí ước tính</th>
               <th style="padding:10px 14px;">Lợi nhuận ước tính</th>

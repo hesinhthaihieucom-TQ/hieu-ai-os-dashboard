@@ -27,7 +27,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, justMarkedId:null };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null };
 
   const PLAN_TABS = [
     { key:'all', label:'Tất cả' },
@@ -171,10 +171,17 @@ function render(container, ctx){
             <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Ghi nhận doanh thu thủ công</div>
             <div class="btn-row" style="justify-content:flex-start;align-items:center;">
               <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualAmount[p.id]||'')}">
+              <select data-manual-days="${p.id}" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+                <option value="" ${!state.manualDays[p.id]?'selected':''}>Gói (không rõ)</option>
+                <option value="30" ${state.manualDays[p.id]==='30'?'selected':''}>1 tháng</option>
+                <option value="180" ${state.manualDays[p.id]==='180'?'selected':''}>6 tháng</option>
+                <option value="365" ${state.manualDays[p.id]==='365'?'selected':''}>12 tháng</option>
+              </select>
               <button class="btn-ghost btn btn-sm" data-mark-revenue="${p.id}" ${state.busyId===p.id?'disabled':''}>Ghi nhận</button>
               ${state.justMarkedId===p.id ? `<span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Thành công</span>` : ''}
               ${state.revenueByProfile[p.id] ? `<span style="color:var(--accent);font-size:12.5px;">Đã ghi nhận: ${state.revenueByProfile[p.id].toLocaleString('vi-VN')}đ</span>` : ''}
             </div>
+            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Chọn đúng gói để tính đúng "Gói đã mua gần nhất" và phân bổ doanh thu theo tháng ở tab Tài chính — bỏ trống nếu không rõ khách mua gói mấy tháng.</div>
 
             <div style="margin-top:16px;padding-top:10px;border-top:1px solid var(--line);">
               ${state.confirmDeleteId===p.id ? `
@@ -225,6 +232,9 @@ function render(container, ctx){
         const [id, next] = el.getAttribute('data-toggle-paid').split('|');
         toggleHasPaid(id, next === 'true');
       };
+    });
+    container.querySelectorAll('[data-manual-days]').forEach(el=>{
+      el.onchange = ()=>{ state.manualDays[el.getAttribute('data-manual-days')] = el.value; };
     });
     container.querySelectorAll('[data-manual-amount]').forEach(el=>{
       el.oninput = ()=>{ state.manualAmount[el.getAttribute('data-manual-amount')] = el.value; };
@@ -282,15 +292,21 @@ function render(container, ctx){
   async function markRevenue(id){
     const amount = Number(state.manualAmount[id]);
     if(!amount || amount <= 0){ state.error = 'Nhập đúng số tiền đã nhận trước khi ghi nhận.'; draw(); return; }
+    const days = Number(state.manualDays[id]) || null;
     state.busyId = id; draw();
     try{
-      await callApi('/api/admin-mark-manual-payment', { user_id: id, amount });
+      await callApi('/api/admin-mark-manual-payment', { user_id: id, amount, days });
+      // Trước đây ghi nhận doanh thu không gắn nhãn gói (last_plan_days) — nên "Lọc theo gói đã
+      // mua gần nhất" ở trên không đếm đúng người vừa ghi nhận doanh thu qua đây. Gắn nhãn gói
+      // luôn nếu admin có chọn (chỉ gắn nhãn, không đụng access_until — vẫn cần bấm "Gia hạn" riêng).
+      if(days) await ctx.supabase.from('profiles').update({ last_plan_days: days }).eq('id', id);
       state.manualAmount[id] = '';
+      state.manualDays[id] = '';
       state.error = null;
       state.justMarkedId = id;
       setTimeout(()=>{ if(state.justMarkedId===id){ state.justMarkedId = null; draw(); } }, 4000);
     } catch(e){ state.error = e.message; }
-    await loadRevenue();
+    await Promise.all([load(), loadRevenue()]);
     state.busyId = null;
     draw();
   }
