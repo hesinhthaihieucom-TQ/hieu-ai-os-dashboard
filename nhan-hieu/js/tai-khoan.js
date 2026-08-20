@@ -43,7 +43,7 @@ function render(container, ctx){
     avatarSaving:false, nameSaving:false, nameSaved:false,
     newPassword:'', confirmPassword:'', passwordSaving:false, passwordError:null, passwordSaved:false,
     goals: { viet:0, taicheviral:0, chamdiemcontent:0, lich:0, chamdiemhook:0, hook:0, suakenh:0 },
-    actualUsage: {},
+    actualUsage: {}, actualLuot: {},
   };
 
   const DRAFT_KEY = 'tai-khoan-goals';
@@ -61,15 +61,22 @@ function render(container, ctx){
   // hoạt động), trả phí thì chỉ tính THÁNG NÀY (khớp cách paid_ai_uses tự reset mỗi tháng).
   async function loadActualUsage(){
     const { isTrial } = remainingInfo();
-    let query = ctx.supabase.from('ai_usage_log').select('action_key').eq('user_id', ctx.user.id);
+    let query = ctx.supabase.from('ai_usage_log').select('action_key, weight').eq('user_id', ctx.user.id);
     if(!isTrial){
       const now = new Date();
       query = query.gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
     }
     const { data } = await query;
-    const counts = {};
-    (data||[]).forEach(r=>{ const g = ACTION_KEY_TO_GOAL[r.action_key]; if(g) counts[g] = (counts[g]||0)+1; });
+    const counts = {}; const luot = {};
+    (data||[]).forEach(r=>{
+      const g = ACTION_KEY_TO_GOAL[r.action_key]; if(!g) return;
+      counts[g] = (counts[g]||0)+1;
+      // Cộng đúng weight ĐÃ GHI ở từng dòng log (không tự nhân lại theo weight hiện tại) — chính xác
+      // ngay cả khi trọng số 1 hành động đổi theo thời gian, khớp đúng số lượt thật đã bị trừ.
+      luot[g] = (luot[g]||0) + (r.weight||0);
+    });
     state.actualUsage = counts;
+    state.actualLuot = luot;
     draw();
   }
 
@@ -150,13 +157,13 @@ function render(container, ctx){
         `).join('')}
 
         <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--accent);margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line);">Đặt mục tiêu tháng này — tự tính xem có đủ lượt không</label>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Điền dự định của bạn, hệ thống tự cộng lượt cần dùng và báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" là số lần bạn đã thực sự làm${remainingInfo().isTrial?' (tính trọn đời dùng thử)':' (tính trong tháng này)'}, để tự đối chiếu với kế hoạch.</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Ô bên dưới điền <b>số LẦN</b> bạn dự định làm (không phải số lượt) — hệ thống tự nhân theo trọng số để ra tổng lượt cần, rồi báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" hiện cả số lần đã thực sự làm và số lượt AI thật đã tiêu cho đúng nhóm đó${remainingInfo().isTrial?' (tính trọn đời dùng thử)':' (tính trong tháng này)'}, để tự đối chiếu với kế hoạch.</div>
         ${GOAL_ITEMS.map(g=>`
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;flex-wrap:wrap;">
             <span style="font-size:13.5px;">${esc(g.label)} <span style="color:var(--ink-soft);font-size:12px;">(${g.weight} lượt/lần)</span></span>
             <div style="display:flex;align-items:center;gap:10px;">
-              <span style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">Thực tế: <b style="color:var(--accent);">${state.actualUsage[g.key]||0}</b></span>
-              <input type="number" min="0" data-goal="${g.key}" value="${state.goals[g.key]}" style="width:70px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;text-align:center;">
+              <span style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">Thực tế: <b style="color:var(--accent);">${state.actualUsage[g.key]||0} lần</b> · <b style="color:var(--accent);">${state.actualLuot[g.key]||0} lượt</b></span>
+              <input type="number" min="0" data-goal="${g.key}" value="${state.goals[g.key]}" style="width:70px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;text-align:center;"> <span style="font-size:11.5px;color:var(--ink-soft);">lần</span>
             </div>
           </div>
         `).join('')}
