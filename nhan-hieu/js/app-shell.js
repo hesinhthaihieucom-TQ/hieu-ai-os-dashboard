@@ -5,6 +5,7 @@ const NAV = [
   { key:'dinh-dang-content', title:'Dạng Content' },
   { key:'kho-content', title:'Kho Content' },
   { key:'kho-hook', title:'Kho Hook' },
+  { key:'kho-cta', title:'Kho CTA' },
   { key:'viet-content', title:'Viết Content' },
   { key:'tai-che-viral', title:'Tái Chế Content Viral' },
   { key:'cham-diem-content', title:'Chấm Điểm Content' },

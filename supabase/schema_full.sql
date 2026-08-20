@@ -371,6 +371,20 @@ create table if not exists hook_scores (
   created_at timestamptz not null default now()
 );
 
+-- Kho CTA & Bình luận ghim (2026-08-20, theo yêu cầu chị Quỳnh) — nơi lưu lại câu CTA/bình luận
+-- ghim đã có sẵn (dán tay từ trước, hoặc lưu từ kết quả AI vừa viết) để dùng làm MẪU THAM KHẢO cho
+-- AI viết bài sau này (biến tấu theo tinh thần cũ, không phải copy y nguyên) — xem cta_reference ở
+-- api/viet-content.js. Cố tình KHÔNG dùng chung bảng/UI với hooks_bank_personal — Kho Hook đã khá
+-- đồ sộ (tab tạo hook, kho chung, duyệt admin...), còn đây chỉ cần lưu/xem lại đơn giản.
+create table if not exists cta_bank_personal (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  text text not null,
+  kind text not null default 'cta' check (kind in ('cta', 'binh_luan_ghim')),
+  note text,
+  created_at timestamptz not null default now()
+);
+
 -- ============================================================
 -- 7. TÀI SẢN QUẢNG BÁ + THƯƠNG HIỆU
 -- ============================================================
@@ -453,6 +467,7 @@ alter table hooks_bank_personal enable row level security;
 alter table hooks_bank_shared enable row level security;
 alter table content_scores enable row level security;
 alter table hook_scores enable row level security;
+alter table cta_bank_personal enable row level security;
 alter table promo_assets enable row level security;
 alter table brands enable row level security;
 alter table sepay_transactions enable row level security;
@@ -481,7 +496,7 @@ declare
 begin
   foreach t in array array[
     'positioning_results','channel_audits','content_bank_personal','ideas','posts','calendar_entries',
-    'hooks_bank_personal','content_scores','hook_scores','promo_assets','brands','weekly_ai_drafts','module_drafts'
+    'hooks_bank_personal','content_scores','hook_scores','promo_assets','brands','weekly_ai_drafts','module_drafts','cta_bank_personal'
   ]
   loop
     execute format('drop policy if exists "%1$s_owner_all" on %1$s', t);

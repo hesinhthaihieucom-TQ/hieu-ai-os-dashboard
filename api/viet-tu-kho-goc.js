@@ -5,7 +5,7 @@
 // gốc, đọc như đăng lại y nguyên).
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
-const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock } = require('./_lib/post-schema');
+const { TOOL_POST_CORE, assemblePost, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock, ctaReferenceBlock } = require('./_lib/post-schema');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, chuyên viết lại 1 bài trong "kho content" (bài viral có sẵn) thành bản của riêng người dùng.
 
@@ -108,7 +108,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, quick_context, source_text, source_title, cau_chuyen_rieng, product_name, group_name, custom_instructions } = req.body || {};
+    const { positioning, quick_context, source_text, source_title, cau_chuyen_rieng, product_name, group_name, custom_instructions, cta_reference } = req.body || {};
     const hasPositioning = !!(positioning && positioning.luot1);
     if (!hasPositioning && !(quick_context && quick_context.trim())) {
       res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi viết.' }); return;
@@ -128,6 +128,7 @@ CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết th�
 
 ${extraFieldsBlock({ product_name, group_name })}
 ${customInstructionsBlock(custom_instructions)}
+${ctaReferenceBlock(cta_reference)}
 Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`;
 
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_POST_KHO_GOC });

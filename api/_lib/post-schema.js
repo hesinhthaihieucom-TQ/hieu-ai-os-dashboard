@@ -166,6 +166,15 @@ SẢN PHẨM/DỊCH VỤ MUỐN NHẮC TRONG BÀI NÀY: ${product_name && produc
 GROUP/CỘNG ĐỒNG MUỐN NHẮC: ${group_name && group_name.trim() ? group_name.trim() : '(không có)'}`;
 }
 
+// Mẫu CTA/bình luận ghim người dùng đã lưu ở Kho CTA (cta_bank_personal), chọn ra làm tham khảo
+// phong cách cho bài này — KHÔNG được copy y nguyên (đây là mẫu CŨ, dùng cho bài KHÁC), chỉ lấy
+// tinh thần/giọng điệu để viết bản mới hợp đúng bài hiện tại.
+function ctaReferenceBlock(cta_reference) {
+  if (!cta_reference || !cta_reference.text || !cta_reference.text.trim()) return '';
+  const label = cta_reference.kind === 'binh_luan_ghim' ? 'bình luận ghim' : 'CTA';
+  return `\nMẪU ${label.toUpperCase()} NGƯỜI DÙNG ĐÃ LƯU (tham khảo TINH THẦN/GIỌNG ĐIỆU, TUYỆT ĐỐI KHÔNG copy y nguyên câu chữ — mẫu này viết cho 1 bài khác, phải biến tấu lại cho khớp đúng nội dung/từ khoá của bài hiện tại): "${cta_reference.text.trim()}"\n`;
+}
+
 // Yêu cầu tự do riêng cho 1 bài cụ thể (vd "viết ngắn hơn", "giọng hài hước", "nhấn số liệu") — KHÁC
 // với Định Vị (áp dụng cho MỌI bài) và câu chuyện riêng (chỉ dùng khi viết từ Kho Content). Ưu tiên
 // tuân theo nhưng không được phá vỡ khung 5 phần/quy tắc CTA bắt buộc đã nêu ở trên.
@@ -174,4 +183,4 @@ function customInstructionsBlock(custom_instructions) {
   return `\nYÊU CẦU RIÊNG CHO BÀI NÀY (ưu tiên tuân theo, miễn không phá vỡ các nguyên tắc bắt buộc đã nêu ở trên): ${custom_instructions.trim()}\n`;
 }
 
-module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock };
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock, ctaReferenceBlock };
