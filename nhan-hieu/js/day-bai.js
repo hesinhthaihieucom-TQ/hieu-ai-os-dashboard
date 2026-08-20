@@ -17,7 +17,7 @@ function render(container, ctx){
     screen:'loading', positioning:null, assets:[], calendarEntries:[], posts:[],
     postSource:'lich', postChoice:'', topicOther:'', quickContext:'',
     selectedAssetIds: new Set(), generating:false, error:null, result:null,
-    saving:false, savedNotice:false,
+    savedNotice:false, expandedMoc:'m1',
   };
 
   const DRAFT_KEY = 'day-bai';
@@ -198,33 +198,47 @@ function render(container, ctx){
     return '';
   }
 
+  // Gọn thành accordion — mỗi mốc chỉ hiện tên + 1 dòng chiến lược khi đóng, bấm mới mở ra đủ
+  // bình luận/gợi ý trả lời/tài sản. Trước đây xổ hết cả 5 mốc đầy đủ liên tiếp, cuộn rất dài,
+  // khó nhìn tổng quan mốc nào cần gì (2026-08-20, theo phản hồi chị Quỳnh).
   function resultHtml(){
     const mocList = (state.result && state.result.moc) || [];
     const postId = resolvedPostId();
     return `
-      <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Kết quả</div></div>
-      ${mocList.map(m=>`
-        <div class="section">
-          <h3>${esc(MILESTONE_LABEL[m.moc] || m.moc)}</h3>
-          <div class="body" style="font-style:italic;color:var(--ink-soft);margin-bottom:8px;">${esc(m.chien_luoc_moc_nay)}</div>
-          <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Bình luận tự đăng / ghim</div>
-          <div class="body" style="margin-bottom:6px;">${esc(m.cmt_tu_dang)}</div>
-          <div class="btn-row no-print" style="margin:0 0 10px;justify-content:flex-start;">${copyBtnHtml(m.moc+':cmt')}</div>
-          <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Gợi ý trả lời bình luận người khác</div>
-          ${(m.goi_y_tra_loi_cmt||[]).map((c,i)=>`
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;">
-              <div style="font-size:14px;">${esc(c)}</div>
-              ${copyBtnHtml(m.moc+':reply:'+i)}
+      <div class="page-head" style="margin:26px 0 6px;"><div class="tag">Kết quả — bấm từng mốc để xem chi tiết</div></div>
+      ${!postId ? `<div class="hint-box" style="margin-bottom:10px;">Nguồn "Khác (dán nội dung)" không tự lưu được — chọn bài từ Lịch Đăng Bài/Kho Content để kế hoạch này tự lưu vào đúng bài đó.</div>` : ''}
+      ${state.savedNotice ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đã tự động lưu vào bài này trong Kho Content — mở lại bài đó bất cứ lúc nào để xem/copy, không cần chạy lại.</div>` : ''}
+      <div class="card" style="padding:0;overflow:hidden;">
+        ${mocList.map((m,i)=>{
+          const isOpen = state.expandedMoc===m.moc;
+          return `
+          <div style="${i>0?'border-top:1px solid var(--line);':''}">
+            <div data-toggle-moc="${m.moc}" style="padding:14px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <div>
+                <b style="font-size:14.5px;">${esc(MILESTONE_LABEL[m.moc] || m.moc)}</b>
+                ${!isOpen?`<div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(excerpt(m.chien_luoc_moc_nay, 90))}</div>`:''}
+              </div>
+              <span style="color:var(--ink-soft);flex-shrink:0;">${isOpen?'▾':'▸'}</span>
             </div>
-          `).join('')}
-          <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:10px 0 4px;">Tài sản nên gắn</div>
-          <div class="body">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b>${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
-        </div>
-      `).join('')}
-      <div class="btn-row" style="margin-top:16px;">
-        ${postId ? `
-          <button class="btn" data-action="save-plan" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':(state.savedNotice?'Đã lưu vào Kho Content ✓':'Lưu vào Kho Content')}</button>
-        ` : `<span style="font-size:12.5px;color:var(--ink-soft);">Nguồn "Khác (dán nội dung)" không lưu được — chọn bài từ Lịch Đăng Bài/Kho Content để lưu lại.</span>`}
+            ${isOpen ? `
+            <div style="padding:0 18px 18px;">
+              <div class="body" style="font-style:italic;color:var(--ink-soft);margin-bottom:10px;">${esc(m.chien_luoc_moc_nay)}</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Bình luận tự đăng / ghim</div>
+              <div class="body" style="margin-bottom:6px;">${esc(m.cmt_tu_dang)}</div>
+              <div class="btn-row no-print" style="margin:0 0 12px;justify-content:flex-start;">${copyBtnHtml(m.moc+':cmt')}</div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Gợi ý trả lời bình luận người khác</div>
+              ${(m.goi_y_tra_loi_cmt||[]).map((c,ci)=>`
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;">
+                  <div style="font-size:14px;">${esc(c)}</div>
+                  ${copyBtnHtml(m.moc+':reply:'+ci)}
+                </div>
+              `).join('')}
+              <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:10px 0 4px;">Tài sản nên gắn</div>
+              <div class="body">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b>${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
+            </div>
+            ` : ''}
+          </div>
+        `;}).join('')}
       </div>
     `;
   }
@@ -259,8 +273,13 @@ function render(container, ctx){
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
 
-    const savePlanBtn = container.querySelector('[data-action="save-plan"]');
-    if(savePlanBtn) savePlanBtn.onclick = savePlan;
+    container.querySelectorAll('[data-toggle-moc]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-toggle-moc');
+        state.expandedMoc = state.expandedMoc===key ? null : key;
+        draw();
+      };
+    });
 
     container.querySelectorAll('[data-copy-field]').forEach(el=>{
       el.onclick = async ()=>{
@@ -279,7 +298,7 @@ function render(container, ctx){
   async function generate(){
     const topic = resolvedTopic();
     if(!topic.trim()) return;
-    state.generating = true; state.error = null; state.result = null; state.savedNotice = false; draw();
+    state.generating = true; state.error = null; state.result = null; state.savedNotice = false; state.expandedMoc = 'm1'; draw();
     const stopProgress = animateProgressButton(container.querySelector('[data-action="generate"]'), 60, 'Đang gợi ý');
     try{
       const preferredAssets = state.assets.filter(a=>state.selectedAssetIds.has(a.id)).map(a=>a.label);
@@ -292,25 +311,25 @@ function render(container, ctx){
       }, 280000);
       state.result = data.result;
       persistDraft();
+      // Tự động lưu ngay vào đúng bài trong Kho Content — không bắt bấm thêm 1 nút riêng nữa
+      // (2026-08-20, theo phản hồi chị Quỳnh: vừa đẩy xong là phải có sẵn luôn ở nút trên bài đó).
+      await savePlanSilently();
     } catch(e){ state.error = e.message; }
     stopProgress();
     state.generating = false; draw();
   }
 
-  async function savePlan(){
+  async function savePlanSilently(){
     const postId = resolvedPostId();
-    if(!postId || !state.result || state.saving) return;
-    state.saving = true; draw();
+    if(!postId || !state.result) return;
     const { error } = await ctx.supabase.from('posts').update({ day_bai_plan: state.result }).eq('id', postId);
-    state.saving = false;
-    if(error){ state.error = error.message; draw(); return; }
+    if(error){ state.error = 'Đã ra kết quả nhưng lưu vào Kho Content bị lỗi: ' + error.message; return; }
     state.savedNotice = true;
     // Cập nhật lại state.posts/calendarEntries tại chỗ để dấu "✓ đã có kế hoạch" hiện đúng ngay,
     // không cần tải lại trang.
     const post = state.posts.find(p=>p.id===postId);
     if(post) post.day_bai_plan = state.result;
     state.calendarEntries.forEach(e=>{ if(e.posts && e.post_id===postId) e.posts.day_bai_plan = state.result; });
-    draw();
   }
 
   boot();
