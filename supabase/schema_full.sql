@@ -25,6 +25,11 @@ alter table profiles add column if not exists is_student boolean not null defaul
 -- Đánh dấu học viên đã dùng ưu đãi 1 tháng đầu (399.200đ) chưa — dùng rồi thì các lần mua gói 1
 -- tháng sau đó về giá thường 499.000đ, không lặp lại ưu đãi này (gói 6/12 tháng không bị ảnh hưởng).
 alter table profiles add column if not exists first_month_discount_used boolean not null default false;
+-- Số ngày của gói gần nhất đã kích hoạt (30/180/365) — set bởi webhook SePay khi khớp tự động, hoặc
+-- bởi admin lúc bấm "Gia hạn" thủ công (xem quan-tri.js) — dùng để lọc/đếm khách theo loại gói ở
+-- Quản trị ("bao nhiêu người đang ở gói 1 tháng/6 tháng/12 tháng"), không suy luận ngược từ
+-- access_until vì cột đó cộng dồn qua nhiều lần gia hạn, không phản ánh đúng gói gần nhất.
+alter table profiles add column if not exists last_plan_days integer;
 -- Giới hạn lượt dùng AI trong thời gian DÙNG THỬ (chưa thanh toán lần nào) — xem api/_lib/trial-quota.js.
 -- has_paid được đánh dấu true bởi api/sepay-webhook.js ngay khi khớp được 1 giao dịch thành công.
 alter table profiles add column if not exists has_paid boolean not null default false;

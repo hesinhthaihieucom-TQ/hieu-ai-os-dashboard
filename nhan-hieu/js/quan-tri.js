@@ -7,7 +7,11 @@ function aiUsageLabel(p){
     const sameMonth = p.paid_ai_month === month;
     const used = sameMonth ? (p.paid_ai_uses||0) : 0;
     const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
-    return `${used}/${200+bonus} lượt AI (tháng này)`;
+    // Chuyển sang trả phí là ĐỔI SANG bộ đếm khác (paid_ai_uses, theo tháng) chứ không xoá trial_ai_uses
+    // — số lượt dùng thử cũ vẫn còn nguyên trong DB, chỉ không còn bị tính vào trần nào cả, không
+    // "mất" — vẫn hiện lại đây để đối chiếu, tránh nhìn như dữ liệu biến mất.
+    const paidLabel = `${used}/${200+bonus} lượt AI (tháng này)`;
+    return p.trial_ai_uses ? `${paidLabel} · đã dùng ${p.trial_ai_uses} lượt lúc còn dùng thử (không tính vào đây nữa)` : paidLabel;
   }
   return `${p.trial_ai_uses||0}/50 lượt AI (dùng thử, trọn đời)`;
 }
@@ -23,7 +27,16 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', error:null, busyId:null, confirmDeleteId:null, manualAmount:{} };
+  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{} };
+
+  const PLAN_TABS = [
+    { key:'all', label:'Tất cả' },
+    { key:'30', label:'1 tháng' },
+    { key:'180', label:'6 tháng' },
+    { key:'365', label:'12 tháng' },
+    { key:'none', label:'Chưa rõ gói' },
+  ];
+  function planKeyOf(p){ return p.last_plan_days ? String(p.last_plan_days) : 'none'; }
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -63,12 +76,13 @@ function render(container, ctx){
 
   function filtered(){
     const q = state.q.trim().toLowerCase();
-    if(!q) return state.profiles;
-    return state.profiles.filter(p =>
-      (p.email||'').toLowerCase().includes(q) ||
-      (p.full_name||'').toLowerCase().includes(q) ||
-      (p.ref_code||'').toLowerCase().includes(q)
-    );
+    return state.profiles.filter(p => {
+      if(state.planFilter !== 'all' && planKeyOf(p) !== state.planFilter) return false;
+      if(!q) return true;
+      return (p.email||'').toLowerCase().includes(q) ||
+        (p.full_name||'').toLowerCase().includes(q) ||
+        (p.ref_code||'').toLowerCase().includes(q);
+    });
   }
 
   function html(){
@@ -91,6 +105,14 @@ function render(container, ctx){
         <div class="source-card"><div class="ic">${counts.soon||0}</div><div class="label">Sắp hết hạn</div></div>
         <div class="source-card"><div class="ic">${counts.expired||0}</div><div class="label">Đã hết hạn</div></div>
         <div class="source-card"><div class="ic">${counts.none||0}</div><div class="label">Chưa kích hoạt</div></div>
+      </div>
+
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Lọc theo gói đã mua gần nhất</label>
+      <div class="chips" style="margin-bottom:20px;">
+        ${PLAN_TABS.map(t=>{
+          const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && planKeyOf(p)===t.key).length;
+          return `<div class="chip ${state.planFilter===t.key?'selected':''}" data-plan-filter="${t.key}">${esc(t.label)} (${n})</div>`;
+        }).join('')}
       </div>
 
       <div class="card" style="margin-bottom:20px;">
@@ -131,7 +153,7 @@ function render(container, ctx){
           </div>
           <div class="body" style="margin-top:8px;font-size:13px;">Hạn dùng: ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
           ${p.role!=='admin' ? `<div class="body" style="margin-top:2px;font-size:13px;">Đã dùng: ${esc(aiUsageLabel(p))}</div>` : ''}
-          ${p.ref_code ? `<div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">Mã tham chiếu chuyển khoản: <span style="font-family:'IBM Plex Mono',monospace;">${esc(p.ref_code)}</span></div>` : ''}
+          ${p.ref_code ? `<div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">Nội dung chuyển khoản đúng: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
           ${p.role!=='admin' ? `
             <div class="body" style="margin-top:6px;font-size:12.5px;">
               ${p.is_student
@@ -176,6 +198,10 @@ function render(container, ctx){
   function bind(){
     const search = container.querySelector('#q-search');
     if(search) search.oninput = ()=>{ state.q = search.value; draw(); search.focus(); search.selectionStart = search.selectionEnd = search.value.length; };
+
+    container.querySelectorAll('[data-plan-filter]').forEach(el=>{
+      el.onclick = ()=>{ state.planFilter = el.getAttribute('data-plan-filter'); draw(); };
+    });
 
     container.querySelectorAll('[data-extend]').forEach(el=>{
       el.onclick = ()=>{
@@ -270,7 +296,7 @@ function render(container, ctx){
     const p = state.profiles.find(x=>x.id===id);
     const base = (p.access_until && new Date(p.access_until).getTime() > Date.now()) ? new Date(p.access_until) : new Date();
     const next = new Date(base.getTime() + days*86400000);
-    const { error } = await ctx.supabase.from('profiles').update({ access_until: next.toISOString() }).eq('id', id);
+    const { error } = await ctx.supabase.from('profiles').update({ access_until: next.toISOString(), last_plan_days: days }).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
     state.busyId = null;
