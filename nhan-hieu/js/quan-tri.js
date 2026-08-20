@@ -27,7 +27,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], transactions:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, justMarkedId:null };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, justMarkedId:null };
 
   const PLAN_TABS = [
     { key:'all', label:'Tất cả' },
@@ -45,7 +45,7 @@ function render(container, ctx){
     if(!ctx.profile || ctx.profile.role !== 'admin'){
       state.screen = 'denied'; draw(); return;
     }
-    await Promise.all([load(), loadTransactions(), loadRevenue()]);
+    await Promise.all([load(), loadRevenue()]);
     state.screen = 'main';
     draw();
   }
@@ -54,11 +54,6 @@ function render(container, ctx){
     const { data, error } = await ctx.supabase.from('profiles').select('*').order('access_until', { ascending:true, nullsFirst:true });
     if(error){ state.error = error.message; state.profiles = []; return; }
     state.profiles = data || [];
-  }
-
-  async function loadTransactions(){
-    const { data } = await ctx.supabase.from('sepay_transactions').select('*').order('created_at', { ascending:false }).limit(20);
-    state.transactions = data || [];
   }
 
   // Tính tổng doanh thu từ TOÀN BỘ giao dịch đã khớp (không giới hạn 20 dòng như danh sách hiển
@@ -128,25 +123,10 @@ function render(container, ctx){
 
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
 
-      ${state.transactions.length ? `
-        <div class="card" style="margin-bottom:20px;">
-          <h3 style="margin-bottom:10px;">Giao dịch SePay gần đây</h3>
-          ${state.transactions.map(t=>{
-            const ok = t.status === 'matched';
-            const isManual = t.gateway === 'manual';
-            return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap;">
-              <span>${esc(new Date(t.created_at).toLocaleString('vi-VN'))} — ${esc((t.transfer_amount||0).toLocaleString('vi-VN'))}đ — <span style="font-family:'IBM Plex Mono',monospace;">${isManual ? '(admin ghi tay)' : esc(t.ref_code_found||'(không tìm thấy mã)')}</span></span>
-              <span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;
-                background:${ok?'var(--accent-soft)':'#FBEAE4'};color:${ok?'var(--accent)':'var(--danger)'};">
-                ${isManual ? '✓ Admin ghi nhận tay' : ok?`Đã cộng ${t.days_granted} ngày`:t.status==='unmatched_code'?'Không tìm thấy mã':'Sai số tiền — cần xử lý tay'}
-              </span>
-            </div>`;
-          }).join('')}
-        </div>
-      ` : ''}
-
       ${list.map(p=>{
         const st = statusOf(p);
+        const miniLabel = `font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;`;
+        const planUnclear = planKeyOf(p) === 'none';
         return `
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
@@ -158,54 +138,48 @@ function render(container, ctx){
               background:${st.cls==='active'?'var(--accent-soft)':st.cls==='soon'?'#FBF6E9':st.cls==='expired'?'#FBEAE4':st.cls==='admin'?'#EDEAE0':'var(--line)'};
               color:${st.cls==='active'?'var(--accent)':st.cls==='soon'?'var(--gold)':st.cls==='expired'?'var(--danger)':'var(--ink-soft)'};">${esc(st.label)}</span>
           </div>
-          <div class="body" style="margin-top:8px;font-size:13px;">Hạn dùng: ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
-          ${p.role!=='admin' ? `<div class="body" style="margin-top:2px;font-size:13px;">Đã dùng: ${esc(aiUsageLabel(p))}</div>` : ''}
-          ${p.ref_code ? `<div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">Nội dung chuyển khoản đúng: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
+
           ${p.role!=='admin' ? `
-            <div class="body" style="margin-top:2px;font-size:12.5px;color:var(--ink-soft);">
-              Gói: <b>${esc((PLAN_TABS.find(t=>t.key===planKeyOf(p))||{}).label||'Chưa rõ')}</b>
-              — kích hoạt trước khi có bộ lọc này thì cần gắn nhãn lại tay:
-              <span style="text-decoration:underline;cursor:pointer;margin-left:4px;" data-set-plan="${p.id}|30">1 tháng</span> ·
-              <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|180">6 tháng</span> ·
-              <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|365">12 tháng</span>
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:13px;">
+              <div><span style="color:var(--ink-soft);">Hạn dùng:</span> ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
+              <div><span style="color:var(--ink-soft);">Gói:</span> <b>${esc((PLAN_TABS.find(t=>t.key===planKeyOf(p))||{}).label||'Chưa rõ')}</b>
+                ${planUnclear ? `<span style="margin-left:6px;font-size:12px;">— gắn tay:
+                  <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|30">1th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|180">6th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|365">12th</span></span>` : ''}
+              </div>
+              <div><span style="color:var(--ink-soft);">Đã dùng:</span> ${esc(aiUsageLabel(p))}</div>
+              <div><span style="color:var(--ink-soft);">Loại khách:</span> ${p.is_student?'🎓 Học viên':'Thường'}
+                <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-student="${p.id}|${!p.is_student}">đổi</span></div>
+              <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?'💰 Đã trả phí (trần 250 lượt/tháng)':'Chưa trả phí (trần dùng thử 50 lượt)'}
+                <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.has_paid}">đổi</span></div>
+              ${p.ref_code ? `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Nội dung CK: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
             </div>
-          ` : ''}
-          ${p.role!=='admin' ? `
-            <div class="body" style="margin-top:6px;font-size:12.5px;">
-              ${p.is_student
-                ? `<span style="color:var(--accent);font-weight:600;">🎓 Học viên (giá ưu đãi)</span>`
-                : `<span style="color:var(--ink-soft);">Khách thường (giá thường)</span>`}
-              — tự khai lúc đăng ký, chưa xác minh. Đối chiếu email với danh sách học viên thật rồi bấm nút bên dưới nếu cần sửa lại.
-            </div>
-            <div class="body" style="margin-top:4px;font-size:12.5px;">
-              ${p.has_paid
-                ? `<span style="color:var(--accent);font-weight:600;">💰 Đã trả phí — dùng trần 250 lượt AI/tháng</span>`
-                : `<span style="color:var(--ink-soft);">Chưa trả phí — vẫn ở trần dùng thử (50 lượt trọn đời)</span>`}
-              — bấm "Gia hạn" KHÔNG tự bật cờ này, nếu kích hoạt tay cho khách chuyển khoản thật thì nhớ bấm thêm nút bên dưới.
-            </div>
-            <div class="btn-row" style="margin-top:12px;justify-content:flex-start;">
+
+            <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Gia hạn thủ công</div>
+            <div class="btn-row" style="justify-content:flex-start;">
               <button class="btn btn-sm" data-extend="${p.id}|30" ${state.busyId===p.id?'disabled':''}>+30 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|180" ${state.busyId===p.id?'disabled':''}>+180 ngày</button>
               <button class="btn btn-sm" data-extend="${p.id}|365" ${state.busyId===p.id?'disabled':''}>+365 ngày</button>
+              <button class="btn-ghost btn btn-sm" data-revoke="${p.id}" ${state.busyId===p.id?'disabled':''}>Thu hồi ngay</button>
+            </div>
+            <div class="btn-row" style="justify-content:flex-start;margin-top:4px;">
               <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-30" ${state.busyId===p.id?'disabled':''}>Hoàn tác -30</button>
               <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-180" ${state.busyId===p.id?'disabled':''}>Hoàn tác -180</button>
               <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-365" ${state.busyId===p.id?'disabled':''}>Hoàn tác -365</button>
-              <button class="btn-ghost btn btn-sm" data-revoke="${p.id}" ${state.busyId===p.id?'disabled':''}>Thu hồi ngay</button>
-              <button class="btn-ghost btn btn-sm" data-toggle-student="${p.id}|${!p.is_student}" ${state.busyId===p.id?'disabled':''}>${p.is_student?'Bỏ đánh dấu học viên':'Đánh dấu là học viên'}</button>
-              <button class="btn-ghost btn btn-sm" data-toggle-paid="${p.id}|${!p.has_paid}" ${state.busyId===p.id?'disabled':''}>${p.has_paid?'Bỏ đánh dấu đã trả phí':'💰 Đánh dấu đã trả phí'}</button>
             </div>
-            <div class="body" style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">"Gia hạn"/"Đánh dấu đã trả phí" ở trên KHÔNG tự tính vào doanh thu — nếu kích hoạt tay cho khách chuyển khoản thật, nhập đúng số tiền đã nhận rồi bấm ghi nhận bên dưới để cộng vào doanh thu.
-              ${state.revenueByProfile[p.id] ? ` <b style="color:var(--accent);">Đã ghi nhận: ${state.revenueByProfile[p.id].toLocaleString('vi-VN')}đ</b>` : ''}
-            </div>
-            <div class="btn-row" style="margin-top:6px;justify-content:flex-start;align-items:center;">
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Không tự tính vào doanh thu — kích hoạt tay cho khách chuyển khoản thật thì ghi nhận doanh thu riêng bên dưới.</div>
+
+            <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Ghi nhận doanh thu thủ công</div>
+            <div class="btn-row" style="justify-content:flex-start;align-items:center;">
               <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualAmount[p.id]||'')}">
-              <button class="btn-ghost btn btn-sm" data-mark-revenue="${p.id}" ${state.busyId===p.id?'disabled':''}>Ghi nhận vào doanh thu</button>
-              ${state.justMarkedId===p.id ? `<span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Đã ghi nhận thành công</span>` : ''}
+              <button class="btn-ghost btn btn-sm" data-mark-revenue="${p.id}" ${state.busyId===p.id?'disabled':''}>Ghi nhận</button>
+              ${state.justMarkedId===p.id ? `<span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Thành công</span>` : ''}
+              ${state.revenueByProfile[p.id] ? `<span style="color:var(--accent);font-size:12.5px;">Đã ghi nhận: ${state.revenueByProfile[p.id].toLocaleString('vi-VN')}đ</span>` : ''}
             </div>
-            <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
+
+            <div style="margin-top:16px;padding-top:10px;border-top:1px solid var(--line);">
               ${state.confirmDeleteId===p.id ? `
                 <span style="font-size:12.5px;color:var(--danger);font-weight:600;">Xoá vĩnh viễn tài khoản này? Không khôi phục được.</span>
-                <button class="btn btn-sm" style="background:var(--danger);" data-confirm-delete="${p.id}" ${state.busyId===p.id?'disabled':''}>${state.busyId===p.id?'Đang xoá…':'Xác nhận xoá'}</button>
+                <button class="btn btn-sm" style="background:var(--danger);margin-left:8px;" data-confirm-delete="${p.id}" ${state.busyId===p.id?'disabled':''}>${state.busyId===p.id?'Đang xoá…':'Xác nhận xoá'}</button>
                 <span class="btn-ghost btn btn-sm" data-cancel-delete="1">Huỷ</span>
               ` : `
                 <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-delete="${p.id}">Xoá tài khoản (tài khoản test/rác)</span>
@@ -322,10 +296,18 @@ function render(container, ctx){
   }
 
   async function extend(id, days){
-    state.busyId = id; draw();
     const p = state.profiles.find(x=>x.id===id);
     const base = (p.access_until && new Date(p.access_until).getTime() > Date.now()) ? new Date(p.access_until) : new Date();
     const next = new Date(base.getTime() + days*86400000);
+    // "Hoàn tác" chỉ TRỪ THẲNG N ngày khỏi hạn dùng hiện tại — không biết có thật sự vừa cộng nhầm
+    // N ngày đó hay không, nên nếu bấm nhầm người/nhầm nút có thể trừ vào hạn dùng THẬT của họ, đẩy
+    // về quá khứ (hết hạn oan, kể cả đang dùng thử). Luôn cho xem trước ngày mới + cảnh báo rõ nếu
+    // kết quả là hết hạn, để admin tự huỷ nếu thấy sai trước khi bấm xác nhận.
+    const willExpire = next.getTime() <= Date.now();
+    const msg = `${days<0?'Hoàn tác':'Gia hạn'} cho ${p.email||'người này'}: hạn dùng sẽ đổi thành ${next.toLocaleString('vi-VN')}`
+      + (willExpire ? ' — CHÚ Ý: ngày này đã ở QUÁ KHỨ, tài khoản sẽ bị coi là hết hạn ngay lập tức. Chắc chắn đúng người/đúng số ngày chưa?' : '. Xác nhận?');
+    if(!(await confirmModal(msg))) return;
+    state.busyId = id; draw();
     // days âm = nút "Hoàn tác" (lỡ bấm nhầm) — xoá luôn nhãn gói vừa gán sai (không biết chắc gói
     // thật trước đó là gì nên đưa về "Chưa rõ gói", admin gắn nhãn lại tay nếu cần) thay vì để nhãn
     // sai (vd tự bị gắn "6 tháng") tồn tại mãi dù đã hoàn tác hạn dùng.
