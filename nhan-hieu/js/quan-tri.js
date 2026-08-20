@@ -133,11 +133,12 @@ function render(container, ctx){
           <h3 style="margin-bottom:10px;">Giao dịch SePay gần đây</h3>
           ${state.transactions.map(t=>{
             const ok = t.status === 'matched';
+            const isManual = t.gateway === 'manual';
             return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap;">
-              <span>${esc(new Date(t.created_at).toLocaleString('vi-VN'))} — ${esc((t.transfer_amount||0).toLocaleString('vi-VN'))}đ — <span style="font-family:'IBM Plex Mono',monospace;">${esc(t.ref_code_found||'(không tìm thấy mã)')}</span></span>
+              <span>${esc(new Date(t.created_at).toLocaleString('vi-VN'))} — ${esc((t.transfer_amount||0).toLocaleString('vi-VN'))}đ — <span style="font-family:'IBM Plex Mono',monospace;">${isManual ? '(admin ghi tay)' : esc(t.ref_code_found||'(không tìm thấy mã)')}</span></span>
               <span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;
                 background:${ok?'var(--accent-soft)':'#FBEAE4'};color:${ok?'var(--accent)':'var(--danger)'};">
-                ${ok?`Đã cộng ${t.days_granted} ngày`:t.status==='unmatched_code'?'Không tìm thấy mã':'Sai số tiền — cần xử lý tay'}
+                ${isManual ? '✓ Admin ghi nhận tay' : ok?`Đã cộng ${t.days_granted} ngày`:t.status==='unmatched_code'?'Không tìm thấy mã':'Sai số tiền — cần xử lý tay'}
               </span>
             </div>`;
           }).join('')}

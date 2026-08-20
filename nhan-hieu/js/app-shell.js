@@ -118,14 +118,17 @@ function buildStudentPlans(profile){
   return [oneMonth, ...STUDENT_PLANS_LONG];
 }
 // Ưu đãi "chốt ngay trong buổi Zoom hướng dẫn" 19/8 — giảm thẳng 500k (gói 6 tháng) / 1.2 triệu
-// (gói 12 tháng) cho ai thanh toán TRONG NGÀY hôm đó, không phân biệt học viên hay không. Tự động
-// hết hạn sau mốc thời gian dưới đây (không cần quay lại xoá tay) — LƯU Ý: 2 số tiền này đã kiểm
-// tra KHÔNG trùng với bất kỳ gói nào khác (thường/học viên) để webhook SePay nhận đúng gói.
-const FLASH_SALE_CUTOFF = new Date('2026-08-20T00:00:00+07:00');
+// (gói 12 tháng) cho ai thanh toán TRONG NGÀY hôm đó, không phân biệt học viên hay không. Gia hạn
+// thêm 1 ngày (tới hết 20/8) vì tối 19/8 ngân hàng VietinBank/SePay bị lỗi (thiếu tiền tố SEVQR,
+// xem api/sepay-webhook.js + PAYMENT_BANK bên dưới) khiến nhiều khách chuyển khoản không kích hoạt
+// được — công bằng cho những khách bị ảnh hưởng đêm đó. Tự động hết hạn sau mốc thời gian dưới đây
+// (không cần quay lại xoá tay) — LƯU Ý: 2 số tiền này đã kiểm tra KHÔNG trùng với bất kỳ gói nào
+// khác (thường/học viên) để webhook SePay nhận đúng gói.
+const FLASH_SALE_CUTOFF = new Date('2026-08-21T00:00:00+07:00');
 function isFlashSaleActive(){ return new Date() < FLASH_SALE_CUTOFF; }
 const FLASH_SALE_PLANS = [
-  { key:'6m_flash', label:'6 tháng — Ưu đãi 19/8', amount:1890000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19/8 — giảm thẳng 500.000đ so với giá thường (2.390.000đ).', recommended:true, flash:true },
-  { key:'12m_flash', label:'12 tháng — Ưu đãi 19/8', amount:2790000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19/8 — giảm thẳng 1.200.000đ so với giá thường (3.990.000đ).', recommended:true, flash:true },
+  { key:'6m_flash', label:'6 tháng — Ưu đãi 19-20/8', amount:1890000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19-20/8 — giảm thẳng 500.000đ so với giá thường (2.390.000đ).', recommended:true, flash:true },
+  { key:'12m_flash', label:'12 tháng — Ưu đãi 19-20/8', amount:2790000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19-20/8 — giảm thẳng 1.200.000đ so với giá thường (3.990.000đ).', recommended:true, flash:true },
 ];
 function currentPaymentPlans(){
   const base = (AppState.profile && AppState.profile.is_student) ? buildStudentPlans(AppState.profile) : REGULAR_PLANS;

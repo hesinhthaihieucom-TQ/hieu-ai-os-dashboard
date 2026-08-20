@@ -18,6 +18,10 @@ const AMOUNT_TO_DAYS = {
   399200: 30,    // 1 tháng, ưu đãi học viên khoá Xây Nhân Hiệu — CHỈ áp dụng ĐÚNG THÁNG ĐẦU TIÊN (xem cờ first_month_discount_used)
   1912000: 180,  // 6 tháng, giá học viên (giảm 20% so với giá chuẩn 2.390.000đ) — áp dụng lâu dài
   3192000: 365,  // 12 tháng, giá học viên (giảm 20% so với giá chuẩn 3.990.000đ) — áp dụng lâu dài
+  // Ưu đãi flash-sale 19-20/8 (xem FLASH_SALE_PLANS ở nhan-hieu/js/app-shell.js) — THIẾU 2 dòng này
+  // là lý do khách chuyển đúng giá ưu đãi đêm 19/8 vẫn không tự kích hoạt được dù đã fix SEVQR.
+  1890000: 180,  // 6 tháng, ưu đãi flash-sale
+  2790000: 365,  // 12 tháng, ưu đãi flash-sale
 };
 // Số tiền coi là "đã dùng ưu đãi tháng đầu" — sau lần này học viên mua gói 1 tháng sẽ trả giá thường.
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
