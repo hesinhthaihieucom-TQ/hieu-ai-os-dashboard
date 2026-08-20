@@ -137,7 +137,11 @@ function render(container, ctx){
       state.answers = normalizeAnswers(data.answers);
       state.luot1 = isComplete ? data.luot1 : null;
       state.luot2 = isComplete ? data.luot2 : null;
-      state.screen = isComplete ? 'done' : 'intro';
+      // Vào thẳng trang kết quả (không qua màn hình trung gian "done" nữa) — trước đây mỗi lần quay
+      // lại Định Vị đều phải bấm thêm 1 lần "Xem kết quả" mới tới được nơi Sửa/Xoá tài sản quảng bá,
+      // khiến người dùng tưởng nhầm là phải làm lại cả Định Vị mới sửa được tài sản. Nút "Làm lại
+      // định vị" vẫn có sẵn ngay trên trang kết quả (data-action="redo") cho ai thực sự muốn làm lại.
+      state.screen = isComplete ? 'results' : 'intro';
     } else {
       state.screen = 'intro';
     }

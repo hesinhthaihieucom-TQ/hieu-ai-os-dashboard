@@ -707,7 +707,10 @@ function render(container, ctx){
       idea_id: state.ideaId,
       title: r.tieu_de,
       content: r.bai_hoan_chinh,
-      structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, tu_khoa_cta:r.tu_khoa_cta, cau_cmt_ghim:r.cau_cmt_ghim, cmt_cta_san_pham:r.cmt_cta_san_pham, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: r.dinh_dang_de_xuat },
+      // state.dinhDangOverride: người dùng tự đổi sang dạng content khác với AI gợi ý (xem dòng ~333)
+      // — trước đây lưu bài luôn ghi cứng r.dinh_dang_de_xuat (dạng AI gợi ý ban đầu), bỏ qua lựa
+      // chọn tay của người dùng dù màn hình đang hiện đúng dạng họ chọn.
+      structure: { hook:r.hook, van_de:r.van_de, gia_tri:r.gia_tri, niem_tin:r.niem_tin, cta:r.cta, tu_khoa_cta:r.tu_khoa_cta, cau_cmt_ghim:r.cau_cmt_ghim, cmt_cta_san_pham:r.cmt_cta_san_pham, hashtag:r.hashtag, goi_y_hinh_anh:r.goi_y_hinh_anh, format: state.dinhDangOverride || r.dinh_dang_de_xuat },
       tags,
       source_table: state.pendingSourceRef ? state.pendingSourceRef.table : null,
       source_id: state.pendingSourceRef ? state.pendingSourceRef.id : null,
