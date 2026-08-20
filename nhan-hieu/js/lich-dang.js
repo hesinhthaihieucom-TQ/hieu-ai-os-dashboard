@@ -22,7 +22,7 @@ function matchPillarKey(text){
 
 function render(container, ctx){
   const state = {
-    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null, expandedEntryId:null,
+    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
   };
@@ -189,22 +189,15 @@ function render(container, ctx){
               }
               if(e){
                 const linkedPost = e.post_id ? state.posts.find(p=>p.id===e.post_id) : null;
-                // Bài đã tích "đã đăng thật" — thu gọn lại chỉ còn 1 dòng, bấm vào mới hiện lại đầy đủ
-                // (checkbox/Sửa/Xoá) để sửa nếu cần — tránh mỗi ô đã xong việc vẫn chiếm hết chỗ nhìn rối.
-                if(e.posted && state.expandedEntryId !== e.id){
-                  return `<div class="week-slot filled" style="min-height:auto;padding:10px;text-align:center;cursor:pointer;" data-expand-entry="${e.id}">
-                    <div class="slot-label">${s.label}</div>
-                    <div style="margin-top:4px;color:var(--accent);font-size:11.5px;font-weight:600;">✓ Đã đăng</div>
-                  </div>`;
-                }
+                // Luôn hiện đủ thông tin bài (tiêu đề/dạng content) kể cả sau khi đã tích "đã đăng" —
+                // chỉ giữ ĐÚNG 1 chỗ báo trạng thái đã đăng (nhãn trên đầu ô), bỏ hẳn checkbox riêng
+                // bên dưới để khỏi lặp 2 nút cùng ý nghĩa. Nhãn trên đầu bấm vào là tự bật/tắt trạng
+                // thái đã đăng — không cần checkbox riêng nữa.
                 return `<div class="week-slot filled">
-                  <div class="slot-label">${s.label} · <span style="color:${e.posted?'var(--accent)':'var(--ink-soft)'};">${e.posted?'✓ Đã đăng':'Đã chọn bài'}</span></div>
+                  <div class="slot-label">${s.label} · <span data-toggle-posted="${e.id}" style="cursor:pointer;color:${e.posted?'var(--accent)':'var(--ink-soft)'};text-decoration:underline;text-decoration-style:dotted;" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}">${e.posted?'✓ Đã đăng':'Đã chọn bài'}</span></div>
                   <b style="font-size:12.5px;">${esc(e.title||'')}</b>
                   ${e.format?`<div style="color:var(--ink-soft);font-size:11px;margin-top:2px;">${esc(e.format)}</div>`:''}
-                  <label style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;cursor:pointer;color:var(--ink-soft);">
-                    <input type="checkbox" data-toggle-posted="${e.id}" ${e.posted?'checked':''} style="margin:0;">Đã đăng thật
-                  </label>
-                  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+                  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
                     ${linkedPost?`<span style="color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" data-view-post="${e.id}">Xem bài →</span>`:''}
                     <span style="color:var(--ink-soft);font-size:11px;cursor:pointer;" data-edit-slot="${dateStr}|${s.key}">Sửa</span>
                     <span style="color:var(--danger);font-size:11px;cursor:pointer;" data-remove="${e.id}">Xoá</span>
@@ -365,14 +358,12 @@ function render(container, ctx){
         draw();
       };
     });
-    container.querySelectorAll('[data-expand-entry]').forEach(el=>{
-      el.onclick = ()=>{ state.expandedEntryId = el.getAttribute('data-expand-entry'); draw(); };
-    });
     container.querySelectorAll('[data-toggle-posted]').forEach(el=>{
-      el.onchange = async ()=>{
+      el.onclick = async ()=>{
         const id = el.getAttribute('data-toggle-posted');
-        await ctx.supabase.from('calendar_entries').update({ posted: el.checked }).eq('id', id);
-        if(el.checked && state.expandedEntryId === id) state.expandedEntryId = null;
+        const entry = state.entries.find(x=>x.id===id);
+        const nextPosted = !(entry && entry.posted);
+        await ctx.supabase.from('calendar_entries').update({ posted: nextPosted }).eq('id', id);
         await loadEntries();
         draw();
       };
