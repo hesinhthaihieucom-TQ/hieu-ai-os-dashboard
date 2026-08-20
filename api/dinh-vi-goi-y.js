@@ -8,8 +8,7 @@ NHIỆM VỤ: Viết đúng 3 ví dụ câu trả lời mẫu cho câu hỏi đ�
 
 NGUYÊN TẮC BẮT BUỘC:
 - Mỗi ví dụ phải rất rõ ràng, cụ thể, chi tiết — có số liệu/tình huống/cảm xúc/nỗi đau thật nếu câu hỏi liên quan, không viết chung chung kiểu sách giáo khoa.
-- 3 ví dụ phải thuộc 3 bối cảnh/ngành nghề khác nhau (ví dụ: 1 ví dụ ngành sức khoẻ, 1 ví dụ ngành tài chính, 1 ví dụ ngành làm đẹp/coaching...) để người dùng dễ liên hệ với hoàn cảnh của chính họ dù làm ngành gì.
-- Nếu đã có dữ liệu người dùng trả lời ở các câu trước, ƯU TIÊN 1 trong 3 ví dụ bám sát đúng bối cảnh đó (đúng ngành, đúng mục tiêu họ đã chia sẻ) để họ thấy ngay sự liên quan.
+- Làm đúng theo YÊU CẦU VỀ NGÀNH NGHỀ được nêu rõ ở cuối nội dung người dùng gửi (có thể là "cả 3 ví dụ cùng 1 lĩnh vực" hoặc "3 ví dụ ở 3 ngành khác nhau" tuỳ tình huống).
 - Viết ở ngôi thứ nhất, như chính người trả lời đang nói.
 - Output tiếng Việt.`;
 
@@ -77,7 +76,17 @@ module.exports = async (req, res) => {
       .map(([k, v]) => `- ${k}: ${v}`)
       .join('\n');
 
-    const userContent = `CÂU HỎI CẦN GỢI Ý TRẢ LỜI:\n${question}\n\n${ctxLines ? `BỐI CẢNH ĐÃ BIẾT VỀ NGƯỜI DÙNG (từ các câu trả lời trước):\n${ctxLines}\n\n` : ''}Hãy đưa đúng 3 ví dụ câu trả lời mẫu.`;
+    // Câu 1 (a1) giờ hỏi thẳng "muốn xây kênh về lĩnh vực gì" — nếu người dùng đã trả lời câu này
+    // (đang ở câu sau câu 1) thì mọi ví dụ gợi ý phải bám đúng lĩnh vực đó, không lan sang ngành
+    // khác nữa, để họ thấy ngay sự liên quan sát với hoàn cảnh thật. Chỉ khi CHƯA biết lĩnh vực
+    // (đang ở đúng câu 1, previousAnswers rỗng) mới cần trải 3 ví dụ ở 3 ngành khác nhau để
+    // ai cũng liên hệ được, làm mẫu tham khảo cho việc trả lời câu 1.
+    const niche = previousAnswers && previousAnswers.a1 && String(previousAnswers.a1).trim();
+    const nicheRule = niche
+      ? `Người dùng đã cho biết lĩnh vực/chủ đề muốn xây kênh (xem mục "a1" trong bối cảnh bên dưới) — CẢ 3 ví dụ đều phải nằm trong đúng lĩnh vực đó, không lấy ví dụ ở ngành khác, chỉ khác nhau ở góc độ/tình huống/con số cụ thể.`
+      : `Người dùng CHƯA cho biết lĩnh vực cụ thể — viết 3 ví dụ thuộc 3 ngành nghề khác nhau (ví dụ: 1 ví dụ ngành sức khoẻ, 1 ví dụ ngành tài chính, 1 ví dụ ngành làm đẹp/coaching...) để họ dễ liên hệ dù đang làm ngành gì.`;
+
+    const userContent = `CÂU HỎI CẦN GỢI Ý TRẢ LỜI:\n${question}\n\n${ctxLines ? `BỐI CẢNH ĐÃ BIẾT VỀ NGƯỜI DÙNG (từ các câu trả lời trước):\n${ctxLines}\n\n` : ''}YÊU CẦU VỀ NGÀNH NGHỀ: ${nicheRule}\n\nHãy đưa đúng 3 ví dụ câu trả lời mẫu.`;
 
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_GOI_Y });
     res.status(200).json({ result });
