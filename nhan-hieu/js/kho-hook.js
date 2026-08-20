@@ -58,7 +58,7 @@ function render(container, ctx){
     genTopic:'', genGoal:CONTENT_GOALS[0].key, genCategory:GOAL_RECOMMENDED_CATS[CONTENT_GOALS[0].key][0], genQuickContext:'',
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{}, genThumbSavedIdx:{},
-    chungPillar:'all', khoToiPillar:'all', posts:[],
+    chungPillar:'all', khoToiPillar:'all', posts:[], khoToiSearch:'', chungSearch:'',
   };
 
   // Giữ lại hook vừa tạo (tab "Tạo Hook") khi chuyển sang tab/trang khác rồi quay lại — trước đây
@@ -329,8 +329,12 @@ function render(container, ctx){
   function khoToiListHtml(){
     if(state.personal.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
 
-    const items = filterByPillar(state.personal, state.khoToiPillar);
-    return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + items.map(h=>`
+    let items = filterByPillar(state.personal, state.khoToiPillar);
+    const q = state.khoToiSearch.trim().toLowerCase();
+    if(q) items = items.filter(h=>(h.hook_text||'').toLowerCase().includes(q));
+    const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
+    if(items.length===0) return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
+    return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + items.map(h=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
@@ -348,8 +352,12 @@ function render(container, ctx){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook <b>đã được kiểm chứng viral</b> — câu mở đầu đã khiến rất nhiều người dừng lại xem — do đội ngũ tuyển chọn và cập nhật liên tục.<br><br>Dùng làm <b>mẫu</b> để viết hook riêng cho chủ đề của bạn, <b>không phải để copy nguyên văn</b>.</div>`;
     if(all.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Hook Viral chưa có hook nào — sẽ được cập nhật từ đội ngũ.</div>`;
 
-    const items = filterByPillar(all, state.chungPillar);
-    return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + items.map(h=>`
+    let items = filterByPillar(all, state.chungPillar);
+    const q = state.chungSearch.trim().toLowerCase();
+    if(q) items = items.filter(h=>(h.hook_text||'').toLowerCase().includes(q));
+    const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
+    if(items.length===0) return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
+    return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + items.map(h=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
         <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
@@ -366,6 +374,22 @@ function render(container, ctx){
     container.querySelectorAll('[data-khotoi-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.khoToiPillar = el.getAttribute('data-khotoi-pillar'); draw(); };
     });
+    const khoToiSearchInput = container.querySelector('[data-khotoi-search]');
+    if(khoToiSearchInput) khoToiSearchInput.oninput = ()=>{
+      state.khoToiSearch = khoToiSearchInput.value;
+      const pos = khoToiSearchInput.selectionStart;
+      draw();
+      const newEl = container.querySelector('[data-khotoi-search]');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
+    const chungSearchInput = container.querySelector('[data-chung-search]');
+    if(chungSearchInput) chungSearchInput.oninput = ()=>{
+      state.chungSearch = chungSearchInput.value;
+      const pos = chungSearchInput.selectionStart;
+      draw();
+      const newEl = container.querySelector('[data-chung-search]');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
 
     container.querySelectorAll('[data-ne-viral]').forEach(el=>{
       el.onclick = ()=>{

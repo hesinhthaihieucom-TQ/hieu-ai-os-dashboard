@@ -3,7 +3,7 @@ const KINDS = { cta: 'CTA', binh_luan_ghim: 'Bình luận ghim' };
 
 function render(container, ctx){
   const state = {
-    screen:'loading', entries:[], filterKind:'all', error:null,
+    screen:'loading', entries:[], filterKind:'all', search:'', error:null,
     newEntry:{ text:'', kind:'cta', note:'' }, adding:false, addError:null,
     editingId:null, editEntry:{ text:'', kind:'cta', note:'' }, copiedId:null,
   };
@@ -24,8 +24,10 @@ function render(container, ctx){
   }
 
   function filteredEntries(){
-    if(state.filterKind==='all') return state.entries;
-    return state.entries.filter(e=>e.kind===state.filterKind);
+    let list = state.filterKind==='all' ? state.entries : state.entries.filter(e=>e.kind===state.filterKind);
+    const q = state.search.trim().toLowerCase();
+    if(q) list = list.filter(e=>(e.text||'').toLowerCase().includes(q) || (e.note||'').toLowerCase().includes(q));
+    return list;
   }
 
   function entryRowHtml(e){
@@ -88,6 +90,7 @@ function render(container, ctx){
         <span class="btn-sm ${state.filterKind==='cta'?'btn':'btn-ghost btn'}" data-filter="cta">CTA (${state.entries.filter(e=>e.kind==='cta').length})</span>
         <span class="btn-sm ${state.filterKind==='binh_luan_ghim'?'btn':'btn-ghost btn'}" data-filter="binh_luan_ghim">Bình luận ghim (${state.entries.filter(e=>e.kind==='binh_luan_ghim').length})</span>
       </div>
+      <input type="text" data-search value="${esc(state.search)}" placeholder="Tìm theo nội dung..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">
       <div class="card">
         ${list.length===0?`<div style="color:var(--ink-soft);font-size:14px;padding:8px 0;">Chưa có mẫu nào — dán vào ô trên, hoặc bấm "💾 Lưu vào Kho" cạnh CTA/bình luận ghim khi viết bài ở Viết Content.</div>`:''}
         ${list.map(entryRowHtml).join('')}
@@ -99,6 +102,14 @@ function render(container, ctx){
     container.querySelectorAll('[data-filter]').forEach(el=>{
       el.onclick = ()=>{ state.filterKind = el.getAttribute('data-filter'); draw(); };
     });
+    const searchInput = container.querySelector('[data-search]');
+    if(searchInput) searchInput.oninput = ()=>{
+      state.search = searchInput.value;
+      const pos = searchInput.selectionStart;
+      draw();
+      const newEl = container.querySelector('[data-search]');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
 
     const newKind = container.querySelector('#new-kind');
     const newText = container.querySelector('#new-text');

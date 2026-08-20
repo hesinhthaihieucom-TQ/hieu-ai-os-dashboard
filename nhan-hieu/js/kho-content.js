@@ -35,7 +35,7 @@ function render(container, ctx){
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(),
-    daVietStatus:'all', daVietSearch:'',
+    daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'',
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
   };
 
@@ -369,8 +369,12 @@ function render(container, ctx){
   function khoToiListHtml(){
     if(state.personalBank.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
 
-    const items = filterByPillar(state.personalBank, state.khoToiPillar);
-    return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + items.map(b=>`
+    let items = filterByPillar(state.personalBank, state.khoToiPillar);
+    const q = state.khoToiSearch.trim().toLowerCase();
+    if(q) items = items.filter(b=>(b.title||'').toLowerCase().includes(q));
+    const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
+    if(items.length===0) return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
+    return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + items.map(b=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <h3>${esc(b.title)}</h3>
@@ -388,8 +392,12 @@ function render(container, ctx){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Kho bài mẫu <b>đã được kiểm chứng viral</b>, do đội ngũ tuyển chọn và cập nhật liên tục — dùng làm <b>khung sườn (hook + cấu trúc)</b> để viết lại theo giọng văn và câu chuyện thật của bạn, không phải để sao chép nguyên văn.<br><br>Đây là <b>cách nhanh nhất</b> để bài mới của bạn có nền tảng đã được thị trường kiểm chứng thay vì viết từ số 0.</div>`;
     if(state.sharedBank.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Content Viral chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`;
 
-    const items = filterByPillar(state.sharedBank, state.chungPillar);
-    return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + items.map(b=>`
+    let items = filterByPillar(state.sharedBank, state.chungPillar);
+    const q = state.chungSearch.trim().toLowerCase();
+    if(q) items = items.filter(b=>(b.title||'').toLowerCase().includes(q));
+    const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
+    if(items.length===0) return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
+    return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + items.map(b=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
         <h3>${esc(b.title)}</h3>
@@ -416,6 +424,22 @@ function render(container, ctx){
       // draw() vẽ lại toàn bộ innerHTML nên mất focus — lấy lại đúng ô + vị trí con trỏ, giống
       // pattern data-goal ở tai-khoan.js, không thì gõ mỗi chữ lại phải bấm chuột vào ô lần nữa.
       const newEl = container.querySelector('[data-daviet-search]');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
+    const khoToiSearchInput = container.querySelector('[data-khotoi-search]');
+    if(khoToiSearchInput) khoToiSearchInput.oninput = ()=>{
+      state.khoToiSearch = khoToiSearchInput.value;
+      const pos = khoToiSearchInput.selectionStart;
+      draw();
+      const newEl = container.querySelector('[data-khotoi-search]');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
+    const chungSearchInput = container.querySelector('[data-chung-search]');
+    if(chungSearchInput) chungSearchInput.oninput = ()=>{
+      state.chungSearch = chungSearchInput.value;
+      const pos = chungSearchInput.selectionStart;
+      draw();
+      const newEl = container.querySelector('[data-chung-search]');
       if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
     };
     container.querySelectorAll('[data-khotoi-pillar]').forEach(el=>{
