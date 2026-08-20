@@ -75,6 +75,26 @@ function render(container, ctx){
     }, {});
   }
 
+  // Ước tính chi phí AI + lợi nhuận — CHỈ là ước tính (dùng giá trung bình/lượt), vì hệ thống chỉ
+  // lưu TỔNG số lượt mỗi người, không biết chi tiết dùng vào việc gì để tính đúng 100%. Muốn chính
+  // xác tuyệt đối thì đối chiếu Tổng doanh thu ở trên với hoá đơn thật trên Anthropic Console.
+  const AVG_COST_PER_LUOT = 450;
+  function estimatedProfitInfo(){
+    const now = new Date();
+    const month = now.toISOString().slice(0,7);
+    const totalLuot = state.profiles
+      .filter(p => p.role !== 'admin')
+      .reduce((sum,p) => {
+        if(p.has_paid){
+          const sameMonth = p.paid_ai_month === month;
+          return sum + (sameMonth ? (p.paid_ai_uses||0) : 0);
+        }
+        return sum + (p.trial_ai_uses||0);
+      }, 0);
+    const estCost = totalLuot * AVG_COST_PER_LUOT;
+    return { totalLuot, estCost, estProfit: state.revenueTotal - estCost, RATE: AVG_COST_PER_LUOT };
+  }
+
   function filtered(){
     const q = state.q.trim().toLowerCase();
     return state.profiles.filter(p => {
@@ -92,6 +112,7 @@ function render(container, ctx){
 
     const list = filtered();
     const counts = state.profiles.reduce((acc,p)=>{ const s=statusOf(p).cls; acc[s]=(acc[s]||0)+1; return acc; }, {});
+    const profit = estimatedProfitInfo();
 
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán.</p></div>
@@ -100,6 +121,13 @@ function render(container, ctx){
         <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueTotal.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
         <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
       </div>
+
+      <div class="source-grid" style="margin-bottom:12px;">
+        <div class="source-card"><div class="ic" style="font-size:16px;">${profit.totalLuot.toLocaleString('vi-VN')}</div><div class="label">Tổng lượt mọi người đang dùng (trừ admin)</div></div>
+        <div class="source-card"><div class="ic" style="font-size:16px;">~${profit.estCost.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính chi phí AI</div></div>
+        <div class="source-card"><div class="ic" style="font-size:16px;color:${profit.estProfit>=0?'var(--accent)':'var(--danger)'};">~${profit.estProfit.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lợi nhuận</div></div>
+      </div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:20px;">Ước tính dùng giá trung bình ~${profit.RATE.toLocaleString('vi-VN')}đ/lượt (dùng thử: tính trọn đời, trả phí: tính tháng này) — so với <b>Tổng doanh thu</b> ở trên. Không chính xác 100% như xem trên Anthropic Console, chỉ để theo dõi xu hướng nhanh.</div>
 
       <div class="source-grid" style="margin-bottom:20px;">
         <div class="source-card"><div class="ic">${counts.active||0}</div><div class="label">Đang hoạt động</div></div>
