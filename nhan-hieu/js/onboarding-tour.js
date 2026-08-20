@@ -5,7 +5,7 @@
 // theo trình duyệt) — dùng localStorage chỉ để tránh nháy lại trong lúc chờ gọi API đánh dấu.
 
 const STEPS = [
-  { key:'dinh-vi', text:'Bắt đầu từ đây — trả lời 18 câu hỏi để AI định vị thương hiệu của bạn. Mọi bước sau đều dựa vào kết quả này.' },
+  { key:'dinh-vi', text:'Bắt đầu từ đây — trả lời 16 câu hỏi để AI định vị thương hiệu của bạn. Mọi bước sau đều dựa vào kết quả này.' },
   { key:'sua-kenh', text:'Kiểm tra ảnh đại diện, ảnh bìa, bio... trên kênh thật có khớp định vị vừa chốt không.' },
   { key:'dinh-dang-content', text:'AI gợi ý 2-3 dạng content phù hợp nhất với bạn trong 12 dạng, kèm hướng dẫn cách làm.' },
   { key:'kho-content', text:'Kho bài mẫu theo trục nội dung — chọn 1 bài phù hợp để viết bài đầu tiên, đỡ phải nghĩ từ đầu.' },

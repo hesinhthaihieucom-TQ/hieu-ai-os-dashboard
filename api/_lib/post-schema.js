@@ -141,9 +141,9 @@ QUY TẮC HASHTAG (BẮT BUỘC — lưu ý về thuật toán, tránh kỳ vọ
 - Nếu không có tên kênh/thương hiệu nào được cung cấp, tự suy ra 1 hashtag đại diện thương hiệu từ bản sắc thương hiệu trong định vị.`;
 
 // Chỉ gửi phần luot2 THỰC SỰ cần cho việc viết văn phong 1 bài — bỏ các phần chiến lược kinh
-// doanh/dòng tiền (dong_tien_phu_hop, lo_trinh_dan_ve_dong_tien, script_gioi_thieu_30s, can_sua_ngay,
-// canh_bao) không ảnh hưởng câu chữ của bài, giảm bớt dung lượng input gửi AI mỗi lần viết bài —
-// dùng chung cho viet-content.js/viet-tu-kho-goc.js/viet-content-extras.js thay vì gửi cả luot2.
+// doanh/dòng tiền (dong_tien_phu_hop, lo_trinh_dan_ve_dong_tien, can_sua_ngay) không ảnh hưởng câu
+// chữ của bài, giảm bớt dung lượng input gửi AI mỗi lần viết bài — dùng chung cho
+// viet-content.js/viet-tu-kho-goc.js/viet-content-extras.js thay vì gửi cả luot2.
 function trimLuot2ForWriting(luot2) {
   if (!luot2) return null;
   const { chan_dung_khach_hang, noi_dau_rao_can, khao_khat_muc_tieu, insight_cot_loi, he_truc_noi_dung } = luot2;

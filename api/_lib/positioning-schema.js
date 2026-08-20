@@ -120,11 +120,12 @@ const TOOL_LUOT2 = {
           required: ['buoc', 'mo_ta'],
         },
       },
-      script_gioi_thieu_30s: { type: 'string', description: 'Script tự giới thiệu 30 giây, dùng khi livestream, gặp khách, sự kiện.' },
       can_sua_ngay: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 5, description: '3-5 việc cần sửa ngay: bio / ảnh / bài ghim / chủ đề / CTA / format / cách kể chuyện / cách dẫn dòng tiền.' },
-      canh_bao: { type: 'array', items: { type: 'string' }, description: 'Nội dung không nên làm / không bán quá sớm / format không phù hợp / trend không nên chạy.' },
     },
-    required: ['chan_dung_khach_hang', 'noi_dau_rao_can', 'khao_khat_muc_tieu', 'insight_cot_loi', 'he_truc_noi_dung', 'dong_tien_phu_hop', 'lo_trinh_dan_ve_dong_tien', 'script_gioi_thieu_30s', 'can_sua_ngay', 'canh_bao'],
+    // Bỏ script_gioi_thieu_30s (ít dùng, chỉ hợp khi livestream/gặp khách trực tiếp) và canh_bao
+    // (trùng lặp với khong_theo_duoi đã có ở Lượt 1) — cho AI sinh nhanh/nhẹ hơn, theo yêu cầu chị
+    // Quỳnh 2026-08-20. Không đụng các trường Viết Content còn phụ thuộc (xem post-schema.js).
+    required: ['chan_dung_khach_hang', 'noi_dau_rao_can', 'khao_khat_muc_tieu', 'insight_cot_loi', 'he_truc_noi_dung', 'dong_tien_phu_hop', 'lo_trinh_dan_ve_dong_tien', 'can_sua_ngay'],
   },
 };
 

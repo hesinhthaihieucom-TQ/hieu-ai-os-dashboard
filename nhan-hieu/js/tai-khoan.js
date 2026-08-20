@@ -7,7 +7,7 @@ const ACTION_WEIGHTS_DISPLAY = [
   { label:'Chấm điểm Content / AI gợi ý lịch tuần', weight:2 },
   { label:'Viết Content (bài mới hoặc từ Kho gốc) / Tái Chế Content Viral', weight:3 },
   { label:'Sửa Kênh (audit kênh)', weight:4 },
-  { label:'Định Vị (làm hoặc sửa lại 18 câu)', weight:8 },
+  { label:'Định Vị (làm hoặc sửa lại 16 câu)', weight:8 },
   { label:'Định Vị — dán kết quả có sẵn', weight:6 },
 ];
 

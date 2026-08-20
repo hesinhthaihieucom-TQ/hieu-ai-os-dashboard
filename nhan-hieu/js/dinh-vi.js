@@ -15,10 +15,13 @@ const QUESTIONS = [
   {id:'d1', group:'D', type:'textarea', q:'Bạn biết ai đang làm nội dung trong lĩnh vực tương tự? Họ đang làm tốt điều gì, và bạn khác họ ở điểm nào?'},
   {id:'d2', group:'D', type:'textarea', q:'Nếu chỉ có 10 giây để người lạ nhớ bạn là ai, bạn sẽ nói gì?'},
   {id:'d3', group:'D', type:'textarea', q:'Điều bạn tin sâu sắc nhất về lĩnh vực mình làm — điều không phải ai cũng đồng ý?'},
-  {id:'e1', group:'E', type:'textarea', q:'Mỗi ngày bạn làm gì nhiều nhất trong công việc? Có đồ vật hoặc không gian nào luôn xuất hiện cùng bạn không?', helper:'Ví dụ: gặp khách/dạy học/tư vấn ở bàn làm việc, với laptop/sổ tay/công cụ nghề luôn bên cạnh...'},
-  {id:'e2', group:'E', type:'textarea', q:'Bạn có phong cách ăn mặc / xuất hiện nhất quán không?', helper:'Ví dụ: màu hay mặc, kiểu tóc, phụ kiện đặc trưng, formal hay casual...'},
   {id:'e3', group:'E', type:'textarea', q:'Khi nghĩ về những người có thương hiệu hình ảnh mạnh mà bạn ngưỡng mộ, họ có điểm chung gì về hình ảnh?'},
 ];
+
+// "Xem gợi ý cụ thể" không trừ lượt AI của người dùng (miễn phí, khuyến khích bấm) nhưng vẫn tốn
+// chi phí Anthropic thật cho mỗi lần gọi — giới hạn số lần/câu để tránh bấm lặp vô hạn gây tốn
+// chi phí ngoài kiểm soát, theo quyết định của chị Quỳnh (2026-08-20).
+const SUGGEST_LIMIT_PER_QUESTION = 1;
 
 const GROUPS = [
   {key:'A', title:'Công Việc & Mục Tiêu'},
@@ -70,7 +73,7 @@ function normalizeAnswers(raw){
 function render(container, ctx){
   const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
     luot2Loading:false, luot2Error:null,
-    suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null,
+    suggestLoading:false, suggestions:null, suggestError:null, suggestForQ:null, suggestCounts:{},
     pasteText:'', pasteError:null, pasteLoading:false,
     channelHandle:'', channelSaving:false, channelSaved:false,
     assets:[], newAsset:{ label:'', url:'', kind:'san_pham_so' }, newGroup:{ label:'', url:'' },
@@ -81,7 +84,7 @@ function render(container, ctx){
     storyBoSung:[], storyUpdating:false, storyUpdateError:null };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
 
-  // Giữ lại câu trả lời đang làm dở (18 câu, dễ mất công gõ) khi chuyển trang rồi quay lại — khác
+  // Giữ lại câu trả lời đang làm dở (16 câu, dễ mất công gõ) khi chuyển trang rồi quay lại — khác
   // với positioning_results (chỉ lưu khi đã CHỐT xong Lượt 1), draft này lưu MỌI lúc đang trả lời dở.
   const WIZARD_DRAFT_KEY = 'dinh-vi-wizard';
   function persistWizardDraft(){ saveModuleDraft(ctx, WIZARD_DRAFT_KEY, { qIndex: state.qIndex, answers: state.answers }); }
@@ -177,7 +180,7 @@ function render(container, ctx){
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
       <div style="text-align:center;margin-top:18px;">
-        <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Có bản kết quả Định Vị khác muốn dùng thay? Dán vào đây thay vì trả lời lại 18 câu →</span>
+        <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Có bản kết quả Định Vị khác muốn dùng thay? Dán vào đây thay vì trả lời lại 16 câu →</span>
       </div>
     `;
   }
@@ -207,7 +210,7 @@ function render(container, ctx){
       <div class="page-head" style="text-align:center;">
         <div class="tag">Bước 1 · Định Vị</div>
         <h1>Tìm ra định vị thương hiệu chuẩn nhất</h1>
-        <p>Trả lời thật 18 câu hỏi trong 5 nhóm — mất khoảng 10-12 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>
+        <p>Trả lời thật 16 câu hỏi trong 5 nhóm — mất khoảng 9-11 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>
         <p style="color:var(--accent);font-size:13.5px;font-weight:600;margin-top:6px;">💡 Nên trả lời kỹ, thật ngay từ đầu — mỗi lần bấm "Sửa lại câu trả lời" để làm lại sẽ tính thêm 8 lượt AI trong số lượt dùng thử của bạn.</p>
       </div>
       <div class="source-grid">
@@ -229,7 +232,7 @@ function render(container, ctx){
       <div class="page-head" style="text-align:center;">
         <div class="tag">Dán kết quả có sẵn</div>
         <h1>Dán kết quả Định Vị bạn đã làm trước đây</h1>
-        <p>Copy toàn bộ kết quả từ trợ lý ĐỊNH VỊ AI (ChatGPT) bạn đã dùng trước đây — Lượt 1, hoặc cả Lượt 1 + Lượt 2 — dán nguyên văn vào ô bên dưới. AI sẽ tự sắp xếp lại đúng cấu trúc, không cần làm lại 18 câu hỏi.</p>
+        <p>Copy toàn bộ kết quả từ trợ lý ĐỊNH VỊ AI (ChatGPT) bạn đã dùng trước đây — Lượt 1, hoặc cả Lượt 1 + Lượt 2 — dán nguyên văn vào ô bên dưới. AI sẽ tự sắp xếp lại đúng cấu trúc, không cần làm lại 16 câu hỏi.</p>
       </div>
       <div class="card">
         <textarea id="paste-input" style="min-height:260px;" placeholder="Dán nguyên văn kết quả định vị vào đây...">${esc(state.pasteText)}</textarea>
@@ -251,10 +254,11 @@ function render(container, ctx){
     let inputHtml = '';
     let suggestHtml = '';
     if(q.type==='textarea'){
+      const suggestUsed = (state.suggestCounts[q.id]||0) >= SUGGEST_LIMIT_PER_QUESTION;
       inputHtml = `<textarea id="qinput" placeholder="${esc(q.placeholder||'Trả lời thật, càng cụ thể càng tốt...')}">${esc(val||'')}</textarea>
         <div class="hint-box" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
           <div style="font-size:12.5px;line-height:1.5;">✍️ Trả lời càng chi tiết, càng nhiều dữ liệu thật (mốc thời gian, con số, cảm xúc, tình huống cụ thể...) thì Định Vị và content sau này AI viết ra sẽ càng đúng, càng hay — đừng trả lời qua loa cho xong.</div>
-          <button class="btn btn-sm" style="flex-shrink:0;" data-action="suggest" ${state.suggestLoading?'disabled':''}>${state.suggestLoading?'Đang nghĩ ví dụ…':'💡 Xem gợi ý cụ thể'}</button>
+          <button class="btn btn-sm" style="flex-shrink:0;" data-action="suggest" ${(state.suggestLoading||suggestUsed)?'disabled':''}>${state.suggestLoading?'Đang nghĩ ví dụ…':suggestUsed?'Đã xem gợi ý cho câu này':'💡 Xem gợi ý cụ thể'}</button>
         </div>`;
       if(state.suggestForQ===state.qIndex){
         if(state.suggestError){
@@ -508,9 +512,7 @@ function render(container, ctx){
             `).join('')}
           </div>
         </div>
-        ${sectionHtml('Script tự giới thiệu 30 giây', r2.script_gioi_thieu_30s)}
         ${listSectionHtml('Cần sửa ngay', r2.can_sua_ngay)}
-        ${listSectionHtml('Cảnh báo', r2.canh_bao)}
       ` : state.luot2Loading ? `
         <div class="section" style="text-align:center;color:var(--ink-soft);margin-top:24px;">
           Đang xây tiếp Chiến lược &amp; Dòng tiền…
@@ -746,6 +748,11 @@ function render(container, ctx){
 
   async function fetchSuggestions(){
     const q = QUESTIONS[state.qIndex];
+    // Miễn phí lượt cho người dùng nhưng vẫn tốn chi phí Anthropic thật mỗi lần gọi — giới hạn
+    // SUGGEST_LIMIT_PER_QUESTION lần/câu để tránh bấm lặp vô hạn gây tốn chi phí ngoài kiểm soát
+    // (nút cũng đã tự disable ở render(), chặn thêm ở đây phòng trường hợp gọi hàm trực tiếp).
+    if((state.suggestCounts[q.id]||0) >= SUGGEST_LIMIT_PER_QUESTION) return;
+    state.suggestCounts[q.id] = (state.suggestCounts[q.id]||0) + 1;
     state.suggestLoading = true; draw();
     try{
       const data = await callApi('/api/dinh-vi-goi-y', { question: q.q, previousAnswers: flattenAnswers() });
@@ -804,7 +811,7 @@ function render(container, ctx){
   }
 
   // Cập nhật CHỈ mục câu chuyện cá nhân — không đụng phần còn lại của định vị đã chốt, không cần
-  // đi lại 18 câu hỏi/chạy lại Lượt 1 (2026-08-20, theo phản hồi chị Quỳnh: "cho người ta làm lại
+  // đi lại 16 câu hỏi/chạy lại Lượt 1 (2026-08-20, theo phản hồi chị Quỳnh: "cho người ta làm lại
   // đúng cái câu chuyện của người ta thôi").
   async function updateStory(){
     if(state.storyUpdating) return;

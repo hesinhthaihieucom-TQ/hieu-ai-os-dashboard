@@ -1,6 +1,6 @@
 (function(){
 const STEPS = [
-  { key:'dinh-vi', label:'Định Vị thương hiệu', desc:'Trả lời 18 câu hỏi để AI tìm ra định vị chuẩn nhất — mọi bước sau đều dựa vào kết quả này.' },
+  { key:'dinh-vi', label:'Định Vị thương hiệu', desc:'Trả lời 16 câu hỏi để AI tìm ra định vị chuẩn nhất — mọi bước sau đều dựa vào kết quả này.' },
   { key:'sua-kenh', label:'Sửa Kênh', desc:'Kiểm tra ảnh đại diện, ảnh bìa, bio, profile có khớp định vị chưa, AI chỉ chỗ cần sửa.' },
   { key:'viet-content', label:'Viết bài đầu tiên', desc:'Nhập 1 chủ đề, để AI viết bài hoàn chỉnh theo đúng giọng văn của bạn.' },
   { key:'lich-dang', label:'Lên lịch đăng bài', desc:'Xếp bài vào lịch tuần, đăng đều đặn thay vì nhớ ngày tự đăng tay.' },
