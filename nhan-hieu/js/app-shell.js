@@ -24,7 +24,7 @@ const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'L
 // Khớp đúng TRIAL_AI_LIMIT/PAID_MONTHLY_AI_LIMIT/PAID_TOPUP_PACK ở api/_lib/trial-quota.js — chỉ
 // để HIỂN THỊ cảnh báo sớm cho người dùng biết ngay từ đầu, việc CHẶN thật sự luôn nằm ở server,
 // không phải ở số hiển thị này.
-const TRIAL_AI_LIMIT = 65;
+const TRIAL_AI_LIMIT = 100;
 const PAID_MONTHLY_AI_LIMIT = 250;
 const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
 function paidMonthlyUsage(p){

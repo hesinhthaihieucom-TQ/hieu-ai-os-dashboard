@@ -13,7 +13,7 @@ function aiUsageLabel(p){
     const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (tháng này)`;
     return p.trial_ai_uses ? `${paidLabel} · đã dùng ${p.trial_ai_uses} lượt lúc còn dùng thử (không tính vào đây nữa)` : paidLabel;
   }
-  return `${p.trial_ai_uses||0}/65 lượt AI (dùng thử, trọn đời)`;
+  return `${p.trial_ai_uses||0}/100 lượt AI (dùng thử, trọn đời)`;
 }
 
 function statusOf(p){
@@ -75,26 +75,6 @@ function render(container, ctx){
     }, {});
   }
 
-  // Ước tính chi phí AI + lợi nhuận — CHỈ là ước tính (dùng giá trung bình/lượt), vì hệ thống chỉ
-  // lưu TỔNG số lượt mỗi người, không biết chi tiết dùng vào việc gì để tính đúng 100%. Muốn chính
-  // xác tuyệt đối thì đối chiếu Tổng doanh thu ở trên với hoá đơn thật trên Anthropic Console.
-  const AVG_COST_PER_LUOT = 450;
-  function estimatedProfitInfo(){
-    const now = new Date();
-    const month = now.toISOString().slice(0,7);
-    const totalLuot = state.profiles
-      .filter(p => p.role !== 'admin')
-      .reduce((sum,p) => {
-        if(p.has_paid){
-          const sameMonth = p.paid_ai_month === month;
-          return sum + (sameMonth ? (p.paid_ai_uses||0) : 0);
-        }
-        return sum + (p.trial_ai_uses||0);
-      }, 0);
-    const estCost = totalLuot * AVG_COST_PER_LUOT;
-    return { totalLuot, estCost, estProfit: state.revenueTotal - estCost, RATE: AVG_COST_PER_LUOT };
-  }
-
   function filtered(){
     const q = state.q.trim().toLowerCase();
     return state.profiles.filter(p => {
@@ -112,8 +92,6 @@ function render(container, ctx){
 
     const list = filtered();
     const counts = state.profiles.reduce((acc,p)=>{ const s=statusOf(p).cls; acc[s]=(acc[s]||0)+1; return acc; }, {});
-    const profit = estimatedProfitInfo();
-
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán.</p></div>
 
@@ -121,13 +99,7 @@ function render(container, ctx){
         <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueTotal.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
         <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
       </div>
-
-      <div class="source-grid" style="margin-bottom:12px;">
-        <div class="source-card"><div class="ic" style="font-size:16px;">${profit.totalLuot.toLocaleString('vi-VN')}</div><div class="label">Tổng lượt mọi người đang dùng (trừ admin)</div></div>
-        <div class="source-card"><div class="ic" style="font-size:16px;">~${profit.estCost.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính chi phí AI</div></div>
-        <div class="source-card"><div class="ic" style="font-size:16px;color:${profit.estProfit>=0?'var(--accent)':'var(--danger)'};">~${profit.estProfit.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lợi nhuận</div></div>
-      </div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:20px;">Ước tính dùng giá trung bình ~${profit.RATE.toLocaleString('vi-VN')}đ/lượt (dùng thử: tính trọn đời, trả phí: tính tháng này) — so với <b>Tổng doanh thu</b> ở trên. Không chính xác 100% như xem trên Anthropic Console, chỉ để theo dõi xu hướng nhanh.</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:20px;">Xem ước tính chi phí AI/lợi nhuận và bảng theo tháng ở tab <b>Tài chính</b>.</div>
 
       <div class="source-grid" style="margin-bottom:20px;">
         <div class="source-card"><div class="ic">${counts.active||0}</div><div class="label">Đang hoạt động</div></div>
@@ -171,13 +143,13 @@ function render(container, ctx){
             <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:13px;">
               <div><span style="color:var(--ink-soft);">Hạn dùng:</span> ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
               <div><span style="color:var(--ink-soft);">Gói:</span> <b>${esc((PLAN_TABS.find(t=>t.key===planKeyOf(p))||{}).label||'Chưa rõ')}</b>
-                ${planUnclear ? `<span style="margin-left:6px;font-size:12px;">— gắn tay:
-                  <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|30">1th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|180">6th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|365">12th</span></span>` : ''}
+                <span style="margin-left:6px;font-size:12px;">— gắn tay:
+                  <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|30">1th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|180">6th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|365">12th</span>${!planUnclear ? `/<span style="text-decoration:underline;cursor:pointer;color:var(--danger);" data-set-plan="${p.id}|clear">xoá</span>` : ''}</span>
               </div>
               <div><span style="color:var(--ink-soft);">Đã dùng:</span> ${esc(aiUsageLabel(p))}</div>
               <div><span style="color:var(--ink-soft);">Loại khách:</span> ${p.is_student?'🎓 Học viên':'Thường'}
                 <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-student="${p.id}|${!p.is_student}">đổi</span></div>
-              <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?'💰 Đã trả phí (trần 250 lượt/tháng)':'Chưa trả phí (trần dùng thử 50 lượt)'}
+              <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?'💰 Đã trả phí (trần 250 lượt/tháng)':'Chưa trả phí (trần dùng thử 100 lượt)'}
                 <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.has_paid}">đổi</span></div>
               ${p.ref_code ? `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Nội dung CK: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
             </div>
@@ -229,7 +201,7 @@ function render(container, ctx){
     container.querySelectorAll('[data-set-plan]').forEach(el=>{
       el.onclick = ()=>{
         const [id, days] = el.getAttribute('data-set-plan').split('|');
-        setPlanOnly(id, Number(days));
+        setPlanOnly(id, days === 'clear' ? null : Number(days));
       };
     });
 
@@ -294,7 +266,7 @@ function render(container, ctx){
 
   // Dùng khi kích hoạt TAY cho khách đã chuyển khoản thật (vd lúc webhook SePay bị lỗi/trễ đồng bộ)
   // — "Gia hạn" chỉ cộng ngày dùng (access_until), không tự bật has_paid, nên nếu không bấm thêm nút
-  // này, khách vẫn bị tính lượt AI theo trần dùng thử (65 lượt trọn đời) dù đã có hạn dùng dài hơn.
+  // này, khách vẫn bị tính lượt AI theo trần dùng thử (100 lượt trọn đời) dù đã có hạn dùng dài hơn.
   async function toggleHasPaid(id, hasPaid){
     state.busyId = id; draw();
     const { error } = await ctx.supabase.from('profiles').update({ has_paid: hasPaid }).eq('id', id);
