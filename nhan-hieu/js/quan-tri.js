@@ -326,10 +326,10 @@ function render(container, ctx){
     const p = state.profiles.find(x=>x.id===id);
     const base = (p.access_until && new Date(p.access_until).getTime() > Date.now()) ? new Date(p.access_until) : new Date();
     const next = new Date(base.getTime() + days*86400000);
-    // days âm = nút "Hoàn tác" (lỡ bấm nhầm) — chỉ chỉnh lại hạn dùng, không đổi nhãn gói vì đây
-    // không phải 1 lần mua gói mới.
-    const patch = { access_until: next.toISOString() };
-    if(days > 0) patch.last_plan_days = days;
+    // days âm = nút "Hoàn tác" (lỡ bấm nhầm) — xoá luôn nhãn gói vừa gán sai (không biết chắc gói
+    // thật trước đó là gì nên đưa về "Chưa rõ gói", admin gắn nhãn lại tay nếu cần) thay vì để nhãn
+    // sai (vd tự bị gắn "6 tháng") tồn tại mãi dù đã hoàn tác hạn dùng.
+    const patch = { access_until: next.toISOString(), last_plan_days: days > 0 ? days : null };
     const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
