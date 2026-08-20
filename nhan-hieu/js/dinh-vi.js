@@ -979,7 +979,10 @@ function render(container, ctx){
     state.luot2Loading = true; state.luot2Error = null; draw();
     const stopL2Progress = animateProgressBar(container.querySelector('#progress-bar-el-luot2'), 60);
     try{
-      const data = await callApi('/api/dinh-vi', { luot:2, answers: flattenAnswers(), luot1: state.luot1 }, 280000);
+      // skipGatedCallback: server chỉ trừ lượt ở lần gọi Lượt 1 (xem comment trong api/dinh-vi.js)
+      // — không bỏ qua thì sidebar sẽ cộng optimistic thêm 8 lượt nữa dù server không trừ, hiện sai
+      // thành "16 lượt" cho cả Định Vị dù thực tế chỉ 8.
+      const data = await callApi('/api/dinh-vi', { luot:2, answers: flattenAnswers(), luot1: state.luot1 }, 280000, { skipGatedCallback: true });
       state.luot2 = data.result;
       await persist({ luot1: state.luot1, luot2: data.result });
       state.luot2Error = null;

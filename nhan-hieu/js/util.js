@@ -239,7 +239,7 @@ async function callApiOnce(relativePath, body, timeoutMs){
   }
 }
 
-async function callApi(path, body, timeoutMs){
+async function callApi(path, body, timeoutMs, opts){
   // Đường dẫn tương đối (bỏ dấu "/" đầu) để hoạt động đúng dù web được host ở
   // gốc domain (Vercel) hay dưới 1 thư mục con qua reverse proxy (vd Cloudflare Worker
   // tại hesinhthaihieu.com/webxaynhanhieu) — trình duyệt sẽ tự nối theo đúng thư mục hiện tại.
@@ -265,7 +265,10 @@ async function callApi(path, body, timeoutMs){
   if(!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
   // Báo cho app-shell.js biết vừa gọi thành công 1 endpoint để tự cập nhật số lượt còn lại ở
   // sidebar ngay lập tức — không cần đợi load lại trang/chuyển trang mới thấy số mới.
-  if(window.onGatedApiSuccess) window.onGatedApiSuccess(relativePath);
+  // opts.skipGatedCallback: dùng khi 1 endpoint được gọi nhiều lần cho CÙNG 1 hành động chỉ trừ
+  // lượt 1 lần phía server (vd Lượt 2 của Định Vị, xem api/dinh-vi.js) — nếu không bỏ qua, sidebar
+  // sẽ cộng dồn optimistic 2 lần dù server chỉ trừ 1 lần, hiện sai số lượt đã dùng.
+  if(window.onGatedApiSuccess && !(opts && opts.skipGatedCallback)) window.onGatedApiSuccess(relativePath);
   return data;
 }
 
