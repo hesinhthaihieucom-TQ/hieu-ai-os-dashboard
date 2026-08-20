@@ -28,6 +28,7 @@ const AI_WEIGHTS = {
   'goi-y-hook-theo-chu-de': 1,
   'goi-y-day-bai': 1,
   'goi-y-tu-nguon': 1,
+  'hoi-dap': 1,
   'cham-diem-content': 2,
   'goi-y-lich': 2,
   'viet-content': 3,

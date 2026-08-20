@@ -34,8 +34,25 @@ const HELP_SECTIONS = [
 ];
 
 function renderHelp(container){
-  container.innerHTML = `
+  const state = { question:'', asking:false, answer:null, error:null };
+  function draw(){ container.innerHTML = html(); bind(); }
+
+  function html(){
+    return `
     <div class="page-head"><h1>Hỏi & Trợ Giúp</h1><p>Câu hỏi thường gặp khi dùng Xây Nhân Hiệu.</p></div>
+
+    <div class="section highlight" style="margin-bottom:24px;">
+      <h3>Hỏi AI trực tiếp</h3>
+      <div class="body" style="margin-bottom:10px;">Không thấy câu trả lời ở danh sách bên dưới? Gõ câu hỏi của bạn, AI sẽ trả lời dựa trên cách app hoạt động.</div>
+      <textarea id="hd-question" placeholder="Ví dụ: Làm sao để AI viết đúng giọng văn của tôi?" style="min-height:70px;">${esc(state.question)}</textarea>
+      <div class="btn-row" style="margin-top:10px;align-items:center;">
+        <button class="btn" data-action="ask" ${state.asking?'disabled':''}>${state.asking?'Đang trả lời…':'Hỏi AI'}</button>
+        ${!state.asking?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
+      </div>
+      ${state.error?`<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>`:''}
+      ${state.answer?`<div class="body" style="margin-top:14px;background:var(--accent-soft);padding:12px;border-radius:8px;">${esc(breakSentences(state.answer))}</div>`:''}
+    </div>
+
     ${HELP_SECTIONS.map(sec=>`
       <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">${esc(sec.group)}</div>
       ${sec.items.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('')}
@@ -45,6 +62,26 @@ function renderHelp(container){
       <div class="body">Cần hỗ trợ thêm hoặc muốn tìm hiểu các sản phẩm khác trong hệ sinh thái HIỂU? Truy cập <a href="https://hesinhthaihieu.com" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline;">hesinhthaihieu.com</a>.</div>
     </div>
   `;
+  }
+
+  function bind(){
+    const qInput = container.querySelector('#hd-question');
+    if(qInput) qInput.oninput = ()=>{ state.question = qInput.value; };
+    const askBtn = container.querySelector('[data-action="ask"]');
+    if(askBtn) askBtn.onclick = ask;
+  }
+
+  async function ask(){
+    if(!state.question.trim() || state.asking) return;
+    state.asking = true; state.error = null; state.answer = null; draw();
+    try{
+      const data = await callApi('/api/hoi-dap', { question: state.question.trim() });
+      state.answer = data.result.tra_loi;
+    } catch(e){ state.error = e.message; }
+    state.asking = false; draw();
+  }
+
+  draw();
 }
 
 window.Modules = window.Modules || {};
