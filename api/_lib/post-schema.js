@@ -97,16 +97,24 @@ const ANTI_AI_CLICHE_RULES = `QUY TẮC TRÁNH GIỌNG "NGHE NHƯ AI" (BẮT BU�
 - TUYỆT ĐỐI KHÔNG mở đầu hoặc chuyển đoạn bằng các cụm kể chuyện sáo rỗng sau (đặc trưng giọng AI, đọc vào lộ ngay): "Có một giai đoạn...", "Ngày trước mình...", "Mình từng...", "Có một thời điểm...", "Hồi đó...", "Có một lần...", "Mình nhận ra một điều...", "Có một sự thật...", "Điều lạ là...", "Nhìn bên ngoài...", "Có lúc...", "Có thời điểm...", "Có giai đoạn...", "Có một khoảng thời gian...", "Đã từng...".
 - Nếu cần lồng trải nghiệm cá nhân, viết theo kiểu ĐANG NÓI VỀ 1 NHẬN THỨC đã đúc kết, không phải kể chuyện theo trình tự thời gian. Ví dụ: thay vì "Mình từng nghĩ cuộc đời sẽ tự thay đổi...", viết "Mình đã mất khá lâu mới hiểu rằng, biết nhiều không đồng nghĩa với việc cuộc đời sẽ thay đổi."`;
 
-const CTA_COMMENT_RULES = `QUY TẮC CTA (BẮT BUỘC):
-- CTA luôn phải chốt bằng 1 từ khoá kích hoạt cụ thể gồm ĐÚNG 2 CHỮ (ví dụ: "Dòng tiền", "Sổ tay", "Bí kíp", "Bắt đầu"...), theo mẫu: "Để lại bình luận chữ '<từ khoá 2 chữ>' và mình sẽ gửi bạn <thứ nhận được cụ thể>." — không dùng CTA chung chung kiểu "inbox mình nhé" hay "để lại bình luận bên dưới" mà không có từ khoá.
-- Từ khoá phải khớp chủ đề bài và thứ người đọc sẽ nhận được (tài liệu, link, ưu đãi, tư vấn...).
+// Viết theo tư duy chuyên gia tăng trưởng Facebook (2026-08-20, theo yêu cầu chị Quỳnh): thuật toán
+// Facebook đẩy bài rộng hơn chủ yếu dựa trên TỐC ĐỘ + SỐ LƯỢNG tương tác thật trong khoảng 30-60
+// phút đầu, và bình luận có TRỌNG SỐ CAO HƠN HẲN lượt thích — đặc biệt bình luận sinh ra PHẢN HỒI
+// QUA LẠI (tác giả trả lời, người khác trả lời tiếp) được xếp vào nhóm "tương tác có ý nghĩa", đẩy
+// mạnh hơn nữa. Vì vậy toàn bộ CTA/bình luận ghim phải tối ưu để hạ thấp rào cản bình luận NGAY LÚC
+// ĐỌC, không phải để đẹp câu chữ suông.
+const CTA_COMMENT_RULES = `QUY TẮC CTA (BẮT BUỘC — tối ưu theo cách Facebook đẩy bài):
+- Facebook ưu tiên đẩy bài có nhiều bình luận thật, đến sớm, và có phản hồi qua lại — hơn hẳn lượt thích/lượt xem. CTA phải hạ THẤP NHẤT rào cản để người đọc bình luận ngay lúc đó, không phải "để lúc khác".
+- CTA luôn phải chốt bằng 1 từ khoá kích hoạt cụ thể gồm ĐÚNG 2 CHỮ, càng NGẮN — DỄ GÕ TRÊN ĐIỆN THOẠI — GÂY CẢM XÚC càng tốt (ví dụ: "Dòng tiền", "Sổ tay", "Bí kíp", "Bắt đầu"...) — từ khoá càng dễ gõ thì tỷ lệ người đọc thật sự bấm bình luận (thay vì chỉ định bụng rồi lướt qua) càng cao. Theo mẫu: "Để lại bình luận chữ '<từ khoá 2 chữ>' và mình sẽ gửi bạn <thứ nhận được cụ thể>." — không dùng CTA chung chung kiểu "inbox mình nhé" hay "để lại bình luận bên dưới" mà không có từ khoá.
+- Từ khoá phải khớp chủ đề bài và thứ người đọc sẽ nhận được (tài liệu, link, ưu đãi, tư vấn...) — hứa hẹn mơ hồ khiến người đọc nghi ngờ, giảm hẳn tỷ lệ bình luận thật.
 
-QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — đây là cú hích cuối cùng, không phải nhắc lại CTA cho có):
-- Bình luận ghim (cau_cmt_ghim) phải đánh THẲNG vào đúng nỗi đau/nỗi sợ/mong muốn đã nêu ở đoạn vấn đề (van_de) của bài — không viết chung chung, phải khiến người đang lưỡng lự cảm thấy "nói đúng tim đen mình" thì mới bấm bình luận. Chọn 1 trong các hướng sau, tuỳ hợp bài:
+QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — đây là bình luận ĐẦU TIÊN của chính tác giả dưới bài, dùng để MỒI và DẪN DẮT luồng bình luận, không phải nhắc lại CTA cho có):
+- Phải đánh THẲNG vào đúng nỗi đau/nỗi sợ/mong muốn đã nêu ở đoạn vấn đề (van_de) của bài — không viết chung chung, phải khiến người đang lưỡng lự cảm thấy "nói đúng tim đen mình" thì mới bấm bình luận. Chọn 1 trong các hướng sau, tuỳ hợp bài:
   • Xoáy vào cái giá phải trả nếu CỨ ĐỂ NGUYÊN tình trạng hiện tại, không hành động gì.
   • Gọi đúng tên nỗi ngại/lý do trì hoãn phổ biến nhất của người đọc, rồi trấn an bằng đúng 1 câu ngắn gọn.
   • Tạo cảm giác cấp bách thật (vì sao nên làm ngay lúc đọc bài này, không phải "để đó tính sau").
-- Vẫn phải nhắc đúng từ khoá CTA để người đọc biết gõ gì, nhưng viết như 1 câu tác giả buột miệng nói thêm — có cảm xúc thật, KHÔNG được viết kiểu thông báo hành chính ("Bình luận '...' để nhận ngay...").`;
+- Vẫn phải nhắc đúng từ khoá CTA để người đọc biết gõ gì, nhưng viết như 1 câu tác giả buột miệng nói thêm — có cảm xúc thật, KHÔNG được viết kiểu thông báo hành chính ("Bình luận '...' để nhận ngay...").
+- Người đọc lưỡng lự thường bắt chước đúng bình luận đầu tiên họ nhìn thấy — nên viết bình luận ghim NHƯ GIỌNG 1 NGƯỜI ĐỌC THẬT sắp bình luận (không phải giọng tác giả tự PR), để khi có người bình luận theo, cả luồng bình luận đọc tự nhiên, không lộ dàn dựng.`;
 
 // QUY TẮC CMT CTA SẢN PHẨM/GROUP nằm ở EXTRAS (không phải CORE) vì đây là field DUY NHẤT phụ thuộc
 // tên kênh/thương hiệu/sản phẩm/group người dùng chọn ở "Tuỳ chọn thêm" — tách ra khỏi CORE để bước
@@ -123,7 +131,8 @@ QUY TẮC CAPTION VIDEO (goi_y_caption):
   • YouTube: caption/mô tả dùng cho SEO nên có thể dài hơn hẳn — 2-3 câu ĐẦU phải chứa đúng từ khoá chính người xem hay tìm (vì đây là phần hiện trong kết quả tìm kiếm/preview), sau đó có thể mô tả thêm chi tiết/bối cảnh; hashtag đặt cuối cùng, tối đa 3-5 (YouTube chỉ hiện 3 hashtag đầu phía trên tiêu đề nên đặt hashtag quan trọng nhất lên đầu).
   • Zalo: giọng gần gũi, cá nhân, như đang nhắn tin chia sẻ với người quen chứ không phải đăng bài quảng cáo; ngắn gọn, hầu như KHÔNG dùng hashtag (Zalo không dùng hashtag để gợi ý khám phá nội dung như TikTok/YouTube); nên có 1 CTA rõ ràng dẫn về Zalo OA/nhóm nếu phù hợp.
 
-QUY TẮC HASHTAG (BẮT BUỘC):
+QUY TẮC HASHTAG (BẮT BUỘC — lưu ý về thuật toán, tránh kỳ vọng sai):
+- Trên Facebook, hashtag gần như KHÔNG ảnh hưởng tới lượt tiếp cận/đẩy bài — khác hẳn TikTok/Instagram, nơi hashtag là 1 kênh khám phá nội dung thật sự. Trên Facebook, hashtag chủ yếu để PHÂN LOẠI/tìm lại nội dung cũ (của người đăng và người xem), không phải đòn bẩy tăng reach. Vì vậy ưu tiên hashtag ĐÚNG NGÁCH/thương hiệu để dễ tìm lại và xây nhận diện nhất quán, không cố nhồi hashtag "đang viral" chung chung với hi vọng tăng tiếp cận trên Facebook — không có tác dụng đó ở nền tảng này (hashtag viral/trending chỉ thật sự đáng cân nhắc khi đăng dạng video lên TikTok — xem QUY TẮC CAPTION VIDEO bên dưới).
 - Xuất ĐÚNG 5 hashtag, không hơn không kém.
 - TẤT CẢ hashtag phải viết KHÔNG DẤU (bỏ hết dấu thanh và dấu chữ tiếng Việt, ví dụ "Tài Chính" → "TaiChinh"), viết liền không có khoảng trắng, không ký tự đặc biệt.
 - Nếu người dùng có cung cấp tên kênh Facebook/TikTok, 1 trong 5 hashtag PHẢI là tên kênh đó (không dấu, viết liền).
