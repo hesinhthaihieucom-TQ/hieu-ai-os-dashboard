@@ -22,9 +22,24 @@ const AMOUNT_TO_DAYS = {
   // là lý do khách chuyển đúng giá ưu đãi đêm 19/8 vẫn không tự kích hoạt được dù đã fix SEVQR.
   1890000: 180,  // 6 tháng, ưu đãi flash-sale
   2790000: 365,  // 12 tháng, ưu đãi flash-sale
+  // Giá giới thiệu (referral, xem REFERRAL_REGULAR_PLANS ở nhan-hieu/js/app-shell.js) — giảm 15%
+  // so với giá thường, CHỈ hiện cho người có referred_by_ref_code. Khớp đúng những số tiền này còn
+  // kích hoạt thưởng lượt AI cho người đã giới thiệu (xem creditReferralReward bên dưới).
+  424000: 30,    // 1 tháng, giá giới thiệu
+  2032000: 180,  // 6 tháng, giá giới thiệu
+  3392000: 365,  // 12 tháng, giá giới thiệu
 };
 // Số tiền coi là "đã dùng ưu đãi tháng đầu" — sau lần này học viên mua gói 1 tháng sẽ trả giá thường.
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
+
+// Số tiền giá giới thiệu — khớp 1 trong 3 số này thì mới kích hoạt thưởng cho người đã giới thiệu
+// (gói ưu đãi/flash-sale và giá học viên KHÔNG bao giờ tính hoa hồng, theo yêu cầu chị Quỳnh).
+const REFERRAL_AMOUNTS = new Set([424000, 2032000, 3392000]);
+// Quy đổi: người giới thiệu được thưởng lượt AI = 15% giá trị đơn hàng, tính theo giá bán lẻ
+// "Mua thêm lượt" hiện tại (1.500đ/lượt, xem AMOUNT_TO_TOPUP_LUOT) — chốt cùng lúc với % giảm giá
+// cho người được giới thiệu (xem memory project_referral_program_plan).
+const REFERRAL_LUOT_PER_DONG = 1500;
+const REFERRAL_REWARD_PERCENT = 0.15;
 
 // "Mua thêm lượt" — dành cho khách ĐÃ TRẢ PHÍ dùng vượt trần 250 lượt/tháng (xem
 // api/_lib/trial-quota.js). Số tiền này KHÔNG được trùng bất kỳ số tiền nào ở AMOUNT_TO_DAYS.
@@ -43,6 +58,62 @@ function timingSafeEqual(a, b) {
 function extractRefCode(content) {
   const m = /XNH[A-Z0-9]{6}/i.exec(content || '');
   return m ? m[0].toUpperCase() : null;
+}
+
+// Thưởng người ĐÃ giới thiệu (referrer) khi người ĐƯỢC giới thiệu (referee) vừa thanh toán thành
+// công giá giới thiệu lần ĐẦU TIÊN — best-effort, KHÔNG throw ra ngoài: nếu bước này lỗi, referee
+// vẫn đã được kích hoạt gói bình thường ở trên, không nên rollback hay chặn cả webhook chỉ vì phần
+// thưởng phụ này thất bại. Tự thưởng bằng đúng cơ chế đã có sẵn (không cần bảng/cột lượt mới):
+// - Người giới thiệu ĐANG dùng thử: hoàn (trừ ngược) trial_ai_uses — giống hệt refund_ai_quota,
+//   cho họ thêm dư địa dưới trần dùng thử hiện có.
+// - Người giới thiệu ĐÃ trả phí: cộng thẳng vào paid_ai_bonus tháng hiện tại — giống hệt cách
+//   "Mua thêm lượt" cộng bonus (dùng hết trong tháng, không cộng dồn vĩnh viễn).
+async function creditReferralReward(refereeProfile, transferAmount) {
+  if (!REFERRAL_AMOUNTS.has(transferAmount)) return;
+  if (!refereeProfile.referred_by_ref_code || refereeProfile.referral_reward_given) return;
+
+  const referrerResp = await supabaseAdmin(
+    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus`
+  );
+  const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
+  const referrer = referrerRows[0];
+  if (!referrer) return; // mã giới thiệu không còn khớp ai (vd tài khoản đã bị xoá) — bỏ qua, không lỗi
+
+  const rewardLuot = Math.round((transferAmount * REFERRAL_REWARD_PERCENT) / REFERRAL_LUOT_PER_DONG);
+  if (rewardLuot <= 0) return;
+
+  const rewardPatch = referrer.has_paid
+    ? (() => {
+        const month = new Date().toISOString().slice(0, 7);
+        const sameMonth = referrer.paid_ai_month === month;
+        return sameMonth
+          ? { paid_ai_bonus: (referrer.paid_ai_bonus || 0) + rewardLuot }
+          : { paid_ai_month: month, paid_ai_uses: 0, paid_ai_bonus: rewardLuot };
+      })()
+    : { trial_ai_uses: Math.max(0, (referrer.trial_ai_uses || 0) - rewardLuot) };
+
+  const patchResp = await supabaseAdmin(`profiles?id=eq.${referrer.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(rewardPatch),
+  });
+  if (!patchResp.ok) return;
+
+  // Đánh dấu đã thưởng NGAY (trước khi ghi log referrals) — referee này không được thưởng lại lần
+  // 2 kể cả nếu bước ghi log referrals bên dưới lỗi.
+  await supabaseAdmin(`profiles?id=eq.${refereeProfile.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ referral_reward_given: true }),
+  });
+  await supabaseAdmin('referrals', {
+    method: 'POST',
+    prefer: 'return=minimal',
+    body: JSON.stringify({
+      referrer_id: referrer.id,
+      referee_id: refereeProfile.id,
+      package_amount: transferAmount,
+      reward_luot: rewardLuot,
+    }),
+  });
 }
 
 // fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Supabase bị kẹt, request có thể treo tới
@@ -117,7 +188,7 @@ module.exports = async (req, res) => {
     let topupLuotGranted = null;
 
     if (refCode) {
-      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus`);
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
@@ -142,6 +213,9 @@ module.exports = async (req, res) => {
             status = 'matched';
             matchedProfileId = profile.id;
             daysGranted = days;
+            // Best-effort, KHÔNG để lỗi ở đây làm mất luôn việc ghi log sepay_transactions bên
+            // dưới — referee đã kích hoạt xong gói của họ rồi, phần thưởng cho referrer là phụ.
+            try { await creditReferralReward(profile, transferAmount); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
           } else {
             status = 'unmatched_amount'; // update thất bại, giữ nguyên để admin soát lại
           }

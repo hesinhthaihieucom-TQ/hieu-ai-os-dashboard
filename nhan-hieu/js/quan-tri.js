@@ -27,7 +27,12 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[] };
+
+  // Ai giới thiệu >= ngưỡng này được coi là "partner" — chị Quỳnh tự nhắn/chuyển khoản tay trả hoa
+  // hồng tiền mặt cho họ (KHÔNG tự động chuyển tiền — SePay chỉ nhận tiền vào, không có API chuyển
+  // ra). reward_luot ở bảng referrals chỉ để tham khảo mức % đã áp dụng, không phải số tiền mặt.
+  const PARTNER_REFERRAL_THRESHOLD = 5;
 
   const PLAN_TABS = [
     { key:'all', label:'Tất cả' },
@@ -45,7 +50,10 @@ function render(container, ctx){
     if(!ctx.profile || ctx.profile.role !== 'admin'){
       state.screen = 'denied'; draw(); return;
     }
-    await Promise.all([load(), loadRevenue()]);
+    // load() TRƯỚC (không gộp Promise.all) — loadReferralPartners() cần state.profiles đã có sẵn
+    // để tra email theo referrer_id, chạy song song sẽ có lúc profiles vẫn còn rỗng.
+    await load();
+    await Promise.all([loadRevenue(), loadReferralPartners()]);
     state.screen = 'main';
     draw();
   }
@@ -54,6 +62,24 @@ function render(container, ctx){
     const { data, error } = await ctx.supabase.from('profiles').select('*').order('access_until', { ascending:true, nullsFirst:true });
     if(error){ state.error = error.message; state.profiles = []; return; }
     state.profiles = data || [];
+  }
+
+  async function loadReferralPartners(){
+    const { data } = await ctx.supabase.from('referrals').select('referrer_id, reward_luot');
+    const rows = data || [];
+    const byReferrer = {};
+    rows.forEach(r=>{
+      if(!byReferrer[r.referrer_id]) byReferrer[r.referrer_id] = { count:0, luot:0 };
+      byReferrer[r.referrer_id].count++;
+      byReferrer[r.referrer_id].luot += (r.reward_luot||0);
+    });
+    state.referralPartners = Object.entries(byReferrer)
+      .filter(([, v]) => v.count >= PARTNER_REFERRAL_THRESHOLD)
+      .map(([referrerId, v]) => {
+        const p = state.profiles.find(pr => pr.id === referrerId);
+        return { id: referrerId, email: (p && p.email) || referrerId, fullName: p && p.full_name, count: v.count, luot: v.luot };
+      })
+      .sort((a, b) => b.count - a.count);
   }
 
   // Tính tổng doanh thu từ TOÀN BỘ giao dịch đã khớp (không giới hạn 20 dòng như danh sách hiển
@@ -107,6 +133,19 @@ function render(container, ctx){
         <div class="source-card"><div class="ic">${counts.expired||0}</div><div class="label">Đã hết hạn</div></div>
         <div class="source-card"><div class="ic">${counts.none||0}</div><div class="label">Chưa kích hoạt</div></div>
       </div>
+
+      ${state.referralPartners.length ? `
+      <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
+        <h3 style="margin-bottom:6px;">🌟 Partner giới thiệu (≥ ${PARTNER_REFERRAL_THRESHOLD} người)</h3>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Đủ ngưỡng để cân nhắc trả hoa hồng tiền mặt — tự nhắn/chuyển khoản tay, hệ thống không tự động chuyển tiền.</div>
+        ${state.referralPartners.map(rp=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;flex-wrap:wrap;">
+            <span>${esc(rp.email)}${rp.fullName?` <span style="color:var(--ink-soft);">(${esc(rp.fullName)})</span>`:''}</span>
+            <span><b style="color:var(--accent);">${rp.count}</b> người · đã tặng <b>${rp.luot}</b> lượt</span>
+          </div>
+        `).join('')}
+      </div>
+      ` : ''}
 
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Lọc theo gói đã mua gần nhất</label>
       <div class="chips" style="margin-bottom:20px;">

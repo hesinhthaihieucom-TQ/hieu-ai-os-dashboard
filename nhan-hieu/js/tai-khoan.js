@@ -44,6 +44,7 @@ function render(container, ctx){
     newPassword:'', confirmPassword:'', passwordSaving:false, passwordError:null, passwordSaved:false,
     goals: { viet:0, taicheviral:0, chamdiemcontent:0, lich:0, chamdiemhook:0, hook:0, suakenh:0 },
     actualUsage: {}, actualLuot: {},
+    referralCount: 0, referralLuotEarned: 0, referralLinkCopied: false,
   };
 
   const DRAFT_KEY = 'tai-khoan-goals';
@@ -78,6 +79,23 @@ function render(container, ctx){
     state.actualUsage = counts;
     state.actualLuot = luot;
     draw();
+  }
+
+  // Đếm số người đã giới thiệu thành công + tổng lượt đã được thưởng — bảng referrals chỉ có dòng
+  // khi referee đã trả tiền THẬT (xem creditReferralReward trong api/sepay-webhook.js), nên đây
+  // đúng nghĩa "đã giới thiệu thành công", không tính người mới bấm link nhưng chưa mua gì.
+  async function loadReferralStats(){
+    const { data } = await ctx.supabase.from('referrals').select('reward_luot').eq('referrer_id', ctx.user.id);
+    const rows = data || [];
+    state.referralCount = rows.length;
+    state.referralLuotEarned = rows.reduce((sum,r)=> sum + (r.reward_luot||0), 0);
+    draw();
+  }
+
+  function referralLink(){
+    const refCode = ctx.profile && ctx.profile.ref_code;
+    if(!refCode) return '';
+    return `${location.origin}${location.pathname}?ref=${refCode}`;
   }
 
   function remainingInfo(){
@@ -144,6 +162,19 @@ function render(container, ctx){
         ${state.passwordSaved?`<div style="color:var(--accent);font-size:12.5px;margin-top:8px;">✓ Đã đổi mật khẩu thành công</div>`:''}
       </div>
 
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
+        <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — bạn bè bấm vào đăng ký sẽ được <b>giảm 15%</b> khi mua gói giá thường (không áp dụng gói ưu đãi/flash-sale), còn bạn được <b>tặng lượt AI</b> tương đương 15% giá trị đơn hàng của họ ngay khi họ thanh toán thành công lần đầu.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--panel);" onclick="this.select()">
+          <button class="btn btn-sm" data-action="copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>
+        </div>
+        <div style="display:flex;gap:24px;margin-top:14px;flex-wrap:wrap;">
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralLuotEarned}</div><div style="font-size:12px;color:var(--ink-soft);">lượt AI đã được tặng</div></div>
+        </div>
+      </div>
+
       <div class="card">
         <h3 style="margin-bottom:6px;">Lượt AI — lên kế hoạch dùng trong tháng</h3>
         <div class="hint-box" style="margin-bottom:14px;">${limitLabel()}</div>
@@ -183,6 +214,12 @@ function render(container, ctx){
   }
 
   function bind(){
+    const copyRefBtn = container.querySelector('[data-action="copy-referral-link"]');
+    if(copyRefBtn) copyRefBtn.onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(referralLink()); } catch(e){}
+      state.referralLinkCopied = true; draw();
+      setTimeout(()=>{ state.referralLinkCopied = false; draw(); }, 2000);
+    };
     container.querySelectorAll('[data-goal]').forEach(el=>{
       el.oninput = ()=>{
         const key = el.getAttribute('data-goal');
@@ -265,6 +302,7 @@ function render(container, ctx){
   draw();
   loadGoalsDraft();
   loadActualUsage();
+  loadReferralStats();
 }
 window.Modules = window.Modules || {};
 window.Modules['tai-khoan'] = { title:'Tài khoản', render };

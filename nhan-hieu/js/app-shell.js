@@ -28,6 +28,18 @@ const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'L
 const TRIAL_AI_LIMIT = 100;
 const PAID_MONTHLY_AI_LIMIT = 250;
 const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
+
+// Chương trình giới thiệu: bắt lấy ?ref=<mã> ngay khi vào web (kể cả trước khi đăng ký/đăng nhập —
+// người mới có thể lướt vài trang trước khi bấm "Tạo tài khoản") và lưu tạm vào localStorage, tới
+// lúc signUp() mới thực sự gửi lên (xem renderAuthScreen bên dưới). Không ghi đè nếu đã lưu sẵn 1
+// mã khác — tôn trọng đúng link giới thiệu ĐẦU TIÊN người này từng bấm vào.
+const REF_STORAGE_KEY = 'xnh_referred_by_ref_code';
+(function captureReferralCode(){
+  try {
+    const m = /[?&]ref=([A-Za-z0-9]+)/.exec(location.search);
+    if(m && !localStorage.getItem(REF_STORAGE_KEY)) localStorage.setItem(REF_STORAGE_KEY, m[1].toUpperCase());
+  } catch(e){}
+})();
 function paidMonthlyUsage(p){
   const month = new Date().toISOString().slice(0,7);
   const sameMonth = p.paid_ai_month === month;
@@ -143,8 +155,23 @@ const FLASH_SALE_PLANS = [
   { key:'6m_flash', label:'6 tháng — Ưu đãi 19-20/8', amount:1890000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19-20/8 — giảm thẳng 500.000đ so với giá thường (2.390.000đ).', recommended:true, flash:true },
   { key:'12m_flash', label:'12 tháng — Ưu đãi 19-20/8', amount:2790000, note:'🔥 Chỉ áp dụng nếu chuyển khoản trong ngày 19-20/8 — giảm thẳng 1.200.000đ so với giá thường (3.990.000đ).', recommended:true, flash:true },
 ];
+// Chương trình giới thiệu (2026-08-20): người ĐƯỢC giới thiệu (referred_by_ref_code có giá trị,
+// gán 1 lần lúc đăng ký — xem handle_new_user trong schema_full.sql) được giảm 15% ngay lúc mua,
+// CHỈ áp dụng gói giá thường — không cộng dồn với giá học viên (đã giảm 20% sẵn) hay flash-sale
+// (ưu đãi có thời hạn riêng, không tính hoa hồng giới thiệu, xem api/sepay-webhook.js). Người giới
+// thiệu được thưởng lượt AI tương đương 15% giá trị đơn này, cộng tự động qua webhook khi khớp
+// đúng 1 trong 3 số tiền dưới đây — 3 số tiền này ĐÃ kiểm tra không trùng bất kỳ gói nào khác.
+const REFERRAL_REGULAR_PLANS = [
+  { key:'1m_ref', label:'1 tháng (giá giới thiệu)', amount:424000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 424.000đ so với giá thường 499.000đ.' },
+  { key:'6m_ref', label:'6 tháng (giá giới thiệu)', amount:2032000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 2.032.000đ so với giá thường 2.390.000đ.', recommended:true },
+  { key:'12m_ref', label:'12 tháng (giá giới thiệu)', amount:3392000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 3.392.000đ so với giá thường 3.990.000đ.', recommended:true },
+];
 function currentPaymentPlans(){
-  const base = (AppState.profile && AppState.profile.is_student) ? buildStudentPlans(AppState.profile) : REGULAR_PLANS;
+  const p = AppState.profile;
+  const isStudent = !!(p && p.is_student);
+  const base = isStudent
+    ? buildStudentPlans(p)
+    : (p && p.referred_by_ref_code) ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS;
   return isFlashSaleActive() ? [...FLASH_SALE_PLANS, ...base] : base;
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
@@ -278,9 +305,11 @@ function paymentCardHtml(){
     ${(() => {
       function chipHtml(pl){
         const savings = planSavingsLabel(pl);
-        // Gói flash sale: hiện thêm giá gốc gạch ngang ngay trong chip — thấy ngay đang được giảm
-        // bao nhiêu mà không cần bấm chọn mới thấy, tăng cảm giác "hời" ngay từ cái nhìn đầu tiên.
-        const originalPlan = pl.flash ? REGULAR_PLANS.find(r => r.key === pl.key.replace('_flash','')) : null;
+        // Gói flash sale/giá giới thiệu: hiện thêm giá gốc gạch ngang ngay trong chip — thấy ngay
+        // đang được giảm bao nhiêu mà không cần bấm chọn mới thấy, tăng cảm giác "hời" ngay từ cái
+        // nhìn đầu tiên.
+        const originalPlan = pl.flash ? REGULAR_PLANS.find(r => r.key === pl.key.replace('_flash',''))
+          : pl.key.endsWith('_ref') ? REGULAR_PLANS.find(r => r.key === pl.key.replace('_ref','')) : null;
         const priceHtml = originalPlan
           ? `<s style="opacity:.65;font-weight:400;">${originalPlan.amount.toLocaleString('vi-VN')}đ</s> ${pl.amount.toLocaleString('vi-VN')}đ`
           : `${pl.amount.toLocaleString('vi-VN')}đ`;
@@ -486,8 +515,13 @@ function renderAuthScreen(err, successMsg){
         if(signupIsStudent === null){ renderAuthScreen('Vui lòng chọn bạn đã học khoá Xây Nhân Hiệu hay chưa.'); return; }
         btn.disabled = true; btn.textContent = 'Đang xử lý…';
         const full_name = root.querySelector('#af-name').value.trim();
-        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name, is_student: signupIsStudent } } });
+        let referredByRefCode = null;
+        try { referredByRefCode = localStorage.getItem(REF_STORAGE_KEY) || null; } catch(e){}
+        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name, is_student: signupIsStudent, referred_by_ref_code: referredByRefCode } } });
         if(error) throw error;
+        // Đã dùng xong (handle_new_user trong schema_full.sql đã đọc metadata này lúc tạo profile)
+        // — xoá để lần đăng ký SAU đó (vd tài khoản khác trên cùng máy) không bị gán nhầm referrer cũ.
+        try { localStorage.removeItem(REF_STORAGE_KEY); } catch(e){}
         // Đẩy lead sang Brevo để chăm sóc qua email — không chờ, không chặn luồng đăng ký dù lỗi
         // (vd chưa cấu hình BREVO_API_KEY) vì đây chỉ là việc phụ, không phải điều kiện đăng ký.
         fetch('api/sync-lead-brevo', {

@@ -46,6 +46,17 @@ alter table profiles add column if not exists paid_ai_month text;
 -- AMOUNT_TO_DAYS) — cộng vào trần PAID_MONTHLY_AI_LIMIT của paid_ai_month hiện tại, tự về 0 khi
 -- sang tháng mới (reset cùng lúc với paid_ai_uses, xem api/_lib/trial-quota.js).
 alter table profiles add column if not exists paid_ai_bonus integer not null default 0;
+-- Chương trình giới thiệu (2026-08-20): người GIỚI THIỆU (referrer) được tặng lượt AI, người ĐƯỢC
+-- giới thiệu (referee) được giảm giá tiền thật ngay lúc mua (xem REFERRAL_REGULAR_PLANS ở
+-- app-shell.js + AMOUNT_TO_DAYS ở sepay-webhook.js) — chỉ áp dụng gói giá thường, KHÔNG áp dụng
+-- gói học viên/flash-sale (đã giảm giá sẵn, không cộng dồn thêm ưu đãi giới thiệu).
+-- referred_by_ref_code: ref_code của người đã giới thiệu, ghi 1 LẦN lúc đăng ký (xem handle_new_user),
+-- không đổi được sau đó — tự suy ra ai là người giới thiệu qua ref_code này.
+alter table profiles add column if not exists referred_by_ref_code text;
+-- Chỉ thưởng cho người giới thiệu ĐÚNG 1 LẦN — vào lần đầu người được giới thiệu thanh toán thành
+-- công 1 gói giá thường (không tính gói ưu đãi). Các lần mua/gia hạn sau đó của cùng người này
+-- không thưởng lại nữa (cờ này chặn double-reward).
+alter table profiles add column if not exists referral_reward_given boolean not null default false;
 
 update profiles p set email = u.email from auth.users u where p.id = u.id and p.email is null;
 
@@ -74,11 +85,20 @@ end $$;
 -- phát sinh thêm rủi ro chi phí (dùng hết lượt trong 1 ngày hay trải đều 7 ngày thì chi phí như nhau).
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  v_ref_input text := new.raw_user_meta_data->>'referred_by_ref_code';
+  v_ref_valid text;
 begin
-  insert into public.profiles (id, full_name, email, access_until, ref_code, is_student)
+  -- Chỉ ghi referred_by_ref_code nếu mã đó THẬT SỰ khớp 1 tài khoản đang tồn tại — tránh lưu rác
+  -- (mã gõ sai/bịa, hay link giới thiệu cũ của tài khoản đã bị xoá) khiến sau này báo cáo/thưởng
+  -- referral tra cứu ra rỗng mà không rõ lý do.
+  if v_ref_input is not null and v_ref_input <> '' then
+    select ref_code into v_ref_valid from public.profiles where ref_code = v_ref_input;
+  end if;
+  insert into public.profiles (id, full_name, email, access_until, ref_code, is_student, referred_by_ref_code)
   values (
     new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days',
-    public.generate_ref_code(), coalesce((new.raw_user_meta_data->>'is_student')::boolean, false)
+    public.generate_ref_code(), coalesce((new.raw_user_meta_data->>'is_student')::boolean, false), v_ref_valid
   );
   return new;
 end;
@@ -451,6 +471,27 @@ begin
     foreign key (matched_profile_id) references profiles(id) on delete set null;
 end $$;
 
+-- Lịch sử từng lượt giới thiệu THÀNH CÔNG (referee đã trả tiền, referrer đã được thưởng) — ghi bởi
+-- api/sepay-webhook.js bằng service role. referee_id unique vì mỗi người chỉ thưởng cho referrer
+-- ĐÚNG 1 LẦN (xem profiles.referral_reward_given). Dùng để đếm "ai đã giới thiệu >= 5 người" cho
+-- diện "partner" trả hoa hồng tiền mặt thủ công (xem quan-tri.js) — trả tay, KHÔNG tự động chuyển
+-- tiền (SePay chỉ nhận tiền vào, không có API chuyển tiền ra).
+create table if not exists referrals (
+  id uuid primary key default gen_random_uuid(),
+  referrer_id uuid not null references profiles(id) on delete cascade,
+  referee_id uuid not null references profiles(id) on delete cascade,
+  package_amount bigint not null,
+  reward_luot integer not null,
+  created_at timestamptz not null default now()
+);
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'referrals_referee_id_unique') then
+    alter table referrals add constraint referrals_referee_id_unique unique (referee_id);
+  end if;
+end $$;
+create index if not exists referrals_referrer_idx on referrals(referrer_id);
+
 -- Ghi lại TỪNG lần dùng AI theo đúng hành động (action_key/weight) — profiles chỉ lưu TỔNG số lượt
 -- (trial_ai_uses/paid_ai_uses), không biết đã dùng vào việc gì. Bảng này cho phép người dùng tự
 -- xem "tôi đã dùng bao nhiêu lượt cho Viết Content/Chấm điểm/..." ở mục Tài khoản. Ghi bởi
@@ -483,6 +524,7 @@ alter table cta_bank_personal enable row level security;
 alter table promo_assets enable row level security;
 alter table brands enable row level security;
 alter table sepay_transactions enable row level security;
+alter table referrals enable row level security;
 alter table ai_usage_log enable row level security;
 -- Người dùng tự xem lịch sử dùng lượt của CHÍNH MÌNH (mục Tài khoản) — chỉ service_role được ghi
 -- (xem checkAndConsumeTrialQuota), không cấp insert cho authenticated/anon để tránh tự khai khống.
@@ -530,6 +572,14 @@ create policy "hooks_bank_shared_admin_write" on hooks_bank_shared for all using
 -- sepay_transactions: chỉ admin đọc được trong app; webhook ghi bằng service role key (bỏ qua RLS)
 drop policy if exists "sepay_transactions_admin_read" on sepay_transactions;
 create policy "sepay_transactions_admin_read" on sepay_transactions for select using (is_admin());
+
+-- referrals: admin đọc toàn bộ (đếm "partner" >= 5 người ở quan-tri.js); người giới thiệu tự xem
+-- được lịch sử của CHÍNH MÌNH (mục Tài khoản, đếm "bạn đã giới thiệu bao nhiêu người") — webhook
+-- ghi bằng service role key (bỏ qua RLS), không cấp insert cho authenticated/anon.
+drop policy if exists "referrals_admin_read" on referrals;
+create policy "referrals_admin_read" on referrals for select using (is_admin());
+drop policy if exists "referrals_own_read" on referrals;
+create policy "referrals_own_read" on referrals for select using (auth.uid() = referrer_id);
 
 -- ============================================================
 -- 10. BACKFILL DỮ LIỆU CŨ (an toàn chạy lại nhiều lần — chỉ đụng dòng còn thiếu dữ liệu)
