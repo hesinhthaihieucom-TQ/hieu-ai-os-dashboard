@@ -284,7 +284,12 @@ function paymentCardHtml(){
         const priceHtml = originalPlan
           ? `<s style="opacity:.65;font-weight:400;">${originalPlan.amount.toLocaleString('vi-VN')}đ</s> ${pl.amount.toLocaleString('vi-VN')}đ`
           : `${pl.amount.toLocaleString('vi-VN')}đ`;
-        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${pl.recommended?'🔥 ':''}${esc(pl.label)} — ${priceHtml}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+        // Tag đỏ "FLASH SALE" kiểu app bán hàng — nổi bật hơn hẳn emoji 🔥 đứng trước chữ, giúp
+        // phân biệt ngay gói ưu đãi có thời hạn với gói giá thường trong danh sách (theo phản hồi
+        // chị Quỳnh 2026-08-20). Gắn theo pl.flash (đúng ngữ nghĩa "đang giảm giá có hạn"), không
+        // gắn theo pl.recommended (khái niệm khác — gói được đề xuất, có thể không phải flash sale).
+        const flashTag = pl.flash ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">FLASH SALE</span>` : '';
+        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${flashTag}${esc(pl.label)} — ${priceHtml}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
       }
       const flashPlans = plans.filter(pl => pl.flash);
       const basePlans = plans.filter(pl => !pl.flash);
