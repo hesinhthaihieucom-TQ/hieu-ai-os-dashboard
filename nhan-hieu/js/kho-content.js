@@ -246,6 +246,7 @@ function render(container, ctx){
         <div class="btn-row" style="margin-top:14px;">
           <button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>
           ${!isEditing ? `<span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>` : ''}
+          ${!isEditing ? `<span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-delete-post="${p.id}">Xoá bài</span>` : ''}
         </div>
         ${writeActionHtml('post:'+p.id)}
       </div>
@@ -397,6 +398,15 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-edit-save]').forEach(el=>{
       el.onclick = ()=>{ savePostEdit(el.getAttribute('data-edit-save')); };
+    });
+    container.querySelectorAll('[data-delete-post]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-delete-post');
+        if(!(await confirmModal('Xoá vĩnh viễn bài này khỏi Kho Content? Không khôi phục được — nếu bài đã có trong Lịch Đăng Bài, chỗ đó cũng sẽ mất liên kết tới bài.'))) return;
+        await ctx.supabase.from('posts').delete().eq('id', id);
+        await loadPosts();
+        draw();
+      };
     });
 
     container.querySelectorAll('[data-ne-viral]').forEach(el=>{
