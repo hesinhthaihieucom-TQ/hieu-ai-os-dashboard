@@ -12,11 +12,16 @@ const ACTION_WEIGHTS_DISPLAY = [
 ];
 
 // Các mục cho người dùng tự đặt "mục tiêu tháng này" — dùng đúng trọng số ở trên (weight) để cộng
-// dồn ra tổng lượt cần, so với lượt CÒN LẠI (không phải tổng trần) để cảnh báo đúng thực tế.
+// dồn ra tổng lượt cần, so với lượt CÒN LẠI (không phải tổng trần) để cảnh báo đúng thực tế. Phủ
+// đủ các hành động hay lặp lại hàng tháng — Định Vị/dán kết quả không đưa vào đây vì thường chỉ
+// làm 1 lần, đã có trong bảng "mỗi hành động tốn bao nhiêu lượt" ở trên rồi.
 const GOAL_ITEMS = [
   { key:'viet', label:'Viết Content (bài)', weight:3 },
-  { key:'cham', label:'Chấm điểm Content (lần)', weight:2 },
-  { key:'hook', label:'Tạo/Chấm điểm/Cải thiện Hook (lần)', weight:1 },
+  { key:'taicheviral', label:'Tái Chế Content Viral (lần)', weight:3 },
+  { key:'chamdiemcontent', label:'Chấm điểm Content (lần)', weight:2 },
+  { key:'lich', label:'Gợi ý lịch đăng bài (lần/tuần)', weight:2 },
+  { key:'chamdiemhook', label:'Chấm điểm Hook (lần)', weight:1 },
+  { key:'hook', label:'Tạo/Cải thiện Hook (lần)', weight:1 },
   { key:'suakenh', label:'Sửa Kênh (lần)', weight:4 },
 ];
 
@@ -26,10 +31,19 @@ function render(container, ctx){
     avatarPreview: (ctx.profile && ctx.profile.avatar_url) || null,
     avatarSaving:false, nameSaving:false, nameSaved:false,
     newPassword:'', confirmPassword:'', passwordSaving:false, passwordError:null, passwordSaved:false,
-    goals: { viet:0, cham:0, hook:0, suakenh:0 },
+    goals: { viet:0, taicheviral:0, chamdiemcontent:0, lich:0, chamdiemhook:0, hook:0, suakenh:0 },
   };
 
+  const DRAFT_KEY = 'tai-khoan-goals';
+  function persistGoals(){ saveModuleDraft(ctx, DRAFT_KEY, state.goals); }
+
   function draw(){ container.innerHTML = html(); bind(); }
+
+  async function loadGoalsDraft(){
+    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+    if(draft) Object.assign(state.goals, draft);
+    draw();
+  }
 
   function remainingInfo(){
     const p = ctx.profile;
@@ -136,6 +150,7 @@ function render(container, ctx){
         const key = el.getAttribute('data-goal');
         state.goals[key] = Number(el.value)||0;
         draw();
+        persistGoals();
         const newEl = container.querySelector(`[data-goal="${key}"]`);
         if(newEl) newEl.focus();
       };
@@ -210,6 +225,7 @@ function render(container, ctx){
   }
 
   draw();
+  loadGoalsDraft();
 }
 window.Modules = window.Modules || {};
 window.Modules['tai-khoan'] = { title:'Tài khoản', render };
