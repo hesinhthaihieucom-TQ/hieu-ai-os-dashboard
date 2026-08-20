@@ -39,17 +39,30 @@ const AI_WEIGHTS = {
   'dinh-vi-parse': 6,
 };
 
+// Trước đây fetch() này KHÔNG có giới hạn thời gian chờ — nếu RPC bị kẹt (vd khoá dòng "for
+// update" bị giữ lâu bởi 1 request khác chưa xong), lệnh gọi có thể treo tới tận khi Vercel tự
+// ngắt hàm (300s), khiến MỌI hành động AI (không riêng gì 1 luồng cụ thể) đều bị "treo" ở bước
+// kiểm tra lượt, trước khi kịp gọi tới Anthropic. Đặt trần 12s riêng cho lệnh gọi RPC này — lỗi ở
+// đây vốn đã được coi là "để dùng thừa còn hơn chặn oan" (xem checkAndConsumeTrialQuota), nên hết
+// giờ vẫn xử lý an toàn y như mọi lỗi khác, không chặn người dùng.
 async function supabaseRpc(fn, args) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-    },
-    body: JSON.stringify(args),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    return await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify(args),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Ghi 1 dòng lịch sử dùng lượt (ai_usage_log) để người dùng tự xem lại "đã dùng bao nhiêu lượt cho
@@ -57,6 +70,8 @@ async function supabaseRpc(fn, args) {
 // Best-effort: lỗi ghi không được làm hỏng luồng chính (đã được phép dùng thì cứ để dùng).
 async function logUsage(userId, actionKey, weight) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/ai_usage_log`, {
       method: 'POST',
@@ -66,9 +81,13 @@ async function logUsage(userId, actionKey, weight) {
         Authorization: `Bearer ${serviceKey}`,
         Prefer: 'return=minimal',
       },
+      signal: controller.signal,
       body: JSON.stringify({ user_id: userId, action_key: actionKey, weight }),
     });
-  } catch (e) {}
+  } catch (e) {
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Trả về null nếu được phép dùng (đã tự tăng đếm lên 1), hoặc 1 chuỗi thông báo nếu bị chặn vì hết
