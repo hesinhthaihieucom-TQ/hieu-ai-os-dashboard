@@ -1,5 +1,5 @@
 const NAV = [
-  { key:'trang-chu', title:'Trang chủ' },
+  { key:'trang-chu', title:'Trang chủ', hidden:true }, // không hiện trong sidebar — chỉ dành cho lúc mới đăng nhập/đăng ký, vào lại qua bấm logo/"XÂY NHÂN HIỆU"
   { key:'dinh-vi', title:'Định Vị' },
   { key:'sua-kenh', title:'Sửa Kênh' },
   { key:'dinh-dang-content', title:'Dạng Content' },
@@ -515,15 +515,10 @@ function renderApp(){
   const isAdmin = AppState.profile && AppState.profile.role === 'admin';
   const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin));
   const nav = root.querySelector('#sidebar-nav');
-  // "Trang chủ" không tính vào số thứ tự — giữ nguyên số bước 1,2,3... khớp với "Bước N" đã in
-  // sẵn trên từng trang (Định Vị=1, Sửa Kênh=2...), tránh lệch số gây hiểu lầm là 2 hệ đếm khác nhau.
-  let stepNum = 0;
-  nav.innerHTML = visibleNav.map((n)=>{
-    const isHome = n.key==='trang-chu';
-    if(!isHome) stepNum++;
+  nav.innerHTML = visibleNav.map((n,i)=>{
     return `
     <div class="sidebar-item ${AppState.route===n.key?'active':''}" data-key="${n.key}">
-      <span class="num">${isHome?'🏠':stepNum}</span><span>${esc(n.title)}</span>
+      <span class="num">${i+1}</span><span>${esc(n.title)}</span>
     </div>
   `;}).join('');
 

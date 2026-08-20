@@ -51,6 +51,25 @@ async function supabaseRpc(fn, args) {
   });
 }
 
+// Ghi 1 dòng lịch sử dùng lượt (ai_usage_log) để người dùng tự xem lại "đã dùng bao nhiêu lượt cho
+// việc gì" ở mục Tài khoản — profiles chỉ lưu tổng số, không biết chi tiết theo hành động.
+// Best-effort: lỗi ghi không được làm hỏng luồng chính (đã được phép dùng thì cứ để dùng).
+async function logUsage(userId, actionKey, weight) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/ai_usage_log`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({ user_id: userId, action_key: actionKey, weight }),
+    });
+  } catch (e) {}
+}
+
 // Trả về null nếu được phép dùng (đã tự tăng đếm lên 1), hoặc 1 chuỗi thông báo nếu bị chặn vì hết
 // lượt — gọi ĐÚNG 1 LẦN cho mỗi hành động AI "chính" (viết bài, chấm điểm, tạo hook, lên lịch...),
 // KHÔNG gọi cho các việc AI tự động/nhỏ (phân loại hook/trục, gợi ý hashtag sau khi đã viết bài) vì
@@ -66,7 +85,7 @@ async function checkAndConsumeTrialQuota(userId, actionKey) {
     });
     if (!resp.ok) return null;
     const data = await resp.json();
-    if (data.allowed) return null;
+    if (data.allowed) { await logUsage(userId, actionKey, weight); return null; }
     if (data.mode === 'trial') {
       return `Bạn đã dùng hết ${TRIAL_AI_LIMIT} lượt AI miễn phí trong thời gian dùng thử — vào mục "Nâng cấp / Mua gói" để dùng tiếp không giới hạn.`;
     }

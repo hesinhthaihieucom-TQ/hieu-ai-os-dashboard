@@ -422,6 +422,19 @@ begin
     foreign key (matched_profile_id) references profiles(id) on delete set null;
 end $$;
 
+-- Ghi lại TỪNG lần dùng AI theo đúng hành động (action_key/weight) — profiles chỉ lưu TỔNG số lượt
+-- (trial_ai_uses/paid_ai_uses), không biết đã dùng vào việc gì. Bảng này cho phép người dùng tự
+-- xem "tôi đã dùng bao nhiêu lượt cho Viết Content/Chấm điểm/..." ở mục Tài khoản. Ghi bởi
+-- checkAndConsumeTrialQuota() (api/_lib/trial-quota.js) — best-effort, lỗi ghi không chặn người dùng.
+create table if not exists ai_usage_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  action_key text not null,
+  weight int not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists ai_usage_log_user_created_idx on ai_usage_log(user_id, created_at);
+
 -- ============================================================
 -- 9. ROW LEVEL SECURITY
 -- ============================================================
@@ -440,6 +453,11 @@ alter table hook_scores enable row level security;
 alter table promo_assets enable row level security;
 alter table brands enable row level security;
 alter table sepay_transactions enable row level security;
+alter table ai_usage_log enable row level security;
+-- Người dùng tự xem lịch sử dùng lượt của CHÍNH MÌNH (mục Tài khoản) — chỉ service_role được ghi
+-- (xem checkAndConsumeTrialQuota), không cấp insert cho authenticated/anon để tránh tự khai khống.
+drop policy if exists "ai_usage_log_own_read" on ai_usage_log;
+create policy "ai_usage_log_own_read" on ai_usage_log for select using (auth.uid() = user_id);
 alter table weekly_ai_drafts enable row level security;
 alter table module_drafts enable row level security;
 
