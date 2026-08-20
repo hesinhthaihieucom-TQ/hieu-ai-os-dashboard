@@ -205,10 +205,25 @@ async function initApp(){
       // 1 phiên đăng nhập mới (user id khác với user đang có).
       if(AppState.user && AppState.user.id === session.user.id) return;
       AppState.user = session.user;
-      loadProfile().then(renderApp);
+      // Đây là 1 phiên đăng nhập MỚI (vd vừa đăng ký tài khoản khác trong cùng tab, sau khi tài
+      // khoản trước đó đã đăng xuất) — luôn đưa về trang chào mừng, không giữ lại route/hash của
+      // tài khoản CŨ (vd nếu tài khoản cũ là admin đang ở Quản trị, tài khoản mới không phải admin
+      // sẽ bị kẹt ở "Không có quyền truy cập" — đúng lỗi đã gặp khi test tài khoản mới, 2026-08-20).
+      // Đặt location.hash SAU KHI loadProfile() xong (trong .then) — không phải trước — để lúc
+      // hashchange tự bắn ra và gọi renderApp() lần nữa, AppState.profile đã có sẵn rồi, tránh
+      // render hụt 1 nhịp với profile null.
+      AppState.route = 'trang-chu';
+      loadProfile().then(()=>{
+        location.hash = 'trang-chu';
+        renderApp();
+      });
     } else if(event === 'SIGNED_OUT'){
       AppState.user = null;
       AppState.profile = null;
+      // Reset route/hash ngay lúc đăng xuất — để nếu có đăng nhập/đăng ký tài khoản khác tiếp theo
+      // trong cùng tab (không tải lại trang), route không bị kẹt lại ở trang của tài khoản cũ.
+      AppState.route = 'trang-chu';
+      location.hash = '';
       renderAuthScreen();
     }
   });
