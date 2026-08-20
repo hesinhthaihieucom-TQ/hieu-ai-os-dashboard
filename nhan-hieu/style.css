@@ -47,7 +47,7 @@ a{ color:inherit; }
   font-family:'IBM Plex Mono',monospace; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
 .sidebar-item.active .num{ background:var(--gold); color:#1E2420; }
-.sidebar-foot{ margin-top:auto; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#6C7266; line-height:1.7; padding:10px; border-top:1px solid rgba(255,255,255,.08); }
+.sidebar-foot{ margin-top:auto; font-family:'Be Vietnam Pro',sans-serif; font-size:12px; color:#9CA396; line-height:1.6; padding:10px; border-top:1px solid rgba(255,255,255,.08); }
 .sidebar-foot .signout{ cursor:pointer; color:#C7CBBC; }
 .sidebar-foot .signout:hover{ color:#fff; }
 

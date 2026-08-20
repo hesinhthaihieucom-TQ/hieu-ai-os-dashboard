@@ -41,18 +41,18 @@ function trialQuotaHint(){
   // nhẹ nhàng (không cảnh báo đỏ) để chủ web tự theo dõi mức dùng thật của chính mình.
   if(p.role==='admin'){
     const used = p.has_paid ? paidMonthlyUsage(p).used : (p.trial_ai_uses||0);
-    const period = p.has_paid ? 'tháng này' : 'từ trước tới nay';
-    return `<span style="color:#8A8F82;">📊 Admin — đã dùng ${used} lượt AI ${period} (không giới hạn)</span><br>`;
+    const period = p.has_paid ? '/tháng' : ' trọn đời';
+    return `<span style="color:#8A8F82;">📊 ${used} lượt${period} · không giới hạn</span>`;
   }
   if(p.has_paid){
     const { used, limit } = paidMonthlyUsage(p);
     const remaining = Math.max(0, limit - used);
-    const color = remaining<=10 ? 'var(--danger)' : '#C7CBBC';
-    return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt AI tháng này</span><br>`;
+    const color = remaining<=10 ? 'var(--danger)' : '#9CA396';
+    return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt tháng này</span>`;
   }
   const remaining = Math.max(0, TRIAL_AI_LIMIT - (p.trial_ai_uses||0));
-  const color = remaining<=3 ? 'var(--danger)' : '#C7CBBC';
-  return `<span style="color:${color};">🎁 Dùng thử: còn ${remaining}/${TRIAL_AI_LIMIT} lượt AI</span><br>`;
+  const color = remaining<=3 ? 'var(--danger)' : '#9CA396';
+  return `<span style="color:${color};">🎁 Còn ${remaining}/${TRIAL_AI_LIMIT} lượt dùng thử</span>`;
 }
 // Chỉ hiện ảnh đại diện + tên hiển thị ở đây (không hiện email nữa) — email/thông tin đăng nhập,
 // đổi mật khẩu, đổi ảnh... chuyển hết vào mục "Tài khoản" (bấm vào đúng khối này để vào).
