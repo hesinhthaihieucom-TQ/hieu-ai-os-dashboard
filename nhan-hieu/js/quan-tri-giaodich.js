@@ -52,7 +52,15 @@ function render(container, ctx){
 
   function bind(){
     const search = container.querySelector('#gd-search');
-    if(search) search.oninput = ()=>{ state.q = search.value; draw(); search.focus(); search.selectionStart = search.selectionEnd = search.value.length; };
+    if(search) search.oninput = ()=>{
+      state.q = search.value;
+      const pos = search.selectionStart;
+      draw();
+      // draw() vẽ lại toàn bộ innerHTML nên input cũ bị xoá khỏi DOM — phải lấy lại đúng ô MỚI
+      // rồi mới focus được, không thì gõ mỗi chữ lại mất focus (bug giống hệt ở quan-tri.js).
+      const newEl = container.querySelector('#gd-search');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
   }
 
   boot();

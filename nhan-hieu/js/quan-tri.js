@@ -200,7 +200,16 @@ function render(container, ctx){
 
   function bind(){
     const search = container.querySelector('#q-search');
-    if(search) search.oninput = ()=>{ state.q = search.value; draw(); search.focus(); search.selectionStart = search.selectionEnd = search.value.length; };
+    if(search) search.oninput = ()=>{
+      state.q = search.value;
+      const pos = search.selectionStart;
+      draw();
+      // draw() vẽ lại toàn bộ innerHTML nên input cũ bị xoá khỏi DOM — gọi .focus() trên biến
+      // "search" (đã detach) không có tác dụng gì, phải lấy lại đúng ô MỚI rồi mới focus được,
+      // không thì gõ mỗi chữ lại mất focus, phải bấm chuột vào ô lần nữa mới gõ tiếp được.
+      const newEl = container.querySelector('#q-search');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
 
     container.querySelectorAll('[data-plan-filter]').forEach(el=>{
       el.onclick = ()=>{ state.planFilter = el.getAttribute('data-plan-filter'); draw(); };
