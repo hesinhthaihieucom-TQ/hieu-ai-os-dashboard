@@ -27,7 +27,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[] };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{} };
 
   // Ai giới thiệu >= ngưỡng này được coi là "partner" — chị Quỳnh tự nhắn/chuyển khoản tay trả hoa
   // hồng tiền mặt cho họ (KHÔNG tự động chuyển tiền — SePay chỉ nhận tiền vào, không có API chuyển
@@ -73,6 +73,9 @@ function render(container, ctx){
       byReferrer[r.referrer_id].count++;
       byReferrer[r.referrer_id].luot += (r.reward_luot||0);
     });
+    // Giữ lại TOÀN BỘ map (không chỉ ai đủ ngưỡng partner) để hiện số liệu giới thiệu ngay trên
+    // từng thẻ tài khoản bên dưới — không phải chỉ ai đạt >= PARTNER_REFERRAL_THRESHOLD mới thấy.
+    state.referralCounts = byReferrer;
     state.referralPartners = Object.entries(byReferrer)
       .filter(([, v]) => v.count >= PARTNER_REFERRAL_THRESHOLD)
       .map(([referrerId, v]) => {
@@ -191,6 +194,15 @@ function render(container, ctx){
               <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?'💰 Đã trả phí (trần 250 lượt/tháng)':'Chưa trả phí (trần dùng thử 100 lượt)'}
                 <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.has_paid}">đổi</span></div>
               ${p.ref_code ? `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Nội dung CK: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
+              ${(() => {
+                const rc = state.referralCounts[p.id];
+                const referrer = p.referred_by_ref_code ? state.profiles.find(x=>x.ref_code===p.referred_by_ref_code) : null;
+                if(!rc && !referrer) return '';
+                const parts = [];
+                if(rc) parts.push(`đã giới thiệu <b>${rc.count}</b> người (tặng ${rc.luot} lượt)${rc.count>=PARTNER_REFERRAL_THRESHOLD?' 🌟':''}`);
+                if(referrer) parts.push(`được giới thiệu bởi <b>${esc(referrer.email||referrer.ref_code)}</b>`);
+                return `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Giới thiệu: ${parts.join(' · ')}</div>`;
+              })()}
             </div>
 
             <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Gia hạn thủ công</div>
