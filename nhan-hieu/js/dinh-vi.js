@@ -40,6 +40,33 @@ function isAnswered(q, val){
   return false;
 }
 
+// flattenAnswers() (dùng khi LƯU vào Supabase) nén câu trả lời dạng chips thành 1 chuỗi text —
+// nhưng UI wizard cho chips lại cần đúng shape {chosen:[...], other:''} để tô đúng ô đã chọn VÀ để
+// isAnswered() nhận ra đã trả lời. Trước đây khôi phục answers đã lưu (bấm "Sửa lại câu trả lời")
+// không chuyển ngược lại shape này — câu 3/câu "muốn giúp nhóm người nào" (2 câu dạng chips) không
+// ô nào được tô chọn, và bấm vào 1 ô còn ném lỗi JS (cur.chosen.indexOf trên 1 chuỗi, không phải
+// object) khiến nút "Tiếp tục" kẹt disabled vĩnh viễn — đúng lỗi khách báo "sửa câu 3 không tiếp
+// tục được, thoát ra làm lại vẫn bị" (2026-08-20). Gọi hàm này ở MỌI chỗ answers được nạp từ nguồn
+// bên ngoài (DB đã lưu, AI suy luận ngược, dán kết quả có sẵn) — an toàn gọi lại nhiều lần vì giữ
+// nguyên nếu value đã đúng shape object rồi.
+function normalizeAnswers(raw){
+  if(!raw) return {};
+  const out = {};
+  QUESTIONS.forEach(q=>{
+    const v = raw[q.id];
+    if(v===undefined) return;
+    if(q.type!=='chips'){ out[q.id] = v; return; }
+    if(v && typeof v==='object'){ out[q.id] = v; return; }
+    const str = (v||'').toString().trim();
+    if(!str){ out[q.id] = { chosen:[], other:'' }; return; }
+    const parts = str.split(',').map(s=>s.trim()).filter(Boolean);
+    const chosen = parts.filter(p=>q.options.includes(p));
+    const other = parts.filter(p=>!q.options.includes(p)).join(', ');
+    out[q.id] = { chosen, other };
+  });
+  return out;
+}
+
 function render(container, ctx){
   const state = { screen:'loading', qIndex:0, answers:{}, luot1:null, luot2:null, error:null, savedId:null,
     luot2Loading:false, luot2Error:null,
@@ -104,7 +131,7 @@ function render(container, ctx){
     const isComplete = data && data.luot1 && data.luot1.ket_luan_dinh_vi;
     if(data){
       state.savedId = data.id;
-      state.answers = data.answers || {};
+      state.answers = normalizeAnswers(data.answers);
       state.luot1 = isComplete ? data.luot1 : null;
       state.luot2 = isComplete ? data.luot2 : null;
       state.screen = isComplete ? 'done' : 'intro';
@@ -116,7 +143,7 @@ function render(container, ctx){
     if(state.screen === 'intro'){
       const draft = await loadModuleDraft(ctx, WIZARD_DRAFT_KEY);
       if(draft && draft.answers && Object.keys(draft.answers).length){
-        state.answers = { ...state.answers, ...draft.answers };
+        state.answers = { ...state.answers, ...normalizeAnswers(draft.answers) };
         state.qIndex = Math.min(draft.qIndex || 0, QUESTIONS.length - 1);
         state.screen = 'wizard';
       }
@@ -687,7 +714,11 @@ function render(container, ctx){
       container.querySelectorAll('[data-chip]').forEach(el=>{
         el.onclick = ()=>{
           const opt = el.getAttribute('data-chip');
-          const cur = state.answers[q.id] || {chosen:[], other:''};
+          // Phòng hờ chỗ giữ 1 shape lạ khác (string thay vì object) lọt qua đâu đó — normalizeAnswers()
+          // đã xử lý ở mọi điểm nạp answers từ ngoài vào, nhưng thà tự vá còn hơn ném lỗi JS làm kẹt
+          // nút "Tiếp tục" như bug đã gặp (2026-08-20).
+          const curRaw = state.answers[q.id];
+          const cur = (curRaw && typeof curRaw==='object' && Array.isArray(curRaw.chosen)) ? curRaw : {chosen:[], other:''};
           const idx = cur.chosen.indexOf(opt);
           if(q.multi){ if(idx>=0) cur.chosen.splice(idx,1); else cur.chosen.push(opt); }
           else { cur.chosen = idx>=0 ? [] : [opt]; }
@@ -757,7 +788,7 @@ function render(container, ctx){
     state.reconstructingAnswers = true; state.reconstructFailed = false; draw();
     try{
       const data = await callApi('/api/dinh-vi-reconstruct-answers', { luot1: state.luot1, luot2: state.luot2 });
-      if(data.answers) state.answers = { ...data.answers, ...state.answers };
+      if(data.answers) state.answers = { ...normalizeAnswers(data.answers), ...state.answers };
     } catch(e){ /* lỗi thì thôi, vẫn cho vào sửa bình thường (trống như trước), không chặn người dùng */ }
     // Gọi xong (dù lỗi hay AI trả về toàn chuỗi rỗng vì không suy luận được) mà vẫn không có câu
     // trả lời nào — báo rõ cho người dùng biết đây là "không khôi phục được", không phải bug làm
@@ -824,7 +855,7 @@ function render(container, ctx){
       // câu trả lời" sau này không bị trống trơn — chỉ merge, không ghi đè câu đã có sẵn (dù hiếm
       // khi xảy ra vì đây là lần dán đầu tiên).
       if(data.answers){
-        state.answers = { ...data.answers, ...state.answers };
+        state.answers = { ...normalizeAnswers(data.answers), ...state.answers };
       }
       await persist({ luot1: data.luot1, luot2: data.luot2 || null, format_suggestions: null });
       state.pasteLoading = false; state.error = null;
