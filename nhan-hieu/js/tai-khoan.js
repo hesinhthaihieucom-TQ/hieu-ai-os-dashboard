@@ -75,7 +75,7 @@ function render(container, ctx){
 
   function remainingInfo(){
     const p = ctx.profile;
-    if(!p) return { used:0, limit:50, remaining:50, isTrial:true };
+    if(!p) return { used:0, limit:65, remaining:65, isTrial:true };
     if(p.has_paid){
       const month = new Date().toISOString().slice(0,7);
       const sameMonth = p.paid_ai_month === month;
@@ -85,7 +85,7 @@ function render(container, ctx){
       return { used, limit, remaining: Math.max(0, limit-used), isTrial:false };
     }
     const used = p.trial_ai_uses || 0;
-    return { used, limit:50, remaining: Math.max(0, 50-used), isTrial:true };
+    return { used, limit:65, remaining: Math.max(0, 65-used), isTrial:true };
   }
 
   function limitLabel(){

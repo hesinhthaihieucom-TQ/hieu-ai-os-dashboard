@@ -13,7 +13,7 @@ function aiUsageLabel(p){
     const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (tháng này)`;
     return p.trial_ai_uses ? `${paidLabel} · đã dùng ${p.trial_ai_uses} lượt lúc còn dùng thử (không tính vào đây nữa)` : paidLabel;
   }
-  return `${p.trial_ai_uses||0}/50 lượt AI (dùng thử, trọn đời)`;
+  return `${p.trial_ai_uses||0}/65 lượt AI (dùng thử, trọn đời)`;
 }
 
 function statusOf(p){
@@ -266,7 +266,7 @@ function render(container, ctx){
 
   // Dùng khi kích hoạt TAY cho khách đã chuyển khoản thật (vd lúc webhook SePay bị lỗi/trễ đồng bộ)
   // — "Gia hạn" chỉ cộng ngày dùng (access_until), không tự bật has_paid, nên nếu không bấm thêm nút
-  // này, khách vẫn bị tính lượt AI theo trần dùng thử (50 lượt trọn đời) dù đã có hạn dùng dài hơn.
+  // này, khách vẫn bị tính lượt AI theo trần dùng thử (65 lượt trọn đời) dù đã có hạn dùng dài hơn.
   async function toggleHasPaid(id, hasPaid){
     state.busyId = id; draw();
     const { error } = await ctx.supabase.from('profiles').update({ has_paid: hasPaid }).eq('id', id);

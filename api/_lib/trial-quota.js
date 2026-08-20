@@ -12,7 +12,7 @@
 // cùng "lọt qua" trần trước khi kịp cập nhật số mới cho nhau. Dùng SUPABASE_SERVICE_ROLE_KEY vì
 // đây là hàm chỉ service_role được gọi (xem grant trong supabase/schema_full.sql).
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
-const TRIAL_AI_LIMIT = 50;
+const TRIAL_AI_LIMIT = 65;
 const PAID_MONTHLY_AI_LIMIT = 250;
 // Gói "Mua thêm lượt" (api/sepay-webhook.js) cộng thẳng vào paid_ai_bonus của tháng hiện tại —
 // dùng cho khách dùng vượt mức bình thường (nhiều kênh, tần suất cao...), không phải để bù đắp
