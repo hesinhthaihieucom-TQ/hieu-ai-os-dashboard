@@ -1,5 +1,8 @@
 (function(){
-const SLOTS = [ {key:'sang', label:'Sáng'}, {key:'trua', label:'Trưa'}, {key:'toi', label:'Tối'} ];
+// Giờ hiển thị PHẢI khớp tay với SLOT_HOURS ở api/cron/send-reminders.js — đây là giờ CỐ ĐỊNH dùng
+// để tính lúc nào cron nhắc "đến giờ đăng bài" cho từng slot, hiện luôn ra đây để người dùng biết
+// chính xác giờ sẽ được nhắc (2026-08-21, theo phản hồi chị Quỳnh).
+const SLOTS = [ {key:'sang', label:'Sáng', time:'8:00'}, {key:'trua', label:'Trưa', time:'12:00'}, {key:'toi', label:'Tối', time:'19:00'} ];
 const DAY_NAMES = ['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
 
 // Khớp mô tả trục nội dung tự do của AI (vd "Trục chính: Tài chính gia đình") sang đúng key trục
@@ -235,7 +238,7 @@ function render(container, ctx){
               if(isPast && !e){
                 if(suggestion){
                   return `<div class="week-slot" style="opacity:.55;min-height:auto;padding:6px;text-align:center;border-color:var(--danger);">
-                    <div class="slot-label">${s.label}</div>
+                    <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${s.time}</span></div>
                     <div style="font-size:10.5px;color:var(--danger);margin-top:2px;">Đã bỏ lỡ</div>
                   </div>`;
                 }
@@ -244,7 +247,7 @@ function render(container, ctx){
 
               if(state.pickerFor && state.pickerFor.date===dateStr && state.pickerFor.slot===s.key){
                 return `<div class="week-slot filled">
-                  <div class="slot-label">${s.label}</div>
+                  <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${s.time}</span></div>
                   ${suggestion?`<div style="font-size:11px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
                   <select data-picker-select style="width:100%;margin-top:4px;font-size:12px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
@@ -268,7 +271,7 @@ function render(container, ctx){
                 // Ô đã đăng dùng nền đậm khác hẳn ô mới chọn bài (nền nhạt mặc định) — phân biệt
                 // ngay bằng mắt trên lịch cả tuần, không phải đọc chữ mới biết bài nào xong rồi.
                 return `<div class="week-slot filled" ${e.posted?'style="background:var(--accent);border-color:var(--accent);"':''}>
-                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} · <span data-toggle-posted="${e.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>${e.posted?'Đã đăng':'Đã chọn bài'}</span></div>
+                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <span style="opacity:.6;font-weight:400;">${s.time}</span> · <span data-toggle-posted="${e.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>${e.posted?'Đã đăng':'Đã chọn bài'}</span></div>
                   <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
                   ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
                   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
@@ -284,14 +287,14 @@ function render(container, ctx){
                 // (trước đây bấm vào sẽ lỡ nhảy sang Kho Content/Viết Content, mất luôn bài đang cầm).
                 if(state.pending){
                   return `<div class="week-slot" data-empty="${dateStr}|${s.key}" style="cursor:pointer;border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
-                    <div class="slot-label">${s.label} · <span style="color:var(--gold);">Gợi ý AI</span></div>
+                    <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${s.time}</span> · <span style="color:var(--gold);">Gợi ý AI</span></div>
                     ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
                     <div style="color:var(--accent);font-size:11.5px;font-weight:600;margin-top:6px;">Bấm để xếp bài đang chờ vào đây →</div>
                   </div>`;
                 }
                 const matchedPost = suggestion.bai_co_san ? state.posts.find(p=>p.title===suggestion.bai_co_san) : null;
                 return `<div class="week-slot" style="border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
-                  <div class="slot-label">${s.label} · <span style="color:var(--gold);">Gợi ý AI</span></div>
+                  <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${s.time}</span> · <span style="color:var(--gold);">Gợi ý AI</span></div>
                   ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
                   <b style="font-size:12px;">${esc(matchedPost ? matchedPost.title : (suggestion.chu_de || 'Chưa chọn bài cụ thể'))}</b>
                   ${matchedPost ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">Bài đã viết sẵn</div>` : (suggestion.dinh_dang ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${esc(suggestion.dinh_dang)}</div>` : '')}
@@ -309,7 +312,7 @@ function render(container, ctx){
                 </div>`;
               }
               return `<div class="week-slot" data-empty="${dateStr}|${s.key}" style="cursor:pointer;">
-                <div class="slot-label">${s.label}</div>
+                <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${s.time}</span></div>
                 <div style="color:var(--ink-soft);font-size:20px;text-align:center;margin-top:4px;">+</div>
               </div>`;
             }).join('')}
