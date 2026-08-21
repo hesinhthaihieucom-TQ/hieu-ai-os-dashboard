@@ -281,7 +281,7 @@ function render(container, ctx){
                 // Ô đã đăng dùng nền đậm khác hẳn ô mới chọn bài (nền nhạt mặc định) — phân biệt
                 // ngay bằng mắt trên lịch cả tuần, không phải đọc chữ mới biết bài nào xong rồi.
                 return `<div class="week-slot filled" ${e.posted?'style="background:var(--accent);border-color:var(--accent);"':''}>
-                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <span style="opacity:.6;font-weight:400;">${e.scheduled_time || slotTimeFor(s.key)}</span> · <span data-toggle-posted="${e.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>${e.posted?'Đã đăng':'Chưa đăng'}</span></div>
+                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span ${e.posted?'':`data-toggle-posted="${e.id}"`} style="${e.posted?'':'cursor:pointer;'}display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Đã đánh dấu đăng rồi':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
                   <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
                   ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
                   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
@@ -459,19 +459,33 @@ function render(container, ctx){
       el.onclick = ()=>deleteRecordingSchedule(el.getAttribute('data-del-recording'));
     });
 
+    // Sửa giờ NGAY tại ô lịch, không phải bấm "Sửa" mở form mới thấy — theo phản hồi chị Quỳnh 21/8:
+    // "nếu giờ sửa trong đó người ta sẽ không để ý". Lưu ngay khi đổi (blur/change), không cần nút
+    // Lưu riêng.
+    container.querySelectorAll('[data-inline-time]').forEach(el=>{
+      el.onclick = (ev)=>ev.stopPropagation();
+      el.onchange = async ()=>{
+        if(!el.value) return;
+        const id = el.getAttribute('data-inline-time');
+        await ctx.supabase.from('calendar_entries').update({ scheduled_time: el.value }).eq('id', id);
+        const entry = state.entries.find(x=>x.id===id);
+        if(entry) entry.scheduled_time = el.value;
+        draw();
+      };
+    });
+
+    // Đánh dấu "đã đăng" là hành động 1 CHIỀU (theo phản hồi chị Quỳnh 21/8: "nút tích luôn là đã
+    // đăng... không tích lại được") — bấm xong đổi màu xác nhận luôn, không có đường bấm lại để bỏ
+    // đánh dấu (phần tử này chỉ được gắn data-toggle-posted khi CHƯA posted, xem html() ở trên).
     container.querySelectorAll('[data-toggle-posted]').forEach(el=>{
       el.onclick = async ()=>{
         const id = el.getAttribute('data-toggle-posted');
         const entry = state.entries.find(x=>x.id===id);
-        const nextPosted = !(entry && entry.posted);
-        // posted_at: mốc 0h THẬT để cron tính nhắc kiểm tra view 3h/6h/24h ở Đẩy Bài (xem
-        // api/cron/send-reminders.js) — chỉ set lúc bấm "Đã đăng", xoá lại nếu bấm bỏ đánh dấu
-        // (tránh giữ mốc giờ cũ sai nếu người dùng lỡ tay rồi đăng lại sau).
-        await ctx.supabase.from('calendar_entries').update({ posted: nextPosted, posted_at: nextPosted ? new Date().toISOString() : null }).eq('id', id);
+        await ctx.supabase.from('calendar_entries').update({ posted: true, posted_at: new Date().toISOString() }).eq('id', id);
         // Đồng bộ ngược sang đúng bài trong Kho Content (nếu ô này gắn 1 bài đã viết cụ thể) — để
         // Kho Content chia được đã đăng/chưa đăng, và picker chọn bài tự loại bài đã đăng rồi.
         if(entry && entry.post_id){
-          await ctx.supabase.from('posts').update({ posted: nextPosted }).eq('id', entry.post_id);
+          await ctx.supabase.from('posts').update({ posted: true }).eq('id', entry.post_id);
           await loadPosts();
         }
         await loadEntries();
