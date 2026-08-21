@@ -123,6 +123,7 @@ function render(container, ctx){
     const counts = state.profiles.reduce((acc,p)=>{ const s=statusOf(p).cls; acc[s]=(acc[s]||0)+1; return acc; }, {});
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán. Xem doanh thu/chi phí/lợi nhuận ở tab <b>Tài chính</b>.</p></div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt: <b>${TRIAL_AI_LIMIT} lượt dùng thử</b> (trọn đời) → <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi trả phí — tổng tiềm năng ${TRIAL_AI_LIMIT + PAID_MONTHLY_AI_LIMIT} lượt qua cả 2 giai đoạn (2 bộ đếm tách biệt, không cộng dồn thật).</div>
 
       <div class="source-grid" style="margin-bottom:20px;">
         <div class="source-card"><div class="ic">${counts.active||0}</div><div class="label">Đang hoạt động</div></div>
