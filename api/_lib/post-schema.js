@@ -107,31 +107,29 @@ const ANTI_AI_CLICHE_RULES = `QUY TẮC TRÁNH GIỌNG "NGHE NHƯ AI" (BẮT BU�
 // cách xưng "con" sang cả bình luận CTA/cmt_cta_san_pham — tác giả thật gọi người lạ theo dõi mình
 // là "con" đọc rất kỳ, thậm chí phản cảm) — chốt 1 quy tắc CỨNG dùng chung cho MỌI bình luận/CTA
 // (CTA_COMMENT_RULES lẫn HASHTAG_CAPTION_RULES bên dưới), tách khỏi giọng kể bên trong bài viết.
-// LƯU Ý: cau_cmt_ghim KHÔNG nằm trong quy tắc này — bình luận ghim tuy do tác giả đăng (để ghim)
-// nhưng phải VIẾT NHƯ GIỌNG 1 NGƯỜI ĐỌC THẬT đang bình luận (xem QUY TẮC BÌNH LUẬN GHIM bên dưới,
-// có quy tắc xưng hô riêng) — gộp chung vào đây từng khiến AI lẫn lộn, viết cau_cmt_ghim bằng giọng
-// tác giả hứa hẹn ("mình sẽ gửi bạn...") thay vì giọng người đọc, phá mất hiệu ứng mồi bình luận.
-const ADDRESS_FORM_RULE = `QUY TẮC XƯNG HÔ TRONG CTA (BẮT BUỘC — không có ngoại lệ, áp dụng cho cta, tu_khoa_cta, cmt_cta_san_pham — KHÔNG áp dụng cho cau_cmt_ghim):
+// cau_cmt_ghim CŨNG thuộc quy tắc này (chốt lại 2026-08-21 sau phản hồi trực tiếp chị Quỳnh: bình
+// luận ghim LÀ bình luận CỦA CHÍNH TÁC GIẢ, có cấu trúc NHƯ CTA, mục đích kích thêm bình luận —
+// KHÔNG phải giọng 1 người đọc lạ giả danh như bản trước từng viết nhầm).
+const ADDRESS_FORM_RULE = `QUY TẮC XƯNG HÔ TRONG CTA/BÌNH LUẬN (BẮT BUỘC — không có ngoại lệ, áp dụng cho cta, tu_khoa_cta, cau_cmt_ghim, cmt_cta_san_pham):
 - Đây là lời TÁC GIẢ (chủ trang, ngoài đời thật) nói trực tiếp với người theo dõi lạ trên mạng xã hội — LUÔN xưng "mình", gọi người đọc là "bạn" (chỉ đổi sang "anh/chị" nếu định vị nêu rõ đối tượng lớn tuổi/cần trang trọng hơn hẳn).
 - TUYỆT ĐỐI KHÔNG gọi người đọc là "con", "em" hay bất kỳ đại từ mang tính bề trên/quá thân mật nào.
-- Kể cả khi BÀI VIẾT dùng 1 giọng kể đặc biệt bên trong nội dung (ví dụ giọng gia tiên/tổ tiên xưng "con" với con cháu như 1 thủ pháp văn học cho đoạn hook/thân bài) — giọng đó CHỈ tồn tại bên trong bài viết, KHÔNG được mang sang CTA. CTA là lúc tác giả bước ra khỏi giọng kể đó, nói chuyện thật với 1 người lạ, phải quay về xưng hô bình thường như trên.`;
+- Kể cả khi BÀI VIẾT dùng 1 giọng kể đặc biệt bên trong nội dung (ví dụ giọng gia tiên/tổ tiên xưng "con" với con cháu như 1 thủ pháp văn học cho đoạn hook/thân bài) — giọng đó CHỈ tồn tại bên trong bài viết, KHÔNG được mang sang bình luận/CTA. Bình luận/CTA là lúc tác giả bước ra khỏi giọng kể đó, nói chuyện thật với 1 người lạ, phải quay về xưng hô bình thường như trên.`;
 
 const CTA_COMMENT_RULES = `QUY TẮC CTA (BẮT BUỘC — tối ưu theo cách Facebook đẩy bài):
 ${ADDRESS_FORM_RULE}
 - Facebook ưu tiên đẩy bài có nhiều bình luận thật, đến sớm, và có phản hồi qua lại — hơn hẳn lượt thích/lượt xem. CTA phải hạ THẤP NHẤT rào cản để người đọc bình luận ngay lúc đó, không phải "để lúc khác".
 - CTA luôn phải chốt bằng 1 từ khoá kích hoạt cụ thể gồm ĐÚNG 2 CHỮ, càng NGẮN — DỄ GÕ TRÊN ĐIỆN THOẠI — GÂY CẢM XÚC càng tốt (ví dụ: "Dòng tiền", "Sổ tay", "Bí kíp", "Bắt đầu"...) — từ khoá càng dễ gõ thì tỷ lệ người đọc thật sự bấm bình luận (thay vì chỉ định bụng rồi lướt qua) càng cao. Theo mẫu: "Để lại bình luận chữ '<từ khoá 2 chữ>' và mình sẽ gửi bạn <thứ nhận được cụ thể>." — không dùng CTA chung chung kiểu "inbox mình nhé" hay "để lại bình luận bên dưới" mà không có từ khoá.
 - Từ khoá phải khớp chủ đề bài và thứ người đọc sẽ nhận được (tài liệu, link, ưu đãi, tư vấn...) — hứa hẹn mơ hồ khiến người đọc nghi ngờ, giảm hẳn tỷ lệ bình luận thật.
-- Nếu có SẢN PHẨM/DỊCH VỤ MUỐN NHẮC hoặc GROUP/CỘNG ĐỒNG MUỐN NHẮC được cung cấp (xem block bên dưới), thứ HỨA GỬI trong CTA (cta) BẮT BUỘC phải là đúng sản phẩm/group đó (hoặc thứ dẫn thẳng vào đó, ví dụ tài liệu giới thiệu ngắn) — TUYỆT ĐỐI không tự bịa ra 1 phần thưởng/tài liệu khác không liên quan gì tới sản phẩm/group đã chọn. Nếu KHÔNG có sản phẩm/group nào được cung cấp, tự nghĩ ra 1 thứ hứa hẹn hợp chủ đề bài như bình thường. Quy tắc này CHỈ áp cho cta (lời tác giả) — cau_cmt_ghim không được hứa hẹn gì cả (xem QUY TẮC BÌNH LUẬN GHIM bên dưới).
+- Nếu có SẢN PHẨM/DỊCH VỤ MUỐN NHẮC hoặc GROUP/CỘNG ĐỒNG MUỐN NHẮC được cung cấp (xem block bên dưới), thứ HỨA GỬI trong CTA/bình luận ghim BẮT BUỘC phải là đúng sản phẩm/group đó (hoặc thứ dẫn thẳng vào đó, ví dụ tài liệu giới thiệu ngắn) — TUYỆT ĐỐI không tự bịa ra 1 phần thưởng/tài liệu khác không liên quan gì tới sản phẩm/group đã chọn. Nếu KHÔNG có sản phẩm/group nào được cung cấp, tự nghĩ ra 1 thứ hứa hẹn hợp chủ đề bài như bình thường.
 
-QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — cau_cmt_ghim do tác giả ĐĂNG/ghim lên, nhưng PHẢI VIẾT NHƯ GIỌNG 1 NGƯỜI ĐỌC XA LẠ đang bình luận dưới bài của người khác, KHÔNG PHẢI giọng tác giả — đây là mồi để người đọc thật bắt chước theo, khác hẳn với QUY TẮC XƯNG HÔ TRONG CTA ở trên vốn dành cho cta/tu_khoa_cta/cmt_cta_san_pham là lời tác giả nói thật):
-- Xưng "mình" cho đúng NGƯỜI BÌNH LUẬN (không phải tác giả) — TUYỆT ĐỐI KHÔNG viết theo kiểu tác giả hứa hẹn/tặng quà (vd "mình sẽ gửi bạn...") vì 1 người đọc bình thường không thể hứa gửi ai cái gì — chỉ được RỦ người khác cùng bình luận hoặc bày tỏ đồng cảm/tò mò/cảm xúc thật của chính người đọc đó (ví dụ "để lại bình luận chữ '...' đi mọi người, mình cũng đang tò mò xem" hoặc "đọc xong mà thấy đúng ngay tim đen mình luôn, để lại chữ '...' xem có ai giống mình không").
-- TUYỆT ĐỐI KHÔNG gọi ai là "con", "em" hay đại từ bề trên/quá thân mật — kể cả khi BÀI VIẾT dùng giọng kể đặc biệt bên trong nội dung (ví dụ giọng gia tiên xưng "con" với con cháu như thủ pháp văn học), giọng đó CHỈ tồn tại trong bài viết, không được mang sang bình luận ghim.
+QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — cau_cmt_ghim LÀ bình luận của CHÍNH TÁC GIẢ, đăng và ghim ngay dưới bài của mình — CÓ CẤU TRÚC NHƯ 1 CÂU CTA, mục đích kích thêm người đọc để lại bình luận tiếp theo, KHÔNG PHẢI giọng 1 người đọc lạ giả danh):
+- Cùng xưng hô "mình"/"bạn" như QUY TẮC XƯNG HÔ ở trên (đây là tác giả nói, không phải người đọc) — được phép hứa hẹn/nhắc lại thứ người đọc sẽ nhận được, giống hệt tinh thần câu CTA trong bài, chỉ khác câu chữ/góc nói để không đọc như copy y nguyên CTA.
 - Phải đánh THẲNG vào đúng nỗi đau/nỗi sợ/mong muốn đã nêu ở đoạn vấn đề (van_de) của bài — không viết chung chung, phải khiến người đang lưỡng lự cảm thấy "nói đúng tim đen mình" thì mới bấm bình luận. Chọn 1 trong các hướng sau, tuỳ hợp bài:
   • Xoáy vào cái giá phải trả nếu CỨ ĐỂ NGUYÊN tình trạng hiện tại, không hành động gì.
   • Gọi đúng tên nỗi ngại/lý do trì hoãn phổ biến nhất của người đọc, rồi trấn an bằng đúng 1 câu ngắn gọn.
   • Tạo cảm giác cấp bách thật (vì sao nên làm ngay lúc đọc bài này, không phải "để đó tính sau").
-- Vẫn phải nhắc đúng từ khoá CTA để người đọc biết gõ gì, nhưng viết như 1 câu người đọc buột miệng nói thêm — có cảm xúc thật, KHÔNG được viết kiểu thông báo hành chính ("Bình luận '...' để nhận ngay...").
-- Người đọc lưỡng lự thường bắt chước đúng bình luận đầu tiên họ nhìn thấy — bình luận ghim đọc lên phải giống hệt 1 bình luận thật của 1 người xa lạ, để khi có người bình luận theo, cả luồng bình luận đọc tự nhiên, không lộ dàn dựng.`;
+- Vẫn phải nhắc đúng từ khoá CTA để người đọc biết gõ gì, nhưng viết như 1 câu tác giả buột miệng nói thêm — có cảm xúc thật, KHÔNG được viết kiểu thông báo hành chính ("Bình luận '...' để nhận ngay...").
+- Người đọc lưỡng lự thường bắt chước đúng bình luận đầu tiên họ nhìn thấy — viết sao cho tự nhiên như tác giả thật sự buột miệng bình luận thêm dưới bài mình, để khi có người bình luận theo, cả luồng bình luận đọc tự nhiên, không lộ dàn dựng.`;
 
 // QUY TẮC CMT CTA SẢN PHẨM/GROUP nằm ở EXTRAS (không phải CORE) vì đây là field DUY NHẤT phụ thuộc
 // tên kênh/thương hiệu/sản phẩm/group người dùng chọn ở "Tuỳ chọn thêm" — tách ra khỏi CORE để bước
