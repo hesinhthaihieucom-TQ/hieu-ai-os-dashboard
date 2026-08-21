@@ -255,7 +255,7 @@ function render(container, ctx){
 
               if(state.pickerFor && state.pickerFor.date===dateStr && state.pickerFor.slot===s.key){
                 return `<div class="week-slot filled">
-                  <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${slotTimeFor(s.key)}</span></div>
+                  <div class="slot-label">${s.label}</div>
                   ${suggestion?`<div style="font-size:11px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
                   <select data-picker-select style="width:100%;margin-top:4px;font-size:12px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
@@ -264,6 +264,8 @@ function render(container, ctx){
                   <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng rồi không hiện ở đây nữa, đỡ chọn nhầm.</div>
                   <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
                   <input type="text" data-picker-custom placeholder="Tên bài tự điền..." value="${e && !e.post_id ? esc(e.title||'') : ''}" style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
+                  <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">Giờ đăng bài này</div>
+                  <input type="time" data-picker-time value="${esc((e && e.scheduled_time) || slotTimeFor(s.key))}" style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
                   <div style="display:flex;gap:6px;margin-top:6px;">
                     <button class="btn btn-sm" data-picker-save="${dateStr}|${s.key}">Lưu</button>
                     <span style="align-self:center;font-size:11px;color:var(--ink-soft);cursor:pointer;" data-picker-cancel="1">Huỷ</span>
@@ -279,7 +281,7 @@ function render(container, ctx){
                 // Ô đã đăng dùng nền đậm khác hẳn ô mới chọn bài (nền nhạt mặc định) — phân biệt
                 // ngay bằng mắt trên lịch cả tuần, không phải đọc chữ mới biết bài nào xong rồi.
                 return `<div class="week-slot filled" ${e.posted?'style="background:var(--accent);border-color:var(--accent);"':''}>
-                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <span style="opacity:.6;font-weight:400;">${slotTimeFor(s.key)}</span> · <span data-toggle-posted="${e.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>${e.posted?'Đã đăng':'Đã chọn bài'}</span></div>
+                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <span style="opacity:.6;font-weight:400;">${e.scheduled_time || slotTimeFor(s.key)}</span> · <span data-toggle-posted="${e.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Bấm để bỏ đánh dấu':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>${e.posted?'Đã đăng':'Chưa đăng'}</span></div>
                   <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
                   ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
                   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
@@ -412,6 +414,7 @@ function render(container, ctx){
         const [dateStr, slotKey] = el.getAttribute('data-picker-save').split('|');
         const select = container.querySelector('[data-picker-select]');
         const customInput = container.querySelector('[data-picker-custom]');
+        const timeInput = container.querySelector('[data-picker-time]');
         const postId = select ? select.value : '';
         const post = state.posts.find(p=>p.id===postId);
         const customTitle = customInput ? customInput.value.trim() : '';
@@ -420,6 +423,7 @@ function render(container, ctx){
           title: post ? post.title : (customTitle || 'Bài mới'),
           format: post && post.structure ? (post.structure.format||null) : null,
           cta: post && post.structure ? (post.structure.cta||null) : null,
+          scheduled_time: timeInput && timeInput.value ? timeInput.value : null,
         };
         // "Sửa" mở lại picker cho 1 ô ĐÃ có bài — cập nhật đúng dòng cũ thay vì tạo thêm 1 dòng mới
         // trùng slot/ngày (state.editingEntryId chỉ được gán khi bấm "Sửa", xem data-edit-slot).

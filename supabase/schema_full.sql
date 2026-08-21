@@ -736,3 +736,10 @@ create policy "recording_schedule_owner_all" on recording_schedule for all
 alter table profiles add column if not exists slot_time_sang text not null default '08:00';
 alter table profiles add column if not exists slot_time_trua text not null default '12:00';
 alter table profiles add column if not exists slot_time_toi text not null default '19:00';
+
+-- Sửa lại theo phản hồi chị Quỳnh: giờ đăng bài phải đặt được RIÊNG cho TỪNG bài đã xếp lịch, ngay
+-- trong Lịch Đăng Bài — không chỉ 1 giờ mặc định chung theo slot ở Tài khoản. Cột profiles.slot_time_*
+-- ở trên vẫn giữ lại làm giờ GỢI Ý MẶC ĐỊNH lúc tạo mới (đỡ phải gõ tay mỗi lần), còn giờ THẬT của
+-- từng bài nằm ở đây — null nghĩa là "chưa tự chỉnh, dùng theo mặc định" (áp cho bài tạo trước khi
+-- có tính năng này).
+alter table calendar_entries add column if not exists scheduled_time text;

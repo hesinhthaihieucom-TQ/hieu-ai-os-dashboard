@@ -39,10 +39,12 @@ function withinWindow(targetMinutesOfDay, nowMinutesOfDay) {
 async function checkLichDangBai() {
   const { dateStr, minutesOfDay } = vnNowParts();
 
-  // Giờ giờ theo TỪNG USER (không còn 1 mốc chung) nên phải lấy hết ứng viên trong ngày trước,
-  // rồi mới biết ai đang khớp giờ của chính họ — không lọc được ngay ở query như trước.
+  // Giờ có 3 tầng ưu tiên: giờ riêng của ĐÚNG bài đó (calendar_entries.scheduled_time, đặt trong
+  // Lịch Đăng Bài) → giờ mặc định của user theo slot (profiles.slot_time_*) → giờ mặc định chung.
+  // Không lọc được ngay ở query vì giờ khác nhau theo từng bài/từng user — phải lấy hết ứng viên
+  // trong ngày rồi tự tính từng dòng.
   const entriesResp = await supabaseAdmin(
-    `calendar_entries?posted=eq.false&scheduled_date=eq.${dateStr}&select=id,user_id,title,slot`
+    `calendar_entries?posted=eq.false&scheduled_date=eq.${dateStr}&select=id,user_id,title,slot,scheduled_time`
   );
   const entries = entriesResp.ok ? await entriesResp.json() : [];
   if (!entries.length) return 0;
@@ -57,7 +59,7 @@ async function checkLichDangBai() {
   let count = 0;
   for (const entry of entries) {
     const p = profileById[entry.user_id];
-    const slotTime = (p && p['slot_time_' + entry.slot]) || DEFAULT_SLOT_TIME[entry.slot];
+    const slotTime = entry.scheduled_time || (p && p['slot_time_' + entry.slot]) || DEFAULT_SLOT_TIME[entry.slot];
     if (!withinWindow(parseHHMM(slotTime), minutesOfDay)) continue;
     const result = await notifyOnce(entry.user_id, `lich:${entry.id}`, {
       title: 'Đến giờ đăng bài rồi',
