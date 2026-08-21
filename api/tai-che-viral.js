@@ -7,6 +7,7 @@
 //                       biết các ý đã viết trước đó để không lặp góc độ.
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { ANTI_AI_CLICHE_RULES } = require('./_lib/post-schema');
 
 const ANALYZE_PROMPT = `Bạn là chuyên gia phân tích tâm lý học content viral, giỏi mổ xẻ vì sao 1 bài viết/video thành công.
 
@@ -19,6 +20,9 @@ Output tiếng Việt.`;
 function recycleSystemPrompt() {
   return `Bạn là chuyên gia tái chế content viral — dựa đúng vào 1 bản MỔ XẺ TÂM LÝ đã có sẵn của 1 bài viral gốc (không phải tự phân tích lại), áp dụng cấu trúc tâm lý đó cho 1 chủ đề mới. Không copy câu chữ bài gốc, chỉ giữ cơ chế tâm lý.
 Nếu người dùng có cung cấp định vị thương hiệu hoặc bối cảnh nhanh (ngành/đối tượng), bám theo giọng điệu và đối tượng đó. Nếu không có, viết tự nhiên, phổ quát, dễ áp dụng.
+
+${ANTI_AI_CLICHE_RULES}
+
 Output tiếng Việt.`;
 }
 
