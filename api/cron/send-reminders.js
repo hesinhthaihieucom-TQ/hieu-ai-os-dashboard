@@ -12,8 +12,19 @@ const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { notifyOnce, vapidConfigured } = require('../_lib/push');
 
 const WINDOW_MINUTES = 25;
-const SLOT_HOURS = { sang: 8, trua: 12, toi: 19 }; // giờ Việt Nam (UTC+7), cố định, không lệch DST
+// Giờ mặc định nếu user chưa từng đổi (chưa chạy migrate/tài khoản cũ) — PHẢI khớp tay với default
+// ở cột profiles.slot_time_* trong schema_full.sql. Từ 2026-08-21, mỗi user TỰ CHỌN giờ riêng ở
+// Tài khoản (nhan-hieu/js/tai-khoan.js) — không còn 1 giờ chung cho tất cả.
+const DEFAULT_SLOT_TIME = { sang: '08:00', trua: '12:00', toi: '19:00' };
 const DAYBAI_MILESTONES_H = [3, 6, 24];
+
+// 'HH:MM' -> số phút trong ngày. Bỏ qua giá trị hỏng (không đúng dạng) bằng cách coi như NaN,
+// withinWindow() với NaN luôn trả false nên không bao giờ khớp — an toàn, không throw.
+function parseHHMM(s) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(s || '');
+  if (!m) return NaN;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
 
 function vnNowParts() {
   const vn = new Date(Date.now() + 7 * 3600 * 1000);
@@ -27,20 +38,30 @@ function withinWindow(targetMinutesOfDay, nowMinutesOfDay) {
 
 async function checkLichDangBai() {
   const { dateStr, minutesOfDay } = vnNowParts();
-  const eligibleSlots = Object.entries(SLOT_HOURS)
-    .filter(([, h]) => withinWindow(h * 60, minutesOfDay))
-    .map(([k]) => k);
-  if (!eligibleSlots.length) return 0;
 
-  const resp = await supabaseAdmin(
-    `calendar_entries?posted=eq.false&scheduled_date=eq.${dateStr}&slot=in.(${eligibleSlots.join(',')})&select=id,user_id,title`
+  // Giờ giờ theo TỪNG USER (không còn 1 mốc chung) nên phải lấy hết ứng viên trong ngày trước,
+  // rồi mới biết ai đang khớp giờ của chính họ — không lọc được ngay ở query như trước.
+  const entriesResp = await supabaseAdmin(
+    `calendar_entries?posted=eq.false&scheduled_date=eq.${dateStr}&select=id,user_id,title,slot`
   );
-  const rows = resp.ok ? await resp.json() : [];
+  const entries = entriesResp.ok ? await entriesResp.json() : [];
+  if (!entries.length) return 0;
+
+  const userIds = [...new Set(entries.map((e) => e.user_id))];
+  const profilesResp = await supabaseAdmin(
+    `profiles?id=in.(${userIds.join(',')})&select=id,slot_time_sang,slot_time_trua,slot_time_toi`
+  );
+  const profiles = profilesResp.ok ? await profilesResp.json() : [];
+  const profileById = Object.fromEntries(profiles.map((p) => [p.id, p]));
+
   let count = 0;
-  for (const row of rows) {
-    const result = await notifyOnce(row.user_id, `lich:${row.id}`, {
+  for (const entry of entries) {
+    const p = profileById[entry.user_id];
+    const slotTime = (p && p['slot_time_' + entry.slot]) || DEFAULT_SLOT_TIME[entry.slot];
+    if (!withinWindow(parseHHMM(slotTime), minutesOfDay)) continue;
+    const result = await notifyOnce(entry.user_id, `lich:${entry.id}`, {
       title: 'Đến giờ đăng bài rồi',
-      body: row.title ? `"${row.title}" đang chờ bạn đăng.` : 'Có bài đã lên lịch cần đăng ngay bây giờ.',
+      body: entry.title ? `"${entry.title}" đang chờ bạn đăng.` : 'Có bài đã lên lịch cần đăng ngay bây giờ.',
       url: '/nhan-hieu/#lich-dang',
     });
     if (result.sent) count++;

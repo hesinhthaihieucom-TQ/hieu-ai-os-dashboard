@@ -726,3 +726,13 @@ create table if not exists recording_schedule (
 );
 alter table recording_schedule enable row level security;
 drop policy if exists "recording_schedule_owner_all" on recording_schedule;
+create policy "recording_schedule_owner_all" on recording_schedule for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Giờ đăng bài theo TỪNG NGƯỜI DÙNG tự chọn (2026-08-21, theo phản hồi chị Quỳnh: "giờ đăng bài là
+-- cho người ta tự chọn") — trước đó hardcode chung 8:00/12:00/19:00 cho mọi người. Lưu dạng text
+-- 'HH:MM' (24h, giờ Việt Nam) cho đơn giản, không cần kiểu time riêng. Có default nên user cũ tự
+-- động có giờ mặc định, không cần chạy migrate dữ liệu.
+alter table profiles add column if not exists slot_time_sang text not null default '08:00';
+alter table profiles add column if not exists slot_time_trua text not null default '12:00';
+alter table profiles add column if not exists slot_time_toi text not null default '19:00';
