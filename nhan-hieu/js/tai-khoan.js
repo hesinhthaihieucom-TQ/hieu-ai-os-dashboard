@@ -111,7 +111,7 @@ function render(container, ctx){
       const sameMonth = p.paid_ai_month === month;
       const used = sameMonth ? (p.paid_ai_uses||0) : 0;
       const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
-      const limit = 250 + bonus;
+      const limit = PAID_MONTHLY_AI_LIMIT + bonus;
       return { used, limit, remaining: Math.max(0, limit-used), isTrial:false };
     }
     const used = p.trial_ai_uses || 0;

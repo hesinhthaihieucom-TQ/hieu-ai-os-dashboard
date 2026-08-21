@@ -41,7 +41,7 @@ const REFERRAL_AMOUNTS = new Set([424000, 2032000, 3392000]);
 const REFERRAL_LUOT_PER_DONG = 1500;
 const REFERRAL_REWARD_PERCENT = 0.15;
 
-// "Mua thêm lượt" — dành cho khách ĐÃ TRẢ PHÍ dùng vượt trần 250 lượt/tháng (xem
+// "Mua thêm lượt" — dành cho khách ĐÃ TRẢ PHÍ dùng vượt trần 200 lượt/tháng (xem
 // api/_lib/trial-quota.js). Số tiền này KHÔNG được trùng bất kỳ số tiền nào ở AMOUNT_TO_DAYS.
 // Cộng thẳng vào paid_ai_bonus của đúng tháng hiện tại, KHÔNG đụng access_until/has_paid.
 const AMOUNT_TO_TOPUP_LUOT = {

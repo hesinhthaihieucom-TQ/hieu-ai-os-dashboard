@@ -13,10 +13,12 @@
 // đây là hàm chỉ service_role được gọi (xem grant trong supabase/schema_full.sql).
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 const TRIAL_AI_LIMIT = 100;
-const PAID_MONTHLY_AI_LIMIT = 250;
+// 200/tháng — chưa từng nâng lên 250 dù có 1 lần bị hiểu nhầm là đã nâng (2026-08-20, chị Quỳnh xác
+// nhận lại: trả phí luôn là 200/tháng, chỉ có TRIAL_AI_LIMIT ở trên là mới nâng lên 100).
+const PAID_MONTHLY_AI_LIMIT = 200;
 // Gói "Mua thêm lượt" (api/sepay-webhook.js) cộng thẳng vào paid_ai_bonus của tháng hiện tại —
 // dùng cho khách dùng vượt mức bình thường (nhiều kênh, tần suất cao...), không phải để bù đắp
-// mức nền — trần 250 đã đủ cho use-case bình thường kể cả khách đăng nhiều bài/ngày.
+// mức nền — trần 200 đã đủ cho use-case bình thường kể cả khách đăng nhiều bài/ngày.
 const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
 
 // Trọng số lượt theo TỪNG hành động — phản ánh đúng chi phí Anthropic thực tế của hành động đó

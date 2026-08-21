@@ -25,7 +25,7 @@ const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'L
 // để HIỂN THỊ cảnh báo sớm cho người dùng biết ngay từ đầu, việc CHẶN thật sự luôn nằm ở server,
 // không phải ở số hiển thị này.
 const TRIAL_AI_LIMIT = 100;
-const PAID_MONTHLY_AI_LIMIT = 250;
+const PAID_MONTHLY_AI_LIMIT = 200;
 const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
 
 // Chương trình giới thiệu: bắt lấy ?ref=<mã> ngay khi vào web (kể cả trước khi đăng ký/đăng nhập —
@@ -368,7 +368,7 @@ function bindPaymentCard(root, redraw){
   });
 }
 
-// Chỉ dành cho khách ĐÃ TRẢ PHÍ (has_paid) — trần 250 lượt/tháng đã đủ rộng cho use-case bình
+// Chỉ dành cho khách ĐÃ TRẢ PHÍ (has_paid) — trần 200 lượt/tháng đã đủ rộng cho use-case bình
 // thường, gói này để dành riêng cho khách dùng vượt mức (nhiều kênh, tần suất cao...), không hiện
 // cho khách dùng thử (họ nên mua gói chính thức, không phải mua thêm lượt).
 function topupCardHtml(){
