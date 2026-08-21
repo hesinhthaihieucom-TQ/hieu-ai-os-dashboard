@@ -50,13 +50,6 @@ function render(container, ctx){
     goals: { viet:0, taicheviral:0, chamdiemcontent:0, lich:0, chamdiemhook:0, hook:0, suakenh:0 },
     actualUsage: {}, actualLuot: {},
     referralCount: 0, referralLuotEarned: 0, referralLinkCopied: false,
-    pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
-    pushPermission: window.Notification ? Notification.permission : 'denied',
-    pushSubscribed: false, pushBusy: false, pushError: null,
-    slotTimeSang: (ctx.profile && ctx.profile.slot_time_sang) || '08:00',
-    slotTimeTrua: (ctx.profile && ctx.profile.slot_time_trua) || '12:00',
-    slotTimeToi: (ctx.profile && ctx.profile.slot_time_toi) || '19:00',
-    slotTimeSaving: false, slotTimeSaved: false,
   };
 
   const DRAFT_KEY = 'tai-khoan-goals';
@@ -179,39 +172,7 @@ function render(container, ctx){
         ${state.passwordSaved?`<div style="color:var(--accent);font-size:12.5px;margin-top:8px;">✓ Đã đổi mật khẩu thành công</div>`:''}
       </div>
 
-      <div class="card" style="margin-bottom:20px;">
-        <h3 style="margin-bottom:6px;">Giờ đăng bài</h3>
-        <div class="hint-box" style="margin-bottom:14px;">Đặt giờ cho từng khung Sáng/Trưa/Tối ở <a href="#lich-dang">Lịch Đăng Bài</a> — nếu bạn <b>đã bật thông báo</b>, đây cũng là giờ bạn sẽ được nhắc "đến giờ đăng bài".</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Sáng</label>
-            <input id="tk-slot-sang" type="time" value="${esc(state.slotTimeSang)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
-          </div>
-          <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Trưa</label>
-            <input id="tk-slot-trua" type="time" value="${esc(state.slotTimeTrua)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
-          </div>
-          <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tối</label>
-            <input id="tk-slot-toi" type="time" value="${esc(state.slotTimeToi)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
-          </div>
-          <button class="btn btn-sm" data-action="save-slot-times" style="align-self:flex-end;" ${state.slotTimeSaving?'disabled':''}>${state.slotTimeSaving?'Đang lưu…':'Lưu giờ'}</button>
-        </div>
-        ${state.slotTimeSaved?`<div style="color:var(--accent);font-size:12.5px;margin-top:8px;">✓ Đã lưu</div>`:''}
-      </div>
-
-      <div class="card" style="margin-bottom:20px;">
-        <h3 style="margin-bottom:6px;">Thông báo nhắc lịch</h3>
-        <div class="hint-box" style="margin-bottom:14px;">Bật để nhận thông báo ngay trên máy khi <b>đến giờ đăng bài</b>, <b>đã đăng được 3h/6h/24h</b> (nhắc kiểm tra view ở Đẩy Bài), và <b>đến giờ quay content</b> đã đặt lịch. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> (bấm nút Chia sẻ trên Safari) trước khi bật được — Safari không hỗ trợ thông báo cho tab trình duyệt thường.</div>
-        ${!state.pushSupported ? `
-          <div class="error-box">Trình duyệt/thiết bị này không hỗ trợ thông báo đẩy.</div>
-        ` : state.pushSubscribed ? `
-          <button class="btn-ghost btn btn-sm" data-action="disable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</button>
-        ` : `
-          <button class="btn btn-sm" data-action="enable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang bật…':'Bật thông báo'}</button>
-        `}
-        ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
-      </div>
+      <div class="hint-box" style="margin-bottom:20px;">🔔 Đặt giờ đăng bài mặc định và bật thông báo nhắc lịch ở tab <a href="#lich-dang">Lịch Đăng Bài → Thông báo &amp; giờ đăng</a>.</div>
 
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
@@ -339,20 +300,6 @@ function render(container, ctx){
     const passConfirmInput = container.querySelector('#tk-pass-confirm');
     if(passConfirmInput) passConfirmInput.oninput = ()=>{ state.confirmPassword = passConfirmInput.value; };
 
-    const slotSangInput = container.querySelector('#tk-slot-sang');
-    if(slotSangInput) slotSangInput.oninput = ()=>{ state.slotTimeSang = slotSangInput.value; state.slotTimeSaved = false; };
-    const slotTruaInput = container.querySelector('#tk-slot-trua');
-    if(slotTruaInput) slotTruaInput.oninput = ()=>{ state.slotTimeTrua = slotTruaInput.value; state.slotTimeSaved = false; };
-    const slotToiInput = container.querySelector('#tk-slot-toi');
-    if(slotToiInput) slotToiInput.oninput = ()=>{ state.slotTimeToi = slotToiInput.value; state.slotTimeSaved = false; };
-    const saveSlotTimesBtn = container.querySelector('[data-action="save-slot-times"]');
-    if(saveSlotTimesBtn) saveSlotTimesBtn.onclick = saveSlotTimes;
-
-    const enablePushBtn = container.querySelector('[data-action="enable-push"]');
-    if(enablePushBtn) enablePushBtn.onclick = enablePush;
-    const disablePushBtn = container.querySelector('[data-action="disable-push"]');
-    if(disablePushBtn) disablePushBtn.onclick = disablePush;
-
     const savePassBtn = container.querySelector('[data-action="save-password"]');
     if(savePassBtn) savePassBtn.onclick = async ()=>{
       state.passwordSaved = false;
@@ -367,80 +314,10 @@ function render(container, ctx){
     };
   }
 
-  // Kiểm tra đã có subscription push sẵn chưa (vd đã bật ở thiết bị này trước đó) — không tự hỏi
-  // quyền, chỉ đọc trạng thái hiện có để hiện đúng nút Bật/Tắt.
-  async function checkPushSubscription(){
-    if(!state.pushSupported) { draw(); return; }
-    try{
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      state.pushSubscribed = !!sub;
-    } catch(e){ state.pushSubscribed = false; }
-    draw();
-  }
-
-  // Bật thông báo: xin quyền trình duyệt → đăng ký PushManager → gửi lên server lưu lại. Trên
-  // iPhone CHỈ hoạt động nếu đã cài app qua "Thêm vào Màn hình chính" (Safari không hỗ trợ Web Push
-  // cho tab trình duyệt thường) — báo rõ lý do nếu subscribe thất bại vì việc này rất dễ hiểu nhầm
-  // là "app bị lỗi" trong khi thực ra là do chưa cài app.
-  async function saveSlotTimes(){
-    if(state.slotTimeSaving) return;
-    state.slotTimeSaving = true; state.slotTimeSaved = false; draw();
-    const patch = { slot_time_sang: state.slotTimeSang, slot_time_trua: state.slotTimeTrua, slot_time_toi: state.slotTimeToi };
-    const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', ctx.user.id);
-    state.slotTimeSaving = false;
-    if(!error){
-      state.slotTimeSaved = true;
-      // Cập nhật ngay AppState.profile (ctx.profile CHÍNH LÀ nó, xem app-shell.js) — Lịch Đăng Bài
-      // thấy giờ mới ngay lần sau vào, không cần tải lại trang.
-      if(ctx.profile) Object.assign(ctx.profile, patch);
-    }
-    draw();
-  }
-
-  async function enablePush(){
-    if(state.pushBusy) return;
-    state.pushBusy = true; state.pushError = null; draw();
-    try{
-      if(!state.pushSupported) throw new Error('Trình duyệt này không hỗ trợ thông báo đẩy.');
-      const permission = await Notification.requestPermission();
-      state.pushPermission = permission;
-      if(permission !== 'granted') throw new Error('Bạn chưa cấp quyền thông báo — vào cài đặt trình duyệt/điện thoại để bật lại nếu muốn thử lại.');
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-      await callApi('/api/push-subscribe', sub.toJSON());
-      state.pushSubscribed = true;
-    } catch(e){
-      state.pushError = e.message || 'Không bật được thông báo — thử lại giúp mình.';
-    }
-    state.pushBusy = false; draw();
-  }
-
-  async function disablePush(){
-    if(state.pushBusy) return;
-    state.pushBusy = true; state.pushError = null; draw();
-    try{
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if(sub){
-        await callApi('/api/push-unsubscribe', { endpoint: sub.endpoint });
-        await sub.unsubscribe();
-      }
-      state.pushSubscribed = false;
-    } catch(e){
-      state.pushError = e.message || 'Không tắt được thông báo — thử lại giúp mình.';
-    }
-    state.pushBusy = false; draw();
-  }
-
   draw();
   loadGoalsDraft();
   loadActualUsage();
   loadReferralStats();
-  checkPushSubscription();
 }
 window.Modules = window.Modules || {};
 window.Modules['tai-khoan'] = { title:'Tài khoản', render };
