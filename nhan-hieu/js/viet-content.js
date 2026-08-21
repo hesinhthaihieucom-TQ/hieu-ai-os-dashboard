@@ -404,8 +404,8 @@ function render(container, ctx){
       <div class="btn-row no-print" style="margin-top:20px;align-items:center;">
         ${r.hashtag ? `
           <button class="btn" data-action="save" ${state.saving?'disabled':''}>${state.savedId?'Đã lưu vào thư viện ✓':state.saving?'Đang lưu…':'Lưu vào thư viện bài viết'}</button>
-          ${state.savedId?`<a class="btn-ghost btn" href="#lich-dang">Đưa vào Lịch Đăng Bài →</a>`:''}
-          ${state.savedId?`<a class="btn-ghost btn" href="#day-bai">Đẩy Bài &amp; CTA Comment →</a>`:''}
+          ${state.savedId?`<span class="btn-ghost btn" data-action="schedule-saved">Đưa vào Lịch Đăng Bài →</span>`:''}
+          ${state.savedId?`<span class="btn-ghost btn" data-action="day-bai-saved">Đẩy Bài &amp; CTA Comment →</span>`:''}
         ` : `<span style="font-size:13px;color:var(--ink-soft);">Tạo Hashtag, hình ảnh, dạng content &amp; caption ở trên trước đã, rồi mới lưu được bài.</span>`}
       </div>
     `;
@@ -521,6 +521,19 @@ function render(container, ctx){
         location.hash = 'lich-dang';
       };
     });
+    // Nút ngay sau khi lưu bài — TRƯỚC ĐÂY là thẻ <a href> thường, không gán window.PendingPost nên
+    // Lịch Đăng Bài/Đẩy Bài mở ra không tự chọn sẵn đúng bài vừa lưu (phải tự tìm lại trong danh
+    // sách bên dưới), khiến bấm xong tưởng "không đưa được".
+    const scheduleSavedBtn = container.querySelector('[data-action="schedule-saved"]');
+    if(scheduleSavedBtn) scheduleSavedBtn.onclick = ()=>{
+      window.PendingPost = state.recentPosts.find(p=>p.id===state.savedId);
+      location.hash = 'lich-dang';
+    };
+    const dayBaiSavedBtn = container.querySelector('[data-action="day-bai-saved"]');
+    if(dayBaiSavedBtn) dayBaiSavedBtn.onclick = ()=>{
+      window.PendingPost = state.recentPosts.find(p=>p.id===state.savedId);
+      location.hash = 'day-bai';
+    };
 
     container.querySelectorAll('[data-ask-viral]').forEach(el=>{
       el.onclick = ()=>{ state.viralPromptFor = el.getAttribute('data-ask-viral'); state.viralError = null; draw(); };
@@ -686,6 +699,22 @@ function render(container, ctx){
     state.hookScoring = false; draw();
   }
 
+  // Kho Content chỉ hiện đúng field "content" (không đọc "structure") — trước đây hashtag/bình luận
+  // ghim/bình luận CTA sản phẩm chỉ nằm trong "structure", nên khi xem lại bài đã lưu ở Kho Content
+  // sẽ KHÔNG thấy các phần này, tưởng như bị mất (theo phản hồi chị Quỳnh 21/8). Giờ nối thẳng vào
+  // cuối nội dung lưu, đọc lại ở Kho Content vẫn thấy đủ.
+  function contentForSave(r){
+    let out = r.bai_hoan_chinh;
+    if(r.cau_cmt_ghim && r.cau_cmt_ghim.trim()) out += `\n\n---\nBình luận ghim:\n${r.cau_cmt_ghim.trim()}`;
+    if(r.cmt_cta_san_pham && r.cmt_cta_san_pham.length){
+      out += `\n\n---\nBình luận CTA sản phẩm/group:\n${r.cmt_cta_san_pham.filter(c=>c&&c.trim()).join('\n\n')}`;
+    }
+    if(r.hashtag && r.hashtag.length){
+      out += `\n\n---\nHashtag:\n${r.hashtag.map(h=>'#'+h.replace(/^#/,'')).join(' ')}`;
+    }
+    return out;
+  }
+
   async function save(){
     if(!state.result || state.savedId || state.saving) return;
     state.saving = true; draw();
@@ -703,7 +732,7 @@ function render(container, ctx){
       user_id: ctx.user.id,
       idea_id: state.ideaId,
       title: r.tieu_de,
-      content: r.bai_hoan_chinh,
+      content: contentForSave(r),
       // state.dinhDangOverride: người dùng tự đổi sang dạng content khác với AI gợi ý (xem dòng ~333)
       // — trước đây lưu bài luôn ghi cứng r.dinh_dang_de_xuat (dạng AI gợi ý ban đầu), bỏ qua lựa
       // chọn tay của người dùng dù màn hình đang hiện đúng dạng họ chọn.

@@ -151,6 +151,15 @@ function render(container, ctx){
     const n = usageCountFor(key);
     return n>0 ? `<span style="color:var(--accent);font-size:12px;font-weight:600;">✓ Đã dùng viết bài ${n} lần</span>` : '';
   }
+  // Hook đã dùng viết bài rồi thì đẩy xuống cuối danh sách — hook chưa dùng nổi lên trên để dễ chọn
+  // tiếp (theo phản hồi chị Quỳnh 21/8), giữ nguyên thứ tự tương đối trong từng nhóm. keyFn nhận 1
+  // item, trả về đúng key dùng cho usageCountFor (khác nhau giữa personal/shared/content).
+  function sortUnusedFirst(items, keyFn){
+    return items
+      .map((item,i)=>({ item, i, used: usageCountFor(keyFn(item)) > 0 }))
+      .sort((a,b)=> a.used===b.used ? a.i-b.i : (a.used?1:-1))
+      .map(x=>x.item);
+  }
 
   function html(){
     if(state.error) return `
@@ -332,6 +341,7 @@ function render(container, ctx){
     let items = filterByPillar(state.personal, state.khoToiPillar);
     const q = state.khoToiSearch.trim().toLowerCase();
     if(q) items = items.filter(h=>(h.hook_text||'').toLowerCase().includes(q));
+    items = sortUnusedFirst(items, h=>'personal:'+h.id);
     const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
     if(items.length===0) return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
     return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + items.map(h=>`
@@ -355,6 +365,7 @@ function render(container, ctx){
     let items = filterByPillar(all, state.chungPillar);
     const q = state.chungSearch.trim().toLowerCase();
     if(q) items = items.filter(h=>(h.hook_text||'').toLowerCase().includes(q));
+    items = sortUnusedFirst(items, h=>h._src+':'+h.id);
     const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
     if(items.length===0) return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
     return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + items.map(h=>`
