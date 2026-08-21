@@ -669,3 +669,60 @@ drop policy if exists "hooks_bank_personal_admin_read" on hooks_bank_personal;
 create policy "hooks_bank_personal_admin_read" on hooks_bank_personal for select using (is_admin());
 drop policy if exists "hooks_bank_personal_admin_update" on hooks_bank_personal;
 create policy "hooks_bank_personal_admin_update" on hooks_bank_personal for update using (is_admin()) with check (is_admin());
+
+-- ============================================================
+-- 16. THÔNG BÁO ĐẨY (Web Push) — nhắc lịch đăng bài, nhắc kiểm tra view sau khi đăng (Đẩy Bài),
+-- nhắc lịch quay content (2026-08-21, theo yêu cầu chị Quỳnh). Gửi qua chuẩn Web Push (VAPID) —
+-- hoạt động kể cả khi đã tắt app/trình duyệt, MIỄN LÀ đã cài app lên máy (PWA, xem
+-- nhan-hieu/manifest.json + nhan-hieu/sw.js) và đã cấp quyền thông báo. Trên iPhone: CHỈ hoạt động
+-- nếu đã "Thêm vào Màn hình chính" trước (Safari không hỗ trợ Web Push cho tab trình duyệt thường,
+-- chỉ hỗ trợ PWA đã cài, từ iOS 16.4+). Xem api/_lib/push.js, api/cron/send-reminders.js.
+-- ============================================================
+
+-- Đăng ký nhận thông báo — 1 user có thể có NHIỀU dòng (nhiều thiết bị/trình duyệt đã cài app).
+-- endpoint là URL duy nhất do trình duyệt cấp lúc subscribe, dùng làm khoá tự nhiên để upsert.
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth_key text not null,
+  created_at timestamptz not null default now()
+);
+alter table push_subscriptions enable row level security;
+drop policy if exists "push_subscriptions_owner_all" on push_subscriptions;
+create policy "push_subscriptions_owner_all" on push_subscriptions for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Đánh dấu đã gửi thông báo cho đúng 1 sự kiện cụ thể (vd "lich:<entry_id>" hoặc
+-- "daybai:<entry_id>:3h") — cron chạy mỗi 15 phút nên PHẢI chống gửi trùng, unique (user_id,
+-- event_key) là cách chống trùng đơn giản nhất, không cần lock/queue phức tạp. Chỉ service_role
+-- (cron) mới ghi bảng này nên không cần policy insert cho user thường.
+create table if not exists notification_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  event_key text not null,
+  sent_at timestamptz not null default now(),
+  unique (user_id, event_key)
+);
+alter table notification_log enable row level security;
+drop policy if exists "notification_log_owner_read" on notification_log;
+create policy "notification_log_owner_read" on notification_log for select using (auth.uid() = user_id);
+
+-- Thời điểm THỰC SỰ bấm "Đã đăng" (khác scheduled_date/slot chỉ là dự định) — dùng làm mốc 0h để
+-- tính các mốc nhắc kiểm tra view 3h/6h/24h sau khi đăng thật (Đẩy Bài), vì người dùng có thể đăng
+-- trễ/sớm hơn dự định ban đầu.
+alter table calendar_entries add column if not exists posted_at timestamptz;
+
+-- Lịch quay content — tách khỏi calendar_entries (lịch ĐĂNG) vì đây là hoạt động CHUẨN BỊ trước
+-- khi có bài, không gắn với 1 slot sáng/trưa/tối cố định mà là 1 thời điểm cụ thể do người dùng
+-- tự chọn (ngày + giờ).
+create table if not exists recording_schedule (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text,
+  scheduled_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+alter table recording_schedule enable row level security;
+drop policy if exists "recording_schedule_owner_all" on recording_schedule;

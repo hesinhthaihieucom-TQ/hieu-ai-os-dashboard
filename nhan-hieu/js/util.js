@@ -104,6 +104,18 @@ function excerpt(s, maxLen){
   return str.slice(0, maxLen).trim() + '…';
 }
 
+// PushManager.subscribe() cần applicationServerKey dạng Uint8Array, nhưng VAPID public key ta có
+// là chuỗi base64url — chuyển đổi qua lại theo đúng chuẩn (thêm padding '=' bị chuẩn base64url bỏ,
+// đổi -/_ về +//). Dùng chung cho tai-khoan.js lúc bật thông báo.
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });

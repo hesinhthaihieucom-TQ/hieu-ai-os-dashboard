@@ -25,6 +25,7 @@ function render(container, ctx){
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
+    recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -34,7 +35,7 @@ function render(container, ctx){
     if(window.PendingPost){ state.pending = window.PendingPost; window.PendingPost = null; }
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = (pos && pos.luot1) ? pos : null;
-    await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts()]);
+    await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule()]);
     state.screen='main';
     draw();
   }
@@ -75,6 +76,45 @@ function render(container, ctx){
   async function loadPosts(){
     const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(30);
     state.posts = data || [];
+  }
+
+  // Lịch quay content — nhắc theo THỜI ĐIỂM cụ thể (khác lịch đăng theo slot sáng/trưa/tối), dùng
+  // để chuẩn bị TRƯỚC khi có bài viết sẵn. Chỉ hiện các lịch CHƯA QUA (đã qua thì tự ẩn, không cần
+  // xoá tay) — sắp xếp gần nhất lên đầu.
+  async function loadRecordingSchedule(){
+    const { data } = await ctx.supabase.from('recording_schedule').select('*').eq('user_id', ctx.user.id)
+      .gte('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending:true });
+    state.recordingSchedule = data || [];
+  }
+
+  async function addRecordingSchedule(){
+    if(state.recordingSaving) return;
+    if(!state.newRecordingDate || !state.newRecordingTime){
+      state.recordingError = 'Chọn đủ ngày và giờ quay.';
+      draw();
+      return;
+    }
+    const scheduledAt = new Date(`${state.newRecordingDate}T${state.newRecordingTime}:00`);
+    if(isNaN(scheduledAt.getTime()) || scheduledAt.getTime() < Date.now() - 60000){
+      state.recordingError = 'Thời điểm quay phải ở tương lai.';
+      draw();
+      return;
+    }
+    state.recordingSaving = true; state.recordingError = null; draw();
+    const { error } = await ctx.supabase.from('recording_schedule').insert({
+      user_id: ctx.user.id, title: state.newRecordingTitle.trim() || null, scheduled_at: scheduledAt.toISOString(),
+    });
+    state.recordingSaving = false;
+    if(error){ state.recordingError = error.message; draw(); return; }
+    state.newRecordingTitle = ''; state.newRecordingDate = ''; state.newRecordingTime = '';
+    await loadRecordingSchedule();
+    draw();
+  }
+
+  async function deleteRecordingSchedule(id){
+    await ctx.supabase.from('recording_schedule').delete().eq('id', id);
+    await loadRecordingSchedule();
+    draw();
   }
 
   function weekDays(){
@@ -133,6 +173,37 @@ function render(container, ctx){
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để xếp xong cả tuần — đừng thoát trang khi đang đợi.</div>
         ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:6px;">Lịch quay content</h3>
+        <div class="hint-box" style="margin-bottom:12px;">Đặt lịch cho buổi quay sắp tới — nếu đã <a href="#tai-khoan">bật thông báo</a>, bạn sẽ được nhắc ngay khi đến giờ.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:2;min-width:160px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tên buổi quay (không bắt buộc)</label>
+            <input id="rec-title" type="text" value="${esc(state.newRecordingTitle)}" placeholder="Vd: Quay 5 video tuần này" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+          </div>
+          <div style="min-width:130px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Ngày</label>
+            <input id="rec-date" type="date" value="${esc(state.newRecordingDate)}" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+          </div>
+          <div style="min-width:100px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Giờ</label>
+            <input id="rec-time" type="time" value="${esc(state.newRecordingTime)}" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+          </div>
+          <button class="btn btn-sm" data-action="add-recording" ${state.recordingSaving?'disabled':''}>${state.recordingSaving?'Đang lưu…':'Thêm lịch quay'}</button>
+        </div>
+        ${state.recordingError?`<div class="error-box" style="margin-top:10px;">${esc(state.recordingError)}</div>`:''}
+        ${state.recordingSchedule.length ? `
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+            ${state.recordingSchedule.map(r=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
+                <span style="font-size:13.5px;"><b>${esc(new Date(r.scheduled_at).toLocaleString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }))}</b>${r.title?` — ${esc(r.title)}`:''}</span>
+                <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-recording="${r.id}">Xoá</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Chưa có lịch quay nào sắp tới.</div>`}
       </div>
 
       ${state.pending ? `
@@ -361,12 +432,27 @@ function render(container, ctx){
         draw();
       };
     });
+    const recTitleInput = container.querySelector('#rec-title');
+    if(recTitleInput) recTitleInput.oninput = ()=>{ state.newRecordingTitle = recTitleInput.value; };
+    const recDateInput = container.querySelector('#rec-date');
+    if(recDateInput) recDateInput.oninput = ()=>{ state.newRecordingDate = recDateInput.value; };
+    const recTimeInput = container.querySelector('#rec-time');
+    if(recTimeInput) recTimeInput.oninput = ()=>{ state.newRecordingTime = recTimeInput.value; };
+    const addRecordingBtn = container.querySelector('[data-action="add-recording"]');
+    if(addRecordingBtn) addRecordingBtn.onclick = addRecordingSchedule;
+    container.querySelectorAll('[data-del-recording]').forEach(el=>{
+      el.onclick = ()=>deleteRecordingSchedule(el.getAttribute('data-del-recording'));
+    });
+
     container.querySelectorAll('[data-toggle-posted]').forEach(el=>{
       el.onclick = async ()=>{
         const id = el.getAttribute('data-toggle-posted');
         const entry = state.entries.find(x=>x.id===id);
         const nextPosted = !(entry && entry.posted);
-        await ctx.supabase.from('calendar_entries').update({ posted: nextPosted }).eq('id', id);
+        // posted_at: mốc 0h THẬT để cron tính nhắc kiểm tra view 3h/6h/24h ở Đẩy Bài (xem
+        // api/cron/send-reminders.js) — chỉ set lúc bấm "Đã đăng", xoá lại nếu bấm bỏ đánh dấu
+        // (tránh giữ mốc giờ cũ sai nếu người dùng lỡ tay rồi đăng lại sau).
+        await ctx.supabase.from('calendar_entries').update({ posted: nextPosted, posted_at: nextPosted ? new Date().toISOString() : null }).eq('id', id);
         // Đồng bộ ngược sang đúng bài trong Kho Content (nếu ô này gắn 1 bài đã viết cụ thể) — để
         // Kho Content chia được đã đăng/chưa đăng, và picker chọn bài tự loại bài đã đăng rồi.
         if(entry && entry.post_id){

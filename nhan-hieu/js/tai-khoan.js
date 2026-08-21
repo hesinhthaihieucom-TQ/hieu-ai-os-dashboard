@@ -50,6 +50,9 @@ function render(container, ctx){
     goals: { viet:0, taicheviral:0, chamdiemcontent:0, lich:0, chamdiemhook:0, hook:0, suakenh:0 },
     actualUsage: {}, actualLuot: {},
     referralCount: 0, referralLuotEarned: 0, referralLinkCopied: false,
+    pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
+    pushPermission: window.Notification ? Notification.permission : 'denied',
+    pushSubscribed: false, pushBusy: false, pushError: null,
   };
 
   const DRAFT_KEY = 'tai-khoan-goals';
@@ -170,6 +173,19 @@ function render(container, ctx){
         <button class="btn btn-sm" data-action="save-password" ${state.passwordSaving?'disabled':''}>${state.passwordSaving?'Đang đổi…':'Đổi mật khẩu'}</button>
         ${state.passwordError?`<div class="error-box" style="margin-top:10px;">${esc(state.passwordError)}</div>`:''}
         ${state.passwordSaved?`<div style="color:var(--accent);font-size:12.5px;margin-top:8px;">✓ Đã đổi mật khẩu thành công</div>`:''}
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:6px;">Thông báo nhắc lịch</h3>
+        <div class="hint-box" style="margin-bottom:14px;">Bật để nhận thông báo ngay trên máy khi <b>đến giờ đăng bài</b>, <b>đã đăng được 3h/6h/24h</b> (nhắc kiểm tra view ở Đẩy Bài), và <b>đến giờ quay content</b> đã đặt lịch. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> (bấm nút Chia sẻ trên Safari) trước khi bật được — Safari không hỗ trợ thông báo cho tab trình duyệt thường.</div>
+        ${!state.pushSupported ? `
+          <div class="error-box">Trình duyệt/thiết bị này không hỗ trợ thông báo đẩy.</div>
+        ` : state.pushSubscribed ? `
+          <button class="btn-ghost btn btn-sm" data-action="disable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</button>
+        ` : `
+          <button class="btn btn-sm" data-action="enable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang bật…':'Bật thông báo'}</button>
+        `}
+        ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
       </div>
 
       <div class="card" style="margin-bottom:20px;">
@@ -298,6 +314,11 @@ function render(container, ctx){
     const passConfirmInput = container.querySelector('#tk-pass-confirm');
     if(passConfirmInput) passConfirmInput.oninput = ()=>{ state.confirmPassword = passConfirmInput.value; };
 
+    const enablePushBtn = container.querySelector('[data-action="enable-push"]');
+    if(enablePushBtn) enablePushBtn.onclick = enablePush;
+    const disablePushBtn = container.querySelector('[data-action="disable-push"]');
+    if(disablePushBtn) disablePushBtn.onclick = disablePush;
+
     const savePassBtn = container.querySelector('[data-action="save-password"]');
     if(savePassBtn) savePassBtn.onclick = async ()=>{
       state.passwordSaved = false;
@@ -312,10 +333,65 @@ function render(container, ctx){
     };
   }
 
+  // Kiểm tra đã có subscription push sẵn chưa (vd đã bật ở thiết bị này trước đó) — không tự hỏi
+  // quyền, chỉ đọc trạng thái hiện có để hiện đúng nút Bật/Tắt.
+  async function checkPushSubscription(){
+    if(!state.pushSupported) { draw(); return; }
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      state.pushSubscribed = !!sub;
+    } catch(e){ state.pushSubscribed = false; }
+    draw();
+  }
+
+  // Bật thông báo: xin quyền trình duyệt → đăng ký PushManager → gửi lên server lưu lại. Trên
+  // iPhone CHỈ hoạt động nếu đã cài app qua "Thêm vào Màn hình chính" (Safari không hỗ trợ Web Push
+  // cho tab trình duyệt thường) — báo rõ lý do nếu subscribe thất bại vì việc này rất dễ hiểu nhầm
+  // là "app bị lỗi" trong khi thực ra là do chưa cài app.
+  async function enablePush(){
+    if(state.pushBusy) return;
+    state.pushBusy = true; state.pushError = null; draw();
+    try{
+      if(!state.pushSupported) throw new Error('Trình duyệt này không hỗ trợ thông báo đẩy.');
+      const permission = await Notification.requestPermission();
+      state.pushPermission = permission;
+      if(permission !== 'granted') throw new Error('Bạn chưa cấp quyền thông báo — vào cài đặt trình duyệt/điện thoại để bật lại nếu muốn thử lại.');
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      await callApi('/api/push-subscribe', sub.toJSON());
+      state.pushSubscribed = true;
+    } catch(e){
+      state.pushError = e.message || 'Không bật được thông báo — thử lại giúp mình.';
+    }
+    state.pushBusy = false; draw();
+  }
+
+  async function disablePush(){
+    if(state.pushBusy) return;
+    state.pushBusy = true; state.pushError = null; draw();
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if(sub){
+        await callApi('/api/push-unsubscribe', { endpoint: sub.endpoint });
+        await sub.unsubscribe();
+      }
+      state.pushSubscribed = false;
+    } catch(e){
+      state.pushError = e.message || 'Không tắt được thông báo — thử lại giúp mình.';
+    }
+    state.pushBusy = false; draw();
+  }
+
   draw();
   loadGoalsDraft();
   loadActualUsage();
   loadReferralStats();
+  checkPushSubscription();
 }
 window.Modules = window.Modules || {};
 window.Modules['tai-khoan'] = { title:'Tài khoản', render };

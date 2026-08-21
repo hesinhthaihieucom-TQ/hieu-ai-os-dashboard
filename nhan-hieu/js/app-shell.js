@@ -21,6 +21,12 @@ const NAV = [
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
+// Public key VAPID cho Web Push (2026-08-21) — an toàn để lộ ở client (đúng bản chất "public" trong
+// tên gọi), chỉ dùng để trình duyệt xác nhận đúng server này được phép gửi thông báo cho subscription
+// đó. Private key TUYỆT ĐỐI không đưa vào code — chỉ nằm trong biến môi trường VAPID_PRIVATE_KEY ở
+// Vercel, dùng ở api/_lib/push.js. Đổi key này thì phải đổi luôn VAPID_PUBLIC_KEY ở Vercel env cho
+// khớp, không thì subscribe sẽ ký sai server và bị từ chối.
+const VAPID_PUBLIC_KEY = 'BI1GvgYqAsScGulHSSnwaBz9AZt3-A1pW9ioOch0nLA2HDDvrjYSW0GYC1SkOmTm4fPTAlIhtag0ksV1TUeTAL0';
 // Khớp đúng TRIAL_AI_LIMIT/PAID_MONTHLY_AI_LIMIT/PAID_TOPUP_PACKS ở api/_lib/trial-quota.js — chỉ
 // để HIỂN THỊ cảnh báo sớm cho người dùng biết ngay từ đầu, việc CHẶN thật sự luôn nằm ở server,
 // không phải ở số hiển thị này.

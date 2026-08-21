@@ -4,8 +4,12 @@
     { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
-    "api/*.js": { "maxDuration": 300 }
+    "api/*.js": { "maxDuration": 300 },
+    "api/cron/*.js": { "maxDuration": 60 }
   },
+  "crons": [
+    { "path": "/api/cron/send-reminders", "schedule": "*/15 * * * *" }
+  ],
   "headers": [
     {
       "source": "/nhan-hieu/js/:path*",

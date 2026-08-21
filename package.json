@@ -1,0 +1,8 @@
+{
+  "name": "hieu-ai-os-dashboard",
+  "private": true,
+  "description": "Không có build step cho phần static (nhan-hieu/, tai-chinh/, index.html) — package.json này CHỈ tồn tại để Vercel cài dependency cho các serverless function trong api/ (hiện tại: web-push, dùng để gửi thông báo đẩy). Không thêm devDependencies/bundler/script build vào đây.",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}
