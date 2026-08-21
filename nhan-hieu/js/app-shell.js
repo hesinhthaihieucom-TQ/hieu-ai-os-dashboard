@@ -21,12 +21,18 @@ const NAV = [
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
-// Khớp đúng TRIAL_AI_LIMIT/PAID_MONTHLY_AI_LIMIT/PAID_TOPUP_PACK ở api/_lib/trial-quota.js — chỉ
+// Khớp đúng TRIAL_AI_LIMIT/PAID_MONTHLY_AI_LIMIT/PAID_TOPUP_PACKS ở api/_lib/trial-quota.js — chỉ
 // để HIỂN THỊ cảnh báo sớm cho người dùng biết ngay từ đầu, việc CHẶN thật sự luôn nằm ở server,
 // không phải ở số hiển thị này.
 const TRIAL_AI_LIMIT = 100;
 const PAID_MONTHLY_AI_LIMIT = 200;
-const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
+// Khớp đúng AMOUNT_TO_TOPUP_LUOT ở api/sepay-webhook.js — mua càng nhiều giá/lượt càng rẻ.
+const PAID_TOPUP_PACKS = [
+  { key:'100', amount: 150000, luot: 100 },
+  { key:'300', amount: 420000, luot: 300 },
+  { key:'600', amount: 780000, luot: 600 },
+];
+let selectedTopupKey = '300';
 
 // Chương trình giới thiệu: bắt lấy ?ref=<mã> ngay khi vào web (kể cả trước khi đăng ký/đăng nhập —
 // người mới có thể lướt vài trang trước khi bấm "Tạo tài khoản") và lưu tạm vào localStorage, tới
@@ -376,21 +382,31 @@ function topupCardHtml(){
   if(!p || !p.has_paid) return '';
   const refCode = p.ref_code;
   const { used, limit } = paidMonthlyUsage(p);
+  const basePricePerLuot = PAID_TOPUP_PACKS[0].amount / PAID_TOPUP_PACKS[0].luot;
+  const pack = PAID_TOPUP_PACKS.find(pk => pk.key === selectedTopupKey) || PAID_TOPUP_PACKS[0];
+  selectedTopupKey = pack.key;
   const transferContent = refCode ? `SEVQR ${refCode}` : null;
   const qrUrl = refCode
-    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${PAID_TOPUP_PACK.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${pack.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
   return `
     <div class="card" style="max-width:460px;margin-top:16px;">
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Mua thêm lượt AI</label>
-      <div class="hint-box" style="margin-bottom:12px;">Tháng này bạn đã dùng <b>${used}/${limit} lượt</b>. Nếu cần dùng nhiều hơn mức bình thường (nhiều kênh, tần suất đăng cao...), mua thêm <b>+${PAID_TOPUP_PACK.luot} lượt</b> dùng ngay trong tháng, không cần chờ đầu tháng sau.</div>
+      <div class="hint-box" style="margin-bottom:12px;">Tháng này bạn đã dùng <b>${used}/${limit} lượt</b>. Nếu cần dùng nhiều hơn mức bình thường (nhiều kênh, tần suất đăng cao...), mua thêm lượt dùng ngay trong tháng, không cần chờ đầu tháng sau. Mua càng nhiều, giá/lượt càng rẻ.</div>
+      <div class="chips" id="topup-chips">
+        ${PAID_TOPUP_PACKS.map(pk => {
+          const pricePerLuot = pk.amount / pk.luot;
+          const pct = Math.round((1 - pricePerLuot / basePricePerLuot) * 100);
+          return `<div class="chip ${pk.key===selectedTopupKey?'selected':''}" data-topup="${pk.key}">+${pk.luot} lượt — ${pk.amount.toLocaleString('vi-VN')}đ${pct>0?` <span style="opacity:.72;font-size:11.5px;">(giảm ${pct}%)</span>`:''}</div>`;
+        }).join('')}
+      </div>
       ${qrUrl ? `
-        <div style="text-align:center;">
+        <div style="text-align:center;margin-top:14px;">
           <img src="${qrUrl}" alt="Mã VietQR mua thêm lượt" style="max-width:220px;width:100%;border-radius:12px;border:1px solid var(--line);">
           <div style="margin-top:8px;"><a href="${qrUrl}" download="vietqr-mua-them-luot.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a></div>
         </div>
         <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${PAID_TOPUP_PACK.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${PAID_TOPUP_PACK.amount}">Copy</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${pack.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${pack.amount}">Copy</span></div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
         </div>
         <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu thì ngân hàng mới báo về hệ thống được) — lượt được cộng thẳng trong vài phút, dùng được ngay, không ảnh hưởng tới hạn gói đang có.</div>
@@ -398,7 +414,10 @@ function topupCardHtml(){
     </div>
   `;
 }
-function bindTopupCard(root){
+function bindTopupCard(root, redraw){
+  root.querySelectorAll('[data-topup]').forEach(el=>{
+    el.onclick = ()=>{ selectedTopupKey = el.getAttribute('data-topup'); redraw(); };
+  });
   root.querySelectorAll('[data-copy-value]').forEach(el=>{
     if(el.onclick) return; // đã bind bởi bindPaymentCard trong cùng màn hình, khỏi gán trùng
     el.onclick = async ()=>{

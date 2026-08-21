@@ -18,8 +18,14 @@ const TRIAL_AI_LIMIT = 100;
 const PAID_MONTHLY_AI_LIMIT = 200;
 // Gói "Mua thêm lượt" (api/sepay-webhook.js) cộng thẳng vào paid_ai_bonus của tháng hiện tại —
 // dùng cho khách dùng vượt mức bình thường (nhiều kênh, tần suất cao...), không phải để bù đắp
-// mức nền — trần 200 đã đủ cho use-case bình thường kể cả khách đăng nhiều bài/ngày.
-const PAID_TOPUP_PACK = { amount: 150000, luot: 100 };
+// mức nền — trần 200 đã đủ cho use-case bình thường kể cả khách đăng nhiều bài/ngày. 3 mức, mua
+// càng nhiều giá/lượt càng rẻ (2026-08-21) — khớp đúng AMOUNT_TO_TOPUP_LUOT ở api/sepay-webhook.js
+// và PAID_TOPUP_PACKS ở nhan-hieu/js/app-shell.js.
+const PAID_TOPUP_PACKS = [
+  { amount: 150000, luot: 100 },
+  { amount: 420000, luot: 300 },
+  { amount: 780000, luot: 600 },
+];
 
 // Trọng số lượt theo TỪNG hành động — phản ánh đúng chi phí Anthropic thực tế của hành động đó
 // (hành động càng nhiều token/prompt dài thì tốn càng nhiều lượt), thay vì trước đây tính đồng giá
@@ -134,4 +140,4 @@ async function refundTrialQuota(userId, actionKey) {
   } catch (e) {}
 }
 
-module.exports = { checkAndConsumeTrialQuota, refundTrialQuota, TRIAL_AI_LIMIT, PAID_MONTHLY_AI_LIMIT, PAID_TOPUP_PACK, AI_WEIGHTS };
+module.exports = { checkAndConsumeTrialQuota, refundTrialQuota, TRIAL_AI_LIMIT, PAID_MONTHLY_AI_LIMIT, PAID_TOPUP_PACKS, AI_WEIGHTS };

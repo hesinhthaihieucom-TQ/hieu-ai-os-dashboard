@@ -13,7 +13,7 @@ function render(container, ctx){
       ${window.topupCardHtml()}
     `;
     window.bindPaymentCard(container, draw);
-    window.bindTopupCard(container);
+    window.bindTopupCard(container, draw);
   }
   draw();
 }

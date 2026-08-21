@@ -44,8 +44,13 @@ const REFERRAL_REWARD_PERCENT = 0.15;
 // "Mua thêm lượt" — dành cho khách ĐÃ TRẢ PHÍ dùng vượt trần 200 lượt/tháng (xem
 // api/_lib/trial-quota.js). Số tiền này KHÔNG được trùng bất kỳ số tiền nào ở AMOUNT_TO_DAYS.
 // Cộng thẳng vào paid_ai_bonus của đúng tháng hiện tại, KHÔNG đụng access_until/has_paid.
+// 3 mức, mua càng nhiều giá/lượt càng rẻ (2026-08-21, chốt cùng chị Quỳnh — chi phí Anthropic thực
+// tế đo được hôm 20/8 chỉ ~550-650đ/lượt nên còn nhiều dư địa giảm giá mà vẫn lãi tốt):
+// 100 lượt = 1.500đ/lượt, 300 lượt = 1.400đ/lượt (~7%), 600 lượt = 1.300đ/lượt (~13%).
 const AMOUNT_TO_TOPUP_LUOT = {
   150000: 100,
+  420000: 300,
+  780000: 600,
 };
 
 function timingSafeEqual(a, b) {
