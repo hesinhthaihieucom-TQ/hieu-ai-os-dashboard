@@ -202,4 +202,13 @@ function customInstructionsBlock(custom_instructions) {
   return `\nYÊU CẦU RIÊNG CHO BÀI NÀY (ưu tiên tuân theo, miễn không phá vỡ các nguyên tắc bắt buộc đã nêu ở trên): ${custom_instructions.trim()}\n`;
 }
 
-module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, ADDRESS_FORM_RULE, extraFieldsBlock, contextBlockOf, customInstructionsBlock };
+// Kiến thức ngành (2026-08-21, theo yêu cầu chị Quỳnh) — người dùng tự lưu ở Kho Content ("Kho của
+// tôi", source_type=kien_thuc_nganh), chọn 1 mục cụ thể để lồng vào bài viết này, tạo cảm giác
+// content có chuyên môn thật thay vì AI viết chung chung. BẮT BUỘC diễn đạt lại (không copy nguyên
+// văn) — người dùng có thể chọn lại đúng mục này cho nhiều bài khác nhau sau này.
+function knowledgeBlock(knowledge_text) {
+  if (!knowledge_text || !knowledge_text.trim()) return '';
+  return `\nKIẾN THỨC NGÀNH MUỐN LỒNG VÀO BÀI NÀY (bắt buộc lồng vào đúng đoạn Giá trị/gia_tri, diễn đạt lại bằng giọng của người dùng — TUYỆT ĐỐI không copy nguyên văn, vì mục này có thể được dùng lại cho nhiều bài khác nhau): ${knowledge_text.trim()}\n`;
+}
+
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, ADDRESS_FORM_RULE, extraFieldsBlock, contextBlockOf, customInstructionsBlock, knowledgeBlock };

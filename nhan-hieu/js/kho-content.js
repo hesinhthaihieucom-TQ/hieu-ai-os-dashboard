@@ -6,9 +6,12 @@
 const SOURCE_MAP = {
   ca_nhan: 'Câu chuyện cá nhân', case_hoc_vien: 'Case học viên', cau_hoi_kh: 'Câu hỏi khách hàng',
   xu_huong: 'Xu hướng thị trường', quan_diem_nguoc_dong: 'Quan điểm ngược dòng', bai_mau: 'Bài mẫu tham khảo',
-  chuyen_gia_viet: 'Bài mẫu tham khảo', tai_che_viral: 'Tái chế từ bài viral',
+  kien_thuc_nganh: 'Kiến thức ngành', chuyen_gia_viet: 'Bài mẫu tham khảo', tai_che_viral: 'Tái chế từ bài viral',
 };
-const SOURCE_OPTIONS = ['ca_nhan', 'case_hoc_vien', 'cau_hoi_kh', 'xu_huong', 'quan_diem_nguoc_dong', 'bai_mau'];
+// kien_thuc_nganh (2026-08-21, theo yêu cầu chị Quỳnh): kiến thức chuyên môn/ngành người dùng tự
+// gõ vào — Viết Content cho chọn 1 mục cụ thể để lồng vào bài, tạo cảm giác content có chuyên môn
+// thật, không phải AI bịa kiến thức chung chung.
+const SOURCE_OPTIONS = ['ca_nhan', 'case_hoc_vien', 'cau_hoi_kh', 'xu_huong', 'quan_diem_nguoc_dong', 'bai_mau', 'kien_thuc_nganh'];
 
 // select mặc định trong style.css bị width:100%/padding:14px (dùng cho form nhập liệu dài) — ép lại
 // gọn như 1 chip để dùng làm bộ lọc trục/trạng thái, đỡ chiếm cả hàng ngang dài như trước.
@@ -336,7 +339,7 @@ function render(container, ctx){
   }
 
   function khoToiTab(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Nơi lưu chất liệu của riêng bạn — câu chuyện cá nhân, case học viên, câu hỏi khách hàng hay gặp. <b>Đặc biệt nên cập nhật cả những content đang viral bạn tự tìm thấy ở nơi khác</b> (kênh khác, group khác...) — AI sẽ tự chọn đúng trục nội dung giúp bạn, không cần tự chọn nữa.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Nơi lưu chất liệu của riêng bạn — câu chuyện cá nhân, case học viên, câu hỏi khách hàng hay gặp. <b>Đặc biệt nên cập nhật cả những content đang viral bạn tự tìm thấy ở nơi khác</b> (kênh khác, group khác...) — AI sẽ tự chọn đúng trục nội dung giúp bạn, không cần tự chọn nữa.<br><br>💡 Chọn loại nguồn <b>"Kiến thức ngành"</b> để lưu kiến thức/kinh nghiệm chuyên môn — sang <a href="#viet-content">Viết Content</a> sẽ chọn được lồng thẳng vào bài, giúp content có chuyên môn thật thay vì AI viết chung chung.</div>`;
     return hint + `
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tiêu đề</label>

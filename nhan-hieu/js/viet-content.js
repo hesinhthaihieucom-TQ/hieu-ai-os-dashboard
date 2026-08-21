@@ -2,6 +2,7 @@
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaIsHook:false, ideaId:null, result:null, error:null, generating:false, recentPosts:[], scheduledPostIds:new Set(), savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
+    knowledgeItems:[], knowledgeChoice:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', customInstructions:'', extrasLoading:false, extrasError:null,
     showScoreContent:false, showScoreHook:false, showExtras:false, saving:false, pendingSourceRef:null,
@@ -12,7 +13,7 @@ function render(container, ctx){
   const DRAFT_KEY = 'viet-content';
   function draftPayload(){
     return {
-      ideaText: state.ideaText, ideaIsHook: state.ideaIsHook, khoGocSource: state.khoGocSource, cauChuyenRieng: state.cauChuyenRieng, customInstructions: state.customInstructions,
+      ideaText: state.ideaText, ideaIsHook: state.ideaIsHook, khoGocSource: state.khoGocSource, cauChuyenRieng: state.cauChuyenRieng, customInstructions: state.customInstructions, knowledgeChoice: state.knowledgeChoice,
       pendingSourceRef: state.pendingSourceRef, result: state.result, savedId: state.savedId,
       score: state.score, hookScore: state.hookScore, dinhDangOverride: state.dinhDangOverride,
     };
@@ -46,7 +47,7 @@ function render(container, ctx){
       const draft = await loadModuleDraft(ctx, DRAFT_KEY);
       if(draft) Object.assign(state, draft);
     }
-    await Promise.all([loadRecent(), loadAssets(), loadBrands(), loadScheduledPostIds()]);
+    await Promise.all([loadRecent(), loadAssets(), loadBrands(), loadScheduledPostIds(), loadKnowledgeItems()]);
     state.screen='main';
     draw();
     if(autoGenerate) generate();
@@ -61,6 +62,19 @@ function render(container, ctx){
     const { data } = await ctx.supabase.from('brands').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
     state.brands = data || [];
     if(state.brands.length===1) state.brandChoice = state.brands[0].id;
+  }
+
+  // Kiến thức ngành (2026-08-21, theo yêu cầu chị Quỳnh) — người dùng tự cập nhật ở Kho Content
+  // ("Kho của tôi", source_type=kien_thuc_nganh), ở đây cho chọn 1 mục cụ thể để lồng vào bài, tạo
+  // cảm giác content có chuyên môn thật thay vì AI viết chung chung.
+  async function loadKnowledgeItems(){
+    const { data } = await ctx.supabase.from('content_bank_personal').select('id,title,content')
+      .eq('user_id', ctx.user.id).eq('source_type', 'kien_thuc_nganh').order('created_at', { ascending:false });
+    state.knowledgeItems = data || [];
+  }
+  function resolvedKnowledgeText(){
+    const item = state.knowledgeItems.find(k=>k.id===state.knowledgeChoice);
+    return item ? item.content : '';
   }
 
   function resolvedBrandName(){
@@ -189,6 +203,16 @@ function render(container, ctx){
                 <option value="other" ${state.groupChoice==='other'?'selected':''}>Khác (tự nhập)</option>
               </select>
               ${state.groupChoice==='other'?`<textarea id="ex-group-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.groupNameOther)}</textarea>`:''}
+            </div>
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Kiến thức ngành muốn lồng vào bài (nếu có)</label>
+              ${state.knowledgeItems.length ? `
+                <select id="ex-knowledge-select">
+                  <option value="">— Không lồng —</option>
+                  ${state.knowledgeItems.map(k=>`<option value="${k.id}" ${state.knowledgeChoice===k.id?'selected':''}>${esc(k.title||'(không tiêu đề)')}</option>`).join('')}
+                </select>
+                <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">AI sẽ lồng đúng nội dung này vào bài (diễn đạt lại bằng giọng của bạn, không copy nguyên văn) để bài có chuyên môn thật.</div>
+              ` : `<div style="font-size:11.5px;color:var(--ink-soft);">Chưa có kiến thức ngành nào — thêm ở <a href="#kho-content">Kho Content → Kho của tôi</a> (chọn loại nguồn "Kiến thức ngành").</div>`}
             </div>
             ${resolvedProductCtaMau() || resolvedGroupCtaMau() ? `
             <div style="font-size:11.5px;color:var(--ink-soft);">💡 AI sẽ bám theo giọng điệu câu CTA mẫu đã lưu cho ${resolvedProductCtaMau() && resolvedGroupCtaMau() ? 'sản phẩm và group này' : resolvedProductCtaMau() ? 'sản phẩm này' : 'group này'} (biến tấu lại cho hợp bài mới, không copy y nguyên) — sửa câu mẫu ở <a href="#dinh-vi">Định Vị</a>.</div>
@@ -465,6 +489,9 @@ function render(container, ctx){
     const exGroupOther = container.querySelector('#ex-group-other');
     if(exGroupOther) exGroupOther.oninput = ()=>{ state.groupNameOther = exGroupOther.value; };
 
+    const exKnowledgeSelect = container.querySelector('#ex-knowledge-select');
+    if(exKnowledgeSelect) exKnowledgeSelect.onchange = ()=>{ state.knowledgeChoice = exKnowledgeSelect.value; };
+
     const genBtn = container.querySelector('[data-action="generate"]');
     if(genBtn) genBtn.onclick = generate;
     // "Thử lại ngay" gọi thẳng generate() lần nữa — KHÔNG cần bấm huỷ rồi bấm viết bài riêng 2 bước;
@@ -614,6 +641,7 @@ function render(container, ctx){
         product_name: resolvedProductName(),
         group_name: resolvedGroupName(),
         custom_instructions: state.customInstructions,
+        knowledge_text: resolvedKnowledgeText(),
       };
       if(state.khoGocSource){
         payload.source_text = state.khoGocSource.content;
