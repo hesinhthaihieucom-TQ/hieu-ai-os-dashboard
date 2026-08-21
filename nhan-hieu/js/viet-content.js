@@ -1,6 +1,6 @@
 (function(){
 function render(container, ctx){
-  const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaId:null, result:null, error:null, generating:false, recentPosts:[], scheduledPostIds:new Set(), savedId:null,
+  const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaIsHook:false, ideaId:null, result:null, error:null, generating:false, recentPosts:[], scheduledPostIds:new Set(), savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
     score:null, scoring:false, scoreError:null, hookScore:null, hookScoring:false, hookScoreError:null,
     khoGocSource:null, cauChuyenRieng:'', customInstructions:'', extrasLoading:false, extrasError:null,
@@ -12,7 +12,7 @@ function render(container, ctx){
   const DRAFT_KEY = 'viet-content';
   function draftPayload(){
     return {
-      ideaText: state.ideaText, khoGocSource: state.khoGocSource, cauChuyenRieng: state.cauChuyenRieng, customInstructions: state.customInstructions,
+      ideaText: state.ideaText, ideaIsHook: state.ideaIsHook, khoGocSource: state.khoGocSource, cauChuyenRieng: state.cauChuyenRieng, customInstructions: state.customInstructions,
       pendingSourceRef: state.pendingSourceRef, result: state.result, savedId: state.savedId,
       score: state.score, hookScore: state.hookScore, dinhDangOverride: state.dinhDangOverride,
     };
@@ -27,7 +27,13 @@ function render(container, ctx){
     state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
     const hasPending = !!(window.PendingKhoGoc || window.PendingTopic);
     if(window.PendingKhoGoc){ state.khoGocSource = window.PendingKhoGoc; window.PendingKhoGoc = null; }
-    else if(window.PendingTopic){ state.ideaText = window.PendingTopic; window.PendingTopic = null; }
+    else if(window.PendingTopic){
+      state.ideaText = window.PendingTopic; window.PendingTopic = null;
+      // Hook đã chọn từ Kho Hook/Tái Chế Content Viral — phải giữ nguyên câu này làm hook mở đầu,
+      // không để AI viết lại tự do (xem window.PendingIsHook ở kho-hook.js/tai-che-viral.js).
+      state.ideaIsHook = !!window.PendingIsHook;
+    }
+    window.PendingIsHook = null;
     // Ghi lại bài mới này bắt nguồn từ mục nào trong Kho Content/Kho Hook (nếu đi từ đó sang) — để
     // hiện "✓ Đã dùng viết bài N lần" ngay trên mục đó khi quay lại Kho.
     if(window.PendingSourceRef){ state.pendingSourceRef = window.PendingSourceRef; window.PendingSourceRef = null; }
@@ -135,6 +141,9 @@ function render(container, ctx){
         ` : `
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
         <textarea id="idea-input" placeholder="Ví dụ: 3 sai lầm khiến dòng tiền cá nhân bị nghẽn...">${esc(state.ideaText)}</textarea>
+        ${state.ideaIsHook ? `
+          <div class="hint-box" style="margin-top:8px;">Đây là 1 hook đã chọn sẵn — AI sẽ <b>giữ nguyên câu này làm hook mở đầu</b>, chỉ đổi con số nếu hook có số và cần khớp lại nội dung bài. <span style="cursor:pointer;text-decoration:underline;" data-action="cancel-idea-hook">Không cần giữ nguyên, để AI viết hook mới →</span></div>
+        ` : ''}
         `}
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Yêu cầu riêng cho bài này (không bắt buộc)</label>
         <textarea id="custom-instructions" style="min-height:auto;height:52px;" placeholder="Ví dụ: viết ngắn gọn hơn, nhấn mạnh số liệu cụ thể, giọng hài hước hơn, không dùng từ &quot;chắc chắn&quot;...">${esc(state.customInstructions)}</textarea>
@@ -408,6 +417,8 @@ function render(container, ctx){
 
     const cancelKhoGocLink = container.querySelector('[data-action="cancel-kho-goc"]');
     if(cancelKhoGocLink) cancelKhoGocLink.onclick = ()=>{ state.khoGocSource = null; draw(); };
+    const cancelIdeaHookLink = container.querySelector('[data-action="cancel-idea-hook"]');
+    if(cancelIdeaHookLink) cancelIdeaHookLink.onclick = ()=>{ state.ideaIsHook = false; draw(); };
 
     const editTieuDe = container.querySelector('#edit-tieu-de');
     if(editTieuDe) editTieuDe.oninput = ()=>{ state.result.tieu_de = editTieuDe.value; };
@@ -520,7 +531,7 @@ function render(container, ctx){
     if(resetDraftBtn) resetDraftBtn.onclick = async ()=>{
       if(!(await confirmModal('Xoá bài đang làm dở và làm bài mới? Không khôi phục lại được.'))) return;
       await clearModuleDraft(ctx, DRAFT_KEY);
-      state.ideaText=''; state.khoGocSource=null; state.pendingSourceRef=null;
+      state.ideaText=''; state.ideaIsHook=false; state.khoGocSource=null; state.pendingSourceRef=null;
       state.cauChuyenRieng = (state.positioning && state.positioning.luot1 && state.positioning.luot1.cau_chuyen_ca_nhan) ? (state.positioning.luot1.cau_chuyen_ca_nhan.cau_chuyen || '') : '';
       state.result=null; state.savedId=null; state.score=null; state.hookScore=null; state.dinhDangOverride=null;
       state.error=null; state.showScoreContent=false; state.showScoreHook=false; state.showExtras=false;
@@ -597,6 +608,7 @@ function render(container, ctx){
         payload.cau_chuyen_rieng = state.cauChuyenRieng;
       } else {
         payload.idea_text = state.ideaText;
+        payload.idea_is_hook = state.ideaIsHook;
       }
       const data = await callApi(endpoint, payload, 280000);
       stopProgress(); stopWaitHint(); releaseWakeLock();

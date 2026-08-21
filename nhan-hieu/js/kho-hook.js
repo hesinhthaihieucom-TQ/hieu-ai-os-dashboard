@@ -422,6 +422,10 @@ function render(container, ctx){
       el.onclick = ()=>{
         const i = Number(el.getAttribute('data-write-gen'));
         window.PendingTopic = state.genResult[i];
+        // Đây đã là 1 hook hoàn chỉnh (không phải ý tưởng thô) — Viết Content phải giữ nguyên câu
+        // này làm hook mở đầu, không được viết lại (theo phản hồi chị Quỳnh 21/8: "chỉ hook có số
+        // mới được đổi số, không phải đổi cả hook").
+        window.PendingIsHook = true;
         location.hash = 'viet-content';
       };
     });
@@ -468,6 +472,7 @@ function render(container, ctx){
     if(keepBtn) keepBtn.onclick = ()=>{
       window.PendingTopic = findSourceText(state.writeFor);
       window.PendingSourceRef = sourceRefForKey(state.writeFor);
+      window.PendingIsHook = true;
       location.hash = 'viet-content';
     };
     const copyBtn = container.querySelector('[data-copy-hook]');

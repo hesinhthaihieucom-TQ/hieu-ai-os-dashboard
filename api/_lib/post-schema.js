@@ -103,10 +103,21 @@ const ANTI_AI_CLICHE_RULES = `QUY TẮC TRÁNH GIỌNG "NGHE NHƯ AI" (BẮT BU�
 // QUA LẠI (tác giả trả lời, người khác trả lời tiếp) được xếp vào nhóm "tương tác có ý nghĩa", đẩy
 // mạnh hơn nữa. Vì vậy toàn bộ CTA/bình luận ghim phải tối ưu để hạ thấp rào cản bình luận NGAY LÚC
 // ĐỌC, không phải để đẹp câu chữ suông.
+// Từ sự cố thực tế 2026-08-21 (bài viết theo giọng "gia tiên nói với con cháu" khiến AI mang luôn
+// cách xưng "con" sang cả bình luận CTA/cmt_cta_san_pham — tác giả thật gọi người lạ theo dõi mình
+// là "con" đọc rất kỳ, thậm chí phản cảm) — chốt 1 quy tắc CỨNG dùng chung cho MỌI bình luận/CTA
+// (CTA_COMMENT_RULES lẫn HASHTAG_CAPTION_RULES bên dưới), tách khỏi giọng kể bên trong bài viết.
+const ADDRESS_FORM_RULE = `QUY TẮC XƯNG HÔ TRONG BÌNH LUẬN/CTA (BẮT BUỘC — không có ngoại lệ):
+- Toàn bộ CTA/bình luận (cta, tu_khoa_cta, cau_cmt_ghim, cmt_cta_san_pham) là lời TÁC GIẢ (chủ trang, ngoài đời thật) nói trực tiếp với người theo dõi lạ trên mạng xã hội — LUÔN xưng "mình", gọi người đọc là "bạn" (chỉ đổi sang "anh/chị" nếu định vị nêu rõ đối tượng lớn tuổi/cần trang trọng hơn hẳn).
+- TUYỆT ĐỐI KHÔNG gọi người đọc là "con", "em" hay bất kỳ đại từ mang tính bề trên/quá thân mật nào trong bình luận/CTA.
+- Kể cả khi BÀI VIẾT dùng 1 giọng kể đặc biệt bên trong nội dung (ví dụ giọng gia tiên/tổ tiên xưng "con" với con cháu như 1 thủ pháp văn học cho đoạn hook/thân bài) — giọng đó CHỈ tồn tại bên trong bài viết, KHÔNG được mang sang bình luận/CTA. Bình luận/CTA là lúc tác giả bước ra khỏi giọng kể đó, nói chuyện thật với 1 người lạ, phải quay về xưng hô bình thường như trên.`;
+
 const CTA_COMMENT_RULES = `QUY TẮC CTA (BẮT BUỘC — tối ưu theo cách Facebook đẩy bài):
+${ADDRESS_FORM_RULE}
 - Facebook ưu tiên đẩy bài có nhiều bình luận thật, đến sớm, và có phản hồi qua lại — hơn hẳn lượt thích/lượt xem. CTA phải hạ THẤP NHẤT rào cản để người đọc bình luận ngay lúc đó, không phải "để lúc khác".
 - CTA luôn phải chốt bằng 1 từ khoá kích hoạt cụ thể gồm ĐÚNG 2 CHỮ, càng NGẮN — DỄ GÕ TRÊN ĐIỆN THOẠI — GÂY CẢM XÚC càng tốt (ví dụ: "Dòng tiền", "Sổ tay", "Bí kíp", "Bắt đầu"...) — từ khoá càng dễ gõ thì tỷ lệ người đọc thật sự bấm bình luận (thay vì chỉ định bụng rồi lướt qua) càng cao. Theo mẫu: "Để lại bình luận chữ '<từ khoá 2 chữ>' và mình sẽ gửi bạn <thứ nhận được cụ thể>." — không dùng CTA chung chung kiểu "inbox mình nhé" hay "để lại bình luận bên dưới" mà không có từ khoá.
 - Từ khoá phải khớp chủ đề bài và thứ người đọc sẽ nhận được (tài liệu, link, ưu đãi, tư vấn...) — hứa hẹn mơ hồ khiến người đọc nghi ngờ, giảm hẳn tỷ lệ bình luận thật.
+- Nếu có SẢN PHẨM/DỊCH VỤ MUỐN NHẮC hoặc GROUP/CỘNG ĐỒNG MUỐN NHẮC được cung cấp (xem block bên dưới), thứ HỨA GỬI trong CTA/bình luận ghim BẮT BUỘC phải là đúng sản phẩm/group đó (hoặc thứ dẫn thẳng vào đó, ví dụ tài liệu giới thiệu ngắn) — TUYỆT ĐỐI không tự bịa ra 1 phần thưởng/tài liệu khác không liên quan gì tới sản phẩm/group đã chọn. Nếu KHÔNG có sản phẩm/group nào được cung cấp, tự nghĩ ra 1 thứ hứa hẹn hợp chủ đề bài như bình thường.
 
 QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — đây là bình luận ĐẦU TIÊN của chính tác giả dưới bài, dùng để MỒI và DẪN DẮT luồng bình luận, không phải nhắc lại CTA cho có):
 - Phải đánh THẲNG vào đúng nỗi đau/nỗi sợ/mong muốn đã nêu ở đoạn vấn đề (van_de) của bài — không viết chung chung, phải khiến người đang lưỡng lự cảm thấy "nói đúng tim đen mình" thì mới bấm bình luận. Chọn 1 trong các hướng sau, tuỳ hợp bài:
@@ -120,6 +131,7 @@ QUY TẮC BÌNH LUẬN GHIM (BẮT BUỘC MẠNH TAY — đây là bình luận 
 // tên kênh/thương hiệu/sản phẩm/group người dùng chọn ở "Tuỳ chọn thêm" — tách ra khỏi CORE để bước
 // viết bài chính không bị chậm/nặng thêm chỉ vì có chọn các mục đó (xem ghi chú ở TOOL_POST_CORE).
 const HASHTAG_CAPTION_RULES = `QUY TẮC CMT CTA SẢN PHẨM/GROUP:
+${ADDRESS_FORM_RULE}
 - Nếu người dùng có cung cấp tên sản phẩm/dịch vụ và/hoặc tên group/cộng đồng, viết thêm 1-2 câu bình luận CTA (cmt_cta_san_pham) dẫn khéo về đúng sản phẩm hoặc group đó, giọng chia sẻ tự nhiên, không quảng cáo lộ liễu.
 - BẮT BUỘC: nếu có LINK kèm theo (xem LINK SẢN PHẨM/DỊCH VỤ ĐÓ, LINK GROUP/CỘNG ĐỒNG ĐÓ), phải CHÈN THẲNG đúng link đó vào trong câu bình luận — không chỉ nhắc tên suông rồi để người đọc tự tìm. Chèn tự nhiên, ví dụ "...mình để link ở đây nha: <link>" hoặc "...tham gia tại <link>".
 - Nếu có tên sản phẩm/group nhưng KHÔNG có link kèm theo, vẫn viết bình luận nhắc tên như bình thường, không tự bịa ra link.
@@ -186,4 +198,4 @@ function customInstructionsBlock(custom_instructions) {
   return `\nYÊU CẦU RIÊNG CHO BÀI NÀY (ưu tiên tuân theo, miễn không phá vỡ các nguyên tắc bắt buộc đã nêu ở trên): ${custom_instructions.trim()}\n`;
 }
 
-module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, extraFieldsBlock, contextBlockOf, customInstructionsBlock };
+module.exports = { TOOL_POST_CORE, TOOL_POST_EXTRAS, assemblePost, stripDiacritics, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES, HASHTAG_CAPTION_RULES, ADDRESS_FORM_RULE, extraFieldsBlock, contextBlockOf, customInstructionsBlock };

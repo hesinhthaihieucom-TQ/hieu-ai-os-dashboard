@@ -4,6 +4,7 @@
 // gợi ý trả lời bình luận người khác, và nên gắn tài sản quảng bá nào — phù hợp đúng giai đoạn đó.
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { ADDRESS_FORM_RULE } = require('./_lib/post-schema');
 
 const MILESTONES = {
   m1: { label:'Trước 1.000 view đầu tiên', desc:'Giai đoạn khơi mào — mục tiêu duy nhất là kích người xem để lại bình luận đầu tiên, tuyệt đối chưa nên gắn link bán hàng vì dễ làm giảm reach.' },
@@ -15,6 +16,8 @@ const MILESTONES = {
 const MILESTONE_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5'];
 
 const SYSTEM_PROMPT = `Bạn là chuyên gia tăng trưởng kênh mạng xã hội tại Việt Nam, chuyên "đẩy bài" theo từng mốc lượt xem để tối đa hoá tương tác rồi chuyển đổi đúng thời điểm.
+
+${ADDRESS_FORM_RULE}
 
 NGUYÊN TẮC BẮT BUỘC:
 - Xuất ĐỦ CẢ 5 MỐC lượt xem trong 1 lần — mỗi mốc có mục tiêu khác nhau, không dùng chung 1 kiểu bình luận cho mọi mốc, và các mốc phải nối tiếp logic với nhau (không lặp lại y hệt ý của mốc trước).

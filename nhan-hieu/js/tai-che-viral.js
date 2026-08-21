@@ -186,6 +186,9 @@ function render(container, ctx){
       el.onclick = ()=>{
         const i = Number(el.getAttribute('data-write-title'));
         window.PendingTopic = state.titles[i];
+        // Tiêu đề này đã giữ đúng cơ chế tâm lý mở đầu đã mổ xẻ — Viết Content phải dùng nguyên
+        // văn làm hook, không viết lại (cùng quy tắc với hook chọn từ Kho Hook).
+        window.PendingIsHook = true;
         location.hash = 'viet-content';
       };
     });
