@@ -34,7 +34,7 @@ function render(container, ctx){
   const isAdmin = !!(ctx.profile && ctx.profile.role==='admin');
   const state = {
     tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
-    newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'' },
+    newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null },
     addingPersonal:false, addPersonalError:null, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
@@ -365,6 +365,13 @@ function render(container, ctx){
               <input id="ne-likes" type="text" value="${esc(state.newEntry.viralLikes)}" placeholder="VD: 20k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
             </div>
           </div>
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:12px 0 4px;">Ảnh chụp màn hình chứng minh view/like (không bắt buộc, nhưng giúp admin duyệt nhanh hơn)</label>
+          ${state.newEntry.viralScreenshot ? `
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img src="${state.newEntry.viralScreenshot}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--line);">
+              <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-action="clear-viral-screenshot">Xoá ảnh</span>
+            </div>
+          ` : `<input type="file" accept="image/*" id="ne-screenshot">`}
         ` : ''}
 
         <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add-personal" ${state.addingPersonal?'disabled':''}>${state.addingPersonal?'Đang phân loại…':'Thêm vào kho của tôi'}</button></div>
@@ -392,6 +399,7 @@ function render(container, ctx){
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <h3>${esc(b.title)}</h3>
         ${contentBodyHtml('personal:'+b.id, b.content)}
+        ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
           <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
           ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>':b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>':''}
@@ -559,6 +567,31 @@ function render(container, ctx){
     const s = container.querySelector('#ne-source'); if(s) s.onchange = ()=>state.newEntry.source_type = s.value;
     const v1 = container.querySelector('#ne-views'); if(v1) v1.oninput = ()=>state.newEntry.viralViews = v1.value;
     const v2 = container.querySelector('#ne-likes'); if(v2) v2.oninput = ()=>state.newEntry.viralLikes = v2.value;
+    // Nén/resize ảnh ngay trên trình duyệt trước khi lưu (giống cách Sửa Kênh đang làm với ảnh chụp
+    // màn hình kênh) — giữ base64 đủ nhỏ để lưu thẳng vào cột text, không cần Supabase Storage.
+    const screenshotInput = container.querySelector('#ne-screenshot');
+    if(screenshotInput) screenshotInput.onchange = ()=>{
+      const file = screenshotInput.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          state.newEntry.viralScreenshot = c.toDataURL('image/jpeg', 0.82);
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    const clearScreenshotBtn = container.querySelector('[data-action="clear-viral-screenshot"]');
+    if(clearScreenshotBtn) clearScreenshotBtn.onclick = ()=>{ state.newEntry.viralScreenshot = null; draw(); };
     const addBtn = container.querySelector('[data-action="add-personal"]');
     if(addBtn) addBtn.onclick = addPersonal;
     container.querySelectorAll('[data-del-personal]').forEach(el=>{
@@ -652,6 +685,7 @@ function render(container, ctx){
       source_type: entry.source_type || null, tags,
       is_viral: entry.isViral===true, viral_views: entry.isViral===true ? (entry.viralViews||null) : null,
       viral_likes: entry.isViral===true ? (entry.viralLikes||null) : null,
+      viral_screenshot: entry.isViral===true ? (entry.viralScreenshot||null) : null,
     }).select().single();
 
     state.addingPersonal = false;
@@ -661,7 +695,7 @@ function render(container, ctx){
       return;
     }
     const wasViral = entry.isViral===true;
-    state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'' };
+    state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null };
     await loadPersonal();
     if(wasViral) state.sharePromptFor = row.id;
     draw();

@@ -649,6 +649,11 @@ alter table hooks_bank_personal add column if not exists reviewed_at timestamptz
 alter table content_bank_personal add column if not exists is_viral boolean;
 alter table content_bank_personal add column if not exists viral_views text;
 alter table content_bank_personal add column if not exists viral_likes text;
+-- Ảnh chụp màn hình chứng minh view/like thật (2026-08-21, theo phản hồi chị Quỳnh) — lưu thẳng
+-- base64 data URL trong cột text thay vì Supabase Storage (app chưa dùng Storage ở đâu khác), ảnh
+-- đã được nén/resize nhỏ ở client (canvas, JPEG ~80%, max chiều rộng 1000px) trước khi lưu nên
+-- không phình DB nhiều — chỉ dành cho admin xem lúc duyệt, KHÔNG copy sang content_bank_shared.
+alter table content_bank_personal add column if not exists viral_screenshot text;
 alter table hooks_bank_personal add column if not exists is_viral boolean;
 alter table hooks_bank_personal add column if not exists viral_views text;
 alter table hooks_bank_personal add column if not exists viral_likes text;

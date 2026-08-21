@@ -67,6 +67,7 @@ function render(container, ctx){
             </div>
             <h3>${esc(item.title||'(không tiêu đề)')}</h3>
             <div class="body">${esc(excerpt(item.content||'', 400))}</div>
+            ${item.viral_screenshot ? `<img src="${item.viral_screenshot}" style="max-width:260px;max-height:260px;border-radius:8px;border:1px solid var(--line);margin-top:10px;display:block;">` : ''}
             <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
               <button class="btn btn-sm" data-approve-content="${item.id}" ${state.actingId===item.id?'disabled':''}>${state.actingId===item.id?'Đang xử lý…':'Duyệt lên Kho chung'}</button>
               <span class="btn-ghost btn btn-sm" data-reject-content="${item.id}">Từ chối</span>
