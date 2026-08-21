@@ -2,7 +2,7 @@
 function render(container, ctx){
   const isAdmin = !!(ctx.profile && ctx.profile.role === 'admin');
   const state = { screen:'loading', pendingContent:[], pendingHooks:[], profilesById:{}, actingId:null, error:null,
-    fixingLineBreaks:false, fixResult:null };
+    fixingLineBreaks:false, fixResult:null, rewardMsg:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -48,6 +48,7 @@ function render(container, ctx){
     return `
       <div class="page-head"><h1>Quản trị Kho nội dung</h1><p>Duyệt content/hook do người dùng đề xuất đẩy từ Kho của tôi lên Kho chung — chỉ hiển thị công khai sau khi được duyệt ở đây.</p></div>
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
+      ${state.rewardMsg?`<div class="hint-box">${esc(state.rewardMsg)}</div>`:''}
 
       <div class="card" style="margin-bottom:20px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Dọn xuống dòng cho bài cũ trong Kho</label>
@@ -143,15 +144,42 @@ function render(container, ctx){
     draw();
   }
 
+  // Thưởng cho người đóng góp content VIRAL (is_viral=true) được duyệt thành công — theo yêu cầu chị
+  // Quỳnh 21/8, thưởng lúc ADMIN BẤM DUYỆT (không phải lúc user gửi) để tránh gửi bừa farm lượt, vì
+  // gửi thôi chưa được gì, phải qua được vòng duyệt tay này mới tính. Không áp cho content thường
+  // (case học viên, câu chuyện cá nhân...) hay cho hook — chỉ đúng "content viral" như đã chốt.
+  const LUOT_THUONG_VIRAL = 5;
+  async function creditViralBonus(userId){
+    const { data: rows } = await ctx.supabase.from('profiles')
+      .select('has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,email,full_name').eq('id', userId);
+    const p = rows && rows[0];
+    if(!p) return null;
+    if(p.has_paid){
+      const month = new Date().toISOString().slice(0,7);
+      const sameMonth = p.paid_ai_month === month;
+      const patch = sameMonth
+        ? { paid_ai_bonus: (p.paid_ai_bonus||0) + LUOT_THUONG_VIRAL }
+        : { paid_ai_month: month, paid_ai_uses: 0, paid_ai_bonus: LUOT_THUONG_VIRAL };
+      await ctx.supabase.from('profiles').update(patch).eq('id', userId);
+    } else {
+      await ctx.supabase.from('profiles').update({ trial_ai_uses: Math.max(0, (p.trial_ai_uses||0) - LUOT_THUONG_VIRAL) }).eq('id', userId);
+    }
+    return p.full_name ? `${p.full_name} (${p.email||''})` : (p.email || userId);
+  }
+
   async function approveContent(id){
     const item = state.pendingContent.find(x=>x.id===id);
     if(!item || state.actingId) return;
-    state.actingId = id; state.error = null; draw();
+    state.actingId = id; state.error = null; state.rewardMsg = null; draw();
     const { error: insertError } = await ctx.supabase.from('content_bank_shared').insert({
       created_by: item.user_id, title: item.title, content: item.content, source_type: item.source_type, tags: item.tags,
     });
     if(insertError){ state.error = insertError.message; state.actingId = null; draw(); return; }
     await ctx.supabase.from('content_bank_personal').update({ share_status:'approved', reviewed_at: new Date().toISOString() }).eq('id', id);
+    if(item.is_viral){
+      const who = await creditViralBonus(item.user_id);
+      if(who) state.rewardMsg = `Đã cộng +${LUOT_THUONG_VIRAL} lượt AI cho ${who} (content viral vừa duyệt).`;
+    }
     state.actingId = null;
     await loadPending();
     draw();
