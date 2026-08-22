@@ -96,7 +96,7 @@ function renderAuthScreen(err, successMsg){
     <div class="auth-shell">
       <img src="assets/logo-hieu-hanh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>SỔ DÒNG TIỀN TÂM THỨC</h1>
-      <div class="sub">Tâm an với tiền<br>Nợ nhẹ dần mỗi tháng<br>Tài sản ròng lớn lên<br><span class="sub-brand">Hệ sinh thái HIỂU - HIỂU HẠNH</span></div>
+      <div class="sub">Tâm an với tiền<br>Nợ nhẹ dần mỗi tháng<br>Tài sản ròng lớn lên<br><span class="sub-brand">Hệ sinh thái Hiểu - Hiểu Hạnh</span></div>
       <div class="auth-tabs">
         <div class="auth-tab ${isLogin?'active':''}" data-mode="login">Đăng nhập</div>
         <div class="auth-tab ${!isLogin?'active':''}" data-mode="signup">Đăng ký</div>
