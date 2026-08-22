@@ -1028,3 +1028,7 @@ alter table profiles add column if not exists last_seen_announcement_id uuid;
 -- app-shell.js) kèm lời giải thích, y hệt cơ chế onboarding-tour.js. Mảng rỗng nghĩa là thông báo
 -- không có hướng dẫn kèm theo — popup chỉ hiện nội dung, không có nút "Xem hướng dẫn".
 alter table feature_announcements add column if not exists steps jsonb not null default '[]';
+
+-- Chọn được sticker/emoji riêng cho từng thông báo (2026-08-22, theo yêu cầu chị Quỳnh) — mặc định
+-- 🎉 cho thông báo cũ đã đăng trước khi có cột này.
+alter table feature_announcements add column if not exists emoji text not null default '🎉';
