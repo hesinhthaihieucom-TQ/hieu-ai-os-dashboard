@@ -6,7 +6,7 @@
 // + index.html <title>/meta, không ảnh hưởng gì tới dữ liệu/kiến trúc.
 const NAV = [
   { key:'trang-chu', title:'Trang chủ' },
-  { key:'thiet-lap-nhanh', title:'Thiết Lập Nhanh' },
+  { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền' },
   { key:'kien-thuc', title:'Kiến Thức Nền Tảng' },
   { key:'tang-thuc', title:'Tàng Thức' },
   { key:'muc-tieu', title:'Mục Tiêu & Cam Kết' },

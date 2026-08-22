@@ -1,20 +1,81 @@
 (function(){
-// "Thiết Lập Nhanh" — cùng 7 câu hỏi với "Bản Đồ Sức Khỏe Tài Chính" (bandosuckhoetaichinh.netlify.app,
-// công cụ thu lead/bán hàng riêng của Quỳnh), nhưng ở đây dùng để ĐIỀN SẴN dữ liệu ban đầu cho Sổ
-// Dòng Tiền Tâm Thức thay vì bắt đầu từ con số 0 trống trơn. Chỉ lưu vào bảng nào ĐÃ CÓ sẵn trong
-// app (Quỹ Khẩn Cấp, 1 dòng Nợ gộp, Cân Đối Tài Sản tháng này) — Thu nhập tự động/Số nguồn thu chưa
-// có chỗ lưu trong schema nên chỉ hiện ở phần kết quả, không lưu lại.
+// "Chấm Điểm Nghiệp Tiền" (trước gọi "Thiết Lập Nhanh") — vẫn giữ đúng 7 câu hỏi số liệu gốc từ
+// "Bản Đồ Sức Khỏe Tài Chính" (bandosuckhoetaichinh.netlify.app, công cụ thu lead riêng của Quỳnh)
+// để điền sẵn dữ liệu ban đầu, NHƯNG thêm 1 câu Vibe Check (tâm thức) ngay sau mỗi nhóm số liệu —
+// góp ý 2026-08-22: ứng dụng tài chính thường chỉ hỏi con số vô cảm, mất kết nối cảm xúc; ở đây mỗi
+// lần điền số đều bắt cặp với 1 câu hỏi cảm xúc để ra thêm "Điểm Nghiệp Tiền" (0-100, KHÔNG lưu DB —
+// tính lại mỗi lần làm bài, đúng nguyên tắc "không lưu điểm suy ra được" xuyên suốt app) và chỉ ra
+// đang yếu nhất ở khâu Đón Nhận/Chi Dùng/Đối Diện Nợ. Chỉ lưu vào bảng nào ĐÃ CÓ sẵn trong app (Quỹ
+// Khẩn Cấp, 1 dòng Nợ gộp, Cân Đối Tài Sản tháng này) — Thu nhập tự động/Số nguồn thu/Vibe Check
+// chưa có chỗ lưu theo thời gian trong schema nên chỉ hiện ở phần kết quả, không lưu lại.
 const SEED_DEBT_NAME = 'Tổng nợ hiện tại (ước tính ban đầu)';
 // Toàn bộ ô nhập tiền trong wizard này tính bằng ĐƠN VỊ TRIỆU (khớp bandosuckhoetaichinh.netlify.app)
 // nhưng các bảng tc_debts/tc_emergency_fund/tc_networth_snapshots lưu bằng ĐỒNG thật — phải nhân/chia
 // cho TRIEU khi ghi/đọc, nếu không số sẽ sai 1 triệu lần so với phần còn lại của app.
 const TRIEU = 1000000;
 
+const VIBE_QUESTIONS = {
+  income: {
+    q: 'Khi tiền về tài khoản (lương, thu nhập...), lồng ngực bạn thường ở trạng thái nào?',
+    options: [
+      { k:'A', points:10, label:'🟢 Hoan hỷ, biết ơn', d:'Thấy đó là thành quả xứng đáng, chúc phúc cho dòng tiền vừa về.' },
+      { k:'B', points:5, label:'🟡 Hiển nhiên, vô cảm', d:'Coi đó là chuyện đương nhiên phải có, không cảm xúc gì đặc biệt.' },
+      { k:'C', points:0, label:'🔴 Lo âu, co thắt', d:'Chưa kịp vui đã nghĩ ngay tới hoá đơn, nợ nần sắp phải trả.' },
+    ],
+  },
+  expense: {
+    q: 'Mỗi lần bấm chuyển khoản trả 1 hoá đơn lớn (điện, học phí, trả nợ...), bạn thường phản ứng thế nào?',
+    options: [
+      { k:'A', points:10, label:'🟢 Trân trọng, chúc phúc', d:'Biết ơn giá trị mình nhận được, chuyển tiền trong sự nhẹ nhõm.' },
+      { k:'B', points:5, label:'🟡 Tặc lưỡi cho xong', d:'Làm theo quán tính, không để tâm nhiều.' },
+      { k:'C', points:0, label:'🔴 Ấm ức, xót xa', d:'Thở dài, tiếc nuối như vừa "mất" một khoản tiền.' },
+    ],
+  },
+  ef: {
+    q: 'Nếu ngày mai nguồn thu nhập chính của bạn đột ngột dừng hẳn, cảm xúc đầu tiên trong bạn là gì?',
+    options: [
+      { k:'A', points:10, label:'🟢 Bình tĩnh, chấp nhận', d:'Tin vào năng lực bản thân, sẵn sàng lên kế hoạch xoay xở.' },
+      { k:'B', points:5, label:'🟡 Sốt ruột, né tránh', d:'Biết là nguy nhưng không dám nghĩ tới, tự trấn an qua loa.' },
+      { k:'C', points:0, label:'🔴 Hoảng loạn, mất ngủ', d:'Muốn lao ngay vào kiếm tiền thật nhanh bằng mọi giá.' },
+    ],
+  },
+  debt: {
+    q: 'Khi nghĩ về khoản nợ và người đã cho bạn vay hiện tại, bạn thường nuôi cảm xúc gì?',
+    options: [
+      { k:'A', points:10, label:'🟢 Biết ơn sâu sắc', d:'Coi họ là người đã tin tưởng trao nguồn lực, cam kết trả sòng phẳng.' },
+      { k:'B', points:5, label:'🟡 Né tránh, trì hoãn', d:'Ngại xem tin nhắn nhắc nợ, không dám nhìn thẳng con số thật.' },
+      { k:'C', points:0, label:'🔴 Oán trách, tủi thân', d:'Thấy nhục nhã hoặc trách người đang đòi nợ mình.' },
+    ],
+  },
+  asset: {
+    q: 'Động cơ sâu nhất khiến bạn muốn tích luỹ nhiều tài sản hơn là gì?',
+    options: [
+      { k:'A', points:10, label:'🟢 Phụng sự, kiến tạo', d:'Để lo cho gia đình ấm êm và tạo thêm giá trị cho người khác.' },
+      { k:'B', points:5, label:'🟡 Sĩ diện, công nhận', d:'Để chứng minh năng lực bản thân, để người khác nể phục.' },
+      { k:'C', points:0, label:'🔴 Sợ đói khổ', d:'Tích trữ vì sợ biến cố, sợ một ngày rơi vào cảnh nghèo khó.' },
+    ],
+  },
+  passive: {
+    q: 'Khi nghĩ tới việc có dòng tiền tự động chảy về đều đặn, niềm tin nào thầm thì trong đầu bạn?',
+    options: [
+      { k:'A', points:10, label:'🟢 Tôi xứng đáng', d:'Xứng đáng được tự do tài chính và bình an — không cần vắt kiệt sức.' },
+      { k:'B', points:5, label:'🟡 Hoài nghi', d:'Nghe xa vời quá, chắc chỉ người giỏi hoặc may mắn mới có được.' },
+      { k:'C', points:0, label:'🔴 Không đủ tốt', d:'Thấy bản thân còn nhiều thiếu sót, khó mà đạt tới cột mốc đó.' },
+    ],
+  },
+};
+const WEAKEST_AREA_INFO = {
+  income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại. Thử chú ý cảm xúc lúc nhận tiền ở Ghi Chép Hàng Ngày mỗi ngày.' },
+  expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra). Xem lại gốc rễ ở Kiến Thức Nền Tảng.' },
+  debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm. Thử đổi cách nhìn ở Quản Lý Nợ, và ghi lại niềm tin gốc ở Tàng Thức nếu cảm giác này hay lặp lại.' },
+};
+
 function render(container, ctx){
   const month = new Date().toISOString().slice(0,7);
   const state = {
     loading: true,
     form: { income:'', expense:'', ef_current:'', ef_monthly_min:'', debt_total:'', debt_monthly:'', assets_total:'', passive_income:'', income_sources:'' },
+    vibe: { income:null, expense:null, ef:null, debt:null, asset:null, passive:null },
     saving: false,
     result: null,
   };
@@ -62,7 +123,29 @@ function render(container, ctx){
     else if(dti >= 36) note = `Áp lực trả nợ đang ở mức cần chú ý (${dti}% thu nhập) — cân nhắc ưu tiên trả bớt trước khi vay/mua thêm.`;
     else note = 'Bức tranh hiện tại khá ổn — duy trì đều đặn và bắt đầu đặt mục tiêu cụ thể ở phần Mục Tiêu & Cam Kết.';
 
-    return { cashFlow, savingsRate, efMonths, netWorth, dti, passivePct, note };
+    // Điểm Nghiệp Tiền: trung bình điểm các câu Vibe Check ĐÃ trả lời (bỏ qua câu chưa trả lời,
+    // không ép trả lời đủ 6 câu mới xem được các chỉ số vật lý phía trên). Nút Chặn nặng nhất chỉ
+    // xét trong 3 khâu Đón Nhận/Chi Dùng/Đối Diện Nợ — 3 khâu có hành động lặp lại hàng ngày/tháng,
+    // khác Quỹ Khẩn Cấp/Tài Sản/Thu Nhập Tự Động vốn là trạng thái tĩnh hơn.
+    const answered = Object.entries(state.vibe).filter(([,v])=>v!=null);
+    let vibeScore = null, weakestArea = null;
+    if(answered.length > 0){
+      const totalPoints = answered.reduce((s,[key,ansKey])=>{
+        const opt = VIBE_QUESTIONS[key].options.find(o=>o.k===ansKey);
+        return s + (opt ? opt.points : 0);
+      }, 0);
+      vibeScore = Math.round((totalPoints / (answered.length*10)) * 100);
+      const coreAreas = ['income','expense','debt'].filter(key=>state.vibe[key]!=null);
+      if(coreAreas.length > 0){
+        weakestArea = coreAreas.reduce((worst,key)=>{
+          const pts = VIBE_QUESTIONS[key].options.find(o=>o.k===state.vibe[key]).points;
+          const worstPts = VIBE_QUESTIONS[worst].options.find(o=>o.k===state.vibe[worst]).points;
+          return pts < worstPts ? key : worst;
+        }, coreAreas[0]);
+      }
+    }
+
+    return { cashFlow, savingsRate, efMonths, netWorth, dti, passivePct, note, vibeScore, weakestArea };
   }
 
   async function submit(){
@@ -110,6 +193,20 @@ function render(container, ctx){
     `;
   }
 
+  function vibeQuestionHtml(key){
+    const q = VIBE_QUESTIONS[key];
+    const selected = state.vibe[key];
+    return `
+      <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${esc(q.q)}</label>
+        <div class="chips" data-vibe-group="${key}">
+          ${q.options.map(o=>`<div class="chip ${selected===o.k?'selected':''}" data-vibe-key="${key}" data-vibe-val="${o.k}">${esc(o.label)}</div>`).join('')}
+        </div>
+        ${selected ? `<div class="hint-box" style="margin-top:8px;">${esc(q.options.find(o=>o.k===selected).d)}</div>` : ''}
+      </div>
+    `;
+  }
+
   function resultHtml(){
     const r = state.result;
     return `
@@ -124,7 +221,21 @@ function render(container, ctx){
           <div class="source-card"><div class="ic" style="font-size:16px;">${r.passivePct}%</div><div class="label">Thu nhập tự động</div></div>
         </div>
         <div class="hint-box" style="margin-top:14px;">${esc(r.note)}</div>
-        <div class="btn-row" style="justify-content:flex-start;margin-top:16px;">
+      </div>
+
+      ${r.vibeScore!=null ? `
+        <div class="section">
+          <h3>🔥 Điểm Nghiệp Tiền của bạn</h3>
+          <div style="text-align:center;padding:12px 0;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:700;color:var(--accent);">${r.vibeScore}<span style="font-size:18px;color:var(--ink-soft);">/100</span></div>
+          </div>
+          ${r.weakestArea ? `<div class="hint-box">Khâu đang yếu nhất hiện tại: <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b> — ${esc(WEAKEST_AREA_INFO[r.weakestArea].explain)}</div>` : ''}
+          <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
+        </div>
+      ` : ''}
+
+      <div class="section">
+        <div class="btn-row" style="justify-content:flex-start;">
           <span class="btn btn-sm" data-goto="trang-chu">Về Trang chủ →</span>
           <span class="btn-ghost btn btn-sm" data-goto="quan-ly-no">Xem Quản Lý Nợ →</span>
         </div>
@@ -135,21 +246,28 @@ function render(container, ctx){
   function html(){
     return `
       <div class="page-head">
-        <h1>Thiết Lập Nhanh</h1>
-        <p>7 câu hỏi, khoảng 3 phút — điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, thay vì bắt đầu từ con số 0. Có thể làm lại bất cứ lúc nào để cập nhật.</p>
+        <h1>Chấm Điểm Nghiệp Tiền</h1>
+        <p>7 câu hỏi số liệu + 6 câu Vibe Check đi kèm — vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra khâu nào trong dòng tiền đang bị tâm thức sợ hãi chi phối. Có thể làm lại bất cứ lúc nào để cập nhật.</p>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">
-          <h3>Bước 1-2 · Thu nhập & Chi tiêu</h3>
+          <h3>Bước 1 · Thu nhập</h3>
           ${fieldHtml('income', 'Thu nhập trung bình/tháng', 'Trung bình 3 tháng gần nhất, tổng thu nhập thực nhận.', 'triệu đ')}
+          ${vibeQuestionHtml('income')}
+        </div>
+
+        <div class="section">
+          <h3>Bước 2 · Chi tiêu</h3>
           ${fieldHtml('expense', 'Chi tiêu trung bình/tháng', 'Tính hết mọi khoản: sinh hoạt, nợ, mua sắm, giải trí...', 'triệu đ')}
+          ${vibeQuestionHtml('expense')}
         </div>
 
         <div class="section">
           <h3>Bước 3 · Quỹ Khẩn Cấp</h3>
           ${fieldHtml('ef_current', 'Tiền dự phòng có thể dùng nhanh', 'Nếu ngày mai thu nhập chính dừng lại, bạn có bao nhiêu để xoay xở ngay?', 'triệu đ')}
           ${fieldHtml('ef_monthly_min', 'Chi phí tối thiểu cần mỗi tháng', 'Để duy trì cuộc sống cơ bản.', 'triệu đ')}
+          ${vibeQuestionHtml('ef')}
         </div>
 
         <div class="section">
@@ -157,20 +275,23 @@ function render(container, ctx){
           ${fieldHtml('debt_total', 'Tổng dư nợ hiện tại', 'Không có nợ thì để 0.', 'triệu đ')}
           ${fieldHtml('debt_monthly', 'Số tiền trả nợ mỗi tháng', '', 'triệu đ')}
           <div class="hint-box" style="margin-top:10px;">Đây là số gộp để có điểm khởi đầu nhanh. Sang <a href="#quan-ly-no" style="color:var(--accent);font-weight:600;">Quản Lý Nợ →</a> để khai chi tiết từng khoản (lãi suất, hạn trả) khi có thời gian.</div>
+          ${vibeQuestionHtml('debt')}
         </div>
 
         <div class="section">
           <h3>Bước 5 · Tài sản</h3>
           ${fieldHtml('assets_total', 'Tổng tài sản hiện có', 'Tiền mặt, tiết kiệm, vàng, chứng khoán, bất động sản, xe... — ước tính tổng.', 'triệu đ')}
+          ${vibeQuestionHtml('asset')}
         </div>
 
         <div class="section">
           <h3>Bước 6-7 · Thu nhập tự động & Số nguồn thu</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;">2 câu này chỉ để tham khảo trong kết quả, chưa có chỗ lưu theo thời gian trong app.</p>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;">2 câu số này chỉ để tham khảo trong kết quả, chưa có chỗ lưu theo thời gian trong app.</p>
           ${fieldHtml('passive_income', 'Thu nhập tự động/tháng', 'Tiền đến từ tài sản/hệ thống, không cần trực tiếp làm việc trong tháng đó.', 'triệu đ')}
           ${fieldHtml('income_sources', 'Số nguồn thu đang hoạt động', 'VD: lương + bán hàng online + cho thuê nhà = 3 nguồn.', 'nguồn')}
+          ${vibeQuestionHtml('passive')}
 
-          <button class="btn btn-full" style="margin-top:18px;" id="setup-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Xem Bản Đồ Nhanh →'}</button>
+          <button class="btn btn-full" style="margin-top:18px;" id="setup-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Xem Kết Quả →'}</button>
         </div>
 
         ${state.result ? resultHtml() : ''}
@@ -181,6 +302,13 @@ function render(container, ctx){
   function bind(){
     container.querySelectorAll('[data-field]').forEach(el=>{
       el.oninput = ()=>{ state.form[el.getAttribute('data-field')] = el.value; };
+    });
+    container.querySelectorAll('[data-vibe-key]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-vibe-key'), val = el.getAttribute('data-vibe-val');
+        state.vibe[key] = state.vibe[key]===val ? null : val;
+        draw();
+      };
     });
     const submitBtn = container.querySelector('#setup-submit');
     if(submitBtn) submitBtn.onclick = submit;
@@ -193,5 +321,5 @@ function render(container, ctx){
 }
 
 window.Modules = window.Modules || {};
-window.Modules['thiet-lap-nhanh'] = { title:'Thiết Lập Nhanh', render };
+window.Modules['thiet-lap-nhanh'] = { title:'Chấm Điểm Nghiệp Tiền', render };
 })();

@@ -136,8 +136,8 @@ function render(container, ctx){
         ${state.needsSetup ? `
           <div class="card" style="margin-bottom:20px;background:var(--accent-soft);">
             <div style="font-weight:700;font-size:15px;margin-bottom:6px;">👋 Chưa thiết lập dữ liệu ban đầu?</div>
-            <div style="font-size:13.5px;color:var(--ink);margin-bottom:12px;">Làm bài Thiết Lập Nhanh (3 phút) để điền sẵn Quỹ Khẩn Cấp, Nợ, Tài Sản — thay vì bắt đầu từ con số 0.</div>
-            <span class="btn btn-sm" data-key="thiet-lap-nhanh">Thiết Lập Nhanh →</span>
+            <div style="font-size:13.5px;color:var(--ink);margin-bottom:12px;">Làm bài Chấm Điểm Nghiệp Tiền để vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Tài Sản, vừa soi tâm thức tiền của bạn.</div>
+            <span class="btn btn-sm" data-key="thiet-lap-nhanh">Chấm Điểm Nghiệp Tiền →</span>
           </div>
         ` : ''}
         <div class="card" style="margin-bottom:20px;">
@@ -178,7 +178,7 @@ function render(container, ctx){
       <div class="card">
         <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Đi đến</h3>
         <div class="list-item" data-key="thiet-lap-nhanh">
-          <div class="txt"><b>Thiết Lập Nhanh</b><br><span style="color:var(--ink-soft);font-size:13px;">7 câu hỏi điền sẵn dữ liệu ban đầu, làm lại bất cứ lúc nào.</span></div>
+          <div class="txt"><b>Chấm Điểm Nghiệp Tiền</b><br><span style="color:var(--ink-soft);font-size:13px;">Điền sẵn dữ liệu ban đầu + soi tâm thức tiền, làm lại bất cứ lúc nào.</span></div>
           <button class="btn-ghost btn btn-sm" data-key="thiet-lap-nhanh">Xem →</button>
         </div>
         <div class="list-item" data-key="muc-tieu">
