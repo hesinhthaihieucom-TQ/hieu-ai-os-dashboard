@@ -193,10 +193,6 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
   }
   .topbar-mobile .topbar-title{ font-family:'Playfair Display',serif; font-size:16px; font-weight:700; }
   .app-layout{ margin-top:62px; }
-  /* Banner thông báo tính năng mới nằm NGOÀI .app-layout (span full width phía trên sidebar+main) nên
-     không tự có margin-top như trên — bị topbar-mobile (fixed) đè khuất mất phần đầu nếu không đẩy
-     xuống riêng. */
-  #feature-banner{ margin-top:62px; }
 
   .main-inner{ padding:20px 16px 70px; }
   /* Trên di động, 7 cột ngang buộc phải kéo sang mới xem hết tuần — xếp mỗi ngày 1 hàng dọc, ngày
