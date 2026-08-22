@@ -141,6 +141,37 @@ async function checkNewSignups() {
   return count;
 }
 
+// Đẩy push cho MỌI người đã bật thông báo khi có thông báo tính năng mới (2026-08-22, theo yêu cầu
+// chị Quỳnh: "trên app của khách cũng hiện thông báo") — khác checkNewSignups() ở trên (chỉ báo
+// admin), cái này báo TẤT CẢ user, nên lấy thẳng danh sách user_id có trong push_subscriptions thay
+// vì quét toàn bộ profiles — ai chưa từng bật thông báo thì không có bản ghi, tự động bỏ qua, không
+// tốn công gọi notifyOnce cho người chắc chắn không nhận được gì.
+async function checkNewAnnouncements() {
+  const windowStartIso = new Date(Date.now() - WINDOW_MINUTES * 60000).toISOString();
+  const [annResp, subsResp] = await Promise.all([
+    supabaseAdmin(`feature_announcements?created_at=gte.${encodeURIComponent(windowStartIso)}&select=id,title,body,created_at&order=created_at.asc`),
+    supabaseAdmin(`push_subscriptions?select=user_id`),
+  ]);
+  const announcements = annResp.ok ? await annResp.json() : [];
+  if (!announcements.length) return 0;
+  const subs = subsResp.ok ? await subsResp.json() : [];
+  const userIds = [...new Set(subs.map((s) => s.user_id))];
+  if (!userIds.length) return 0;
+
+  let count = 0;
+  for (const ann of announcements) {
+    for (const userId of userIds) {
+      const result = await notifyOnce(userId, `announce:${ann.id}:${userId}`, {
+        title: '🎉 Tính năng mới: ' + ann.title,
+        body: ann.body,
+        url: '/nhan-hieu/#trang-chu',
+      });
+      if (result.sent) count++;
+    }
+  }
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -152,13 +183,14 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
       checkNewSignups(),
+      checkNewAnnouncements(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

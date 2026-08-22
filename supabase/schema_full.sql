@@ -749,3 +749,24 @@ alter table calendar_entries add column if not exists scheduled_time text;
 -- xong mới mất chứ", không phải cứ qua giờ là coi như xong. Thêm cờ done, người dùng tự tích xác
 -- nhận (giống pattern calendar_entries.posted) — lịch chỉ biến mất khi THẬT SỰ đã tích.
 alter table recording_schedule add column if not exists done boolean not null default false;
+
+-- Thông báo tính năng mới trong app (2026-08-22, theo yêu cầu chị Quỳnh: "mỗi khi mình cập nhật tính
+-- năng gì mới thì trên app của khách cũng hiện thông báo và hướng dẫn sử dụng cái tính năng đó") —
+-- admin đăng 1 dòng ở đây (qua Quản trị → Thông báo), MỌI user đăng nhập đọc được để hiện banner
+-- (RLS đọc mở cho authenticated, ghi/xoá chỉ admin — giống pattern content_bank_shared). Banner tự
+-- ẩn khi user đã đọc, so bằng profiles.last_seen_announcement_id với thông báo mới nhất — không cần
+-- bảng "đã đọc" riêng vì chỉ cần so 1 ID mới nhất, không cần lưu lịch sử đọc từng thông báo.
+create table if not exists feature_announcements (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+alter table feature_announcements enable row level security;
+drop policy if exists "feature_announcements_read_all" on feature_announcements;
+create policy "feature_announcements_read_all" on feature_announcements for select using (auth.role() = 'authenticated');
+drop policy if exists "feature_announcements_admin_write" on feature_announcements;
+create policy "feature_announcements_admin_write" on feature_announcements for all using (is_admin()) with check (is_admin());
+
+alter table profiles add column if not exists last_seen_announcement_id uuid;

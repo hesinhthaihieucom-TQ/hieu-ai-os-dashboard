@@ -18,7 +18,7 @@ const NAV = [
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 // Public key VAPID cho Web Push (đổi lại 2026-08-22 vì key cũ chưa từng set VAPID_PRIVATE_KEY khớp
@@ -229,7 +229,7 @@ async function initApp(){
   const { data } = await supabaseClient.auth.getSession();
   if(data.session){
     AppState.user = data.session.user;
-    await loadProfile();
+    await Promise.all([loadProfile(), loadLatestAnnouncement()]);
     AppState.route = currentRouteFromHash();
     renderApp();
   } else {
@@ -253,7 +253,7 @@ async function initApp(){
       // hashchange tự bắn ra và gọi renderApp() lần nữa, AppState.profile đã có sẵn rồi, tránh
       // render hụt 1 nhịp với profile null.
       AppState.route = 'trang-chu';
-      loadProfile().then(()=>{
+      Promise.all([loadProfile(), loadLatestAnnouncement()]).then(()=>{
         location.hash = 'trang-chu';
         renderApp();
       });
@@ -279,6 +279,15 @@ async function loadProfile(){
   if(!AppState.user) return;
   const { data } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
   AppState.profile = data || null;
+}
+
+// Thông báo tính năng mới (2026-08-22) — chỉ lấy 1 dòng MỚI NHẤT, so với
+// profiles.last_seen_announcement_id để quyết định có hiện banner hay không. Gọi 1 LẦN lúc vào app/
+// đăng nhập (không gọi lại mỗi lần renderApp() đổi route) để khỏi tốn query lặp lại vô ích.
+async function loadLatestAnnouncement(){
+  if(!AppState.user) return;
+  const { data } = await supabaseClient.from('feature_announcements').select('*').order('created_at', { ascending:false }).limit(1).maybeSingle();
+  AppState.latestAnnouncement = data || null;
 }
 
 function hasActiveAccess(){
@@ -571,11 +580,21 @@ function renderAuthScreen(err, successMsg){
 function renderApp(){
   if(!hasActiveAccess()){ renderExpiredScreen(); return; }
   const root = document.getElementById('app');
+  const ann = AppState.latestAnnouncement;
+  const showBanner = ann && (!AppState.profile || AppState.profile.last_seen_announcement_id !== ann.id);
   root.innerHTML = `
     <div class="topbar-mobile">
       <span class="menu-toggle" id="menu-toggle-btn">☰</span>
       <span class="topbar-title">XÂY NHÂN HIỆU</span>
     </div>
+    ${showBanner ? `
+    <div class="feature-banner" id="feature-banner" style="background:var(--accent-soft);border-bottom:1px solid var(--accent);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div style="font-size:14px;line-height:1.5;">
+        <strong>🎉 ${esc(ann.title)}</strong>
+        <div style="color:var(--ink-soft);margin-top:2px;white-space:pre-wrap;">${esc(ann.body)}</div>
+      </div>
+      <span class="btn-ghost btn btn-sm" id="feature-banner-dismiss" style="white-space:nowrap;">Đã hiểu, ẩn đi</span>
+    </div>` : ''}
     <div class="app-layout">
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">
@@ -621,6 +640,15 @@ function renderApp(){
   root.querySelector('#signout-btn').onclick = async ()=>{ await supabaseClient.auth.signOut(); };
   const footInfo = root.querySelector('#sidebar-foot-info');
   if(footInfo) footInfo.onclick = ()=>{ location.hash = 'tai-khoan'; };
+
+  const bannerDismiss = root.querySelector('#feature-banner-dismiss');
+  if(bannerDismiss) bannerDismiss.onclick = async ()=>{
+    const id = ann.id;
+    const bannerEl = root.querySelector('#feature-banner');
+    if(bannerEl) bannerEl.remove();
+    if(AppState.profile) AppState.profile.last_seen_announcement_id = id;
+    await supabaseClient.from('profiles').update({ last_seen_announcement_id: id }).eq('id', AppState.user.id);
+  };
 
   if(window.startOnboardingTour && AppState.user){
     const alreadySeen = !!(AppState.profile && AppState.profile.onboarding_seen);
