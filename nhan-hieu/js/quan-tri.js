@@ -406,6 +406,7 @@ function render(container, ctx){
     // kết quả là hết hạn, để admin tự huỷ nếu thấy sai trước khi bấm xác nhận.
     const willExpire = next.getTime() <= Date.now();
     const msg = `${days<0?'Hoàn tác':'Gia hạn'} cho ${p.email||'người này'}: hạn dùng sẽ đổi thành ${next.toLocaleString('vi-VN')}`
+      + (days > 0 && !p.has_paid ? ' — sẽ tự đánh dấu ĐÃ TRẢ PHÍ luôn (trần đổi sang 200 lượt/tháng).' : '')
       + (willExpire ? ' — CHÚ Ý: ngày này đã ở QUÁ KHỨ, tài khoản sẽ bị coi là hết hạn ngay lập tức. Chắc chắn đúng người/đúng số ngày chưa?' : '. Xác nhận?');
     if(!(await confirmModal(msg))) return;
     state.busyId = id; draw();
@@ -413,6 +414,11 @@ function render(container, ctx){
     // thật trước đó là gì nên đưa về "Chưa rõ gói", admin gắn nhãn lại tay nếu cần) thay vì để nhãn
     // sai (vd tự bị gắn "6 tháng") tồn tại mãi dù đã hoàn tác hạn dùng.
     const patch = { access_until: next.toISOString(), last_plan_days: days > 0 ? days : null };
+    // Tự động bật has_paid khi Gia hạn THẬT (days>0) — theo yêu cầu chị Quỳnh 22/8, gộp nút này với
+    // "Đánh dấu đã trả phí" để tránh sự cố quên bấm 1 trong 2 (Gia hạn vốn chỉ dùng khi khách đã
+    // thanh toán thật, xem page-head). "Hoàn tác" (days<0) KHÔNG đụng has_paid — không chắc trạng
+    // thái trả phí trước đó, tắt oan có thể ảnh hưởng 1 giao dịch thật trước đó của cùng người.
+    if(days > 0) patch.has_paid = true;
     const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
