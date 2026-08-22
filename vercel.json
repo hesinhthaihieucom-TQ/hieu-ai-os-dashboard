@@ -26,6 +26,22 @@
     {
       "source": "/nhan-hieu/manifest.json",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/tai-chinh/js/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/tai-chinh/style.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/he-sinh-thai-hieu/style.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/he-sinh-thai-hieu/script.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     }
   ]
 }
