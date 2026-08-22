@@ -193,10 +193,6 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
   }
   .topbar-mobile .topbar-title{ font-family:'Playfair Display',serif; font-size:16px; font-weight:700; }
   .app-layout{ margin-top:62px; }
-  /* Banner thông báo tính năng mới nằm NGOÀI .app-layout (span full width phía trên sidebar+main) nên
-     không tự có margin-top như trên — bị topbar-mobile (fixed) đè khuất mất phần đầu nếu không đẩy
-     xuống riêng. */
-  #feature-banner{ margin-top:62px; }
 
   .main-inner{ padding:20px 16px 70px; }
   /* Trên di động, 7 cột ngang buộc phải kéo sang mới xem hết tuần — xếp mỗi ngày 1 hàng dọc, ngày
@@ -218,3 +214,21 @@ table.plan th{ background:#FBF9F2; font-weight:600; font-size:12px; }
   body{ background:#fff; }
   .section{ break-inside:avoid; border-color:#ccc; }
 }
+
+/* Chú giải tâm thức (glossaryWrap() trong util.js) — chính CHỮ TÊN khái niệm là nơi bấm/trỏ vào để
+   mở định nghĩa (không phải icon "?" riêng), gạch chân chấm để gợi ý có thể bấm vào. */
+details.glossary-wrap{ display:inline; }
+summary.glossary-term{
+  display:inline; list-style:none; cursor:help;
+  border-bottom:1px dotted var(--ink-soft); text-underline-offset:2px;
+}
+summary.glossary-term::-webkit-details-marker{ display:none; }
+summary.glossary-term::marker{ content:''; }
+
+/* Kiến Thức Nền Tảng — accordion từng phần, dùng <details> gốc, không cần JS quản lý mở/đóng. */
+details.kt-section{ border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:10px; background:#FDFCF8; }
+summary.kt-summary{ cursor:pointer; font-weight:600; font-size:14.5px; color:var(--ink); list-style:none; }
+summary.kt-summary::-webkit-details-marker{ display:none; }
+summary.kt-summary::marker{ content:''; }
+summary.kt-summary::before{ content:'▸ '; color:var(--accent); }
+details.kt-section[open] summary.kt-summary::before{ content:'▾ '; }

@@ -671,6 +671,257 @@ drop policy if exists "hooks_bank_personal_admin_update" on hooks_bank_personal;
 create policy "hooks_bank_personal_admin_update" on hooks_bank_personal for update using (is_admin()) with check (is_admin());
 
 -- ============================================================
+-- 11. SỔ DÒNG TIỀN (tai-chinh/ — sản phẩm cá nhân riêng, dùng chung Supabase project với Xây Nhân
+-- Hiệu để tận dụng auth.users/profiles có sẵn, nhưng KHÔNG đọc/ghi has_paid/access_until của
+-- profiles — giai đoạn 1 (beta) mọi tài khoản đã đăng nhập đều dùng free, chưa gắn thanh
+-- toán/quota. Đặt tiền tố tc_ cho mọi bảng để không lẫn với bảng của Xây Nhân Hiệu.
+-- ============================================================
+
+-- Sổ giao dịch hàng ngày (Phần 2 cuốn sổ giấy) — gộp cả thu nhập lẫn chi tiêu 1 bảng, phân biệt
+-- bằng cột type. Quỹ 10%/5%/85% của thu nhập tính hiển thị ở phía JS (tai-chinh/js/ghi-chep.js),
+-- không lưu cứng ở đây để khỏi lệch dữ liệu nếu tỉ lệ này đổi sau này.
+create table if not exists tc_finance_entries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  entry_date date not null,
+  type text not null check (type in ('income','expense')),
+  amount numeric not null check (amount >= 0),
+  description text,
+  category text check (category in ('tai_san','tieu_san','cp_co_dinh','cp_bien_doi')),
+  created_at timestamptz not null default now()
+);
+create index if not exists tc_finance_entries_user_date_idx on tc_finance_entries (user_id, entry_date);
+
+-- Nhận xét tổng kết tuần (Phần 3.C) — khoá theo tuần bắt đầu thứ Hai, giống pattern weekly_ai_drafts.
+create table if not exists tc_weekly_reflections (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  week_start date not null,
+  regret_expense text,
+  unexpected_expense text,
+  spending_feeling text,
+  went_well text,
+  to_change text,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, week_start)
+);
+
+-- Bảng cân đối tài sản/tiêu sản tháng (Phần 4.B) — Tài Sản Ròng = tổng asset_* − tổng debt_* tính
+-- ở JS lúc render (tai-chinh/js/tong-ket-thang.js), không lưu cột tổng để tránh lệch dữ liệu.
+create table if not exists tc_networth_snapshots (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  snapshot_month text not null, -- 'YYYY-MM'
+  asset_cash numeric not null default 0,
+  asset_savings numeric not null default 0,
+  asset_gold_fx numeric not null default 0,
+  asset_stocks numeric not null default 0,
+  asset_realestate numeric not null default 0,
+  asset_other numeric not null default 0,
+  debt_credit_card numeric not null default 0,
+  debt_installment numeric not null default 0,
+  debt_bank_loan numeric not null default 0,
+  debt_other numeric not null default 0,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, snapshot_month)
+);
+
+-- Bài học & mục tiêu tháng tiếp theo (Phần 5).
+create table if not exists tc_monthly_reflections (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  month text not null, -- 'YYYY-MM'
+  reflection_regret text,
+  reflection_worth text,
+  reflection_blocker text,
+  reflection_good_habit text,
+  reflection_bad_habit text,
+  goal_income numeric,
+  goal_savings numeric,
+  goal_debt_reduction numeric,
+  goal_new_asset numeric,
+  goal_new_asset_type text,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, month)
+);
+
+alter table tc_finance_entries enable row level security;
+alter table tc_weekly_reflections enable row level security;
+alter table tc_networth_snapshots enable row level security;
+alter table tc_monthly_reflections enable row level security;
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['tc_finance_entries','tc_weekly_reflections','tc_networth_snapshots','tc_monthly_reflections']
+  loop
+    execute format('drop policy if exists "%1$s_owner_all" on %1$s', t);
+    execute format('create policy "%1$s_owner_all" on %1$s for all using (auth.uid() = user_id) with check (auth.uid() = user_id)', t);
+  end loop;
+end $$;
+
+-- ============================================================
+-- 12. SỔ DÒNG TIỀN — Quản Lý Nợ, Quỹ Khẩn Cấp, Ngân Sách (nâng cấp theo góp ý chuyên gia tài chính
+-- cá nhân 2026-08-21: app trước đó gộp nợ thành 4 số trong tc_networth_snapshots, không đủ để
+-- người đang nợ quyết định trả khoản nào trước — cần biết lãi suất/hạn trả TỪNG khoản).
+-- ============================================================
+
+-- Danh mục CHI TIẾT cho cả thu & chi (khác cột category hiện có trên tc_finance_entries — category
+-- chỉ phân loại kế toán thô Tài sản/Tiêu sản/CP cố định/CP biến đổi, chỉ áp dụng cho chi tiêu).
+-- Text TỰ DO (không enum/check) — người dùng tự gõ, app chỉ GỢI Ý qua datalist (xem
+-- SUGGESTED_EXPENSE_CATEGORIES/SUGGESTED_INCOME_CATEGORIES trong tai-chinh/js/util.js) + học lại
+-- các danh mục người dùng từng gõ trước đó, không ép vào danh sách cứng (góp ý Quỳnh 2026-08-21).
+alter table tc_finance_entries add column if not exists category_label text;
+
+-- Từng khoản nợ riêng biệt (thay vì 4 số gộp) — current_balance do người dùng tự cập nhật trực
+-- tiếp (giống số dư thẻ thật, có thể TĂNG nếu quẹt thêm), không suy ra từ lịch sử thanh toán.
+create table if not exists tc_debts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  creditor_name text not null,
+  current_balance numeric not null default 0,
+  interest_rate numeric not null default 0, -- %/năm
+  minimum_payment numeric not null default 0,
+  due_day integer check (due_day between 1 and 31),
+  is_paid_off boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- Lịch sử thanh toán từng khoản nợ — dùng để biết "tháng này đã trả bao nhiêu" và tự động chảy
+-- 1 dòng tương ứng vào tc_finance_entries (spending_category='tra_no') lúc ghi nhận, xem
+-- tai-chinh/js/quan-ly-no.js.
+create table if not exists tc_debt_payments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  debt_id uuid not null references tc_debts(id) on delete cascade,
+  payment_date date not null,
+  amount numeric not null check (amount >= 0),
+  created_at timestamptz not null default now()
+);
+
+-- Quỹ khẩn cấp — 1 dòng/user (không theo tháng, là quỹ liên tục). Theo đúng thứ tự Dave Ramsey:
+-- có quỹ khẩn cấp nhỏ TRƯỚC khi dồn lực trả nợ, tránh việc 1 sự cố bất ngờ lại đẻ ra nợ mới.
+create table if not exists tc_emergency_fund (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  target_amount numeric not null default 0,
+  current_amount numeric not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+-- Hạn mức chi tiêu theo tháng + theo category_label (ngân sách chủ động, thay vì chỉ nhìn lại
+-- quá khứ như tc_weekly_reflections/tc_monthly_reflections).
+create table if not exists tc_budgets (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  month text not null, -- 'YYYY-MM'
+  category_label text not null,
+  limit_amount numeric not null default 0,
+  primary key (user_id, month, category_label)
+);
+
+alter table tc_debts enable row level security;
+alter table tc_debt_payments enable row level security;
+alter table tc_emergency_fund enable row level security;
+alter table tc_budgets enable row level security;
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['tc_debts','tc_debt_payments','tc_emergency_fund','tc_budgets']
+  loop
+    execute format('drop policy if exists "%1$s_owner_all" on %1$s', t);
+    execute format('create policy "%1$s_owner_all" on %1$s for all using (auth.uid() = user_id) with check (auth.uid() = user_id)', t);
+  end loop;
+end $$;
+
+-- ============================================================
+-- 13. LỚP TÂM THỨC (Sổ Dòng Tiền Tâm Thức / KarmaFlow — Tầng 1, 2026-08-21): Vibe Check,
+-- danh xưng tri ân cho khoản nợ, gắn mục tiêu tháng vào 1 trong 5 Ngôi Nhà. Số liệu thật (lãi
+-- suất, hạn trả, DTI...) KHÔNG đổi — lớp này chỉ bọc thêm ngôn ngữ/cảm xúc bên ngoài, không
+-- được che số liệu thật đi.
+-- ============================================================
+
+-- Vibe Check: trạng thái cảm xúc lúc nhập giao dịch — KHÔNG bắt buộc chọn (mặc định 'gray' nếu
+-- bỏ qua, tránh tạo thêm ma sát khiến người dùng bỏ ghi chép — xem tai-chinh/js/ghi-chep.js).
+alter table tc_finance_entries add column if not exists vibe text
+  check (vibe in ('green','red','gray')) default 'gray';
+
+-- Lý do đằng sau cảm xúc Vibe Check (không bắt buộc, nhưng viết ra giúp người dùng tự nhận diện
+-- gốc rễ tâm thức rõ hơn — hiện lại ngay dưới giao dịch trong Ghi Chép Hàng Ngày).
+alter table tc_finance_entries add column if not exists vibe_reason text;
+
+-- Lời tri ân ngầm gửi tới "Ân Nhân Hỗ Trợ Vốn" — lưu thật để học viên quay lại đọc được lời mình
+-- từng viết, không phải hiệu ứng UI thoáng qua.
+alter table tc_debts add column if not exists gratitude_note text;
+
+-- Mục tiêu tháng tiếp theo neo vào đúng 1 trong 5 Trụ Cột Năng Lượng Bản Thể (khoá học riêng "21
+-- Ngày Giải Nghiệp" của Quỳnh — ĐÃ THAY cho "5 Ngôi Nhà" theo góp ý 2026-08-21, vì "5 Ngôi Nhà" là
+-- khung của Thầy Bùi Quốc Tuấn, không phải của Quỳnh). Cột tên `goal_house` giữ nguyên (đỡ phải
+-- đổi tên khắp code), chỉ đổi tập giá trị hợp lệ.
+alter table tc_monthly_reflections add column if not exists goal_house text
+  check (goal_house in ('than_tam_ban_the','coi_nguon_sinh_thanh','ban_doi_moi_quan_he','tai_chinh_tam_thuc','thuan_phap_nhan_qua'));
+
+-- ============================================================
+-- 14. LỚP TÂM THỨC — Tầng 2 (Mục Tiêu & Cam Kết, Nhật Ký Rắc Rối, Karma Score 5 trục, Soi Nút
+-- Thắt, 2026-08-21). LƯU Ý: KHÔNG dùng "A'"/"Lệnh Ấn Định"/"Khoá Van Tiền" làm tên trong code hay
+-- UI — đó là thuật ngữ độc quyền của bên dạy (Thầy Bùi Quốc Tuấn), Quỳnh chỉ giữ lại Ý TƯỞNG dưới
+-- tên gọi khác: "Tiếng Lòng", "Lời Cam Kết", "Nút Thắt Dòng Tiền". Karma Score KHÔNG lưu điểm tích
+-- luỹ ở đây — luôn tính lại từ dữ liệu thô mỗi lần render (xem tai-chinh/js/trang-chu.js), tránh
+-- lệch dữ liệu khi người dùng sửa/xoá giao dịch cũ.
+-- ============================================================
+
+-- "Tiếng Lòng": phản ứng cảm xúc thật ngay lúc vừa viết xong mục tiêu tháng (tc_monthly_reflections
+-- đã có sẵn các cột goal_* — cột này chỉ bổ sung, không tạo bảng riêng).
+alter table tc_monthly_reflections add column if not exists goal_first_reaction text;
+
+-- Nhật Ký Rắc Rối: ghi lại biến cố cản trở trong lúc theo đuổi mục tiêu — app phản chiếu lại ngay
+-- (client-side, không phải AI) rằng đây là bài kiểm tra, không phải dấu hiệu thất bại.
+create table if not exists tc_obstacle_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  description text not null,
+  created_at timestamptz not null default now()
+);
+alter table tc_obstacle_log enable row level security;
+drop policy if exists "tc_obstacle_log_owner_all" on tc_obstacle_log;
+create policy "tc_obstacle_log_owner_all" on tc_obstacle_log for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Tự đánh giá nhẹ nhàng hàng tuần (1-5) cho 3 trục vốn mang tính chủ quan của Karma Score (Mối
+-- Quan Hệ/Sức Khỏe/Mục Đích Sống — không thể suy ra đáng tin cậy từ category_label tự do), cộng
+-- câu hỏi "Soi Nút Thắt" (thái độ khi thấy người khác nhận tin vui về tiền).
+alter table tc_weekly_reflections add column if not exists relationship_score integer check (relationship_score between 1 and 5);
+alter table tc_weekly_reflections add column if not exists health_score integer check (health_score between 1 and 5);
+alter table tc_weekly_reflections add column if not exists purpose_score integer check (purpose_score between 1 and 5);
+alter table tc_weekly_reflections add column if not exists reaction_to_others_success text;
+
+-- Tầng 3 (2026-08-21): thêm 2 tự đánh giá cho đúng 5 Trụ Cột Năng Lượng Bản Thể (Cội Nguồn Sinh
+-- Thành + Tài Chính Tâm Thức) — trước đó Karma Score dùng 5 trục chung chung (Tài Chính/Mối Quan
+-- Hệ/Sức Khỏe/Mục Đích Sống/Tâm Thức) không khớp khung 5 Trụ riêng của Quỳnh. finance_mindset_score
+-- là câu hỏi CHECK TRỰC TIẾP về tâm thức tiền (Quỳnh yêu cầu — Karma Score trước đó chỉ suy luận
+-- gián tiếp từ Vibe Check, chưa có câu hỏi check riêng).
+alter table tc_weekly_reflections add column if not exists parents_connection_score integer check (parents_connection_score between 1 and 5);
+alter table tc_weekly_reflections add column if not exists finance_mindset_score integer check (finance_mindset_score between 1 and 5);
+
+-- Tầng 4 (2026-08-22): "Tàng Thức" — tầng gốc rễ sâu nhất (niềm tin cũ về tiền hình thành từ ký ức/
+-- tuổi thơ, nuôi các Nút Chặn Dòng Tiền lặp lại ở tầng Tâm Thức phía trên). Module riêng
+-- tang-thuc.js, không dùng AI — người dùng tự viết niềm tin cũ + tự viết niềm tin mới thay thế
+-- (đúng tinh thần "tự nhận diện" xuyên suốt app, không có bước nào do AI phán thay).
+create table if not exists tc_core_beliefs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  belief_text text not null,
+  origin_note text,
+  linked_nut_chan integer check (linked_nut_chan between 1 and 4),
+  new_belief text,
+  still_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table tc_core_beliefs enable row level security;
+drop policy if exists "tc_core_beliefs_owner_all" on tc_core_beliefs;
+create policy "tc_core_beliefs_owner_all" on tc_core_beliefs for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ============================================================
 -- 16. THÔNG BÁO ĐẨY (Web Push) — nhắc lịch đăng bài, nhắc kiểm tra view sau khi đăng (Đẩy Bài),
 -- nhắc lịch quay content (2026-08-21, theo yêu cầu chị Quỳnh). Gửi qua chuẩn Web Push (VAPID) —
 -- hoạt động kể cả khi đã tắt app/trình duyệt, MIỄN LÀ đã cài app lên máy (PWA, xem
