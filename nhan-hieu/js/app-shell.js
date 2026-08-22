@@ -236,6 +236,15 @@ async function initApp(){
     renderAuthScreen();
   }
 
+  // Kiểm tra định kỳ thông báo tính năng mới — để người ĐANG MỞ SẴN app (không tải lại trang) cũng
+  // thấy popup mà không cần tắt/mở lại app. 3 phút là đủ nhanh để cảm giác "gần như ngay", không quá
+  // dày để tốn query liên tục trong lúc họ không rời khỏi app.
+  setInterval(async ()=>{
+    if(!AppState.user) return;
+    await loadLatestAnnouncement();
+    maybeShowFeatureAnnouncement();
+  }, 3 * 60 * 1000);
+
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if(event === 'SIGNED_IN' && session){
       // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại —
@@ -288,6 +297,20 @@ async function loadLatestAnnouncement(){
   if(!AppState.user) return;
   const { data } = await supabaseClient.from('feature_announcements').select('*').order('created_at', { ascending:false }).limit(1).maybeSingle();
   AppState.latestAnnouncement = data || null;
+}
+
+// Hiện popup nếu có thông báo CHƯA ĐỌC — gọi từ renderApp() (lúc mới vào app/đổi trang) VÀ từ vòng
+// lặp định kỳ ở initApp() (để người đang MỞ SẴN app, không tải lại trang, vẫn thấy popup mà không
+// cần tắt/mở lại — theo câu hỏi chị Quỳnh 2026-08-22: "ngta đang dùng app vẫn nhận đc ngay ko").
+function maybeShowFeatureAnnouncement(){
+  const ann = AppState.latestAnnouncement;
+  const annUnseen = ann && (!AppState.profile || AppState.profile.last_seen_announcement_id !== ann.id);
+  if(window.startFeatureAnnouncement && annUnseen){
+    window.startFeatureAnnouncement(ann, async ()=>{
+      if(AppState.profile) AppState.profile.last_seen_announcement_id = ann.id;
+      await supabaseClient.from('profiles').update({ last_seen_announcement_id: ann.id }).eq('id', AppState.user.id);
+    });
+  }
 }
 
 function hasActiveAccess(){
@@ -640,14 +663,7 @@ function renderApp(){
     });
   }
 
-  const ann = AppState.latestAnnouncement;
-  const annUnseen = ann && (!AppState.profile || AppState.profile.last_seen_announcement_id !== ann.id);
-  if(window.startFeatureAnnouncement && annUnseen){
-    window.startFeatureAnnouncement(ann, async ()=>{
-      if(AppState.profile) AppState.profile.last_seen_announcement_id = ann.id;
-      await supabaseClient.from('profiles').update({ last_seen_announcement_id: ann.id }).eq('id', AppState.user.id);
-    });
-  }
+  maybeShowFeatureAnnouncement();
 
   const content = root.querySelector('#main-content');
   const mod = window.Modules && window.Modules[AppState.route];

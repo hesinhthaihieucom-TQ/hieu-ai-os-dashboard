@@ -6,8 +6,10 @@
 // (feature-tour.js so profiles.last_seen_announcement_id) + đẩy push cho ai đã bật thông báo
 // (api/cron/send-reminders.js quét bảng feature_announcements). "Các bước hướng dẫn" là TUỲ CHỌN —
 // để trống thì popup chỉ hiện nội dung + nút "Đã hiểu", không có tour.
+const EMOJI_OPTIONS = ['🎉','🚀','🎁','⚠️','✨','🔥','📢','💡'];
+
 function render(container, ctx){
-  const state = { title:'', body:'', steps:[], posting:false, list:[] };
+  const state = { title:'', body:'', emoji:EMOJI_OPTIONS[0], steps:[], posting:false, list:[] };
   // Chỉ cho chọn các mục sidebar THẬT SỰ hiện ra được (không phải mục ẩn/chỉ-admin) — feature-tour.js
   // trỏ sáng bằng .sidebar-item[data-key], mục không hiện trong sidebar thì không trỏ được.
   const navOptions = (typeof NAV !== 'undefined' ? NAV : []).filter(n => !n.hidden && !n.adminOnly);
@@ -32,11 +34,11 @@ function render(container, ctx){
     state.posting = true; draw();
     const cleanSteps = state.steps.filter(s => s.key && s.text.trim()).map(s => ({ key:s.key, text:s.text.trim() }));
     const { error } = await ctx.supabase.from('feature_announcements').insert({
-      title: state.title.trim(), body: state.body.trim(), steps: cleanSteps, created_by: ctx.user.id,
+      title: state.title.trim(), body: state.body.trim(), emoji: state.emoji, steps: cleanSteps, created_by: ctx.user.id,
     });
     state.posting = false;
     if(error){ alert('Lỗi khi đăng: ' + error.message); draw(); return; }
-    state.title = ''; state.body = ''; state.steps = [];
+    state.title = ''; state.body = ''; state.emoji = EMOJI_OPTIONS[0]; state.steps = [];
     await load();
     draw();
   }
@@ -77,6 +79,14 @@ function render(container, ctx){
           <textarea id="tb-body" rows="4" placeholder="Mô tả ngắn tính năng mới..."
             style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;resize:vertical;">${esc(state.body)}</textarea>
         </div>
+        <div class="field" style="margin-bottom:18px;">
+          <label>Sticker</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${EMOJI_OPTIONS.map(e => `
+              <span data-emoji="${e}" style="font-size:22px;padding:6px 10px;border-radius:8px;cursor:pointer;border:2px solid ${state.emoji===e?'var(--accent)':'transparent'};background:${state.emoji===e?'var(--accent-soft)':'#FDFCF8'};">${e}</span>
+            `).join('')}
+          </div>
+        </div>
         <div class="field" style="margin-bottom:10px;">
           <label>Các bước hướng dẫn (tuỳ chọn) — để trống nếu chỉ cần thông báo, không cần dẫn từng bước</label>
         </div>
@@ -93,7 +103,7 @@ function render(container, ctx){
       ${state.list.map(a=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
           <div>
-            <div style="font-weight:600;font-size:14.5px;margin-bottom:4px;">${esc(a.title)}</div>
+            <div style="font-weight:600;font-size:14.5px;margin-bottom:4px;">${esc(a.emoji || '🎉')} ${esc(a.title)}</div>
             <div style="font-size:13.5px;color:var(--ink-soft);white-space:pre-wrap;">${esc(a.body)}</div>
             <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">
               ${esc(new Date(a.created_at).toLocaleString('vi-VN'))}${a.steps && a.steps.length ? ` — ${a.steps.length} bước hướng dẫn` : ''}
@@ -111,6 +121,10 @@ function render(container, ctx){
     const refreshPostBtn = ()=>{ const d=container.querySelector('#tb-post'); if(d) d.disabled = !canPost(); };
     if(title) title.oninput = ()=>{ state.title = title.value; refreshPostBtn(); };
     if(body) body.oninput = ()=>{ state.body = body.value; refreshPostBtn(); };
+
+    container.querySelectorAll('[data-emoji]').forEach(el=>{
+      el.onclick = ()=>{ state.emoji = el.getAttribute('data-emoji'); draw(); };
+    });
 
     const addStepBtn = container.querySelector('#tb-add-step');
     if(addStepBtn) addStepBtn.onclick = ()=>{ state.steps.push({ key:'', text:'' }); draw(); };

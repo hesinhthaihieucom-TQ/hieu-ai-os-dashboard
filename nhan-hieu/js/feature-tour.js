@@ -40,7 +40,7 @@ function startFeatureAnnouncement(ann, onDone){
     overlay.innerHTML = `
       <div style="position:fixed;inset:0;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div style="max-width:400px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-          <div style="font-size:34px;margin-bottom:10px;">🎉</div>
+          <div style="font-size:34px;margin-bottom:10px;">${esc(ann.emoji || '🎉')}</div>
           <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:10px;">${esc(ann.title)}</div>
           <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:22px;white-space:pre-wrap;">${esc(ann.body)}</div>
           <div style="display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap;">
