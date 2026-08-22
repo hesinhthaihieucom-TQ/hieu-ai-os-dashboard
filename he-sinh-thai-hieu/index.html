@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hệ Sinh Thái HIỂU — Tú Quỳnh</title>
+<meta name="description" content="Hệ Sinh Thái HIỂU: Hiểu Hạnh (tâm thức & tài chính), Hiểu Mạnh (sức khoẻ) và Hiểu Kênh (nhân hiệu & dòng tiền) — cùng Tú Quỳnh.">
+<link rel="icon" href="assets/images/logo.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/images/logo.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hệ Sinh Thái HIỂU">
+<meta property="og:title" content="Hệ Sinh Thái HIỂU — Tú Quỳnh">
+<meta property="og:description" content="Hiểu Hạnh (tâm thức & tài chính), Hiểu Mạnh (sức khoẻ) và Hiểu Kênh (nhân hiệu & dòng tiền) — cùng Tú Quỳnh.">
+<meta property="og:image" content="assets/images/profile-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hệ Sinh Thái HIỂU — Tú Quỳnh">
+<meta name="twitter:description" content="Hiểu Hạnh (tâm thức & tài chính), Hiểu Mạnh (sức khoẻ) và Hiểu Kênh (nhân hiệu & dòng tiền) — cùng Tú Quỳnh.">
+<meta name="twitter:image" content="assets/images/profile-hero.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,600&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ========== NAV ========== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="logo">
+      <div class="logo-img"><img src="assets/images/logo.png" alt="Logo Hệ Sinh Thái Hiểu"></div>
+      <div class="logo-text">
+        <span class="logo-top">Hệ Sinh Thái</span>
+        <span class="logo-bottom">HIỂU</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#top">Trang chủ</a></li>
+      <li><a href="#story">Giới thiệu</a></li>
+      <li><a href="#branches">Sản phẩm</a></li>
+      <li><a href="#proof">Kết quả</a></li>
+      <li><a href="#ctv">Cộng tác viên</a></li>
+      <li><a href="#cta">Liên hệ</a></li>
+      <li><a href="#" class="nav-cta" onclick="event.preventDefault(); quizOpen();">Làm bài test</a></li>
+    </ul>
+    <button class="hamburger" aria-label="Menu" onclick="event.preventDefault(); quizOpen();"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- ========== SUB-NAV: truy cập nhanh ========== -->
+<div class="subnav">
+  <div class="subnav-inner">
+    <a href="#branches" class="strong">📦 Sản phẩm &amp; dịch vụ</a>
+    <a href="#free">🎁 Dùng thử miễn phí</a>
+    <a href="#s-hanh"><span class="dot" style="background:var(--hanh)"></span>Hiểu Hạnh</a>
+    <a href="#s-manh"><span class="dot" style="background:var(--manh)"></span>Hiểu Mạnh</a>
+    <a href="#s-kenh"><span class="dot" style="background:var(--kenh)"></span>Hiểu Kênh</a>
+    <a href="#proof">📊 Kết quả thật</a>
+    <a href="#ctv">🤝 Trở thành Cộng tác viên</a>
+    <a href="#" onclick="event.preventDefault(); quizOpen();">🧭 Bài test định hướng</a>
+  </div>
+</div>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="tag">Mentor · Speaker · Entrepreneur</span>
+      <h1 class="hero-h1" style="margin-top:14px;">Hệ Sinh Thái <em>HIỂU</em></h1>
+      <p class="hero-sub">Dành cho người muốn sống khoẻ hơn, giàu hơn và hạnh phúc hơn từ bên trong — do Tú Quỳnh xây dựng và trực tiếp đồng hành.</p>
+
+      <ul class="hero-list">
+        <li>Khai thông nhận thức</li>
+        <li>Xây tài sản con người</li>
+        <li>Tạo dòng tiền thật</li>
+      </ul>
+
+      <div class="hero-cta">
+        <a href="#branches" class="btn btn-accent">Xem sản phẩm &amp; dịch vụ →</a>
+        <a href="#" class="btn btn-ghost" onclick="event.preventDefault(); quizOpen();">Làm bài test định hướng</a>
+      </div>
+
+      <div class="hero-branches">
+        <a href="#s-hanh" class="hero-branch"><span class="dot" style="background:var(--hanh)"></span><b>Hiểu Hạnh</b><span class="d">— Tâm thức &amp; Tài chính</span></a>
+        <a href="#s-manh" class="hero-branch"><span class="dot" style="background:var(--manh)"></span><b>Hiểu Mạnh</b><span class="d">— Sức khoẻ &amp; Năng lượng</span></a>
+        <a href="#s-kenh" class="hero-branch"><span class="dot" style="background:var(--kenh)"></span><b>Hiểu Kênh</b><span class="d">— Nhân hiệu &amp; Dòng tiền</span></a>
+      </div>
+    </div>
+
+    <div>
+      <div class="hero-photo">
+        <img src="assets/images/profile-hero.jpg" alt="Tú Quỳnh">
+        <div class="hero-photo-cap">
+          <div class="hero-avatars">
+            <div class="hero-av"><img src="assets/images/avatar-tuquynh.jpg" alt="Tú Quỳnh"></div>
+            <div class="hero-av"><img src="assets/images/avatar-hocvien-1.jpg" alt="Học viên"></div>
+            <div class="hero-av"><img src="assets/images/avatar-hocvien-2.jpg" alt="Học viên"></div>
+          </div>
+          <div class="stat"><b>10.000+</b><span>người đồng hành</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STAT BAR ========== -->
+<section class="stat-bar">
+  <div class="wrap">
+    <div class="stat-card">
+      <div class="stat-card-item"><span class="n">136K</span><span class="l">Followers Facebook</span></div>
+      <div class="stat-card-item"><span class="n">9 chữ số</span><span class="l">Doanh số / tháng</span></div>
+      <div class="stat-card-item"><span class="n">10.000+</span><span class="l">Người đồng hành</span></div>
+      <div class="stat-card-item"><span class="n">5+</span><span class="l">Năm kinh nghiệm</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FREE TOOLS / LEAD MAGNET ========== -->
+<section class="free-tools" id="free">
+  <div class="wrap">
+    <span class="tag">Bắt đầu miễn phí</span>
+    <h2 style="margin-top:14px; margin-bottom:6px; font-size:clamp(22px,2.6vw,28px);">Dùng thử miễn phí trước khi bắt đầu</h2>
+    <p style="color:var(--ink-soft); font-size:14px; max-width:600px;">Mỗi nhánh đều có một công cụ miễn phí để bạn tự trải nghiệm trước — không cần đăng ký, không cần trả phí.</p>
+
+    <div class="free-grid">
+      <div class="free-card">
+        <span class="free-tag">Miễn phí</span>
+        <div class="branch-of"><span class="dot" style="background:var(--hanh)"></span>Hiểu Hạnh</div>
+        <h4>Chấm Điểm Nghiệp</h4>
+        <p>Trả lời nhanh để biết bạn đang vướng vòng lặp nào trong tiền bạc, cảm xúc và cuộc sống.</p>
+        <a href="https://hesinhthaihieu.com/chamdiem" target="_blank" class="btn btn-ghost btn-sm">Làm bài chấm điểm →</a>
+      </div>
+      <div class="free-card">
+        <span class="free-tag">Miễn phí</span>
+        <div class="branch-of"><span class="dot" style="background:var(--manh)"></span>Hiểu Mạnh</div>
+        <h4>Bản Đồ Sức Khoẻ</h4>
+        <p>Đánh giá nhanh tình trạng sức khoẻ hiện tại, biết ngay vùng cần ưu tiên cải thiện.</p>
+        <a href="https://hieu-de-khoe-manh.vercel.app/" target="_blank" class="btn btn-ghost btn-sm">Xem bản đồ →</a>
+      </div>
+      <div class="free-card">
+        <span class="free-tag">Miễn phí</span>
+        <div class="branch-of"><span class="dot" style="background:var(--kenh)"></span>Hiểu Kênh</div>
+        <h4>Bản Đồ 8 Dòng Tiền</h4>
+        <p>Xem trước 8 dòng tiền có thể tạo ra từ nhân hiệu cá nhân — không cần đăng ký.</p>
+        <a href="https://bando8dongtien.netlify.app/?v=11" target="_blank" class="btn btn-ghost btn-sm">Xem bản đồ →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TRUST RATIONALE ========== -->
+<section class="trust">
+  <div class="wrap">
+    <span class="section-label">Vì sao tin tưởng</span>
+    <div class="trust-grid">
+      <div class="trust-item">
+        <span class="list-num">01</span>
+        <div>
+          <h4>Trải nghiệm thật, không lý thuyết suông</h4>
+          <p>Tú Quỳnh tự đi qua hành trình từ khó khăn tài chính, sức khoẻ đến xây dựng lại từ đầu — mọi điều chia sẻ đều đã tự áp dụng trước.</p>
+        </div>
+      </div>
+      <div class="trust-item">
+        <span class="list-num">02</span>
+        <div>
+          <h4>Kết quả đo lường được</h4>
+          <p>Số liệu, ảnh chụp, kết quả xét nghiệm — bằng chứng thật, công khai minh bạch ở phần Kết Quả bên dưới.</p>
+        </div>
+      </div>
+      <div class="trust-item">
+        <span class="list-num">03</span>
+        <div>
+          <h4>Đồng hành trực tiếp</h4>
+          <p>Tư vấn 1:1 qua Zalo với chính Tú Quỳnh — miễn phí, không qua trung gian, không áp lực mua hàng.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STORY ========== -->
+<section class="story" id="story">
+  <div class="wrap-narrow">
+    <span class="tag">01 — Câu chuyện</span>
+    <h2 style="margin-top:14px; font-size:clamp(24px,3vw,32px);">Từ chiếc Dream mượn đến cuộc đời ước mơ</h2>
+
+    <div class="story-copy" style="margin-top:20px;">
+      <p class="hook">Có bao giờ bạn cảm thấy mình đã rất cố gắng, nhưng cuộc sống vẫn không đi theo hướng mình mong muốn?</p>
+      <p>Làm nhiều hơn nhưng không dư hơn. Kiếm được tiền nhưng vẫn bất an. Muốn sống khoẻ hơn, hạnh phúc hơn, tự do hơn — nhưng bên trong lại luôn có cảm giác đang bị cuốn đi.</p>
+      <p>Nếu bạn từng như vậy, mình hiểu. Vì gần 5 năm trước, mình cũng đã từng ở chính nơi ấy. Khi dịch Covid-19 bùng phát, công việc kinh doanh ngưng trệ. Tài chính áp lực, sức khoẻ lao dốc. Và đúng lúc đó, người mình từng đặt trọn niềm tin cũng rời đi.</p>
+
+      <div class="story-quote"><p>"Rốt cuộc mình đang sống cuộc đời của ai?"</p></div>
+
+      <p>Càng đi qua biến cố, mình càng nhận ra: <strong>gốc rễ không nằm ở hoàn cảnh — gốc rễ nằm ở nhận thức.</strong></p>
+      <p>Và đó là lý do <strong>Hệ Sinh Thái HIỂU</strong> được hình thành — không phải để bán cho bạn một giấc mơ, mà để đồng hành cùng những người đang muốn sống khoẻ hơn, rõ mình hơn và tạo ra dòng tiền thật từ giá trị thật.</p>
+    </div>
+
+    <p class="story-sig">— <b>Tú Quỳnh</b>, người sáng lập Hệ Sinh Thái HIỂU</p>
+
+    <div class="story-cta">
+      <a href="#" class="btn btn-accent" id="storyCtaPlay">Xem video giới thiệu</a>
+      <a href="#" class="btn btn-ghost" onclick="event.preventDefault(); quizOpen();">Tìm hướng phù hợp với bạn →</a>
+    </div>
+
+    <div class="story-media">
+      <div class="story-video-card">
+        <div class="story-video-wrap" id="storyThumb">
+          <img src="assets/images/video-thumb.jpg" alt="Thumbnail video Tú Quỳnh">
+          <button class="story-play" id="storyPlay" aria-label="Phát video">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M8 5.5L19 12L8 18.5V5.5Z" fill="#1E2420"/></svg>
+          </button>
+        </div>
+        <video id="storyVideo" class="story-video-native" controls playsinline preload="none">
+          <source src="https://res.cloudinary.com/dynlgt2vr/video/upload/v1782291245/1dd1334b0c71f5bb602ac8f166265c73_ilnpni.mp4" type="video/mp4">
+        </video>
+        <div class="story-video-cap">Video giới thiệu · Tú Quỳnh kể về hành trình xây Hệ Sinh Thái HIỂU</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PROOF ========== -->
+<section class="proof" id="proof">
+  <div class="wrap">
+    <span class="tag">Kết quả thật</span>
+    <h2 style="margin-top:14px; margin-bottom:6px; font-size:clamp(24px,3vw,32px);">Không phải lời hứa — đây là bằng chứng</h2>
+    <p style="color:var(--ink-soft); font-size:14px; margin-bottom:24px;">Số liệu và hình ảnh thật từ Tú Quỳnh và cộng đồng Hệ Sinh Thái HIỂU.</p>
+
+    <div class="proof-tabs">
+      <button class="tab-btn active" data-tab="kenh" onclick="proofSwitch('kenh')">📈 Hiểu Kênh</button>
+      <button class="tab-btn" data-tab="manh" onclick="proofSwitch('manh')">💪 Hiểu Mạnh</button>
+      <button class="tab-btn" data-tab="hanh" onclick="proofSwitch('hanh')">✨ Hành trình cá nhân</button>
+    </div>
+
+    <!-- KÊNH -->
+    <div class="proof-panel active" id="panel-kenh">
+      <div class="proof-stats">
+        <div class="proof-stat"><span class="n">128K</span><span class="l">Followers Facebook</span></div>
+        <div class="proof-stat"><span class="n">177tr</span><span class="d">+570%</span><span class="l">Doanh số affiliate / 30 ngày</span></div>
+        <div class="proof-stat"><span class="n">892</span><span class="d">+377%</span><span class="l">Đơn hàng / tháng</span></div>
+        <div class="proof-stat"><span class="n">2,7tr</span><span class="l">Views / video</span></div>
+      </div>
+      <div class="proof-grid">
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-kenh-fb128k.jpg" alt="Facebook 128K followers" loading="lazy"></div><div class="proof-cap">128K followers · Facebook cá nhân</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-kenh-doanhthu.jpg" alt="Doanh thu 177tr" loading="lazy"></div><div class="proof-cap">Doanh số affiliate 177,3tr · +570% / 30 ngày</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-kenh-videoviral.jpg" alt="Video viral" loading="lazy"></div><div class="proof-cap">2,7tr views · 151K tương tác</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-kenh-ngatien-stats.jpg" alt="Nga Tiến stats" loading="lazy"></div><div class="proof-cap">Học viên Nga Tiến · 5,5tr views +403%</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-kenh-ngatien-reels.jpg" alt="Nga Tiến reels" loading="lazy"></div><div class="proof-cap">Reels viral của học viên</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-kenh-congdong.jpg" alt="Cộng đồng" loading="lazy"></div><div class="proof-cap">Cộng đồng &amp; lớp đào tạo trực tiếp</div></div>
+      </div>
+    </div>
+
+    <!-- MẠNH -->
+    <div class="proof-panel" id="panel-manh">
+      <div class="proof-stats">
+        <div class="proof-stat"><span class="n">−6kg</span><span class="l">Mỡ cơ thể (2 tháng)</span></div>
+        <div class="proof-stat"><span class="n">−12cm</span><span class="l">Vòng eo</span></div>
+        <div class="proof-stat"><span class="n">−15kg</span><span class="l">Bố của Tú Quỳnh</span></div>
+        <div class="proof-stat"><span class="n">100%</span><span class="l">Chỉ số máu an toàn</span></div>
+      </div>
+      <div class="proof-grid">
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-beforeafter.jpg" alt="Tú Quỳnh before after" loading="lazy"></div><div class="proof-cap">Tú Quỳnh · Bắt đầu → 20 ngày → 2 tháng</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-xetnghiem.jpg" alt="Phiếu xét nghiệm" loading="lazy"></div><div class="proof-cap">Xét nghiệm máu · Mỡ máu về bình thường</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-hocvien-da.jpg" alt="Học viên da mặt" loading="lazy"></div><div class="proof-cap">Học viên · Da mặt cải thiện</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-bo-15kg.jpg" alt="Bố giảm 15kg" loading="lazy"></div><div class="proof-cap">Bố của Tú Quỳnh · −15kg</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-me-lotxac.jpg" alt="Mẹ lột xác" loading="lazy"></div><div class="proof-cap">Mẹ của Tú Quỳnh · Lột xác</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-mebim.jpg" alt="Mẹ bỉm before after" loading="lazy"></div><div class="proof-cap">Học viên sau sinh · Vóc dáng đổi hoàn toàn</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-tinnhan.jpg" alt="Tin nhắn học viên" loading="lazy"></div><div class="proof-cap">−7kg, −13cm eo, −10cm bụng</div></div>
+        <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/proof-manh-hocviennam.jpg" alt="Học viên nam" loading="lazy"></div><div class="proof-cap">Học viên nam · theo dõi 3 mốc</div></div>
+      </div>
+    </div>
+
+    <!-- HÀNH TRÌNH -->
+    <div class="proof-panel" id="panel-hanh">
+      <div class="proof-stats">
+        <div class="proof-stat"><span class="n">3tr</span><span class="l">Lương khởi điểm</span></div>
+        <div class="proof-stat"><span class="n">9 tháng</span><span class="l">Mua xe đầu tiên</span></div>
+        <div class="proof-stat"><span class="n">4 năm</span><span class="l">Mua nhà trả góp</span></div>
+        <div class="proof-stat"><span class="n">136K</span><span class="l">Followers hôm nay</span></div>
+      </div>
+      <div class="proof-two-col">
+        <div class="timeline">
+          <div class="tl-item"><span class="tl-period">Điểm xuất phát</span><p class="tl-text">Làm 10-12 tiếng/ngày, 11 ngày/tuần. Lương <strong>3 triệu đồng</strong>. Đi làm bằng chiếc xe Dream mượn của bác.</p></div>
+          <div class="tl-item"><span class="tl-period">Thất bại liên tiếp</span><p class="tl-text">Vay vốn kinh doanh thất bại. Làm nhiều nghề, tích luỹ rồi lại đầu tư sai. <strong>Nhiều năm không có tài sản gì trong tay.</strong></p></div>
+          <div class="tl-item"><span class="tl-period">Bước ngoặt 2020</span><p class="tl-text">Covid ập đến. Kinh doanh ngưng. Bắt đầu học lại từ gốc: <strong>nhận thức về sức khoẻ và tài chính.</strong></p></div>
+          <div class="tl-item"><span class="tl-period">Sau 9 tháng</span><p class="tl-text">Học cách tích sản, mua vàng hàng tháng. <strong>Mua được xe ô tô đầu tiên.</strong></p></div>
+          <div class="tl-item"><span class="tl-period">Sau 4 năm</span><p class="tl-text"><strong>Mua được nhà trả góp.</strong> Xây dựng Hệ Sinh Thái HIỂU. 136K followers, 10.000+ người đồng hành.</p></div>
+        </div>
+        <div class="proof-grid" style="grid-template-columns:repeat(2,1fr);">
+          <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/journey-xedream.jpg" alt="Xe Dream mượn" loading="lazy"></div><div class="proof-cap">Xe Dream mượn của bác</div></div>
+          <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/journey-phongtro.jpg" alt="Phòng trọ ngày xưa" loading="lazy"></div><div class="proof-cap">Phòng trọ · Lương 3 triệu</div></div>
+          <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/journey-muavang.jpg" alt="Mua vàng tích sản" loading="lazy"></div><div class="proof-cap">Tích sản bằng vàng mỗi tháng</div></div>
+          <div class="proof-img" onclick="proofZoom(this)"><div class="ph"><img src="assets/images/journey-xeoto.jpg" alt="Xe ô tô đầu tiên" loading="lazy"></div><div class="proof-cap">Xe ô tô đầu tiên sau 9 tháng</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <button class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open')">&times;</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<!-- ========== BRANCHES ========== -->
+<section class="branches" id="branches">
+  <div class="wrap">
+    <span class="tag">02 — Sản phẩm &amp; dịch vụ</span>
+    <h2 style="margin-top:14px; margin-bottom:6px; font-size:clamp(24px,3vw,32px);">Ba nhánh, một hành trình</h2>
+    <p style="color:var(--ink-soft); font-size:14px; margin-bottom:16px; max-width:620px;">Hệ Sinh Thái HIỂU không phải là những sản phẩm riêng lẻ — đó là một hành trình toàn diện giúp bạn hiểu mình, xây sức khoẻ, xây nhân hiệu và tạo dòng tiền thật.</p>
+    <div class="chips branches-filter">
+      <a href="#s-hanh" class="chip"><span class="dot" style="background:var(--hanh)"></span>Hiểu Hạnh</a>
+      <a href="#s-manh" class="chip"><span class="dot" style="background:var(--manh)"></span>Hiểu Mạnh</a>
+      <a href="#s-kenh" class="chip"><span class="dot" style="background:var(--kenh)"></span>Hiểu Kênh</a>
+    </div>
+
+    <!-- HIỂU HẠNH -->
+    <div class="branch hanh" id="s-hanh">
+      <div class="branch-head">
+        <div class="branch-logo"><img src="assets/images/branch-hanh.png" alt="Hiểu Hạnh"></div>
+        <h3 class="branch-name">Hiểu Hạnh</h3>
+      </div>
+      <p class="branch-tag">Khai thông nhận thức · Tài chính · Phát triển bản thân</p>
+      <p class="branch-desc">Dành cho những người muốn hiểu chính mình sâu hơn, tháo gỡ các vòng lặp cũ trong tiền bạc, cảm xúc và cuộc sống để sống chủ động và hạnh phúc hơn.</p>
+      <a href="#proof" class="branch-proof-link" onclick="event.preventDefault(); proofSwitch('hanh'); document.getElementById('proof').scrollIntoView({behavior:'smooth',block:'start'});">
+        Xem bằng chứng của hành trình này
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <div class="pcards">
+        <div class="pcard">
+          <div class="pcard-top"><img src="assets/images/card-sodongtien.jpg" alt="Sổ Dòng Tiền" loading="lazy"></div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">Sổ Dòng Tiền</h4>
+            <p class="pcard-desc">Quản lý thu chi, phân biệt tài sản và tiêu sản, xây nền tài chính vững chắc từng bước.</p>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSdta1H-B_ewAEEUr291J7BsMfdEQK_lW-J2Gg1iNnenWy4Gdg/viewform?usp=sharing&ouid=117253466361221244180" target="_blank" class="pcard-btn">Tìm hiểu thêm <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-top"><img src="assets/images/card-21ngay.jpg" alt="21 Ngày Chuyển Nghiệp" loading="lazy"></div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">21 Ngày Chuyển Nghiệp</h4>
+            <p class="pcard-desc">Hiểu bài học đang lặp lại trong cuộc đời, chuyển hoá nhận thức để sống nhẹ và chủ động hơn.</p>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSedOqJbCmW2_l6CyPs-oG7hpIOmIFat4NIbB-sEnmZhUruqPw/viewform?usp=sharing&ouid=117253466361221244180" target="_blank" class="pcard-btn">Tìm hiểu thêm <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-top"><img src="assets/images/card-30ngay.jpg" alt="30 Ngày Tái Lập Tâm Thức Tài Chính" loading="lazy"></div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">30 Ngày Tái Lập Tâm Thức Tài Chính</h4>
+            <p class="pcard-desc">Xây dựng lại mối quan hệ với tiền, giá trị bản thân và nền tảng tư duy dòng tiền bền vững.</p>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSce7ALSqfpQbhUuVPtAx8WntPxxM0PoIAzGvYaH0SW1sFjbiA/viewform?usp=sharing&ouid=117253466361221244180" target="_blank" class="pcard-btn">Tìm hiểu thêm <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIỂU MẠNH -->
+    <div class="branch manh" id="s-manh">
+      <div class="branch-head">
+        <div class="branch-logo"><img src="assets/images/branch-manh.png" alt="Hiểu Mạnh"></div>
+        <h3 class="branch-name">Hiểu Mạnh</h3>
+      </div>
+      <p class="branch-tag">Hiểu để khoẻ mạnh</p>
+      <p class="branch-desc">Xây nền sức khoẻ từ gốc thông qua lối sống, dinh dưỡng và dữ liệu sức khoẻ — cơ thể khoẻ mạnh, năng lượng bền vững mỗi ngày.</p>
+      <a href="#proof" class="branch-proof-link" onclick="event.preventDefault(); proofSwitch('manh'); document.getElementById('proof').scrollIntoView({behavior:'smooth',block:'start'});">
+        Xem bằng chứng của nhánh này
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <div class="pcards">
+        <div class="pcard">
+          <div class="pcard-top"><img src="assets/images/card-bandosuckhoe.jpg" alt="Bản Đồ Sức Khoẻ" loading="lazy"></div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">Bản Đồ Sức Khoẻ</h4>
+            <p class="pcard-desc">Đánh giá nhanh tình trạng sức khoẻ, xác định ưu tiên cần cải thiện để bắt đầu hành trình sống khoẻ.</p>
+            <a href="https://hieu-de-khoe-manh.vercel.app/" target="_blank" class="pcard-btn">Tìm hiểu thêm <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-top" style="background:linear-gradient(135deg,var(--manh),#1c4a3f);">
+            <div class="pcard-top-label"><div><div class="t">Chương Trình Wellness</div><div class="s">Đồng hành sức khoẻ toàn diện</div></div></div>
+          </div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">Chương Trình Wellness</h4>
+            <p class="pcard-desc">Đồng hành cải thiện sức khoẻ dựa trên xét nghiệm máu, dinh dưỡng và vận động — giảm mỡ, tăng năng lượng.</p>
+            <a href="#" class="pcard-btn disabled">Sắp ra mắt</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIỂU KÊNH -->
+    <div class="branch kenh" id="s-kenh">
+      <div class="branch-head">
+        <div class="branch-logo"><img src="assets/images/branch-kenh.png" alt="Hiểu Kênh"></div>
+        <h3 class="branch-name">Hiểu Kênh</h3>
+      </div>
+      <p class="branch-tag">Xây nhân hiệu · Xây kênh · Tạo dòng tiền</p>
+      <p class="branch-desc">Giúp bạn biến giá trị thật thành nhiều dòng tiền thông qua thương hiệu cá nhân và hệ sinh thái nội dung bền vững.</p>
+      <a href="#proof" class="branch-proof-link" onclick="event.preventDefault(); proofSwitch('kenh'); document.getElementById('proof').scrollIntoView({behavior:'smooth',block:'start'});">
+        Xem bằng chứng của nhánh này
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <div class="pcards">
+        <div class="pcard">
+          <div class="pcard-top"><img src="assets/images/card-8dongtien.jpg" alt="Công Thức 8 Dòng Tiền" loading="lazy"></div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">Công Thức 8 Dòng Tiền Từ Xây Nhân Hiệu</h4>
+            <p class="pcard-desc">Cách một nhân hiệu tạo ra nhiều dòng tiền từ kiến thức, trải nghiệm, cộng đồng và hệ sinh thái sản phẩm.</p>
+            <a href="https://xaynhanhieu8dongtien.netlify.app/" target="_blank" class="pcard-btn">Tìm hiểu thêm <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-top" style="background:linear-gradient(135deg,#1a1a1a,#2d2d2d);">
+            <div class="pcard-top-label"><div><div class="t" style="color:var(--gold)">Workshop Xây Kênh &amp; Nhân Hiệu</div><div class="s">Định vị — Nội dung — Hệ thống</div></div></div>
+          </div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">Workshop Xây Kênh &amp; Nhân Hiệu</h4>
+            <p class="pcard-desc">Khai trục nội dung, định vị thương hiệu cá nhân và xây hệ thống phát triển kênh dài hạn.</p>
+            <a href="https://zalo.me/0866849193" target="_blank" class="pcard-btn">Liên hệ tư vấn <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-top" style="background:linear-gradient(135deg,#1E2420,#2F6F62);">
+            <span class="pcard-flag">7 ngày dùng thử miễn phí</span>
+            <div class="pcard-top-label"><div><div class="t">Xây Nhân Hiệu — Web App AI</div><div class="s">Định vị · Sửa kênh · Kho content · Lịch đăng</div></div></div>
+          </div>
+          <div class="pcard-body">
+            <h4 class="pcard-name">Xây Nhân Hiệu — Web App AI</h4>
+            <p class="pcard-desc">Công cụ AI đồng hành hằng ngày: định vị, sửa kênh, kho content &amp; hook, viết content, chấm điểm, lên lịch đăng.</p>
+            <a href="https://hesinhthaihieu.com/webxaynhanhieu/" target="_blank" class="pcard-btn">Dùng thử miễn phí <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLOSING -->
+    <div class="branches-closing">
+      <span class="closing-label">Sứ mệnh</span>
+      <h3 class="closing-title">Hệ Sinh Thái HIỂU không phải là những sản phẩm riêng lẻ. Đó là một <em>hành trình</em>.</h3>
+      <div class="closing-items">
+        <div class="closing-item"><span class="dot"></span>Hiểu mình</div>
+        <div class="closing-item"><span class="dot"></span>Xây sức khoẻ</div>
+        <div class="closing-item"><span class="dot"></span>Xây nhân hiệu</div>
+        <div class="closing-item"><span class="dot"></span>Xây tài chính</div>
+      </div>
+      <p class="closing-sub">Để tạo nên một cuộc sống chủ động và bền vững hơn.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CTV / CỘNG TÁC VIÊN ========== -->
+<section class="ctv" id="ctv">
+  <div class="wrap">
+    <span class="tag">03 — Cơ hội hợp tác</span>
+    <h2 style="margin-top:14px; margin-bottom:6px; font-size:clamp(24px,3vw,32px);">Trở thành Cộng tác viên</h2>
+    <p style="color:var(--ink-soft); font-size:14px; margin-bottom:8px; max-width:640px;">Giới thiệu bạn bè, người quen dùng <b>Web App AI Xây Nhân Hiệu</b> qua link giới thiệu riêng của bạn — bạn được thưởng, người bạn giới thiệu cũng được giảm giá. Không cần vốn, không cần làm sản phẩm, chỉ cần chia sẻ đúng người cần.</p>
+
+    <div class="ctv-grid" style="margin-top:28px;">
+      <div>
+        <div class="ctv-list">
+          <div class="list-item">
+            <div class="txt"><b>Người bạn giới thiệu</b><br><span style="color:var(--ink-soft); font-size:13px;">Được giảm ngay <b>15%</b> khi đăng ký gói trả phí Web App AI.</span></div>
+          </div>
+          <div class="list-item">
+            <div class="txt"><b>Bạn (người giới thiệu)</b><br><span style="color:var(--ink-soft); font-size:13px;">Được cộng thêm <b>lượt AI</b> tương đương 15% giá trị gói bạn bè mua — tự động ngay khi họ thanh toán thành công.</span></div>
+          </div>
+          <div class="list-item">
+            <div class="txt"><b>Lên hạng Partner</b><br><span style="color:var(--ink-soft); font-size:13px;">Giới thiệu thành công từ <b>5 người trở lên</b> — nhận <b>hoa hồng bằng tiền mặt</b> thay vì lượt AI, Tú Quỳnh chuyển khoản trực tiếp.</span></div>
+          </div>
+        </div>
+        <a href="https://hesinhthaihieu.com/webxaynhanhieu/" target="_blank" class="btn btn-accent">Đăng ký &amp; lấy link giới thiệu của bạn →</a>
+      </div>
+
+      <div class="ctv-panel">
+        <h4>Ví dụ thu nhập</h4>
+        <div class="row"><span class="l">Bạn giới thiệu dùng gói 6 tháng (2.032.000đ)</span></div>
+        <div class="row"><span class="l">Bạn nhận lượt AI trị giá</span><span class="v">~305.000đ</span></div>
+        <div class="row"><span class="l">Đủ 5 người giới thiệu thành công</span><span class="v">Lên Partner</span></div>
+        <div class="row"><span class="l">Từ đó trở đi</span><span class="v">Hoa hồng tiền mặt</span></div>
+        <p class="ctv-note">Link giới thiệu và tiến độ được theo dõi ngay trong mục "Tài khoản" của Web App AI sau khi đăng ký — không cần công cụ nào khác.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== COMMITMENT + FAQ ========== -->
+<section class="commit">
+  <div class="wrap">
+    <span class="section-label">Cam kết đồng hành</span>
+    <div class="commit-bar">
+      <div class="commit-item">
+        <h4>7 ngày dùng thử miễn phí</h4>
+        <p>Áp dụng cho Web App AI Xây Nhân Hiệu — trải nghiệm trước khi trả phí.</p>
+      </div>
+      <div class="commit-item">
+        <h4>Tư vấn miễn phí, không ràng buộc</h4>
+        <p>Nhắn Zalo để được tư vấn hướng phù hợp — không cam kết mua ngay.</p>
+      </div>
+      <div class="commit-item">
+        <h4>Thanh toán minh bạch</h4>
+        <p>Chuyển khoản trực tiếp, được tư vấn cụ thể trước khi quyết định.</p>
+      </div>
+    </div>
+
+    <span class="tag">Câu hỏi thường gặp</span>
+    <h2 style="margin-top:14px; margin-bottom:20px; font-size:clamp(22px,2.6vw,28px);">Còn băn khoăn gì trước khi bắt đầu?</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <h4>Mình chưa từng học online, có theo được không?</h4><span class="plus">+</span>
+        </div>
+        <div class="faq-a"><p>Có. Mỗi sản phẩm đều có hướng dẫn từng bước cụ thể, không cần kinh nghiệm hay nền tảng trước đó.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <h4>Mình khá bận, không có nhiều thời gian mỗi ngày thì sao?</h4><span class="plus">+</span>
+        </div>
+        <div class="faq-a"><p>Các chương trình được thiết kế để áp dụng dần mỗi ngày, không cần dồn nhiều giờ liền — quan trọng là làm đều, không phải làm nhiều.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <h4>Làm sao biết sản phẩm nào phù hợp với mình?</h4><span class="plus">+</span>
+        </div>
+        <div class="faq-a"><p>Làm <a href="#" onclick="event.preventDefault(); quizOpen();" style="color:var(--accent); font-weight:600;">bài test định hướng 5 câu hỏi</a> (miễn phí), hoặc nhắn Zalo để được tư vấn trực tiếp.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <h4>Thanh toán và nhận sản phẩm như thế nào?</h4><span class="plus">+</span>
+        </div>
+        <div class="faq-a"><p>Tuỳ sản phẩm sẽ có hướng dẫn cụ thể — nhắn Zalo để được tư vấn chi tiết trước khi thanh toán.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <h4>Nếu mua rồi mà thấy chưa phù hợp thì sao?</h4><span class="plus">+</span>
+        </div>
+        <div class="faq-a"><p>Nhắn trực tiếp cho Tú Quỳnh qua Zalo — từng trường hợp sẽ được hỗ trợ cụ thể.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CTA ========== -->
+<section class="cta" id="cta">
+  <div class="wrap">
+    <div class="cta-card">
+      <span class="tag on-dark">Bắt đầu hành trình</span>
+      <h2 class="cta-title" style="margin-top:14px;">Nếu bạn đang muốn thay đổi — <em>bắt đầu từ việc hiểu mình</em></h2>
+      <p class="cta-sub">Nhắn tin cho Tú Quỳnh qua Zalo để được tư vấn trực tiếp — miễn phí, không áp lực, không cam kết ngay.</p>
+      <div class="cta-buttons">
+        <a href="https://zalo.me/0866849193" target="_blank" class="btn btn-zalo">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.936 1.49 5.55 3.823 7.25L5 22l3.833-1.19A10.392 10.392 0 0012 21.487c5.523 0 10-4.145 10-9.244C22 6.145 17.523 2 12 2zm.92 13.36c-.22.06-.45.09-.69.09-2.78 0-5.04-2.09-5.04-4.67 0-2.57 2.26-4.66 5.04-4.66 2.79 0 5.05 2.09 5.05 4.66 0 1.34-.6 2.55-1.55 3.4l.37 1.47-1.75-.54a4.91 4.91 0 01-1.44.25z"/></svg>
+          Nhắn tin Zalo ngay
+        </a>
+        <a href="https://www.facebook.com/tuquynh911/?locale=vi_VN" target="_blank" class="btn btn-ghost on-dark">
+          <svg viewBox="0 0 24 24" fill="#1877F2" width="16" height="16"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          Theo dõi Facebook
+        </a>
+      </div>
+      <div class="cta-trust">
+        <span>Tư vấn miễn phí</span>
+        <span>Không áp lực mua hàng</span>
+        <span>10.000+ người đã đồng hành</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer class="footer">
+  <div class="wrap footer-top">
+    <div class="footer-brand">
+      <a href="#top" class="footer-logo">
+        <div class="footer-logo-img"><img src="assets/images/logo.png" alt="Logo Hệ Sinh Thái Hiểu"></div>
+        <div class="logo-text footer-logo-text"><span class="logo-top">Hệ Sinh Thái</span><span class="logo-bottom">HIỂU</span></div>
+      </a>
+      <p class="footer-tagline">Hiểu mình sâu hơn. Sống khoẻ hơn.<br>Hạnh phúc hơn. Thịnh vượng hơn.</p>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/tuquynh911/?locale=vi_VN" target="_blank" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="#E8E4D6" opacity=".8"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+        <a href="https://zalo.me/0866849193" target="_blank" aria-label="Zalo"><svg viewBox="0 0 24 24" fill="#E8E4D6" opacity=".8"><path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.936 1.49 5.55 3.823 7.25L5 22l3.833-1.19A10.392 10.392 0 0012 21.487c5.523 0 10-4.145 10-9.244C22 6.145 17.523 2 12 2z"/></svg></a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <span class="footer-col-title">Hệ Sinh Thái</span>
+      <ul>
+        <li><a href="#s-hanh"><div class="footer-branch-logo"><img src="assets/images/branch-hanh.png" alt="Hiểu Hạnh"></div>Hiểu Hạnh</a></li>
+        <li><a href="#s-manh"><div class="footer-branch-logo"><img src="assets/images/branch-manh.png" alt="Hiểu Mạnh"></div>Hiểu Mạnh</a></li>
+        <li><a href="#s-kenh"><div class="footer-branch-logo"><img src="assets/images/branch-kenh.png" alt="Hiểu Kênh"></div>Hiểu Kênh</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <span class="footer-col-title">Khoá học</span>
+      <ul>
+        <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSdta1H-B_ewAEEUr291J7BsMfdEQK_lW-J2Gg1iNnenWy4Gdg/viewform" target="_blank">Sổ Dòng Tiền</a></li>
+        <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSedOqJbCmW2_l6CyPs-oG7hpIOmIFat4NIbB-sEnmZhUruqPw/viewform" target="_blank">21 Ngày Chuyển Nghiệp</a></li>
+        <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSce7ALSqfpQbhUuVPtAx8WntPxxM0PoIAzGvYaH0SW1sFjbiA/viewform" target="_blank">30 Ngày Tái Lập Tâm Thức</a></li>
+        <li><a href="https://hieu-de-khoe-manh.vercel.app/" target="_blank">Bản Đồ Sức Khoẻ</a></li>
+        <li><a href="https://xaynhanhieu8dongtien.netlify.app/" target="_blank">8 Dòng Tiền Nhân Hiệu</a></li>
+        <li><a href="https://bando8dongtien.netlify.app/?v=11" target="_blank">Bản Đồ 8 Dòng Tiền (miễn phí)</a></li>
+        <li><a href="https://zalo.me/0866849193" target="_blank">Workshop Xây Kênh</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <span class="footer-col-title">Liên hệ</span>
+      <ul>
+        <li><a href="https://zalo.me/0866849193" target="_blank">Zalo: 0866 849 193</a></li>
+        <li><a href="https://www.facebook.com/tuquynh911/?locale=vi_VN" target="_blank">Facebook Tú Quỳnh</a></li>
+        <li><a href="#ctv">Trở thành Cộng tác viên</a></li>
+        <li><a href="#" onclick="event.preventDefault(); quizOpen();">Làm bài test định hướng</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <p class="footer-copy">© 2025 <strong>Hệ Sinh Thái Hiểu</strong> · Lê Tú Quỳnh. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="https://zalo.me/0866849193" target="_blank">Liên hệ</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ========== QUIZ MODAL ========== -->
+<div class="quiz-overlay" id="quizOverlay">
+  <div class="quiz-modal">
+    <button class="quiz-close" onclick="quizClose()" aria-label="Đóng">&times;</button>
+
+    <div class="quiz-progress-wrap" id="quizProgressWrap">
+      <div class="quiz-progress-track"><div class="quiz-progress-fill" id="quizProgressFill"></div></div>
+      <span class="quiz-progress-label" id="quizProgressLabel">Câu 1/5</span>
+    </div>
+
+    <div class="quiz-step active" data-step="1">
+      <span class="quiz-eyebrow">Câu 1/5</span>
+      <h3 class="quiz-question">Bạn đang gặp khó khăn lớn nhất ở đâu?</h3>
+      <div class="quiz-options" data-q="1">
+        <button class="quiz-opt" data-val="hanh">Tài chính — kiếm được tiền nhưng không dư, không an tâm</button>
+        <button class="quiz-opt" data-val="manh">Sức khoẻ — mệt mỏi, thiếu năng lượng, cơ thể không ổn</button>
+        <button class="quiz-opt" data-val="kenh">Thu nhập — có chuyên môn nhưng chưa biết cách kiếm tiền từ đó</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="2">
+      <span class="quiz-eyebrow">Câu 2/5</span>
+      <h3 class="quiz-question">Mục tiêu lớn nhất của bạn lúc này là gì?</h3>
+      <div class="quiz-options" data-q="2">
+        <button class="quiz-opt" data-val="hanh">Hiểu rõ dòng tiền, kiểm soát tài chính cá nhân</button>
+        <button class="quiz-opt" data-val="manh">Có một cơ thể khoẻ mạnh, năng lượng dồi dào hơn</button>
+        <button class="quiz-opt" data-val="kenh">Xây dựng thương hiệu cá nhân, tạo thêm dòng tiền</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="3">
+      <span class="quiz-eyebrow">Câu 3/5</span>
+      <h3 class="quiz-question">Bạn dành nhiều thời gian nhất cho điều gì mỗi ngày?</h3>
+      <div class="quiz-options" data-q="3">
+        <button class="quiz-opt" data-val="hanh">Suy nghĩ, lo lắng về tiền bạc và tương lai</button>
+        <button class="quiz-opt" data-val="manh">Cố gắng giữ sức khoẻ giữa lịch trình bận rộn</button>
+        <button class="quiz-opt" data-val="kenh">Làm nội dung, mạng xã hội nhưng chưa hiệu quả</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="4">
+      <span class="quiz-eyebrow">Câu 4/5</span>
+      <h3 class="quiz-question">Nếu chỉ chọn một điều để thay đổi ngay, bạn chọn gì?</h3>
+      <div class="quiz-options" data-q="4">
+        <button class="quiz-opt" data-val="hanh">Tư duy và thói quen quản lý tiền bạc</button>
+        <button class="quiz-opt" data-val="manh">Lối sống, dinh dưỡng và vận động</button>
+        <button class="quiz-opt" data-val="kenh">Cách xây kênh và tạo nguồn thu nhập mới</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="5">
+      <span class="quiz-eyebrow">Câu 5/5</span>
+      <h3 class="quiz-question">Bạn sẵn sàng dành thời gian cho việc thay đổi như thế nào?</h3>
+      <div class="quiz-options" data-q="5">
+        <button class="quiz-opt" data-val="hanh">Tôi muốn hiểu sâu trước, hành động chắc chắn sau</button>
+        <button class="quiz-opt" data-val="manh">Tôi muốn thấy kết quả cụ thể trên cơ thể mỗi ngày</button>
+        <button class="quiz-opt" data-val="kenh">Tôi muốn hành động nhanh để sớm có thêm thu nhập</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="result">
+      <div class="quiz-result-header">
+        <div class="quiz-result-icon">✨</div>
+        <h3 class="quiz-result-title">Kết quả của bạn</h3>
+        <p class="quiz-result-sub">Dựa trên câu trả lời, đây là mức độ phù hợp với từng nhánh</p>
+      </div>
+      <div class="quiz-ranks" id="quizRanks"></div>
+      <div class="quiz-result-cta">
+        <button class="btn btn-accent" onclick="quizGoToProduct()">
+          Xem bằng chứng &amp; sản phẩm phù hợp
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 5v14M19 12l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
