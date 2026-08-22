@@ -94,9 +94,9 @@ function renderAuthScreen(err, successMsg){
   const isLogin = AppState.authMode === 'login';
   root.innerHTML = `
     <div class="auth-shell">
-      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <img src="assets/logo-hieu-hanh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>SỔ DÒNG TIỀN TÂM THỨC</h1>
-      <div class="sub">Tâm an với tiền · Nợ nhẹ dần mỗi tháng · Tài sản ròng lớn lên<br><span class="sub-brand">Hệ sinh thái HIỂU - HIỂU KÊNH</span></div>
+      <div class="sub">Tâm an với tiền<br>Nợ nhẹ dần mỗi tháng<br>Tài sản ròng lớn lên<br><span class="sub-brand">Hệ sinh thái HIỂU - HIỂU HẠNH</span></div>
       <div class="auth-tabs">
         <div class="auth-tab ${isLogin?'active':''}" data-mode="login">Đăng nhập</div>
         <div class="auth-tab ${!isLogin?'active':''}" data-mode="signup">Đăng ký</div>
@@ -166,8 +166,8 @@ function renderApp(){
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">
         <div class="sidebar-brand" id="sidebar-brand-home" style="cursor:pointer;">
-          <img src="assets/logo-hieu-kenh-badge.svg" class="brand-logo" alt="" onerror="this.style.display='none'">
-          <div class="brand-text">SỔ DÒNG TIỀN<br>TÂM THỨC<small>Hệ sinh thái HIỂU<br>HIỂU KÊNH</small></div>
+          <img src="assets/logo-hieu-hanh.png" class="brand-logo" alt="" onerror="this.style.display='none'">
+          <div class="brand-text">SỔ DÒNG TIỀN<br>TÂM THỨC<small>Hệ sinh thái HIỂU<br>HIỂU HẠNH</small></div>
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
         <div class="sidebar-foot">
