@@ -58,10 +58,26 @@ function render(container, ctx){
     draw();
   }
 
+  // Đăng ký mới (theo phản hồi chị Quỳnh 21/8: "người đăng ký mới sẽ đẩy lên đầu danh sách để kiểm
+  // soát") đẩy lên ĐẦU danh sách trong 48h đầu, mới nhất lên trước — sau 48h tự rơi về đúng thứ tự
+  // cũ (sắp hết hạn lên đầu, giúp việc gia hạn không bị lãng quên). Sort ở client vì logic 2 tầng
+  // này khó diễn đạt gọn bằng ORDER BY của PostgREST.
+  const NEW_ACCOUNT_WINDOW_MS = 48 * 3600 * 1000;
+  function isNewAccount(p){ return !!p.created_at && (Date.now() - new Date(p.created_at).getTime()) < NEW_ACCOUNT_WINDOW_MS; }
+
   async function load(){
-    const { data, error } = await ctx.supabase.from('profiles').select('*').order('access_until', { ascending:true, nullsFirst:true });
+    const { data, error } = await ctx.supabase.from('profiles').select('*');
     if(error){ state.error = error.message; state.profiles = []; return; }
-    state.profiles = data || [];
+    const rows = (data || []).slice();
+    rows.sort((a, b) => {
+      const aNew = isNewAccount(a), bNew = isNewAccount(b);
+      if (aNew !== bNew) return aNew ? -1 : 1;
+      if (aNew) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      const aU = a.access_until ? new Date(a.access_until).getTime() : -Infinity;
+      const bU = b.access_until ? new Date(b.access_until).getTime() : -Infinity;
+      return aU - bU;
+    });
+    state.profiles = rows;
   }
 
   async function loadReferralPartners(){
@@ -168,7 +184,7 @@ function render(container, ctx){
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
             <div>
-              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}</h3>
+              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}</h3>
               <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
             </div>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;

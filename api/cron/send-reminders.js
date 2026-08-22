@@ -113,6 +113,34 @@ async function checkRecordingSchedule() {
   return count;
 }
 
+// Báo admin ngay khi có người đăng ký mới (2026-08-21, theo yêu cầu chị Quỳnh: "khi có ai đăng ký
+// mới thì app sẽ báo cho e") — quét profiles.created_at trong cùng cửa sổ ~25 phút như các loại
+// nhắc khác, gửi cho MỌI admin (role='admin') đang có đăng ký thông báo, không chỉ 1 người cố định.
+async function checkNewSignups() {
+  const windowStartIso = new Date(Date.now() - WINDOW_MINUTES * 60000).toISOString();
+  const [signupsResp, adminsResp] = await Promise.all([
+    supabaseAdmin(`profiles?role=eq.student&created_at=gte.${encodeURIComponent(windowStartIso)}&select=id,email,full_name,created_at`),
+    supabaseAdmin(`profiles?role=eq.admin&select=id`),
+  ]);
+  const signups = signupsResp.ok ? await signupsResp.json() : [];
+  const admins = adminsResp.ok ? await adminsResp.json() : [];
+  if (!signups.length || !admins.length) return 0;
+
+  let count = 0;
+  for (const signup of signups) {
+    const who = signup.full_name ? `${signup.full_name} (${signup.email || ''})` : (signup.email || 'Người dùng mới');
+    for (const admin of admins) {
+      const result = await notifyOnce(admin.id, `signup:${signup.id}:${admin.id}`, {
+        title: 'Có người đăng ký mới',
+        body: `${who} vừa tạo tài khoản — vào Quản trị để xem.`,
+        url: '/nhan-hieu/#quan-tri-hub',
+      });
+      if (result.sent) count++;
+    }
+  }
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -124,12 +152,13 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay] = await Promise.all([
+    const [lich, daybai, quay, signups] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
+      checkNewSignups(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
