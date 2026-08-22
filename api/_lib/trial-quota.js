@@ -129,6 +129,33 @@ async function checkAndConsumeTrialQuota(userId, actionKey) {
   }
 }
 
+// "Hỏi & Trợ Giúp": câu hỏi ĐẦU TIÊN trong ngày (giờ Việt Nam) được MIỄN PHÍ, không trừ lượt — theo
+// yêu cầu chị Quỳnh 22/8, để người dùng đỡ phải hỏi trực tiếp trong group. Từ câu thứ 2 trong cùng
+// ngày trở đi tính lượt bình thường (tránh bị hỏi tràn lan). Dựa vào ai_usage_log đã ghi sẵn cho
+// mỗi lần dùng (xem logUsage) — không cần thêm cột/bảng riêng.
+async function hasUsedFreeQuestionToday(userId) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return true; // hạ tầng lỗi — coi như ĐÃ dùng free, để rơi về nhánh trừ lượt bình thường (an toàn hơn là phát free vô hạn khi lỗi).
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const vnNow = new Date(Date.now() + 7 * 3600 * 1000);
+  const vnDateStr = vnNow.toISOString().slice(0, 10);
+  const vnTodayStartIso = new Date(new Date(`${vnDateStr}T00:00:00.000Z`).getTime() - 7 * 3600 * 1000).toISOString();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/ai_usage_log?user_id=eq.${userId}&action_key=eq.hoi-dap&created_at=gte.${encodeURIComponent(vnTodayStartIso)}&select=id&limit=1`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }, signal: controller.signal }
+    );
+    if (!resp.ok) return true;
+    const rows = await resp.json();
+    return rows.length > 0;
+  } catch (e) {
+    return true;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Gọi trong catch block của endpoint, SAU checkAndConsumeTrialQuota, khi bản thân lệnh gọi AI/luồng
 // xử lý bị lỗi (Anthropic lỗi, thiếu dữ liệu đầu vào...) — trả lại đúng 1 lượt vừa trừ oan vì người
 // dùng không thực sự nhận được kết quả. Không dùng cho lỗi 401/402 (chưa từng trừ lượt ở các case đó).
@@ -140,4 +167,4 @@ async function refundTrialQuota(userId, actionKey) {
   } catch (e) {}
 }
 
-module.exports = { checkAndConsumeTrialQuota, refundTrialQuota, TRIAL_AI_LIMIT, PAID_MONTHLY_AI_LIMIT, PAID_TOPUP_PACKS, AI_WEIGHTS };
+module.exports = { checkAndConsumeTrialQuota, refundTrialQuota, hasUsedFreeQuestionToday, TRIAL_AI_LIMIT, PAID_MONTHLY_AI_LIMIT, PAID_TOPUP_PACKS, AI_WEIGHTS };

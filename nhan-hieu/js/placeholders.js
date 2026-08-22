@@ -34,7 +34,7 @@ const HELP_SECTIONS = [
 ];
 
 function renderHelp(container){
-  const state = { question:'', asking:false, answer:null, error:null };
+  const state = { question:'', asking:false, answer:null, error:null, freeQuestionUsed:false };
   function draw(){ container.innerHTML = html(); bind(); }
 
   function html(){
@@ -47,10 +47,11 @@ function renderHelp(container){
       <textarea id="hd-question" placeholder="Ví dụ: Làm sao để AI viết đúng giọng văn của tôi?" style="min-height:70px;">${esc(state.question)}</textarea>
       <div class="btn-row" style="margin-top:10px;align-items:center;">
         <button class="btn" data-action="ask" ${state.asking?'disabled':''}>${state.asking?'Đang trả lời…':'Hỏi AI'}</button>
-        ${!state.asking?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}
+        ${!state.asking?`<span style="font-size:11px;color:var(--ink-soft);">(câu đầu tiên trong ngày miễn phí, từ câu thứ 2 tốn 1 lượt AI)</span>`:''}
       </div>
       ${state.error?`<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>`:''}
       ${state.answer?`<div class="body" style="margin-top:14px;background:var(--accent-soft);padding:12px;border-radius:8px;">${esc(breakSentences(state.answer))}</div>`:''}
+      ${state.answer && state.freeQuestionUsed?`<div style="margin-top:8px;font-size:12px;color:var(--accent);font-weight:600;">✓ Câu hỏi này miễn phí, không trừ lượt AI.</div>`:''}
     </div>
 
     ${HELP_SECTIONS.map(sec=>`
@@ -73,10 +74,11 @@ function renderHelp(container){
 
   async function ask(){
     if(!state.question.trim() || state.asking) return;
-    state.asking = true; state.error = null; state.answer = null; draw();
+    state.asking = true; state.error = null; state.answer = null; state.freeQuestionUsed = false; draw();
     try{
       const data = await callApi('/api/hoi-dap', { question: state.question.trim() });
       state.answer = data.result.tra_loi;
+      state.freeQuestionUsed = !!data.free_question_used;
     } catch(e){ state.error = e.message; }
     state.asking = false; draw();
   }

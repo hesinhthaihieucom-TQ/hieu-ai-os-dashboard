@@ -3,7 +3,7 @@
 // cứu gì thêm). Tính lượt (weight 1, rẻ nhất) — chủ yếu để tránh bị hỏi tràn lan/spam vô tội vạ vì
 // đây là ô nhập tự do, không có gì chặn tự nhiên như các hành động khác cần dữ liệu đầu vào cụ thể.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeTrialQuota, refundTrialQuota, hasUsedFreeQuestionToday } = require('./_lib/trial-quota');
 
 const SYSTEM_PROMPT = `Bạn là trợ lý hỗ trợ người dùng app "Xây Nhân Hiệu" — công cụ AI giúp xây dựng thương hiệu cá nhân tại Việt Nam. Trả lời câu hỏi của người dùng về CÁCH DÙNG APP, ngắn gọn, rõ ràng, tiếng Việt.
 
@@ -80,8 +80,20 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
+  // Câu hỏi ĐẦU TIÊN trong ngày (giờ VN) được miễn phí — kiểm tra TRƯỚC khi trừ lượt, vì
+  // checkAndConsumeTrialQuota() bên dưới tự ghi log (đúng field cần để lần kiểm tra sau biết "đã
+  // dùng free hôm nay chưa"). Trừ lượt bình thường trước, rồi hoàn ngay nếu đây là lượt free — tái
+  // dùng đúng cơ chế consume/refund atomic sẵn có, không cần sửa RPC.
+  const usedFreeToday = await hasUsedFreeQuestionToday(user.id);
+
   const quotaError = await checkAndConsumeTrialQuota(user.id, 'hoi-dap');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
+
+  let freeQuestionUsed = false;
+  if (!usedFreeToday) {
+    await refundTrialQuota(user.id, 'hoi-dap');
+    freeQuestionUsed = true;
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
@@ -92,9 +104,10 @@ module.exports = async (req, res) => {
     if (question.length > 500) { res.status(400).json({ error: 'Câu hỏi quá dài, rút gọn lại giúp mình.' }); return; }
 
     const result = await callClaude({ apiKey, question: question.trim() });
-    res.status(200).json({ result });
+    res.status(200).json({ result, free_question_used: freeQuestionUsed });
   } catch (err) {
-    await refundTrialQuota(user.id, 'hoi-dap');
+    // Đừng hoàn lại lần 2 nếu đây vốn đã là câu hỏi free (đã hoàn ở trên rồi) — tránh hoàn trùng.
+    if (!freeQuestionUsed) await refundTrialQuota(user.id, 'hoi-dap');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi trả lời câu hỏi.' });
   }
 };
