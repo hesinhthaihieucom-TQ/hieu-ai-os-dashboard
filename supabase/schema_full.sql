@@ -1021,3 +1021,10 @@ drop policy if exists "feature_announcements_admin_write" on feature_announcemen
 create policy "feature_announcements_admin_write" on feature_announcements for all using (is_admin()) with check (is_admin());
 
 alter table profiles add column if not exists last_seen_announcement_id uuid;
+
+-- Nâng cấp thông báo tính năng mới thành popup giữa màn hình + hướng dẫn từng bước có thể bấm "Có"
+-- xem (2026-08-22, theo phản hồi chị Quỳnh: "làm y hệt như hướng dẫn lúc đầu vô app") — mỗi thông
+-- báo có thể kèm 1 danh sách bước, mỗi bước trỏ sáng 1 mục trong sidebar (key khớp NAV ở
+-- app-shell.js) kèm lời giải thích, y hệt cơ chế onboarding-tour.js. Mảng rỗng nghĩa là thông báo
+-- không có hướng dẫn kèm theo — popup chỉ hiện nội dung, không có nút "Xem hướng dẫn".
+alter table feature_announcements add column if not exists steps jsonb not null default '[]';
