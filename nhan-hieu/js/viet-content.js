@@ -731,14 +731,17 @@ function render(container, ctx){
   // ghim/bình luận CTA sản phẩm chỉ nằm trong "structure", nên khi xem lại bài đã lưu ở Kho Content
   // sẽ KHÔNG thấy các phần này, tưởng như bị mất (theo phản hồi chị Quỳnh 21/8). Giờ nối thẳng vào
   // cuối nội dung lưu, đọc lại ở Kho Content vẫn thấy đủ.
+  // SỬA LẠI 22/8 (theo phản hồi chị Quỳnh): trước đây gộp cả bình luận ghim/CTA sản phẩm vào thẳng
+  // "content" — SAI, vì đó là bình luận ĐĂNG RIÊNG sau bài (không phải 1 phần của bài đăng), gộp vào
+  // khiến 1 bài đọc như bị lặp nội dung 2 lần khi so với 2 card riêng "Bình luận ghim"/"CTA sản phẩm"
+  // đã hiện sẵn trên màn hình. Các phần đó vẫn lưu đầy đủ trong "structure" (không mất), Kho Content
+  // giờ đọc structure để hiện thành mục riêng thay vì dán vào content (xem kho-content.js). Hashtag
+  // vẫn nối vào cuối content — hashtag THẬT SỰ là 1 phần của bài đăng (đi kèm caption khi đăng thật),
+  // không phải bình luận riêng, nên vẫn cần có sẵn khi copy nguyên bài đi đăng, không cần label thừa.
   function contentForSave(r){
     let out = r.bai_hoan_chinh;
-    if(r.cau_cmt_ghim && r.cau_cmt_ghim.trim()) out += `\n\n---\nBình luận ghim:\n${r.cau_cmt_ghim.trim()}`;
-    if(r.cmt_cta_san_pham && r.cmt_cta_san_pham.length){
-      out += `\n\n---\nBình luận CTA sản phẩm/group:\n${r.cmt_cta_san_pham.filter(c=>c&&c.trim()).join('\n\n')}`;
-    }
     if(r.hashtag && r.hashtag.length){
-      out += `\n\n---\nHashtag:\n${r.hashtag.map(h=>'#'+h.replace(/^#/,'')).join(' ')}`;
+      out += `\n\n${r.hashtag.map(h=>'#'+h.replace(/^#/,'')).join(' ')}`;
     }
     return out;
   }

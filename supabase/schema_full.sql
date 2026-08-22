@@ -743,3 +743,9 @@ alter table profiles add column if not exists slot_time_toi text not null defaul
 -- từng bài nằm ở đây — null nghĩa là "chưa tự chỉnh, dùng theo mặc định" (áp cho bài tạo trước khi
 -- có tính năng này).
 alter table calendar_entries add column if not exists scheduled_time text;
+
+-- Trước đây "Lịch quay content" tự BIẾN MẤT khỏi danh sách ngay khi qua giờ (lọc theo scheduled_at
+-- >= now trong query) — sai theo phản hồi chị Quỳnh 22/8: "nó phải có mục tích đã làm để mình tích
+-- xong mới mất chứ", không phải cứ qua giờ là coi như xong. Thêm cờ done, người dùng tự tích xác
+-- nhận (giống pattern calendar_entries.posted) — lịch chỉ biến mất khi THẬT SỰ đã tích.
+alter table recording_schedule add column if not exists done boolean not null default false;

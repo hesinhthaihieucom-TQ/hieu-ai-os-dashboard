@@ -98,7 +98,7 @@ async function checkRecordingSchedule() {
   const nowIso = new Date().toISOString();
   const windowStartIso = new Date(Date.now() - WINDOW_MINUTES * 60000).toISOString();
   const resp = await supabaseAdmin(
-    `recording_schedule?scheduled_at=lte.${encodeURIComponent(nowIso)}&scheduled_at=gt.${encodeURIComponent(windowStartIso)}&select=id,user_id,title`
+    `recording_schedule?done=eq.false&scheduled_at=lte.${encodeURIComponent(nowIso)}&scheduled_at=gt.${encodeURIComponent(windowStartIso)}&select=id,user_id,title`
   );
   const rows = resp.ok ? await resp.json() : [];
   let count = 0;

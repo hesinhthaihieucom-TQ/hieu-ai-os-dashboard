@@ -298,8 +298,9 @@ function render(container, ctx){
       <div class="section">
         ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
         ${isEditing ? editPostHtml(p) : contentBodyHtml('post:'+p.id, p.content)}
+        ${isEditing ? '' : postExtrasHtml(p)}
         <div class="btn-row" style="margin-top:14px;">
-          <button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>
+          ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>` : ''}
           <span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">${p.day_bai_plan?'✓ ':''}Đẩy bài &amp; CTA Comment →</span>
           ${!isEditing ? `<span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>` : ''}
           ${!isEditing ? `<span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-delete-post="${p.id}">Xoá bài</span>` : ''}
@@ -307,6 +308,35 @@ function render(container, ctx){
         ${writeActionHtml('post:'+p.id)}
       </div>
     `;}).join('');
+  }
+
+  // Bình luận ghim/CTA sản phẩm/từ khoá KHÔNG phải 1 phần của "content" (đó là bình luận đăng RIÊNG
+  // sau bài, không phải nội dung bài đăng) — hiện thành từng mục riêng, dễ nhìn, có nút Copy từng
+  // mục, thay vì dán chung vào bài như trước (theo phản hồi chị Quỳnh 22/8: "cho list chọn đi chứ
+  // đừng để dàn trải... phân ra thành từng mục").
+  function postExtrasHtml(p){
+    const s = p.structure;
+    if(!s) return '';
+    const parts = [];
+    if(s.tu_khoa_cta) parts.push({ label:'Từ khoá CTA', value: s.tu_khoa_cta });
+    if(s.cau_cmt_ghim) parts.push({ label:'Bình luận ghim', value: s.cau_cmt_ghim });
+    (s.cmt_cta_san_pham||[]).filter(Boolean).forEach((c,i)=>{
+      parts.push({ label:`Bình luận CTA sản phẩm/group${(s.cmt_cta_san_pham.length>1)?` #${i+1}`:''}`, value: c });
+    });
+    if(!parts.length) return '';
+    return `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:8px;">
+        ${parts.map(part=>`
+          <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div>
+              <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(part.label)}</div>
+              <div style="font-size:13px;">${esc(part.value)}</div>
+            </div>
+            <span class="btn-ghost btn btn-sm" style="flex-shrink:0;padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(part.value)}">Copy</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
   }
 
   function editPostHtml(p){
@@ -433,6 +463,16 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-copy-value]').forEach(el=>{
+      el.onclick = async ()=>{
+        try{
+          await navigator.clipboard.writeText(el.getAttribute('data-copy-value'));
+          const old = el.textContent;
+          el.textContent = 'Đã copy ✓';
+          setTimeout(()=>{ el.textContent = old; }, 1500);
+        } catch(e){}
+      };
+    });
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };

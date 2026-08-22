@@ -98,12 +98,19 @@ function render(container, ctx){
   }
 
   // Lịch quay content — nhắc theo THỜI ĐIỂM cụ thể (khác lịch đăng theo slot sáng/trưa/tối), dùng
-  // để chuẩn bị TRƯỚC khi có bài viết sẵn. Chỉ hiện các lịch CHƯA QUA (đã qua thì tự ẩn, không cần
-  // xoá tay) — sắp xếp gần nhất lên đầu.
+  // để chuẩn bị TRƯỚC khi có bài viết sẵn. Lọc theo "done" (người dùng tự tích xác nhận, giống hệt
+  // pattern calendar_entries.posted) — KHÔNG tự ẩn chỉ vì đã qua giờ (sửa 22/8 theo phản hồi chị
+  // Quỳnh: "nó phải có mục tích đã làm để mình tích xong mới mất chứ").
   async function loadRecordingSchedule(){
     const { data } = await ctx.supabase.from('recording_schedule').select('*').eq('user_id', ctx.user.id)
-      .gte('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending:true });
+      .eq('done', false).order('scheduled_at', { ascending:true });
     state.recordingSchedule = data || [];
+  }
+
+  async function markRecordingDone(id){
+    await ctx.supabase.from('recording_schedule').update({ done:true }).eq('id', id);
+    await loadRecordingSchedule();
+    draw();
   }
 
   async function addRecordingSchedule(){
@@ -224,12 +231,17 @@ function render(container, ctx){
         ${state.recordingError?`<div class="error-box" style="margin-top:10px;">${esc(state.recordingError)}</div>`:''}
         ${state.recordingSchedule.length ? `
           <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
-            ${state.recordingSchedule.map(r=>`
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
-                <span style="font-size:13.5px;"><b>${esc(new Date(r.scheduled_at).toLocaleString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }))}</b>${r.title?` — ${esc(r.title)}`:''}</span>
-                <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-recording="${r.id}">Xoá</span>
+            ${state.recordingSchedule.map(r=>{
+              const isOverdue = new Date(r.scheduled_at).getTime() < Date.now();
+              return `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;">
+                <span style="font-size:13.5px;${isOverdue?'color:var(--gold);':''}">${isOverdue?'⏰ ':''}<b>${esc(new Date(r.scheduled_at).toLocaleString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }))}</b>${r.title?` — ${esc(r.title)}`:''}</span>
+                <span style="display:flex;gap:12px;align-items:center;">
+                  <span class="btn-ghost btn btn-sm" data-mark-recording-done="${r.id}">✓ Đã làm</span>
+                  <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-recording="${r.id}">Xoá</span>
+                </span>
               </div>
-            `).join('')}
+            `;}).join('')}
           </div>
         ` : `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Chưa có lịch quay nào sắp tới.</div>`}
       </div>
@@ -529,6 +541,9 @@ function render(container, ctx){
     if(recTimeInput) recTimeInput.oninput = ()=>{ state.newRecordingTime = recTimeInput.value; };
     const addRecordingBtn = container.querySelector('[data-action="add-recording"]');
     if(addRecordingBtn) addRecordingBtn.onclick = addRecordingSchedule;
+    container.querySelectorAll('[data-mark-recording-done]').forEach(el=>{
+      el.onclick = ()=>markRecordingDone(el.getAttribute('data-mark-recording-done'));
+    });
     container.querySelectorAll('[data-del-recording]').forEach(el=>{
       el.onclick = ()=>deleteRecordingSchedule(el.getAttribute('data-del-recording'));
     });
