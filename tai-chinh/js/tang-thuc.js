@@ -24,7 +24,16 @@ function render(container, ctx){
     lastReframe: '',
     justAddedId: null,
     newBeliefDraft: '',
+    incomingContext: null,
   };
+
+  // Đến từ nút "Ghi niềm tin gốc..." ở kết quả Chấm Điểm Nghiệp Tiền — 1 điều hướng chủ động luôn
+  // thắng, nên đọc và xoá ngay window.Pending* (đúng quy ước dùng ở nhan-hieu/js/cham-diem-hook.js).
+  if(window.PendingTangThucContext){
+    state.incomingContext = window.PendingTangThucContext;
+    state.form.linked_nut_chan = state.incomingContext.nutChan;
+    window.PendingTangThucContext = null;
+  }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -113,6 +122,7 @@ function render(container, ctx){
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">
           <h3>Ghi lại 1 niềm tin cũ</h3>
+          ${state.incomingContext ? `<div class="hint-box" style="margin-bottom:14px;">Bài Chấm Điểm Nghiệp Tiền vừa chỉ ra khâu <b>${esc(state.incomingContext.areaLabel)}</b> đang yếu nhất — thử viết xem có niềm tin cũ nào từ nhỏ đang đứng sau phản ứng đó không.</div>` : ''}
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Niềm tin cũ về tiền bạn đang mang là gì?</label>
           <textarea id="tt2-belief" placeholder="VD: Tiền là thứ khó kiếm, phải vất vả cả đời mới có được...">${esc(state.form.belief_text)}</textarea>
 

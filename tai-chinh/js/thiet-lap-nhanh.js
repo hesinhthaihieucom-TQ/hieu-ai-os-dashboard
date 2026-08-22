@@ -65,9 +65,9 @@ const VIBE_QUESTIONS = {
   },
 };
 const WEAKEST_AREA_INFO = {
-  income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại. Thử chú ý cảm xúc lúc nhận tiền ở Ghi Chép Hàng Ngày mỗi ngày.' },
-  expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra). Xem lại gốc rễ ở Kiến Thức Nền Tảng.' },
-  debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm. Thử đổi cách nhìn ở Quản Lý Nợ, và ghi lại niềm tin gốc ở Tàng Thức nếu cảm giác này hay lặp lại.' },
+  income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2 },
+  expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3 },
+  debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm.', nutChan:null },
 };
 
 function render(container, ctx){
@@ -229,7 +229,12 @@ function render(container, ctx){
           <div style="text-align:center;padding:12px 0;">
             <div style="font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:700;color:var(--accent);">${r.vibeScore}<span style="font-size:18px;color:var(--ink-soft);">/100</span></div>
           </div>
-          ${r.weakestArea ? `<div class="hint-box">Khâu đang yếu nhất hiện tại: <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b> — ${esc(WEAKEST_AREA_INFO[r.weakestArea].explain)}</div>` : ''}
+          ${r.weakestArea ? `
+            <div class="hint-box">Khâu đang yếu nhất hiện tại: <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b> — ${esc(WEAKEST_AREA_INFO[r.weakestArea].explain)}</div>
+            <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+              <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Ghi niềm tin gốc về khâu này vào Tàng Thức →</span>
+            </div>
+          ` : ''}
           <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
         </div>
       ` : ''}
@@ -314,6 +319,15 @@ function render(container, ctx){
     if(submitBtn) submitBtn.onclick = submit;
     container.querySelectorAll('[data-goto]').forEach(el=>{
       el.onclick = ()=>{ location.hash = el.getAttribute('data-goto'); };
+    });
+    container.querySelectorAll('[data-tangthuc-area]').forEach(el=>{
+      el.onclick = ()=>{
+        const area = el.getAttribute('data-tangthuc-area');
+        // Truyền ngữ cảnh sang Tàng Thức qua window.Pending* — đúng quy ước đã dùng ở nhan-hieu/
+        // (vd window.PendingHookText) để 1 module đưa dữ liệu tạm sang module khác qua điều hướng.
+        window.PendingTangThucContext = { areaLabel: WEAKEST_AREA_INFO[area].label, nutChan: WEAKEST_AREA_INFO[area].nutChan };
+        location.hash = 'tang-thuc';
+      };
     });
   }
 
