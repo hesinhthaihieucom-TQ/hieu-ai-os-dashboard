@@ -12,6 +12,7 @@ const IMPORTANT_NOTES = [
   { icon:'⚡', text:'<b>Lượt AI tính theo độ phức tạp</b> — hành động càng nhiều bước AI xử lý thì càng tốn nhiều lượt hơn, không đồng giá. Xem chi tiết và tự lên kế hoạch dùng ở mục <b>Tài khoản</b> (bấm vào ảnh đại diện/tên ở cuối sidebar).' },
   { icon:'⏱️', text:'<b>AI cần khoảng 30 giây - 2 phút để xử lý</b> mỗi lần — đừng thoát app hay khoá màn hình giữa chừng, cứ để chờ.' },
   { icon:'🌐', text:'<b>Kho chung vs Kho của tôi</b> — Kho Content/Kho Hook có phần "chung" (nội dung viral, dùng chung mọi người) và phần "của tôi" (riêng tư, chỉ bạn thấy).' },
+  { icon:'💬', text:'<b>Đọc kỹ mục <a href="#tro-giup" style="color:var(--accent);font-weight:600;">Hỏi &amp; Trợ Giúp</a> trước khi hỏi trong nhóm</b> — AI trả lời ngay lập tức, không cần đợi admin rảnh mới trả lời trong group.' },
 ];
 
 const EXPLORE = [
