@@ -9,11 +9,22 @@ function aiUsageLabel(p){
     const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
     // Chuyển sang trả phí là ĐỔI SANG bộ đếm khác (paid_ai_uses, theo tháng) chứ không xoá trial_ai_uses
     // — số lượt dùng thử cũ vẫn còn nguyên trong DB, chỉ không còn bị tính vào trần nào cả, không
-    // "mất" — vẫn hiện lại đây để đối chiếu, tránh nhìn như dữ liệu biến mất.
+    // "mất". LUÔN hiện cả 2 bộ đếm (kể cả trial_ai_uses=0) — theo yêu cầu chị Quỳnh 21/8: "người
+    // dùng đã đăng ký gói thì ngoài 200 lượt/tháng thì thông tin của họ cũng hiện luôn 100 lượt
+    // free" — trước đây chỉ hiện dòng dùng thử NẾU trial_ai_uses>0, ẩn mất với khách chưa dùng thử
+    // lượt nào trước khi mua, gây cảm giác thiếu thông tin.
     const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (tháng này)`;
-    return p.trial_ai_uses ? `${paidLabel} · đã dùng ${p.trial_ai_uses} lượt lúc còn dùng thử (không tính vào đây nữa)` : paidLabel;
+    return `${paidLabel} · ${p.trial_ai_uses||0}/${TRIAL_AI_LIMIT} lượt dùng thử trọn đời đã dùng trước đó (không tính vào trần tháng)`;
   }
-  return `${p.trial_ai_uses||0}/100 lượt AI (dùng thử, trọn đời)`;
+  return `${p.trial_ai_uses||0}/${TRIAL_AI_LIMIT} lượt AI (dùng thử, trọn đời)`;
+}
+
+// Cảnh báo dữ liệu lệch: admin đã gắn "Gói" (last_plan_days) bằng tay hoặc hạn dùng còn rất dài —
+// rõ ràng coi là khách đã trả phí — nhưng lại QUÊN bấm "💰 Đánh dấu đã trả phí" nên has_paid vẫn
+// false, khiến trang hiện sai "Chưa trả phí (trần 100 lượt)" thay vì đúng 200 lượt/tháng (sự cố
+// thực tế phát hiện 22/8 — 2 nút Gia hạn/Đánh dấu đã trả phí độc lập nhau, dễ quên 1 trong 2).
+function hasPaidMismatch(p){
+  return p.role!=='admin' && !p.has_paid && !!p.last_plan_days;
 }
 
 function statusOf(p){
@@ -137,6 +148,7 @@ function render(container, ctx){
 
     const list = filtered();
     const counts = state.profiles.reduce((acc,p)=>{ const s=statusOf(p).cls; acc[s]=(acc[s]||0)+1; return acc; }, {});
+    const mismatchCount = state.profiles.filter(hasPaidMismatch).length;
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán. Xem doanh thu/chi phí/lợi nhuận ở tab <b>Tài chính</b>.</p></div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt: <b>${TRIAL_AI_LIMIT} lượt dùng thử</b> (trọn đời) → <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi trả phí — tổng tiềm năng ${TRIAL_AI_LIMIT + PAID_MONTHLY_AI_LIMIT} lượt qua cả 2 giai đoạn (2 bộ đếm tách biệt, không cộng dồn thật).</div>
@@ -147,6 +159,8 @@ function render(container, ctx){
         <div class="source-card"><div class="ic">${counts.expired||0}</div><div class="label">Đã hết hạn</div></div>
         <div class="source-card"><div class="ic">${counts.none||0}</div><div class="label">Chưa kích hoạt</div></div>
       </div>
+
+      ${mismatchCount>0 ? `<div class="error-box" style="margin-bottom:20px;">⚠️ Có <b>${mismatchCount} tài khoản</b> đã gắn "Gói" (chắc chắn đã kích hoạt tay) nhưng CHƯA bấm "💰 Đánh dấu đã trả phí" — họ đang bị hiện SAI trần lượt (100 lượt dùng thử thay vì 200 lượt/tháng). Tìm nhãn "⚠️ Chưa đánh dấu trả phí" trên từng thẻ bên dưới để sửa nhanh.</div>` : ''}
 
       ${state.referralPartners.length ? `
       <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
@@ -184,7 +198,7 @@ function render(container, ctx){
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
             <div>
-              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}</h3>
+              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}</h3>
               <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
             </div>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;
