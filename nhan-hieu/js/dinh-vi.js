@@ -991,6 +991,11 @@ function render(container, ctx){
   async function runLuot2(){
     state.luot2Loading = true; state.luot2Error = null; draw();
     const stopL2Progress = animateProgressBar(container.querySelector('#progress-bar-el-luot2'), 60);
+    // Khác Lượt 1 (dùng startHeavyProgress, có giữ wake lock), Lượt 2 chạy ngầm trong lúc user đã
+    // thấy màn hình kết quả — dễ bị bỏ sót giữ màn hình, nếu khoá màn hình giữa chừng thì kết nối
+    // mạng của tab bị treo im lìm (khách báo bị "treo ở 48% cả 15 phút" 2026-08-22), không lỗi cũng
+    // không xong. Giữ wake lock riêng ở đây, nhả lại khi xong (thành công hoặc lỗi).
+    acquireWakeLock();
     try{
       // skipGatedCallback: server chỉ trừ lượt ở lần gọi Lượt 1 (xem comment trong api/dinh-vi.js)
       // — không bỏ qua thì sidebar sẽ cộng optimistic thêm 8 lượt nữa dù server không trừ, hiện sai
@@ -1000,6 +1005,7 @@ function render(container, ctx){
       await persist({ luot1: state.luot1, luot2: data.result });
       state.luot2Error = null;
     } catch(e){ state.luot2Error = e.message; }
+    releaseWakeLock();
     stopL2Progress();
     state.luot2Loading = false;
     state.screen = 'results';

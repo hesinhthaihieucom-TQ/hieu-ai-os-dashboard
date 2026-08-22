@@ -41,7 +41,7 @@ function render(container, ctx){
     addingPersonal:false, addPersonalError:null, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
-    chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(),
+    chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedExtraIds:new Set(),
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'',
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
   };
@@ -299,21 +299,26 @@ function render(container, ctx){
         ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
         ${isEditing ? editPostHtml(p) : contentBodyHtml('post:'+p.id, p.content)}
         ${isEditing ? '' : postExtrasHtml(p)}
-        <div class="btn-row" style="margin-top:14px;">
-          ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>` : ''}
-          <span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">${p.day_bai_plan?'✓ ':''}Đẩy bài &amp; CTA Comment →</span>
-          ${!isEditing ? `<span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>` : ''}
-          ${!isEditing ? `<span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-delete-post="${p.id}">Xoá bài</span>` : ''}
-        </div>
-        ${writeActionHtml('post:'+p.id)}
+        ${isEditing ? '' : `
+          <div class="btn-row" style="margin-top:14px;">
+            ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>` : ''}
+            <span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">${p.day_bai_plan?'✓ ':''}Đẩy bài &amp; CTA Comment →</span>
+          </div>
+          <div style="margin-top:10px;">${writeActionHtml('post:'+p.id)}</div>
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
+            <span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>
+            <span style="color:var(--danger);font-size:12.5px;cursor:pointer;" data-delete-post="${p.id}">Xoá bài</span>
+          </div>
+        `}
       </div>
     `;}).join('');
   }
 
   // Bình luận ghim/CTA sản phẩm/từ khoá KHÔNG phải 1 phần của "content" (đó là bình luận đăng RIÊNG
-  // sau bài, không phải nội dung bài đăng) — hiện thành từng mục riêng, dễ nhìn, có nút Copy từng
-  // mục, thay vì dán chung vào bài như trước (theo phản hồi chị Quỳnh 22/8: "cho list chọn đi chứ
-  // đừng để dàn trải... phân ra thành từng mục").
+  // sau bài, không phải nội dung bài đăng) — gộp chung vào 1 mục "Tuỳ chọn bài viết" thu gọn, bấm ra
+  // mới hiện từng mục kèm nút Copy (theo phản hồi chị Quỳnh 22/8 lần 2: "gộp lại thành 1 cái gì đó
+  // chung xong khi bấm nó hiện ra để ngta copy thôi" — hiện dàn trải hết ngay cả khi thu gọn vẫn dài
+  // dòng, mỗi mục 1 khối riêng ăn hết chỗ trên màn hình).
   function postExtrasHtml(p){
     const s = p.structure;
     if(!s) return '';
@@ -324,17 +329,23 @@ function render(container, ctx){
       parts.push({ label:`Bình luận CTA sản phẩm/group${(s.cmt_cta_san_pham.length>1)?` #${i+1}`:''}`, value: c });
     });
     if(!parts.length) return '';
+    const isOpen = state.expandedExtraIds.has(p.id);
     return `
-      <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:8px;">
-        ${parts.map(part=>`
-          <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-            <div>
-              <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(part.label)}</div>
-              <div style="font-size:13px;">${esc(part.value)}</div>
-            </div>
-            <span class="btn-ghost btn btn-sm" style="flex-shrink:0;padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(part.value)}">Copy</span>
+      <div style="margin-top:10px;">
+        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-extras="${p.id}">${isOpen?'▾':'▸'} Tuỳ chọn bài viết (${parts.length})</span>
+        ${isOpen ? `
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;">
+            ${parts.map(part=>`
+              <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                <div>
+                  <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(part.label)}</div>
+                  <div style="font-size:13px;">${esc(part.value)}</div>
+                </div>
+                <span class="btn-ghost btn btn-sm" style="flex-shrink:0;padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(part.value)}">Copy</span>
+              </div>
+            `).join('')}
           </div>
-        `).join('')}
+        ` : ''}
       </div>
     `;
   }
@@ -515,6 +526,13 @@ function render(container, ctx){
       el.onclick = ()=>{
         const key = el.getAttribute('data-toggle-full');
         if(state.expandedIds.has(key)) state.expandedIds.delete(key); else state.expandedIds.add(key);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-toggle-extras]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-toggle-extras');
+        if(state.expandedExtraIds.has(id)) state.expandedExtraIds.delete(id); else state.expandedExtraIds.add(id);
         draw();
       };
     });
