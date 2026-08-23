@@ -19,8 +19,11 @@ const VIBE_INFO = {
   gray: { label:'🩶 Vô cảm, tự động', explain:'Bấm tiền ra/vào như một nghĩa vụ, không cảm xúc gì — tín hiệu bạn đang ngắt kết nối với dòng tiền. Thử dừng lại 1 nhịp thở trước khi chọn tiếp.' },
 };
 
-// Gợi ý danh mục: gộp danh mục GỢI Ý mặc định với danh mục CHÍNH người dùng từng gõ trước đây
-// (ưu tiên hiện trước) — datalist chỉ để gợi ý, người dùng luôn gõ tự do (góp ý Quỳnh 2026-08-21).
+// Danh mục hiện thành CHIP để CHỌN (không còn gõ tự do) — góp ý Quỳnh 2026-08-23: gõ tự do khiến
+// mỗi lần ghi 1 kiểu khác nhau (vd "ăn uống"/"ăn sáng"/"cà phê"), Tổng Kết không gom nhóm chính xác
+// được đang tiêu nhiều nhất vào đâu. Danh mục CỐ ĐỊNH sẵn (SUGGESTED_*) + danh mục người dùng đã
+// TỰ THÊM trước đây (nút "+ Khác") ghép lại thành chip — người dùng vẫn thêm được mục riêng, nhưng
+// qua đúng 1 chỗ ("+ Khác"), không gõ tràn lan mỗi lần nhập.
 function categorySuggestions(type, learned){
   const defaults = type === 'income' ? SUGGESTED_INCOME_CATEGORIES : SUGGESTED_EXPENSE_CATEGORIES;
   const merged = [...(learned||[]), ...defaults];
@@ -47,6 +50,7 @@ function render(container, ctx){
     error: null,
     debtWarning: null,
     learnedCategories: { income:[], expense:[] },
+    showCustomCategory: false,
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form }); }
 
@@ -115,6 +119,7 @@ function render(container, ctx){
     state.saving = false;
     if(error){ state.error = 'Không lưu được — thử lại. (' + error.message + ')'; draw(); return; }
     state.form = { type: state.form.type, amount:'', description:'', category:'cp_bien_doi', category_label:'', vibe:null, vibe_reason:'' };
+    state.showCustomCategory = false;
     await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
     await loadLearnedCategories();
@@ -169,11 +174,14 @@ function render(container, ctx){
           </div>
         `}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(gõ tự do, có gợi ý)</span></label>
-        <input type="text" id="gc-category-label" list="gc-category-datalist" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Lương, Hoa hồng...':'VD: Ăn uống, Xăng xe...'}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
-        <datalist id="gc-category-datalist">
-          ${categorySuggestions(state.form.type, state.learnedCategories[state.form.type]).map(c=>`<option value="${esc(c)}">`).join('')}
-        </datalist>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(chọn 1 mục — bấm "+ Khác" nếu muốn thêm mục riêng)</span></label>
+        <div class="chips" id="gc-category-label-chips">
+          ${categorySuggestions(state.form.type, state.learnedCategories[state.form.type]).map(c=>`<div class="chip ${state.form.category_label===c?'selected':''}" data-category-label="${esc(c)}">${esc(c)}</div>`).join('')}
+          <div class="chip ${state.showCustomCategory?'selected':''}" id="gc-category-label-custom-toggle">+ Khác</div>
+        </div>
+        ${state.showCustomCategory ? `
+          <input type="text" id="gc-category-label-custom" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Cho thuê nhà...':'VD: Tiền điện nước...'}" style="width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        ` : ''}
 
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <button class="btn btn-full" id="gc-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'+ Thêm giao dịch'}</button>
@@ -217,7 +225,18 @@ function render(container, ctx){
       el.onclick = ()=>{ state.form.vibe = el.getAttribute('data-vibe'); state.error = null; draw(); persistDraft(); };
     });
     container.querySelector('#gc-vibe-reason').oninput = (e)=>{ state.form.vibe_reason = e.target.value; persistDraft(); };
-    container.querySelector('#gc-category-label').oninput = (e)=>{ state.form.category_label = e.target.value; persistDraft(); };
+    container.querySelectorAll('#gc-category-label-chips [data-category-label]').forEach(el=>{
+      el.onclick = ()=>{
+        state.form.category_label = el.getAttribute('data-category-label');
+        state.showCustomCategory = false;
+        draw();
+        persistDraft();
+      };
+    });
+    const customToggle = container.querySelector('#gc-category-label-custom-toggle');
+    if(customToggle) customToggle.onclick = ()=>{ state.showCustomCategory = !state.showCustomCategory; draw(); };
+    const customInput = container.querySelector('#gc-category-label-custom');
+    if(customInput) customInput.oninput = (e)=>{ state.form.category_label = e.target.value; persistDraft(); };
     container.querySelector('#gc-desc').oninput = (e)=>{ state.form.description = e.target.value; persistDraft(); };
     container.querySelector('#gc-amount').oninput = (e)=>{
       state.form.amount = e.target.value;

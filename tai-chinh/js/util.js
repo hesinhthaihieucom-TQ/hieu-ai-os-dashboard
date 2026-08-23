@@ -292,10 +292,12 @@ async function clearModuleDraft(ctx, key){
   try{ await ctx.supabase.from('module_drafts').delete().eq('user_id', ctx.user.id).eq('module_key', key); } catch(e){}
 }
 
-// Danh mục CHI TIẾT chỉ để GỢI Ý (datalist) — category_label trên tc_finance_entries giờ là text
-// tự do, người dùng tự gõ (góp ý Quỳnh 2026-08-21: "để người ta tự điền, mình gợi ý thôi"), app
-// không ép vào danh sách cứng nữa. Dùng chung ở ghi-chep.js (datalist), tong-ket-tuan.js/
-// tong-ket-thang.js chỉ hiển thị lại đúng chuỗi người dùng đã gõ, không tra bảng key->label nữa.
+// Danh mục CHI TIẾT — cột category_label trên tc_finance_entries vẫn là text tự do (không CHECK
+// constraint), nhưng từ 2026-08-23 UI ở ghi-chep.js hiện thành CHIP CỐ ĐỊNH để chọn (không gõ tự do
+// nữa) — góp ý Quỳnh: gõ tự do mỗi lần 1 kiểu khiến Tổng Kết không gom nhóm được đang tiêu nhiều
+// nhất vào đâu (vd "ăn uống" vs "ăn sáng" vs "cà phê" bị tính thành 3 danh mục khác nhau). Người
+// dùng vẫn thêm được danh mục riêng qua nút "+ Khác", nhưng qua đúng 1 cửa, không gõ tràn lan.
+// tong-ket-tuan.js/tong-ket-thang.js chỉ hiển thị lại đúng chuỗi đã lưu, không tra bảng key->label.
 const SUGGESTED_EXPENSE_CATEGORIES = [
   'Ăn uống', 'Di chuyển / Xăng xe', 'Mua sắm / Quần áo', 'Giải trí / Du lịch',
   'Sức khỏe / Làm đẹp', 'Hoá đơn (điện, nước, mạng)', 'Học phí cho con', 'Thuê nhà',
