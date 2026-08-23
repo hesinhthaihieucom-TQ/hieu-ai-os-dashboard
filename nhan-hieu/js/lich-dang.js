@@ -605,8 +605,14 @@ function render(container, ctx){
     const stopProgress = animateProgressButton(container.querySelector('[data-action="ai-suggest"]'), 55, 'Đang lên lịch');
     acquireWakeLock();
     try{
-      const scheduledPostIds = new Set(state.entries.map(e=>e.post_id).filter(Boolean));
-      const unscheduledPosts = state.posts.filter(p=>!scheduledPostIds.has(p.id)).slice(0, 15)
+      // Loại bài ĐÃ DÙNG khỏi danh sách đưa cho AI — KHÔNG chỉ bài đã xếp trong tuần ĐANG XEM
+      // (state.entries chỉ tải đúng 7 ngày của tuần hiện tại, xem loadEntries()) mà cả bài đã xếp ở
+      // TUẦN KHÁC (quá khứ/tương lai) và bài đã đăng thật rồi (posted=true) — trước đây thiếu 2 vế
+      // này nên AI gợi ý lại cả bài đã dùng/đã đăng (phản hồi chị Quỳnh 23/8: "AI gợi ý tất cả các
+      // bài dù đã làm hay chưa làm luôn, thế ko đc").
+      const { data: allEntries } = await ctx.supabase.from('calendar_entries').select('post_id').eq('user_id', ctx.user.id);
+      const usedPostIds = new Set((allEntries||[]).map(e=>e.post_id).filter(Boolean));
+      const unscheduledPosts = state.posts.filter(p=>!p.posted && !usedPostIds.has(p.id)).slice(0, 15)
         .map(p=>({ title:p.title, content:p.content }));
       const data = await callApi('/api/goi-y-lich', {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
