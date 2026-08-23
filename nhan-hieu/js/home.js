@@ -4,13 +4,18 @@
 // thẻ riêng, chị Quỳnh phản hồi thấy trùng/thừa). Vẫn giữ tick hoàn thành + nút "Bắt đầu/Xem lại" cho
 // từng bước, chỉ đổi tên/thứ tự cho đúng quy trình hiệu quả (lên lịch AI TRƯỚC khi viết). Lý do đầy
 // đủ từng bước nằm ở Hỏi & Trợ Giúp, không nhắc lại hết ở đây cho gọn.
+// group:'once' — làm 1 lần duy nhất, KHÔNG lặp lại mỗi tuần (phân biệt rõ theo phản hồi chị Quỳnh
+// 23/8: "nhìn như này vẫn hiểu là làm định vị và sửa kênh từng tuần" — trước đó đánh số chung 1-5
+// liền mạch dưới tiêu đề "quy trình hiệu quả" khiến hiểu lầm cả 5 bước đều lặp lại hàng tuần).
+// group:'weekly' — 3 bước còn lại mới thật sự lặp lại mỗi khi sản xuất content mới.
 const STEPS = [
-  { key:'dinh-vi', label:'Định Vị thật chi tiết', desc:'Trả lời 16 câu hỏi để AI tìm ra định vị chuẩn nhất — mọi bước sau đều dựa vào kết quả này.', required:true },
-  { key:'sua-kenh', label:'Sửa Kênh khớp định vị', desc:'Kiểm tra ảnh đại diện, ảnh bìa, bio có khớp định vị chưa — chỉ cần làm 1 lần, AI chỉ chỗ cần sửa.', required:true },
-  { key:'lich-dang', label:'Lịch Đăng Bài → AI gợi ý lịch tuần', desc:'Lên khung trục nội dung cho cả tuần TRƯỚC khi viết, tránh viết lan man sai chỗ.' },
-  { key:'viet-content', label:'Viết từng ô lịch từ Kho Content/Kho Hook', desc:'Theo đúng trục AI đã gợi ý cho từng ô — không phải viết tự do rồi mới tìm chỗ nhét vào.' },
-  { key:'day-bai', label:'Đẩy Bài khi bài đạt view tốt', desc:'Gợi ý mốc trên 1000 view — đừng bỏ qua, đây là lúc tối ưu bài đang viral.' },
+  { key:'dinh-vi', label:'Định Vị thật chi tiết', desc:'Trả lời 16 câu hỏi để AI tìm ra định vị chuẩn nhất — mọi bước sau đều dựa vào kết quả này.', group:'once' },
+  { key:'sua-kenh', label:'Sửa Kênh khớp định vị', desc:'Kiểm tra ảnh đại diện, ảnh bìa, bio có khớp định vị chưa — AI chỉ chỗ cần sửa.', group:'once' },
+  { key:'lich-dang', label:'Lịch Đăng Bài → AI gợi ý lịch tuần', desc:'Lên khung trục nội dung cho cả tuần TRƯỚC khi viết, tránh viết lan man sai chỗ.', group:'weekly' },
+  { key:'viet-content', label:'Viết từng ô lịch từ Kho Content/Kho Hook', desc:'Theo đúng trục AI đã gợi ý cho từng ô — không phải viết tự do rồi mới tìm chỗ nhét vào.', group:'weekly' },
+  { key:'day-bai', label:'Đẩy Bài khi bài đạt view tốt', desc:'Gợi ý mốc trên 1000 view — đừng bỏ qua, đây là lúc tối ưu bài đang viral.', group:'weekly' },
 ];
+const STEP_GROUP_LABEL = { once:'Làm 1 lần đầu tiên (nền tảng)', weekly:'Lặp lại mỗi khi sản xuất content mới' };
 
 const IMPORTANT_NOTES = [
   { icon:'🎯', text:'<b>Định Vị luôn làm trước tiên</b> — mọi bài viết/kết quả AI ở các bước sau đều dựa vào kết quả Định Vị, nên trả lời thật kỹ ngay từ đầu.' },
@@ -66,13 +71,17 @@ function render(container, ctx){
         ${state.loading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải tiến độ…</div>` : STEPS.map((s,i)=>{
           const isDone = state.done[s.key];
           const isNext = i===nextIdx;
+          const groupHeader = (i===0 || STEPS[i-1].group!==s.group)
+            ? `<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin:${i===0?'0':'16px'} 0 8px;">${esc(STEP_GROUP_LABEL[s.group])}</div>`
+            : '';
           return `
+          ${groupHeader}
           <div class="list-item">
             <div style="display:flex;align-items:flex-start;gap:12px;">
               <div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
                 background:${isDone?'var(--accent)':'var(--accent-soft)'};color:${isDone?'#fff':'var(--accent)'};">${isDone?'✓':i+1}</div>
               <div class="txt">
-                <b>${esc(s.label)}</b>${s.required?` <span style="background:var(--gold);color:#1E2420;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;">Bắt buộc trước</span>`:''}<br>
+                <b>${esc(s.label)}</b><br>
                 <span style="color:var(--ink-soft);font-size:13px;">${esc(s.desc)}</span>
               </div>
             </div>
