@@ -2,18 +2,19 @@
 // Quy trình dùng app hiệu quả nhất (2026-08-23, chốt cùng chị Quỳnh) — GỘP checklist làm quen app
 // lần đầu với quy trình LẶP LẠI mỗi tuần khi sản xuất content thành 1 khối duy nhất (trước đó tách 2
 // thẻ riêng, chị Quỳnh phản hồi thấy trùng/thừa). Vẫn giữ tick hoàn thành + nút "Bắt đầu/Xem lại" cho
-// từng bước, chỉ đổi tên/thứ tự cho đúng quy trình hiệu quả (lên lịch AI TRƯỚC khi viết). Lý do đầy
-// đủ từng bước nằm ở Hỏi & Trợ Giúp, không nhắc lại hết ở đây cho gọn.
-// group:'once' — làm 1 lần duy nhất, KHÔNG lặp lại mỗi tuần (phân biệt rõ theo phản hồi chị Quỳnh
-// 23/8: "nhìn như này vẫn hiểu là làm định vị và sửa kênh từng tuần" — trước đó đánh số chung 1-5
-// liền mạch dưới tiêu đề "quy trình hiệu quả" khiến hiểu lầm cả 5 bước đều lặp lại hàng tuần).
-// group:'weekly' — 3 bước còn lại mới thật sự lặp lại mỗi khi sản xuất content mới.
+// từng bước, chỉ đổi tên/thứ tự cho đúng quy trình hiệu quả (lên lịch AI TRƯỚC khi viết).
+// Bản ĐẦY ĐỦ (kèm lý do) chỉ nằm ở ĐÂY — chị Quỳnh chốt 23/8: "trang chủ cứ ghi full đi, bỏ hẳn cái
+// mục ở hỏi đi" (trước đó thử tách 2 bản ngắn/dài ở 2 trang, thấy vẫn trùng nên bỏ luôn 1 bên thay vì
+// tối giản thêm). Hỏi & Trợ Giúp không còn khối này nữa, chỉ còn FAQ "nên làm theo thứ tự nào" trỏ
+// thẳng về đây.
+// group:'once' — làm 1 lần duy nhất, KHÔNG lặp lại mỗi tuần. group:'weekly' — 3 bước còn lại mới
+// thật sự lặp lại mỗi khi sản xuất content mới.
 const STEPS = [
-  { key:'dinh-vi', label:'Định Vị thật chi tiết', desc:'Trả lời 16 câu hỏi để AI tìm ra định vị chuẩn nhất — mọi bước sau đều dựa vào kết quả này.', group:'once' },
-  { key:'sua-kenh', label:'Sửa Kênh khớp định vị', desc:'Kiểm tra ảnh đại diện, ảnh bìa, bio có khớp định vị chưa — AI chỉ chỗ cần sửa.', group:'once' },
-  { key:'lich-dang', label:'Lịch Đăng Bài → AI gợi ý lịch tuần', desc:'Lên khung trục nội dung cho cả tuần TRƯỚC khi viết, tránh viết lan man sai chỗ.', group:'weekly' },
-  { key:'viet-content', label:'Viết từng ô lịch từ Kho Content/Kho Hook', desc:'Theo đúng trục AI đã gợi ý cho từng ô — không phải viết tự do rồi mới tìm chỗ nhét vào.', group:'weekly' },
-  { key:'day-bai', label:'Đẩy Bài khi bài đạt view tốt', desc:'Gợi ý mốc trên 1000 view — đừng bỏ qua, đây là lúc tối ưu bài đang viral.', group:'weekly' },
+  { key:'dinh-vi', label:'Định Vị thật chi tiết', group:'once', why:'Nền tảng cho mọi bước sau — trục nội dung, chân dung khách hàng, giọng văn AI dùng lại xuyên suốt đều lấy từ đây, nên trả lời kỹ ngay từ đầu, đỡ phải sửa lại nhiều lần về sau.' },
+  { key:'sua-kenh', label:'Sửa Kênh khớp định vị', group:'once', why:'Đồng bộ ảnh đại diện/ảnh bìa/bio khớp với định vị vừa chốt. Chỉ cần làm 1 lần, nhưng nên làm trước khi đẩy content ra ngoài — bài viral kéo người lạ vào trang mà kênh chưa khớp định vị thì phí mất khách.' },
+  { key:'lich-dang', label:'Lịch Đăng Bài → AI gợi ý lịch tuần', group:'weekly', why:'Lên khung trục nội dung + định dạng cho cả 7 ngày TRƯỚC khi viết bất kỳ bài nào — tránh viết lan man rồi không biết nhét vào đâu. Nhập mục tiêu tuần này (ra mắt sản phẩm, tăng follow...) để AI ưu tiên đúng chỗ.' },
+  { key:'viet-content', label:'Viết từng ô lịch từ Kho Content/Kho Hook', group:'weekly', why:'Ô nào AI đã khớp sẵn 1 bài bạn từng viết — Chấm Điểm Content/Hook nhanh trước khi dùng (1 lượt) để chắc bài đủ chuẩn trước khi lên lịch thật. Ô chưa có bài — bấm "Chọn bài mẫu đúng trục" vào Kho Content/Kho Hook đúng trục để viết; nếu vừa thấy 1 bài viral ở nơi khác thì qua Tái Chế Content Viral thay vì viết từ đầu.' },
+  { key:'day-bai', label:'Đẩy Bài khi bài đạt view tốt', group:'weekly', why:'Gợi ý mốc trên 1000 view. App cũng tự nhắc theo giờ (3h/6h/24h sau khi đăng) để không quên vào kiểm tra — 2 cái bổ trợ nhau, đừng bỏ qua bước này vì đây là lúc tối ưu hoá đúng bài đang viral, không phải lúc để yên.' },
 ];
 const STEP_GROUP_LABEL = { once:'Làm 1 lần đầu tiên (nền tảng)', weekly:'Lặp lại mỗi khi sản xuất content mới' };
 
@@ -82,13 +83,12 @@ function render(container, ctx){
                 background:${isDone?'var(--accent)':'var(--accent-soft)'};color:${isDone?'#fff':'var(--accent)'};">${isDone?'✓':i+1}</div>
               <div class="txt">
                 <b>${esc(s.label)}</b><br>
-                <span style="color:var(--ink-soft);font-size:13px;">${esc(s.desc)}</span>
+                <span style="color:var(--ink-soft);font-size:13px;">${esc(s.why)}</span>
               </div>
             </div>
             <button class="${isNext?'btn':'btn-ghost btn'} btn-sm" data-key="${s.key}">${isDone?'Xem lại →':(isNext?'Bắt đầu →':'→')}</button>
           </div>
         `;}).join('')}
-        <a href="#tro-giup" style="display:inline-block;margin-top:14px;color:var(--accent);font-weight:600;font-size:13px;">Xem lý do từng bước →</a>
       </div>
 
       <div class="card" style="margin-top:20px;background:var(--accent-soft);">

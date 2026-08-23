@@ -10,23 +10,9 @@ function comingSoon(title, desc){
   };
 }
 
-// Quy trình dùng app hiệu quả nhất (2026-08-23, chốt cùng chị Quỳnh). Trang chủ dùng ĐÚNG 5 bước này
-// làm checklist chính (đã gộp làm 1, không còn tách 2 khối riêng) — khối này là bản đầy đủ kèm lý do
-// từng bước. group:'once'/'weekly' TÁCH RÕ 2 bước đầu (làm 1 lần) khỏi 3 bước lặp lại — phản hồi
-// chị Quỳnh 23/8: đánh số chung 1-5 liền mạch dưới tiêu đề chung khiến hiểu lầm cả 5 bước đều lặp
-// lại hàng tuần, kể cả Định Vị/Sửa Kênh.
-const WORKFLOW_GUIDE = [
-  { n:1, title:'Định Vị thật chi tiết', group:'once', why:'Nền tảng cho mọi bước sau — trục nội dung, chân dung khách hàng, giọng văn AI dùng lại xuyên suốt đều lấy từ đây, nên trả lời kỹ ngay từ đầu, đỡ phải sửa lại nhiều lần về sau.' },
-  { n:2, title:'Sửa Kênh', group:'once', why:'Đồng bộ ảnh đại diện/ảnh bìa/bio khớp với định vị vừa chốt. Chỉ cần làm 1 lần, nhưng nên làm trước khi đẩy content ra ngoài — bài viral kéo người lạ vào trang mà kênh chưa khớp định vị thì phí mất khách.' },
-  { n:3, title:'Lịch Đăng Bài → bấm "AI gợi ý lịch tuần"', group:'weekly', why:'Lên khung trục nội dung + định dạng cho cả 7 ngày TRƯỚC khi viết bất kỳ bài nào — tránh viết lan man rồi không biết nhét vào đâu. Nhập mục tiêu tuần này (ra mắt sản phẩm, tăng follow...) để AI ưu tiên đúng chỗ.' },
-  { n:4, title:'Viết từng ô lịch theo đúng gợi ý', group:'weekly', why:'Ô nào AI đã khớp sẵn 1 bài bạn từng viết — Chấm Điểm Content/Hook nhanh trước khi dùng (1 lượt) để chắc bài đủ chuẩn trước khi lên lịch thật. Ô chưa có bài — bấm "Chọn bài mẫu đúng trục" vào Kho Content/Kho Hook đúng trục để viết; nếu vừa thấy 1 bài viral ở nơi khác thì qua Tái Chế Content Viral thay vì viết từ đầu.' },
-  { n:5, title:'Đẩy Bài & CTA Comment khi bài đạt view tốt', group:'weekly', why:'Gợi ý mốc trên 1000 view. App cũng tự nhắc theo giờ (3h/6h/24h sau khi đăng) để không quên vào kiểm tra — 2 cái bổ trợ nhau, đừng bỏ qua bước này vì đây là lúc tối ưu hoá đúng bài đang viral, không phải lúc để yên.' },
-];
-const WORKFLOW_GROUP_LABEL = { once:'Làm 1 lần đầu tiên (nền tảng)', weekly:'Lặp lại mỗi khi sản xuất content mới' };
-
 const HELP_SECTIONS = [
   { group:'Bắt đầu từ đâu', items: [
-    { q:'Tôi nên làm theo thứ tự nào?', a:'Đi đúng theo thứ tự sidebar từ trên xuống: Định Vị → Sửa Kênh → Dạng Content → Kho Content / Kho Hook → Viết Content → Chấm Điểm → Lịch Đăng Bài. Định Vị luôn là bước đầu tiên vì mọi bước sau đều dựa vào kết quả đó (bao gồm cả chân dung khách hàng và giọng văn). Đó là thứ tự làm quen app lần đầu — còn quy trình sản xuất content HÀNG TUẦN sau khi đã quen thì xem khối "Quy trình dùng app hiệu quả nhất" ngay phía trên.' },
+    { q:'Tôi nên làm theo thứ tự nào?', a:'Đi đúng theo thứ tự sidebar từ trên xuống: Định Vị → Sửa Kênh → Dạng Content → Kho Content / Kho Hook → Viết Content → Chấm Điểm → Lịch Đăng Bài. Định Vị luôn là bước đầu tiên vì mọi bước sau đều dựa vào kết quả đó (bao gồm cả chân dung khách hàng và giọng văn). Đó là thứ tự làm quen app lần đầu — quy trình sản xuất content HÀNG TUẦN đầy đủ kèm lý do từng bước xem ở khối "Quy trình dùng app hiệu quả nhất" ngay đầu Trang chủ.' },
     { q:'Tôi đã làm Định Vị ở một trợ lý GPT khác trước đây rồi, có phải làm lại không?', a:'Không cần làm lại. Ở màn hình Định Vị, bấm "Đã có kết quả Định Vị rồi? Dán vào đây" rồi dán nguyên văn kết quả cũ vào — hệ thống tự sắp xếp lại đúng cấu trúc, không cần trả lời lại 26 câu hỏi.' },
     { q:'Dùng trên điện thoại có cài thành app riêng được không?', a:'Được. Trên Android (Chrome): mở link này, Chrome sẽ tự hiện banner "Thêm vào màn hình chính" — hoặc vào menu (⋮) → "Cài đặt ứng dụng". Trên iPhone (Safari): mở link → bấm nút Chia sẻ (hình vuông có mũi tên đi lên) → "Thêm vào MH chính". Sau khi cài, mở từ icon trên màn hình chính sẽ chạy như 1 app riêng, không còn thanh địa chỉ trình duyệt.' },
   ]},
@@ -38,7 +24,8 @@ const HELP_SECTIONS = [
     { q:'Kho Content và Kho Hook khác gì nhau?', a:'Kho Content lưu bài viết/mẫu content (của bạn và của đội ngũ). Kho Hook lưu riêng các câu hook hay để tra cứu nhanh khi cần mở đầu bài.' },
     { q:'Làm sao để AI viết đúng giọng văn của tôi?', a:'Ở bất kỳ bài nào trong Kho Content, bấm "Dùng làm giọng mẫu" — hệ thống tự phân tích giọng điệu từ bài đó và cập nhật ngay vào Định Vị, áp dụng cho mọi bài AI viết sau này.' },
     { q:'Dạng Content dùng để làm gì?', a:'Sau khi có Định Vị, trang này tự gợi ý 2-3 dạng content (trong 12 dạng) phù hợp nhất với trục nội dung của bạn, kèm hướng dẫn cách làm cụ thể từng dạng.' },
-    { q:'Chấm Điểm Content / Chấm Điểm Hook dùng để làm gì?', a:'Dán 1 bài viết hoặc 1 câu hook vào để AI chấm theo đúng khung chuẩn, chỉ ra chỗ yếu và cách sửa cụ thể — không chỉ khen chê chung chung.' },
+    { q:'Chấm Điểm Content / Chấm Điểm Hook dùng để làm gì?', a:'Dán 1 bài viết hoặc 1 câu hook vào để AI chấm theo đúng khung chuẩn, chỉ ra chỗ yếu và cách sửa cụ thể — không chỉ khen chê chung chung. Không phải bước bắt buộc trong quy trình, dùng bất cứ lúc nào bạn thấy cần kiểm tra lại chất lượng 1 bài/1 hook, kể cả bài không nằm trong lịch tuần.' },
+    { q:'Tái Chế Content Viral dùng khi nào?', a:'Khi bạn thấy 1 bài đang viral ở nơi khác (kênh khác, group khác) và muốn viết lại theo giọng văn của mình — dán nguyên văn bài đó vào, AI giữ đúng hook và cấu trúc đã được kiểm chứng, chỉ đổi câu chữ theo câu chuyện thật của bạn. Không phải bước cố định trong quy trình — dùng bất cứ lúc nào bạn tình cờ thấy content hay, không chỉ khi đang tìm bài để lấp vào ô lịch.' },
     { q:'Lịch Đăng Bài có tự động không?', a:'Có. Nhập mục tiêu tuần này, bấm "AI gợi ý lịch tuần" — hệ thống xếp sẵn 7 ngày theo đúng trục nội dung, bạn chỉ cần bấm "Dùng gợi ý" hoặc tự chọn bài khác.' },
     { q:'Tạo Ảnh Thương Hiệu khác gì ảnh bìa ở Sửa Kênh?', a:'Đây là ảnh có chữ để đăng KÈM bài viết (không phải ảnh đại diện/ảnh bìa kênh) — chọn bố cục, font, màu ngay trên web, dùng khi bài cần thêm ảnh minh hoạ trực quan (trích dẫn, số liệu...).' },
   ]},
@@ -55,25 +42,6 @@ function renderHelp(container){
   function html(){
     return `
     <div class="page-head"><h1>Hỏi & Trợ Giúp</h1><p>Câu hỏi thường gặp khi dùng Xây Nhân Hiệu.</p></div>
-
-    <div class="section highlight" style="margin-bottom:24px;">
-      <h3>📋 Quy trình dùng app hiệu quả nhất</h3>
-      <div class="body" style="margin-bottom:14px;">Đúng thứ tự checklist ở Trang chủ, đây là bản đầy đủ kèm lý do từng bước.</div>
-      ${WORKFLOW_GUIDE.map((s,i)=>{
-        const groupHeader = (i===0 || WORKFLOW_GUIDE[i-1].group!==s.group)
-          ? `<div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin:${i===0?'0':'18px'} 0 4px;">${esc(WORKFLOW_GROUP_LABEL[s.group])}</div>`
-          : '';
-        return `
-        ${groupHeader}
-        <div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.12);">
-          <div style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${s.n}</div>
-          <div>
-            <b>${esc(s.title)}</b>
-            <div style="font-size:13px;margin-top:3px;opacity:.9;">${esc(s.why)}</div>
-          </div>
-        </div>
-      `;}).join('')}
-    </div>
 
     <div class="section highlight" style="margin-bottom:24px;">
       <h3>Hỏi AI trực tiếp</h3>
