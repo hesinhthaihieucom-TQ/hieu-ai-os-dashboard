@@ -3,7 +3,8 @@
 // nhắc vào Đẩy Bài kiểm tra view (Đẩy Bài tính theo lượt view chứ không theo giờ, nên đây là 1 lớp
 // nhắc THEO THỜI GIAN mới, độc lập với mốc view thật), (3) đến giờ công việc content
 // (recording_schedule — tên bảng vẫn giữ "recording" trong code, nhưng hiển thị cho người dùng là
-// "lịch công việc content" nói chung, không riêng buổi quay, đổi 23/8 theo phản hồi chị Quỳnh).
+// "lịch công việc content" nói chung, không riêng buổi quay, đổi 23/8 theo phản hồi chị Quỳnh),
+// (4) dùng thử sắp hết hạn (24h trước) hoặc vừa hết hạn (checkTrialEnding, thêm 23/8).
 // Theo yêu cầu chị Quỳnh 2026-08-21.
 //
 // Mỗi loại dùng 1 CỬA SỔ THỜI GIAN ~25 phút (rộng hơn khoảng cách 15 phút giữa 2 lần cron 1 chút,
@@ -174,6 +175,47 @@ async function checkNewAnnouncements() {
   return count;
 }
 
+// Nhắc dùng thử sắp/vừa hết hạn (2026-08-23, theo yêu cầu chị Quỳnh: "làm thông báo nhắc hết hạn
+// dùng thử tự động") — 2 mốc: còn ~24h nữa hết hạn (nhắc sớm để kịp quyết định/xem ưu đãi), và vừa
+// hết hạn (kéo họ quay lại app xem màn hình nâng cấp). Chỉ nhắc has_paid=false — người đã trả phí
+// access_until là hạn GÓI, không phải dùng thử, không liên quan nhắc này.
+async function checkTrialEnding() {
+  const now = Date.now();
+  let count = 0;
+
+  const soonStartIso = new Date(now + 24 * 3600000).toISOString();
+  const soonEndIso = new Date(now + 24 * 3600000 + WINDOW_MINUTES * 60000).toISOString();
+  const soonResp = await supabaseAdmin(
+    `profiles?has_paid=eq.false&role=eq.student&access_until=gte.${encodeURIComponent(soonStartIso)}&access_until=lt.${encodeURIComponent(soonEndIso)}&select=id`
+  );
+  const soonRows = soonResp.ok ? await soonResp.json() : [];
+  for (const row of soonRows) {
+    const result = await notifyOnce(row.id, 'trial-ending-24h', {
+      title: 'Dùng thử sắp hết hạn',
+      body: 'Còn khoảng 24 giờ nữa là hết 7 ngày dùng thử — nâng cấp ngay để không bị gián đoạn.',
+      url: '/nhan-hieu/#nang-cap',
+    });
+    if (result.sent) count++;
+  }
+
+  const expiredStartIso = new Date(now - WINDOW_MINUTES * 60000).toISOString();
+  const expiredEndIso = new Date(now).toISOString();
+  const expiredResp = await supabaseAdmin(
+    `profiles?has_paid=eq.false&role=eq.student&access_until=gte.${encodeURIComponent(expiredStartIso)}&access_until=lt.${encodeURIComponent(expiredEndIso)}&select=id`
+  );
+  const expiredRows = expiredResp.ok ? await expiredResp.json() : [];
+  for (const row of expiredRows) {
+    const result = await notifyOnce(row.id, 'trial-expired', {
+      title: 'Dùng thử đã kết thúc',
+      body: '7 ngày dùng thử đã hết — nâng cấp ngay để tiếp tục dùng app.',
+      url: '/nhan-hieu/#nang-cap',
+    });
+    if (result.sent) count++;
+  }
+
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -185,14 +227,15 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
       checkNewSignups(),
       checkNewAnnouncements(),
+      checkTrialEnding(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
