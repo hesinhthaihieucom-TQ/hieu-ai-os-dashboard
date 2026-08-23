@@ -150,6 +150,8 @@ function render(container, ctx){
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều cần THAY ĐỔI tuần tới</label>
           <textarea id="tt-to-change" placeholder="Tuần tới bạn muốn thay đổi điều gì?">${esc(state.reflection.to_change)}</textarea>
 
+          <div class="hint-box" style="margin:16px 0 10px;">5 câu chấm điểm dưới đây tương ứng đúng 5 Trụ Cột ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a> — chấm thật theo cảm nhận tuần này, không cần nghĩ nhiều.</div>
+
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Mối quan hệ tuần này thế nào?</label>
           <div class="chips" id="tt-relationship-chips" style="margin-bottom:14px;">
             ${[1,2,3,4,5].map(v=>`<div class="chip ${state.reflection.relationship_score===v?'selected':''}" data-score-field="relationship_score" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
@@ -174,7 +176,7 @@ function render(container, ctx){
           <div class="chips" id="tt-finance-mindset-chips">
             ${[1,2,3,4,5].map(v=>`<div class="chip ${state.reflection.finance_mindset_score===v?'selected':''}" data-score-field="finance_mindset_score" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
           </div>
-          <div class="hint-box" style="margin-top:10px;">Đây là câu hỏi CHECK trực tiếp Trụ Tài Chính Tâm Thức — điểm này ảnh hưởng nhẹ tới cả 4 trụ còn lại ở Karma Radar trang chủ.</div>
+          <div class="hint-box" style="margin-top:10px;">Câu này CHECK trực tiếp Trụ Tài Chính Tâm Thức — vì tài chính bất ổn kéo theo mọi mặt khác, điểm này còn ảnh hưởng nhẹ tới cả 4 trụ còn lại ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a>.</div>
 
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Tuần này khi thấy người khác (đồng nghiệp, bạn bè) nhận tin vui về tiền, bạn cảm thấy thế nào?</label>
           <div class="chips" id="tt-reaction-chips">

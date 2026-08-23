@@ -144,7 +144,18 @@ function render(container, ctx){
     return `
       <div class="page-head">
         <h1>Hạt Giống Phước - Nghiệp</h1>
-        <p>${glossaryWrap('Sổ Niềm Tin Cũ Về Tiền', 'tang_thuc')} — nơi ghi lại gốc rễ đang nuôi các Nút Chặn Dòng Tiền bạn hay gặp ở <a href="#kien-thuc" style="color:var(--accent);font-weight:600;">Kiến Thức Nền Tảng →</a>. Mỗi niềm tin còn "Đang chi phối" sẽ kéo nhẹ Trụ Tài Chính Tâm Thức ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a> xuống — đánh dấu "Đã chuyển hoá" khi bạn thật sự không còn thấy nó chi phối nữa, để Điểm Nghiệp phản ánh đúng con người bạn bây giờ.</p>
+        <p>${glossaryWrap('Sổ Niềm Tin Cũ Về Tiền', 'tang_thuc')} — nơi ghi lại gốc rễ đang nuôi các Nút Chặn Dòng Tiền bạn hay gặp ở <a href="#kien-thuc" style="color:var(--accent);font-weight:600;">Kiến Thức Nền Tảng →</a>.</p>
+      </div>
+
+      <div class="hint-box" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FDF0E0;color:#B5691A;">Đang chi phối</span>
+          <span>— còn kéo nhẹ Trụ Tài Chính Tâm Thức ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a> xuống</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Đã chuyển hoá ✓</span>
+          <span>— đánh dấu khi bạn thật sự không còn thấy niềm tin đó chi phối mình nữa</span>
+        </div>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `

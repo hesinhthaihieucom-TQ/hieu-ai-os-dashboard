@@ -5,7 +5,9 @@
 // góp ý 2026-08-22: ứng dụng tài chính thường chỉ hỏi con số vô cảm, mất kết nối cảm xúc; ở đây mỗi
 // lần điền số đều bắt cặp với 1 câu hỏi cảm xúc để ra thêm "Điểm Nghiệp Tiền" (0-100, KHÔNG lưu DB —
 // tính lại mỗi lần làm bài, đúng nguyên tắc "không lưu điểm suy ra được" xuyên suốt app) và chỉ ra
-// đang yếu nhất ở khâu Đón Nhận/Chi Dùng/Đối Diện Nợ. Chỉ lưu vào bảng nào ĐÃ CÓ sẵn trong app (Quỹ
+// đang yếu nhất ở khâu nào (Đón Nhận/Chi Dùng/Đối Diện Nợ/Đón Nhận Của Người Khác — 3/4 Nút Chặn Dòng
+// Tiền của app, xem tang-thuc.js NUT_CHAN_LABELS; Nút Chặn #4 "khi thấy người khác chi tiền" hiếm gặp
+// hơn hẳn 3 khâu còn lại nên chưa đưa vào bài test nhanh này). Chỉ lưu vào bảng nào ĐÃ CÓ sẵn trong app (Quỹ
 // Khẩn Cấp, 1 dòng Nợ gộp, Cân Đối Tài Sản tháng này) — Thu nhập tự động/Số nguồn thu/Vibe Check
 // chưa có chỗ lưu theo thời gian trong schema nên chỉ hiện ở phần kết quả, không lưu lại.
 const SEED_DEBT_NAME = 'Tổng nợ hiện tại (ước tính ban đầu)';
@@ -82,6 +84,30 @@ const VIBE_QUESTIONS = {
       { k:'C', points:0, label:'🔴 Căng thẳng, đối đầu', d:'Thường thành tranh cãi mỗi khi đụng tới tiền.' },
     ],
   },
+  // 2 câu thêm 2026-08-24 (theo góp ý Quỳnh, muốn bài test này "tốt nhất, liên hệ với phần còn lại"):
+  // - witness_receive: bài test cũ chỉ chẩn đoán được Nút Chặn #2/#3 (khi CHÍNH MÌNH nhận/chi) qua
+  //   income/expense — Nút Chặn #1 (khi thấy NGƯỜI KHÁC nhận tiền) chưa bao giờ được chẩn đoán ở đây,
+  //   dù đã có sẵn khái niệm này ở tang-thuc.js. Thêm câu này để weakestArea có thể trỏ tới cả #1.
+  // - giving: "phước phần" đúng gốc là CHO đi, không phải giữ/tích — 6 câu trước toàn hỏi về nhận/giữ/
+  //   sợ mất, chưa câu nào hỏi về hành vi cho đi (dù app đã có quỹ "🎁 Cho Đi 5%" ở Ghi Chép Hàng
+  //   Ngày). Seed cùng Trụ 5 với "asset" (xem PILLAR_SEED_MAP) — tích sản mà không cho đi không phải
+  //   Thuận Pháp & Nhân Quả trọn vẹn.
+  witness_receive: {
+    q: 'Khi thấy người khác (bạn bè, đồng nghiệp) vừa nhận tin vui về tiền — thăng chức, trúng thưởng, bán hàng đắt khách — bạn cảm thấy gì đầu tiên?',
+    options: [
+      { k:'A', points:10, label:'🟢 Vui mừng, chúc phúc thật lòng', d:'Bạn không thấy tiền là "cuộc chơi có tổng bằng 0" — người khác giàu lên không lấy đi phần của bạn. Đây là tần số mở, giúp khơi thông dòng tiền của chính bạn.' },
+      { k:'B', points:5, label:'🟡 Vui nhưng có chút chạnh lòng', d:'Chúc mừng ngoài miệng nhưng trong lòng vẫn so sánh — nhận ra được cảm xúc này đã là một bước tiến.' },
+      { k:'C', points:0, label:'🔴 Ganh tị, thấy không công bằng', d:'Đây chính là Nút Chặn Dòng Tiền #1 — thấy người khác nhận tiền lại kích hoạt phản ứng phòng vệ, âm thầm dạy tâm thức rằng thịnh vượng là khan hiếm.' },
+    ],
+  },
+  giving: {
+    q: 'Khi cho/tặng tiền cho người khác (không phải trả nợ) — mừng cưới, giúp người khó khăn, biếu cha mẹ — bạn thường cảm thấy thế nào?',
+    options: [
+      { k:'A', points:10, label:'🟢 Nhẹ nhõm, vui vì tạo được giá trị', d:'Cho đi trong sự đủ đầy, không toan tính — đúng gốc rễ "phước phần": cho là gieo, nhận lại là quả, không cần vội thấy ngay.' },
+      { k:'B', points:5, label:'🟡 Cho vì phải cho', d:'Làm theo thói quen/nghĩa vụ xã hội, chưa thật sự kết nối cảm xúc với hành động cho đi.' },
+      { k:'C', points:0, label:'🔴 Tiếc, sợ cho rồi mình sẽ thiếu', d:'Nỗi sợ khan hiếm khiến việc cho đi thành gánh nặng — chính vòng lặp "giữ chặt vì sợ thiếu" này thường lại là thứ khiến dòng tiền khó chảy vào.' },
+    ],
+  },
 };
 // Ánh xạ mỗi câu Vibe Check sang đúng cột tc_weekly_reflections mà trang-chu.js dùng để tính Điểm
 // Nghiệp — sau khi làm bài, seed thẳng vào tuần hiện tại (CHỈ điền cột nào còn trống, không đè lên
@@ -91,14 +117,15 @@ const PILLAR_SEED_MAP = {
   health_score: ['ef', 'passive'],           // Trụ 1 — Thân Tâm Bản Thể
   parents_connection_score: ['parents'],     // Trụ 2 — Cội Nguồn Sinh Thành
   relationship_score: ['partner'],           // Trụ 3 — Bạn Đời & Mối Quan Hệ Thân Mật
-  finance_mindset_score: ['income', 'expense', 'debt'], // Trụ 4 — Tài Chính Tâm Thức
-  purpose_score: ['asset'],                  // Trụ 5 — Thuận Pháp & Nhân Quả
+  finance_mindset_score: ['income', 'expense', 'debt', 'witness_receive'], // Trụ 4 — Tài Chính Tâm Thức
+  purpose_score: ['asset', 'giving'],        // Trụ 5 — Thuận Pháp & Nhân Quả (tích sản + cho đi)
 };
 function pointsToRating(points){ return points>=10 ? 5 : points>=5 ? 3 : 1; }
 const WEAKEST_AREA_INFO = {
   income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2, seedBelief:'Tôi khó đón nhận trọn vẹn khi tiền về — nỗi lo thường che mất niềm vui.' },
   expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3, seedBelief:'Tôi hay thấy xót của mỗi khi phải chi tiền ra, dù là chi cho việc cần thiết.' },
   debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm.', nutChan:null, seedBelief:'Tôi đang né tránh đối diện thẳng với khoản nợ của mình.' },
+  witness_receive: { label:'Đón Nhận Của Người Khác', explain:'Bạn đang khó vui thật lòng khi người khác nhận được tiền — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #1 (Khi thấy người khác nhận tiền), khiến tâm thức tin rằng thịnh vượng là có hạn.', nutChan:1, seedBelief:'Tôi khó vui thật lòng khi thấy người khác nhận được tiền hoặc tin vui tài chính.' },
 };
 
 function render(container, ctx){
@@ -107,7 +134,7 @@ function render(container, ctx){
   const state = {
     loading: true,
     form: { income:'', expense:'', ef_current:'', ef_monthly_min:'', debt_total:'', debt_monthly:'', assets_total:'', passive_income:'', income_sources:'' },
-    vibe: { income:null, expense:null, ef:null, debt:null, asset:null, passive:null, parents:null, partner:null },
+    vibe: { income:null, expense:null, ef:null, debt:null, asset:null, passive:null, parents:null, partner:null, witness_receive:null, giving:null },
     saving: false,
     result: null,
   };
@@ -164,9 +191,10 @@ function render(container, ctx){
     else note = 'Bức tranh hiện tại khá ổn — duy trì đều đặn và bắt đầu đặt mục tiêu cụ thể ở phần Mục Tiêu & Cam Kết.';
 
     // Điểm Nghiệp Tiền: trung bình điểm các câu Vibe Check ĐÃ trả lời (bỏ qua câu chưa trả lời,
-    // không ép trả lời đủ 6 câu mới xem được các chỉ số vật lý phía trên). Nút Chặn nặng nhất chỉ
-    // xét trong 3 khâu Đón Nhận/Chi Dùng/Đối Diện Nợ — 3 khâu có hành động lặp lại hàng ngày/tháng,
-    // khác Quỹ Khẩn Cấp/Tài Sản/Thu Nhập Tự Động vốn là trạng thái tĩnh hơn.
+    // không ép trả lời đủ hết mới xem được các chỉ số vật lý phía trên). Nút Chặn nặng nhất chỉ xét
+    // trong 4 khâu Đón Nhận/Chi Dùng/Đối Diện Nợ/Đón Nhận Của Người Khác — đây là các khâu có hành
+    // động/tình huống lặp lại hàng ngày/tháng, khác Quỹ Khẩn Cấp/Tài Sản/Thu Nhập Tự Động/Cho Đi vốn
+    // là trạng thái hoặc hành vi không lặp lại đều mỗi ngày.
     const answered = Object.entries(state.vibe).filter(([,v])=>v!=null);
     let vibeScore = null, weakestArea = null;
     if(answered.length > 0){
@@ -175,7 +203,7 @@ function render(container, ctx){
         return s + (opt ? opt.points : 0);
       }, 0);
       vibeScore = Math.round((totalPoints / (answered.length*10)) * 100);
-      const coreAreas = ['income','expense','debt'].filter(key=>state.vibe[key]!=null);
+      const coreAreas = ['income','expense','debt','witness_receive'].filter(key=>state.vibe[key]!=null);
       if(coreAreas.length > 0){
         weakestArea = coreAreas.reduce((worst,key)=>{
           const pts = VIBE_QUESTIONS[key].options.find(o=>o.k===state.vibe[key]).points;
@@ -317,7 +345,7 @@ function render(container, ctx){
     return `
       <div class="page-head">
         <h1>Chấm Điểm Nghiệp Tiền</h1>
-        <p>7 câu hỏi số liệu + 6 câu Vibe Check đi kèm — vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra khâu nào trong dòng tiền đang bị tâm thức sợ hãi chi phối. Có thể làm lại bất cứ lúc nào để cập nhật.</p>
+        <p>7 câu hỏi số liệu + 10 câu Vibe Check đi kèm — vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra khâu nào trong dòng tiền đang bị tâm thức sợ hãi chi phối (kể cả khi thấy NGƯỜI KHÁC nhận tiền, không chỉ riêng chuyện tiền của bạn). Trả lời hết cũng tự điền luôn cả 5 Trụ Cột ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a>, thay vì phải chờ làm Tổng Kết Tuần nhiều lần mới có số thật. Có thể làm lại bất cứ lúc nào để cập nhật.</p>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
@@ -363,10 +391,12 @@ function render(container, ctx){
         </div>
 
         <div class="section">
-          <h3>Bước 8 · Cội Nguồn & Mối Quan Hệ</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;">2 câu này không liên quan số liệu — dùng để Điểm Nghiệp ở Trang chủ có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột, không chỉ riêng Trụ Tài Chính Tâm Thức.</p>
+          <h3>Bước 8 · Cội Nguồn, Mối Quan Hệ & Cho Đi</h3>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;">4 câu này không liên quan số liệu — 2 câu đầu giúp Điểm Nghiệp ở Trang chủ có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột, 2 câu sau giúp chẩn đoán đủ hơn khâu đang yếu nhất (kể cả khi thấy người khác nhận tiền) và soi thêm phần "cho đi" — gốc rễ thật của phước phần, không chỉ riêng chuyện tích luỹ.</p>
           ${vibeQuestionHtml('parents')}
           ${vibeQuestionHtml('partner')}
+          ${vibeQuestionHtml('witness_receive')}
+          ${vibeQuestionHtml('giving')}
 
           <button class="btn btn-full" style="margin-top:18px;" id="setup-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Xem Kết Quả →'}</button>
         </div>

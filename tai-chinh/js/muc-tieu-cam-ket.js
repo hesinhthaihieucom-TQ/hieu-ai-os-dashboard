@@ -198,7 +198,7 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Nhật Ký Rắc Rối</h3>
-          <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;">Có chuyện gì vừa cản trở bạn trên đường tới mục tiêu? Ghi lại — đây không phải dấu hiệu thất bại.</p>
+          <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;">Có chuyện gì vừa cản trở bạn trên đường tới mục tiêu? Ghi lại ngay lúc vừa xảy ra — app sẽ phản chiếu lại 1 góc nhìn khác ngay bên dưới, để chuyện này không âm thầm khiến bạn bỏ cuộc. Chỉ để bạn tự nhìn lại, không tính vào Điểm Nghiệp hay điểm số nào.</p>
           <input type="text" id="mt-obstacle-input" value="${esc(state.obstacleInput)}" placeholder="Vừa có chuyện gì cản trở bạn?" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
           <button class="btn btn-sm" style="margin-top:10px;" id="mt-submit-obstacle" ${state.savingObstacle?'disabled':''}>${state.savingObstacle?'Đang lưu…':'Ghi lại'}</button>
 
