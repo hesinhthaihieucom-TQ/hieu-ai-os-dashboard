@@ -1005,8 +1005,8 @@ alter table recording_schedule add column if not exists done boolean not null de
 -- năng gì mới thì trên app của khách cũng hiện thông báo và hướng dẫn sử dụng cái tính năng đó") —
 -- admin đăng 1 dòng ở đây (qua Quản trị → Thông báo), MỌI user đăng nhập đọc được để hiện banner
 -- (RLS đọc mở cho authenticated, ghi/xoá chỉ admin — giống pattern content_bank_shared). Banner tự
--- ẩn khi user đã đọc, so bằng profiles.last_seen_announcement_id với thông báo mới nhất — không cần
--- bảng "đã đọc" riêng vì chỉ cần so 1 ID mới nhất, không cần lưu lịch sử đọc từng thông báo.
+-- ẩn khi user đã đọc — xem profiles.last_seen_announcement_at bên dưới (2026-08-24, thay cho cách so
+-- 1 ID mới nhất ban đầu, để không bỏ sót thông báo đăng xen giữa 2 lần khách mở app).
 create table if not exists feature_announcements (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -1021,6 +1021,16 @@ drop policy if exists "feature_announcements_admin_write" on feature_announcemen
 create policy "feature_announcements_admin_write" on feature_announcements for all using (is_admin()) with check (is_admin());
 
 alter table profiles add column if not exists last_seen_announcement_id uuid;
+
+-- Mốc "đã xem thông báo tới thời điểm nào" (2026-08-24, theo yêu cầu chị Quỳnh: "có rất nhiều tính
+-- năng mng chưa biết", muốn khách xem ĐỦ mọi thông báo, không chỉ mỗi cái mới nhất) — thay cho
+-- last_seen_announcement_id ở trên (so 1 ID mới nhất sẽ làm KHÁCH BỎ LỠ mọi thông báo đăng xen giữa
+-- 2 lần khách mở app, vì xem xong 1 cái là nhảy thẳng mốc "đã xem" lên tới ID mới nhất luôn). Dùng
+-- mốc thời gian thay vì 1 ID để app-shell.js lọc được TOÀN BỘ thông báo mới hơn mốc này, xếp thành
+-- hàng đợi hiện lần lượt — mỗi thông báo xem xong tự đẩy mốc lên đúng created_at của nó rồi hiện
+-- tiếp cái kế, không bỏ sót cái nào. Cột last_seen_announcement_id ở trên không xoá (tránh đổi
+-- schema có thể ảnh hưởng dữ liệu cũ) nhưng không còn dùng nữa.
+alter table profiles add column if not exists last_seen_announcement_at timestamptz;
 
 -- Nâng cấp thông báo tính năng mới thành popup giữa màn hình + hướng dẫn từng bước có thể bấm "Có"
 -- xem (2026-08-22, theo phản hồi chị Quỳnh: "làm y hệt như hướng dẫn lúc đầu vô app") — mỗi thông

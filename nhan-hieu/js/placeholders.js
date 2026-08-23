@@ -41,8 +41,8 @@ const HELP_SECTIONS = [
 // báo MỚI NHẤT rồi mất hẳn, không tra lại được. Giờ có nơi cố định liệt kê lại hết, bấm "Xem lại
 // hướng dẫn" chạy đúng lại tour trỏ sáng từng bước (dùng chung window.startFeatureAnnouncement() đã
 // có sẵn từ feature-tour.js, không viết lại UI hướng dẫn) — onDone truyền vào rỗng vì đây là XEM LẠI
-// chủ động, không phải popup tự động lần đầu, không được đụng vào profiles.last_seen_announcement_id
-// (đụng vào sẽ vô tình đánh dấu "đã xem" nhầm 1 thông báo MỚI HƠN mà người này thực ra chưa xem).
+// chủ động, không phải popup tự động lần đầu, không được đụng vào profiles.last_seen_announcement_at
+// (đụng vào sẽ vô tình đẩy mốc "đã xem" qua 1 thông báo MỚI HƠN mà người này thực ra chưa xem).
 function renderHelp(container, ctx){
   const state = { question:'', asking:false, answer:null, error:null, freeQuestionUsed:false, announcements:[], loadingAnnouncements:true };
   function draw(){ container.innerHTML = html(); bind(); }

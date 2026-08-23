@@ -18,7 +18,7 @@ const NAV = [
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null, profileLoadError:null };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], profileLoadError:null };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 // Public key VAPID cho Web Push (đổi lại 2026-08-22 vì key cũ chưa từng set VAPID_PRIVATE_KEY khớp
@@ -229,7 +229,11 @@ async function initApp(){
   const { data } = await supabaseClient.auth.getSession();
   if(data.session){
     AppState.user = data.session.user;
-    await Promise.all([loadProfile(), loadLatestAnnouncement()]);
+    // TUẦN TỰ, không Promise.all — loadAnnouncementQueue() cần đọc profile.last_seen_announcement_at
+    // vừa tải xong ở loadProfile(), chạy song song sẽ có lúc đọc trúng profile rỗng, coi như "chưa
+    // xem gì" và hiện lại TOÀN BỘ thông báo cũ mỗi lần vào app.
+    await loadProfile();
+    await loadAnnouncementQueue();
     AppState.route = currentRouteFromHash();
     renderApp();
   } else {
@@ -241,7 +245,7 @@ async function initApp(){
   // dày để tốn query liên tục trong lúc họ không rời khỏi app.
   setInterval(async ()=>{
     if(!AppState.user) return;
-    await loadLatestAnnouncement();
+    await loadAnnouncementQueue();
     maybeShowFeatureAnnouncement();
   }, 3 * 60 * 1000);
 
@@ -262,7 +266,8 @@ async function initApp(){
       // hashchange tự bắn ra và gọi renderApp() lần nữa, AppState.profile đã có sẵn rồi, tránh
       // render hụt 1 nhịp với profile null.
       AppState.route = 'trang-chu';
-      Promise.all([loadProfile(), loadLatestAnnouncement()]).then(()=>{
+      // Tuần tự — cùng lý do đã ghi ở initApp(): loadAnnouncementQueue() cần profile đã tải xong.
+      loadProfile().then(loadAnnouncementQueue).then(()=>{
         location.hash = 'trang-chu';
         renderApp();
       });
@@ -302,27 +307,34 @@ async function loadProfile(){
   AppState.profileLoadError = error ? error.message : null;
 }
 
-// Thông báo tính năng mới (2026-08-22) — chỉ lấy 1 dòng MỚI NHẤT, so với
-// profiles.last_seen_announcement_id để quyết định có hiện banner hay không. Gọi 1 LẦN lúc vào app/
-// đăng nhập (không gọi lại mỗi lần renderApp() đổi route) để khỏi tốn query lặp lại vô ích.
-async function loadLatestAnnouncement(){
+// Thông báo tính năng mới — trước đây chỉ lấy ĐÚNG 1 dòng MỚI NHẤT, nên ai đăng nhiều thông báo
+// liên tiếp trong lúc 1 khách không mở app thì khách đó BỎ LỠ hẳn các thông báo ở giữa (chỉ thấy
+// đúng thông báo cuối cùng khi quay lại) — theo yêu cầu chị Quỳnh 2026-08-24: "có rất nhiều tính
+// năng mng chưa biết", muốn khách xem ĐỦ mọi thông báo, không bỏ sót cái nào. Giờ lấy TOÀN BỘ thông
+// báo mới hơn mốc "đã xem tới đâu" (profiles.last_seen_announcement_at), xếp cũ→mới, xếp thành 1
+// hàng đợi hiện lần lượt từng cái — bấm xong/bỏ qua 1 cái mới đẩy mốc lên đúng đến đó rồi hiện tiếp
+// cái kế, không đẩy mốc thẳng lên cái mới nhất như cách cũ.
+async function loadAnnouncementQueue(){
   if(!AppState.user) return;
-  const { data } = await supabaseClient.from('feature_announcements').select('*').order('created_at', { ascending:false }).limit(1).maybeSingle();
-  AppState.latestAnnouncement = data || null;
+  const sinceAt = (AppState.profile && AppState.profile.last_seen_announcement_at) || '1970-01-01';
+  const { data } = await supabaseClient.from('feature_announcements').select('*').gt('created_at', sinceAt).order('created_at', { ascending:true });
+  AppState.announcementQueue = data || [];
 }
 
-// Hiện popup nếu có thông báo CHƯA ĐỌC — gọi từ renderApp() (lúc mới vào app/đổi trang) VÀ từ vòng
-// lặp định kỳ ở initApp() (để người đang MỞ SẴN app, không tải lại trang, vẫn thấy popup mà không
-// cần tắt/mở lại — theo câu hỏi chị Quỳnh 2026-08-22: "ngta đang dùng app vẫn nhận đc ngay ko").
+// Hiện popup CHO THÔNG BÁO CŨ NHẤT còn chưa xem trong hàng đợi — gọi từ renderApp() (lúc mới vào
+// app/đổi trang) VÀ từ vòng lặp định kỳ ở initApp() (để người đang MỞ SẴN app, không tải lại trang,
+// vẫn thấy popup mà không cần tắt/mở lại). Xem/bỏ qua xong tự nối sang thông báo kế tiếp trong hàng
+// đợi (nếu còn) — không cần đợi hết 3 phút hay tắt mở lại app mới thấy cái tiếp theo.
 function maybeShowFeatureAnnouncement(){
-  const ann = AppState.latestAnnouncement;
-  const annUnseen = ann && (!AppState.profile || AppState.profile.last_seen_announcement_id !== ann.id);
-  if(window.startFeatureAnnouncement && annUnseen){
-    window.startFeatureAnnouncement(ann, async ()=>{
-      if(AppState.profile) AppState.profile.last_seen_announcement_id = ann.id;
-      await supabaseClient.from('profiles').update({ last_seen_announcement_id: ann.id }).eq('id', AppState.user.id);
-    });
-  }
+  const queue = AppState.announcementQueue;
+  if(!queue || !queue.length || !window.startFeatureAnnouncement) return;
+  const ann = queue[0];
+  window.startFeatureAnnouncement(ann, async ()=>{
+    if(AppState.profile) AppState.profile.last_seen_announcement_at = ann.created_at;
+    await supabaseClient.from('profiles').update({ last_seen_announcement_at: ann.created_at }).eq('id', AppState.user.id);
+    queue.shift();
+    maybeShowFeatureAnnouncement();
+  });
 }
 
 function hasActiveAccess(){

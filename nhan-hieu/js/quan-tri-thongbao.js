@@ -3,7 +3,7 @@
 // năng gì mới thì trên app của khách cũng hiện thông báo và hướng dẫn sử dụng cái tính năng đó" —
 // sau đó chốt lại: "hiện kiểu popup giữa màn hình... hỏi ngta có muốn hướng dẫn ko, ấn có thì
 // hướng dẫn từng bước y hệt như hướng dẫn lúc đầu vô app"). Đăng ở đây → hiện popup cho MỌI user
-// (feature-tour.js so profiles.last_seen_announcement_id) + đẩy push cho ai đã bật thông báo
+// (app-shell.js xếp hàng đợi theo profiles.last_seen_announcement_at) + đẩy push cho ai đã bật thông báo
 // (api/cron/send-reminders.js quét bảng feature_announcements). "Các bước hướng dẫn" là TUỲ CHỌN —
 // để trống thì popup chỉ hiện nội dung + nút "Đã hiểu", không có tour.
 const EMOJI_OPTIONS = ['🎉','🚀','🎁','⚠️','✨','🔥','📢','💡'];

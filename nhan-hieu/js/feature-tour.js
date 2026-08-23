@@ -7,7 +7,8 @@
 // tách riêng để sửa cái này không rủi ro ảnh hưởng luồng onboarding đã kiểm chứng.
 
 // ann: 1 dòng từ bảng feature_announcements ({id, title, body, steps}). onDone: gọi khi popup đóng
-// (bất kể bấm "Đã hiểu"/"Bỏ qua" hay đi hết các bước) — dùng để lưu last_seen_announcement_id.
+// (bất kể bấm "Đã hiểu"/"Bỏ qua" hay đi hết các bước) — dùng để lưu last_seen_announcement_at và
+// hiện tiếp thông báo kế tiếp trong hàng đợi nếu còn (xem app-shell.js).
 function startFeatureAnnouncement(ann, onDone){
   if(!ann) return;
   if(document.getElementById('fa-overlay')) return;
