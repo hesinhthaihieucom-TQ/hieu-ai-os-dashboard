@@ -490,7 +490,7 @@ function renderProfileLoadErrorScreen(){
   const root = document.getElementById('app');
   root.innerHTML = `
     <div class="auth-shell" style="max-width:420px;">
-      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <img src="assets/logo-hieu-kenh-badge.png" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>Không tải được thông tin tài khoản</h1>
       <div class="sub">Có thể do mạng chập chờn — đây không phải hết hạn dùng, tài khoản của bạn vẫn nguyên vẹn. Thử tải lại giúp mình nhé.</div>
       <div class="card">
@@ -517,7 +517,7 @@ function renderExpiredScreen(){
 
   root.innerHTML = `
     <div class="auth-shell" style="max-width:460px;">
-      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <img src="assets/logo-hieu-kenh-badge.png" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 7 ngày đã kết thúc'}</h1>
       <div class="sub">${hadAccessBefore
         ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Chuyển khoản để tiếp tục dùng ngay.`
@@ -555,7 +555,7 @@ function renderAuthScreen(err, successMsg){
   const isLogin = AppState.authMode === 'login';
   root.innerHTML = `
     <div class="auth-shell">
-      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <img src="assets/logo-hieu-kenh-badge.png" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>XÂY NHÂN HIỆU</h1>
       <div class="sub">Định vị · Sửa kênh · Viết content · Lịch đăng<br><span class="sub-brand">Hệ sinh thái HIỂU - HIỂU KÊNH</span></div>
       <div class="auth-tabs">
@@ -656,7 +656,7 @@ function renderApp(){
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">
         <div class="sidebar-brand" id="sidebar-brand-home" style="cursor:pointer;">
-          <img src="assets/logo-hieu-kenh-badge.svg" class="brand-logo" alt="" onerror="this.style.display='none'">
+          <img src="assets/logo-hieu-kenh-badge.png" class="brand-logo" alt="" onerror="this.style.display='none'">
           <div class="brand-text">XÂY NHÂN HIỆU<small>Hệ sinh thái HIỂU<br>HIỂU KÊNH</small></div>
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
