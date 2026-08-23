@@ -237,7 +237,10 @@ function render(container, ctx){
               <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;">
                 <span style="font-size:13.5px;${isOverdue?'color:var(--gold);':''}">${isOverdue?'⏰ ':''}<b>${esc(new Date(r.scheduled_at).toLocaleString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }))}</b>${r.title?` — ${esc(r.title)}`:''}</span>
                 <span style="display:flex;gap:12px;align-items:center;">
-                  <span class="btn-ghost btn btn-sm" data-mark-recording-done="${r.id}">✓ Đã làm</span>
+                  <span data-mark-recording-done="${r.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:var(--ink-soft);font-size:13px;" title="Bấm để đánh dấu đã quay xong — chưa bấm thì vẫn coi là chưa làm">
+                    <span style="width:13px;height:13px;border-radius:3px;border:1.5px solid var(--ink-soft);background:transparent;display:inline-flex;flex-shrink:0;"></span>
+                    Đã làm
+                  </span>
                   <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-recording="${r.id}">Xoá</span>
                 </span>
               </div>
