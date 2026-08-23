@@ -63,7 +63,38 @@ const VIBE_QUESTIONS = {
       { k:'C', points:0, label:'🔴 Không đủ tốt', d:'Thấy bản thân còn nhiều thiếu sót, khó mà đạt tới cột mốc đó.' },
     ],
   },
+  // 2 câu thêm 2026-08-22 — 6 câu trên chỉ chạm tới Trụ 4 (Tài Chính Tâm Thức); Điểm Nghiệp ở Trang
+  // chủ có 5 trụ, nếu thiếu 2 câu này thì 4 trụ còn lại mãi chỉ là con số mặc định 50 (trung tính)
+  // cho tới khi làm Tổng Kết Tuần nhiều lần. Xem PILLAR_SEED_MAP bên dưới để rõ câu nào seed trụ nào.
+  parents: {
+    q: 'Khi nghĩ về cách bố mẹ đã dạy/truyền lại quan niệm về tiền cho bạn, bạn cảm thấy thế nào?',
+    options: [
+      { k:'A', points:10, label:'🟢 Biết ơn', d:'Dù bài học gì, tôi thấy đó là món quà giúp tôi trưởng thành hôm nay.' },
+      { k:'B', points:5, label:'🟡 Trung lập', d:'Không nghĩ nhiều, bố mẹ dạy sao thì biết vậy.' },
+      { k:'C', points:0, label:'🔴 Oán trách', d:'Ước gì bố mẹ đã dạy mình khác đi về chuyện tiền bạc.' },
+    ],
+  },
+  partner: {
+    q: 'Khi bàn chuyện tiền bạc với bạn đời/người yêu, bạn thường cảm thấy thế nào?',
+    options: [
+      { k:'A', points:10, label:'🟢 Cởi mở, đồng lòng', d:'Thấy đó là chuyện chung, thoải mái chia sẻ thật lòng.' },
+      { k:'B', points:5, label:'🟡 Né tránh', d:'Ngại nói ra, sợ thành chuyện to tiếng.' },
+      { k:'C', points:0, label:'🔴 Căng thẳng, đối đầu', d:'Thường thành tranh cãi mỗi khi đụng tới tiền.' },
+    ],
+  },
 };
+// Ánh xạ mỗi câu Vibe Check sang đúng cột tc_weekly_reflections mà trang-chu.js dùng để tính Điểm
+// Nghiệp — sau khi làm bài, seed thẳng vào tuần hiện tại (CHỈ điền cột nào còn trống, không đè lên
+// tự đánh giá thật đã có, xem submit()) để lần đầu vào Trang chủ radar có dữ liệu thật ở cả 5 trụ,
+// không phải mặc định 50 cho tới khi làm Tổng Kết Tuần nhiều lần.
+const PILLAR_SEED_MAP = {
+  health_score: ['ef', 'passive'],           // Trụ 1 — Thân Tâm Bản Thể
+  parents_connection_score: ['parents'],     // Trụ 2 — Cội Nguồn Sinh Thành
+  relationship_score: ['partner'],           // Trụ 3 — Bạn Đời & Mối Quan Hệ Thân Mật
+  finance_mindset_score: ['income', 'expense', 'debt'], // Trụ 4 — Tài Chính Tâm Thức
+  purpose_score: ['asset'],                  // Trụ 5 — Thuận Pháp & Nhân Quả
+};
+function pointsToRating(points){ return points>=10 ? 5 : points>=5 ? 3 : 1; }
 const WEAKEST_AREA_INFO = {
   income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2, seedBelief:'Tôi khó đón nhận trọn vẹn khi tiền về — nỗi lo thường che mất niềm vui.' },
   expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3, seedBelief:'Tôi hay thấy xót của mỗi khi phải chi tiền ra, dù là chi cho việc cần thiết.' },
@@ -76,7 +107,7 @@ function render(container, ctx){
   const state = {
     loading: true,
     form: { income:'', expense:'', ef_current:'', ef_monthly_min:'', debt_total:'', debt_monthly:'', assets_total:'', passive_income:'', income_sources:'' },
-    vibe: { income:null, expense:null, ef:null, debt:null, asset:null, passive:null },
+    vibe: { income:null, expense:null, ef:null, debt:null, asset:null, passive:null, parents:null, partner:null },
     saving: false,
     result: null,
   };
@@ -157,6 +188,26 @@ function render(container, ctx){
     return { cashFlow, savingsRate, efMonths, netWorth, dti, passivePct, note, vibeScore, weakestArea };
   }
 
+  // Seed tự đánh giá tuần hiện tại từ các câu Vibe Check — CHỈ điền cột nào còn TRỐNG (không đè lên
+  // tự đánh giá thật người dùng đã tự chấm ở Tổng Kết Tuần), để Điểm Nghiệp ở Trang chủ có dữ liệu
+  // thật ở cả 5 Trụ Cột ngay lần đầu, thay vì mặc định 50 cho tới khi làm Tổng Kết Tuần nhiều lần.
+  async function seedWeeklyPillars(){
+    const weekStartIso = isoDate(startOfWeek(new Date()));
+    const { data: existing } = await ctx.supabase.from('tc_weekly_reflections')
+      .select('*').eq('user_id', ctx.user.id).eq('week_start', weekStartIso).maybeSingle();
+    const payload = { user_id: ctx.user.id, week_start: weekStartIso, updated_at: new Date().toISOString() };
+    let hasAnySeed = false;
+    Object.entries(PILLAR_SEED_MAP).forEach(([column, vibeKeys]) => {
+      if(existing && existing[column] != null) return; // đã tự chấm thật rồi — không đè lên
+      const answered = vibeKeys.filter(k => state.vibe[k] != null);
+      if(answered.length === 0) return;
+      const avgPoints = answered.reduce((s,k)=> s + VIBE_QUESTIONS[k].options.find(o=>o.k===state.vibe[k]).points, 0) / answered.length;
+      payload[column] = pointsToRating(avgPoints);
+      hasAnySeed = true;
+    });
+    if(hasAnySeed) await ctx.supabase.from('tc_weekly_reflections').upsert(payload, { onConflict:'user_id,week_start' });
+  }
+
   async function submit(){
     state.saving = true; draw();
     const f = state.form;
@@ -184,6 +235,7 @@ function render(container, ctx){
       ctx.supabase.from('tc_networth_snapshots').upsert({
         user_id: ctx.user.id, snapshot_month: month, asset_other: assetsTotal, updated_at: new Date().toISOString(),
       }, { onConflict:'user_id,snapshot_month' }),
+      seedWeeklyPillars(),
     ]);
 
     // Xoá draft sau khi đã ra kết quả — làm lại bài lần sau nên bắt đầu sạch (đúng tinh thần "Điểm
@@ -248,6 +300,7 @@ function render(container, ctx){
             </div>
           ` : ''}
           <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
+          <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a> có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
         </div>
       ` : ''}
 
@@ -307,6 +360,13 @@ function render(container, ctx){
           ${fieldHtml('passive_income', 'Thu nhập tự động/tháng', 'Tiền đến từ tài sản/hệ thống, không cần trực tiếp làm việc trong tháng đó.', 'triệu đ')}
           ${fieldHtml('income_sources', 'Số nguồn thu đang hoạt động', 'VD: lương + bán hàng online + cho thuê nhà = 3 nguồn.', 'nguồn')}
           ${vibeQuestionHtml('passive')}
+        </div>
+
+        <div class="section">
+          <h3>Bước 8 · Cội Nguồn & Mối Quan Hệ</h3>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;">2 câu này không liên quan số liệu — dùng để Điểm Nghiệp ở Trang chủ có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột, không chỉ riêng Trụ Tài Chính Tâm Thức.</p>
+          ${vibeQuestionHtml('parents')}
+          ${vibeQuestionHtml('partner')}
 
           <button class="btn btn-full" style="margin-top:18px;" id="setup-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Xem Kết Quả →'}</button>
         </div>
