@@ -338,13 +338,12 @@ function render(container, ctx){
                   <b style="font-size:12px;">${esc(matchedPost ? matchedPost.title : (suggestion.chu_de || 'Chưa chọn bài cụ thể'))}</b>
                   ${matchedPost ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">Bài đã viết sẵn</div>` : (suggestion.dinh_dang ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${esc(suggestion.dinh_dang)}</div>` : '')}
                   <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;">
-                    ${matchedPost
-                      ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>`
-                      : state.choosingKhoFor===`${dateStr}|${s.key}`
-                        ? `<span style="font-size:11px;color:var(--ink-soft);">Tìm ở kho nào?</span>
-                           <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-content|${dateStr}|${s.key}">Kho Content</span>
-                           <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-hook|${dateStr}|${s.key}">Kho Hook</span>`
-                        : `<span class="btn-ghost btn btn-sm" data-choose-kho="${dateStr}|${s.key}">Chọn bài mẫu đúng trục →</span>`
+                    ${matchedPost ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>` : ''}
+                    ${state.choosingKhoFor===`${dateStr}|${s.key}`
+                      ? `<span style="font-size:11px;color:var(--ink-soft);">Tìm ở kho nào?</span>
+                         <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-content|${dateStr}|${s.key}">Kho Content</span>
+                         <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-hook|${dateStr}|${s.key}">Kho Hook</span>`
+                      : `<span class="btn-ghost btn btn-sm" data-choose-kho="${dateStr}|${s.key}">Chọn bài mẫu đúng trục →</span>`
                     }
                     <span style="align-self:center;color:var(--ink-soft);font-size:11px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
                   </div>
