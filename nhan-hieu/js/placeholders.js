@@ -12,10 +12,11 @@ function comingSoon(title, desc){
 
 // Quy trình LẶP LẠI mỗi tuần khi sản xuất content (khác câu "nên làm theo thứ tự nào" bên dưới —
 // đó là thứ tự làm quen app LẦN ĐẦU). Đặt thành khối riêng, nổi bật ở đầu trang, để xem lại được bất
-// cứ lúc nào (2026-08-23, chốt cùng chị Quỳnh — thẻ tóm tắt tương ứng đặt ở Trang chủ, trỏ về đây).
+// cứ lúc nào (2026-08-23, chốt cùng chị Quỳnh). Trang chủ dùng ĐÚNG 5 bước này làm checklist chính
+// (đã gộp làm 1, không còn tách 2 khối riêng) — khối này là bản đầy đủ kèm lý do từng bước.
 const WORKFLOW_GUIDE = [
-  { n:1, title:'Định Vị thật chi tiết', why:'Nền tảng cho mọi bước sau — trục nội dung, chân dung khách hàng, giọng văn AI dùng lại xuyên suốt đều lấy từ đây, nên trả lời kỹ ngay từ đầu, đỡ phải sửa lại nhiều lần về sau.' },
-  { n:2, title:'Sửa Kênh', why:'Đồng bộ ảnh đại diện/ảnh bìa/bio khớp với định vị vừa chốt. Chỉ cần làm 1 lần (không lặp lại mỗi tuần), nhưng nên làm trước khi đẩy content ra ngoài — bài viral kéo người lạ vào trang mà kênh chưa khớp định vị thì phí mất khách.' },
+  { n:1, title:'Định Vị thật chi tiết', required:true, why:'Nền tảng cho mọi bước sau — trục nội dung, chân dung khách hàng, giọng văn AI dùng lại xuyên suốt đều lấy từ đây, nên trả lời kỹ ngay từ đầu, đỡ phải sửa lại nhiều lần về sau.' },
+  { n:2, title:'Sửa Kênh', required:true, why:'Đồng bộ ảnh đại diện/ảnh bìa/bio khớp với định vị vừa chốt. Chỉ cần làm 1 lần (không lặp lại mỗi tuần), nhưng nên làm trước khi đẩy content ra ngoài — bài viral kéo người lạ vào trang mà kênh chưa khớp định vị thì phí mất khách.' },
   { n:3, title:'Lịch Đăng Bài → bấm "AI gợi ý lịch tuần"', why:'Lên khung trục nội dung + định dạng cho cả 7 ngày TRƯỚC khi viết bất kỳ bài nào — tránh viết lan man rồi không biết nhét vào đâu. Nhập mục tiêu tuần này (ra mắt sản phẩm, tăng follow...) để AI ưu tiên đúng chỗ.' },
   { n:4, title:'Viết từng ô lịch theo đúng gợi ý', why:'Ô nào AI đã khớp sẵn 1 bài bạn từng viết — Chấm Điểm Content/Hook nhanh trước khi dùng (1 lượt) để chắc bài đủ chuẩn trước khi lên lịch thật. Ô chưa có bài — bấm "Chọn bài mẫu đúng trục" vào Kho Content/Kho Hook đúng trục để viết; nếu vừa thấy 1 bài viral ở nơi khác thì qua Tái Chế Content Viral thay vì viết từ đầu.' },
   { n:5, title:'Đẩy Bài & CTA Comment khi bài đạt view tốt', why:'Gợi ý mốc trên 1000 view. App cũng tự nhắc theo giờ (3h/6h/24h sau khi đăng) để không quên vào kiểm tra — 2 cái bổ trợ nhau, đừng bỏ qua bước này vì đây là lúc tối ưu hoá đúng bài đang viral, không phải lúc để yên.' },
@@ -37,6 +38,10 @@ const HELP_SECTIONS = [
     { q:'Dạng Content dùng để làm gì?', a:'Sau khi có Định Vị, trang này tự gợi ý 2-3 dạng content (trong 12 dạng) phù hợp nhất với trục nội dung của bạn, kèm hướng dẫn cách làm cụ thể từng dạng.' },
     { q:'Chấm Điểm Content / Chấm Điểm Hook dùng để làm gì?', a:'Dán 1 bài viết hoặc 1 câu hook vào để AI chấm theo đúng khung chuẩn, chỉ ra chỗ yếu và cách sửa cụ thể — không chỉ khen chê chung chung.' },
     { q:'Lịch Đăng Bài có tự động không?', a:'Có. Nhập mục tiêu tuần này, bấm "AI gợi ý lịch tuần" — hệ thống xếp sẵn 7 ngày theo đúng trục nội dung, bạn chỉ cần bấm "Dùng gợi ý" hoặc tự chọn bài khác.' },
+    { q:'Viết Content dùng như thế nào?', a:'Vào từ 1 bài mẫu ở Kho Content/Kho Hook (bấm "Viết bài từ đây") hoặc tự nhập chủ đề — AI viết bài hoàn chỉnh kèm hook, CTA, từ khoá CTA, bình luận ghim gợi ý, rồi tự chấm điểm và gợi ý bản tối ưu hơn ngay sau khi viết xong.' },
+    { q:'Tái Chế Content Viral dùng khi nào?', a:'Khi bạn thấy 1 bài đang viral ở nơi khác (kênh khác, group khác) và muốn viết lại theo giọng văn của mình — dán nguyên văn bài đó vào, AI giữ đúng hook và cấu trúc đã được kiểm chứng, chỉ đổi câu chữ theo câu chuyện thật của bạn, không sao chép nguyên văn.' },
+    { q:'Đẩy Bài & CTA Comment dùng để làm gì?', a:'Sau khi đăng bài thật, quay lại đây theo mốc lượt xem bài đạt được (không phải theo giờ) — hệ thống gợi ý nên bình luận gì, gắn tài sản/link nào ở mốc view đó để tối ưu bài đang lên. App cũng tự nhắc theo giờ (3h/6h/24h) để bạn nhớ vào kiểm tra view.' },
+    { q:'Tạo Ảnh Thương Hiệu khác gì ảnh bìa ở Sửa Kênh?', a:'Đây là ảnh có chữ để đăng KÈM bài viết (không phải ảnh đại diện/ảnh bìa kênh) — chọn bố cục, font, màu ngay trên web, dùng khi bài cần thêm ảnh minh hoạ trực quan (trích dẫn, số liệu...).' },
   ]},
   { group:'Dữ liệu & bảo mật', items: [
     { q:'Dữ liệu của tôi có bị người khác xem không?', a:'Không. Mỗi tài khoản chỉ thấy dữ liệu của chính mình, trừ "Kho Content Viral"/"Kho Hook Viral" do đội ngũ quản lý là mọi người đều xem được.' },
@@ -54,12 +59,12 @@ function renderHelp(container){
 
     <div class="section highlight" style="margin-bottom:24px;">
       <h3>📋 Quy trình dùng app hiệu quả nhất</h3>
-      <div class="body" style="margin-bottom:14px;">Quy trình lặp lại mỗi tuần khi sản xuất content — khác checklist làm quen app lần đầu ở Trang chủ.</div>
+      <div class="body" style="margin-bottom:14px;">Quy trình lặp lại mỗi tuần khi sản xuất content — đúng thứ tự checklist ở Trang chủ, đây là bản đầy đủ kèm lý do từng bước.</div>
       ${WORKFLOW_GUIDE.map(s=>`
         <div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.12);">
           <div style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${s.n}</div>
           <div>
-            <b>${esc(s.title)}</b>
+            <b>${esc(s.title)}</b>${s.required?` <span style="background:var(--gold);color:#1E2420;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;">Bắt buộc trước</span>`:''}
             <div style="font-size:13px;margin-top:3px;opacity:.9;">${esc(s.why)}</div>
           </div>
         </div>

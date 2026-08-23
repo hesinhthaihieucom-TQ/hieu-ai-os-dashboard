@@ -1,21 +1,15 @@
 (function(){
+// Quy trình dùng app hiệu quả nhất (2026-08-23, chốt cùng chị Quỳnh) — GỘP checklist làm quen app
+// lần đầu với quy trình LẶP LẠI mỗi tuần khi sản xuất content thành 1 khối duy nhất (trước đó tách 2
+// thẻ riêng, chị Quỳnh phản hồi thấy trùng/thừa). Vẫn giữ tick hoàn thành + nút "Bắt đầu/Xem lại" cho
+// từng bước, chỉ đổi tên/thứ tự cho đúng quy trình hiệu quả (lên lịch AI TRƯỚC khi viết). Lý do đầy
+// đủ từng bước nằm ở Hỏi & Trợ Giúp, không nhắc lại hết ở đây cho gọn.
 const STEPS = [
-  { key:'dinh-vi', label:'Định Vị thương hiệu', desc:'Trả lời 16 câu hỏi để AI tìm ra định vị chuẩn nhất — mọi bước sau đều dựa vào kết quả này.' },
-  { key:'sua-kenh', label:'Sửa Kênh', desc:'Kiểm tra ảnh đại diện, ảnh bìa, bio, profile có khớp định vị chưa, AI chỉ chỗ cần sửa.' },
-  { key:'viet-content', label:'Viết bài đầu tiên', desc:'Nhập 1 chủ đề, để AI viết bài hoàn chỉnh theo đúng giọng văn của bạn.' },
-  { key:'lich-dang', label:'Lên lịch đăng bài', desc:'Xếp bài vào lịch tuần, đăng đều đặn thay vì nhớ ngày tự đăng tay.' },
-];
-
-// Quy trình dùng app hiệu quả nhất (2026-08-23, chốt cùng chị Quỳnh) — khác STEPS ở trên (checklist
-// làm lần đầu, có tick hoàn thành), đây là quy trình LẶP LẠI mỗi tuần khi sản xuất content, nên đặt
-// thành thẻ riêng để xem lại được bất cứ lúc nào (không tự ẩn khi đã "xong"). Bản đầy đủ kèm lý do
-// từng bước nằm ở Hỏi & Trợ Giúp — thẻ này chỉ tóm tắt để không choán Trang chủ.
-const WORKFLOW_STEPS = [
-  '<b>Định Vị</b> thật chi tiết',
-  '<b>Sửa Kênh</b> khớp định vị (làm 1 lần)',
-  '<b>Lịch Đăng Bài</b> → AI gợi ý lịch tuần trước',
-  'Viết từng ô lịch từ <b>Kho Content/Kho Hook</b> đúng trục',
-  '<b>Đẩy Bài</b> khi bài đạt view tốt',
+  { key:'dinh-vi', label:'Định Vị thật chi tiết', desc:'Trả lời 16 câu hỏi để AI tìm ra định vị chuẩn nhất — mọi bước sau đều dựa vào kết quả này.', required:true },
+  { key:'sua-kenh', label:'Sửa Kênh khớp định vị', desc:'Kiểm tra ảnh đại diện, ảnh bìa, bio có khớp định vị chưa — chỉ cần làm 1 lần, AI chỉ chỗ cần sửa.', required:true },
+  { key:'lich-dang', label:'Lịch Đăng Bài → AI gợi ý lịch tuần', desc:'Lên khung trục nội dung cho cả tuần TRƯỚC khi viết, tránh viết lan man sai chỗ.' },
+  { key:'viet-content', label:'Viết từng ô lịch từ Kho Content/Kho Hook', desc:'Theo đúng trục AI đã gợi ý cho từng ô — không phải viết tự do rồi mới tìm chỗ nhét vào.' },
+  { key:'day-bai', label:'Đẩy Bài khi bài đạt view tốt', desc:'Gợi ý mốc trên 1000 view — đừng bỏ qua, đây là lúc tối ưu bài đang viral.' },
 ];
 
 const IMPORTANT_NOTES = [
@@ -40,17 +34,19 @@ function render(container, ctx){
   draw();
 
   async function boot(){
-    const [pos, audit, posts, cal] = await Promise.all([
+    const [pos, audit, posts, cal, dayBai] = await Promise.all([
       ctx.supabase.from('positioning_results').select('luot1').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('channel_audits').select('id').eq('user_id', ctx.user.id).limit(1).maybeSingle(),
       ctx.supabase.from('posts').select('id').eq('user_id', ctx.user.id).limit(1).maybeSingle(),
       ctx.supabase.from('calendar_entries').select('id').eq('user_id', ctx.user.id).limit(1).maybeSingle(),
+      ctx.supabase.from('posts').select('id').eq('user_id', ctx.user.id).not('day_bai_plan', 'is', null).limit(1).maybeSingle(),
     ]);
     state.done = {
       'dinh-vi': !!(pos.data && pos.data.luot1),
       'sua-kenh': !!audit.data,
       'viet-content': !!posts.data,
       'lich-dang': !!cal.data,
+      'day-bai': !!dayBai.data,
     };
     state.loading = false;
     draw();
@@ -66,7 +62,7 @@ function render(container, ctx){
       </div>
 
       <div class="card">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Bắt đầu từ đây</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">📋 Quy trình dùng app hiệu quả nhất</h3>
         ${state.loading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải tiến độ…</div>` : STEPS.map((s,i)=>{
           const isDone = state.done[s.key];
           const isNext = i===nextIdx;
@@ -76,21 +72,14 @@ function render(container, ctx){
               <div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
                 background:${isDone?'var(--accent)':'var(--accent-soft)'};color:${isDone?'#fff':'var(--accent)'};">${isDone?'✓':i+1}</div>
               <div class="txt">
-                <b>${esc(s.label)}</b><br>
+                <b>${esc(s.label)}</b>${s.required?` <span style="background:var(--gold);color:#1E2420;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;">Bắt buộc trước</span>`:''}<br>
                 <span style="color:var(--ink-soft);font-size:13px;">${esc(s.desc)}</span>
               </div>
             </div>
             <button class="${isNext?'btn':'btn-ghost btn'} btn-sm" data-key="${s.key}">${isDone?'Xem lại →':(isNext?'Bắt đầu →':'→')}</button>
           </div>
         `;}).join('')}
-      </div>
-
-      <div class="card" style="margin-top:20px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">📋 Quy trình dùng app hiệu quả nhất</h3>
-        <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.5;">
-          ${WORKFLOW_STEPS.map(s=>`<li>${s}</li>`).join('')}
-        </ol>
-        <a href="#tro-giup" style="display:inline-block;margin-top:12px;color:var(--accent);font-weight:600;font-size:13px;">Xem chi tiết & lý do từng bước →</a>
+        <a href="#tro-giup" style="display:inline-block;margin-top:14px;color:var(--accent);font-weight:600;font-size:13px;">Xem lý do từng bước →</a>
       </div>
 
       <div class="card" style="margin-top:20px;background:var(--accent-soft);">
