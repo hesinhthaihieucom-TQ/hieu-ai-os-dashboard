@@ -323,8 +323,9 @@ async function loadAnnouncementQueue(){
 
 // Hiện popup CHO THÔNG BÁO CŨ NHẤT còn chưa xem trong hàng đợi — gọi từ renderApp() (lúc mới vào
 // app/đổi trang) VÀ từ vòng lặp định kỳ ở initApp() (để người đang MỞ SẴN app, không tải lại trang,
-// vẫn thấy popup mà không cần tắt/mở lại). Xem/bỏ qua xong tự nối sang thông báo kế tiếp trong hàng
-// đợi (nếu còn) — không cần đợi hết 3 phút hay tắt mở lại app mới thấy cái tiếp theo.
+// vẫn thấy popup mà không cần tắt/mở lại). CHỈ hiện ĐÚNG 1 thông báo mỗi lần gọi (không tự nối sang
+// cái kế tiếp — theo phản hồi chị Quỳnh 2026-08-24: "nhiều quá", dồn hết trong 1 lượt gây rối) — nếu
+// hàng đợi còn nhiều hơn 1, các cái còn lại chỉ hiện dần ở lần mở app/lần kiểm tra định kỳ SAU đó.
 function maybeShowFeatureAnnouncement(){
   const queue = AppState.announcementQueue;
   if(!queue || !queue.length || !window.startFeatureAnnouncement) return;
@@ -333,7 +334,6 @@ function maybeShowFeatureAnnouncement(){
     if(AppState.profile) AppState.profile.last_seen_announcement_at = ann.created_at;
     await supabaseClient.from('profiles').update({ last_seen_announcement_at: ann.created_at }).eq('id', AppState.user.id);
     queue.shift();
-    maybeShowFeatureAnnouncement();
   });
 }
 
