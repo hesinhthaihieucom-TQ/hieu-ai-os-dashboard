@@ -10,9 +10,20 @@ function comingSoon(title, desc){
   };
 }
 
+// Quy trình LẶP LẠI mỗi tuần khi sản xuất content (khác câu "nên làm theo thứ tự nào" bên dưới —
+// đó là thứ tự làm quen app LẦN ĐẦU). Đặt thành khối riêng, nổi bật ở đầu trang, để xem lại được bất
+// cứ lúc nào (2026-08-23, chốt cùng chị Quỳnh — thẻ tóm tắt tương ứng đặt ở Trang chủ, trỏ về đây).
+const WORKFLOW_GUIDE = [
+  { n:1, title:'Định Vị thật chi tiết', why:'Nền tảng cho mọi bước sau — trục nội dung, chân dung khách hàng, giọng văn AI dùng lại xuyên suốt đều lấy từ đây, nên trả lời kỹ ngay từ đầu, đỡ phải sửa lại nhiều lần về sau.' },
+  { n:2, title:'Sửa Kênh', why:'Đồng bộ ảnh đại diện/ảnh bìa/bio khớp với định vị vừa chốt. Chỉ cần làm 1 lần (không lặp lại mỗi tuần), nhưng nên làm trước khi đẩy content ra ngoài — bài viral kéo người lạ vào trang mà kênh chưa khớp định vị thì phí mất khách.' },
+  { n:3, title:'Lịch Đăng Bài → bấm "AI gợi ý lịch tuần"', why:'Lên khung trục nội dung + định dạng cho cả 7 ngày TRƯỚC khi viết bất kỳ bài nào — tránh viết lan man rồi không biết nhét vào đâu. Nhập mục tiêu tuần này (ra mắt sản phẩm, tăng follow...) để AI ưu tiên đúng chỗ.' },
+  { n:4, title:'Viết từng ô lịch theo đúng gợi ý', why:'Ô nào AI đã khớp sẵn 1 bài bạn từng viết — Chấm Điểm Content/Hook nhanh trước khi dùng (1 lượt) để chắc bài đủ chuẩn trước khi lên lịch thật. Ô chưa có bài — bấm "Chọn bài mẫu đúng trục" vào Kho Content/Kho Hook đúng trục để viết; nếu vừa thấy 1 bài viral ở nơi khác thì qua Tái Chế Content Viral thay vì viết từ đầu.' },
+  { n:5, title:'Đẩy Bài & CTA Comment khi bài đạt view tốt', why:'Gợi ý mốc trên 1000 view. App cũng tự nhắc theo giờ (3h/6h/24h sau khi đăng) để không quên vào kiểm tra — 2 cái bổ trợ nhau, đừng bỏ qua bước này vì đây là lúc tối ưu hoá đúng bài đang viral, không phải lúc để yên.' },
+];
+
 const HELP_SECTIONS = [
   { group:'Bắt đầu từ đâu', items: [
-    { q:'Tôi nên làm theo thứ tự nào?', a:'Đi đúng theo thứ tự sidebar từ trên xuống: Định Vị → Sửa Kênh → Dạng Content → Kho Content / Kho Hook → Viết Content → Chấm Điểm → Lịch Đăng Bài. Định Vị luôn là bước đầu tiên vì mọi bước sau đều dựa vào kết quả đó (bao gồm cả chân dung khách hàng và giọng văn).' },
+    { q:'Tôi nên làm theo thứ tự nào?', a:'Đi đúng theo thứ tự sidebar từ trên xuống: Định Vị → Sửa Kênh → Dạng Content → Kho Content / Kho Hook → Viết Content → Chấm Điểm → Lịch Đăng Bài. Định Vị luôn là bước đầu tiên vì mọi bước sau đều dựa vào kết quả đó (bao gồm cả chân dung khách hàng và giọng văn). Đó là thứ tự làm quen app lần đầu — còn quy trình sản xuất content HÀNG TUẦN sau khi đã quen thì xem khối "Quy trình dùng app hiệu quả nhất" ngay phía trên.' },
     { q:'Tôi đã làm Định Vị ở một trợ lý GPT khác trước đây rồi, có phải làm lại không?', a:'Không cần làm lại. Ở màn hình Định Vị, bấm "Đã có kết quả Định Vị rồi? Dán vào đây" rồi dán nguyên văn kết quả cũ vào — hệ thống tự sắp xếp lại đúng cấu trúc, không cần trả lời lại 26 câu hỏi.' },
     { q:'Dùng trên điện thoại có cài thành app riêng được không?', a:'Được. Trên Android (Chrome): mở link này, Chrome sẽ tự hiện banner "Thêm vào màn hình chính" — hoặc vào menu (⋮) → "Cài đặt ứng dụng". Trên iPhone (Safari): mở link → bấm nút Chia sẻ (hình vuông có mũi tên đi lên) → "Thêm vào MH chính". Sau khi cài, mở từ icon trên màn hình chính sẽ chạy như 1 app riêng, không còn thanh địa chỉ trình duyệt.' },
   ]},
@@ -40,6 +51,20 @@ function renderHelp(container){
   function html(){
     return `
     <div class="page-head"><h1>Hỏi & Trợ Giúp</h1><p>Câu hỏi thường gặp khi dùng Xây Nhân Hiệu.</p></div>
+
+    <div class="section highlight" style="margin-bottom:24px;">
+      <h3>📋 Quy trình dùng app hiệu quả nhất</h3>
+      <div class="body" style="margin-bottom:14px;">Quy trình lặp lại mỗi tuần khi sản xuất content — khác checklist làm quen app lần đầu ở Trang chủ.</div>
+      ${WORKFLOW_GUIDE.map(s=>`
+        <div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.12);">
+          <div style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${s.n}</div>
+          <div>
+            <b>${esc(s.title)}</b>
+            <div style="font-size:13px;margin-top:3px;opacity:.9;">${esc(s.why)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
 
     <div class="section highlight" style="margin-bottom:24px;">
       <h3>Hỏi AI trực tiếp</h3>

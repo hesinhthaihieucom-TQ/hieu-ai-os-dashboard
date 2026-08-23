@@ -6,6 +6,18 @@ const STEPS = [
   { key:'lich-dang', label:'Lên lịch đăng bài', desc:'Xếp bài vào lịch tuần, đăng đều đặn thay vì nhớ ngày tự đăng tay.' },
 ];
 
+// Quy trình dùng app hiệu quả nhất (2026-08-23, chốt cùng chị Quỳnh) — khác STEPS ở trên (checklist
+// làm lần đầu, có tick hoàn thành), đây là quy trình LẶP LẠI mỗi tuần khi sản xuất content, nên đặt
+// thành thẻ riêng để xem lại được bất cứ lúc nào (không tự ẩn khi đã "xong"). Bản đầy đủ kèm lý do
+// từng bước nằm ở Hỏi & Trợ Giúp — thẻ này chỉ tóm tắt để không choán Trang chủ.
+const WORKFLOW_STEPS = [
+  '<b>Định Vị</b> thật chi tiết',
+  '<b>Sửa Kênh</b> khớp định vị (làm 1 lần)',
+  '<b>Lịch Đăng Bài</b> → AI gợi ý lịch tuần trước',
+  'Viết từng ô lịch từ <b>Kho Content/Kho Hook</b> đúng trục',
+  '<b>Đẩy Bài</b> khi bài đạt view tốt',
+];
+
 const IMPORTANT_NOTES = [
   { icon:'🎯', text:'<b>Định Vị luôn làm trước tiên</b> — mọi bài viết/kết quả AI ở các bước sau đều dựa vào kết quả Định Vị, nên trả lời thật kỹ ngay từ đầu.' },
   { icon:'💾', text:'<b>Không lo mất dữ liệu khi chuyển trang</b> — mọi tiến trình đang làm dở (câu trả lời, bài đang viết, ảnh đã tải lên...) tự động lưu lại, quay lại vẫn còn nguyên.' },
@@ -71,6 +83,14 @@ function render(container, ctx){
             <button class="${isNext?'btn':'btn-ghost btn'} btn-sm" data-key="${s.key}">${isDone?'Xem lại →':(isNext?'Bắt đầu →':'→')}</button>
           </div>
         `;}).join('')}
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">📋 Quy trình dùng app hiệu quả nhất</h3>
+        <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.5;">
+          ${WORKFLOW_STEPS.map(s=>`<li>${s}</li>`).join('')}
+        </ol>
+        <a href="#tro-giup" style="display:inline-block;margin-top:12px;color:var(--accent);font-weight:600;font-size:13px;">Xem chi tiết & lý do từng bước →</a>
       </div>
 
       <div class="card" style="margin-top:20px;background:var(--accent-soft);">
