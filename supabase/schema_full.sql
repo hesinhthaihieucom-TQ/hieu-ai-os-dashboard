@@ -1096,6 +1096,18 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.start_tc_trial() to authenticated;
 
+-- Hướng dẫn lần đầu (onboarding tour) cho Sổ Dòng Tiền Tâm Thức (2026-08-23, áp dụng quy tắc đã có
+-- bên nhan-hieu/js/onboarding-tour.js) — cột RIÊNG tc_onboarding_seen, không dùng chung
+-- onboarding_seen của nhan-hieu (1 user có thể đã xem tour bên kia nhưng chưa xem bên này).
+alter table profiles add column if not exists tc_onboarding_seen boolean not null default false;
+create or replace function public.mark_tc_onboarding_seen()
+returns void as $$
+begin
+  update public.profiles set tc_onboarding_seen = true where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_tc_onboarding_seen() to authenticated;
+
 -- Kết quả thật (view/like/cmt/share) cho từng bài đã đăng — TỰ NGUYỆN điền, không bắt buộc (2026-08-23,
 -- theo đề xuất chị Quỳnh: "ai điền thì có lợi cho lịch tuần tiếp theo, ai ko điền thì thôi"). Trước
 -- đây "AI gợi ý lịch tuần" chỉ dựa quy tắc chung (trục/định dạng/CTA tĩnh), không biết bài NÀO của

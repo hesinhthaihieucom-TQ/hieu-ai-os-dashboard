@@ -18,6 +18,7 @@ const NAV = [
   { key:'tong-ket-tuan', title:'Tổng Kết Tuần', premium:true },
   { key:'tong-ket-thang', title:'Tổng Kết Tháng', premium:true },
   { key:'quan-ly-no', title:'Quản Lý Nợ', premium:true },
+  { key:'nang-cap', title:'Nâng Cấp' }, // luôn vào được, kể cả đang còn hạn dùng thử — không phải premium
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm email ở cuối sidebar, không hiện trong danh sách
   { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin', xem renderApp()
 ];
@@ -62,12 +63,6 @@ async function initApp(){
     await Promise.all([loadProfile(), loadLatestAnnouncement()]);
     AppState.route = currentRouteFromHash();
     renderApp();
-    // Chưa có onboarding tour riêng cho tai-chinh (khác nhan-hieu, nơi cái này gọi sau khi tour
-    // kết thúc) — hỏi cài app sau 1 nhịp ngắn kể từ lần render đầu của phiên, tránh chồng lên popup
-    // thông báo tính năng mới nếu đang hiện (2026-08-23).
-    setTimeout(()=>{
-      if(window.maybeShowInstallPrompt && !document.getElementById('fa-overlay')) window.maybeShowInstallPrompt();
-    }, 2500);
   } else {
     renderAuthScreen();
   }
@@ -115,7 +110,7 @@ async function loadProfile(){
   // Set mốc dùng thử 14 ngày ở LẦN ĐẦU vào app tai-chinh — RPC tự bỏ qua nếu đã set rồi (idempotent),
   // không reset lại đồng hồ đếm ngược mỗi lần load profile.
   if(AppState.profile && !AppState.profile.tc_trial_started_at){
-    const { data: trialData } = await supabaseClient.rpc('start_tc_trial');
+    await supabaseClient.rpc('start_tc_trial');
     const { data: refreshed } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
     if(refreshed) AppState.profile = refreshed;
   }
@@ -277,6 +272,17 @@ function renderApp(){
   const footInfo = root.querySelector('#sidebar-foot-info');
   if(footInfo) footInfo.onclick = ()=>{ location.hash = 'tai-khoan'; };
 
+  if(window.startOnboardingTour && AppState.user){
+    const alreadySeen = !!(AppState.profile && AppState.profile.tc_onboarding_seen);
+    window.startOnboardingTour(AppState.user.id, alreadySeen, async ()=>{
+      const { error } = await supabaseClient.rpc('mark_tc_onboarding_seen');
+      if(!error && AppState.profile) AppState.profile.tc_onboarding_seen = true;
+      // Hỏi cài app NGAY SAU KHI tour kết thúc — đúng lúc hợp lý để rủ cài thay vì hỏi giữa chừng
+      // (giống nhan-hieu/js/app-shell.js) — thay cho setTimeout tạm trước đây.
+      if(window.maybeShowInstallPrompt) window.maybeShowInstallPrompt();
+    });
+  }
+
   maybeShowFeatureAnnouncement();
 
   const content = root.querySelector('#main-content');
@@ -292,14 +298,13 @@ function renderApp(){
   }
 }
 
-// Khác nhan-hieu (renderExpiredScreen chiếm TOÀN màn hình, không cho dùng gì nữa) — ở đây CHỈ đúng
-// route premium bị khoá mới hiện màn này, sidebar/Ghi Chép/Kiến Thức vẫn dùng bình thường. Vẽ vào
-// #main-content như 1 module bình thường, không thay root.innerHTML.
-function renderUpgradeScreen(content){
+// Tách riêng thẻ QR/thông tin chuyển khoản để dùng lại được ở CẢ màn khoá tự động (renderUpgradeScreen,
+// hiện khi bấm vào route premium mà chưa có quyền) LẪN trang "Nâng Cấp" chủ động (module nang-cap.js,
+// vào được bất cứ lúc nào kể cả đang còn hạn dùng thử) — giống pattern paymentCardHtml() bên
+// nhan-hieu/js/app-shell.js, chỉ đơn giản hơn vì tai-chinh chỉ có ĐÚNG 1 gói (không cần chọn gói).
+function tcPaymentCardHtml(){
   const p = AppState.profile;
   const refCode = p && p.ref_code;
-  const daysLeft = tcTrialDaysLeft();
-  const hadTrial = !!(p && p.tc_trial_started_at);
   // VietinBank CHỈ báo biến động số dư về SePay nếu nội dung chuyển khoản bắt đầu bằng "SEVQR"
   // (yêu cầu riêng SePay cho VietinBank) — xem api/sepay-webhook.js.
   const transferContent = refCode ? `SEVQR ${refCode}` : null;
@@ -307,38 +312,33 @@ function renderUpgradeScreen(content){
     ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${TC_LIFETIME_PRICE}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
 
-  content.innerHTML = `
-    <div class="page-head">
-      <h1>🔒 Tính năng trả phí</h1>
-      <p>${hadTrial && daysLeft===0 ? 'Bạn đã dùng thử xong 14 ngày.' : `Còn ${daysLeft} ngày dùng thử.`} Mở khoá TRỌN ĐỜI toàn bộ Chấm Điểm Nghiệp Tiền, Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.</p>
-    </div>
-    <div class="card" style="max-width:460px;">
-      <div style="text-align:center;font-size:15px;font-weight:700;margin-bottom:14px;">${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
-      ${qrUrl ? `
-        <div style="text-align:center;">
-          <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
-          <div style="margin-top:8px;">
-            <a href="${qrUrl}" download="vietqr-tai-chinh.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
-          </div>
+  return `
+    <div style="text-align:center;font-size:15px;font-weight:700;margin-bottom:14px;">${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
+    ${qrUrl ? `
+      <div style="text-align:center;">
+        <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
+        <div style="margin-top:8px;">
+          <a href="${qrUrl}" download="vietqr-tai-chinh.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
         </div>
-        <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
-          <div><b>Ngân hàng:</b> Vietinbank</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
-          <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${TC_LIFETIME_PRICE}">Copy</span></div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
-        </div>
-        <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận. Chuyển xong đợi 1-2 phút rồi bấm nút bên dưới.</div>
-      ` : `
-        <div class="error-box">Chưa có mã tài khoản để đối chiếu tự động. Nhắn email đăng ký (${esc((AppState.user&&AppState.user.email)||'')}) để được kích hoạt thủ công.</div>
-      `}
-      <div class="btn-row" style="margin-top:16px;justify-content:center;">
-        <button class="btn-ghost btn" id="tc-reload-status-btn">Tôi đã chuyển khoản — tải lại trạng thái</button>
       </div>
+      <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+        <div><b>Ngân hàng:</b> Vietinbank</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+        <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${TC_LIFETIME_PRICE}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+      </div>
+      <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận. Chuyển xong đợi 1-2 phút rồi bấm nút bên dưới.</div>
+    ` : `
+      <div class="error-box">Chưa có mã tài khoản để đối chiếu tự động. Nhắn email đăng ký (${esc((AppState.user&&AppState.user.email)||'')}) để được kích hoạt thủ công.</div>
+    `}
+    <div class="btn-row" style="margin-top:16px;justify-content:center;">
+      <button class="btn-ghost btn" id="tc-reload-status-btn">Tôi đã chuyển khoản — tải lại trạng thái</button>
     </div>
   `;
-
-  content.querySelectorAll('[data-copy-value]').forEach(el=>{
+}
+function bindTcPaymentCard(root, onReload){
+  root.querySelectorAll('[data-copy-value]').forEach(el=>{
     el.onclick = async ()=>{
       try{
         await navigator.clipboard.writeText(el.getAttribute('data-copy-value'));
@@ -348,8 +348,25 @@ function renderUpgradeScreen(content){
       } catch(e){}
     };
   });
-  const reloadBtn = content.querySelector('#tc-reload-status-btn');
-  if(reloadBtn) reloadBtn.onclick = async ()=>{ await loadProfile(); renderApp(); };
+  const reloadBtn = root.querySelector('#tc-reload-status-btn');
+  if(reloadBtn) reloadBtn.onclick = async ()=>{ await loadProfile(); onReload(); };
+}
+
+// Khác nhan-hieu (renderExpiredScreen chiếm TOÀN màn hình, không cho dùng gì nữa) — ở đây CHỈ đúng
+// route premium bị khoá mới hiện màn này, sidebar/Ghi Chép/Kiến Thức vẫn dùng bình thường. Vẽ vào
+// #main-content như 1 module bình thường, không thay root.innerHTML.
+function renderUpgradeScreen(content){
+  const daysLeft = tcTrialDaysLeft();
+  const hadTrial = !!(AppState.profile && AppState.profile.tc_trial_started_at);
+
+  content.innerHTML = `
+    <div class="page-head">
+      <h1>🔒 Tính năng trả phí</h1>
+      <p>${hadTrial && daysLeft===0 ? 'Bạn đã dùng thử xong 14 ngày.' : `Còn ${daysLeft} ngày dùng thử.`} Mở khoá TRỌN ĐỜI toàn bộ Chấm Điểm Nghiệp Tiền, Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.</p>
+    </div>
+    <div class="card" style="max-width:460px;">${tcPaymentCardHtml()}</div>
+  `;
+  bindTcPaymentCard(content, renderApp);
 }
 
 window.Modules = window.Modules || {};
