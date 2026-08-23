@@ -79,12 +79,17 @@ function startFeatureAnnouncement(ann, onDone){
     if(!target){ idx++; if(idx < steps.length) renderStep(); else finish(); return; }
     const r = target.getBoundingClientRect();
     const pad = 6;
+    // Ảnh minh hoạ (tuỳ chọn, xem quan-tri-thongbao.js) — dùng khi chỗ cần chỉ KHÔNG PHẢI mục sidebar
+    // (VD 1 ô nhập chỉ hiện khi đã có dữ liệu cụ thể) — trỏ sáng vẫn dẫn đúng tới trang chứa nó, ảnh
+    // bổ sung thêm vị trí chi tiết bên trong trang đó. Thẻ rộng hơn (320px) khi có ảnh để dễ nhìn.
+    const cardWidth = step.img ? 320 : 280;
     overlay.innerHTML = `
       <div style="position:fixed;top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;
         border-radius:10px;box-shadow:0 0 0 9999px rgba(20,24,20,.78);pointer-events:none;transition:all .2s ease;"></div>
-      <div style="position:fixed;top:${Math.min(r.top, window.innerHeight-220)}px;left:${Math.min(r.left+r.width+16, window.innerWidth-320)}px;
-        width:280px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 8px 28px rgba(0,0,0,.25);pointer-events:auto;">
+      <div style="position:fixed;top:${Math.min(r.top, window.innerHeight-(step.img?380:220))}px;left:${Math.min(r.left+r.width+16, window.innerWidth-cardWidth-40)}px;
+        width:${cardWidth}px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 8px 28px rgba(0,0,0,.25);pointer-events:auto;max-height:80vh;overflow-y:auto;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft, #5B5F55);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Bước ${idx+1}/${steps.length}</div>
+        ${step.img ? `<img src="${step.img}" style="width:100%;border-radius:8px;border:1px solid var(--line, #E4DFCF);margin-bottom:12px;display:block;">` : ''}
         <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:14px;">${esc(step.text)}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span id="fa-skip2" style="font-size:12.5px;color:#5B5F55;cursor:pointer;">Bỏ qua</span>

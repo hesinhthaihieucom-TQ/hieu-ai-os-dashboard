@@ -32,7 +32,7 @@ function render(container, ctx){
   async function post(){
     if(!canPost()) return;
     state.posting = true; draw();
-    const cleanSteps = state.steps.filter(s => s.key && s.text.trim()).map(s => ({ key:s.key, text:s.text.trim() }));
+    const cleanSteps = state.steps.filter(s => s.key && s.text.trim()).map(s => ({ key:s.key, text:s.text.trim(), img:s.img || null }));
     const { error } = await ctx.supabase.from('feature_announcements').insert({
       title: state.title.trim(), body: state.body.trim(), emoji: state.emoji, steps: cleanSteps, created_by: ctx.user.id,
     });
@@ -53,14 +53,26 @@ function render(container, ctx){
 
   function stepRowHtml(step, i){
     return `
-      <div class="section" data-step-row="${i}" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
-        <select data-step-key="${i}" style="flex:0 0 200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
-          <option value="">— Chọn mục trong app —</option>
-          ${navOptions.map(n => `<option value="${esc(n.key)}" ${step.key===n.key?'selected':''}>${esc(n.title)}</option>`).join('')}
-        </select>
-        <input data-step-text="${i}" type="text" placeholder="Nói gì ở bước này..." value="${esc(step.text)}"
-          style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
-        <span data-step-remove="${i}" class="btn-ghost btn btn-sm" style="color:var(--danger);white-space:nowrap;">Xoá</span>
+      <div class="section" data-step-row="${i}" style="margin-bottom:8px;">
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <select data-step-key="${i}" style="flex:0 0 200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+            <option value="">— Chọn mục trong app —</option>
+            ${navOptions.map(n => `<option value="${esc(n.key)}" ${step.key===n.key?'selected':''}>${esc(n.title)}</option>`).join('')}
+          </select>
+          <input data-step-text="${i}" type="text" placeholder="Nói gì ở bước này..." value="${esc(step.text)}"
+            style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+          <span data-step-remove="${i}" class="btn-ghost btn btn-sm" style="color:var(--danger);white-space:nowrap;">Xoá</span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:10px;align-items:center;">
+          ${step.img ? `
+            <img src="${step.img}" style="max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--line);">
+            <span data-step-clear-img="${i}" style="color:var(--danger);font-size:12px;cursor:pointer;">Xoá ảnh</span>
+          ` : `
+            <label style="font-size:12px;color:var(--ink-soft);">Ảnh minh hoạ bước này (tuỳ chọn — hữu ích khi chỗ cần trỏ không phải mục sidebar):
+              <input type="file" accept="image/*" data-step-img="${i}" style="display:block;margin-top:4px;font-size:12px;">
+            </label>
+          `}
+        </div>
       </div>
     `;
   }
@@ -137,6 +149,35 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-step-remove]').forEach(el=>{
       el.onclick = ()=>{ state.steps.splice(Number(el.getAttribute('data-step-remove')), 1); draw(); };
+    });
+    // Nén/resize ảnh minh hoạ ngay trên trình duyệt trước khi lưu (giống pattern ảnh chụp màn hình
+    // viral ở kho-content.js) — giữ base64 đủ nhỏ để lưu thẳng trong cột steps (jsonb), không cần
+    // Supabase Storage riêng.
+    container.querySelectorAll('[data-step-img]').forEach(el=>{
+      el.onchange = ()=>{
+        const i = Number(el.getAttribute('data-step-img'));
+        const file = el.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          const img = new Image();
+          img.onload = ()=>{
+            const maxW = 700;
+            const scale = Math.min(1, maxW / img.width);
+            const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            state.steps[i].img = c.toDataURL('image/jpeg', 0.82);
+            draw();
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      };
+    });
+    container.querySelectorAll('[data-step-clear-img]').forEach(el=>{
+      el.onclick = ()=>{ state.steps[Number(el.getAttribute('data-step-clear-img'))].img = null; draw(); };
     });
 
     const postBtn = container.querySelector('#tb-post');
