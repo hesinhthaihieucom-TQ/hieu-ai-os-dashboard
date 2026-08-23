@@ -266,9 +266,12 @@ function render(container, ctx){
       seedWeeklyPillars(),
     ]);
 
-    // Xoá draft sau khi đã ra kết quả — làm lại bài lần sau nên bắt đầu sạch (đúng tinh thần "Điểm
-    // Nghiệp Tiền không lưu lại" đã ghi trong kết quả), draft chỉ để chống mất khi đang gõ dở.
-    await clearModuleDraft(ctx, DRAFT_KEY);
+    // KHÔNG xoá draft sau khi lưu (khác hầu hết module khác) — góp ý Quỳnh 2026-08-24: "không lưu
+    // những gì làm dở khi bấm sang phần khác". 4 câu số (income/expense/passive_income/
+    // income_sources) KHÔNG có bảng riêng nào lưu lại (xem comment đầu file) — draft chính là nơi
+    // DUY NHẤT giữ lại các số này; xoá draft ngay sau khi lưu nghĩa là quay lại trang này lần sau
+    // luôn thấy trống trơn, dù vừa mới làm xong. Giữ draft để rời trang rồi quay lại vẫn thấy đúng
+    // số cũ, sửa lại rồi "Xem Kết Quả" lại là đủ cho nhu cầu "làm lại bài", không cần dọn sạch trước.
     state.saving = false;
     state.result = computeResult();
     draw();
