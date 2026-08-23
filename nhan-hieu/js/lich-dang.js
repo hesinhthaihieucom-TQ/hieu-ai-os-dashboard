@@ -33,6 +33,7 @@ function render(container, ctx){
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushPermission: window.Notification ? Notification.permission : 'denied',
     pushSubscribed: false, pushBusy: false, pushError: null,
+    testPushBusy: false, testPushResult: null,
     slotTimeSang: (ctx.profile && ctx.profile.slot_time_sang) || '08:00',
     slotTimeTrua: (ctx.profile && ctx.profile.slot_time_trua) || '12:00',
     slotTimeToi: (ctx.profile && ctx.profile.slot_time_toi) || '19:00',
@@ -403,6 +404,13 @@ function render(container, ctx){
           <button class="btn btn-sm" data-action="enable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang bật…':'Bật thông báo'}</button>
         `}
         ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
+        ${state.pushSupported ? `
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+            <span class="btn-ghost btn btn-sm" data-action="test-push" ${state.testPushBusy?'disabled':''}>${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Bấm để kiểm tra ngay thông báo có hoạt động không, không cần chờ đúng lúc có sự kiện thật.</div>
+            ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -424,6 +432,8 @@ function render(container, ctx){
     if(enablePushBtn) enablePushBtn.onclick = enablePush;
     const disablePushBtn = container.querySelector('[data-action="disable-push"]');
     if(disablePushBtn) disablePushBtn.onclick = disablePush;
+    const testPushBtn = container.querySelector('[data-action="test-push"]');
+    if(testPushBtn) testPushBtn.onclick = testPush;
 
     const goalInput = container.querySelector('#weekly-goal');
     if(goalInput) goalInput.oninput = ()=>{ state.weeklyGoal = goalInput.value; saveDraftForCurrentWeek(); };
@@ -702,6 +712,21 @@ function render(container, ctx){
       state.pushError = e.message || 'Không tắt được thông báo — thử lại giúp mình.';
     }
     state.pushBusy = false; draw();
+  }
+
+  // Gửi ngay 1 thông báo test, không chờ đúng sự kiện thật — trả lời trực tiếp câu hỏi chị Quỳnh
+  // 23/8 "sao e vẫn chưa thấy cái mục thông báo nó hoạt động nhỉ": server báo rõ đang vướng ở đâu
+  // (chưa cấu hình VAPID, hay máy này chưa đăng ký nhận) thay vì im lặng không biết lý do.
+  async function testPush(){
+    if(state.testPushBusy) return;
+    state.testPushBusy = true; state.testPushResult = null; draw();
+    try{
+      const data = await callApi('/api/test-push', {});
+      state.testPushResult = { ok: data.ok, message: data.message };
+    } catch(e){
+      state.testPushResult = { ok:false, message: e.message || 'Không gửi được — thử lại giúp mình.' };
+    }
+    state.testPushBusy = false; draw();
   }
 
   boot();
