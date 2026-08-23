@@ -35,9 +35,24 @@ const HELP_SECTIONS = [
   ]},
 ];
 
-function renderHelp(container){
-  const state = { question:'', asking:false, answer:null, error:null, freeQuestionUsed:false };
+// Lưu trữ lại TẤT CẢ thông báo tính năng đã đăng (2026-08-23, theo yêu cầu chị Quỳnh: "muốn sau này
+// lưu cái hướng dẫn đó vào chỗ nào đó để sau này ngta muốn tìm cách làm thì bấm vào sẽ ra hướng dẫn...
+// tất cả các hướng dẫn và thông báo về sau luôn") — trước đây popup chỉ hiện ĐÚNG 1 LẦN cho thông
+// báo MỚI NHẤT rồi mất hẳn, không tra lại được. Giờ có nơi cố định liệt kê lại hết, bấm "Xem lại
+// hướng dẫn" chạy đúng lại tour trỏ sáng từng bước (dùng chung window.startFeatureAnnouncement() đã
+// có sẵn từ feature-tour.js, không viết lại UI hướng dẫn) — onDone truyền vào rỗng vì đây là XEM LẠI
+// chủ động, không phải popup tự động lần đầu, không được đụng vào profiles.last_seen_announcement_id
+// (đụng vào sẽ vô tình đánh dấu "đã xem" nhầm 1 thông báo MỚI HƠN mà người này thực ra chưa xem).
+function renderHelp(container, ctx){
+  const state = { question:'', asking:false, answer:null, error:null, freeQuestionUsed:false, announcements:[], loadingAnnouncements:true };
   function draw(){ container.innerHTML = html(); bind(); }
+
+  async function loadAnnouncements(){
+    if(!ctx || !ctx.supabase) { state.loadingAnnouncements = false; return; }
+    const { data } = await ctx.supabase.from('feature_announcements').select('*').order('created_at', { ascending:false }).limit(50);
+    state.announcements = data || [];
+    state.loadingAnnouncements = false;
+  }
 
   function html(){
     return `
@@ -56,6 +71,18 @@ function renderHelp(container){
       ${state.answer && state.freeQuestionUsed?`<div style="margin-top:8px;font-size:12px;color:var(--accent);font-weight:600;">✓ Câu hỏi này miễn phí, không trừ lượt AI.</div>`:''}
     </div>
 
+    <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">📋 Thông báo &amp; hướng dẫn đã đăng</div>
+    ${state.loadingAnnouncements ? `<div class="section" style="color:var(--ink-soft);">Đang tải…</div>`
+      : state.announcements.length===0 ? `<div class="section" style="color:var(--ink-soft);">Chưa có thông báo nào.</div>`
+      : state.announcements.map(a=>`
+        <div class="section">
+          <h3>${esc(a.emoji||'🎉')} ${esc(a.title)}</h3>
+          <div class="body" style="white-space:pre-wrap;">${esc(a.body)}</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(new Date(a.created_at).toLocaleDateString('vi-VN'))}</div>
+          ${Array.isArray(a.steps) && a.steps.length ? `<div class="btn-row" style="margin-top:10px;"><span class="btn-ghost btn btn-sm" data-replay-announcement="${a.id}">▶ Xem lại hướng dẫn từng bước</span></div>` : ''}
+        </div>
+      `).join('')}
+
     ${HELP_SECTIONS.map(sec=>`
       <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">${esc(sec.group)}</div>
       ${sec.items.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('')}
@@ -72,6 +99,12 @@ function renderHelp(container){
     if(qInput) qInput.oninput = ()=>{ state.question = qInput.value; };
     const askBtn = container.querySelector('[data-action="ask"]');
     if(askBtn) askBtn.onclick = ask;
+    container.querySelectorAll('[data-replay-announcement]').forEach(el=>{
+      el.onclick = ()=>{
+        const ann = state.announcements.find(a=>a.id===el.getAttribute('data-replay-announcement'));
+        if(ann && window.startFeatureAnnouncement) window.startFeatureAnnouncement(ann, ()=>{});
+      };
+    });
   }
 
   async function ask(){
@@ -86,6 +119,7 @@ function renderHelp(container){
   }
 
   draw();
+  loadAnnouncements().then(draw);
 }
 
 window.Modules = window.Modules || {};
