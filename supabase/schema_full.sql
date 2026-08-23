@@ -1032,3 +1032,27 @@ alter table feature_announcements add column if not exists steps jsonb not null 
 -- Chọn được sticker/emoji riêng cho từng thông báo (2026-08-22, theo yêu cầu chị Quỳnh) — mặc định
 -- 🎉 cho thông báo cũ đã đăng trước khi có cột này.
 alter table feature_announcements add column if not exists emoji text not null default '🎉';
+
+-- Áp dụng quy tắc thông báo tính năng mới (feature_announcements ở trên) cho Sổ Dòng Tiền Tâm Thức
+-- (2026-08-23, theo yêu cầu chị Quỳnh "áp dụng tất cả quy tắc bên Xây Nhân Hiệu cho web này") — bảng
+-- RIÊNG (tc_feature_announcements), KHÔNG dùng chung feature_announcements của nhan-hieu, vì 2 app
+-- có tính năng/nội dung hoàn toàn khác nhau — 1 thông báo về Kho Content không có nghĩa gì với người
+-- dùng Sổ Dòng Tiền. Cột đánh dấu đã đọc cũng tách riêng (tc_last_seen_announcement_id) trên cùng
+-- bảng profiles dùng chung, để không lẫn giữa "đã đọc thông báo nhân hiệu" và "đã đọc thông báo tài
+-- chính" của cùng 1 tài khoản.
+create table if not exists tc_feature_announcements (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null,
+  emoji text not null default '🎉',
+  steps jsonb not null default '[]',
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+alter table tc_feature_announcements enable row level security;
+drop policy if exists "tc_feature_announcements_read_all" on tc_feature_announcements;
+create policy "tc_feature_announcements_read_all" on tc_feature_announcements for select using (auth.role() = 'authenticated');
+drop policy if exists "tc_feature_announcements_admin_write" on tc_feature_announcements;
+create policy "tc_feature_announcements_admin_write" on tc_feature_announcements for all using (is_admin()) with check (is_admin());
+
+alter table profiles add column if not exists tc_last_seen_announcement_id uuid;

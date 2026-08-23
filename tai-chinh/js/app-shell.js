@@ -15,9 +15,10 @@ const NAV = [
   { key:'tong-ket-thang', title:'Tổng Kết Tháng' },
   { key:'quan-ly-no', title:'Quản Lý Nợ' },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm email ở cuối sidebar, không hiện trong danh sách
+  { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin', xem renderApp()
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null };
 
 function sidebarFootHtml(){
   const p = AppState.profile;
@@ -46,12 +47,20 @@ async function initApp(){
   const { data } = await supabaseClient.auth.getSession();
   if(data.session){
     AppState.user = data.session.user;
-    await loadProfile();
+    await Promise.all([loadProfile(), loadLatestAnnouncement()]);
     AppState.route = currentRouteFromHash();
     renderApp();
   } else {
     renderAuthScreen();
   }
+
+  // Kiểm tra định kỳ thông báo tính năng mới — để người ĐANG MỞ SẴN app (không tải lại trang) cũng
+  // thấy popup mà không cần tắt/mở lại app (giống cơ chế bên nhan-hieu/js/app-shell.js).
+  setInterval(async ()=>{
+    if(!AppState.user) return;
+    await loadLatestAnnouncement();
+    maybeShowFeatureAnnouncement();
+  }, 3 * 60 * 1000);
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if(event === 'SIGNED_IN' && session){
@@ -61,7 +70,7 @@ async function initApp(){
       if(AppState.user && AppState.user.id === session.user.id) return;
       AppState.user = session.user;
       AppState.route = 'trang-chu';
-      loadProfile().then(()=>{
+      Promise.all([loadProfile(), loadLatestAnnouncement()]).then(()=>{
         location.hash = 'trang-chu';
         renderApp();
       });
@@ -85,6 +94,25 @@ async function loadProfile(){
   if(!AppState.user) return;
   const { data } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
   AppState.profile = data || null;
+}
+
+// Thông báo tính năng mới — chỉ lấy 1 dòng MỚI NHẤT, so với profiles.tc_last_seen_announcement_id
+// để quyết định có hiện banner hay không (áp dụng quy tắc bên nhan-hieu/js/app-shell.js, bảng riêng
+// tc_feature_announcements + cột riêng tc_last_seen_announcement_id — xem schema_full.sql).
+async function loadLatestAnnouncement(){
+  if(!AppState.user) return;
+  const { data } = await supabaseClient.from('tc_feature_announcements').select('*').order('created_at', { ascending:false }).limit(1).maybeSingle();
+  AppState.latestAnnouncement = data || null;
+}
+function maybeShowFeatureAnnouncement(){
+  const ann = AppState.latestAnnouncement;
+  const annUnseen = ann && (!AppState.profile || AppState.profile.tc_last_seen_announcement_id !== ann.id);
+  if(window.startFeatureAnnouncement && annUnseen){
+    window.startFeatureAnnouncement(ann, async ()=>{
+      if(AppState.profile) AppState.profile.tc_last_seen_announcement_id = ann.id;
+      await supabaseClient.from('profiles').update({ tc_last_seen_announcement_id: ann.id }).eq('id', AppState.user.id);
+    });
+  }
 }
 
 let authFields = { name:'', email:'', pass:'', passConfirm:'' };
@@ -179,7 +207,8 @@ function renderApp(){
     </div>
   `;
 
-  const visibleNav = NAV.filter(n=> !n.hidden);
+  const isAdmin = AppState.profile && AppState.profile.role === 'admin';
+  const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin));
   const nav = root.querySelector('#sidebar-nav');
   nav.innerHTML = visibleNav.map((n,i)=>{
     return `
@@ -206,6 +235,8 @@ function renderApp(){
   root.querySelector('#signout-btn').onclick = async ()=>{ await supabaseClient.auth.signOut(); };
   const footInfo = root.querySelector('#sidebar-foot-info');
   if(footInfo) footInfo.onclick = ()=>{ location.hash = 'tai-khoan'; };
+
+  maybeShowFeatureAnnouncement();
 
   const content = root.querySelector('#main-content');
   const mod = window.Modules && window.Modules[AppState.route];
