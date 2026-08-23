@@ -18,7 +18,7 @@ const NAV = [
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null, profileLoadError:null };
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 // Public key VAPID cho Web Push (đổi lại 2026-08-22 vì key cũ chưa từng set VAPID_PRIVATE_KEY khớp
@@ -269,6 +269,7 @@ async function initApp(){
     } else if(event === 'SIGNED_OUT'){
       AppState.user = null;
       AppState.profile = null;
+      AppState.profileLoadError = null;
       // Reset route/hash ngay lúc đăng xuất — để nếu có đăng nhập/đăng ký tài khoản khác tiếp theo
       // trong cùng tab (không tải lại trang), route không bị kẹt lại ở trang của tài khoản cũ.
       AppState.route = 'trang-chu';
@@ -284,10 +285,21 @@ async function initApp(){
   });
 }
 
+// Lỗi mạng/API thoáng qua lúc tải hồ sơ TRƯỚC ĐÂY bị nuốt lặng lẽ (chỉ lấy data, bỏ qua error) —
+// AppState.profile thành null y hệt "chưa có hồ sơ", khiến hasActiveAccess() coi là hết hạn và hiện
+// nhầm "Dùng thử 7 ngày đã kết thúc" cho người VẪN CÒN HẠN DÙNG THẬT (phát hiện 2026-08-23: khách báo
+// hết hạn dù SQL kiểm tra access_until vẫn còn nguyên 7 ngày — chỉ là 1 lần tải hồ sơ bị lỗi thoáng
+// qua). Thử lại 1 lần sau 1.5s cho các lỗi mạng chập chờn tự qua; nếu vẫn lỗi thì ghi lại
+// profileLoadError để renderApp() hiện đúng màn hình "lỗi tải" thay vì "hết hạn".
 async function loadProfile(){
   if(!AppState.user) return;
-  const { data } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
+  let { data, error } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
+  if(error){
+    await new Promise(r=>setTimeout(r, 1500));
+    ({ data, error } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle());
+  }
   AppState.profile = data || null;
+  AppState.profileLoadError = error ? error.message : null;
 }
 
 // Thông báo tính năng mới (2026-08-22) — chỉ lấy 1 dòng MỚI NHẤT, so với
@@ -471,6 +483,33 @@ function bindTopupCard(root, redraw){
   });
 }
 
+// Màn hình lỗi tải hồ sơ (2026-08-23) — KHÁC renderExpiredScreen(): không mời mua gói, không có QR
+// chuyển khoản, chỉ báo lỗi tạm thời + nút Thử lại, để không khiến người còn hạn dùng thật hiểu nhầm
+// là phải trả tiền.
+function renderProfileLoadErrorScreen(){
+  const root = document.getElementById('app');
+  root.innerHTML = `
+    <div class="auth-shell" style="max-width:420px;">
+      <img src="assets/logo-hieu-kenh-badge.svg" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <h1>Không tải được thông tin tài khoản</h1>
+      <div class="sub">Có thể do mạng chập chờn — đây không phải hết hạn dùng, tài khoản của bạn vẫn nguyên vẹn. Thử tải lại giúp mình nhé.</div>
+      <div class="card">
+        ${AppState.profileLoadError ? `<div class="error-box">${esc(AppState.profileLoadError)}</div>` : ''}
+        <div class="btn-row" style="margin-top:10px;justify-content:center;">
+          <button class="btn" id="retry-load-profile-btn">Thử lại</button>
+        </div>
+        <div class="btn-row" style="margin-top:6px;justify-content:center;">
+          <span class="signout" id="signout-btn-loaderr" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
+        </div>
+      </div>
+    </div>
+  `;
+  const retryBtn = root.querySelector('#retry-load-profile-btn');
+  if(retryBtn) retryBtn.onclick = async ()=>{ await loadProfile(); renderApp(); };
+  const btn = root.querySelector('#signout-btn-loaderr');
+  if(btn) btn.onclick = async ()=>{ await supabaseClient.auth.signOut(); };
+}
+
 function renderExpiredScreen(){
   const root = document.getElementById('app');
   const p = AppState.profile;
@@ -601,6 +640,11 @@ function renderAuthScreen(err, successMsg){
 }
 
 function renderApp(){
+  // Tải hồ sơ thất bại (lỗi mạng/API, đã thử lại 1 lần trong loadProfile() rồi vẫn lỗi) khác hẳn
+  // "thật sự hết hạn" — không được rơi vào renderExpiredScreen() (hasActiveAccess() thấy profile=null
+  // sẽ hiểu nhầm là "chưa từng dùng thử", hiện oan "Dùng thử 7 ngày đã kết thúc" cho người còn hạn
+  // dùng thật, xem loadProfile()).
+  if(AppState.user && !AppState.profile && AppState.profileLoadError){ renderProfileLoadErrorScreen(); return; }
   if(!hasActiveAccess()){ renderExpiredScreen(); return; }
   const root = document.getElementById('app');
   root.innerHTML = `
