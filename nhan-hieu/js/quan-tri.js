@@ -38,7 +38,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{} };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{} };
 
   // Ai giới thiệu >= ngưỡng này được coi là "partner" — chị Quỳnh tự nhắn/chuyển khoản tay trả hoa
   // hồng tiền mặt cho họ (KHÔNG tự động chuyển tiền — SePay chỉ nhận tiền vào, không có API chuyển
@@ -244,6 +244,12 @@ function render(container, ctx){
             </div>
             <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Không tự tính vào doanh thu — kích hoạt tay cho khách chuyển khoản thật thì ghi nhận doanh thu riêng bên dưới.</div>
 
+            <div class="btn-row" style="justify-content:flex-start;align-items:center;margin-top:8px;">
+              <input type="number" data-custom-days="${p.id}" placeholder="Số ngày, vd 4" style="width:110px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.customDays[p.id]||'')}">
+              <button class="btn-ghost btn btn-sm" data-extend-trial="${p.id}" ${state.busyId===p.id?'disabled':''}>Bù ngày dùng thử (không đánh dấu đã trả phí)</button>
+            </div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Dùng khi cần cộng bù đúng số ngày lẻ (vd sửa lỗi thiếu ngày dùng thử) — chỉ đổi hạn dùng, KHÔNG bật "đã trả phí" như 3 nút bên trên.</div>
+
             <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Ghi nhận doanh thu thủ công</div>
             <div class="btn-row" style="justify-content:flex-start;align-items:center;">
               <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualAmount[p.id]||'')}">
@@ -305,6 +311,15 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-revoke]').forEach(el=>{
       el.onclick = ()=>{ revoke(el.getAttribute('data-revoke')); };
+    });
+    container.querySelectorAll('[data-custom-days]').forEach(el=>{
+      el.oninput = ()=>{ state.customDays[el.getAttribute('data-custom-days')] = el.value; };
+    });
+    container.querySelectorAll('[data-extend-trial]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-extend-trial');
+        extendTrialOnly(id, Number(state.customDays[id]));
+      };
     });
     container.querySelectorAll('[data-toggle-student]').forEach(el=>{
       el.onclick = ()=>{
@@ -421,6 +436,24 @@ function render(container, ctx){
     if(days > 0) patch.has_paid = true;
     const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
+    await load();
+    state.busyId = null;
+    draw();
+  }
+
+  // Bù ngày dùng thử lẻ (vd sửa lỗi thiếu ngày do đổi cấu hình giữa chừng, 2026-08-23) — KHÁC "Gia
+  // hạn" ở trên: chỉ đổi access_until, KHÔNG tự bật has_paid/last_plan_days, vì đây không phải xác
+  // nhận thanh toán thật, chỉ là bù đúng số ngày còn thiếu cho người đang dùng thử.
+  async function extendTrialOnly(id, days){
+    if(!days || days <= 0 || !Number.isFinite(days)){ state.error = 'Nhập số ngày hợp lệ (lớn hơn 0) trước khi bù.'; draw(); return; }
+    const p = state.profiles.find(x=>x.id===id);
+    const base = (p.access_until && new Date(p.access_until).getTime() > Date.now()) ? new Date(p.access_until) : new Date();
+    const next = new Date(base.getTime() + days*86400000);
+    const msg = `Bù ${days} ngày dùng thử cho ${p.email||'người này'}: hạn dùng sẽ đổi thành ${next.toLocaleString('vi-VN')} — KHÔNG đánh dấu đã trả phí. Xác nhận?`;
+    if(!(await confirmModal(msg))) return;
+    state.busyId = id; draw();
+    const { error } = await ctx.supabase.from('profiles').update({ access_until: next.toISOString() }).eq('id', id);
+    if(error) state.error = error.message; else { state.error = null; state.customDays[id] = ''; }
     await load();
     state.busyId = null;
     draw();
