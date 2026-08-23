@@ -1057,6 +1057,45 @@ create policy "tc_feature_announcements_admin_write" on tc_feature_announcements
 
 alter table profiles add column if not exists tc_last_seen_announcement_id uuid;
 
+-- RLS trên profiles đã khoá update tự do của user thường từ trước ("profiles_self_update... cố ý
+-- KHÔNG tạo lại — đã khoá từ v3", xem trên) — user CHỈ update được qua RPC hẹp (kiểu
+-- update_my_channel_handle/mark_onboarding_seen ở trên). "Đánh dấu đã đọc thông báo" cũng cần đi
+-- qua RPC riêng này, không được gọi .update() thẳng từ client (sẽ bị RLS chặn âm thầm, popup sẽ
+-- hiện lại mãi vì cột không bao giờ được ghi).
+create or replace function public.mark_tc_announcement_seen(ann_id uuid)
+returns void as $$
+begin
+  update public.profiles set tc_last_seen_announcement_id = ann_id where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_tc_announcement_seen(uuid) to authenticated;
+
+-- Thu phí Sổ Dòng Tiền Tâm Thức (2026-08-23, theo yêu cầu chị Quỳnh) — mô hình freemium: Ghi Chép
+-- Hàng Ngày + Kiến Thức Nền Tảng luôn FREE (giữ thói quen ghi chép + marketing tự nhiên), 6 module
+-- còn lại (Chấm Điểm Nghiệp Tiền, Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng,
+-- Quản Lý Nợ) khoá sau 14 ngày dùng thử trừ khi đã trả phí TRỌN ĐỜI 1 lần (299.000đ — không theo
+-- tháng, vì (a) app không tốn AI/API nên không có chi phí vận hành tăng dần cần "theo tháng" mới bù
+-- được, (b) hệ SePay/VietinBank hiện tại là chuyển khoản tay 1 lần, không tự động gia hạn định kỳ,
+-- thu trọn đời khớp đúng hạ tầng đang có hơn). Cột RIÊNG hoàn toàn với access_until/has_paid của
+-- nhan-hieu (sản phẩm khác, giá khác, không được lẫn — 1 user có thể trả phí bên này mà chưa trả
+-- phí bên kia hoặc ngược lại). tc_trial_started_at set LƯỜI (lazy) ở lần đầu vào app tai-chinh, xem
+-- tai-chinh/js/app-shell.js — KHÔNG dùng chung on_auth_user_created vì trigger đó chạy cho MỌI
+-- signup (kể cả từ nhan-hieu), không biết được user có định dùng tai-chinh hay không.
+alter table profiles add column if not exists tc_trial_started_at timestamptz;
+alter table profiles add column if not exists tc_has_paid boolean not null default false;
+alter table profiles add column if not exists tc_paid_at timestamptz;
+
+-- Set mốc bắt đầu dùng thử 14 ngày CHO CHÍNH MÌNH, chỉ khi CHƯA từng set (idempotent — gọi lại
+-- nhiều lần vô hại, không reset lại đồng hồ đếm ngược). Qua RPC vì user không update() thẳng
+-- profiles được (RLS đã khoá, xem mark_tc_announcement_seen ở trên).
+create or replace function public.start_tc_trial()
+returns void as $$
+begin
+  update public.profiles set tc_trial_started_at = now() where id = auth.uid() and tc_trial_started_at is null;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.start_tc_trial() to authenticated;
+
 -- Kết quả thật (view/like/cmt/share) cho từng bài đã đăng — TỰ NGUYỆN điền, không bắt buộc (2026-08-23,
 -- theo đề xuất chị Quỳnh: "ai điền thì có lợi cho lịch tuần tiếp theo, ai ko điền thì thôi"). Trước
 -- đây "AI gợi ý lịch tuần" chỉ dựa quy tắc chung (trục/định dạng/CTA tĩnh), không biết bài NÀO của

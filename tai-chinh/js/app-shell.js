@@ -1,22 +1,34 @@
-// Rút gọn từ nhan-hieu/js/app-shell.js — CHỈ giữ routing + đăng nhập/đăng ký Supabase Auth. Bỏ hẳn
-// hasActiveAccess()/renderExpiredScreen()/PAYMENT_BANK/GATED_API_WEIGHTS: giai đoạn 1 (beta) mọi
-// tài khoản đã đăng nhập đều dùng free, chưa gắn thanh toán/quota — xem plan lúc triển khai.
+// Rút gọn từ nhan-hieu/js/app-shell.js — CHỈ giữ routing + đăng nhập/đăng ký Supabase Auth.
 // Tên sản phẩm: "SỔ DÒNG TIỀN TÂM THỨC" (chốt 2026-08-21, đổi từ "SỔ DÒNG TIỀN" — mã nội bộ/kỹ
 // thuật là KarmaFlow, không hiện trên UI) — đổi tên sau này chỉ cần sửa các chuỗi trong file này
 // + index.html <title>/meta, không ảnh hưởng gì tới dữ liệu/kiến trúc.
+//
+// Thu phí (2026-08-23, theo yêu cầu chị Quỳnh): freemium, KHÔNG phải all-or-nothing như nhan-hieu.
+// Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng luôn FREE mãi mãi (giữ thói quen ghi chép hàng ngày +
+// marketing tự nhiên qua nội dung giáo dục). 6 route trong PREMIUM_ROUTES khoá sau 14 ngày dùng thử
+// trừ khi tc_has_paid — xem hasActiveAccess()/renderApp(). KHÁC nhan-hieu: không có renderExpiredScreen
+// chiếm toàn màn hình — sidebar vẫn dùng được bình thường, chỉ đúng route premium hiện màn nâng cấp.
 const NAV = [
   { key:'trang-chu', title:'Trang chủ' },
-  { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền' },
+  { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền', premium:true },
   { key:'kien-thuc', title:'Kiến Thức Nền Tảng' },
-  { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp' },
-  { key:'muc-tieu', title:'Mục Tiêu & Cam Kết' },
+  { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp', premium:true },
+  { key:'muc-tieu', title:'Mục Tiêu & Cam Kết', premium:true },
   { key:'ghi-chep', title:'Ghi Chép Hàng Ngày' },
-  { key:'tong-ket-tuan', title:'Tổng Kết Tuần' },
-  { key:'tong-ket-thang', title:'Tổng Kết Tháng' },
-  { key:'quan-ly-no', title:'Quản Lý Nợ' },
+  { key:'tong-ket-tuan', title:'Tổng Kết Tuần', premium:true },
+  { key:'tong-ket-thang', title:'Tổng Kết Tháng', premium:true },
+  { key:'quan-ly-no', title:'Quản Lý Nợ', premium:true },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm email ở cuối sidebar, không hiện trong danh sách
   { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin', xem renderApp()
 ];
+const PREMIUM_ROUTES = new Set(NAV.filter(n=>n.premium).map(n=>n.key));
+const TC_TRIAL_DAYS = 14;
+const TC_LIFETIME_PRICE = 299000;
+// Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code
+// dùng chung cơ chế "SEVQR <ref_code>" nhưng số tiền 299.000đ là DUY NHẤT, không trùng bất kỳ gói
+// nào của nhan-hieu (xem AMOUNT_TO_DAYS ở api/sepay-webhook.js) nên webhook phân biệt được đúng
+// sản phẩm nào đang được thanh toán chỉ qua số tiền, không cần đổi định dạng ref_code.
+const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null };
 
@@ -100,6 +112,26 @@ async function loadProfile(){
   if(!AppState.user) return;
   const { data } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
   AppState.profile = data || null;
+  // Set mốc dùng thử 14 ngày ở LẦN ĐẦU vào app tai-chinh — RPC tự bỏ qua nếu đã set rồi (idempotent),
+  // không reset lại đồng hồ đếm ngược mỗi lần load profile.
+  if(AppState.profile && !AppState.profile.tc_trial_started_at){
+    const { data: trialData } = await supabaseClient.rpc('start_tc_trial');
+    const { data: refreshed } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
+    if(refreshed) AppState.profile = refreshed;
+  }
+}
+
+function tcTrialDaysLeft(){
+  const p = AppState.profile;
+  if(!p || !p.tc_trial_started_at) return TC_TRIAL_DAYS;
+  const elapsedDays = (Date.now() - new Date(p.tc_trial_started_at).getTime()) / 86400000;
+  return Math.max(0, Math.ceil(TC_TRIAL_DAYS - elapsedDays));
+}
+function hasActiveAccess(){
+  const p = AppState.profile;
+  if(p && p.role === 'admin') return true;
+  if(p && p.tc_has_paid) return true;
+  return tcTrialDaysLeft() > 0;
 }
 
 // Thông báo tính năng mới — chỉ lấy 1 dòng MỚI NHẤT, so với profiles.tc_last_seen_announcement_id
@@ -116,7 +148,8 @@ function maybeShowFeatureAnnouncement(){
   if(window.startFeatureAnnouncement && annUnseen){
     window.startFeatureAnnouncement(ann, async ()=>{
       if(AppState.profile) AppState.profile.tc_last_seen_announcement_id = ann.id;
-      await supabaseClient.from('profiles').update({ tc_last_seen_announcement_id: ann.id }).eq('id', AppState.user.id);
+      // RPC, không .update() thẳng — RLS đã khoá user tự update profiles (xem schema_full.sql).
+      await supabaseClient.rpc('mark_tc_announcement_seen', { ann_id: ann.id });
     });
   }
 }
@@ -214,12 +247,14 @@ function renderApp(){
   `;
 
   const isAdmin = AppState.profile && AppState.profile.role === 'admin';
+  const canAccess = hasActiveAccess();
   const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin));
   const nav = root.querySelector('#sidebar-nav');
   nav.innerHTML = visibleNav.map((n,i)=>{
+    const locked = n.premium && !canAccess;
     return `
     <div class="sidebar-item ${AppState.route===n.key?'active':''}" data-key="${n.key}">
-      <span class="num">${i+1}</span><span>${esc(n.title)}</span>
+      <span class="num">${i+1}</span><span>${esc(n.title)}</span>${locked?' <span title="Cần nâng cấp">🔒</span>':''}
     </div>
   `;}).join('');
 
@@ -245,12 +280,76 @@ function renderApp(){
   maybeShowFeatureAnnouncement();
 
   const content = root.querySelector('#main-content');
+  if(PREMIUM_ROUTES.has(AppState.route) && !canAccess){
+    renderUpgradeScreen(content);
+    return;
+  }
   const mod = window.Modules && window.Modules[AppState.route];
   if(mod && mod.render){
     mod.render(content, { supabase: supabaseClient, user: AppState.user, profile: AppState.profile });
   } else {
     content.innerHTML = `<div class="card">Module đang được xây dựng.</div>`;
   }
+}
+
+// Khác nhan-hieu (renderExpiredScreen chiếm TOÀN màn hình, không cho dùng gì nữa) — ở đây CHỈ đúng
+// route premium bị khoá mới hiện màn này, sidebar/Ghi Chép/Kiến Thức vẫn dùng bình thường. Vẽ vào
+// #main-content như 1 module bình thường, không thay root.innerHTML.
+function renderUpgradeScreen(content){
+  const p = AppState.profile;
+  const refCode = p && p.ref_code;
+  const daysLeft = tcTrialDaysLeft();
+  const hadTrial = !!(p && p.tc_trial_started_at);
+  // VietinBank CHỈ báo biến động số dư về SePay nếu nội dung chuyển khoản bắt đầu bằng "SEVQR"
+  // (yêu cầu riêng SePay cho VietinBank) — xem api/sepay-webhook.js.
+  const transferContent = refCode ? `SEVQR ${refCode}` : null;
+  const qrUrl = refCode
+    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${TC_LIFETIME_PRICE}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+    : null;
+
+  content.innerHTML = `
+    <div class="page-head">
+      <h1>🔒 Tính năng trả phí</h1>
+      <p>${hadTrial && daysLeft===0 ? 'Bạn đã dùng thử xong 14 ngày.' : `Còn ${daysLeft} ngày dùng thử.`} Mở khoá TRỌN ĐỜI toàn bộ Chấm Điểm Nghiệp Tiền, Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.</p>
+    </div>
+    <div class="card" style="max-width:460px;">
+      <div style="text-align:center;font-size:15px;font-weight:700;margin-bottom:14px;">${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
+      ${qrUrl ? `
+        <div style="text-align:center;">
+          <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
+          <div style="margin-top:8px;">
+            <a href="${qrUrl}" download="vietqr-tai-chinh.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
+          </div>
+        </div>
+        <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+          <div><b>Ngân hàng:</b> Vietinbank</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+          <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${TC_LIFETIME_PRICE}">Copy</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+        </div>
+        <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận. Chuyển xong đợi 1-2 phút rồi bấm nút bên dưới.</div>
+      ` : `
+        <div class="error-box">Chưa có mã tài khoản để đối chiếu tự động. Nhắn email đăng ký (${esc((AppState.user&&AppState.user.email)||'')}) để được kích hoạt thủ công.</div>
+      `}
+      <div class="btn-row" style="margin-top:16px;justify-content:center;">
+        <button class="btn-ghost btn" id="tc-reload-status-btn">Tôi đã chuyển khoản — tải lại trạng thái</button>
+      </div>
+    </div>
+  `;
+
+  content.querySelectorAll('[data-copy-value]').forEach(el=>{
+    el.onclick = async ()=>{
+      try{
+        await navigator.clipboard.writeText(el.getAttribute('data-copy-value'));
+        const old = el.textContent;
+        el.textContent = 'Đã copy ✓';
+        setTimeout(()=>{ el.textContent = old; }, 1500);
+      } catch(e){}
+    };
+  });
+  const reloadBtn = content.querySelector('#tc-reload-status-btn');
+  if(reloadBtn) reloadBtn.onclick = async ()=>{ await loadProfile(); renderApp(); };
 }
 
 window.Modules = window.Modules || {};

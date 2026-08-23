@@ -1,15 +1,36 @@
 (function(){
 // Trang Quản Trị cho Sổ Dòng Tiền Tâm Thức — áp dụng quy tắc bên nhan-hieu/js/quan-tri-thongbao.js
-// (2026-08-23, theo yêu cầu chị Quỳnh). KHÔNG làm hub nhiều tab như bên nhan-hieu (thành viên/tài
-// chính/giao dịch/kho nội dung) vì tai-chinh CHƯA có hệ thu phí/quota (giai đoạn 1 beta, mọi tài
-// khoản đã đăng nhập dùng free — xem app-shell.js) nên các tab đó không có ý nghĩa gì ở đây. Chỉ
-// giữ đúng 1 việc: đăng thông báo tính năng mới → hiện popup cho mọi user (feature-tour.js so
-// profiles.tc_last_seen_announcement_id). Route này chỉ hiện trong sidebar khi profiles.role==='admin'
+// (2026-08-23, theo yêu cầu chị Quỳnh). 2 tab: Thông báo (đăng feature announcement) + Thành viên
+// (xem/gán tc_has_paid, gia hạn dùng thử) — KHÔNG làm hub nhiều tab như bên nhan-hieu (tài chính/
+// giao dịch SePay/kho nội dung) vì tai-chinh chỉ có ĐÚNG 1 gói (trọn đời), không có nhiều gói/tháng
+// cần đối soát phức tạp như bên đó. Route này chỉ hiện trong sidebar khi profiles.role==='admin'
 // (xem app-shell.js NAV, cờ adminOnly) — nhưng RLS ở Supabase (is_admin()) mới là chốt chặn thật,
 // ẩn sidebar chỉ để đỡ rối giao diện cho user thường.
 const EMOJI_OPTIONS = ['🎉','🚀','🎁','⚠️','✨','🔥','📢','💡'];
+const TC_TRIAL_DAYS_FOR_ADMIN = 14; // khớp TC_TRIAL_DAYS ở app-shell.js — chỉ để hiện đúng số ngày còn lại
 
 function render(container, ctx){
+  const hubState = { tab:'thongbao' };
+  function drawHub(){
+    container.innerHTML = `
+      <div class="page-head"><h1>Quản Trị</h1><p>Đăng thông báo tính năng mới hoặc xem/quản lý thành viên trả phí.</p></div>
+      <div class="chips" style="margin-bottom:18px;">
+        <div class="chip ${hubState.tab==='thongbao'?'selected':''}" data-hub-tab="thongbao">Thông báo</div>
+        <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành viên</div>
+      </div>
+      <div id="qt-hub-sub"></div>
+    `;
+    container.querySelectorAll('[data-hub-tab]').forEach(el=>{
+      el.onclick = ()=>{ hubState.tab = el.getAttribute('data-hub-tab'); drawHub(); };
+    });
+    const sub = container.querySelector('#qt-hub-sub');
+    if(hubState.tab === 'thongbao') renderThongBao(sub, ctx);
+    else renderThanhVien(sub, ctx);
+  }
+  drawHub();
+}
+
+function renderThongBao(container, ctx){
   const state = { title:'', body:'', emoji:EMOJI_OPTIONS[0], steps:[], posting:false, list:[] };
   // Chỉ cho chọn các mục sidebar THẬT SỰ hiện ra được (không phải mục ẩn/chỉ-admin) — feature-tour.js
   // trỏ sáng bằng .sidebar-item[data-key], mục không hiện trong sidebar thì không trỏ được.
@@ -68,7 +89,7 @@ function render(container, ctx){
 
   function html(){
     return `
-      <div class="page-head"><h1>Quản Trị</h1><p>Đăng ở đây sẽ hiện popup giữa màn hình cho tất cả khách đang dùng Sổ Dòng Tiền Tâm Thức. Thêm "các bước hướng dẫn" nếu muốn dẫn khách đi từng bước trong app (giống hướng dẫn lúc mới vào app).</p></div>
+      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Đăng ở đây sẽ hiện popup giữa màn hình cho tất cả khách đang dùng Sổ Dòng Tiền Tâm Thức. Thêm "các bước hướng dẫn" nếu muốn dẫn khách đi từng bước trong app (giống hướng dẫn lúc mới vào app).</p>
       <div class="card" style="margin-bottom:24px;">
         <div class="field" style="margin-bottom:14px;">
           <label>Tiêu đề</label>
@@ -149,6 +170,108 @@ function render(container, ctx){
 
   boot();
 }
+
+// Tab "Thành viên" — xem/gán tc_has_paid + gia hạn dùng thử. RÚT GỌN nhiều so với
+// nhan-hieu/js/quan-tri.js (486 dòng, nhiều gói tháng/năm cần đối soát) vì tai-chinh chỉ có ĐÚNG
+// 1 gói (trọn đời) — không cần chọn số ngày gia hạn, chỉ cần 1 nút bật tc_has_paid.
+function renderThanhVien(container, ctx){
+  const state = { loading:true, rows:[], search:'', busyId:null };
+
+  function draw(){ container.innerHTML = html(); bind(); }
+
+  async function load(){
+    state.loading = true; draw();
+    const { data } = await ctx.supabase.from('profiles')
+      .select('id,email,full_name,role,tc_has_paid,tc_trial_started_at,tc_paid_at,created_at')
+      .order('created_at', { ascending:false }).limit(200);
+    state.rows = data || [];
+    state.loading = false;
+    draw();
+  }
+
+  function trialDaysLeft(row){
+    if(!row.tc_trial_started_at) return TC_TRIAL_DAYS_FOR_ADMIN;
+    const elapsed = (Date.now() - new Date(row.tc_trial_started_at).getTime()) / 86400000;
+    return Math.max(0, Math.ceil(TC_TRIAL_DAYS_FOR_ADMIN - elapsed));
+  }
+
+  function statusBadge(row){
+    if(row.role === 'admin') return `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Admin</span>`;
+    if(row.tc_has_paid) return `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Đã trả phí</span>`;
+    const left = trialDaysLeft(row);
+    return left > 0
+      ? `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FDF0E0;color:#B5691A;">Còn ${left} ngày dùng thử</span>`
+      : `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FBE5E5;color:#B5271A;">Hết dùng thử</span>`;
+  }
+
+  async function markPaid(id, value){
+    state.busyId = id; draw();
+    await ctx.supabase.from('profiles').update({ tc_has_paid: value, tc_paid_at: value ? new Date().toISOString() : null }).eq('id', id);
+    state.busyId = null;
+    await load();
+  }
+
+  async function extendTrial(id, days){
+    state.busyId = id; draw();
+    const row = state.rows.find(r=>r.id===id);
+    // Lùi mốc bắt đầu dùng thử về trước N ngày — tương đương cộng thêm N ngày dùng thử kể từ giờ,
+    // dùng lại đúng cột tc_trial_started_at (không cần cột riêng cho "gia hạn").
+    const base = row && row.tc_trial_started_at ? new Date(row.tc_trial_started_at) : new Date();
+    base.setDate(base.getDate() - days);
+    await ctx.supabase.from('profiles').update({ tc_trial_started_at: base.toISOString() }).eq('id', id);
+    state.busyId = null;
+    await load();
+  }
+
+  function html(){
+    const filtered = state.search.trim()
+      ? state.rows.filter(r => (r.email||'').toLowerCase().includes(state.search.toLowerCase()) || (r.full_name||'').toLowerCase().includes(state.search.toLowerCase()))
+      : state.rows;
+    return `
+      <input type="text" id="tv-search" placeholder="Tìm theo email hoặc tên..." value="${esc(state.search)}"
+        style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;margin-bottom:16px;">
+      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : filtered.map(r=>`
+        <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${esc(r.full_name||'(chưa đặt tên)')} ${statusBadge(r)}</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(r.email||'')}</div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">
+              Vào tai-chinh: ${r.tc_trial_started_at ? esc(new Date(r.tc_trial_started_at).toLocaleDateString('vi-VN')) : 'chưa vào'}
+              ${r.tc_paid_at ? ` · Trả phí: ${esc(new Date(r.tc_paid_at).toLocaleDateString('vi-VN'))}` : ''}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${r.tc_has_paid
+              ? `<span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-mark-unpaid="${r.id}" ${state.busyId===r.id?'disabled':''}>Bỏ đánh dấu trả phí</span>`
+              : `<span class="btn btn-sm" data-mark-paid="${r.id}" ${state.busyId===r.id?'disabled':''}>💰 Đánh dấu đã trả phí</span>`}
+            <span class="btn-ghost btn btn-sm" data-extend-trial="${r.id}|14" ${state.busyId===r.id?'disabled':''}>+14 ngày dùng thử</span>
+          </div>
+        </div>
+      `).join('')}
+      ${!state.loading && filtered.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Không có kết quả.</div>` : ''}
+    `;
+  }
+
+  function bind(){
+    const searchEl = container.querySelector('#tv-search');
+    if(searchEl) searchEl.oninput = (e)=>{ state.search = e.target.value; draw(); };
+    container.querySelectorAll('[data-mark-paid]').forEach(el=>{
+      el.onclick = ()=>markPaid(el.getAttribute('data-mark-paid'), true);
+    });
+    container.querySelectorAll('[data-mark-unpaid]').forEach(el=>{
+      el.onclick = ()=>markPaid(el.getAttribute('data-mark-unpaid'), false);
+    });
+    container.querySelectorAll('[data-extend-trial]').forEach(el=>{
+      el.onclick = ()=>{
+        const [id, days] = el.getAttribute('data-extend-trial').split('|');
+        extendTrial(id, Number(days));
+      };
+    });
+  }
+
+  load();
+}
+
 window.Modules = window.Modules || {};
 window.Modules['quan-tri'] = { title:'Quản Trị', render };
 })();

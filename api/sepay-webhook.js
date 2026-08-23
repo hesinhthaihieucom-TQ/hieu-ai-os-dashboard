@@ -1,6 +1,10 @@
 // Serverless function — nhận webhook từ SePay mỗi khi có giao dịch vào tài khoản Vietinbank
-// của Xây Nhân Hiệu, tự đối chiếu mã tham chiếu (ref_code) trong nội dung chuyển khoản và
-// số tiền, rồi tự gia hạn access_until cho đúng tài khoản — không cần admin bấm tay.
+// dùng chung cho CẢ Xây Nhân Hiệu lẫn Sổ Dòng Tiền Tâm Thức (2026-08-23, chị Quỳnh chỉ có 1 tài
+// khoản ngân hàng thật), tự đối chiếu mã tham chiếu (ref_code) trong nội dung chuyển khoản và số
+// tiền, rồi tự gia hạn access_until (nhan-hieu) hoặc bật tc_has_paid (tai-chinh) cho đúng tài khoản
+// — không cần admin bấm tay. Phân biệt ĐÚNG sản phẩm nào đang được thanh toán CHỈ qua số tiền
+// chuyển khoản (xem AMOUNT_TO_DAYS/TC_LIFETIME_AMOUNT bên dưới — 2 tập số tiền không được trùng
+// nhau), vì ref_code dùng chung 1 định dạng cho cả 2 sản phẩm.
 //
 // Bảo mật: xác thực bằng header "Authorization: Apikey <SEPAY_WEBHOOK_APIKEY>" (khớp đúng
 // method "API Key" cấu hình trong SePay dashboard khi tạo webhook). Dùng SUPABASE_SERVICE_ROLE_KEY
@@ -31,6 +35,13 @@ const AMOUNT_TO_DAYS = {
 };
 // Số tiền coi là "đã dùng ưu đãi tháng đầu" — sau lần này học viên mua gói 1 tháng sẽ trả giá thường.
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
+
+// Gói TRỌN ĐỜI của Sổ Dòng Tiền Tâm Thức (tai-chinh/, sản phẩm KHÁC, giá KHÁC — không đụng
+// access_until/has_paid ở trên, xem tc_has_paid/tc_paid_at trong schema_full.sql). Số tiền này ĐÃ
+// kiểm tra không trùng bất kỳ giá trị nào trong AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT ở trên — webhook
+// phân biệt 2 sản phẩm CHỈ qua số tiền chuyển khoản, ref_code dùng chung định dạng "SEVQR <ref_code>"
+// với nhan-hieu (cùng 1 tài khoản ngân hàng thật, chị Quỳnh chỉ có 1 tài khoản).
+const TC_LIFETIME_AMOUNT = 299000;
 
 // Số tiền giá giới thiệu — khớp 1 trong 3 số này thì mới kích hoạt thưởng cho người đã giới thiệu
 // (gói ưu đãi/flash-sale và giá học viên KHÔNG bao giờ tính hoa hồng, theo yêu cầu chị Quỳnh).
@@ -240,6 +251,21 @@ module.exports = async (req, res) => {
             status = 'matched';
             matchedProfileId = profile.id;
             topupLuotGranted = topupLuot;
+          } else {
+            status = 'unmatched_amount';
+          }
+        } else if (transferAmount === TC_LIFETIME_AMOUNT) {
+          // Sổ Dòng Tiền Tâm Thức (tai-chinh/) — trọn đời, KHÔNG đụng access_until/has_paid của
+          // nhan-hieu. Idempotent tự nhiên: PATCH lại true/timestamp mới nếu lỡ chuyển trùng không
+          // sao, không có tác dụng phụ nào (khác gói theo ngày, cộng dồn được nên phải chống trùng
+          // ở nơi khác — ở đây chỉ set 1 cờ boolean).
+          const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ tc_has_paid: true, tc_paid_at: new Date().toISOString() }),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProfileId = profile.id;
           } else {
             status = 'unmatched_amount';
           }
