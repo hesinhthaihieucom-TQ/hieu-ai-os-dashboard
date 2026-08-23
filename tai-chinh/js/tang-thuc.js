@@ -16,12 +16,24 @@ const NUT_CHAN_LABELS = {
   3: 'Nút Chặn #3 — Khi chính mình chi tiền',
   4: 'Nút Chặn #4 — Khi thấy người khác chi tiền',
 };
+// Gợi ý sự kiện gốc thường gặp + PHÂN TÍCH SẴN (không bắt người dùng tự chẩn đoán "đứa trẻ nào bị
+// tổn thương" — góp ý 2026-08-22: app phải là bên phân tích, người dùng chỉ cần chọn/mô tả đúng sự
+// kiện họ nhớ). Bấm 1 gợi ý sẽ điền sẵn vào ô sự kiện (sửa lại được) + hiện luôn phân tích tương ứng.
+const ORIGIN_EVENT_PATTERNS = [
+  { key:'cai_nhau', label:'Nghe bố mẹ cãi nhau/than thở về tiền', seed:'Hồi nhỏ hay nghe bố mẹ cãi nhau hoặc than thở vì thiếu tiền.', analysis:'Bạn học được rằng tiền gắn liền với xung đột, bất an trong gia đình — lớn lên dễ né tránh nói chuyện tiền bạc thẳng thắn, hoặc thấy căng thẳng mỗi khi phải bàn chuyện tài chính với người thân.' },
+  { key:'so_sanh_ngheo', label:'Bị so sánh/chê bai vì gia đình nghèo hơn người khác', seed:'Bị so sánh hoặc chê bai vì nhà mình nghèo hơn bạn bè/họ hàng.', analysis:'Bạn học được rằng thiếu tiền đồng nghĩa với xấu hổ, kém cỏi — lớn lên dễ tích tiền hoặc mua sắm để chứng minh giá trị bản thân, thay vì vì nhu cầu hay mục đích thật.' },
+  { key:'vo_no', label:'Chứng kiến người thân vỡ nợ/mất trắng vì tiền', seed:'Chứng kiến người thân trong nhà vỡ nợ hoặc mất trắng tài sản.', analysis:'Bạn học được rằng tiền có thể biến mất bất cứ lúc nào — lớn lên dễ ôm giữ quá mức, sợ chi tiêu, khó tin vào sự an toàn tài chính dù hiện tại đang ổn định.' },
+  { key:'bi_trach_mang', label:'Bị trách mắng/phạt vì tiêu tiền sai ý người lớn', seed:'Từng bị trách mắng hoặc phạt vì tiêu tiền không đúng ý bố mẹ.', analysis:'Bạn học được rằng chi tiền dễ bị phán xét hoặc trừng phạt — lớn lên dễ thấy tội lỗi mỗi khi chi cho bản thân, dù đó là nhu cầu chính đáng.' },
+  { key:'phai_nhin', label:'Phải nhịn/thiếu thốn để nhường cho người khác trong nhà', seed:'Từng phải nhịn hoặc thiếu thốn để nhường phần cho anh chị em/người khác trong nhà.', analysis:'Bạn học được rằng nhu cầu của mình không quan trọng bằng người khác — lớn lên dễ hy sinh tài chính bản thân quá mức, hoặc áy náy khi giữ tiền lại cho chính mình.' },
+  { key:'tien_dieu_kien', label:'Được cho tiền đi kèm điều kiện/áp lực phải nghe lời', seed:'Được cho tiền nhưng luôn đi kèm điều kiện hoặc áp lực phải nghe lời.', analysis:'Bạn học được rằng tiền gắn liền với sự kiểm soát — lớn lên dễ khó chịu khi phải phụ thuộc tài chính vào ai, hoặc ngược lại, dùng tiền để kiểm soát người khác.' },
+];
 
 function render(container, ctx){
   const state = {
     loading: true,
     beliefs: [],
-    form: { belief_text:'', origin_note:'', inner_child_note:'', linked_nut_chan:null },
+    form: { belief_text:'', origin_note:'', linked_nut_chan:null },
+    selectedOriginPattern: null,
     saving: false,
     lastReframe: '',
     justAddedId: null,
@@ -57,13 +69,13 @@ function render(container, ctx){
       user_id: ctx.user.id,
       belief_text: text,
       origin_note: state.form.origin_note.trim() || null,
-      inner_child_note: state.form.inner_child_note.trim() || null,
       linked_nut_chan: state.form.linked_nut_chan,
     }).select().maybeSingle();
     state.lastReframe = REFRAME_PROMPTS[Math.floor(Math.random()*REFRAME_PROMPTS.length)];
     state.justAddedId = data ? data.id : null;
     state.newBeliefDraft = '';
-    state.form = { belief_text:'', origin_note:'', inner_child_note:'', linked_nut_chan:null };
+    state.form = { belief_text:'', origin_note:'', linked_nut_chan:null };
+    state.selectedOriginPattern = null;
     state.saving = false;
     await load();
   }
@@ -100,7 +112,6 @@ function render(container, ctx){
           <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;${b.still_active?'background:#FDF0E0;color:#B5691A;':'background:#E5F0E5;color:#2E7D32;'}">${b.still_active?'Đang chi phối':'Đã chuyển hoá ✓'}</span>
         </div>
         ${b.origin_note?`<div style="font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:6px;">Sự kiện gốc: ${esc(b.origin_note)}</div>`:''}
-        ${b.inner_child_note?`<div style="font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:4px;">Đứa trẻ bị tổn thương: ${esc(b.inner_child_note)}</div>`:''}
         ${b.new_belief?`<div class="hint-box" style="margin-top:8px;">🌱 Niềm tin mới: "${esc(b.new_belief)}"</div>`:
           state.justAddedId===b.id ? `
             <div class="hint-box" style="margin-top:10px;">💛 ${esc(state.lastReframe)}</div>
@@ -131,10 +142,12 @@ function render(container, ctx){
           <textarea id="tt2-belief" placeholder="VD: Tiền là thứ khó kiếm, phải vất vả cả đời mới có được...">${esc(state.form.belief_text)}</textarea>
 
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Sự kiện cụ thể nào trong quá khứ khiến bạn tin điều này? <span style="font-weight:400;">(không bắt buộc)</span></label>
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Chưa nhớ ra rõ ràng? Bấm thử 1 gợi ý quen thuộc dưới đây để bắt đầu:</div>
+          <div class="chips" id="tt2-origin-pattern-chips" style="margin-bottom:10px;">
+            ${ORIGIN_EVENT_PATTERNS.map(p=>`<div class="chip ${state.selectedOriginPattern===p.key?'selected':''}" data-origin-pattern="${p.key}">${esc(p.label)}</div>`).join('')}
+          </div>
+          ${state.selectedOriginPattern ? `<div class="hint-box" style="margin-bottom:10px;">${esc(ORIGIN_EVENT_PATTERNS.find(p=>p.key===state.selectedOriginPattern).analysis)}</div>` : ''}
           <textarea id="tt2-origin" placeholder="VD: Năm 10 tuổi, thấy bố mẹ cãi nhau vì tiền, nghe mẹ nói 'nhà mình nghèo lắm'...">${esc(state.form.origin_note)}</textarea>
-
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đứa trẻ nào trong bạn đang mang tổn thương này? <span style="font-weight:400;">(không bắt buộc)</span></label>
-          <textarea id="tt2-inner-child" placeholder="VD: Đứa trẻ 10 tuổi đang sợ hãi, cảm thấy bất lực và xấu hổ vì nhà nghèo...">${esc(state.form.inner_child_note)}</textarea>
 
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Niềm tin này thường hiện rõ nhất ở đâu? <span style="font-weight:400;">(không bắt buộc)</span></label>
           <div class="chips" id="tt2-nutchan-chips">
@@ -161,8 +174,15 @@ function render(container, ctx){
     if(beliefEl) beliefEl.oninput = (e)=>{ state.form.belief_text = e.target.value; };
     const originEl = container.querySelector('#tt2-origin');
     if(originEl) originEl.oninput = (e)=>{ state.form.origin_note = e.target.value; };
-    const innerChildEl = container.querySelector('#tt2-inner-child');
-    if(innerChildEl) innerChildEl.oninput = (e)=>{ state.form.inner_child_note = e.target.value; };
+    const originPatternChips = container.querySelector('#tt2-origin-pattern-chips');
+    if(originPatternChips) originPatternChips.querySelectorAll('[data-origin-pattern]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-origin-pattern');
+        state.selectedOriginPattern = key;
+        if(!state.form.origin_note.trim()) state.form.origin_note = ORIGIN_EVENT_PATTERNS.find(p=>p.key===key).seed;
+        draw();
+      };
+    });
     const nutChanChips = container.querySelector('#tt2-nutchan-chips');
     if(nutChanChips) nutChanChips.querySelectorAll('[data-nutchan]').forEach(el=>{
       el.onclick = ()=>{

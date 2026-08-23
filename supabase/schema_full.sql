@@ -921,11 +921,6 @@ drop policy if exists "tc_core_beliefs_owner_all" on tc_core_beliefs;
 create policy "tc_core_beliefs_owner_all" on tc_core_beliefs for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Góp ý 2026-08-22: câu "học từ ai/khi nào" quá chung chung, không đủ gợi để người dùng lần về
--- đúng ký ức gốc. Tách rõ thành sự kiện cụ thể (origin_note, giữ tên cột cũ) + đứa trẻ nào trong
--- quá khứ đang mang tổn thương này (inner_child_note, cột mới) — 2 câu khác nhau, không gộp 1 ô.
-alter table tc_core_beliefs add column if not exists inner_child_note text;
-
 -- ============================================================
 -- 16. THÔNG BÁO ĐẨY (Web Push) — nhắc lịch đăng bài, nhắc kiểm tra view sau khi đăng (Đẩy Bài),
 -- nhắc lịch quay content (2026-08-21, theo yêu cầu chị Quỳnh). Gửi qua chuẩn Web Push (VAPID) —
