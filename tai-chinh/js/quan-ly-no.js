@@ -49,6 +49,8 @@ function render(container, ctx){
     savingDebt: false,
     error: null,
   };
+  const DRAFT_KEY = 'quan-ly-no-new-debt';
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { newDebt: state.newDebt }); }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -63,6 +65,9 @@ function render(container, ctx){
       ? { target_amount: String(efRes.data.target_amount||0), current_amount: String(efRes.data.current_amount||0) }
       : { target_amount:'', current_amount:'' };
     state.debts = debtsRes.data || [];
+    // Đang gõ dở form "+ Thêm khoản nợ" mà lỡ rời trang thì không được mất (góp ý Quỳnh 2026-08-22).
+    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+    if(draft && draft.newDebt) Object.assign(state.newDebt, draft.newDebt);
     state.loading = false;
     draw();
   }
@@ -95,6 +100,7 @@ function render(container, ctx){
     state.savingDebt = false;
     if(error){ state.error = 'Không lưu được — thử lại. (' + error.message + ')'; draw(); return; }
     state.newDebt = { creditor_name:'', current_balance:'', interest_rate:'', minimum_payment:'', due_day:'' };
+    await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
   }
 
@@ -339,7 +345,7 @@ function render(container, ctx){
     if(efSaveEl) efSaveEl.onclick = saveEmergencyFund;
 
     container.querySelectorAll('[data-new]').forEach(el=>{
-      el.oninput = ()=>{ state.newDebt[el.getAttribute('data-new')] = el.value; };
+      el.oninput = ()=>{ state.newDebt[el.getAttribute('data-new')] = el.value; persistDraft(); };
     });
     const addBtn = container.querySelector('#add-debt');
     if(addBtn) addBtn.onclick = addDebt;

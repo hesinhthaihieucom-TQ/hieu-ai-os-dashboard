@@ -37,6 +37,7 @@ function fundSplitHtml(amount, debtWarning){
 }
 
 function render(container, ctx){
+  const DRAFT_KEY = 'ghi-chep';
   const state = {
     loading: true,
     date: isoDate(new Date()),
@@ -47,6 +48,7 @@ function render(container, ctx){
     debtWarning: null,
     learnedCategories: { income:[], expense:[] },
   };
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form }); }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -59,6 +61,13 @@ function render(container, ctx){
     state.entries = error ? [] : (data||[]);
     state.loading = false;
     draw();
+  }
+
+  // Đang gõ dở 1 giao dịch (chọn loại, nhập số tiền, chọn Vibe Check...) mà lỡ bấm sang màn khác
+  // thì không được mất — khôi phục lại đúng draft đã gõ khi quay lại (góp ý Quỳnh 2026-08-22).
+  async function restoreDraft(){
+    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+    if(draft && draft.form) { state.form = draft.form; draw(); }
   }
 
   async function loadDebtWarning(){
@@ -106,6 +115,7 @@ function render(container, ctx){
     state.saving = false;
     if(error){ state.error = 'Không lưu được — thử lại. (' + error.message + ')'; draw(); return; }
     state.form = { type: state.form.type, amount:'', description:'', category:'cp_bien_doi', category_label:'', vibe:null, vibe_reason:'' };
+    await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
     await loadLearnedCategories();
   }
@@ -196,25 +206,26 @@ function render(container, ctx){
   function bind(){
     container.querySelector('#gc-date').onchange = (e)=>{ state.date = e.target.value; load(); };
     container.querySelectorAll('#gc-type-chips [data-type]').forEach(el=>{
-      el.onclick = ()=>{ state.form.type = el.getAttribute('data-type'); state.error = null; draw(); };
+      el.onclick = ()=>{ state.form.type = el.getAttribute('data-type'); state.error = null; draw(); persistDraft(); };
     });
     const catChips = container.querySelector('#gc-category-chips');
     if(catChips) catChips.querySelectorAll('[data-category]').forEach(el=>{
-      el.onclick = ()=>{ state.form.category = el.getAttribute('data-category'); draw(); };
+      el.onclick = ()=>{ state.form.category = el.getAttribute('data-category'); draw(); persistDraft(); };
     });
     const vibeChips = container.querySelector('#gc-vibe-chips');
     if(vibeChips) vibeChips.querySelectorAll('[data-vibe]').forEach(el=>{
-      el.onclick = ()=>{ state.form.vibe = el.getAttribute('data-vibe'); state.error = null; draw(); };
+      el.onclick = ()=>{ state.form.vibe = el.getAttribute('data-vibe'); state.error = null; draw(); persistDraft(); };
     });
-    container.querySelector('#gc-vibe-reason').oninput = (e)=>{ state.form.vibe_reason = e.target.value; };
-    container.querySelector('#gc-category-label').oninput = (e)=>{ state.form.category_label = e.target.value; };
-    container.querySelector('#gc-desc').oninput = (e)=>{ state.form.description = e.target.value; };
+    container.querySelector('#gc-vibe-reason').oninput = (e)=>{ state.form.vibe_reason = e.target.value; persistDraft(); };
+    container.querySelector('#gc-category-label').oninput = (e)=>{ state.form.category_label = e.target.value; persistDraft(); };
+    container.querySelector('#gc-desc').oninput = (e)=>{ state.form.description = e.target.value; persistDraft(); };
     container.querySelector('#gc-amount').oninput = (e)=>{
       state.form.amount = e.target.value;
       // Chỉ cập nhật riêng ô gợi ý chia quỹ, KHÔNG gọi draw() lại toàn bộ — nếu không sẽ mất focus
       // ngay sau ký tự đầu tiên gõ vào (innerHTML bị thay hoàn toàn mỗi lần gõ).
       const splitEl = container.querySelector('#gc-fund-split');
       if(splitEl) splitEl.innerHTML = fundSplitHtml(state.form.amount, state.debtWarning);
+      persistDraft();
     };
     container.querySelector('#gc-submit').onclick = submit;
     container.querySelectorAll('[data-delete]').forEach(el=>{
@@ -230,6 +241,7 @@ function render(container, ctx){
   load();
   loadDebtWarning();
   loadLearnedCategories();
+  restoreDraft();
 }
 
 window.Modules = window.Modules || {};

@@ -28,6 +28,8 @@ function render(container, ctx){
     lastReframe: '',
     savingObstacle: false,
   };
+  const DRAFT_KEY = 'muc-tieu-' + month;
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { goal: state.goal, goal_first_reaction: state.goal_first_reaction, selectedResistance: state.selectedResistance, obstacleInput: state.obstacleInput, step: state.step }); }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -48,6 +50,15 @@ function render(container, ctx){
       state.goal_first_reaction = r.goal_first_reaction || '';
       state.step = hasAnyGoal(state.goal) ? 'summary' : 'goal';
     }
+    // Draft (đang gõ dở, chưa bấm Lưu) đè lên SAU dữ liệu đã lưu — draft luôn là bản mới hơn.
+    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+    if(draft){
+      if(draft.goal) Object.assign(state.goal, draft.goal);
+      if(draft.goal_first_reaction) state.goal_first_reaction = draft.goal_first_reaction;
+      if(draft.selectedResistance) state.selectedResistance = draft.selectedResistance;
+      if(draft.obstacleInput) state.obstacleInput = draft.obstacleInput;
+      if(draft.step) state.step = draft.step;
+    }
     state.obstacles = obstaclesRes.data || [];
     state.loading = false;
     draw();
@@ -65,6 +76,7 @@ function render(container, ctx){
     state.saving = false;
     state.step = 'reaction';
     draw();
+    persistDraft();
   }
 
   async function saveReaction(){
@@ -73,6 +85,8 @@ function render(container, ctx){
       user_id: ctx.user.id, month, goal_first_reaction: state.goal_first_reaction.trim() || null,
       updated_at: new Date().toISOString(),
     }, { onConflict:'user_id,month' });
+    // Cả Lời Cam Kết lẫn Tiếng Lòng đều đã lưu xong — draft không còn ý nghĩa cho tháng này nữa.
+    await clearModuleDraft(ctx, DRAFT_KEY);
     state.saving = false;
     state.step = 'summary';
     draw();
@@ -86,6 +100,7 @@ function render(container, ctx){
     state.lastReframe = REFRAME_MESSAGES[Math.floor(Math.random()*REFRAME_MESSAGES.length)];
     state.obstacleInput = '';
     state.savingObstacle = false;
+    persistDraft();
     await load();
   }
 
@@ -210,28 +225,28 @@ function render(container, ctx){
   function bind(){
     const houseChips = container.querySelector('#mt-house-chips');
     if(houseChips) houseChips.querySelectorAll('[data-house]').forEach(el=>{
-      el.onclick = ()=>{ state.goal.goal_house = el.getAttribute('data-house'); draw(); };
+      el.onclick = ()=>{ state.goal.goal_house = el.getAttribute('data-house'); draw(); persistDraft(); };
     });
     const resistanceChips = container.querySelector('#mt-resistance-chips');
     if(resistanceChips) resistanceChips.querySelectorAll('[data-resistance]').forEach(el=>{
-      el.onclick = ()=>{ state.selectedResistance = el.getAttribute('data-resistance'); draw(); };
+      el.onclick = ()=>{ state.selectedResistance = el.getAttribute('data-resistance'); draw(); persistDraft(); };
     });
     container.querySelectorAll('[data-goal]').forEach(el=>{
-      el.oninput = ()=>{ state.goal[el.getAttribute('data-goal')] = el.value; };
+      el.oninput = ()=>{ state.goal[el.getAttribute('data-goal')] = el.value; persistDraft(); };
     });
     const saveGoalBtn = container.querySelector('#mt-save-goal');
     if(saveGoalBtn) saveGoalBtn.onclick = saveGoal;
 
     const reactionEl = container.querySelector('#mt-reaction');
-    if(reactionEl) reactionEl.oninput = (e)=>{ state.goal_first_reaction = e.target.value; };
+    if(reactionEl) reactionEl.oninput = (e)=>{ state.goal_first_reaction = e.target.value; persistDraft(); };
     const saveReactionBtn = container.querySelector('#mt-save-reaction');
     if(saveReactionBtn) saveReactionBtn.onclick = saveReaction;
 
     const editBtn = container.querySelector('#mt-edit-goal');
-    if(editBtn) editBtn.onclick = ()=>{ state.step = 'goal'; draw(); };
+    if(editBtn) editBtn.onclick = ()=>{ state.step = 'goal'; draw(); persistDraft(); };
 
     const obstacleInput = container.querySelector('#mt-obstacle-input');
-    if(obstacleInput) obstacleInput.oninput = (e)=>{ state.obstacleInput = e.target.value; };
+    if(obstacleInput) obstacleInput.oninput = (e)=>{ state.obstacleInput = e.target.value; persistDraft(); };
     const submitObstacleBtn = container.querySelector('#mt-submit-obstacle');
     if(submitObstacleBtn) submitObstacleBtn.onclick = submitObstacle;
     container.querySelectorAll('[data-delete-obstacle]').forEach(el=>{

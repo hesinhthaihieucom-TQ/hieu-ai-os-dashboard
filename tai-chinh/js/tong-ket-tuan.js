@@ -20,6 +20,10 @@ function render(container, ctx){
     saving: false,
     savedMsg: '',
   };
+  // Draft khoá riêng theo TỪNG TUẦN — không thì đổi tuần (Tuần trước/sau) sẽ vô tình dán nhầm bản
+  // nháp của tuần khác vào tuần đang xem (góp ý Quỳnh 2026-08-22: gõ dở bị mất khi rời trang).
+  function draftKey(){ return 'tong-ket-tuan-' + isoDate(state.weekStart); }
+  function persistDraft(){ saveModuleDraft(ctx, draftKey(), { reflection: state.reflection }); }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -45,6 +49,10 @@ function render(container, ctx){
     state.reflection = r
       ? { regret_expense: r.regret_expense||'', unexpected_expense: r.unexpected_expense||'', spending_feeling: r.spending_feeling||'', went_well: r.went_well||'', to_change: r.to_change||'', relationship_score: r.relationship_score||null, health_score: r.health_score||null, purpose_score: r.purpose_score||null, parents_connection_score: r.parents_connection_score||null, finance_mindset_score: r.finance_mindset_score||null, reaction_to_others_success: r.reaction_to_others_success||null }
       : { regret_expense:'', unexpected_expense:'', spending_feeling:'', went_well:'', to_change:'', relationship_score:null, health_score:null, purpose_score:null, parents_connection_score:null, finance_mindset_score:null, reaction_to_others_success:null };
+    // Draft đè lên SAU dữ liệu đã lưu — draft luôn là bản mới hơn (đang gõ dở, chưa bấm "Lưu nhận
+    // xét tuần").
+    const draft = await loadModuleDraft(ctx, draftKey());
+    if(draft && draft.reflection) Object.assign(state.reflection, draft.reflection);
     state.loading = false;
     draw();
   }
@@ -57,6 +65,7 @@ function render(container, ctx){
       ...state.reflection,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,week_start' });
+    await clearModuleDraft(ctx, draftKey());
     state.saving = false;
     state.savedMsg = 'Đã lưu ✓';
     draw();
@@ -188,12 +197,12 @@ function render(container, ctx){
 
     const feelingChips = container.querySelector('#tt-feeling-chips');
     if(feelingChips) feelingChips.querySelectorAll('[data-feeling]').forEach(el=>{
-      el.onclick = ()=>{ state.reflection.spending_feeling = el.getAttribute('data-feeling'); draw(); };
+      el.onclick = ()=>{ state.reflection.spending_feeling = el.getAttribute('data-feeling'); draw(); persistDraft(); };
     });
 
     const bindText = (id, field)=>{
       const el = container.querySelector(id);
-      if(el) el.oninput = (e)=>{ state.reflection[field] = e.target.value; };
+      if(el) el.oninput = (e)=>{ state.reflection[field] = e.target.value; persistDraft(); };
     };
     bindText('#tt-regret', 'regret_expense');
     bindText('#tt-unexpected', 'unexpected_expense');
@@ -204,11 +213,12 @@ function render(container, ctx){
       el.onclick = ()=>{
         state.reflection[el.getAttribute('data-score-field')] = Number(el.getAttribute('data-score-value'));
         draw();
+        persistDraft();
       };
     });
     const reactionChips = container.querySelector('#tt-reaction-chips');
     if(reactionChips) reactionChips.querySelectorAll('[data-reaction]').forEach(el=>{
-      el.onclick = ()=>{ state.reflection.reaction_to_others_success = el.getAttribute('data-reaction'); draw(); };
+      el.onclick = ()=>{ state.reflection.reaction_to_others_success = el.getAttribute('data-reaction'); draw(); persistDraft(); };
     });
 
     const saveBtn = container.querySelector('#tt-save');

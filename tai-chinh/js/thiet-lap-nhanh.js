@@ -72,6 +72,7 @@ const WEAKEST_AREA_INFO = {
 
 function render(container, ctx){
   const month = new Date().toISOString().slice(0,7);
+  const DRAFT_KEY = 'thiet-lap-nhanh';
   const state = {
     loading: true,
     form: { income:'', expense:'', ef_current:'', ef_monthly_min:'', debt_total:'', debt_monthly:'', assets_total:'', passive_income:'', income_sources:'' },
@@ -79,6 +80,7 @@ function render(container, ctx){
     saving: false,
     result: null,
   };
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -96,6 +98,13 @@ function render(container, ctx){
       if(debtRes.data.minimum_payment) state.form.debt_monthly = String(debtRes.data.minimum_payment/TRIEU);
     }
     if(netRes.data && netRes.data.asset_other) state.form.assets_total = String(netRes.data.asset_other/TRIEU);
+    // Draft (đang gõ dở, chưa bấm "Xem Kết Quả") đè lên SAU dữ liệu đã lưu — vì draft luôn là bản
+    // mới hơn những gì đã submit trước đó (góp ý Quỳnh 2026-08-22: gõ dở bấm sang trang khác bị mất).
+    const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+    if(draft){
+      if(draft.form) Object.assign(state.form, draft.form);
+      if(draft.vibe) Object.assign(state.vibe, draft.vibe);
+    }
     state.loading = false;
     draw();
   }
@@ -177,6 +186,9 @@ function render(container, ctx){
       }, { onConflict:'user_id,snapshot_month' }),
     ]);
 
+    // Xoá draft sau khi đã ra kết quả — làm lại bài lần sau nên bắt đầu sạch (đúng tinh thần "Điểm
+    // Nghiệp Tiền không lưu lại" đã ghi trong kết quả), draft chỉ để chống mất khi đang gõ dở.
+    await clearModuleDraft(ctx, DRAFT_KEY);
     state.saving = false;
     state.result = computeResult();
     draw();
@@ -306,13 +318,14 @@ function render(container, ctx){
 
   function bind(){
     container.querySelectorAll('[data-field]').forEach(el=>{
-      el.oninput = ()=>{ state.form[el.getAttribute('data-field')] = el.value; };
+      el.oninput = ()=>{ state.form[el.getAttribute('data-field')] = el.value; persistDraft(); };
     });
     container.querySelectorAll('[data-vibe-key]').forEach(el=>{
       el.onclick = ()=>{
         const key = el.getAttribute('data-vibe-key'), val = el.getAttribute('data-vibe-val');
         state.vibe[key] = state.vibe[key]===val ? null : val;
         draw();
+        persistDraft();
       };
     });
     const submitBtn = container.querySelector('#setup-submit');

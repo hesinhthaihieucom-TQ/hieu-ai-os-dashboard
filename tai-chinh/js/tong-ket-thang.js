@@ -83,6 +83,14 @@ function render(container, ctx){
     savedReflectionMsg: '',
     savedBudgetMsg: '',
   };
+  // Draft khoá riêng theo TỪNG THÁNG (giống tong-ket-tuan.js) — đổi tháng (Tháng trước/sau) không
+  // được dán nhầm bản nháp của tháng khác vào (góp ý Quỳnh 2026-08-22: gõ dở bị mất khi rời trang).
+  function draftKey(){ return 'tong-ket-thang-' + state.month; }
+  function persistDraft(){ saveModuleDraft(ctx, draftKey(), { networth: state.networth, reflection: state.reflection, budgetForm: state.budgetForm }); }
+  // Không gọi clearModuleDraft() sau mỗi lần lưu — 3 khối (ngân sách/tài sản/bài học) lưu ĐỘC LẬP,
+  // xoá cả draft khi chỉ 1 khối vừa lưu sẽ mất nháp đang gõ dở của 2 khối còn lại. Vô hại nếu để
+  // draft tồn tại sau khi đã lưu: load() luôn merge draft ĐÈ SAU dữ liệu thật, nên khối đã lưu chỉ
+  // bị ghi đè lại đúng giá trị vừa lưu (không đổi gì).
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -127,6 +135,13 @@ function render(container, ctx){
     state.reflection = refl
       ? Object.fromEntries(Object.keys(EMPTY_REFLECTION).map(k=>[k, refl[k]!=null ? String(refl[k]) : '']))
       : { ...EMPTY_REFLECTION };
+    // Draft đè lên SAU dữ liệu đã lưu — draft luôn là bản mới hơn (đang gõ dở, chưa bấm lưu).
+    const draft = await loadModuleDraft(ctx, draftKey());
+    if(draft){
+      if(draft.networth) Object.assign(state.networth, draft.networth);
+      if(draft.reflection) Object.assign(state.reflection, draft.reflection);
+      if(draft.budgetForm) Object.assign(state.budgetForm, draft.budgetForm);
+    }
     state.loading = false;
     draw();
   }
@@ -330,13 +345,13 @@ function render(container, ctx){
     if(nextEl) nextEl.onclick = ()=>{ state.month = nextMonthKey(state.month); load(); };
 
     container.querySelectorAll('[data-networth]').forEach(el=>{
-      el.oninput = ()=>{ state.networth[el.getAttribute('data-networth')] = el.value; recomputeNetworthPreview(); };
+      el.oninput = ()=>{ state.networth[el.getAttribute('data-networth')] = el.value; recomputeNetworthPreview(); persistDraft(); };
     });
     const saveNetworthBtn = container.querySelector('#tk-save-networth');
     if(saveNetworthBtn) saveNetworthBtn.onclick = saveNetworth;
 
     container.querySelectorAll('[data-budget]').forEach(el=>{
-      el.oninput = ()=>{ state.budgetForm[el.getAttribute('data-budget')] = el.value; };
+      el.oninput = ()=>{ state.budgetForm[el.getAttribute('data-budget')] = el.value; persistDraft(); };
     });
     const addBudgetCategoryBtn = container.querySelector('#tk-add-budget-category');
     if(addBudgetCategoryBtn) addBudgetCategoryBtn.onclick = ()=>{
@@ -347,12 +362,13 @@ function render(container, ctx){
       state.budgetActuals[name] = state.budgetActuals[name] || 0;
       state.budgetForm[name] = amountEl.value;
       draw();
+      persistDraft();
     };
     const saveBudgetBtn = container.querySelector('#tk-save-budget');
     if(saveBudgetBtn) saveBudgetBtn.onclick = saveBudget;
 
     container.querySelectorAll('[data-reflection]').forEach(el=>{
-      el.oninput = ()=>{ state.reflection[el.getAttribute('data-reflection')] = el.value; };
+      el.oninput = ()=>{ state.reflection[el.getAttribute('data-reflection')] = el.value; persistDraft(); };
     });
     const saveReflectionBtn = container.querySelector('#tk-save-reflection');
     if(saveReflectionBtn) saveReflectionBtn.onclick = saveReflection;

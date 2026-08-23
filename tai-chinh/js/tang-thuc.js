@@ -40,9 +40,12 @@ function render(container, ctx){
     newBeliefDraft: '',
     incomingContext: null,
   };
+  const DRAFT_KEY = 'tang-thuc';
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, selectedOriginPattern: state.selectedOriginPattern }); }
 
   // Đến từ nút "Ghi niềm tin gốc..." ở kết quả Chấm Điểm Nghiệp Tiền — 1 điều hướng chủ động luôn
   // thắng, nên đọc và xoá ngay window.Pending* (đúng quy ước dùng ở nhan-hieu/js/cham-diem-hook.js).
+  // Điều hướng chủ động này LUÔN thắng draft cũ (xem load() bên dưới) — đúng quy ước chung của app.
   if(window.PendingTangThucContext){
     state.incomingContext = window.PendingTangThucContext;
     state.form.linked_nut_chan = state.incomingContext.nutChan;
@@ -57,6 +60,15 @@ function render(container, ctx){
     const { data } = await ctx.supabase.from('tc_core_beliefs')
       .select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
     state.beliefs = data || [];
+    // Đang gõ dở 1 niềm tin mà lỡ bấm sang màn khác thì không được mất — trừ khi vừa đến từ 1 điều
+    // hướng chủ động (Pending* ở trên), lúc đó ngữ cảnh mới luôn thắng draft cũ (góp ý Quỳnh 2026-08-22).
+    if(!state.incomingContext){
+      const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+      if(draft){
+        if(draft.form) Object.assign(state.form, draft.form);
+        if(draft.selectedOriginPattern) state.selectedOriginPattern = draft.selectedOriginPattern;
+      }
+    }
     state.loading = false;
     draw();
   }
@@ -77,6 +89,7 @@ function render(container, ctx){
     state.form = { belief_text:'', origin_note:'', linked_nut_chan:null };
     state.selectedOriginPattern = null;
     state.saving = false;
+    await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
   }
 
@@ -171,9 +184,9 @@ function render(container, ctx){
 
   function bind(){
     const beliefEl = container.querySelector('#tt2-belief');
-    if(beliefEl) beliefEl.oninput = (e)=>{ state.form.belief_text = e.target.value; };
+    if(beliefEl) beliefEl.oninput = (e)=>{ state.form.belief_text = e.target.value; persistDraft(); };
     const originEl = container.querySelector('#tt2-origin');
-    if(originEl) originEl.oninput = (e)=>{ state.form.origin_note = e.target.value; };
+    if(originEl) originEl.oninput = (e)=>{ state.form.origin_note = e.target.value; persistDraft(); };
     const originPatternChips = container.querySelector('#tt2-origin-pattern-chips');
     if(originPatternChips) originPatternChips.querySelectorAll('[data-origin-pattern]').forEach(el=>{
       el.onclick = ()=>{
@@ -181,6 +194,7 @@ function render(container, ctx){
         state.selectedOriginPattern = key;
         if(!state.form.origin_note.trim()) state.form.origin_note = ORIGIN_EVENT_PATTERNS.find(p=>p.key===key).seed;
         draw();
+        persistDraft();
       };
     });
     const nutChanChips = container.querySelector('#tt2-nutchan-chips');
@@ -189,6 +203,7 @@ function render(container, ctx){
         const n = Number(el.getAttribute('data-nutchan'));
         state.form.linked_nut_chan = state.form.linked_nut_chan===n ? null : n;
         draw();
+        persistDraft();
       };
     });
     const submitBtn = container.querySelector('#tt2-submit');
