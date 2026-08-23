@@ -8,7 +8,7 @@ const NAV = [
   { key:'trang-chu', title:'Trang chủ' },
   { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền' },
   { key:'kien-thuc', title:'Kiến Thức Nền Tảng' },
-  { key:'tang-thuc', title:'Tàng Thức' },
+  { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp' },
   { key:'muc-tieu', title:'Mục Tiêu & Cam Kết' },
   { key:'ghi-chep', title:'Ghi Chép Hàng Ngày' },
   { key:'tong-ket-tuan', title:'Tổng Kết Tuần' },

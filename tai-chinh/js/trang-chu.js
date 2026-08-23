@@ -92,8 +92,8 @@ function render(container, ctx){
 
     // Trụ 4 = trung bình(tỷ lệ Vibe Check, tự chấm tâm thức tiền trực tiếp) — đây là trụ "gốc" ảnh
     // hưởng lan sang 4 trụ còn lại, vì tài chính bất ổn kéo theo mọi mặt khác của đời sống. Niềm tin
-    // cũ ở Tàng Thức CHƯA chuyển hoá (still_active) kéo nhẹ Trụ 4 xuống — đây là cách vòng lặp
-    // Tàng Thức → Tâm Thức → Ý Thức thực sự có tác dụng lên Điểm Nghiệp, không chỉ là 1 cuốn nhật ký
+    // cũ ở Hạt Giống Phước - Nghiệp CHƯA chuyển hoá (still_active) kéo nhẹ Trụ 4 xuống — đây là cách
+    // vòng lặp Tàng Thức → Tâm Thức → Ý Thức thực sự có tác dụng lên Điểm Nghiệp, không chỉ là 1 sổ
     // rời rạc không liên quan gì tới phần còn lại của app.
     state.activeBeliefsCount = (activeBeliefsRes.data || []).length;
     const beliefPenalty = Math.min(20, state.activeBeliefsCount * 5);
@@ -148,7 +148,7 @@ function render(container, ctx){
               ? `<b>${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).label||'')}</b> — ${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).desc||'')}`
               : 'Bấm vào tên 1 Trụ Cột phía trên để xem trụ đó là gì.'
           }</div>
-          ${state.activeBeliefsCount>0 ? `<div class="hint-box" style="margin-top:6px;">🌱 Bạn còn <b>${state.activeBeliefsCount}</b> niềm tin cũ ở Tàng Thức chưa chuyển hoá — đang kéo nhẹ Trụ Tài Chính Tâm Thức (và lan sang cả 4 trụ còn lại) xuống. <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Xem Tàng Thức →</a></div>` : ''}
+          ${state.activeBeliefsCount>0 ? `<div class="hint-box" style="margin-top:6px;">🌱 Bạn còn <b>${state.activeBeliefsCount}</b> hạt giống cũ chưa chuyển hoá — đang kéo nhẹ Trụ Tài Chính Tâm Thức (và lan sang cả 4 trụ còn lại) xuống. <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Xem Hạt Giống Phước - Nghiệp →</a></div>` : ''}
         </div>
 
         <div class="source-grid" style="margin-bottom:20px;">

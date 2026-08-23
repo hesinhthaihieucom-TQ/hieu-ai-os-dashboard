@@ -65,9 +65,9 @@ const VIBE_QUESTIONS = {
   },
 };
 const WEAKEST_AREA_INFO = {
-  income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2 },
-  expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3 },
-  debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm.', nutChan:null },
+  income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2, seedBelief:'Tôi khó đón nhận trọn vẹn khi tiền về — nỗi lo thường che mất niềm vui.' },
+  expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3, seedBelief:'Tôi hay thấy xót của mỗi khi phải chi tiền ra, dù là chi cho việc cần thiết.' },
+  debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm.', nutChan:null, seedBelief:'Tôi đang né tránh đối diện thẳng với khoản nợ của mình.' },
 };
 
 function render(container, ctx){
@@ -232,7 +232,7 @@ function render(container, ctx){
           ${r.weakestArea ? `
             <div class="hint-box">Khâu đang yếu nhất hiện tại: <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b> — ${esc(WEAKEST_AREA_INFO[r.weakestArea].explain)}</div>
             <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
-              <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Ghi niềm tin gốc về khâu này vào Tàng Thức →</span>
+              <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
             </div>
           ` : ''}
           <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
@@ -321,11 +321,24 @@ function render(container, ctx){
       el.onclick = ()=>{ location.hash = el.getAttribute('data-goto'); };
     });
     container.querySelectorAll('[data-tangthuc-area]').forEach(el=>{
-      el.onclick = ()=>{
+      el.onclick = async ()=>{
         const area = el.getAttribute('data-tangthuc-area');
-        // Truyền ngữ cảnh sang Tàng Thức qua window.Pending* — đúng quy ước đã dùng ở nhan-hieu/
-        // (vd window.PendingHookText) để 1 module đưa dữ liệu tạm sang module khác qua điều hướng.
-        window.PendingTangThucContext = { areaLabel: WEAKEST_AREA_INFO[area].label, nutChan: WEAKEST_AREA_INFO[area].nutChan };
+        const info = WEAKEST_AREA_INFO[area];
+        el.textContent = 'Đang lưu…';
+        // Bấm nút này phải THỰC SỰ lưu 1 dòng vào Hạt Giống Phước - Nghiệp ngay (không chỉ điều
+        // hướng kèm gợi ý rồi bắt gõ lại từ đầu) — góp ý 2026-08-22 sau khi bấm xong không thấy gì
+        // được lưu. Câu khởi tạo (seedBelief) chỉ là điểm bắt đầu, người dùng sửa lại theo đúng cảm
+        // nhận thật của mình khi sang trang, không bắt buộc giữ nguyên.
+        await ctx.supabase.from('tc_core_beliefs').insert({
+          user_id: ctx.user.id,
+          belief_text: info.seedBelief,
+          origin_note: 'Tự động ghi từ bài Chấm Điểm Nghiệp Tiền',
+          linked_nut_chan: info.nutChan,
+        });
+        // Truyền ngữ cảnh sang Hạt Giống Phước - Nghiệp qua window.Pending* — đúng quy ước đã dùng ở
+        // nhan-hieu/ (vd window.PendingHookText) để 1 module đưa dữ liệu tạm sang module khác qua
+        // điều hướng.
+        window.PendingTangThucContext = { areaLabel: info.label, nutChan: info.nutChan, justSaved: true };
         location.hash = 'tang-thuc';
       };
     });

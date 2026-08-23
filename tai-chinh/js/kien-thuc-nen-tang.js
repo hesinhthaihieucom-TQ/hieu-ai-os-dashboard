@@ -79,7 +79,7 @@ function html(){
         ${n.levels.map(([label,d])=>`<p><b>${esc(label)}</b> — ${esc(d)}</p>`).join('')}
         <div class="hint-box" style="margin-top:10px;">${esc(n.practice)}</div>
       `)).join('')}
-      <div class="hint-box" style="margin:4px 0 12px;">Có 1 Nút Chặn nào ở trên cứ lặp đi lặp lại mãi dù bạn đã biết? Rất có thể đang có 1 niềm tin gốc từ nhỏ nuôi nó ở tầng sâu hơn — xem <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Tàng Thức →</a></div>
+      <div class="hint-box" style="margin:4px 0 12px;">Có 1 Nút Chặn nào ở trên cứ lặp đi lặp lại mãi dù bạn đã biết? Rất có thể đang có 1 niềm tin gốc từ nhỏ nuôi nó ở tầng sâu hơn — xem <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Hạt Giống Phước - Nghiệp →</a></div>
       ${detailsSection('🌪️ Vì sao mục tiêu hay bị chính mình phá hỏng?', `
         <p>Ngay sau khi viết ra 1 mục tiêu lớn (vd "tháng này tất toán 100 triệu"), phần lớn chúng ta đều có 1 phản ứng cảm xúc gần như ngay lập tức — đây gọi là <b>Tiếng Lòng</b>. Vấn đề là: nếu Tiếng Lòng toàn sự hoài nghi/sợ hãi, nó thường mạnh hơn chính mục tiêu, khiến ta dễ bỏ cuộc trước khi thử. 4 dạng Tiếng Lòng thường gặp nhất:</p>
         ${RESISTANCE_PATTERNS.map(p=>`<p><b>${esc(p.t)}</b> — ${esc(p.d)}</p>`).join('')}

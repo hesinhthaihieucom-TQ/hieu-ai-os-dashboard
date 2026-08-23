@@ -1,7 +1,9 @@
 (function(){
-// Sổ Niềm Tin Cũ Về Tiền — tầng Tàng Thức (gốc rễ sâu nhất, xem glossaryWrap 'tang_thuc' ở util.js).
-// KHÔNG dùng AI để đoán/gợi ý niềm tin thay thế — người dùng tự viết cả niềm tin cũ lẫn niềm tin
-// mới, đúng tinh thần "tự nhận diện" xuyên suốt app (giống Tiếng Lòng, Nhật Ký Rắc Rối).
+// "Hạt Giống Phước - Nghiệp" (trước gọi "Tàng Thức", đổi tên 2026-08-22) — Sổ Niềm Tin Cũ Về Tiền,
+// ứng với tầng Tàng Thức trong triết lý 4 tầng Tàng Thức -> Tâm Thức -> Tiềm Thức -> Ý Thức (xem
+// glossaryWrap 'tang_thuc' ở util.js) — mỗi niềm tin cũ là 1 "hạt giống" Phước hoặc Nghiệp đã gieo
+// từ ký ức/tuổi thơ. KHÔNG dùng AI để đoán/gợi ý niềm tin thay thế — người dùng tự viết cả niềm tin
+// cũ lẫn niềm tin mới, đúng tinh thần "tự nhận diện" xuyên suốt app (giống Tiếng Lòng, Nhật Ký Rắc Rối).
 const REFRAME_PROMPTS = [
   'Niềm tin này đã từng bảo vệ bạn thế nào trong quá khứ — dù giờ có thể không còn cần thiết nữa?',
   'Nếu niềm tin này KHÔNG đúng, hôm nay bạn sẽ hành xử với tiền khác đi thế nào?',
@@ -19,7 +21,7 @@ function render(container, ctx){
   const state = {
     loading: true,
     beliefs: [],
-    form: { belief_text:'', origin_note:'', linked_nut_chan:null },
+    form: { belief_text:'', origin_note:'', inner_child_note:'', linked_nut_chan:null },
     saving: false,
     lastReframe: '',
     justAddedId: null,
@@ -55,12 +57,13 @@ function render(container, ctx){
       user_id: ctx.user.id,
       belief_text: text,
       origin_note: state.form.origin_note.trim() || null,
+      inner_child_note: state.form.inner_child_note.trim() || null,
       linked_nut_chan: state.form.linked_nut_chan,
     }).select().maybeSingle();
     state.lastReframe = REFRAME_PROMPTS[Math.floor(Math.random()*REFRAME_PROMPTS.length)];
     state.justAddedId = data ? data.id : null;
     state.newBeliefDraft = '';
-    state.form = { belief_text:'', origin_note:'', linked_nut_chan:null };
+    state.form = { belief_text:'', origin_note:'', inner_child_note:'', linked_nut_chan:null };
     state.saving = false;
     await load();
   }
@@ -96,7 +99,8 @@ function render(container, ctx){
           </div>
           <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;${b.still_active?'background:#FDF0E0;color:#B5691A;':'background:#E5F0E5;color:#2E7D32;'}">${b.still_active?'Đang chi phối':'Đã chuyển hoá ✓'}</span>
         </div>
-        ${b.origin_note?`<div style="font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:6px;">Gốc rễ: ${esc(b.origin_note)}</div>`:''}
+        ${b.origin_note?`<div style="font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:6px;">Sự kiện gốc: ${esc(b.origin_note)}</div>`:''}
+        ${b.inner_child_note?`<div style="font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:4px;">Đứa trẻ bị tổn thương: ${esc(b.inner_child_note)}</div>`:''}
         ${b.new_belief?`<div class="hint-box" style="margin-top:8px;">🌱 Niềm tin mới: "${esc(b.new_belief)}"</div>`:
           state.justAddedId===b.id ? `
             <div class="hint-box" style="margin-top:10px;">💛 ${esc(state.lastReframe)}</div>
@@ -115,19 +119,22 @@ function render(container, ctx){
   function html(){
     return `
       <div class="page-head">
-        <h1>Tàng Thức</h1>
+        <h1>Hạt Giống Phước - Nghiệp</h1>
         <p>${glossaryWrap('Sổ Niềm Tin Cũ Về Tiền', 'tang_thuc')} — nơi ghi lại gốc rễ đang nuôi các Nút Chặn Dòng Tiền bạn hay gặp ở <a href="#kien-thuc" style="color:var(--accent);font-weight:600;">Kiến Thức Nền Tảng →</a>. Mỗi niềm tin còn "Đang chi phối" sẽ kéo nhẹ Trụ Tài Chính Tâm Thức ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a> xuống — đánh dấu "Đã chuyển hoá" khi bạn thật sự không còn thấy nó chi phối nữa, để Điểm Nghiệp phản ánh đúng con người bạn bây giờ.</p>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">
           <h3>Ghi lại 1 niềm tin cũ</h3>
-          ${state.incomingContext ? `<div class="hint-box" style="margin-bottom:14px;">Bài Chấm Điểm Nghiệp Tiền vừa chỉ ra khâu <b>${esc(state.incomingContext.areaLabel)}</b> đang yếu nhất — thử viết xem có niềm tin cũ nào từ nhỏ đang đứng sau phản ứng đó không.</div>` : ''}
+          ${state.incomingContext ? `<div class="hint-box" style="margin-bottom:14px;">${state.incomingContext.justSaved ? `✓ Đã tự động lưu 1 hạt giống về khâu <b>${esc(state.incomingContext.areaLabel)}</b> (bài Chấm Điểm Nghiệp Tiền vừa chỉ ra đây là khâu yếu nhất) vào sổ bên dưới — sửa lại câu chữ cho đúng cảm nhận thật của bạn bất cứ lúc nào.` : `Bài Chấm Điểm Nghiệp Tiền vừa chỉ ra khâu <b>${esc(state.incomingContext.areaLabel)}</b> đang yếu nhất — thử viết xem có niềm tin cũ nào từ nhỏ đang đứng sau phản ứng đó không.`}</div>` : ''}
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Niềm tin cũ về tiền bạn đang mang là gì?</label>
           <textarea id="tt2-belief" placeholder="VD: Tiền là thứ khó kiếm, phải vất vả cả đời mới có được...">${esc(state.form.belief_text)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bạn học niềm tin này từ ai/khi nào? <span style="font-weight:400;">(không bắt buộc)</span></label>
-          <textarea id="tt2-origin" placeholder="VD: Nghe bố mẹ hay than thở lúc còn nhỏ...">${esc(state.form.origin_note)}</textarea>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Sự kiện cụ thể nào trong quá khứ khiến bạn tin điều này? <span style="font-weight:400;">(không bắt buộc)</span></label>
+          <textarea id="tt2-origin" placeholder="VD: Năm 10 tuổi, thấy bố mẹ cãi nhau vì tiền, nghe mẹ nói 'nhà mình nghèo lắm'...">${esc(state.form.origin_note)}</textarea>
+
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đứa trẻ nào trong bạn đang mang tổn thương này? <span style="font-weight:400;">(không bắt buộc)</span></label>
+          <textarea id="tt2-inner-child" placeholder="VD: Đứa trẻ 10 tuổi đang sợ hãi, cảm thấy bất lực và xấu hổ vì nhà nghèo...">${esc(state.form.inner_child_note)}</textarea>
 
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Niềm tin này thường hiện rõ nhất ở đâu? <span style="font-weight:400;">(không bắt buộc)</span></label>
           <div class="chips" id="tt2-nutchan-chips">
@@ -154,6 +161,8 @@ function render(container, ctx){
     if(beliefEl) beliefEl.oninput = (e)=>{ state.form.belief_text = e.target.value; };
     const originEl = container.querySelector('#tt2-origin');
     if(originEl) originEl.oninput = (e)=>{ state.form.origin_note = e.target.value; };
+    const innerChildEl = container.querySelector('#tt2-inner-child');
+    if(innerChildEl) innerChildEl.oninput = (e)=>{ state.form.inner_child_note = e.target.value; };
     const nutChanChips = container.querySelector('#tt2-nutchan-chips');
     if(nutChanChips) nutChanChips.querySelectorAll('[data-nutchan]').forEach(el=>{
       el.onclick = ()=>{
@@ -183,5 +192,5 @@ function render(container, ctx){
 }
 
 window.Modules = window.Modules || {};
-window.Modules['tang-thuc'] = { title:'Tàng Thức', render };
+window.Modules['tang-thuc'] = { title:'Hạt Giống Phước - Nghiệp', render };
 })();
