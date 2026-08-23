@@ -50,6 +50,12 @@ async function initApp(){
     await Promise.all([loadProfile(), loadLatestAnnouncement()]);
     AppState.route = currentRouteFromHash();
     renderApp();
+    // Chưa có onboarding tour riêng cho tai-chinh (khác nhan-hieu, nơi cái này gọi sau khi tour
+    // kết thúc) — hỏi cài app sau 1 nhịp ngắn kể từ lần render đầu của phiên, tránh chồng lên popup
+    // thông báo tính năng mới nếu đang hiện (2026-08-23).
+    setTimeout(()=>{
+      if(window.maybeShowInstallPrompt && !document.getElementById('fa-overlay')) window.maybeShowInstallPrompt();
+    }, 2500);
   } else {
     renderAuthScreen();
   }

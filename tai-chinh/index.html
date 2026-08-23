@@ -5,9 +5,24 @@
 <title>Sổ Dòng Tiền Tâm Thức</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#14201B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sổ Dòng Tiền">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/logo-hieu-hanh.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>
+  // Bắt sự kiện cài PWA CÀNG SỚM CÀNG TỐT — trình duyệt chỉ bắn đúng 1 lần, bắt muộn có thể lỡ mất
+  // (copy quy tắc từ nhan-hieu/index.html, 2026-08-23).
+  window.__deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.__deferredInstallPrompt = e;
+  });
+</script>
 </head>
 <body>
 <div id="app"></div>
@@ -27,6 +42,15 @@
 <script src="js/tai-khoan.js"></script>
 <script src="js/quan-tri.js"></script>
 <script src="js/feature-tour.js"></script>
+<script src="js/install-prompt.js"></script>
 <script src="js/app-shell.js"></script>
+<script>
+  // Đăng ký service worker để trình duyệt cho phép "Thêm vào màn hình chính" như 1 app thật —
+  // sw.js không cache gì cả (network passthrough), tránh bug cache JS/CSS cũ (copy quy tắc từ
+  // nhan-hieu/index.html, 2026-08-23).
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  }
+</script>
 </body>
 </html>

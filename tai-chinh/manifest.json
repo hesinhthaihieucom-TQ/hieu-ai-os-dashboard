@@ -1,0 +1,15 @@
+{
+  "name": "Sổ Dòng Tiền Tâm Thức",
+  "short_name": "Sổ Dòng Tiền",
+  "description": "Hệ sinh thái Hiểu - Hiểu Hạnh — Ghi chép thu chi, Vibe Check, Điểm Nghiệp, Hạt Giống Phước - Nghiệp.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4EC",
+  "theme_color": "#14201B",
+  "icons": [
+    { "src": "assets/logo-hieu-hanh.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo-hieu-hanh.png", "sizes": "180x180", "type": "image/png", "purpose": "maskable" }
+  ]
+}
