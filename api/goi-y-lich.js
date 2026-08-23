@@ -22,6 +22,7 @@ NGUYÊN TẮC:
 - BÀI ĐÃ VIẾT SẴN: nếu người dùng có cung cấp danh sách bài đã viết, ƯU TIÊN xếp các bài đó vào lịch trước (ghi đúng nguyên văn tiêu đề vào bai_co_san) — chỉ bịa chủ đề mới (chu_de) cho những ngày/slot không còn bài có sẵn nào phù hợp. Mỗi bài đã viết chỉ dùng 1 lần trong cả tuần, không lặp lại.
 - Nếu người dùng KHÔNG cung cấp bài đã viết nào (hoặc đã dùng hết), luôn để bai_co_san rỗng và chỉ gợi ý chu_de (chủ đề) — không tự bịa ra nội dung bài hoàn chỉnh.
 - Luôn ghi rõ truc_noi_dung cho mỗi bài (trục chính hay trục phụ, tên trục gì) để người dùng biết mỗi bài đang phục vụ trục nào.
+- KẾT QUẢ THẬT (nếu có cung cấp): đây là tín hiệu quan trọng NHẤT, đáng tin hơn mọi quy tắc chung ở trên — ưu tiên lặp lại đúng định dạng/trục/kiểu CTA của các bài có view/tương tác cao nhất, hạn chế lặp lại kiểu bài có kết quả thấp. Nếu KHÔNG có dữ liệu này, bỏ qua nguyên tắc này, cứ theo các quy tắc chung phía trên.
 - Output tiếng Việt.`;
 
 // Từ 2 bài/ngày trở lên (14-21 mục/tuần), KHÔNG bắt AI nghĩ chi tiết chủ đề/dạng/hook/cta cho
@@ -124,7 +125,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { positioning, quick_context, weekly_goal, posts_per_day, existing_posts } = req.body || {};
+    const { positioning, quick_context, weekly_goal, posts_per_day, existing_posts, performance_data } = req.body || {};
     const hasPositioning = !!(positioning && positioning.luot1);
     if (!hasPositioning && !(quick_context && quick_context.trim())) {
       res.status(400).json({ error: 'Cần có Định Vị hoặc mô tả nhanh ngành/đối tượng trước khi gợi ý lịch.' }); return;
@@ -140,13 +141,22 @@ module.exports = async (req, res) => {
       ? `BÀI ĐÃ VIẾT SẴN (ưu tiên xếp vào lịch trước, ghi đúng nguyên văn tiêu đề vào bai_co_san):\n${postsList.map((p, i) => `${i + 1}. "${p.title}" — ${(p.content || '').slice(0, 150)}`).join('\n')}`
       : 'BÀI ĐÃ VIẾT SẴN: (chưa có bài nào — chỉ gợi ý chủ đề, để bai_co_san rỗng)';
 
+    // Kết quả thật (view/like/cmt/share) của các bài đã đăng gần đây — CHỈ có nếu người dùng tự
+    // nguyện điền sau khi đăng (xem lich-dang.js, mảng rỗng nếu chưa từng điền, không bắt buộc).
+    // Khi có, đây là tín hiệu THẬT về công thức đang hiệu quả với ĐÚNG người này, đáng tin hơn hẳn
+    // quy tắc chung ở NGUYÊN TẮC bên trên (2026-08-23, theo đề xuất chị Quỳnh).
+    const perfList = Array.isArray(performance_data) ? performance_data.filter(p => p && p.title) : [];
+    const perfBlock = perfList.length
+      ? `\n\nKẾT QUẢ THẬT CỦA CÁC BÀI GẦN ĐÂY (do người dùng tự điền, xếp theo view giảm dần — ưu tiên lặp lại đúng trục/định dạng/CTA của những bài view cao nhất, tránh lặp lại kiểu bài view thấp):\n${perfList.map((p, i) => `${i + 1}. "${p.title}" — định dạng: ${p.format || '(không rõ)'} — CTA: ${p.cta || '(không rõ)'} — ${p.views ?? '?'} view, ${p.likes ?? '?'} like, ${p.comments ?? '?'} cmt, ${p.shares ?? '?'} share`).join('\n')}`
+      : '';
+
     const userContent = `${contextBlock}
 
 MỤC TIÊU TUẦN NÀY: ${weekly_goal && weekly_goal.trim() ? weekly_goal : '(không nêu cụ thể — cứ bám trục nội dung chính là được)'}
 
 SỐ BÀI MUỐN ĐĂNG MỖI NGÀY: ${postsPerDay}
 
-${postsBlock}
+${postsBlock}${perfBlock}
 
 Hãy xuất lịch 7 ngày, đúng ${postsPerDay} bài/ngày.`;
 

@@ -1056,3 +1056,14 @@ drop policy if exists "tc_feature_announcements_admin_write" on tc_feature_annou
 create policy "tc_feature_announcements_admin_write" on tc_feature_announcements for all using (is_admin()) with check (is_admin());
 
 alter table profiles add column if not exists tc_last_seen_announcement_id uuid;
+
+-- Kết quả thật (view/like/cmt/share) cho từng bài đã đăng — TỰ NGUYỆN điền, không bắt buộc (2026-08-23,
+-- theo đề xuất chị Quỳnh: "ai điền thì có lợi cho lịch tuần tiếp theo, ai ko điền thì thôi"). Trước
+-- đây "AI gợi ý lịch tuần" chỉ dựa quy tắc chung (trục/định dạng/CTA tĩnh), không biết bài NÀO của
+-- CHÍNH người đó thật sự hiệu quả — giờ nếu người dùng chịu khó điền sau khi đăng, goi-y-lich.js sẽ
+-- ưu tiên lặp lại đúng công thức (trục/dạng/CTA) đang hiệu quả thật cho riêng họ. Để NULL nếu chưa
+-- điền, không có giá trị mặc định 0 (0 thật khác với "chưa biết").
+alter table calendar_entries add column if not exists views integer;
+alter table calendar_entries add column if not exists likes integer;
+alter table calendar_entries add column if not exists comments integer;
+alter table calendar_entries add column if not exists shares integer;

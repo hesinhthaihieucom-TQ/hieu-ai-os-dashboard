@@ -321,6 +321,17 @@ function render(container, ctx){
                   <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span ${e.posted?'':`data-toggle-posted="${e.id}"`} style="${e.posted?'':'cursor:pointer;'}display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Đã đánh dấu đăng rồi':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
                   <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
                   ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
+                  ${e.posted ? `
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.25);">
+                      <div style="font-size:9.5px;color:#fff;opacity:.75;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;">Kết quả (không bắt buộc)</div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="views" data-metric-id="${e.id}" value="${e.views==null?'':e.views}" placeholder="View" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="likes" data-metric-id="${e.id}" value="${e.likes==null?'':e.likes}" placeholder="Like" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="comments" data-metric-id="${e.id}" value="${e.comments==null?'':e.comments}" placeholder="Cmt" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="shares" data-metric-id="${e.id}" value="${e.shares==null?'':e.shares}" placeholder="Share" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
+                      </div>
+                    </div>
+                  ` : ''}
                   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
                     ${linkedPost?`<span style="font-size:11px;cursor:pointer;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}" data-view-post="${e.id}">Xem bài →</span>`:''}
                     <span style="font-size:11px;cursor:pointer;${e.posted?'color:#fff;opacity:.85;':'color:var(--ink-soft);'}" data-edit-slot="${dateStr}|${s.key}">Sửa</span>
@@ -579,6 +590,21 @@ function render(container, ctx){
       };
     });
 
+    // Kết quả thật (view/like/cmt/share) — TỰ NGUYỆN, lưu ngay khi đổi (blur/change), để trống thì
+    // lưu null (khác 0 thật) — dùng cho fetchAiSchedule() ưu tiên lặp lại công thức đang hiệu quả
+    // (xem 2026-08-23, theo đề xuất chị Quỳnh).
+    container.querySelectorAll('[data-metric-field]').forEach(el=>{
+      el.onclick = (ev)=>ev.stopPropagation();
+      el.onchange = async ()=>{
+        const field = el.getAttribute('data-metric-field');
+        const id = el.getAttribute('data-metric-id');
+        const val = el.value.trim() === '' ? null : Math.max(0, parseInt(el.value, 10) || 0);
+        await ctx.supabase.from('calendar_entries').update({ [field]: val }).eq('id', id);
+        const entry = state.entries.find(x=>x.id===id);
+        if(entry) entry[field] = val;
+      };
+    });
+
     // Đánh dấu "đã đăng" là hành động 1 CHIỀU (theo phản hồi chị Quỳnh 21/8: "nút tích luôn là đã
     // đăng... không tích lại được") — bấm xong đổi màu xác nhận luôn, không có đường bấm lại để bỏ
     // đánh dấu (phần tử này chỉ được gắn data-toggle-posted khi CHƯA posted, xem html() ở trên).
@@ -630,12 +656,24 @@ function render(container, ctx){
       const usedPostIds = new Set((allEntries||[]).map(e=>e.post_id).filter(Boolean));
       const unscheduledPosts = state.posts.filter(p=>!p.posted && !usedPostIds.has(p.id)).slice(0, 15)
         .map(p=>({ title:p.title, content:p.content }));
+      // Bài đã đăng có ĐIỀN số view thật (tự nguyện, xem [data-metric-field] ở bind()) — ưu tiên lấy
+      // top bài hiệu quả nhất cho AI "học" công thức đang chạy tốt của CHÍNH người này, thay vì chỉ
+      // dựa quy tắc chung (2026-08-23, theo đề xuất chị Quỳnh: "ai điền thì sẽ có lợi cho lịch các
+      // tuần tiếp theo, ai ko điền thì thôi" — nên mảng này RỖNG nếu người dùng chưa từng điền, AI
+      // vẫn chạy bình thường theo quy tắc chung).
+      const { data: performedEntries } = await ctx.supabase.from('calendar_entries')
+        .select('title,format,cta,views,likes,comments,shares').eq('user_id', ctx.user.id)
+        .eq('posted', true).not('views', 'is', null).order('views', { ascending:false }).limit(6);
+      const performanceData = (performedEntries||[]).map(e=>({
+        title:e.title, format:e.format, cta:e.cta, views:e.views, likes:e.likes, comments:e.comments, shares:e.shares,
+      }));
       const data = await callApi('/api/goi-y-lich', {
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
         weekly_goal: state.weeklyGoal,
         posts_per_day: state.postsPerDay,
         existing_posts: unscheduledPosts,
+        performance_data: performanceData,
       }, 280000);
       state.aiSuggestions = data.result.lich;
       saveDraftForCurrentWeek();
