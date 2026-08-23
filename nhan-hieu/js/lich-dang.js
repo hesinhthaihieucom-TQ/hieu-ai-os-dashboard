@@ -97,10 +97,14 @@ function render(container, ctx){
     return (p && p['slot_time_'+slotKey]) || DEFAULT_SLOT_TIME[slotKey];
   }
 
-  // Lịch quay content — nhắc theo THỜI ĐIỂM cụ thể (khác lịch đăng theo slot sáng/trưa/tối), dùng
-  // để chuẩn bị TRƯỚC khi có bài viết sẵn. Lọc theo "done" (người dùng tự tích xác nhận, giống hệt
-  // pattern calendar_entries.posted) — KHÔNG tự ẩn chỉ vì đã qua giờ (sửa 22/8 theo phản hồi chị
-  // Quỳnh: "nó phải có mục tích đã làm để mình tích xong mới mất chứ").
+  // Lịch công việc content — nhắc theo THỜI ĐIỂM cụ thể (khác lịch đăng theo slot sáng/trưa/tối),
+  // dùng cho MỌI việc chuẩn bị content nói chung (quay video, lên kịch bản, họp nhóm, deadline...),
+  // không riêng buổi quay (đổi tên hiển thị 23/8 theo phản hồi chị Quỳnh: "chỗ phần này k phải là
+  // lên lịch quay mà lên lịch cho các hoạt động làm content nói chung" — tên bảng/biến trong code vẫn
+  // giữ "recording"/"quay" cho khỏi phải đổi schema, chỉ đổi chữ hiển thị cho người dùng).
+  // Lọc theo "done" (người dùng tự tích xác nhận, giống hệt pattern calendar_entries.posted) — KHÔNG
+  // tự ẩn chỉ vì đã qua giờ (sửa 22/8 theo phản hồi chị Quỳnh: "nó phải có mục tích đã làm để mình
+  // tích xong mới mất chứ").
   async function loadRecordingSchedule(){
     const { data } = await ctx.supabase.from('recording_schedule').select('*').eq('user_id', ctx.user.id)
       .eq('done', false).order('scheduled_at', { ascending:true });
@@ -116,13 +120,13 @@ function render(container, ctx){
   async function addRecordingSchedule(){
     if(state.recordingSaving) return;
     if(!state.newRecordingDate || !state.newRecordingTime){
-      state.recordingError = 'Chọn đủ ngày và giờ quay.';
+      state.recordingError = 'Chọn đủ ngày và giờ.';
       draw();
       return;
     }
     const scheduledAt = new Date(`${state.newRecordingDate}T${state.newRecordingTime}:00`);
     if(isNaN(scheduledAt.getTime()) || scheduledAt.getTime() < Date.now() - 60000){
-      state.recordingError = 'Thời điểm quay phải ở tương lai.';
+      state.recordingError = 'Thời điểm phải ở tương lai.';
       draw();
       return;
     }
@@ -211,12 +215,12 @@ function render(container, ctx){
       </div>
 
       <div class="card" style="margin-bottom:20px;">
-        <h3 style="margin-bottom:6px;">Lịch quay content</h3>
-        <div class="hint-box" style="margin-bottom:12px;">Đặt lịch cho buổi quay sắp tới — nếu đã <span style="text-decoration:underline;cursor:pointer;" data-tab="thong-bao">bật thông báo</span>, bạn sẽ được nhắc ngay khi đến giờ.</div>
+        <h3 style="margin-bottom:6px;">Lịch công việc content</h3>
+        <div class="hint-box" style="margin-bottom:12px;">Đặt lịch cho việc content sắp tới — quay video, lên kịch bản, họp nhóm, deadline bất kỳ... không chỉ riêng buổi quay. Nếu đã <span style="text-decoration:underline;cursor:pointer;" data-tab="thong-bao">bật thông báo</span>, bạn sẽ được nhắc ngay khi đến giờ.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
           <div style="flex:2;min-width:160px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tên buổi quay (không bắt buộc)</label>
-            <input id="rec-title" type="text" value="${esc(state.newRecordingTitle)}" placeholder="Vd: Quay 5 video tuần này" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tên công việc (không bắt buộc)</label>
+            <input id="rec-title" type="text" value="${esc(state.newRecordingTitle)}" placeholder="Vd: Quay 5 video tuần này, Lên kịch bản..." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
           </div>
           <div style="min-width:130px;">
             <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Ngày</label>
@@ -226,7 +230,7 @@ function render(container, ctx){
             <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Giờ</label>
             <input id="rec-time" type="time" value="${esc(state.newRecordingTime)}" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
           </div>
-          <button class="btn btn-sm" data-action="add-recording" ${state.recordingSaving?'disabled':''}>${state.recordingSaving?'Đang lưu…':'Thêm lịch quay'}</button>
+          <button class="btn btn-sm" data-action="add-recording" ${state.recordingSaving?'disabled':''}>${state.recordingSaving?'Đang lưu…':'Thêm lịch'}</button>
         </div>
         ${state.recordingError?`<div class="error-box" style="margin-top:10px;">${esc(state.recordingError)}</div>`:''}
         ${state.recordingSchedule.length ? `
@@ -237,7 +241,7 @@ function render(container, ctx){
               <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;">
                 <span style="font-size:13.5px;${isOverdue?'color:var(--gold);':''}">${isOverdue?'⏰ ':''}<b>${esc(new Date(r.scheduled_at).toLocaleString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }))}</b>${r.title?` — ${esc(r.title)}`:''}</span>
                 <span style="display:flex;gap:12px;align-items:center;">
-                  <span data-mark-recording-done="${r.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:var(--ink-soft);font-size:13px;" title="Bấm để đánh dấu đã quay xong — chưa bấm thì vẫn coi là chưa làm">
+                  <span data-mark-recording-done="${r.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:var(--ink-soft);font-size:13px;" title="Bấm để đánh dấu đã làm xong — chưa bấm thì vẫn coi là chưa làm">
                     <span style="width:13px;height:13px;border-radius:3px;border:1.5px solid var(--ink-soft);background:transparent;display:inline-flex;flex-shrink:0;"></span>
                     Đã làm
                   </span>
@@ -246,7 +250,7 @@ function render(container, ctx){
               </div>
             `;}).join('')}
           </div>
-        ` : `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Chưa có lịch quay nào sắp tới.</div>`}
+        ` : `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Chưa có việc nào sắp tới.</div>`}
       </div>
 
       ${state.pending ? `
@@ -390,7 +394,7 @@ function render(container, ctx){
 
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:6px;">Thông báo nhắc lịch</h3>
-        <div class="hint-box" style="margin-bottom:14px;">Bật để nhận thông báo ngay trên máy khi <b>đến giờ đăng bài</b>, <b>đã đăng được 3h/6h/24h</b> (nhắc kiểm tra view ở Đẩy Bài), và <b>đến giờ quay content</b> đã đặt lịch. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> (bấm nút Chia sẻ trên Safari) trước khi bật được — Safari không hỗ trợ thông báo cho tab trình duyệt thường.</div>
+        <div class="hint-box" style="margin-bottom:14px;">Bật để nhận thông báo ngay trên máy khi <b>đến giờ đăng bài</b>, <b>đã đăng được 3h/6h/24h</b> (nhắc kiểm tra view ở Đẩy Bài), và <b>đến giờ công việc content</b> đã đặt lịch. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> (bấm nút Chia sẻ trên Safari) trước khi bật được — Safari không hỗ trợ thông báo cho tab trình duyệt thường.</div>
         ${!state.pushSupported ? `
           <div class="error-box">Trình duyệt/thiết bị này không hỗ trợ thông báo đẩy.</div>
         ` : state.pushSubscribed ? `

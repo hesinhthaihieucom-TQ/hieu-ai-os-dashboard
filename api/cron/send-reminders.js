@@ -1,7 +1,9 @@
 // Cron job (xem "crons" trong vercel.json, chạy mỗi 15 phút) — quét 3 loại lịch cần nhắc và gửi
 // Web Push cho đúng người: (1) đến giờ đăng bài (calendar_entries), (2) đã đăng được 3h/6h/24h,
 // nhắc vào Đẩy Bài kiểm tra view (Đẩy Bài tính theo lượt view chứ không theo giờ, nên đây là 1 lớp
-// nhắc THEO THỜI GIAN mới, độc lập với mốc view thật), (3) đến giờ quay content (recording_schedule).
+// nhắc THEO THỜI GIAN mới, độc lập với mốc view thật), (3) đến giờ công việc content
+// (recording_schedule — tên bảng vẫn giữ "recording" trong code, nhưng hiển thị cho người dùng là
+// "lịch công việc content" nói chung, không riêng buổi quay, đổi 23/8 theo phản hồi chị Quỳnh).
 // Theo yêu cầu chị Quỳnh 2026-08-21.
 //
 // Mỗi loại dùng 1 CỬA SỔ THỜI GIAN ~25 phút (rộng hơn khoảng cách 15 phút giữa 2 lần cron 1 chút,
@@ -104,8 +106,8 @@ async function checkRecordingSchedule() {
   let count = 0;
   for (const row of rows) {
     const result = await notifyOnce(row.user_id, `quay:${row.id}`, {
-      title: 'Đến giờ quay content rồi',
-      body: row.title ? `Lịch quay "${row.title}" đã đến giờ.` : 'Đã đến lịch quay content bạn đặt.',
+      title: 'Đến giờ công việc content rồi',
+      body: row.title ? `"${row.title}" đã đến giờ.` : 'Đã đến lịch công việc content bạn đặt.',
       url: '/nhan-hieu/#lich-dang',
     });
     if (result.sent) count++;
