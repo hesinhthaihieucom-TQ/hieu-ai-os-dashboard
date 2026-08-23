@@ -3,6 +3,20 @@
 // thuật là KarmaFlow, không hiện trên UI) — đổi tên sau này chỉ cần sửa các chuỗi trong file này
 // + index.html <title>/meta, không ảnh hưởng gì tới dữ liệu/kiến trúc.
 //
+// Bắt mã giới thiệu (?ref=...) CÀNG SỚM CÀNG TỐT, trước khi người dùng kịp rời trang landing —
+// copy quy tắc từ nhan-hieu/js/app-shell.js. Key RIÊNG "tc_referred_by_ref_code" (khác
+// "xnh_referred_by_ref_code" của nhan-hieu) vì 2 app cùng chia sẻ 1 domain/localStorage khi deploy
+// qua hesinhthaihieu.com — không được lẫn link giới thiệu của app này với app kia. Ghi vào ĐÚNG cột
+// profiles.referred_by_ref_code lúc đăng ký (tái dùng cột chung, xem schema_full.sql phần chương
+// trình giới thiệu) — không ghi đè nếu đã có sẵn 1 mã khác, tôn trọng link giới thiệu ĐẦU TIÊN.
+const TC_REF_STORAGE_KEY = 'tc_referred_by_ref_code';
+(function captureReferralCode(){
+  try {
+    const m = /[?&]ref=([A-Za-z0-9]+)/.exec(location.search);
+    if(m && !localStorage.getItem(TC_REF_STORAGE_KEY)) localStorage.setItem(TC_REF_STORAGE_KEY, m[1].toUpperCase());
+  } catch(e){}
+})();
+//
 // Thu phí (2026-08-23, theo yêu cầu chị Quỳnh): freemium, KHÔNG phải all-or-nothing như nhan-hieu.
 // Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng luôn FREE mãi mãi (giữ thói quen ghi chép hàng ngày +
 // marketing tự nhiên qua nội dung giáo dục). 6 route trong PREMIUM_ROUTES khoá sau 14 ngày dùng thử
@@ -201,8 +215,11 @@ function renderAuthScreen(err, successMsg){
         if(pass !== confirmPass){ renderAuthScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
         btn.disabled = true; btn.textContent = 'Đang xử lý…';
         const full_name = root.querySelector('#af-name').value.trim();
-        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name } } });
+        let referredByRefCode = null;
+        try { referredByRefCode = localStorage.getItem(TC_REF_STORAGE_KEY) || null; } catch(e){}
+        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name, referred_by_ref_code: referredByRefCode } } });
         if(error) throw error;
+        try { localStorage.removeItem(TC_REF_STORAGE_KEY); } catch(e){}
         if(!data.session){
           AppState.authMode = 'login';
           authFields = { name:'', email:'', pass:'', passConfirm:'' };

@@ -1,4 +1,9 @@
 (function(){
+// Số % hoa hồng cho người giới thiệu — khớp TC_REFERRAL_REWARD_PERCENT ở api/sepay-webhook.js, chỉ
+// để hiển thị đúng con số cho người dùng thấy, không dùng để tính toán gì (webhook mới là nơi ghi
+// sổ thật).
+const TC_REFERRAL_REWARD_PERCENT = 20;
+
 function render(container, ctx){
   const state = {
     fullName: (ctx.profile && ctx.profile.full_name) || '',
@@ -9,10 +14,25 @@ function render(container, ctx){
     savingPass: false,
     passMsg: '',
     passError: '',
+    referrals: [],
+    referralLinkCopied: false,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
+
+  async function loadReferrals(){
+    const { data } = await ctx.supabase.from('tc_referrals').select('*').eq('referrer_id', ctx.user.id).order('created_at', { ascending:false });
+    state.referrals = data || [];
+    draw();
+  }
+  loadReferrals();
+
+  function referralLink(){
+    const refCode = ctx.profile && ctx.profile.ref_code;
+    if(!refCode) return '';
+    return `${location.origin}${location.pathname}?ref=${refCode}`;
+  }
 
   async function saveName(){
     state.savingName = true; draw();
@@ -70,6 +90,28 @@ function render(container, ctx){
         <button class="btn" style="margin-top:14px;" id="tk-save-pass" ${state.savingPass?'disabled':''}>${state.savingPass?'Đang xử lý…':'Đổi mật khẩu'}</button>
       </div>
 
+      ${(()=>{
+        const totalCount = state.referrals.length;
+        const totalEarned = state.referrals.reduce((s,r)=>s+Number(r.reward_amount),0);
+        const totalPaid = state.referrals.filter(r=>r.paid).reduce((s,r)=>s+Number(r.reward_amount),0);
+        const totalPending = totalEarned - totalPaid;
+        return `
+          <div class="section">
+            <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
+            <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — khi bạn bè bấm vào đăng ký rồi mua trọn đời, bạn được thưởng <b>${TC_REFERRAL_REWARD_PERCENT}%</b> giá trị đơn hàng của họ (~${Math.round(TC_LIFETIME_PRICE*TC_REFERRAL_REWARD_PERCENT/100).toLocaleString('vi-VN')}đ mỗi người). Trả bằng chuyển khoản tay, không tự động — bên dưới là số bạn đang được ghi nợ.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg);color:var(--ink);" onclick="this.select()">
+              <button class="btn btn-sm" id="tk-copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>
+            </div>
+            <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
+              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công</div></div>
+              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalPaid.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">đã nhận</div></div>
+              <div><div style="font-size:20px;font-weight:700;color:${totalPending>0?'var(--danger)':'var(--ink)'};">${totalPending.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">đang chờ chuyển khoản</div></div>
+            </div>
+          </div>
+        `;
+      })()}
+
       <div class="btn-row" style="justify-content:flex-start;margin-top:8px;">
         <span class="signout" id="tk-signout-btn" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
       </div>
@@ -85,6 +127,13 @@ function render(container, ctx){
     container.querySelector('#tk-save-pass').onclick = changePassword;
 
     container.querySelector('#tk-signout-btn').onclick = async ()=>{ await ctx.supabase.auth.signOut(); };
+
+    const copyRefBtn = container.querySelector('#tk-copy-referral-link');
+    if(copyRefBtn) copyRefBtn.onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(referralLink()); } catch(e){}
+      state.referralLinkCopied = true; draw();
+      setTimeout(()=>{ state.referralLinkCopied = false; draw(); }, 2000);
+    };
   }
 }
 

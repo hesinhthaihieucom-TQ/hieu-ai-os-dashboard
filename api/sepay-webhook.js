@@ -42,6 +42,12 @@ const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 // phân biệt 2 sản phẩm CHỈ qua số tiền chuyển khoản, ref_code dùng chung định dạng "SEVQR <ref_code>"
 // với nhan-hieu (cùng 1 tài khoản ngân hàng thật, chị Quỳnh chỉ có 1 tài khoản).
 const TC_LIFETIME_AMOUNT = 299000;
+// Chương trình giới thiệu tai-chinh (2026-08-23, chị Quỳnh chốt "20% cho người giới thiệu") — MỘT
+// CHIỀU, referee vẫn trả nguyên TC_LIFETIME_AMOUNT (khác nhan-hieu có giảm giá riêng cho referee).
+// Trả bằng TIỀN THẬT (không có hệ lượt AI như nhan-hieu để quy đổi) — ghi vào sổ tc_referrals, chị
+// Quỳnh tự chuyển khoản tay rồi đánh dấu đã trả trong Quản Trị (xem tai-chinh/js/quan-tri.js).
+const TC_REFERRAL_REWARD_PERCENT = 0.20;
+const TC_REFERRAL_REWARD_AMOUNT = Math.round(TC_LIFETIME_AMOUNT * TC_REFERRAL_REWARD_PERCENT);
 
 // Số tiền giá giới thiệu — khớp 1 trong 3 số này thì mới kích hoạt thưởng cho người đã giới thiệu
 // (gói ưu đãi/flash-sale và giá học viên KHÔNG bao giờ tính hoa hồng, theo yêu cầu chị Quỳnh).
@@ -132,6 +138,35 @@ async function creditReferralReward(refereeProfile, transferAmount) {
   });
 }
 
+// Thưởng referrer của tai-chinh khi referee vừa mua TRỌN ĐỜI lần ĐẦU TIÊN — tiền thật, ghi sổ
+// tc_referrals (paid=false), chị Quỳnh tự chuyển khoản tay + đánh dấu đã trả sau. Best-effort,
+// KHÔNG throw ra ngoài — referee đã kích hoạt tc_has_paid xong ở trên rồi, phần thưởng cho
+// referrer là phụ, không nên làm hỏng cả webhook chỉ vì bước này lỗi.
+async function creditTcReferralReward(refereeProfile) {
+  if (!refereeProfile.referred_by_ref_code || refereeProfile.tc_referral_reward_given) return;
+
+  const referrerResp = await supabaseAdmin(`profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id`);
+  const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
+  const referrer = referrerRows[0];
+  if (!referrer) return; // mã giới thiệu không còn khớp ai (vd tài khoản đã bị xoá) — bỏ qua, không lỗi
+
+  await supabaseAdmin('tc_referrals', {
+    method: 'POST',
+    prefer: 'return=minimal',
+    body: JSON.stringify({
+      referrer_id: referrer.id,
+      referee_id: refereeProfile.id,
+      reward_amount: TC_REFERRAL_REWARD_AMOUNT,
+    }),
+  });
+  // Đánh dấu đã thưởng SAU KHI ghi sổ thành công — nếu ghi sổ lỗi, lần webhook sau (nếu SePay retry)
+  // vẫn còn cơ hội thử lại, không mất luôn phần thưởng của referrer.
+  await supabaseAdmin(`profiles?id=eq.${refereeProfile.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ tc_referral_reward_given: true }),
+  });
+}
+
 // fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Supabase bị kẹt, request có thể treo tới
 // tận khi Vercel tự ngắt hàm (300s), khiến SePay coi webhook là timeout và gửi lại giao dịch (retry),
 // có nguy cơ xử lý trùng. Đặt trần 12s giống supabaseRpc ở trial-quota.js.
@@ -204,7 +239,7 @@ module.exports = async (req, res) => {
     let topupLuotGranted = null;
 
     if (refCode) {
-      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given`);
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
@@ -266,6 +301,7 @@ module.exports = async (req, res) => {
           if (updateResp.ok) {
             status = 'matched';
             matchedProfileId = profile.id;
+            try { await creditTcReferralReward(profile); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
           } else {
             status = 'unmatched_amount';
           }

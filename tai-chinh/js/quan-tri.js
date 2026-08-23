@@ -1,11 +1,11 @@
 (function(){
 // Trang Quản Trị cho Sổ Dòng Tiền Tâm Thức — áp dụng quy tắc bên nhan-hieu/js/quan-tri-thongbao.js
-// (2026-08-23, theo yêu cầu chị Quỳnh). 2 tab: Thông báo (đăng feature announcement) + Thành viên
-// (xem/gán tc_has_paid, gia hạn dùng thử) — KHÔNG làm hub nhiều tab như bên nhan-hieu (tài chính/
-// giao dịch SePay/kho nội dung) vì tai-chinh chỉ có ĐÚNG 1 gói (trọn đời), không có nhiều gói/tháng
-// cần đối soát phức tạp như bên đó. Route này chỉ hiện trong sidebar khi profiles.role==='admin'
-// (xem app-shell.js NAV, cờ adminOnly) — nhưng RLS ở Supabase (is_admin()) mới là chốt chặn thật,
-// ẩn sidebar chỉ để đỡ rối giao diện cho user thường.
+// (2026-08-23, theo yêu cầu chị Quỳnh). 3 tab: Thông báo (đăng feature announcement) + Thành viên
+// (xem/gán tc_has_paid, gia hạn dùng thử) + Hoa Hồng (chương trình giới thiệu 20%, trả tay) — KHÔNG
+// làm hub nhiều tab như bên nhan-hieu (tài chính/giao dịch SePay/kho nội dung) vì tai-chinh chỉ có
+// ĐÚNG 1 gói (trọn đời), không có nhiều gói/tháng cần đối soát phức tạp như bên đó. Route này chỉ
+// hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js NAV, cờ adminOnly) — nhưng RLS ở
+// Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ rối giao diện cho user thường.
 const EMOJI_OPTIONS = ['🎉','🚀','🎁','⚠️','✨','🔥','📢','💡'];
 const TC_TRIAL_DAYS_FOR_ADMIN = 14; // khớp TC_TRIAL_DAYS ở app-shell.js — chỉ để hiện đúng số ngày còn lại
 
@@ -13,10 +13,11 @@ function render(container, ctx){
   const hubState = { tab:'thongbao' };
   function drawHub(){
     container.innerHTML = `
-      <div class="page-head"><h1>Quản Trị</h1><p>Đăng thông báo tính năng mới hoặc xem/quản lý thành viên trả phí.</p></div>
+      <div class="page-head"><h1>Quản Trị</h1><p>Đăng thông báo tính năng mới, quản lý thành viên trả phí, hoặc xem hoa hồng giới thiệu đang chờ trả.</p></div>
       <div class="chips" style="margin-bottom:18px;">
         <div class="chip ${hubState.tab==='thongbao'?'selected':''}" data-hub-tab="thongbao">Thông báo</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành viên</div>
+        <div class="chip ${hubState.tab==='hoahong'?'selected':''}" data-hub-tab="hoahong">Hoa Hồng</div>
       </div>
       <div id="qt-hub-sub"></div>
     `;
@@ -25,7 +26,8 @@ function render(container, ctx){
     });
     const sub = container.querySelector('#qt-hub-sub');
     if(hubState.tab === 'thongbao') renderThongBao(sub, ctx);
-    else renderThanhVien(sub, ctx);
+    else if(hubState.tab === 'thanhvien') renderThanhVien(sub, ctx);
+    else renderHoaHong(sub, ctx);
   }
   drawHub();
 }
@@ -266,6 +268,89 @@ function renderThanhVien(container, ctx){
         const [id, days] = el.getAttribute('data-extend-trial').split('|');
         extendTrial(id, Number(days));
       };
+    });
+  }
+
+  load();
+}
+
+// Tab "Hoa Hồng" — chương trình giới thiệu 20%, trả bằng chuyển khoản tay (không có API tự động).
+// Gộp tc_referrals theo TỪNG referrer để chị thấy ngay ai đang được nợ bao nhiêu, thay vì phải cộng
+// tay từng dòng. Join thủ công với profiles bằng 2 query riêng (không dùng PostgREST embed) vì FK
+// của tc_referrals trỏ vào auth.users, không trỏ thẳng profiles — embed tự động không chắc ăn.
+function renderHoaHong(container, ctx){
+  const state = { loading:true, rows:[], profileById:{}, busyReferrerId:null };
+
+  function draw(){ container.innerHTML = html(); bind(); }
+
+  async function load(){
+    state.loading = true; draw();
+    const { data: rows } = await ctx.supabase.from('tc_referrals').select('*').order('created_at', { ascending:false });
+    state.rows = rows || [];
+    const ids = [...new Set(state.rows.flatMap(r=>[r.referrer_id, r.referee_id]))];
+    if(ids.length > 0){
+      const { data: profs } = await ctx.supabase.from('profiles').select('id,email,full_name').in('id', ids);
+      state.profileById = {};
+      (profs||[]).forEach(p=>{ state.profileById[p.id] = p; });
+    }
+    state.loading = false;
+    draw();
+  }
+
+  function nameOf(id){
+    const p = state.profileById[id];
+    return p ? (p.full_name || p.email || id) : id;
+  }
+
+  function groupByReferrer(){
+    const groups = {};
+    state.rows.forEach(r=>{
+      if(!groups[r.referrer_id]) groups[r.referrer_id] = [];
+      groups[r.referrer_id].push(r);
+    });
+    return Object.entries(groups).map(([referrerId, rows])=>({
+      referrerId,
+      rows,
+      totalPending: rows.filter(r=>!r.paid).reduce((s,r)=>s+Number(r.reward_amount),0),
+      totalPaid: rows.filter(r=>r.paid).reduce((s,r)=>s+Number(r.reward_amount),0),
+    })).sort((a,b)=> b.totalPending - a.totalPending);
+  }
+
+  async function markGroupPaid(referrerId){
+    state.busyReferrerId = referrerId; draw();
+    const unpaidIds = state.rows.filter(r=>r.referrer_id===referrerId && !r.paid).map(r=>r.id);
+    if(unpaidIds.length > 0){
+      await ctx.supabase.from('tc_referrals').update({ paid:true, paid_at: new Date().toISOString() }).in('id', unpaidIds);
+    }
+    state.busyReferrerId = null;
+    await load();
+  }
+
+  function html(){
+    const groups = groupByReferrer();
+    return `
+      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Mỗi người giới thiệu thành công 1 khách mua trọn đời được thưởng 20% (~59.800đ). Không có chuyển khoản tự động — chị tự chuyển khoản tay cho người giới thiệu rồi bấm "Đánh dấu đã trả" bên dưới.</p>
+      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : groups.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có ai được thưởng hoa hồng.</div>` : groups.map(g=>`
+        <div class="section">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:600;font-size:14.5px;">${esc(nameOf(g.referrerId))}</div>
+              <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">Đã giới thiệu: ${g.rows.map(r=>esc(nameOf(r.referee_id))).join(', ')}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:12px;color:var(--ink-soft);">Đã trả: ${g.totalPaid.toLocaleString('vi-VN')}đ</div>
+              <div style="font-size:15px;font-weight:700;color:${g.totalPending>0?'var(--danger)':'var(--ink)'};">Đang nợ: ${g.totalPending.toLocaleString('vi-VN')}đ</div>
+            </div>
+          </div>
+          ${g.totalPending>0 ? `<button class="btn btn-sm" style="margin-top:10px;" data-mark-group-paid="${g.referrerId}" ${state.busyReferrerId===g.referrerId?'disabled':''}>${state.busyReferrerId===g.referrerId?'Đang lưu…':'✓ Đánh dấu đã trả hết'}</button>` : ''}
+        </div>
+      `).join('')}
+    `;
+  }
+
+  function bind(){
+    container.querySelectorAll('[data-mark-group-paid]').forEach(el=>{
+      el.onclick = ()=>markGroupPaid(el.getAttribute('data-mark-group-paid'));
     });
   }
 

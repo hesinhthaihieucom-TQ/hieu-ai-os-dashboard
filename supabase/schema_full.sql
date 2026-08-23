@@ -1118,3 +1118,34 @@ alter table calendar_entries add column if not exists views integer;
 alter table calendar_entries add column if not exists likes integer;
 alter table calendar_entries add column if not exists comments integer;
 alter table calendar_entries add column if not exists shares integer;
+
+-- Chương trình giới thiệu cho Sổ Dòng Tiền Tâm Thức (2026-08-23, theo yêu cầu chị Quỳnh: "20% cho
+-- người giới thiệu") — MỘT CHIỀU (referee vẫn trả nguyên 299.000đ, khác nhan-hieu giảm 15% cho
+-- referee), vì chị chốt giữ đúng 1 mức giá duy nhất cho mọi người. Thưởng = 20% × 299.000đ =
+-- 59.800đ, trả cho referrer bằng TIỀN THẬT (không phải lượt AI như nhan-hieu, vì tai-chinh không có
+-- hệ lượt) — không có API chuyển khoản tự động nào ở đây, nên phải có sổ ghi nợ để chị tự chuyển
+-- khoản tay rồi đánh dấu đã trả, không thì không cách nào nhớ nổi ai đang được nợ bao nhiêu.
+--
+-- TÁI SỬ DỤNG profiles.referred_by_ref_code đã có sẵn (do handle_new_user() ghi lúc đăng ký, dùng
+-- CHUNG cho cả 2 app vì đây là "ai đã mời người này vào hệ sinh thái", không phải riêng theo app) —
+-- CHỈ thêm cờ RIÊNG tc_referral_reward_given (khác hẳn referral_reward_given của nhan-hieu) để 2 app
+-- thưởng ĐỘC LẬP nhau khi referee mua SẢN PHẨM CỦA RIÊNG APP ĐÓ, không đụng nhau, không thưởng trùng.
+alter table profiles add column if not exists tc_referral_reward_given boolean not null default false;
+
+-- Sổ hoa hồng — 1 dòng/lần giới thiệu thành công. KHÔNG lưu "số dư" trên profiles (tính lại bằng
+-- sum(reward_amount) where paid=false mỗi lần cần, đúng nguyên tắc "không lưu tổng suy ra được"
+-- xuyên suốt app tai-chinh — tránh lệch nếu admin sửa paid tay mà quên cập nhật số dư ở chỗ khác).
+create table if not exists tc_referrals (
+  id uuid primary key default gen_random_uuid(),
+  referrer_id uuid not null references auth.users(id) on delete cascade,
+  referee_id uuid not null references auth.users(id) on delete cascade,
+  reward_amount integer not null,
+  paid boolean not null default false,
+  paid_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table tc_referrals enable row level security;
+drop policy if exists "tc_referrals_referrer_read" on tc_referrals;
+create policy "tc_referrals_referrer_read" on tc_referrals for select using (auth.uid() = referrer_id);
+drop policy if exists "tc_referrals_admin_all" on tc_referrals;
+create policy "tc_referrals_admin_all" on tc_referrals for all using (is_admin()) with check (is_admin());
