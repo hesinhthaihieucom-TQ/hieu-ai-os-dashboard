@@ -374,6 +374,7 @@ function radarChartHtml(axes){
   // ký tự (vd "Cội Nguồn Sinh Thành", "Thuận Pháp & Nhân Quả" — tên 5 Trụ Cột dài hơn hẳn nhãn cũ)
   // được bẻ xuống 2 dòng bằng <tspan>, nếu không dòng chữ 1 dòng sẽ tràn ra ngoài viewBox và bị cắt
   // (SVG mặc định overflow:hidden ở phần tử gốc).
+  const lineHeight = 11;
   const labels = axes.map((ax,i)=>{
     const a = angleFor(i);
     const cosA = Math.cos(a), sinA = Math.sin(a);
@@ -386,12 +387,18 @@ function radarChartHtml(axes){
       const mid = Math.ceil(words.length/2);
       lines = [words.slice(0,mid).join(' '), words.slice(mid).join(' ')];
     }
-    const yStart = lines.length > 1 ? ly - 5.5 : ly;
-    const tspans = lines.map((line,li)=>`<tspan x="${lx.toFixed(1)}" ${li===0?`y="${yStart.toFixed(1)}"`:'dy="11"'}>${esc(line)}</tspan>`).join('');
+    // Điểm số (0-100) của trụ hiện ngay dưới tên — trước đây chỉ vẽ hình, không hiện số nào, người
+    // dùng phải bấm vào tên mới thấy MÔ TẢ (không phải điểm) — góp ý Quỳnh 2026-08-24: "không có điểm
+    // từng phần". Thêm 1 dòng số riêng, tô màu theo mức để nhìn lướt cũng biết trụ nào yếu.
+    const scoreColor = ax.value>=70 ? 'var(--accent)' : ax.value>=40 ? 'var(--ink-soft)' : 'var(--danger)';
+    const totalLines = lines.length + 1;
+    const yStart = ly - (totalLines-1)*lineHeight/2;
+    const labelTspans = lines.map((line,li)=>`<tspan x="${lx.toFixed(1)}" ${li===0?`y="${yStart.toFixed(1)}"`:`dy="${lineHeight}"`}>${esc(line)}</tspan>`).join('');
+    const scoreTspan = `<tspan x="${lx.toFixed(1)}" dy="${lineHeight+1}" font-size="12" font-weight="700" fill="${scoreColor}">${Math.round(ax.value)}</tspan>`;
     // Nhãn có thể bấm vào để xem giải thích trụ đó là gì (nếu axis truyền kèm `key`) — cùng ngôn
     // ngữ hình ảnh gạch chân chấm như glossaryWrap, để người dùng nhận ra ngay đây là chỗ bấm được.
     const clickAttrs = ax.key ? `data-axis-key="${esc(ax.key)}" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;"` : '';
-    return `<text text-anchor="${anchor}" font-size="10.5" fill="var(--ink-soft)" ${clickAttrs}>${tspans}</text>`;
+    return `<text text-anchor="${anchor}" font-size="10.5" fill="var(--ink-soft)" ${clickAttrs}>${labelTspans}${scoreTspan}</text>`;
   }).join('');
   return `
     <svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:280px;height:auto;display:block;margin:0 auto;font-family:'Be Vietnam Pro',sans-serif;overflow:visible;">

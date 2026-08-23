@@ -145,8 +145,8 @@ function render(container, ctx){
           ${radarChartHtml(state.karmaAxes)}
           <div class="hint-box" id="tc-pillar-explain" style="margin-top:6px;">${
             state.selectedPillarKey
-              ? `<b>${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).label||'')}</b> — ${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).desc||'')}`
-              : 'Bấm vào tên 1 Trụ Cột phía trên để xem trụ đó là gì.'
+              ? `<b>${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).label||'')}: ${(state.karmaAxes.find(a=>a.key===state.selectedPillarKey)||{}).value ?? '—'}/100</b> — ${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).desc||'')}`
+              : 'Điểm từng trụ đã hiện ngay dưới tên ở trên — bấm vào tên 1 Trụ Cột để xem trụ đó là gì.'
           }</div>
           ${state.activeBeliefsCount>0 ? `<div class="hint-box" style="margin-top:6px;">🌱 Bạn còn <b>${state.activeBeliefsCount}</b> hạt giống cũ chưa chuyển hoá — đang kéo nhẹ Trụ Tài Chính Tâm Thức (và lan sang cả 4 trụ còn lại) xuống. <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Xem Hạt Giống Phước - Nghiệp →</a></div>` : ''}
         </div>
