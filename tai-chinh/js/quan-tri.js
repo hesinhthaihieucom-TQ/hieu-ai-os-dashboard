@@ -7,7 +7,7 @@
 // hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js NAV, cờ adminOnly) — nhưng RLS ở
 // Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ rối giao diện cho user thường.
 const EMOJI_OPTIONS = ['🎉','🚀','🎁','⚠️','✨','🔥','📢','💡'];
-const TC_TRIAL_DAYS_FOR_ADMIN = 14; // khớp TC_TRIAL_DAYS ở app-shell.js — chỉ để hiện đúng số ngày còn lại
+const TC_TRIAL_DAYS_FOR_ADMIN = 0; // khớp TC_TRIAL_DAYS ở app-shell.js (2026-08-24: bỏ hẳn dùng thử) — chỉ để hiện đúng số ngày còn lại; admin vẫn "Gia hạn" tay được qua extendTrial() nếu cần cho 1 tài khoản cụ thể
 
 function render(container, ctx){
   const hubState = { tab:'thongbao' };

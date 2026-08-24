@@ -407,6 +407,11 @@ function render(container, ctx){
     // số cũ, sửa lại rồi "Xem Kết Quả" lại là đủ cho nhu cầu "làm lại bài", không cần dọn sạch trước.
     state.saving = false;
     state.result = computeResult();
+    // Cá nhân hoá màn nâng cấp (renderUpgradeScreen ở app-shell.js) bằng đúng khâu yếu nhất vừa đo
+    // được — 2026-08-24, góp ý Quỳnh: cho làm bài chẩn đoán free rồi mời nâng cấp NGAY lúc động lực
+    // cao nhất. Chỉ lưu tạm trong window (session), không lưu DB — đúng nguyên tắc "Điểm Nghiệp Tiền
+    // không lưu lại".
+    window.TcLastWeakestArea = state.result.weakestArea ? WEAKEST_AREA_INFO[state.result.weakestArea] : null;
     draw();
   }
 
@@ -465,6 +470,19 @@ function render(container, ctx){
           ` : ''}
           <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
           <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
+        </div>
+      ` : ''}
+
+      ${!(ctx.profile && ctx.profile.tc_has_paid) ? `
+        <div class="card" style="margin-top:20px;background:var(--accent-soft);border-color:var(--accent);">
+          <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">🔓 Đây chỉ là bức tranh khởi đầu</div>
+          <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">
+            ${r.weakestArea
+              ? `Bạn đang yếu nhất ở khâu <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b>. Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp (chữa lành gốc rễ), Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật, không chỉ dừng ở việc nhìn thấy vấn đề.`
+              : `Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để đi tiếp từ bức tranh này.`}
+            Chỉ <b>${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.
+          </div>
+          <span class="btn btn-full" data-goto="nang-cap">Nâng Cấp Ngay →</span>
         </div>
       ` : ''}
 

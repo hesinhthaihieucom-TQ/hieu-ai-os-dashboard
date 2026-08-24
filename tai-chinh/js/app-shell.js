@@ -17,14 +17,19 @@ const TC_REF_STORAGE_KEY = 'tc_referred_by_ref_code';
   } catch(e){}
 })();
 //
-// Thu phí (2026-08-23, theo yêu cầu chị Quỳnh): freemium, KHÔNG phải all-or-nothing như nhan-hieu.
-// Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng luôn FREE mãi mãi (giữ thói quen ghi chép hàng ngày +
-// marketing tự nhiên qua nội dung giáo dục). 6 route trong PREMIUM_ROUTES khoá sau 14 ngày dùng thử
-// trừ khi tc_has_paid — xem hasActiveAccess()/renderApp(). KHÁC nhan-hieu: không có renderExpiredScreen
-// chiếm toàn màn hình — sidebar vẫn dùng được bình thường, chỉ đúng route premium hiện màn nâng cấp.
+// Thu phí (2026-08-23, theo yêu cầu chị Quỳnh; SỬA 2026-08-24 — bỏ hẳn 14 ngày dùng thử): freemium,
+// KHÔNG phải all-or-nothing như nhan-hieu. Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng luôn FREE mãi mãi
+// (giữ thói quen ghi chép hàng ngày + marketing tự nhiên qua nội dung giáo dục). Chấm Điểm Nghiệp
+// Tiền CŨNG free mãi mãi — cố ý dùng làm "mồi": cho làm bài chẩn đoán miễn phí (ra Điểm Nghiệp +
+// khâu yếu nhất), rồi mời nâng cấp NGAY lúc vừa thấy kết quả, đúng lúc động lực cao nhất, thay vì
+// phải chờ hết 14 ngày mới gặp màn khoá. 5 route còn lại trong PREMIUM_ROUTES khoá THẲNG (không có
+// giai đoạn dùng thử nào) trừ khi tc_has_paid — xem hasActiveAccess()/renderApp() (TC_TRIAL_DAYS=0).
+// Chưa có tài khoản thật nào dùng app lúc đổi quy tắc này nên không cần lo ai bị "cắt" quyền đang
+// dùng — áp dụng ngay cho tất cả. KHÁC nhan-hieu: không có renderExpiredScreen chiếm toàn màn hình —
+// sidebar vẫn dùng được bình thường, chỉ đúng route premium hiện màn nâng cấp.
 const NAV = [
   { key:'trang-chu', title:'Trang chủ', hidden:true }, // không hiện trong sidebar (giống nhan-hieu) — 2026-08-24 góp ý Quỳnh, vào lại qua bấm logo/"SỔ DÒNG TIỀN TÂM THỨC" ở đầu sidebar (đã có sẵn #sidebar-brand-home)
-  { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền', premium:true },
+  { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền' }, // KHÔNG premium — free mãi mãi, dùng làm bài chẩn đoán mồi trước khi mời nâng cấp (2026-08-24)
   { key:'kien-thuc', title:'Kiến Thức Nền Tảng' },
   { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp', premium:true },
   { key:'muc-tieu', title:'Mục Tiêu & Cam Kết', premium:true },
@@ -38,7 +43,7 @@ const NAV = [
   { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin', xem renderApp()
 ];
 const PREMIUM_ROUTES = new Set(NAV.filter(n=>n.premium).map(n=>n.key));
-const TC_TRIAL_DAYS = 14;
+const TC_TRIAL_DAYS = 0; // 2026-08-24: bỏ hẳn dùng thử, xem comment NAV phía trên
 const TC_LIFETIME_PRICE = 299000;
 // Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code
 // dùng chung cơ chế "SEVQR <ref_code>" nhưng số tiền 299.000đ là DUY NHẤT, không trùng bất kỳ gói
@@ -374,13 +379,16 @@ function bindTcPaymentCard(root, onReload){
 // route premium bị khoá mới hiện màn này, sidebar/Ghi Chép/Kiến Thức vẫn dùng bình thường. Vẽ vào
 // #main-content như 1 module bình thường, không thay root.innerHTML.
 function renderUpgradeScreen(content){
-  const daysLeft = tcTrialDaysLeft();
-  const hadTrial = !!(AppState.profile && AppState.profile.tc_trial_started_at);
-
+  // Cá nhân hoá bằng khâu yếu nhất vừa đo được ở Chấm Điểm Nghiệp Tiền (window.TcLastWeakestArea,
+  // xem thiet-lap-nhanh.js) — CHỈ tồn tại tạm trong session, không lưu DB (đúng nguyên tắc "Điểm
+  // Nghiệp Tiền không lưu lại"). Đúng lúc động lực cao nhất (vừa thấy mình yếu ở đâu) thì gặp ngay
+  // lời mời nâng cấp nhắm đúng vào đó, thay vì 1 câu chung chung không liên quan gì tới họ.
+  const weakest = window.TcLastWeakestArea;
   content.innerHTML = `
     <div class="page-head">
       <h1>🔒 Tính năng trả phí</h1>
-      <p>${hadTrial && daysLeft===0 ? 'Bạn đã dùng thử xong 14 ngày.' : `Còn ${daysLeft} ngày dùng thử.`} Mở khoá TRỌN ĐỜI toàn bộ Chấm Điểm Nghiệp Tiền, Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.</p>
+      ${weakest ? `<p>Bạn vừa làm Chấm Điểm Nghiệp Tiền và đang yếu nhất ở khâu <b>${esc(weakest.label)}</b> — ${esc(weakest.explain)}</p>` : ''}
+      <p>Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.</p>
     </div>
     <div class="card" style="max-width:460px;">${tcPaymentCardHtml()}</div>
   `;
