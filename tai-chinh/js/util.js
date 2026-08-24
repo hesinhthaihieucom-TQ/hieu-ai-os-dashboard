@@ -346,6 +346,42 @@ function donutChartHtml(rows){
   `;
 }
 
+// Biểu đồ cột "Xu hướng" theo từng khoảng thời gian nhỏ hơn (ngày trong tuần, hoặc từng khoảng
+// ngày trong tháng) — kiểu Money Lover (2026-08-24, góp ý Quỳnh: "cần biểu đồ như money lover ý").
+// buckets: [{label, amount}], amount có thể = 0 (vẫn vẽ cột rỗng để thấy đủ mốc thời gian).
+function trendBarChartHtml(buckets, color){
+  if(buckets.every(b=>b.amount<=0)) return `<div style="color:var(--ink-soft);font-size:13px;">Chưa có dữ liệu.</div>`;
+  const w = 320, h = 170, padTop = 10, padBottom = 26, padSide = 8;
+  const innerW = w - padSide*2, innerH = h - padTop - padBottom;
+  const maxVal = Math.max(1, ...buckets.map(b=>b.amount));
+  const n = buckets.length;
+  const slot = innerW/n;
+  const barW = Math.max(8, Math.min(34, slot*0.55));
+  const bars = buckets.map((b,i)=>{
+    const x = padSide + slot*i + (slot-barW)/2;
+    const barH = Math.max(1, innerH * (b.amount/maxVal));
+    const y = padTop + (innerH - barH);
+    const valueLabel = b.amount>0 ? `<text x="${(x+barW/2).toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--ink-soft)" font-family="IBM Plex Mono, monospace">${Math.round(b.amount/1000)}k</text>` : '';
+    return `${valueLabel}<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" fill="${color}" rx="3"/><text x="${(x+barW/2).toFixed(1)}" y="${h-8}" text-anchor="middle" font-size="10" fill="var(--ink-soft)" font-family="IBM Plex Mono, monospace">${esc(b.label)}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;max-width:360px;height:${h}px;display:block;">${bars}</svg>`;
+}
+
+// Khung "Chi tiết" (donut) / "Xu hướng" (cột theo thời gian) dùng chung cho Tổng Kết Tuần/Tháng —
+// id để phân biệt nhiều khối trên cùng 1 trang (vd expense/income), tab='chi-tiet'|'xu-huong' do
+// module gọi tự quản lý trong state riêng (hàm này chỉ vẽ, không tự đổi tab).
+function breakdownToggleHtml(id, tab, groupRows, trendBuckets, color){
+  return `
+    <div class="chips" style="margin-bottom:12px;">
+      <div class="chip ${tab==='chi-tiet'?'selected':''}" data-breakdown-tab="${esc(id)}:chi-tiet">Chi tiết</div>
+      <div class="chip ${tab==='xu-huong'?'selected':''}" data-breakdown-tab="${esc(id)}:xu-huong">Xu hướng</div>
+    </div>
+    ${tab==='xu-huong'
+      ? trendBarChartHtml(trendBuckets, color)
+      : (groupRows.length===0 ? `<div style="color:var(--ink-soft);font-size:13px;">Chưa có dữ liệu.</div>` : donutChartHtml(groupRows))}
+  `;
+}
+
 // Radar chart SVG thuần cho Điểm Nghiệp 5 trục. axes: [{label, value}] (value 0-100).
 function radarChartHtml(axes){
   const size = 320, cx = size/2, cy = size/2, maxR = 70;

@@ -19,6 +19,9 @@ function render(container, ctx){
     reflection: { regret_expense:'', unexpected_expense:'', spending_feeling:'', went_well:'', to_change:'', relationship_score:null, health_score:null, purpose_score:null, parents_connection_score:null, finance_mindset_score:null, reaction_to_others_success:null },
     saving: false,
     savedMsg: '',
+    // Tab "Chi tiết" (donut theo danh mục) / "Xu hướng" (cột theo từng ngày trong tuần) — kiểu Money
+    // Lover, 2026-08-24 góp ý Quỳnh. Không lưu draft — chỉ là cách xem, không phải dữ liệu.
+    breakdownTab: { expense:'chi-tiet', income:'chi-tiet' },
   };
   // Draft khoá riêng theo TỪNG TUẦN — không thì đổi tuần (Tuần trước/sau) sẽ vô tình dán nhầm bản
   // nháp của tuần khác vào tuần đang xem (góp ý Quỳnh 2026-08-22: gõ dở bị mất khi rời trang).
@@ -90,6 +93,19 @@ function render(container, ctx){
     const expenseByCategory = groupByCategory(expense);
     const incomeByCategory = groupByCategory(income);
 
+    // 7 cột, đúng từng ngày trong tuần (T2→CN) — bucket theo entry_date, không theo danh mục.
+    function groupByDayOfWeek(list){
+      const byDate = {};
+      list.forEach(e=>{ byDate[e.entry_date] = (byDate[e.entry_date]||0) + Number(e.amount); });
+      const DAY_LABELS = ['CN','T2','T3','T4','T5','T6','T7'];
+      return Array.from({length:7}, (_,i)=>{
+        const d = new Date(state.weekStart); d.setDate(d.getDate()+i);
+        return { label: DAY_LABELS[d.getDay()], amount: byDate[isoDate(d)] || 0 };
+      });
+    }
+    const expenseByDay = groupByDayOfWeek(expense);
+    const incomeByDay = groupByDayOfWeek(income);
+
     const top3 = [...expense].sort((a,b)=>Number(b.amount)-Number(a.amount)).slice(0,3);
 
     return `
@@ -112,13 +128,13 @@ function render(container, ctx){
         </div>
 
         <div class="section">
-          <h3>Chi tiêu theo danh mục</h3>
-          ${expenseByCategory.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có khoản chi nào.</div>` : donutChartHtml(expenseByCategory)}
+          <h3>Chi tiêu</h3>
+          ${breakdownToggleHtml('expense', state.breakdownTab.expense, expenseByCategory, expenseByDay, 'var(--danger)')}
         </div>
 
         <div class="section">
-          <h3>Thu nhập theo nguồn</h3>
-          ${incomeByCategory.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có khoản thu nào.</div>` : donutChartHtml(incomeByCategory)}
+          <h3>Thu nhập</h3>
+          ${breakdownToggleHtml('income', state.breakdownTab.income, incomeByCategory, incomeByDay, 'var(--accent)')}
         </div>
 
         <div class="section">
@@ -192,6 +208,13 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-breakdown-tab]').forEach(el=>{
+      el.onclick = ()=>{
+        const [id, tab] = el.getAttribute('data-breakdown-tab').split(':');
+        state.breakdownTab[id] = tab;
+        draw();
+      };
+    });
     const prevEl = container.querySelector('#tt-prev');
     if(prevEl) prevEl.onclick = ()=>{ const d = new Date(state.weekStart); d.setDate(d.getDate()-7); state.weekStart = d; load(); };
     const nextEl = container.querySelector('#tt-next');

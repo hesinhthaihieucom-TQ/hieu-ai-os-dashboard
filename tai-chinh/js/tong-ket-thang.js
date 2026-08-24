@@ -34,6 +34,23 @@ function monthLabel(m){
 function sumFields(row, fields){
   return fields.reduce((s,f)=> s + Number((row && row[f.key]) || 0), 0);
 }
+// "Xu hướng" kiểu Money Lover — chia tháng thành các khoảng 7 ngày (1-7, 8-14...) thay vì vẽ 28-31
+// cột riêng lẻ (quá dày, khó đọc trên điện thoại). entries cần có entry_date 'YYYY-MM-DD'.
+function groupByDayRange(entries, month){
+  const [y, mo] = month.split('-').map(Number);
+  const daysInMonth = new Date(y, mo, 0).getDate();
+  const buckets = [];
+  for(let start=1; start<=daysInMonth; start+=7){
+    const end = Math.min(start+6, daysInMonth);
+    buckets.push({ start, end, label: start===end ? `${start}` : `${start}-${end}`, amount:0 });
+  }
+  entries.forEach(e=>{
+    const day = Number(e.entry_date.slice(8,10));
+    const b = buckets.find(b=>day>=b.start && day<=b.end);
+    if(b) b.amount += Number(e.amount);
+  });
+  return buckets;
+}
 
 // Biểu đồ cột tài sản ròng theo tháng — tự vẽ SVG thô, không thêm thư viện. Hỗ trợ cả trường hợp
 // tài sản ròng ÂM (đang nợ nhiều hơn tài sản) bằng cách neo mốc 0 linh động thay vì cố định đáy.
@@ -82,6 +99,10 @@ function render(container, ctx){
     savedNetworthMsg: '',
     savedReflectionMsg: '',
     savedBudgetMsg: '',
+    expenseEntries: [],
+    // Tab "Chi tiết" (donut theo danh mục) / "Xu hướng" (cột theo từng khoảng ngày trong tháng) —
+    // kiểu Money Lover, 2026-08-24 góp ý Quỳnh. Không lưu draft — chỉ là cách xem, không phải dữ liệu.
+    breakdownTab: 'chi-tiet',
   };
   // Draft khoá riêng theo TỪNG THÁNG (giống tong-ket-tuan.js) — đổi tháng (Tháng trước/sau) không
   // được dán nhầm bản nháp của tháng khác vào (góp ý Quỳnh 2026-08-22: gõ dở bị mất khi rời trang).
@@ -100,7 +121,7 @@ function render(container, ctx){
     const monthStart = `${state.month}-01`;
     const monthEndExclusive = `${nextMonthKey(state.month)}-01`;
     const [entriesRes, snapshotRes, historyRes, reflectionRes, budgetsRes, debtsRes] = await Promise.all([
-      ctx.supabase.from('tc_finance_entries').select('type, amount, category_label')
+      ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
         .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
       ctx.supabase.from('tc_networth_snapshots').select('*')
         .eq('user_id', ctx.user.id).eq('snapshot_month', state.month).maybeSingle(),
@@ -118,8 +139,9 @@ function render(container, ctx){
       income: entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0),
       expense: entries.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0),
     };
+    state.expenseEntries = entries.filter(e=>e.type==='expense');
     state.budgetActuals = {};
-    entries.filter(e=>e.type==='expense').forEach(e=>{
+    state.expenseEntries.forEach(e=>{
       const key = e.category_label || 'Khác';
       state.budgetActuals[key] = (state.budgetActuals[key]||0) + Number(e.amount);
     });
@@ -199,6 +221,9 @@ function render(container, ctx){
       .filter(k => (state.budgetActuals[k]||0) > 0 || Number(state.budgetForm[k]) > 0)
       .sort((a,b)=> (state.budgetActuals[b]||0) - (state.budgetActuals[a]||0));
 
+    const expenseByCategory = Object.entries(state.budgetActuals).map(([label,amount])=>({label,amount})).sort((a,b)=>b.amount-a.amount);
+    const expenseByDayRange = groupByDayRange(state.expenseEntries, state.month);
+
     return `
       <div class="page-head">
         <h1>Tổng Kết Tháng</h1>
@@ -221,6 +246,11 @@ function render(container, ctx){
             ${dti!=null ? `<div class="source-card"><div class="ic" style="font-size:16px;color:${dtiColor};">${dti}%</div><div class="label">Tỷ lệ nợ/thu nhập (DTI)</div></div>` : ''}
           </div>
           ${dti!=null && dti>=36 ? `<div class="hint-box" style="margin-top:12px;">DTI ${dti}% ${dti>=43?'ở mức đáng lo (≥43%)':'ở mức cần chú ý (36-43%)'} — ngân hàng thường coi trên 43% là rủi ro cao. Cân nhắc ưu tiên trả bớt nợ trước khi vay/mua thêm.</div>` : ''}
+        </div>
+
+        <div class="section">
+          <h3>A1. Chi tiêu theo danh mục</h3>
+          ${breakdownToggleHtml('expense', state.breakdownTab, expenseByCategory, expenseByDayRange, 'var(--danger)')}
         </div>
 
         <div class="section">
@@ -334,6 +364,13 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-breakdown-tab]').forEach(el=>{
+      el.onclick = ()=>{
+        const [, tab] = el.getAttribute('data-breakdown-tab').split(':');
+        state.breakdownTab = tab;
+        draw();
+      };
+    });
     const prevEl = container.querySelector('#tk-prev');
     if(prevEl) prevEl.onclick = ()=>{
       const [y,mo] = state.month.split('-').map(Number);
