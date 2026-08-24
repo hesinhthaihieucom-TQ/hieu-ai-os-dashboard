@@ -29,6 +29,7 @@ const NAV = [
   { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp', premium:true },
   { key:'muc-tieu', title:'Mục Tiêu & Cam Kết', premium:true },
   { key:'ghi-chep', title:'Ghi Chép Hàng Ngày' },
+  { key:'danh-muc', title:'Danh Mục', hidden:true }, // không hiện trong sidebar — vào qua link "Quản lý danh mục →" ở Ghi Chép Hàng Ngày/Ngân sách. KHÔNG premium (dù Ngân sách premium) vì Ghi Chép Hàng Ngày free cần danh mục hoạt động được ngay.
   { key:'tong-ket-tuan', title:'Tổng Kết Tuần', premium:true },
   { key:'tong-ket-thang', title:'Tổng Kết Tháng', premium:true },
   { key:'quan-ly-no', title:'Quản Lý Nợ', premium:true },

@@ -307,6 +307,40 @@ const SUGGESTED_EXPENSE_CATEGORIES = [
 const SUGGESTED_INCOME_CATEGORIES = [
   'Lương', 'Thưởng', 'Hoa hồng kinh doanh', 'Đầu tư / Lãi', 'Được tặng / biếu', 'Khác',
 ];
+// Gợi ý sẵn CP cố định/CP biến đổi cho từng danh mục CHI TIÊU mặc định — dùng lúc seed lần đầu vào
+// tc_categories (xem ensureCategoriesSeeded). Không đoán cho "Khác" (quá chung, để trống cho người
+// dùng tự chọn) và không đoán Tài sản/Tiêu sản (bản chất khác nhau TỪNG LẦN chi, không cố định theo
+// tên danh mục — đúng góp ý Quỳnh chỉ gợi ý CP cố định/biến đổi).
+const SUGGESTED_EXPENSE_CLASSIFICATION = {
+  'Ăn uống':'cp_bien_doi', 'Di chuyển / Xăng xe':'cp_bien_doi', 'Mua sắm / Quần áo':'cp_bien_doi',
+  'Giải trí / Du lịch':'cp_bien_doi', 'Sức khỏe / Làm đẹp':'cp_bien_doi', 'Đồ dùng thiết yếu':'cp_bien_doi',
+  'Quà tặng / Việc xã hội':'cp_bien_doi',
+  'Hoá đơn (điện, nước, mạng)':'cp_co_dinh', 'Học phí cho con':'cp_co_dinh', 'Thuê nhà':'cp_co_dinh',
+  'Trả góp nhà / xe':'cp_co_dinh', 'Giáo dục / Sách vở':'cp_co_dinh', 'Trả nợ':'cp_co_dinh',
+};
+// Danh mục thu/chi giờ là 1 danh sách THIẾT LẬP SẴN (tc_categories) thay vì "học" dần từ lịch sử ghi
+// chép — góp ý Quỳnh 2026-08-24. Lần đầu 1 user chưa có dòng nào trong tc_categories thì seed 1 lần:
+// SUGGESTED_* mặc định + mọi category_label họ ĐÃ từng dùng trước đó (không làm "biến mất" dữ liệu
+// cũ của người dùng đã dùng app từ trước bản cập nhật này). Idempotent — gọi nhiều lần không sao,
+// chỉ seed khi bảng đang trống.
+async function ensureCategoriesSeeded(ctx){
+  const { data: existing } = await ctx.supabase.from('tc_categories').select('id').eq('user_id', ctx.user.id).limit(1);
+  if(existing && existing.length > 0) return;
+  const { data: historyRows } = await ctx.supabase.from('tc_finance_entries')
+    .select('type, category_label').eq('user_id', ctx.user.id).not('category_label', 'is', null);
+  const rows = [];
+  const seen = new Set();
+  function addRow(type, label, classification){
+    const key = type+'|'+label;
+    if(seen.has(key) || !label) return;
+    seen.add(key);
+    rows.push({ user_id: ctx.user.id, type, label, default_classification: classification || null });
+  }
+  SUGGESTED_EXPENSE_CATEGORIES.forEach(c=>addRow('expense', c, SUGGESTED_EXPENSE_CLASSIFICATION[c]));
+  SUGGESTED_INCOME_CATEGORIES.forEach(c=>addRow('income', c, null));
+  (historyRows||[]).forEach(r=>addRow(r.type, r.category_label, r.type==='expense' ? 'cp_bien_doi' : null));
+  if(rows.length > 0) await ctx.supabase.from('tc_categories').insert(rows);
+}
 
 // Gán 1 màu cố định cho mỗi tên danh mục (hash chuỗi) — cùng 1 tên luôn ra cùng 1 màu giữa các lần
 // render, dù danh mục giờ là text tự do không còn key cố định.

@@ -19,16 +19,10 @@ const VIBE_INFO = {
   gray: { label:'🩶 Vô cảm, tự động', explain:'Bấm tiền ra/vào như một nghĩa vụ, không cảm xúc gì — tín hiệu bạn đang ngắt kết nối với dòng tiền. Thử dừng lại 1 nhịp thở trước khi chọn tiếp.' },
 };
 
-// Danh mục hiện thành CHIP để CHỌN (không còn gõ tự do) — góp ý Quỳnh 2026-08-23: gõ tự do khiến
-// mỗi lần ghi 1 kiểu khác nhau (vd "ăn uống"/"ăn sáng"/"cà phê"), Tổng Kết không gom nhóm chính xác
-// được đang tiêu nhiều nhất vào đâu. Danh mục CỐ ĐỊNH sẵn (SUGGESTED_*) + danh mục người dùng đã
-// TỰ THÊM trước đây (nút "+ Khác") ghép lại thành chip — người dùng vẫn thêm được mục riêng, nhưng
-// qua đúng 1 chỗ ("+ Khác"), không gõ tràn lan mỗi lần nhập.
-function categorySuggestions(type, learned){
-  const defaults = type === 'income' ? SUGGESTED_INCOME_CATEGORIES : SUGGESTED_EXPENSE_CATEGORIES;
-  const merged = [...(learned||[]), ...defaults];
-  return [...new Set(merged)];
-}
+// Danh mục giờ đọc từ tc_categories — THIẾT LẬP SẴN (xem danh-muc.js), không còn "học" dần từ lịch
+// sử ghi chép nữa (góp ý Quỳnh 2026-08-24: "muốn nó là thiết lập ban đầu, không phải chọn lúc
+// ghi"). "+ Khác" vẫn cho thêm nhanh ngay tại đây (xem submit()) — nhưng giờ ghi THẲNG vào
+// tc_categories luôn, để lần sau hiện lại ở đúng 1 nơi (cả đây và màn Quản Lý Danh Mục).
 
 function fundSplitHtml(amount, debtWarning){
   if(debtWarning){
@@ -49,7 +43,7 @@ function render(container, ctx){
     saving: false,
     error: null,
     debtWarning: null,
-    learnedCategories: { income:[], expense:[] },
+    categories: [],
     showCustomCategory: false,
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form }); }
@@ -89,12 +83,10 @@ function render(container, ctx){
     }
   }
 
-  async function loadLearnedCategories(){
-    const { data } = await ctx.supabase.from('tc_finance_entries')
-      .select('type, category_label').eq('user_id', ctx.user.id).not('category_label', 'is', null);
-    const byType = { income: new Set(), expense: new Set() };
-    (data||[]).forEach(r=>{ if(r.category_label && byType[r.type]) byType[r.type].add(r.category_label); });
-    state.learnedCategories = { income: [...byType.income], expense: [...byType.expense] };
+  async function loadCategories(){
+    await ensureCategoriesSeeded(ctx);
+    const { data } = await ctx.supabase.from('tc_categories').select('*').eq('user_id', ctx.user.id).order('label');
+    state.categories = data || [];
     draw();
   }
 
@@ -118,11 +110,19 @@ function render(container, ctx){
     const { error } = await ctx.supabase.from('tc_finance_entries').insert(payload);
     state.saving = false;
     if(error){ state.error = 'Không lưu được — thử lại. (' + error.message + ')'; draw(); return; }
+    // Gõ danh mục mới qua "+ Khác" ngay lúc ghi (không bắt phải qua Quản Lý Danh Mục trước) — lưu
+    // luôn vào tc_categories để lần sau hiện lại ở đúng 1 nơi, cả đây và màn Quản Lý Danh Mục.
+    if(payload.category_label && !state.categories.some(c=>c.type===payload.type && c.label===payload.category_label)){
+      await ctx.supabase.from('tc_categories').insert({
+        user_id: ctx.user.id, type: payload.type, label: payload.category_label,
+        default_classification: payload.type==='expense' ? payload.category : null,
+      });
+    }
     state.form = { type: state.form.type, amount:'', description:'', category:'cp_bien_doi', category_label:'', vibe:null, vibe_reason:'' };
     state.showCustomCategory = false;
     await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
-    await loadLearnedCategories();
+    await loadCategories();
   }
 
   function html(){
@@ -174,9 +174,9 @@ function render(container, ctx){
           </div>
         `}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(chọn 1 mục — bấm "+ Khác" nếu muốn thêm mục riêng)</span></label>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(chọn 1 mục — bấm "+ Khác" nếu chưa có sẵn, hoặc <a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
         <div class="chips" id="gc-category-label-chips">
-          ${categorySuggestions(state.form.type, state.learnedCategories[state.form.type]).map(c=>`<div class="chip ${state.form.category_label===c?'selected':''}" data-category-label="${esc(c)}">${esc(c)}</div>`).join('')}
+          ${state.categories.filter(c=>c.type===state.form.type).map(c=>`<div class="chip ${state.form.category_label===c.label?'selected':''}" data-category-label="${esc(c.label)}" data-category-classification="${c.default_classification||''}">${esc(c.label)}</div>`).join('')}
           <div class="chip ${state.showCustomCategory?'selected':''}" id="gc-category-label-custom-toggle">+ Khác</div>
         </div>
         ${state.showCustomCategory ? `
@@ -228,6 +228,11 @@ function render(container, ctx){
     container.querySelectorAll('#gc-category-label-chips [data-category-label]').forEach(el=>{
       el.onclick = ()=>{
         state.form.category_label = el.getAttribute('data-category-label');
+        // Danh mục đã gắn sẵn CP cố định/CP biến đổi (thiết lập ở Quản Lý Danh Mục) thì tự điền
+        // luôn "Phân loại (kế toán)" ở trên — đỡ phải chọn lại mỗi lần ghi cùng 1 danh mục quen.
+        // Danh mục chưa gắn (data-category-classification rỗng) thì giữ nguyên lựa chọn hiện tại.
+        const classification = el.getAttribute('data-category-classification');
+        if(classification) state.form.category = classification;
         state.showCustomCategory = false;
         draw();
         persistDraft();
@@ -259,7 +264,7 @@ function render(container, ctx){
 
   load();
   loadDebtWarning();
-  loadLearnedCategories();
+  loadCategories();
   restoreDraft();
 }
 

@@ -34,10 +34,14 @@ function render(container, ctx){
     budgetForm: {},
     savingBudget: false,
     savedBudgetMsg: '',
+    expenseCategories: [],
   };
+  // Hiện ĐỦ mọi danh mục chi tiêu đã thiết lập (xem danh-muc.js) — không chỉ danh mục đã có chi
+  // tiêu/hạn mức như trước (2026-08-24, góp ý Quỳnh "để làm ngân sách thì theo đúng cái của người
+  // ta luôn"), để đặt hạn mức được ngay cả cho danh mục chưa tiêu đồng nào tháng này.
   function budgetCategoryKeys(){
-    return [...new Set([...Object.keys(state.budgetActuals), ...Object.keys(state.budgetForm)])]
-      .filter(k => (state.budgetActuals[k]||0) > 0 || Number(state.budgetForm[k]) > 0)
+    const fromCategories = state.expenseCategories.map(c=>c.label);
+    return [...new Set([...fromCategories, ...Object.keys(state.budgetActuals), ...Object.keys(state.budgetForm)])]
       .sort((a,b)=> (state.budgetActuals[b]||0) - (state.budgetActuals[a]||0));
   }
   const DRAFT_KEY = 'muc-tieu-' + month;
@@ -48,16 +52,19 @@ function render(container, ctx){
 
   async function load(){
     state.loading = true; draw();
+    await ensureCategoriesSeeded(ctx);
     const monthStart = `${month}-01`;
     const [y, mo] = month.split('-').map(Number);
     const monthEndExclusive = `${new Date(y, mo, 1).getFullYear()}-${String(new Date(y, mo, 1).getMonth()+1).padStart(2,'0')}-01`;
-    const [reflRes, obstaclesRes, entriesRes, budgetsRes] = await Promise.all([
+    const [reflRes, obstaclesRes, entriesRes, budgetsRes, categoriesRes] = await Promise.all([
       ctx.supabase.from('tc_monthly_reflections').select('*').eq('user_id', ctx.user.id).eq('month', month).maybeSingle(),
       ctx.supabase.from('tc_obstacle_log').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(20),
       ctx.supabase.from('tc_finance_entries').select('amount, category_label')
         .eq('user_id', ctx.user.id).eq('type', 'expense').gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
       ctx.supabase.from('tc_budgets').select('*').eq('user_id', ctx.user.id).eq('month', month),
+      ctx.supabase.from('tc_categories').select('*').eq('user_id', ctx.user.id).eq('type', 'expense').order('label'),
     ]);
+    state.expenseCategories = categoriesRes.data || [];
     const r = reflRes.data;
     if(r){
       state.goal = {
@@ -238,8 +245,8 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Ngân sách chi tiêu tháng này</h3>
-          <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;">Đặt hạn mức từng danh mục TRƯỚC khi tiêu — cùng tinh thần với Lời Cam Kết ở trên. Xem chi tiêu thật đã tiêu vào đâu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a>.</p>
-          ${budgetCategoryKeys().length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có chi tiêu hoặc hạn mức nào tháng này.</div>` : budgetCategoryKeys().map(key=>{
+          <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;">Đặt hạn mức từng danh mục TRƯỚC khi tiêu — cùng tinh thần với Lời Cam Kết ở trên. Danh sách dưới đây đúng theo <a href="#danh-muc" style="color:var(--accent);font-weight:600;">danh mục đã thiết lập →</a>. Xem chi tiêu thật đã tiêu vào đâu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a>.</p>
+          ${budgetCategoryKeys().length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có danh mục chi tiêu nào — <a href="#danh-muc" style="color:var(--accent);font-weight:600;">thiết lập ngay →</a></div>` : budgetCategoryKeys().map(key=>{
             const actual = state.budgetActuals[key]||0;
             const limit = Number(state.budgetForm[key])||0;
             const pct = limit>0 ? Math.min(100, Math.round(actual/limit*100)) : 0;
@@ -263,7 +270,7 @@ function render(container, ctx){
           <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
             <input type="text" id="mt-new-budget-category" list="mt-budget-category-datalist" placeholder="+ Thêm danh mục ngân sách..." style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
             <datalist id="mt-budget-category-datalist">
-              ${SUGGESTED_EXPENSE_CATEGORIES.map(c=>`<option value="${esc(c)}">`).join('')}
+              ${state.expenseCategories.map(c=>`<option value="${esc(c.label)}">`).join('')}
             </datalist>
             <input type="number" min="0" id="mt-new-budget-amount" placeholder="Hạn mức" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
             <span class="btn-ghost btn btn-sm" id="mt-add-budget-category">+ Thêm</span>
@@ -325,13 +332,19 @@ function render(container, ctx){
       el.oninput = ()=>{ state.budgetForm[el.getAttribute('data-budget')] = el.value; persistDraft(); };
     });
     const addBudgetCategoryBtn = container.querySelector('#mt-add-budget-category');
-    if(addBudgetCategoryBtn) addBudgetCategoryBtn.onclick = ()=>{
+    if(addBudgetCategoryBtn) addBudgetCategoryBtn.onclick = async ()=>{
       const nameEl = container.querySelector('#mt-new-budget-category');
       const amountEl = container.querySelector('#mt-new-budget-amount');
       const name = nameEl.value.trim();
       if(!name || !Number(amountEl.value)) return;
       state.budgetActuals[name] = state.budgetActuals[name] || 0;
       state.budgetForm[name] = amountEl.value;
+      // Gõ danh mục mới ngay đây (chưa có trong Quản Lý Danh Mục) — lưu luôn vào tc_categories để
+      // Ghi Chép Hàng Ngày/Quản Lý Danh Mục cũng thấy đúng 1 danh sách, không lệch nhau.
+      if(!state.expenseCategories.some(c=>c.label===name)){
+        await ctx.supabase.from('tc_categories').insert({ user_id: ctx.user.id, type:'expense', label:name, default_classification:'cp_bien_doi' });
+        state.expenseCategories.push({ label:name, type:'expense', default_classification:'cp_bien_doi' });
+      }
       draw();
       persistDraft();
     };

@@ -1171,3 +1171,25 @@ alter table tc_networth_snapshots add column if not exists estimated_income nume
 alter table tc_networth_snapshots add column if not exists estimated_expense numeric;
 alter table tc_networth_snapshots add column if not exists passive_income numeric;
 alter table tc_networth_snapshots add column if not exists income_sources integer;
+
+-- Danh mục thu/chi — TRƯỚC ĐÂY danh mục chỉ "học" dần từ tc_finance_entries.category_label đã ghi
+-- (xem ghi-chep.js loadLearnedCategories, hàm này giữ nguyên để đọc/hiển thị lại lịch sử cũ, không
+-- xoá) — góp ý Quỳnh 2026-08-24: "muốn nó là thiết lập ban đầu, không phải chọn lúc ghi" + "để làm
+-- ngân sách thì theo đúng cái của người ta luôn". Giờ có bảng riêng để: (1) Ngân sách (đã chuyển
+-- sang muc-tieu-cam-ket.js) hiện ĐỦ danh mục ngay từ đầu, không phải chờ có chi tiêu mới "lộ" ra;
+-- (2) mỗi danh mục CHI TIÊU gắn sẵn 1 default_classification (CP cố định/CP biến đổi — CHỈ 2 lựa
+-- chọn này theo đúng góp ý, không ép Tài sản/Tiêu sản vì bản chất đó thường khác nhau TỪNG LẦN chi,
+-- không cố định theo tên danh mục) để tự điền sẵn lúc Ghi Chép, đỡ phải chọn lại "Phân loại (kế
+-- toán)" mỗi lần cho cùng 1 danh mục.
+create table if not exists tc_categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  type text not null check (type in ('income','expense')),
+  label text not null,
+  default_classification text check (default_classification in ('tai_san','tieu_san','cp_co_dinh','cp_bien_doi')),
+  created_at timestamptz not null default now(),
+  unique(user_id, type, label)
+);
+alter table tc_categories enable row level security;
+drop policy if exists "tc_categories_owner_all" on tc_categories;
+create policy "tc_categories_owner_all" on tc_categories for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
