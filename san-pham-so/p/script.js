@@ -29,7 +29,10 @@ async function fetchProduct() {
 }
 
 async function createOrder(productSlug, buyerEmail) {
-  const resp = await fetch('/san-pham-so/api/san-pham-so-create-order', {
+  // Đường dẫn TƯƠNG ĐỐI (trang này nằm ở .../p/, "../api/..." trỏ lên .../api/...) — không hard-code
+  // "/san-pham-so/api/..." vì domain thật sau này sẽ là hesinhthaihieu.com/apptaosanphamso/p/, path
+  // tương đối tự khớp đúng dù đang chạy dưới tiền tố nào (xem app.js đầu file để biết thêm).
+  const resp = await fetch('../api/san-pham-so-create-order', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ slug: productSlug, buyer_email: buyerEmail || null }),
   });
@@ -39,7 +42,7 @@ async function createOrder(productSlug, buyerEmail) {
 }
 
 async function checkOrder(refCode) {
-  const resp = await fetch('/san-pham-so/api/san-pham-so-check-order', {
+  const resp = await fetch('../api/san-pham-so-check-order', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ ref_code: refCode }),
   });

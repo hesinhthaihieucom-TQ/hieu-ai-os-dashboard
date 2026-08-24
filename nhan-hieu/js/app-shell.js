@@ -12,9 +12,6 @@ const NAV = [
   { key:'lich-dang', title:'Lịch Đăng Bài' },
   { key:'day-bai', title:'Đẩy Bài & CTA Comment' },
   { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
-  // MVP allowlist (2026-08-24) — chỉ hiện cho tài khoản được bật cờ can_sell_products (profiles),
-  // chưa mở đại trà cho mọi user Xây Nhân Hiệu. Xem thêm điều kiện lọc ở visibleNav bên dưới.
-  { key:'san-pham-so', title:'🛒 Sản Phẩm Số', requiresFlag:'can_sell_products' },
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
   { key:'nang-cap', title:'🔥 Nâng cấp / Mua gói' },
   { key:'quan-tri-hub', title:'Quản trị', adminOnly:true },
@@ -804,7 +801,7 @@ function renderApp(){
   `;
 
   const isAdmin = AppState.profile && AppState.profile.role === 'admin';
-  const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin) && (!n.requiresFlag || (AppState.profile && AppState.profile[n.requiresFlag])));
+  const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin));
   const nav = root.querySelector('#sidebar-nav');
   nav.innerHTML = visibleNav.map((n,i)=>{
     return `
