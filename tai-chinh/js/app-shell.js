@@ -23,7 +23,7 @@ const TC_REF_STORAGE_KEY = 'tc_referred_by_ref_code';
 // trừ khi tc_has_paid — xem hasActiveAccess()/renderApp(). KHÁC nhan-hieu: không có renderExpiredScreen
 // chiếm toàn màn hình — sidebar vẫn dùng được bình thường, chỉ đúng route premium hiện màn nâng cấp.
 const NAV = [
-  { key:'trang-chu', title:'Trang chủ' },
+  { key:'trang-chu', title:'Trang chủ', hidden:true }, // không hiện trong sidebar (giống nhan-hieu) — 2026-08-24 góp ý Quỳnh, vào lại qua bấm logo/"SỔ DÒNG TIỀN TÂM THỨC" ở đầu sidebar (đã có sẵn #sidebar-brand-home)
   { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền', premium:true },
   { key:'kien-thuc', title:'Kiến Thức Nền Tảng' },
   { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp', premium:true },

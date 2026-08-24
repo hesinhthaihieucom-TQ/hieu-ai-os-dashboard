@@ -7,9 +7,13 @@
 // tính lại mỗi lần làm bài, đúng nguyên tắc "không lưu điểm suy ra được" xuyên suốt app) và chỉ ra
 // đang yếu nhất ở khâu nào (Đón Nhận/Chi Dùng/Đối Diện Nợ/Đón Nhận Của Người Khác — 3/4 Nút Chặn Dòng
 // Tiền của app, xem tang-thuc.js NUT_CHAN_LABELS; Nút Chặn #4 "khi thấy người khác chi tiền" hiếm gặp
-// hơn hẳn 3 khâu còn lại nên chưa đưa vào bài test nhanh này). Chỉ lưu vào bảng nào ĐÃ CÓ sẵn trong app (Quỹ
-// Khẩn Cấp, 1 dòng Nợ gộp, Cân Đối Tài Sản tháng này) — Thu nhập tự động/Số nguồn thu/Vibe Check
-// chưa có chỗ lưu theo thời gian trong schema nên chỉ hiện ở phần kết quả, không lưu lại.
+// hơn hẳn 3 khâu còn lại nên chưa đưa vào bài test nhanh này). Lưu vào bảng nào ĐÃ CÓ sẵn trong app
+// (Quỹ Khẩn Cấp, 1 dòng Nợ gộp, Cân Đối Tài Sản tháng này) — kể cả 4 câu số income/expense/
+// passive_income/income_sources (2026-08-24, góp ý Quỳnh "cần có chỗ cho những thứ đó": trước đây
+// 4 số này KHÔNG có cột nào lưu, chỉ tồn tại tạm trong module_drafts, mất theo draft) đều gộp vào
+// đúng dòng tc_networth_snapshots tháng này (estimated_income/estimated_expense/passive_income/
+// income_sources — xem schema_full.sql). Duy chỉ Vibe Check là KHÔNG lưu, đúng nguyên tắc "không
+// lưu điểm suy ra được" — làm lại bài bất cứ lúc nào vẫn tính lại đúng từ đầu.
 const SEED_DEBT_NAME = 'Tổng nợ hiện tại (ước tính ban đầu)';
 // Toàn bộ ô nhập tiền trong wizard này tính bằng ĐƠN VỊ TRIỆU (khớp bandosuckhoetaichinh.netlify.app)
 // nhưng các bảng tc_debts/tc_emergency_fund/tc_networth_snapshots lưu bằng ĐỒNG thật — phải nhân/chia
@@ -128,6 +132,48 @@ const WEAKEST_AREA_INFO = {
   witness_receive: { label:'Đón Nhận Của Người Khác', explain:'Bạn đang khó vui thật lòng khi người khác nhận được tiền — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #1 (Khi thấy người khác nhận tiền), khiến tâm thức tin rằng thịnh vượng là có hạn.', nutChan:1, seedBelief:'Tôi khó vui thật lòng khi thấy người khác nhận được tiền hoặc tin vui tài chính.' },
 };
 
+// Điểm Nghiệp (radar 5 Trụ Cột) — DI CHUYỂN nguyên từ trang-chu.js sang đây (2026-08-24, góp ý
+// Quỳnh: "cái màn hình radar điểm nghiệp này ở luôn cái mục chấm điểm nghiệp"). Trang chủ giờ chỉ còn
+// là màn chào + checklist quy trình (xem trang-chu.js, đổi hẳn sang kiểu y hệt nhan-hieu/js/home.js).
+// LUÔN tính lại từ dữ liệu thô mỗi lần render (không lưu điểm tích luỹ) — xem giải thích đầy đủ ở
+// comment gốc lúc mới thêm tính năng này (trước đây nằm ở trang-chu.js).
+function computeFinanceScore(entries){
+  const counts = { green:0, red:0, gray:0 };
+  entries.forEach(e=>{ counts[e.vibe||'gray'] = (counts[e.vibe||'gray']||0) + 1; });
+  const total = counts.green + counts.red + counts.gray;
+  if(total === 0) return 50;
+  return Math.round(50 + ((counts.green - counts.red) / total) * 50);
+}
+function computeMindScore({ distinctDaysLogged, hasGoal, hasNetworthThisMonth }){
+  let score = 30 + Math.min(40, distinctDaysLogged * 4);
+  if(hasGoal) score += 15;
+  if(hasNetworthThisMonth) score += 15;
+  return Math.min(100, score);
+}
+function avgSelfScore(rows, field){
+  const vals = rows.map(r=>r[field]).filter(v=>v!=null);
+  if(vals.length === 0) return 50;
+  const avg = vals.reduce((s,v)=>s+v,0) / vals.length;
+  return Math.round((avg/5)*100);
+}
+function clampScore(v){ return Math.max(0, Math.min(100, Math.round(v))); }
+function nextMonthKey(m){
+  const [y, mo] = m.split('-').map(Number);
+  const d = new Date(y, mo, 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+// Khoản nợ nào có due_day trong vòng 7 ngày tới — vòng qua tháng sau nếu due_day đã qua trong tháng
+// này (vd hôm nay 25/8, hạn ngày 5 -> hạn kế tiếp là 5/9, không phải 5/8 đã qua).
+function computeUpcomingDebts(debts){
+  const today = new Date(); today.setHours(0,0,0,0);
+  return debts.filter(d=>d.due_day).map(d=>{
+    let next = new Date(today.getFullYear(), today.getMonth(), d.due_day);
+    if(d.due_day < today.getDate()) next = new Date(today.getFullYear(), today.getMonth()+1, d.due_day);
+    const daysUntil = Math.round((next - today) / 86400000);
+    return { creditor_name: d.creditor_name, daysUntil };
+  }).filter(x=>x.daysUntil <= 7).sort((a,b)=>a.daysUntil-b.daysUntil);
+}
+
 function render(container, ctx){
   const month = new Date().toISOString().slice(0,7);
   const DRAFT_KEY = 'thiet-lap-nhanh';
@@ -137,11 +183,85 @@ function render(container, ctx){
     vibe: { income:null, expense:null, ef:null, debt:null, asset:null, passive:null, parents:null, partner:null, witness_receive:null, giving:null },
     saving: false,
     result: null,
+    // Điểm Nghiệp — cùng bộ state di chuyển từ trang-chu.js, xem bootDashboard() bên dưới.
+    dashboardLoading: true,
+    monthIncome: 0, monthExpense: 0, netWorth: null, netWorthMonth: null, totalDebt: 0,
+    upcomingDebts: [], karmaAxes: [], activeBeliefsCount: 0, selectedPillarKey: null,
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
+
+  async function bootDashboard(){
+    const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+    const fourteenDaysAgo = new Date(); fourteenDaysAgo.setDate(fourteenDaysAgo.getDate()-14);
+    const monthStart = `${month}-01`;
+    const [entriesRes, netWorthRes, debtsRes, vibeRes, recentDatesRes, monthGoalRes, monthNetworthRes, weeklyRes, activeBeliefsRes] = await Promise.all([
+      ctx.supabase.from('tc_finance_entries').select('type, amount')
+        .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', nextMonthKey(month)+'-01'),
+      ctx.supabase.from('tc_networth_snapshots').select('*')
+        .eq('user_id', ctx.user.id).order('snapshot_month', { ascending:false }).limit(1).maybeSingle(),
+      ctx.supabase.from('tc_debts').select('creditor_name, current_balance, due_day')
+        .eq('user_id', ctx.user.id).eq('is_paid_off', false),
+      ctx.supabase.from('tc_finance_entries').select('vibe')
+        .eq('user_id', ctx.user.id).gte('entry_date', isoDate(thirtyDaysAgo)),
+      ctx.supabase.from('tc_finance_entries').select('entry_date')
+        .eq('user_id', ctx.user.id).gte('entry_date', isoDate(fourteenDaysAgo)),
+      ctx.supabase.from('tc_monthly_reflections').select('goal_income,goal_savings,goal_debt_reduction,goal_new_asset')
+        .eq('user_id', ctx.user.id).eq('month', month).maybeSingle(),
+      ctx.supabase.from('tc_networth_snapshots').select('snapshot_month')
+        .eq('user_id', ctx.user.id).eq('snapshot_month', month).maybeSingle(),
+      ctx.supabase.from('tc_weekly_reflections').select('relationship_score,health_score,purpose_score,parents_connection_score,finance_mindset_score')
+        .eq('user_id', ctx.user.id).order('week_start', { ascending:false }).limit(4),
+      ctx.supabase.from('tc_core_beliefs').select('id').eq('user_id', ctx.user.id).eq('still_active', true),
+    ]);
+    const entries = entriesRes.data || [];
+    state.monthIncome = entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
+    state.monthExpense = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0);
+    if(netWorthRes.data){
+      const s = netWorthRes.data;
+      const assets = Number(s.asset_cash||0)+Number(s.asset_savings||0)+Number(s.asset_gold_fx||0)+Number(s.asset_stocks||0)+Number(s.asset_realestate||0)+Number(s.asset_other||0);
+      const debts = Number(s.debt_credit_card||0)+Number(s.debt_installment||0)+Number(s.debt_bank_loan||0)+Number(s.debt_other||0);
+      state.netWorth = assets - debts;
+      state.netWorthMonth = s.snapshot_month;
+    }
+    const activeDebts = debtsRes.data || [];
+    state.totalDebt = activeDebts.reduce((s,d)=>s+Number(d.current_balance),0);
+    state.upcomingDebts = computeUpcomingDebts(activeDebts);
+
+    const financeScore = computeFinanceScore(vibeRes.data || []);
+    const distinctDaysLogged = new Set((recentDatesRes.data||[]).map(r=>r.entry_date)).size;
+    const g = monthGoalRes.data;
+    const hasGoal = !!(g && (Number(g.goal_income)||Number(g.goal_savings)||Number(g.goal_debt_reduction)||Number(g.goal_new_asset)));
+    const mindScore = computeMindScore({ distinctDaysLogged, hasGoal, hasNetworthThisMonth: !!monthNetworthRes.data });
+    const weeklyRows = weeklyRes.data || [];
+
+    // Trụ 4 = trung bình(tỷ lệ Vibe Check, tự chấm tâm thức tiền trực tiếp) — trụ "gốc" ảnh hưởng lan
+    // sang 4 trụ còn lại (tài chính bất ổn kéo theo mọi mặt khác). Niềm tin cũ ở Hạt Giống Phước -
+    // Nghiệp CHƯA chuyển hoá (still_active) kéo nhẹ Trụ 4 xuống.
+    state.activeBeliefsCount = (activeBeliefsRes.data || []).length;
+    const beliefPenalty = Math.min(20, state.activeBeliefsCount * 5);
+    const financeMindsetScore = avgSelfScore(weeklyRows, 'finance_mindset_score');
+    const pillar4Raw = clampScore(Math.round((financeScore + financeMindsetScore) / 2) - beliefPenalty);
+    const crossPillarModifier = (pillar4Raw - 50) * 0.2;
+
+    const pillar1Raw = Math.round((avgSelfScore(weeklyRows, 'health_score') + mindScore) / 2);
+    const pillar2Raw = avgSelfScore(weeklyRows, 'parents_connection_score');
+    const pillar3Raw = avgSelfScore(weeklyRows, 'relationship_score');
+    const pillar5Raw = avgSelfScore(weeklyRows, 'purpose_score');
+
+    state.karmaAxes = [
+      { key:'than_tam_ban_the', label:'Thân Tâm Bản Thể', value: clampScore(pillar1Raw + crossPillarModifier) },
+      { key:'coi_nguon_sinh_thanh', label:'Cội Nguồn Sinh Thành', value: clampScore(pillar2Raw + crossPillarModifier) },
+      { key:'ban_doi_moi_quan_he', label:'Mối Quan Hệ Thân Mật', value: clampScore(pillar3Raw + crossPillarModifier) },
+      { key:'tai_chinh_tam_thuc', label:'Tài Chính Tâm Thức', value: clampScore(pillar4Raw) },
+      { key:'thuan_phap_nhan_qua', label:'Thuận Pháp & Nhân Quả', value: clampScore(pillar5Raw + crossPillarModifier) },
+    ];
+
+    state.dashboardLoading = false;
+    draw();
+  }
 
   async function load(){
     state.loading = true; draw();
@@ -155,7 +275,13 @@ function render(container, ctx){
       if(debtRes.data.current_balance) state.form.debt_total = String(debtRes.data.current_balance/TRIEU);
       if(debtRes.data.minimum_payment) state.form.debt_monthly = String(debtRes.data.minimum_payment/TRIEU);
     }
-    if(netRes.data && netRes.data.asset_other) state.form.assets_total = String(netRes.data.asset_other/TRIEU);
+    if(netRes.data){
+      if(netRes.data.asset_other) state.form.assets_total = String(netRes.data.asset_other/TRIEU);
+      if(netRes.data.estimated_income) state.form.income = String(netRes.data.estimated_income/TRIEU);
+      if(netRes.data.estimated_expense) state.form.expense = String(netRes.data.estimated_expense/TRIEU);
+      if(netRes.data.passive_income) state.form.passive_income = String(netRes.data.passive_income/TRIEU);
+      if(netRes.data.income_sources) state.form.income_sources = String(netRes.data.income_sources);
+    }
     // Draft (đang gõ dở, chưa bấm "Xem Kết Quả") đè lên SAU dữ liệu đã lưu — vì draft luôn là bản
     // mới hơn những gì đã submit trước đó (góp ý Quỳnh 2026-08-22: gõ dở bấm sang trang khác bị mất).
     const draft = await loadModuleDraft(ctx, DRAFT_KEY);
@@ -245,6 +371,10 @@ function render(container, ctx){
     const debtTotal = (Number(f.debt_total)||0) * TRIEU;
     const debtMonthly = (Number(f.debt_monthly)||0) * TRIEU;
     const assetsTotal = (Number(f.assets_total)||0) * TRIEU;
+    const estimatedIncome = (Number(f.income)||0) * TRIEU;
+    const estimatedExpense = (Number(f.expense)||0) * TRIEU;
+    const passiveIncomeAmt = (Number(f.passive_income)||0) * TRIEU;
+    const incomeSourcesCount = Number(f.income_sources)||0; // đếm số nguồn, KHÔNG nhân TRIEU
 
     const existingEf = await ctx.supabase.from('tc_emergency_fund').select('target_amount').eq('user_id', ctx.user.id).maybeSingle();
     const suggestedTarget = Math.round(efMonthlyMin * 3);
@@ -261,7 +391,10 @@ function render(container, ctx){
         else if(debtTotal > 0) await ctx.supabase.from('tc_debts').insert({ ...payload, user_id: ctx.user.id, interest_rate:0 });
       })(),
       ctx.supabase.from('tc_networth_snapshots').upsert({
-        user_id: ctx.user.id, snapshot_month: month, asset_other: assetsTotal, updated_at: new Date().toISOString(),
+        user_id: ctx.user.id, snapshot_month: month, asset_other: assetsTotal,
+        estimated_income: estimatedIncome, estimated_expense: estimatedExpense,
+        passive_income: passiveIncomeAmt, income_sources: incomeSourcesCount,
+        updated_at: new Date().toISOString(),
       }, { onConflict:'user_id,snapshot_month' }),
       seedWeeklyPillars(),
     ]);
@@ -331,7 +464,7 @@ function render(container, ctx){
             </div>
           ` : ''}
           <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
-          <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a> có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
+          <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
         </div>
       ` : ''}
 
@@ -344,12 +477,52 @@ function render(container, ctx){
     `;
   }
 
+  function dashboardHtml(){
+    return `
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;text-align:center;">${glossaryWrap('Điểm Nghiệp', 'karma_score')}</h3>
+        ${radarChartHtml(state.karmaAxes)}
+        <div class="hint-box" id="tc-pillar-explain" style="margin-top:6px;">${
+          state.selectedPillarKey
+            ? `<b>${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).label||'')}: ${(state.karmaAxes.find(a=>a.key===state.selectedPillarKey)||{}).value ?? '—'}/100</b> — ${esc((HOUSES.find(h=>h.key===state.selectedPillarKey)||{}).desc||'')}`
+            : 'Điểm từng trụ đã hiện ngay dưới tên ở trên — bấm vào tên 1 Trụ Cột để xem trụ đó là gì.'
+        }</div>
+        ${state.activeBeliefsCount>0 ? `<div class="hint-box" style="margin-top:6px;">🌱 Bạn còn <b>${state.activeBeliefsCount}</b> hạt giống cũ chưa chuyển hoá — đang kéo nhẹ Trụ Tài Chính Tâm Thức (và lan sang cả 4 trụ còn lại) xuống. <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Xem Hạt Giống Phước - Nghiệp →</a></div>` : ''}
+      </div>
+
+      <div class="source-grid" style="margin-bottom:20px;">
+        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${state.monthIncome.toLocaleString('vi-VN')}đ</div><div class="label">Thu tháng này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${state.monthExpense.toLocaleString('vi-VN')}đ</div><div class="label">Chi tháng này</div></div>
+        <div class="source-card">
+          <div class="ic" style="font-size:17px;${state.netWorth==null?'':`color:${state.netWorth>=0?'var(--accent)':'var(--danger)'};`}">${state.netWorth==null?'Chưa có':state.netWorth.toLocaleString('vi-VN')+'đ'}</div>
+          <div class="label">Tài sản ròng${state.netWorthMonth?` (${esc(state.netWorthMonth)})`:''}</div>
+        </div>
+        <div class="source-card"><div class="ic" style="font-size:17px;${state.totalDebt>0?'color:var(--danger);':''}">${state.totalDebt.toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
+      </div>
+
+      ${state.upcomingDebts.length>0 ? `
+        <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">💛 Cơ hội thanh khoản tri ân sắp tới</h3>
+          ${state.upcomingDebts.map(d=>{
+            const timeLabel = d.daysUntil===0 ? 'Hôm nay' : d.daysUntil===1 ? 'Ngày mai' : `Còn ${d.daysUntil} ngày`;
+            return `
+            <div style="padding:6px 0;font-size:13.5px;line-height:1.6;">
+              <b>${timeLabel}</b> là cơ hội để bạn thanh khoản tri ân cho <b>${esc(d.creditor_name)}</b> — hãy gửi năng lượng biết ơn đến dòng chảy tài chính đang nâng đỡ bạn nhé.
+            </div>
+          `;}).join('')}
+        </div>
+      ` : ''}
+    `;
+  }
+
   function html(){
     return `
       <div class="page-head">
         <h1>Chấm Điểm Nghiệp Tiền</h1>
-        <p>7 câu hỏi số liệu + 10 câu Vibe Check đi kèm — vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra khâu nào trong dòng tiền đang bị tâm thức sợ hãi chi phối (kể cả khi thấy NGƯỜI KHÁC nhận tiền, không chỉ riêng chuyện tiền của bạn). Trả lời hết cũng tự điền luôn cả 5 Trụ Cột ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a>, thay vì phải chờ làm Tổng Kết Tuần nhiều lần mới có số thật. Có thể làm lại bất cứ lúc nào để cập nhật.</p>
+        <p>Điểm Nghiệp theo 5 Trụ Cột + bảng số liệu tháng này ngay dưới đây — cập nhật mỗi khi bạn ghi chép/tổng kết. 7 câu hỏi số liệu + 10 câu Vibe Check bên dưới vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra khâu nào trong dòng tiền đang bị tâm thức sợ hãi chi phối (kể cả khi thấy NGƯỜI KHÁC nhận tiền, không chỉ riêng chuyện tiền của bạn) — làm lại bất cứ lúc nào để cập nhật.</p>
       </div>
+
+      ${state.dashboardLoading ? `<div class="loading"><div class="spinner"></div></div>` : dashboardHtml()}
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">
@@ -410,6 +583,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-axis-key]').forEach(el=>{
+      el.onclick = ()=>{ state.selectedPillarKey = el.getAttribute('data-axis-key'); draw(); };
+    });
     container.querySelectorAll('[data-field]').forEach(el=>{
       el.oninput = ()=>{ state.form[el.getAttribute('data-field')] = el.value; persistDraft(); };
     });
@@ -451,6 +627,7 @@ function render(container, ctx){
   }
 
   load();
+  bootDashboard();
 }
 
 window.Modules = window.Modules || {};

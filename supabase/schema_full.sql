@@ -1159,3 +1159,15 @@ drop policy if exists "tc_referrals_referrer_read" on tc_referrals;
 create policy "tc_referrals_referrer_read" on tc_referrals for select using (auth.uid() = referrer_id);
 drop policy if exists "tc_referrals_admin_all" on tc_referrals;
 create policy "tc_referrals_admin_all" on tc_referrals for all using (is_admin()) with check (is_admin());
+
+-- 4 câu số ở Chấm Điểm Nghiệp Tiền (thu nhập/chi tiêu ước tính, thu nhập tự động, số nguồn thu) vốn
+-- KHÔNG có chỗ lưu nào (chỉ nằm tạm ở module_drafts, xem tai-chinh/js/thiet-lap-nhanh.js) — góp ý
+-- Quỳnh 2026-08-24 "cần có chỗ cho những thứ đó". Gắn vào ĐÚNG tc_networth_snapshots (đã có sẵn,
+-- theo tháng, cùng chỗ asset_other/debt_* đang lưu) thay vì tạo bảng riêng, vì cùng bản chất "số ước
+-- tính của tháng đó". estimated_income/estimated_expense là số TỰ ƯỚC TÍNH nhanh ở bài test này —
+-- KHÁC hẳn thu/chi THẬT tính từ tc_finance_entries (Ghi Chép Hàng Ngày) mà Tổng Kết Tuần/Tháng đang
+-- dùng, nên đặt tên "estimated_" để không ai nhầm 2 nguồn số này là một.
+alter table tc_networth_snapshots add column if not exists estimated_income numeric;
+alter table tc_networth_snapshots add column if not exists estimated_expense numeric;
+alter table tc_networth_snapshots add column if not exists passive_income numeric;
+alter table tc_networth_snapshots add column if not exists income_sources integer;

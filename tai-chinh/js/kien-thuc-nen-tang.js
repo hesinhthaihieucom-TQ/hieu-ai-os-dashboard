@@ -68,9 +68,9 @@ function html(){
         <p>Tiền tự nó trung tính — nó chỉ phản chiếu đúng tần số cảm xúc của bạn lúc dòng tiền đi qua. Đây là lý do Ghi Chép Hàng Ngày luôn hỏi bạn "đang cảm nhận gì" mỗi khi nhập giao dịch.</p>
       `)}
       ${detailsSection('🧘 5 Trụ Cột Năng Lượng Bản Thể là gì?', `
-        <p>Mọi dòng tiền đi qua bạn đều ảnh hưởng tới 5 trụ cột đời sống (khoá "21 Ngày Giải Nghiệp"). Xem ngay 5 trụ này của bạn đang ở mức nào tại <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a>:</p>
+        <p>Mọi dòng tiền đi qua bạn đều ảnh hưởng tới 5 trụ cột đời sống (khoá "21 Ngày Giải Nghiệp"). Xem ngay 5 trụ này của bạn đang ở mức nào tại <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a>:</p>
         <p>${HOUSES.map(h=>`${esc(h.label)} — ${esc(h.desc)}`).join('<br>')}</p>
-        <p>Gắn mục tiêu tài chính vào 1 trụ cụ thể giúp mục tiêu có ý nghĩa cảm xúc thật, không chỉ là con số khô khan — đây là lý do Mục Tiêu & Cam Kết luôn hỏi bạn chọn 1 Trụ, và vì sao Điểm Nghiệp ở Trang chủ tính theo đúng 5 trụ này.</p>
+        <p>Gắn mục tiêu tài chính vào 1 trụ cụ thể giúp mục tiêu có ý nghĩa cảm xúc thật, không chỉ là con số khô khan — đây là lý do Mục Tiêu & Cam Kết luôn hỏi bạn chọn 1 Trụ, và vì sao Điểm Nghiệp tính theo đúng 5 trụ này.</p>
       `)}
       ${detailsSection('🎯 Neo mục tiêu thanh khoản nợ vào 5 Trụ Cột', `
         ${HOUSES.map(h=>`<p><b>${esc(h.label)}</b> — ${esc(HOUSE_GOAL_ANCHOR[h.key])}</p>`).join('')}

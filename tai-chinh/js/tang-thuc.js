@@ -150,7 +150,7 @@ function render(container, ctx){
       <div class="hint-box" style="display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FDF0E0;color:#B5691A;">Đang chi phối</span>
-          <span>— còn kéo nhẹ Trụ Tài Chính Tâm Thức ở <a href="#trang-chu" style="color:var(--accent);font-weight:600;">Điểm Nghiệp Trang chủ →</a> xuống</span>
+          <span>— còn kéo nhẹ Trụ Tài Chính Tâm Thức ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a> xuống</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Đã chuyển hoá ✓</span>
