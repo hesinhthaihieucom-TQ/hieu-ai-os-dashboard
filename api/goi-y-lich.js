@@ -24,7 +24,7 @@ NGUYÊN TẮC:
 - BÀI ĐÃ VIẾT SẴN: nếu người dùng có cung cấp danh sách bài đã viết, ƯU TIÊN xếp các bài đó vào lịch trước (ghi đúng nguyên văn tiêu đề vào bai_co_san) — chỉ bịa chủ đề mới (chu_de) cho những ngày/slot không còn bài có sẵn nào phù hợp. Mỗi bài đã viết chỉ dùng 1 lần trong cả tuần, không lặp lại.
 - Nếu người dùng KHÔNG cung cấp bài đã viết nào (hoặc đã dùng hết), luôn để bai_co_san rỗng và chỉ gợi ý chu_de (chủ đề) — không tự bịa ra nội dung bài hoàn chỉnh.
 - Luôn ghi rõ truc_noi_dung cho mỗi bài (trục chính hay trục phụ, tên trục gì) để người dùng biết mỗi bài đang phục vụ trục nào.
-- KẾT QUẢ THẬT (nếu có cung cấp): đây là tín hiệu quan trọng NHẤT, đáng tin hơn mọi quy tắc chung ở trên — ưu tiên lặp lại đúng định dạng/trục/kiểu CTA của các bài có view/tương tác cao nhất, hạn chế lặp lại kiểu bài có kết quả thấp. Nếu KHÔNG có dữ liệu này, bỏ qua nguyên tắc này, cứ theo các quy tắc chung phía trên.
+- KẾT QUẢ THẬT (nếu có cung cấp): đây là tín hiệu quan trọng NHẤT, đáng tin hơn mọi quy tắc chung ở trên. Dữ liệu chỉ gồm tiêu đề, dạng content, CTA và số liệu — KHÔNG có sẵn tên trục, nên tự đọc tiêu đề để đoán đúng chủ đề/góc nhìn đang ăn khách. Với các bài có view/tương tác cao nhất, ưu tiên lặp lại đúng công thức của bài đó (chủ đề/góc nhìn gần giống + cùng dạng content + cùng kiểu CTA), hạn chế lặp lại công thức của bài có kết quả thấp. Nếu KHÔNG có dữ liệu này, bỏ qua nguyên tắc này, cứ theo các quy tắc chung phía trên.
 - Output tiếng Việt.`;
 
 // Từ 2 bài/ngày trở lên (14-21 mục/tuần), KHÔNG bắt AI nghĩ chi tiết chủ đề/dạng/hook/cta cho
@@ -149,7 +149,7 @@ module.exports = async (req, res) => {
     // quy tắc chung ở NGUYÊN TẮC bên trên (2026-08-23, theo đề xuất chị Quỳnh).
     const perfList = Array.isArray(performance_data) ? performance_data.filter(p => p && p.title) : [];
     const perfBlock = perfList.length
-      ? `\n\nKẾT QUẢ THẬT CỦA CÁC BÀI GẦN ĐÂY (do người dùng tự điền, xếp theo view giảm dần — ưu tiên lặp lại đúng trục/định dạng/CTA của những bài view cao nhất, tránh lặp lại kiểu bài view thấp):\n${perfList.map((p, i) => `${i + 1}. "${p.title}" — định dạng: ${p.format || '(không rõ)'} — CTA: ${p.cta || '(không rõ)'} — ${p.views ?? '?'} view, ${p.likes ?? '?'} like, ${p.comments ?? '?'} cmt, ${p.shares ?? '?'} share`).join('\n')}`
+      ? `\n\nKẾT QUẢ THẬT CỦA CÁC BÀI GẦN ĐÂY (do người dùng tự điền, xếp theo view giảm dần) — đọc tiêu đề để đoán đúng chủ đề/góc nhìn đang ăn khách, ưu tiên lặp lại công thức (chủ đề/góc nhìn gần giống + cùng dạng content + cùng kiểu CTA) của những bài view cao nhất, tránh lặp lại công thức của bài view thấp:\n${perfList.map((p, i) => `${i + 1}. "${p.title}" — định dạng: ${p.format || '(không rõ)'} — CTA: ${p.cta || '(không rõ)'} — ${p.views ?? '?'} view, ${p.likes ?? '?'} like, ${p.comments ?? '?'} cmt, ${p.shares ?? '?'} share`).join('\n')}`
       : '';
 
     const userContent = `${contextBlock}
