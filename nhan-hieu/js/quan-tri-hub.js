@@ -15,6 +15,7 @@ function render(container, ctx){
         <div class="chip ${state.tab==='giaodich'?'selected':''}" data-tab="giaodich">Giao dịch SePay</div>
         <div class="chip ${state.tab==='kho'?'selected':''}" data-tab="kho">Kho nội dung</div>
         <div class="chip ${state.tab==='thongbao'?'selected':''}" data-tab="thongbao">Thông báo</div>
+        <div class="chip ${state.tab==='danhgia'?'selected':''}" data-tab="danhgia">Đánh giá app</div>
       </div>
       <div id="qt-hub-sub"></div>
     `;
@@ -22,7 +23,7 @@ function render(container, ctx){
       el.onclick = () => { state.tab = el.getAttribute('data-tab'); draw(); };
     });
     const sub = container.querySelector('#qt-hub-sub');
-    const subModuleKey = state.tab === 'thanhvien' ? 'quan-tri' : state.tab === 'taichinh' ? 'quan-tri-taichinh' : state.tab === 'giaodich' ? 'quan-tri-giaodich' : state.tab === 'thongbao' ? 'quan-tri-thongbao' : 'quan-tri-kho';
+    const subModuleKey = state.tab === 'thanhvien' ? 'quan-tri' : state.tab === 'taichinh' ? 'quan-tri-taichinh' : state.tab === 'giaodich' ? 'quan-tri-giaodich' : state.tab === 'thongbao' ? 'quan-tri-thongbao' : state.tab === 'danhgia' ? 'quan-tri-danhgia' : 'quan-tri-kho';
     window.Modules[subModuleKey].render(sub, ctx);
   }
 

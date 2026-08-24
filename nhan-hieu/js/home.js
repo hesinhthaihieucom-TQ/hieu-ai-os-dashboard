@@ -35,7 +35,10 @@ const EXPLORE = [
 ];
 
 function render(container, ctx){
-  const state = { loading:true, done:{} };
+  const state = {
+    loading:true, done:{},
+    reviews:[], reviewsLoading:true, reviewComment:'', reviewSubmitting:false, reviewError:null, reviewJustSubmitted:false,
+  };
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
 
@@ -56,6 +59,28 @@ function render(container, ctx){
     };
     state.loading = false;
     draw();
+    loadReviews();
+  }
+
+  async function loadReviews(){
+    const { data } = await ctx.supabase.from('app_reviews').select('display_name,comment,created_at')
+      .eq('approved', true).order('created_at', { ascending:false }).limit(20);
+    state.reviews = data || [];
+    state.reviewsLoading = false;
+    draw();
+  }
+
+  async function submitReview(){
+    if(state.reviewSubmitting || !state.reviewComment.trim()) return;
+    state.reviewSubmitting = true; state.reviewError = null; draw();
+    try{
+      const data = await callApi('/api/submit-review', { comment: state.reviewComment.trim() });
+      if(window.onReviewSubmitted) window.onReviewSubmitted(data);
+      state.reviewComment = '';
+      state.reviewJustSubmitted = true;
+      loadReviews();
+    } catch(e){ state.reviewError = e.message; }
+    state.reviewSubmitting = false; draw();
   }
 
   function html(){
@@ -107,6 +132,38 @@ function render(container, ctx){
           ${EXPLORE.map(e=>`<div class="chip" data-key="${e.key}">${esc(e.label)}</div>`).join('')}
         </div>
       </div>
+
+      ${reviewSectionHtml()}
+    `;
+  }
+
+  function reviewSectionHtml(){
+    const alreadyRewarded = !!(ctx.profile && ctx.profile.review_reward_given);
+    return `
+      <div style="margin-top:28px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Đánh giá từ mọi người</h3>
+        <div class="card" style="margin-bottom:16px;">
+          ${state.reviewJustSubmitted
+            ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
+            : `
+            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bạn thấy app dùng thế nào?</label>
+            <textarea id="rv-comment" placeholder="Viết cảm nhận của bạn..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
+            ${!alreadyRewarded ? `<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Viết từ 30 từ trở lên được tặng 20 lượt AI miễn phí.</div>` : ''}
+            ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
+            <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+              <button class="btn btn-sm" data-action="submit-review" ${state.reviewSubmitting?'disabled':''}>${state.reviewSubmitting?'Đang gửi…':'Gửi đánh giá'}</button>
+            </div>
+          `}
+        </div>
+        ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải…</div>`
+          : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào được duyệt.</div>`
+          : state.reviews.map(r=>`
+            <div class="section">
+              <div class="body" style="white-space:pre-wrap;">${esc(r.comment)}</div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
+            </div>
+          `).join('')}
+      </div>
     `;
   }
 
@@ -114,6 +171,10 @@ function render(container, ctx){
     container.querySelectorAll('[data-key]').forEach(el=>{
       el.onclick = ()=>{ location.hash = el.getAttribute('data-key'); };
     });
+    const rvComment = container.querySelector('#rv-comment');
+    if(rvComment) rvComment.oninput = ()=>{ state.reviewComment = rvComment.value; };
+    const rvSubmit = container.querySelector('[data-action="submit-review"]');
+    if(rvSubmit) rvSubmit.onclick = submitReview;
   }
 
   boot();

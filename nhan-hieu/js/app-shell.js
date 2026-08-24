@@ -12,13 +12,23 @@ const NAV = [
   { key:'lich-dang', title:'Lịch Đăng Bài' },
   { key:'day-bai', title:'Đẩy Bài & CTA Comment' },
   { key:'tao-anh', title:'Tạo Ảnh Thương Hiệu' },
+  // MVP allowlist (2026-08-24) — chỉ hiện cho tài khoản được bật cờ can_sell_products (profiles),
+  // chưa mở đại trà cho mọi user Xây Nhân Hiệu. Xem thêm điều kiện lọc ở visibleNav bên dưới.
+  { key:'san-pham-so', title:'🛒 Sản Phẩm Số', requiresFlag:'can_sell_products' },
   { key:'tro-giup', title:'Hỏi & Trợ Giúp' },
   { key:'nang-cap', title:'🔥 Nâng cấp / Mua gói' },
   { key:'quan-tri-hub', title:'Quản trị', adminOnly:true },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], profileLoadError:null };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, profileLoadError:null };
+// Điều kiện hiện popup xin đánh giá (2026-08-24, theo yêu cầu chị Quỳnh) — đã dùng có kết quả thật
+// (từ 3 bài đã viết) HOẶC đã dùng app đủ lâu (từ 3 ngày), không hỏi ngay lúc mới vào khi chưa kịp
+// thấy giá trị gì.
+const REVIEW_PROMPT_MIN_POSTS = 3;
+const REVIEW_PROMPT_MIN_DAYS = 3;
+const REVIEW_MIN_WORDS_FOR_REWARD = 30;
+const REVIEW_REWARD_LUOT = 20;
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 // Public key VAPID cho Web Push (đổi lại 2026-08-22 vì key cũ chưa từng set VAPID_PRIVATE_KEY khớp
@@ -248,6 +258,7 @@ async function initApp(){
     // xem gì" và hiện lại TOÀN BỘ thông báo cũ mỗi lần vào app.
     await loadProfile();
     await loadAnnouncementQueue();
+    await loadReviewPromptEligibility();
     AppState.route = currentRouteFromHash();
     renderApp();
   } else {
@@ -281,7 +292,7 @@ async function initApp(){
       // render hụt 1 nhịp với profile null.
       AppState.route = 'trang-chu';
       // Tuần tự — cùng lý do đã ghi ở initApp(): loadAnnouncementQueue() cần profile đã tải xong.
-      loadProfile().then(loadAnnouncementQueue).then(()=>{
+      loadProfile().then(loadAnnouncementQueue).then(loadReviewPromptEligibility).then(()=>{
         location.hash = 'trang-chu';
         renderApp();
       });
@@ -361,6 +372,92 @@ function maybeShowFeatureAnnouncement(){
     queue.shift();
   });
 }
+
+// Chỉ tính điều kiện 1 LẦN lúc vào app (giống loadAnnouncementQueue) — nếu đã bị "dismissed" (đã
+// bấm Để sau HOẶC đã từng gửi đánh giá, xem submit-review.js) thì bỏ qua luôn, khỏi tốn thêm 1 truy
+// vấn đếm bài viết mỗi lần vào app cho người chắc chắn không cần hỏi lại nữa.
+async function loadReviewPromptEligibility(){
+  if(!AppState.user || !AppState.profile) { AppState.reviewPromptEligible = false; return; }
+  if(AppState.profile.review_prompt_dismissed){ AppState.reviewPromptEligible = false; return; }
+  const daysSinceSignup = AppState.profile.created_at
+    ? (Date.now() - new Date(AppState.profile.created_at).getTime()) / 86400000 : 0;
+  if(daysSinceSignup >= REVIEW_PROMPT_MIN_DAYS){ AppState.reviewPromptEligible = true; return; }
+  const { count } = await withTimeout(
+    supabaseClient.from('posts').select('id', { count:'exact', head:true }).eq('user_id', AppState.user.id),
+    8000
+  );
+  AppState.reviewPromptEligible = (count || 0) >= REVIEW_PROMPT_MIN_POSTS;
+}
+
+// Popup xin cảm nhận — CHỈ hiện nếu không có overlay nào khác đang mở (thông báo tính năng/onboarding
+// tour) để tránh chồng 2 popup cùng lúc; gọi SAU maybeShowFeatureAnnouncement() ở mọi điểm gọi để
+// thông báo tính năng luôn được ưu tiên hiện trước nếu cả 2 cùng đủ điều kiện.
+function maybeShowReviewPrompt(){
+  if(!AppState.reviewPromptEligible) return;
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay')) return;
+  AppState.reviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang, không hiện lại nếu re-render
+
+  const overlay = document.createElement('div');
+  overlay.id = 'review-prompt-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Bạn thấy Xây Nhân Hiệu thế nào?</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Viết vài dòng cảm nhận giúp mình cải thiện app — viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên sẽ được tặng ngay <b>${REVIEW_REWARD_LUOT} lượt AI miễn phí</b>.</div>
+      <textarea id="rp-comment" placeholder="Bạn thấy app dùng thế nào, có gì nên cải thiện không..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+      <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
+        <span id="rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="rp-submit" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close(){ overlay.remove(); }
+  const dismissServerSide = async ()=>{
+    if(AppState.profile) AppState.profile.review_prompt_dismissed = true;
+    try{ await supabaseClient.rpc('mark_review_prompt_dismissed'); } catch(e){}
+  };
+  overlay.querySelector('#rp-skip').onclick = async ()=>{ close(); await dismissServerSide(); };
+
+  overlay.querySelector('#rp-submit').onclick = async ()=>{
+    const textarea = overlay.querySelector('#rp-comment');
+    const errorEl = overlay.querySelector('#rp-error');
+    const comment = textarea.value.trim();
+    if(!comment){ errorEl.textContent = 'Chưa nhập cảm nhận.'; errorEl.style.display = 'block'; return; }
+    const btn = overlay.querySelector('#rp-submit');
+    btn.disabled = true; btn.textContent = 'Đang gửi…';
+    try{
+      const data = await callApi('/api/submit-review', { comment });
+      if(window.onReviewSubmitted) window.onReviewSubmitted(data);
+      close();
+    } catch(e){
+      errorEl.textContent = e.message; errorEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Gửi đánh giá';
+    }
+  };
+}
+
+// Cập nhật ngay lập tức số lượt hiển thị sau khi được thưởng (tương tự onGatedApiSuccess) — không
+// cần đợi tải lại trang mới thấy — dùng chung ở cả popup này VÀ ô viết đánh giá ở Trang chủ
+// (home.js), vì cả 2 đều gọi cùng /api/submit-review.
+window.onReviewSubmitted = function(result){
+  const p = AppState.profile;
+  if(!p) return;
+  p.review_prompt_dismissed = true;
+  if(result && result.rewarded){
+    if(p.has_paid){
+      const month = new Date().toISOString().slice(0,7);
+      if(p.paid_ai_month !== month){ p.paid_ai_month = month; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
+      p.paid_ai_bonus = (p.paid_ai_bonus||0) + (result.rewardLuot || REVIEW_REWARD_LUOT);
+    } else {
+      p.trial_ai_limit = (p.trial_ai_limit || TRIAL_AI_LIMIT) + (result.rewardLuot || REVIEW_REWARD_LUOT);
+    }
+  }
+  const el = document.getElementById('sidebar-foot-info');
+  if(el) el.innerHTML = sidebarFootHtml();
+};
 
 function hasActiveAccess(){
   const p = AppState.profile;
@@ -707,7 +804,7 @@ function renderApp(){
   `;
 
   const isAdmin = AppState.profile && AppState.profile.role === 'admin';
-  const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin));
+  const visibleNav = NAV.filter(n=> !n.hidden && (!n.adminOnly || isAdmin) && (!n.requiresFlag || (AppState.profile && AppState.profile[n.requiresFlag])));
   const nav = root.querySelector('#sidebar-nav');
   nav.innerHTML = visibleNav.map((n,i)=>{
     return `
@@ -745,6 +842,7 @@ function renderApp(){
   }
 
   maybeShowFeatureAnnouncement();
+  maybeShowReviewPrompt();
 
   const content = root.querySelector('#main-content');
   const mod = window.Modules && window.Modules[AppState.route];
