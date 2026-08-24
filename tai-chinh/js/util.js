@@ -404,7 +404,15 @@ function radarChartHtml(axes){
     const x = cx+maxR*Math.cos(a), y = cy+maxR*Math.sin(a);
     return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
   }).join('');
-  const dataPts = axes.map((ax,i)=>pointAt(i, ax.value).map(v=>v.toFixed(1)).join(',')).join(' ');
+  const dataPts = axes.map((ax,i)=>pointAt(i, ax.value));
+  const dataPtsAttr = dataPts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ');
+  // Chấm tròn tại từng đỉnh — nhấn thêm hình dạng thật của trụ đó trên khung, không chỉ dựa vào
+  // đường viền mỏng (góp ý Quỳnh 2026-08-24: "cái điểm ở radar nó đang bị chìm" — cả điểm SỐ lẫn
+  // hình dạng đều cần nổi bật hơn).
+  const dataDots = axes.map((ax,i)=>{
+    const [x,y] = dataPts[i];
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--accent)" stroke="var(--bg)" stroke-width="1.5"/>`;
+  }).join('');
   // Neo chữ theo hướng (start/end/middle) tuỳ điểm nằm bên phải/trái/giữa — tránh chữ dài (vd
   // "Mối Quan Hệ") tràn ra ngoài khung SVG khi neo "middle" cố định cho mọi điểm. Nhãn dài hơn 10
   // ký tự (vd "Cội Nguồn Sinh Thành", "Thuận Pháp & Nhân Quả" — tên 5 Trụ Cột dài hơn hẳn nhãn cũ)
@@ -423,24 +431,31 @@ function radarChartHtml(axes){
       const mid = Math.ceil(words.length/2);
       lines = [words.slice(0,mid).join(' '), words.slice(mid).join(' ')];
     }
-    // Điểm số (0-100) của trụ hiện ngay dưới tên — trước đây chỉ vẽ hình, không hiện số nào, người
-    // dùng phải bấm vào tên mới thấy MÔ TẢ (không phải điểm) — góp ý Quỳnh 2026-08-24: "không có điểm
-    // từng phần". Thêm 1 dòng số riêng, tô màu theo mức để nhìn lướt cũng biết trụ nào yếu.
-    const scoreColor = ax.value>=70 ? 'var(--accent)' : ax.value>=40 ? 'var(--ink-soft)' : 'var(--danger)';
-    const totalLines = lines.length + 1;
-    const yStart = ly - (totalLines-1)*lineHeight/2;
+    const yStart = ly - (lines.length-1)*lineHeight/2;
     const labelTspans = lines.map((line,li)=>`<tspan x="${lx.toFixed(1)}" ${li===0?`y="${yStart.toFixed(1)}"`:`dy="${lineHeight}"`}>${esc(line)}</tspan>`).join('');
-    const scoreTspan = `<tspan x="${lx.toFixed(1)}" dy="${lineHeight+1}" font-size="12" font-weight="700" fill="${scoreColor}">${Math.round(ax.value)}</tspan>`;
     // Nhãn có thể bấm vào để xem giải thích trụ đó là gì (nếu axis truyền kèm `key`) — cùng ngôn
     // ngữ hình ảnh gạch chân chấm như glossaryWrap, để người dùng nhận ra ngay đây là chỗ bấm được.
     const clickAttrs = ax.key ? `data-axis-key="${esc(ax.key)}" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;"` : '';
-    return `<text text-anchor="${anchor}" font-size="10.5" fill="var(--ink-soft)" ${clickAttrs}>${labelTspans}${scoreTspan}</text>`;
+    const labelText = `<text text-anchor="${anchor}" font-size="10.5" fill="var(--ink-soft)" ${clickAttrs}>${labelTspans}</text>`;
+
+    // Điểm số (0-100) trong 1 viên "pill" đặc màu — trước đây chỉ là 1 dòng chữ nhỏ cùng cỡ với
+    // nhãn nên rất dễ bị chìm giữa các đường kẻ của radar. Giờ tách hẳn ra khỏi khối chữ, to hơn,
+    // nền đặc + chữ trắng để nổi bật ngay cả khi nhìn lướt, màu nền vẫn theo 3 mức như cũ.
+    const scoreBg = ax.value>=70 ? 'var(--accent)' : ax.value>=40 ? 'var(--gold)' : 'var(--danger)';
+    const pillW = 30, pillH = 19;
+    const pillCy = yStart + (lines.length-1)*lineHeight + lineHeight + 5;
+    const pill = `
+      <rect x="${(lx-pillW/2).toFixed(1)}" y="${(pillCy-pillH/2).toFixed(1)}" width="${pillW}" height="${pillH}" rx="9.5" fill="${scoreBg}"/>
+      <text x="${lx.toFixed(1)}" y="${(pillCy+4.2).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" font-family="'IBM Plex Mono',monospace">${Math.round(ax.value)}</text>
+    `;
+    return labelText + pill;
   }).join('');
   return `
-    <svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:280px;height:auto;display:block;margin:0 auto;font-family:'Be Vietnam Pro',sans-serif;overflow:visible;">
+    <svg viewBox="0 0 ${size} ${size+14}" style="width:100%;max-width:280px;height:auto;display:block;margin:0 auto;font-family:'Be Vietnam Pro',sans-serif;overflow:visible;">
       ${rings}
       ${axisLines}
-      <polygon points="${dataPts}" fill="var(--accent)" fill-opacity="0.25" stroke="var(--accent)" stroke-width="2"/>
+      <polygon points="${dataPtsAttr}" fill="var(--accent)" fill-opacity="0.25" stroke="var(--accent)" stroke-width="2.5"/>
+      ${dataDots}
       ${labels}
     </svg>
   `;

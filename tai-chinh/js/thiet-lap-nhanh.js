@@ -519,7 +519,8 @@ function render(container, ctx){
     return `
       <div class="page-head">
         <h1>Chấm Điểm Nghiệp Tiền</h1>
-        <p>Điểm Nghiệp theo 5 Trụ Cột + bảng số liệu tháng này ngay dưới đây — cập nhật mỗi khi bạn ghi chép/tổng kết. 7 câu hỏi số liệu + 10 câu Vibe Check bên dưới vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra khâu nào trong dòng tiền đang bị tâm thức sợ hãi chi phối (kể cả khi thấy NGƯỜI KHÁC nhận tiền, không chỉ riêng chuyện tiền của bạn) — làm lại bất cứ lúc nào để cập nhật.</p>
+        <p><b>Điểm Nghiệp theo 5 Trụ Cột</b> + số liệu tháng này ngay dưới đây — tự cập nhật mỗi khi bạn ghi chép/tổng kết.</p>
+        <p><b>7 câu hỏi số liệu + 10 câu Vibe Check</b> bên dưới vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra <b>khâu nào đang bị tâm thức sợ hãi chi phối</b> — kể cả khi thấy người khác nhận tiền, không chỉ riêng chuyện tiền của bạn. Làm lại bất cứ lúc nào để cập nhật.</p>
       </div>
 
       ${state.dashboardLoading ? `<div class="loading"><div class="spinner"></div></div>` : dashboardHtml()}
@@ -568,7 +569,9 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Bước 8 · Cội Nguồn, Mối Quan Hệ & Cho Đi</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;">4 câu này không liên quan số liệu — 2 câu đầu giúp Điểm Nghiệp ở Trang chủ có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột, 2 câu sau giúp chẩn đoán đủ hơn khâu đang yếu nhất (kể cả khi thấy người khác nhận tiền) và soi thêm phần "cho đi" — gốc rễ thật của phước phần, không chỉ riêng chuyện tích luỹ.</p>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">4 câu này không liên quan số liệu.</p>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;"><b>2 câu đầu</b> giúp Điểm Nghiệp có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột.</p>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;"><b>2 câu sau</b> giúp chẩn đoán đủ hơn khâu đang yếu nhất (kể cả khi thấy người khác nhận tiền), và soi thêm phần <b>"cho đi"</b> — gốc rễ thật của phước phần, không chỉ riêng chuyện tích luỹ.</p>
           ${vibeQuestionHtml('parents')}
           ${vibeQuestionHtml('partner')}
           ${vibeQuestionHtml('witness_receive')}
