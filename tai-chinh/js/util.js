@@ -372,7 +372,7 @@ function trendBarChartHtml(buckets, color){
 // module gọi tự quản lý trong state riêng (hàm này chỉ vẽ, không tự đổi tab).
 function breakdownToggleHtml(id, tab, groupRows, trendBuckets, color){
   return `
-    <div class="chips" style="margin-bottom:12px;">
+    <div class="chips no-print" style="margin-bottom:12px;">
       <div class="chip ${tab==='chi-tiet'?'selected':''}" data-breakdown-tab="${esc(id)}:chi-tiet">Chi tiết</div>
       <div class="chip ${tab==='xu-huong'?'selected':''}" data-breakdown-tab="${esc(id)}:xu-huong">Xu hướng</div>
     </div>

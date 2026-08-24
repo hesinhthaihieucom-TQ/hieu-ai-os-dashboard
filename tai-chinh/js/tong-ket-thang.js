@@ -208,9 +208,12 @@ function render(container, ctx){
       </div>
 
       <div class="btn-row" style="justify-content:space-between;margin-top:0;margin-bottom:16px;">
-        <span class="btn-ghost btn btn-sm" id="tk-prev">← Tháng trước</span>
+        <span class="btn-ghost btn btn-sm no-print" id="tk-prev">← Tháng trước</span>
         <span style="font-weight:600;align-self:center;">${esc(monthLabel(state.month))}</span>
-        <span class="btn-ghost btn btn-sm" id="tk-next">Tháng sau →</span>
+        <span class="btn-ghost btn btn-sm no-print" id="tk-next">Tháng sau →</span>
+      </div>
+      <div class="btn-row no-print" style="justify-content:flex-end;margin-top:-4px;margin-bottom:16px;">
+        <span class="btn-ghost btn btn-sm" id="tk-print">🖨️ In trang này</span>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
@@ -251,8 +254,8 @@ function render(container, ctx){
 
           <div class="hint-box" id="tk-networth-preview" style="margin-top:16px;">${networthPreviewHtml(totalAssets, totalDebts, netWorth)}</div>
 
-          <button class="btn" style="margin-top:14px;" id="tk-save-networth" ${state.savingNetworth?'disabled':''}>${state.savingNetworth?'Đang lưu…':'Lưu cân đối tháng này'}</button>
-          <span id="tk-networth-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedNetworthMsg}</span>
+          <button class="btn no-print" style="margin-top:14px;" id="tk-save-networth" ${state.savingNetworth?'disabled':''}>${state.savingNetworth?'Đang lưu…':'Lưu cân đối tháng này'}</button>
+          <span class="no-print" id="tk-networth-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedNetworthMsg}</span>
 
           ${historyRows.length>1 ? `
             <div style="margin-top:20px;">
@@ -287,8 +290,8 @@ function render(container, ctx){
 
           <div class="hint-box" style="margin-top:16px;">Muốn đặt mục tiêu cho tháng tới? Sang <a href="#muc-tieu" style="color:var(--accent);font-weight:600;">Mục Tiêu & Cam Kết →</a> — đặt mục tiêu là một nghi thức riêng, nên làm TRƯỚC khi bắt đầu ghi chép tháng mới, không gộp chung với việc nhìn lại ở đây.</div>
 
-          <button class="btn" style="margin-top:16px;" id="tk-save-reflection" ${state.savingReflection?'disabled':''}>${state.savingReflection?'Đang lưu…':'Lưu bài học nhìn lại'}</button>
-          <span id="tk-reflection-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedReflectionMsg}</span>
+          <button class="btn no-print" style="margin-top:16px;" id="tk-save-reflection" ${state.savingReflection?'disabled':''}>${state.savingReflection?'Đang lưu…':'Lưu bài học nhìn lại'}</button>
+          <span class="no-print" id="tk-reflection-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedReflectionMsg}</span>
         </div>
       `}
     `;
@@ -306,6 +309,8 @@ function render(container, ctx){
   }
 
   function bind(){
+    const printBtn = container.querySelector('#tk-print');
+    if(printBtn) printBtn.onclick = ()=>window.print();
     container.querySelectorAll('[data-breakdown-tab]').forEach(el=>{
       el.onclick = ()=>{
         const [, tab] = el.getAttribute('data-breakdown-tab').split(':');

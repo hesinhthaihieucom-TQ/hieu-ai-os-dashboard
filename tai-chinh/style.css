@@ -232,3 +232,16 @@ summary.kt-summary::-webkit-details-marker{ display:none; }
 summary.kt-summary::marker{ content:''; }
 summary.kt-summary::before{ content:'▸ '; color:var(--accent); }
 details.kt-section[open] summary.kt-summary::before{ content:'▾ '; }
+
+/* In trang (Ctrl+P/Cmd+P) — góp ý Quỳnh 2026-08-24: "nên có phần in ra cho những ai không quen
+   dùng công nghệ". Ẩn sidebar/topbar/mọi nút bấm-để-thao-tác (.no-print — gắn thủ công ở từng
+   module cho đúng chỗ, không đoán chung theo class .btn vì .btn còn dùng cho nút điều hướng cần
+   giữ lại lúc in vd link tham khảo), cho phần nội dung chiếm full trang giấy. Input/textarea đang
+   có giá trị vẫn hiện được — chỉ bỏ khung/nền để trông như chữ in, không như 1 form còn bỏ trống. */
+@media print{
+  .topbar-mobile, .sidebar-overlay, .sidebar, .no-print{ display:none !important; }
+  .app-layout{ display:block !important; }
+  .main, .main-inner{ max-width:100% !important; padding:0 !important; margin:0 !important; }
+  input, textarea{ border:none !important; background:transparent !important; padding:2px 0 !important; -webkit-appearance:none; appearance:none; color:var(--ink) !important; }
+  .card, .section{ break-inside:avoid; }
+}
