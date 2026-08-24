@@ -483,7 +483,7 @@ function render(container, ctx){
             ${r.weakestArea
               ? `Bạn đang yếu nhất ở khâu <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b>. Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp (chữa lành gốc rễ), Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật, không chỉ dừng ở việc nhìn thấy vấn đề.`
               : `Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để đi tiếp từ bức tranh này.`}
-            Chỉ <b>${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.
+            Chỉ <b>${tcCurrentPrice().toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.
           </div>
           <span class="btn btn-full" data-goto="nang-cap">Nâng Cấp Ngay →</span>
         </div>

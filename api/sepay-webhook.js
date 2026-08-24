@@ -3,7 +3,7 @@
 // khoản ngân hàng thật), tự đối chiếu mã tham chiếu (ref_code) trong nội dung chuyển khoản và số
 // tiền, rồi tự gia hạn access_until (nhan-hieu) hoặc bật tc_has_paid (tai-chinh) cho đúng tài khoản
 // — không cần admin bấm tay. Phân biệt ĐÚNG sản phẩm nào đang được thanh toán CHỈ qua số tiền
-// chuyển khoản (xem AMOUNT_TO_DAYS/TC_LIFETIME_AMOUNT bên dưới — 2 tập số tiền không được trùng
+// chuyển khoản (xem AMOUNT_TO_DAYS/TC_LIFETIME_AMOUNTS bên dưới — 2 tập số tiền không được trùng
 // nhau), vì ref_code dùng chung 1 định dạng cho cả 2 sản phẩm.
 //
 // Bảo mật: xác thực bằng header "Authorization: Apikey <SEPAY_WEBHOOK_APIKEY>" (khớp đúng
@@ -37,17 +37,23 @@ const AMOUNT_TO_DAYS = {
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 
 // Gói TRỌN ĐỜI của Sổ Dòng Tiền Tâm Thức (tai-chinh/, sản phẩm KHÁC, giá KHÁC — không đụng
-// access_until/has_paid ở trên, xem tc_has_paid/tc_paid_at trong schema_full.sql). Số tiền này ĐÃ
-// kiểm tra không trùng bất kỳ giá trị nào trong AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT ở trên — webhook
-// phân biệt 2 sản phẩm CHỈ qua số tiền chuyển khoản, ref_code dùng chung định dạng "SEVQR <ref_code>"
-// với nhan-hieu (cùng 1 tài khoản ngân hàng thật, chị Quỳnh chỉ có 1 tài khoản).
-const TC_LIFETIME_AMOUNT = 299000;
+// access_until/has_paid ở trên, xem tc_has_paid/tc_paid_at trong schema_full.sql). 2 mức giá theo
+// thời gian (2026-08-24, chị Quỳnh chốt mốc giá ra mắt) — CẢ 2 số đã kiểm tra không trùng bất kỳ
+// giá trị nào trong AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT ở trên (đặc biệt tránh 499000 đang là giá
+// tháng chuẩn của Xây Nhân Hiệu) — webhook phân biệt 2 sản phẩm CHỈ qua số tiền chuyển khoản,
+// ref_code dùng chung định dạng "SEVQR <ref_code>" với nhan-hieu (cùng 1 tài khoản ngân hàng thật).
+// Chấp nhận CẢ 2 mức bất kể ngày hiện tại — không tự chốt theo ngày ở server để tránh trường hợp
+// khách chuyển đúng giá ra mắt sát giờ chốt nhưng webhook xử lý trễ vài phút qua ngày hôm sau.
+const TC_LAUNCH_AMOUNT = 299000;   // giá ra mắt, xem TC_LAUNCH_DEADLINE ở tai-chinh/js/app-shell.js
+const TC_REGULAR_AMOUNT = 599000;  // giá sau mốc ra mắt
+const TC_LIFETIME_AMOUNTS = new Set([TC_LAUNCH_AMOUNT, TC_REGULAR_AMOUNT]);
 // Chương trình giới thiệu tai-chinh (2026-08-23, chị Quỳnh chốt "20% cho người giới thiệu") — MỘT
-// CHIỀU, referee vẫn trả nguyên TC_LIFETIME_AMOUNT (khác nhan-hieu có giảm giá riêng cho referee).
+// CHIỀU, referee vẫn trả nguyên giá đang bán lúc đó (khác nhan-hieu có giảm giá riêng cho referee).
 // Trả bằng TIỀN THẬT (không có hệ lượt AI như nhan-hieu để quy đổi) — ghi vào sổ tc_referrals, chị
-// Quỳnh tự chuyển khoản tay rồi đánh dấu đã trả trong Quản Trị (xem tai-chinh/js/quan-tri.js).
+// Quỳnh tự chuyển khoản tay rồi đánh dấu đã trả trong Quản Trị (xem tai-chinh/js/quan-tri.js). Tính
+// theo ĐÚNG số tiền referee vừa trả (299k hay 599k) — không dùng 1 số cố định — để thưởng đúng 20%
+// giá trị đơn hàng thật, không lệch khi giá đổi qua mốc ra mắt.
 const TC_REFERRAL_REWARD_PERCENT = 0.20;
-const TC_REFERRAL_REWARD_AMOUNT = Math.round(TC_LIFETIME_AMOUNT * TC_REFERRAL_REWARD_PERCENT);
 
 // Số tiền giá giới thiệu — khớp 1 trong 3 số này thì mới kích hoạt thưởng cho người đã giới thiệu
 // (gói ưu đãi/flash-sale và giá học viên KHÔNG bao giờ tính hoa hồng, theo yêu cầu chị Quỳnh).
@@ -142,7 +148,7 @@ async function creditReferralReward(refereeProfile, transferAmount) {
 // tc_referrals (paid=false), chị Quỳnh tự chuyển khoản tay + đánh dấu đã trả sau. Best-effort,
 // KHÔNG throw ra ngoài — referee đã kích hoạt tc_has_paid xong ở trên rồi, phần thưởng cho
 // referrer là phụ, không nên làm hỏng cả webhook chỉ vì bước này lỗi.
-async function creditTcReferralReward(refereeProfile) {
+async function creditTcReferralReward(refereeProfile, transferAmount) {
   if (!refereeProfile.referred_by_ref_code || refereeProfile.tc_referral_reward_given) return;
 
   const referrerResp = await supabaseAdmin(`profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id`);
@@ -156,7 +162,7 @@ async function creditTcReferralReward(refereeProfile) {
     body: JSON.stringify({
       referrer_id: referrer.id,
       referee_id: refereeProfile.id,
-      reward_amount: TC_REFERRAL_REWARD_AMOUNT,
+      reward_amount: Math.round(transferAmount * TC_REFERRAL_REWARD_PERCENT),
     }),
   });
   // Đánh dấu đã thưởng SAU KHI ghi sổ thành công — nếu ghi sổ lỗi, lần webhook sau (nếu SePay retry)
@@ -289,7 +295,7 @@ module.exports = async (req, res) => {
           } else {
             status = 'unmatched_amount';
           }
-        } else if (transferAmount === TC_LIFETIME_AMOUNT) {
+        } else if (TC_LIFETIME_AMOUNTS.has(transferAmount)) {
           // Sổ Dòng Tiền Tâm Thức (tai-chinh/) — trọn đời, KHÔNG đụng access_until/has_paid của
           // nhan-hieu. Idempotent tự nhiên: PATCH lại true/timestamp mới nếu lỡ chuyển trùng không
           // sao, không có tác dụng phụ nào (khác gói theo ngày, cộng dồn được nên phải chống trùng
@@ -301,7 +307,7 @@ module.exports = async (req, res) => {
           if (updateResp.ok) {
             status = 'matched';
             matchedProfileId = profile.id;
-            try { await creditTcReferralReward(profile); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
+            try { await creditTcReferralReward(profile, transferAmount); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
           } else {
             status = 'unmatched_amount';
           }

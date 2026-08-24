@@ -98,7 +98,7 @@ function render(container, ctx){
         return `
           <div class="section">
             <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
-            <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — khi bạn bè bấm vào đăng ký rồi mua trọn đời, bạn được thưởng <b>${TC_REFERRAL_REWARD_PERCENT}%</b> giá trị đơn hàng của họ (~${Math.round(TC_LIFETIME_PRICE*TC_REFERRAL_REWARD_PERCENT/100).toLocaleString('vi-VN')}đ mỗi người). Trả bằng chuyển khoản tay, không tự động — bên dưới là số bạn đang được ghi nợ.</div>
+            <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — khi bạn bè bấm vào đăng ký rồi mua trọn đời, bạn được thưởng <b>${TC_REFERRAL_REWARD_PERCENT}%</b> giá trị đơn hàng của họ (~${Math.round(tcCurrentPrice()*TC_REFERRAL_REWARD_PERCENT/100).toLocaleString('vi-VN')}đ mỗi người ở giá hiện tại). Trả bằng chuyển khoản tay, không tự động — bên dưới là số bạn đang được ghi nợ.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
               <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg);color:var(--ink);" onclick="this.select()">
               <button class="btn btn-sm" id="tk-copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>

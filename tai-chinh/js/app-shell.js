@@ -44,11 +44,21 @@ const NAV = [
 ];
 const PREMIUM_ROUTES = new Set(NAV.filter(n=>n.premium).map(n=>n.key));
 const TC_TRIAL_DAYS = 0; // 2026-08-24: bỏ hẳn dùng thử, xem comment NAV phía trên
-const TC_LIFETIME_PRICE = 299000;
+// Giá ra mắt (2026-08-24, chị Quỳnh chốt) — 299k cho người mua TRƯỚC mốc TC_LAUNCH_DEADLINE, sau
+// đó tăng lên 599k. Đây là mốc THẬT (không phải giá gốc bịa ra để giảm ảo — chưa từng có ai mua ở
+// giá nào khác trước đó) — chị PHẢI thực sự tăng giá đúng lúc để giữ uy tín. 599k (không phải 499k
+// như đề xuất ban đầu) vì 499.000đ đang là giá gói 1 tháng chuẩn của Xây Nhân Hiệu — webhook chỉ
+// phân biệt 2 sản phẩm qua đúng số tiền, trùng số sẽ kích hoạt sai sản phẩm (xem TC_LIFETIME_AMOUNTS
+// ở api/sepay-webhook.js — phải sửa CẢ 2 nơi cùng lúc nếu đổi số tiền).
+const TC_LAUNCH_PRICE = 299000;
+const TC_REGULAR_PRICE = 599000;
+const TC_LAUNCH_DEADLINE = new Date('2026-09-30T23:59:59+07:00');
+function tcCurrentPrice(){ return Date.now() <= TC_LAUNCH_DEADLINE.getTime() ? TC_LAUNCH_PRICE : TC_REGULAR_PRICE; }
+function tcLaunchDaysLeft(){ return Math.max(0, Math.ceil((TC_LAUNCH_DEADLINE.getTime() - Date.now()) / 86400000)); }
 // Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code
-// dùng chung cơ chế "SEVQR <ref_code>" nhưng số tiền 299.000đ là DUY NHẤT, không trùng bất kỳ gói
-// nào của nhan-hieu (xem AMOUNT_TO_DAYS ở api/sepay-webhook.js) nên webhook phân biệt được đúng
-// sản phẩm nào đang được thanh toán chỉ qua số tiền, không cần đổi định dạng ref_code.
+// dùng chung cơ chế "SEVQR <ref_code>" nhưng số tiền là DUY NHẤT, không trùng bất kỳ gói nào của
+// nhan-hieu (xem AMOUNT_TO_DAYS ở api/sepay-webhook.js) nên webhook phân biệt được đúng sản phẩm
+// nào đang được thanh toán chỉ qua số tiền, không cần đổi định dạng ref_code.
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null };
@@ -376,16 +386,20 @@ function tcBenefitsHtml(){
 function tcPaymentCardHtml(){
   const p = AppState.profile;
   const refCode = p && p.ref_code;
+  const price = tcCurrentPrice();
+  const daysLeft = tcLaunchDaysLeft();
+  const inLaunchWindow = price === TC_LAUNCH_PRICE;
   // VietinBank CHỈ báo biến động số dư về SePay nếu nội dung chuyển khoản bắt đầu bằng "SEVQR"
   // (yêu cầu riêng SePay cho VietinBank) — xem api/sepay-webhook.js.
   const transferContent = refCode ? `SEVQR ${refCode}` : null;
   const qrUrl = refCode
-    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${TC_LIFETIME_PRICE}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+    ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
 
   return `
-    <div style="text-align:center;font-size:15px;font-weight:700;">${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
-    <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Chưa tới ${Math.ceil(TC_LIFETIME_PRICE/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
+    ${inLaunchWindow ? `<div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-bottom:6px;">🔥 GIÁ RA MẮT — còn ${daysLeft} ngày trước khi tăng lên ${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ</div>` : ''}
+    <div style="text-align:center;font-size:15px;font-weight:700;">${price.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
+    <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Chưa tới ${Math.ceil(price/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
     ${qrUrl ? `
       <div style="text-align:center;">
         <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
@@ -397,7 +411,7 @@ function tcPaymentCardHtml(){
         <div><b>Ngân hàng:</b> Vietinbank</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
         <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${TC_LIFETIME_PRICE}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${price.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${price}">Copy</span></div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
       </div>
       <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận. Chuyển xong đợi 1-2 phút rồi bấm nút bên dưới.</div>
