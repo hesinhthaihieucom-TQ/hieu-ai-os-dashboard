@@ -216,6 +216,19 @@ function releaseWakeLock(){
   if(_wakeLock){ try{ _wakeLock.release(); } catch(e){} _wakeLock = null; }
 }
 
+// Bọc 1 truy vấn Supabase (dạng {data, error}, KHÔNG throw) với trần thời gian chờ — supabase-js
+// không tự có timeout, nên khi mạng chập chờn (rất hay gặp trên di động) hoặc Supabase đang quá
+// tải, request có thể treo VÔ THỜI HẠN — cả trang đứng ở màn hình "Đang tải…"/vòng xoay mãi mãi,
+// không có cách nào thoát hay thử lại (phát hiện 2026-08-24: nhiều khách báo app "quay quay không
+// vào được" trên điện thoại). Hết giờ thì coi như lỗi (trả object cùng hình dạng {data:null,
+// error}), để chỗ gọi xử lý y hệt mọi lỗi mạng khác, không cần biết riêng đây là do timeout.
+function withTimeout(promise, ms, timeoutMessage){
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(()=> resolve({ data:null, error:{ message: timeoutMessage || 'Kết nối mạng chậm/không ổn định, thử lại giúp mình.' } }), ms)),
+  ]);
+}
+
 function startOfWeek(d){
   const dt = new Date(d);
   const day = dt.getDay(); // 0=Sun

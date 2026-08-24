@@ -226,7 +226,17 @@ async function initApp(){
   const root = document.getElementById('app');
   root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
 
-  const { data } = await supabaseClient.auth.getSession();
+  const { data, error: sessionError } = await withTimeout(
+    supabaseClient.auth.getSession(),
+    10000, 'Kết nối mạng chậm/không ổn định — không kiểm tra được đăng nhập.'
+  );
+  if(sessionError){
+    root.innerHTML = `<div class="loading">
+      <p style="color:var(--danger);padding:0 20px 18px;">${esc(sessionError.message)}</p>
+      <button class="btn" onclick="location.reload()">Tải lại trang</button>
+    </div>`;
+    return;
+  }
   if(data.session){
     AppState.user = data.session.user;
     // TUẦN TỰ, không Promise.all — loadAnnouncementQueue() cần đọc profile.last_seen_announcement_at
@@ -298,10 +308,16 @@ async function initApp(){
 // profileLoadError để renderApp() hiện đúng màn hình "lỗi tải" thay vì "hết hạn".
 async function loadProfile(){
   if(!AppState.user) return;
-  let { data, error } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
+  let { data, error } = await withTimeout(
+    supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle(),
+    12000, 'Kết nối mạng chậm/không ổn định — không tải được hồ sơ. Kiểm tra mạng rồi thử lại.'
+  );
   if(error){
     await new Promise(r=>setTimeout(r, 1500));
-    ({ data, error } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle());
+    ({ data, error } = await withTimeout(
+      supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle(),
+      12000, 'Kết nối mạng chậm/không ổn định — không tải được hồ sơ. Kiểm tra mạng rồi thử lại.'
+    ));
   }
   AppState.profile = data || null;
   AppState.profileLoadError = error ? error.message : null;
@@ -317,7 +333,12 @@ async function loadProfile(){
 async function loadAnnouncementQueue(){
   if(!AppState.user) return;
   const sinceAt = (AppState.profile && AppState.profile.last_seen_announcement_at) || '1970-01-01';
-  const { data } = await supabaseClient.from('feature_announcements').select('*').gt('created_at', sinceAt).order('created_at', { ascending:true });
+  // Không quan trọng bằng loadProfile() — timeout ngắn hơn (8s) và lỗi/treo thì bỏ qua thẳng (hàng
+  // đợi rỗng), không được để tính năng phụ này chặn cả app vào không được.
+  const { data } = await withTimeout(
+    supabaseClient.from('feature_announcements').select('*').gt('created_at', sinceAt).order('created_at', { ascending:true }),
+    8000
+  );
   AppState.announcementQueue = data || [];
 }
 

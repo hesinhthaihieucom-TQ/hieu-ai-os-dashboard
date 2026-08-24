@@ -29,7 +29,7 @@ function render(container, ctx){
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
-    tab:'lich',
+    tab:'lich', weekLoadError:null,
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushPermission: window.Notification ? Notification.permission : 'denied',
     pushSubscribed: false, pushBusy: false, pushError: null,
@@ -42,21 +42,52 @@ function render(container, ctx){
 
   function draw(){ container.innerHTML = html(); bind(); }
 
+  // Trước đây các truy vấn Supabase dưới đây KHÔNG có giới hạn thời gian chờ — mạng chập chờn (rất
+  // hay gặp trên di động) khiến trang treo ở màn hình "Đang tải…" MÃI MÃI, không cách nào thoát hay
+  // thử lại (phát hiện 2026-08-24: nhiều khách báo Lịch Đăng Bài "quay quay không vào được" trên
+  // điện thoại). Bọc withTimeout() (util.js) ở TỪNG hàm tải riêng — vừa sửa được boot() lần đầu vào
+  // trang, vừa sửa luôn các lần bấm "Tuần trước/Tuần sau" (gọi lại đúng các hàm này).
   async function boot(){
-    draw();
+    state.screen = 'loading'; draw();
     if(window.PendingPost){ state.pending = window.PendingPost; window.PendingPost = null; }
-    const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
-    state.positioning = (pos && pos.luot1) ? pos : null;
-    await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule()]);
-    state.screen='main';
+    try{
+      const { data: pos, error } = await withTimeout(
+        ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle(),
+        12000, 'Kết nối mạng chậm/không ổn định — không tải được trang. Kiểm tra mạng rồi thử lại.'
+      );
+      if(error) throw new Error(error.message);
+      state.positioning = (pos && pos.luot1) ? pos : null;
+      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule()]);
+      state.screen='main';
+    } catch(e){
+      state.screen='error';
+      state.bootError = e.message;
+    }
+    draw();
+  }
+
+  // Tải lại đúng dữ liệu của tuần đang xem khi bấm "Tuần trước/Tuần sau" — tách khỏi onclick trực
+  // tiếp để bọc try/catch (applyDraftForCurrentWeek()/loadEntries() giờ NÉM LỖI khi timeout, xem
+  // withTimeout ở util.js) — không bọc thì lỗi mạng làm nút bấm coi như không phản hồi gì, không có
+  // cách nào biết vì sao.
+  async function changeWeek(){
+    state.weekLoadError = null; draw();
+    try{
+      await Promise.all([applyDraftForCurrentWeek(), loadEntries()]);
+    } catch(e){
+      state.weekLoadError = e.message;
+    }
     draw();
   }
 
   // Gợi ý AI + mục tiêu tuần lưu ở bảng weekly_ai_drafts (Supabase) — trước đây lưu localStorage
   // nên tạo lịch trên điện thoại xong mở web lại không thấy gì, giờ đồng bộ theo tài khoản.
   async function applyDraftForCurrentWeek(){
-    const { data: draft } = await ctx.supabase.from('weekly_ai_drafts').select('*')
-      .eq('user_id', ctx.user.id).eq('week_start', isoDate(state.weekStart)).maybeSingle();
+    const { data: draft, error } = await withTimeout(
+      ctx.supabase.from('weekly_ai_drafts').select('*').eq('user_id', ctx.user.id).eq('week_start', isoDate(state.weekStart)).maybeSingle(),
+      12000, 'Kết nối mạng chậm/không ổn định — không tải được mục tiêu tuần. Kiểm tra mạng rồi thử lại.'
+    );
+    if(error) throw new Error(error.message);
     state.aiSuggestions = draft ? draft.ai_suggestions : null;
     state.weeklyGoal = draft ? (draft.weekly_goal || '') : '';
     state.postsPerDay = draft ? (draft.posts_per_day || 1) : 1;
@@ -82,11 +113,19 @@ function render(container, ctx){
     const from = isoDate(state.weekStart);
     const toDate = new Date(state.weekStart); toDate.setDate(toDate.getDate()+6);
     const to = isoDate(toDate);
-    const { data } = await ctx.supabase.from('calendar_entries').select('*').eq('user_id', ctx.user.id).gte('scheduled_date', from).lte('scheduled_date', to);
+    const { data, error } = await withTimeout(
+      ctx.supabase.from('calendar_entries').select('*').eq('user_id', ctx.user.id).gte('scheduled_date', from).lte('scheduled_date', to),
+      12000, 'Kết nối mạng chậm/không ổn định — không tải được lịch tuần này. Kiểm tra mạng rồi thử lại.'
+    );
+    if(error) throw new Error(error.message);
     state.entries = data || [];
   }
   async function loadPosts(){
-    const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(30);
+    const { data, error } = await withTimeout(
+      ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(30),
+      12000, 'Kết nối mạng chậm/không ổn định — không tải được danh sách bài. Kiểm tra mạng rồi thử lại.'
+    );
+    if(error) throw new Error(error.message);
     state.posts = data || [];
   }
 
@@ -107,8 +146,15 @@ function render(container, ctx){
   // tự ẩn chỉ vì đã qua giờ (sửa 22/8 theo phản hồi chị Quỳnh: "nó phải có mục tích đã làm để mình
   // tích xong mới mất chứ").
   async function loadRecordingSchedule(){
-    const { data } = await ctx.supabase.from('recording_schedule').select('*').eq('user_id', ctx.user.id)
-      .eq('done', false).order('scheduled_at', { ascending:true });
+    // Không throw khi lỗi/timeout (khác các hàm load khác ở trên) — hàm này được gọi lại sau nhiều
+    // thao tác nhỏ (tích đã làm/thêm/xoá) KHÔNG bọc try/catch, throw ở đây sẽ làm draw() sau đó
+    // không chạy, giao diện đứng yên không cập nhật dù thao tác đã lưu thành công. Chỉ cần đảm bảo
+    // KHÔNG treo vô thời hạn (xem withTimeout) — lỗi thật thì coi như rỗng, không nghiêm trọng bằng
+    // lịch/bài viết chính.
+    const { data } = await withTimeout(
+      ctx.supabase.from('recording_schedule').select('*').eq('user_id', ctx.user.id).eq('done', false).order('scheduled_at', { ascending:true }),
+      12000
+    );
     state.recordingSchedule = data || [];
   }
 
@@ -180,6 +226,10 @@ function render(container, ctx){
 
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
+    if(state.screen==='error') return `<div class="loading">
+      <p style="color:var(--danger);padding:0 20px 18px;">${esc(state.bootError||'Có lỗi xảy ra.')}</p>
+      <button class="btn" data-action="retry-boot">Thử lại</button>
+    </div>`;
     return `
       <div class="page-head"><div class="tag">Bước 5 · Lịch Đăng Bài</div><h1>Lịch đăng bài theo tuần</h1></div>
       <div class="tab-row">
@@ -264,6 +314,7 @@ function render(container, ctx){
         <b style="font-family:'IBM Plex Mono',monospace;font-size:13px;">${esc(weekLabel)}</b>
         <span style="cursor:pointer;color:var(--ink-soft);" data-action="next-week">Tuần sau →</span>
       </div>
+      ${state.weekLoadError ? `<div class="error-box">${esc(state.weekLoadError)}</div>` : ''}
       ${weekCompletionHtml(days, todayStr)}
       <div class="week-grid">
         ${days.map((d,dayIndex)=>{
@@ -427,6 +478,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const retryBtn = container.querySelector('[data-action="retry-boot"]');
+    if(retryBtn) retryBtn.onclick = boot;
+
     container.querySelectorAll('[data-tab]').forEach(el=>{
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
     });
@@ -457,9 +511,9 @@ function render(container, ctx){
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
 
     const prev = container.querySelector('[data-action="prev-week"]');
-    if(prev) prev.onclick = async ()=>{ state.weekStart.setDate(state.weekStart.getDate()-7); await Promise.all([applyDraftForCurrentWeek(), loadEntries()]); draw(); };
+    if(prev) prev.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()-7); changeWeek(); };
     const next = container.querySelector('[data-action="next-week"]');
-    if(next) next.onclick = async ()=>{ state.weekStart.setDate(state.weekStart.getDate()+7); await Promise.all([applyDraftForCurrentWeek(), loadEntries()]); draw(); };
+    if(next) next.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()+7); changeWeek(); };
     const resetBtn = container.querySelector('[data-action="reset-week"]');
     if(resetBtn) resetBtn.onclick = async ()=>{
       if(!(await confirmModal('Xoá gợi ý AI và mục tiêu của cả tuần này? Không khôi phục được.'))) return;
