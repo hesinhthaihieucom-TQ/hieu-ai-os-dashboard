@@ -27,18 +27,36 @@ function render(container, ctx){
     obstacleInput: '',
     lastReframe: '',
     savingObstacle: false,
+    // Ngân sách chi tiêu tháng này — DI CHUYỂN nguyên từ tong-ket-thang.js (2026-08-24, góp ý Quỳnh
+    // "ngân sách phải ở phần mục tiêu chứ"): đặt hạn mức là 1 việc làm TRƯỚC khi tiêu, giống hệt lý
+    // do goal_* đã chuyển sang đây trước đó — không phải việc nhìn lại cuối tháng.
+    budgetActuals: {},
+    budgetForm: {},
+    savingBudget: false,
+    savedBudgetMsg: '',
   };
+  function budgetCategoryKeys(){
+    return [...new Set([...Object.keys(state.budgetActuals), ...Object.keys(state.budgetForm)])]
+      .filter(k => (state.budgetActuals[k]||0) > 0 || Number(state.budgetForm[k]) > 0)
+      .sort((a,b)=> (state.budgetActuals[b]||0) - (state.budgetActuals[a]||0));
+  }
   const DRAFT_KEY = 'muc-tieu-' + month;
-  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { goal: state.goal, goal_first_reaction: state.goal_first_reaction, selectedResistance: state.selectedResistance, obstacleInput: state.obstacleInput, step: state.step }); }
+  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { goal: state.goal, goal_first_reaction: state.goal_first_reaction, selectedResistance: state.selectedResistance, obstacleInput: state.obstacleInput, step: state.step, budgetForm: state.budgetForm }); }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
 
   async function load(){
     state.loading = true; draw();
-    const [reflRes, obstaclesRes] = await Promise.all([
+    const monthStart = `${month}-01`;
+    const [y, mo] = month.split('-').map(Number);
+    const monthEndExclusive = `${new Date(y, mo, 1).getFullYear()}-${String(new Date(y, mo, 1).getMonth()+1).padStart(2,'0')}-01`;
+    const [reflRes, obstaclesRes, entriesRes, budgetsRes] = await Promise.all([
       ctx.supabase.from('tc_monthly_reflections').select('*').eq('user_id', ctx.user.id).eq('month', month).maybeSingle(),
       ctx.supabase.from('tc_obstacle_log').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(20),
+      ctx.supabase.from('tc_finance_entries').select('amount, category_label')
+        .eq('user_id', ctx.user.id).eq('type', 'expense').gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
+      ctx.supabase.from('tc_budgets').select('*').eq('user_id', ctx.user.id).eq('month', month),
     ]);
     const r = reflRes.data;
     if(r){
@@ -50,6 +68,13 @@ function render(container, ctx){
       state.goal_first_reaction = r.goal_first_reaction || '';
       state.step = hasAnyGoal(state.goal) ? 'summary' : 'goal';
     }
+    state.budgetActuals = {};
+    (entriesRes.data||[]).forEach(e=>{
+      const key = e.category_label || 'Khác';
+      state.budgetActuals[key] = (state.budgetActuals[key]||0) + Number(e.amount);
+    });
+    state.budgetForm = {};
+    (budgetsRes.data||[]).forEach(b=>{ state.budgetForm[b.category_label] = String(b.limit_amount); });
     // Draft (đang gõ dở, chưa bấm Lưu) đè lên SAU dữ liệu đã lưu — draft luôn là bản mới hơn.
     const draft = await loadModuleDraft(ctx, DRAFT_KEY);
     if(draft){
@@ -58,10 +83,25 @@ function render(container, ctx){
       if(draft.selectedResistance) state.selectedResistance = draft.selectedResistance;
       if(draft.obstacleInput) state.obstacleInput = draft.obstacleInput;
       if(draft.step) state.step = draft.step;
+      if(draft.budgetForm) Object.assign(state.budgetForm, draft.budgetForm);
     }
     state.obstacles = obstaclesRes.data || [];
     state.loading = false;
     draw();
+  }
+
+  async function saveBudget(){
+    state.savingBudget = true; draw();
+    const rows = Object.keys(state.budgetForm)
+      .filter(key => key.trim() && Number(state.budgetForm[key]) > 0)
+      .map(key => ({ user_id: ctx.user.id, month, category_label: key, limit_amount: Number(state.budgetForm[key]) }));
+    if(rows.length > 0){
+      await ctx.supabase.from('tc_budgets').upsert(rows, { onConflict:'user_id,month,category_label' });
+    }
+    state.savingBudget = false;
+    state.savedBudgetMsg = 'Đã lưu ✓';
+    await load();
+    setTimeout(()=>{ state.savedBudgetMsg=''; const el = container.querySelector('#mt-budget-saved'); if(el) el.textContent=''; }, 1800);
   }
 
   async function saveGoal(){
@@ -197,6 +237,42 @@ function render(container, ctx){
         </div>
 
         <div class="section">
+          <h3>Ngân sách chi tiêu tháng này</h3>
+          <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;">Đặt hạn mức từng danh mục TRƯỚC khi tiêu — cùng tinh thần với Lời Cam Kết ở trên. Xem chi tiêu thật đã tiêu vào đâu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a>.</p>
+          ${budgetCategoryKeys().length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có chi tiêu hoặc hạn mức nào tháng này.</div>` : budgetCategoryKeys().map(key=>{
+            const actual = state.budgetActuals[key]||0;
+            const limit = Number(state.budgetForm[key])||0;
+            const pct = limit>0 ? Math.min(100, Math.round(actual/limit*100)) : 0;
+            const over = limit>0 && actual>limit;
+            return `
+              <div style="margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px;">
+                  <span>${esc(key)}</span>
+                  <span>${actual.toLocaleString('vi-VN')}đ${limit>0?` / ${limit.toLocaleString('vi-VN')}đ`:''}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden;">
+                    <div style="height:100%;width:${limit>0?pct:0}%;background:${over?'var(--danger)':'var(--accent)'};border-radius:999px;"></div>
+                  </div>
+                  <input type="number" min="0" data-budget="${esc(key)}" value="${esc(state.budgetForm[key]||'')}" placeholder="Hạn mức" style="width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#FDFCF8;color:var(--ink);">
+                </div>
+                ${over?`<div style="font-size:11.5px;color:var(--danger);margin-top:2px;">Đã vượt hạn mức ${(actual-limit).toLocaleString('vi-VN')}đ</div>`:''}
+              </div>
+            `;
+          }).join('')}
+          <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+            <input type="text" id="mt-new-budget-category" list="mt-budget-category-datalist" placeholder="+ Thêm danh mục ngân sách..." style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
+            <datalist id="mt-budget-category-datalist">
+              ${SUGGESTED_EXPENSE_CATEGORIES.map(c=>`<option value="${esc(c)}">`).join('')}
+            </datalist>
+            <input type="number" min="0" id="mt-new-budget-amount" placeholder="Hạn mức" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
+            <span class="btn-ghost btn btn-sm" id="mt-add-budget-category">+ Thêm</span>
+          </div>
+          <button class="btn btn-sm" style="margin-top:14px;" id="mt-save-budget" ${state.savingBudget?'disabled':''}>${state.savingBudget?'Đang lưu…':'Lưu ngân sách'}</button>
+          <span id="mt-budget-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedBudgetMsg}</span>
+        </div>
+
+        <div class="section">
           <h3>Nhật Ký Rắc Rối</h3>
           <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;">Có chuyện gì vừa cản trở bạn trên đường tới mục tiêu? Ghi lại ngay lúc vừa xảy ra — app sẽ phản chiếu lại 1 góc nhìn khác ngay bên dưới, để chuyện này không âm thầm khiến bạn bỏ cuộc. Chỉ để bạn tự nhìn lại, không tính vào Điểm Nghiệp hay điểm số nào.</p>
           <input type="text" id="mt-obstacle-input" value="${esc(state.obstacleInput)}" placeholder="Vừa có chuyện gì cản trở bạn?" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
@@ -244,6 +320,23 @@ function render(container, ctx){
 
     const editBtn = container.querySelector('#mt-edit-goal');
     if(editBtn) editBtn.onclick = ()=>{ state.step = 'goal'; draw(); persistDraft(); };
+
+    container.querySelectorAll('[data-budget]').forEach(el=>{
+      el.oninput = ()=>{ state.budgetForm[el.getAttribute('data-budget')] = el.value; persistDraft(); };
+    });
+    const addBudgetCategoryBtn = container.querySelector('#mt-add-budget-category');
+    if(addBudgetCategoryBtn) addBudgetCategoryBtn.onclick = ()=>{
+      const nameEl = container.querySelector('#mt-new-budget-category');
+      const amountEl = container.querySelector('#mt-new-budget-amount');
+      const name = nameEl.value.trim();
+      if(!name || !Number(amountEl.value)) return;
+      state.budgetActuals[name] = state.budgetActuals[name] || 0;
+      state.budgetForm[name] = amountEl.value;
+      draw();
+      persistDraft();
+    };
+    const saveBudgetBtn = container.querySelector('#mt-save-budget');
+    if(saveBudgetBtn) saveBudgetBtn.onclick = saveBudget;
 
     const obstacleInput = container.querySelector('#mt-obstacle-input');
     if(obstacleInput) obstacleInput.oninput = (e)=>{ state.obstacleInput = e.target.value; persistDraft(); };

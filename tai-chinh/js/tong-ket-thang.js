@@ -17,7 +17,10 @@ const EMPTY_NETWORTH = Object.fromEntries([...ASSET_FIELDS, ...DEBT_FIELDS].map(
 // Chỉ còn "Bài học nhìn lại tháng qua" (retrospective) ở đây — phần đặt mục tiêu (goal_*, prospective)
 // đã chuyển hẳn sang module "Mục Tiêu & Cam Kết" (tai-chinh/js/muc-tieu-cam-ket.js), theo đúng góp ý
 // Quỳnh 2026-08-21: đặt mục tiêu phải là 1 khoảnh khắc riêng TRƯỚC khi ghi chép, không gộp chung
-// với việc nhìn lại cuối tháng.
+// với việc nhìn lại cuối tháng. Cùng lý do đó, KHOẢN NGÂN SÁCH (đặt hạn mức, cũng là 1 việc làm
+// TRƯỚC khi tiêu) chuyển sang muc-tieu-cam-ket.js luôn (2026-08-24, góp ý Quỳnh "ngân sách phải ở
+// phần mục tiêu chứ") — ở đây chỉ còn XEM chi tiêu thật đã tiêu vào đâu (mục A1), không còn đặt/sửa
+// hạn mức.
 const EMPTY_REFLECTION = {
   reflection_regret:'', reflection_worth:'', reflection_blocker:'', reflection_good_habit:'', reflection_bad_habit:'',
 };
@@ -91,14 +94,11 @@ function render(container, ctx){
     networthHistory: [],
     reflection: { ...EMPTY_REFLECTION },
     budgetActuals: {},
-    budgetForm: {},
     totalMinPayments: 0,
     savingNetworth: false,
     savingReflection: false,
-    savingBudget: false,
     savedNetworthMsg: '',
     savedReflectionMsg: '',
-    savedBudgetMsg: '',
     expenseEntries: [],
     // Tab "Chi tiết" (donut theo danh mục) / "Xu hướng" (cột theo từng khoảng ngày trong tháng) —
     // kiểu Money Lover, 2026-08-24 góp ý Quỳnh. Không lưu draft — chỉ là cách xem, không phải dữ liệu.
@@ -107,11 +107,11 @@ function render(container, ctx){
   // Draft khoá riêng theo TỪNG THÁNG (giống tong-ket-tuan.js) — đổi tháng (Tháng trước/sau) không
   // được dán nhầm bản nháp của tháng khác vào (góp ý Quỳnh 2026-08-22: gõ dở bị mất khi rời trang).
   function draftKey(){ return 'tong-ket-thang-' + state.month; }
-  function persistDraft(){ saveModuleDraft(ctx, draftKey(), { networth: state.networth, reflection: state.reflection, budgetForm: state.budgetForm }); }
-  // Không gọi clearModuleDraft() sau mỗi lần lưu — 3 khối (ngân sách/tài sản/bài học) lưu ĐỘC LẬP,
-  // xoá cả draft khi chỉ 1 khối vừa lưu sẽ mất nháp đang gõ dở của 2 khối còn lại. Vô hại nếu để
-  // draft tồn tại sau khi đã lưu: load() luôn merge draft ĐÈ SAU dữ liệu thật, nên khối đã lưu chỉ
-  // bị ghi đè lại đúng giá trị vừa lưu (không đổi gì).
+  function persistDraft(){ saveModuleDraft(ctx, draftKey(), { networth: state.networth, reflection: state.reflection }); }
+  // Không gọi clearModuleDraft() sau mỗi lần lưu — 2 khối (tài sản/bài học) lưu ĐỘC LẬP, xoá cả draft
+  // khi chỉ 1 khối vừa lưu sẽ mất nháp đang gõ dở của khối còn lại. Vô hại nếu để draft tồn tại sau
+  // khi đã lưu: load() luôn merge draft ĐÈ SAU dữ liệu thật, nên khối đã lưu chỉ bị ghi đè lại đúng
+  // giá trị vừa lưu (không đổi gì).
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -120,7 +120,7 @@ function render(container, ctx){
     state.loading = true; draw();
     const monthStart = `${state.month}-01`;
     const monthEndExclusive = `${nextMonthKey(state.month)}-01`;
-    const [entriesRes, snapshotRes, historyRes, reflectionRes, budgetsRes, debtsRes] = await Promise.all([
+    const [entriesRes, snapshotRes, historyRes, reflectionRes, debtsRes] = await Promise.all([
       ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
         .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
       ctx.supabase.from('tc_networth_snapshots').select('*')
@@ -129,8 +129,6 @@ function render(container, ctx){
         .eq('user_id', ctx.user.id).order('snapshot_month', { ascending:true }),
       ctx.supabase.from('tc_monthly_reflections').select('*')
         .eq('user_id', ctx.user.id).eq('month', state.month).maybeSingle(),
-      ctx.supabase.from('tc_budgets').select('*')
-        .eq('user_id', ctx.user.id).eq('month', state.month),
       ctx.supabase.from('tc_debts').select('minimum_payment')
         .eq('user_id', ctx.user.id).eq('is_paid_off', false),
     ]);
@@ -145,8 +143,6 @@ function render(container, ctx){
       const key = e.category_label || 'Khác';
       state.budgetActuals[key] = (state.budgetActuals[key]||0) + Number(e.amount);
     });
-    state.budgetForm = {};
-    (budgetsRes.data||[]).forEach(b=>{ state.budgetForm[b.category_label] = String(b.limit_amount); });
     state.totalMinPayments = (debtsRes.data||[]).reduce((s,d)=>s+Number(d.minimum_payment||0),0);
     const snap = snapshotRes.data;
     state.networth = snap
@@ -162,24 +158,9 @@ function render(container, ctx){
     if(draft){
       if(draft.networth) Object.assign(state.networth, draft.networth);
       if(draft.reflection) Object.assign(state.reflection, draft.reflection);
-      if(draft.budgetForm) Object.assign(state.budgetForm, draft.budgetForm);
     }
     state.loading = false;
     draw();
-  }
-
-  async function saveBudget(){
-    state.savingBudget = true; draw();
-    const rows = Object.keys(state.budgetForm)
-      .filter(key => key.trim() && Number(state.budgetForm[key]) > 0)
-      .map(key => ({ user_id: ctx.user.id, month: state.month, category_label: key, limit_amount: Number(state.budgetForm[key]) }));
-    if(rows.length > 0){
-      await ctx.supabase.from('tc_budgets').upsert(rows, { onConflict:'user_id,month,category_label' });
-    }
-    state.savingBudget = false;
-    state.savedBudgetMsg = 'Đã lưu ✓';
-    await load();
-    setTimeout(()=>{ state.savedBudgetMsg=''; const el = container.querySelector('#tk-budget-saved'); if(el) el.textContent=''; }, 1800);
   }
 
   async function saveNetworth(){
@@ -217,10 +198,6 @@ function render(container, ctx){
     const dti = state.cashFlow.income>0 ? Math.round(state.totalMinPayments/state.cashFlow.income*100) : null;
     const dtiColor = dti==null ? 'var(--ink)' : dti<36 ? 'var(--accent)' : dti<43 ? 'var(--gold)' : 'var(--danger)';
 
-    const budgetCategoryKeys = [...new Set([...Object.keys(state.budgetActuals), ...Object.keys(state.budgetForm)])]
-      .filter(k => (state.budgetActuals[k]||0) > 0 || Number(state.budgetForm[k]) > 0)
-      .sort((a,b)=> (state.budgetActuals[b]||0) - (state.budgetActuals[a]||0));
-
     const expenseByCategory = Object.entries(state.budgetActuals).map(([label,amount])=>({label,amount})).sort((a,b)=>b.amount-a.amount);
     const expenseByDayRange = groupByDayRange(state.expenseEntries, state.month);
 
@@ -251,41 +228,6 @@ function render(container, ctx){
         <div class="section">
           <h3>A1. Chi tiêu theo danh mục</h3>
           ${breakdownToggleHtml('expense', state.breakdownTab, expenseByCategory, expenseByDayRange, 'var(--danger)')}
-        </div>
-
-        <div class="section">
-          <h3>A2. Ngân sách chi tiêu tháng này</h3>
-          ${budgetCategoryKeys.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có chi tiêu hoặc hạn mức nào tháng này.</div>` : budgetCategoryKeys.map(key=>{
-            const actual = state.budgetActuals[key]||0;
-            const limit = Number(state.budgetForm[key])||0;
-            const pct = limit>0 ? Math.min(100, Math.round(actual/limit*100)) : 0;
-            const over = limit>0 && actual>limit;
-            return `
-              <div style="margin-bottom:14px;">
-                <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px;">
-                  <span>${esc(key)}</span>
-                  <span>${actual.toLocaleString('vi-VN')}đ${limit>0?` / ${limit.toLocaleString('vi-VN')}đ`:''}</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden;">
-                    <div style="height:100%;width:${limit>0?pct:0}%;background:${over?'var(--danger)':'var(--accent)'};border-radius:999px;"></div>
-                  </div>
-                  <input type="number" min="0" data-budget="${esc(key)}" value="${esc(state.budgetForm[key]||'')}" placeholder="Hạn mức" style="width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#FDFCF8;color:var(--ink);">
-                </div>
-                ${over?`<div style="font-size:11.5px;color:var(--danger);margin-top:2px;">Đã vượt hạn mức ${(actual-limit).toLocaleString('vi-VN')}đ</div>`:''}
-              </div>
-            `;
-          }).join('')}
-          <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
-            <input type="text" id="tk-new-budget-category" list="tk-budget-category-datalist" placeholder="+ Thêm danh mục ngân sách..." style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
-            <datalist id="tk-budget-category-datalist">
-              ${SUGGESTED_EXPENSE_CATEGORIES.map(c=>`<option value="${esc(c)}">`).join('')}
-            </datalist>
-            <input type="number" min="0" id="tk-new-budget-amount" placeholder="Hạn mức" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
-            <span class="btn-ghost btn btn-sm" id="tk-add-budget-category">+ Thêm</span>
-          </div>
-          <button class="btn btn-sm" style="margin-top:14px;" id="tk-save-budget" ${state.savingBudget?'disabled':''}>${state.savingBudget?'Đang lưu…':'Lưu ngân sách'}</button>
-          <span id="tk-budget-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedBudgetMsg}</span>
         </div>
 
         <div class="section">
@@ -386,23 +328,6 @@ function render(container, ctx){
     });
     const saveNetworthBtn = container.querySelector('#tk-save-networth');
     if(saveNetworthBtn) saveNetworthBtn.onclick = saveNetworth;
-
-    container.querySelectorAll('[data-budget]').forEach(el=>{
-      el.oninput = ()=>{ state.budgetForm[el.getAttribute('data-budget')] = el.value; persistDraft(); };
-    });
-    const addBudgetCategoryBtn = container.querySelector('#tk-add-budget-category');
-    if(addBudgetCategoryBtn) addBudgetCategoryBtn.onclick = ()=>{
-      const nameEl = container.querySelector('#tk-new-budget-category');
-      const amountEl = container.querySelector('#tk-new-budget-amount');
-      const name = nameEl.value.trim();
-      if(!name || !Number(amountEl.value)) return;
-      state.budgetActuals[name] = state.budgetActuals[name] || 0;
-      state.budgetForm[name] = amountEl.value;
-      draw();
-      persistDraft();
-    };
-    const saveBudgetBtn = container.querySelector('#tk-save-budget');
-    if(saveBudgetBtn) saveBudgetBtn.onclick = saveBudget;
 
     container.querySelectorAll('[data-reflection]').forEach(el=>{
       el.oninput = ()=>{ state.reflection[el.getAttribute('data-reflection')] = el.value; persistDraft(); };
