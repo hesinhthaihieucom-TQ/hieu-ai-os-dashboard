@@ -1,7 +1,8 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" }
+    { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" },
+    { "source": "/san-pham-so/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300 },
@@ -41,6 +42,14 @@
     },
     {
       "source": "/he-sinh-thai-hieu/script.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/san-pham-so/p/script.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/san-pham-so/p/style.css",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     }
   ]

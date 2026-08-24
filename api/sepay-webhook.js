@@ -10,6 +10,8 @@
 // method "API Key" cấu hình trong SePay dashboard khi tạo webhook). Dùng SUPABASE_SERVICE_ROLE_KEY
 // (bỏ qua RLS) vì đây là thao tác hệ thống, không gắn với 1 phiên đăng nhập user nào.
 
+const crypto = require('crypto');
+
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
 // Số tiền → số ngày được cộng thêm. Phải khớp CHÍNH XÁC 1 trong các mức giá đang bán, và
@@ -85,6 +87,16 @@ function timingSafeEqual(a, b) {
 
 function extractRefCode(content) {
   const m = /XNH[A-Z0-9]{6}/i.exec(content || '');
+  return m ? m[0].toUpperCase() : null;
+}
+
+// Sản Phẩm Số (san-pham-so/) — mã đơn hàng của khách MUA LẺ, KHÔNG có tài khoản/profile (khác hẳn
+// XNH ở trên, gắn với 1 profile). Tiền tố "SPS" tách biệt hoàn toàn khỏi "XNH" nên 2 luồng đối chiếu
+// không bao giờ đụng nhau dù cùng chạy trong 1 webhook. Không dùng bảng số tiền cố định như
+// AMOUNT_TO_DAYS (giá sản phẩm số do người bán tự đặt, không cố định) — tra thẳng theo ref_code, số
+// tiền chỉ để đối chiếu an toàn (xem nhánh xử lý bên dưới).
+function extractProductOrderRefCode(content) {
+  const m = /SPS[A-Z0-9]{6,}/i.exec(content || '');
   return m ? m[0].toUpperCase() : null;
 }
 
@@ -239,8 +251,12 @@ module.exports = async (req, res) => {
     }
 
     const refCode = extractRefCode(content);
+    // Chỉ thử nhận diện mã đơn Sản Phẩm Số nếu KHÔNG khớp mã XNH — 2 định dạng không thể cùng khớp
+    // 1 nội dung chuyển khoản thật (tiền tố khác nhau), nhưng giữ if/else rõ ràng cho dễ đọc.
+    const productOrderRefCode = !refCode ? extractProductOrderRefCode(content) : null;
     let status = 'unmatched_code';
     let matchedProfileId = null;
+    let matchedProductOrderId = null;
     let daysGranted = null;
     let topupLuotGranted = null;
 
@@ -317,6 +333,37 @@ module.exports = async (req, res) => {
       } else {
         status = 'unmatched_code';
       }
+    } else if (productOrderRefCode) {
+      // Sản Phẩm Số — khách mua lẻ không có profile, tra thẳng theo ref_code của ĐÚNG đơn hàng
+      // (không đối chiếu qua bảng số tiền cố định vì giá do người bán tự đặt). Số tiền chỉ dùng để
+      // đối chiếu AN TOÀN — lệch số tiền thì KHÔNG duyệt, ghi 'unmatched_amount' để tự soát tay.
+      const orderResp = await supabaseAdmin(`digital_product_orders?ref_code=eq.${productOrderRefCode}&select=id,status,amount`);
+      const orderRows = orderResp.ok ? await orderResp.json() : [];
+      const order = orderRows[0];
+
+      if (order) {
+        if (order.status === 'paid') {
+          // SePay gửi lại đúng giao dịch đã xử lý (retry) — coi như thành công, không lỗi, không
+          // patch lại (idempotent, tránh cấp lại download_token mới làm mất token đã gửi khách).
+          status = 'matched';
+          matchedProductOrderId = order.id;
+        } else if (order.amount === transferAmount) {
+          const updateResp = await supabaseAdmin(`digital_product_orders?id=eq.${order.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'paid', paid_at: new Date().toISOString(), download_token: crypto.randomUUID() }),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProductOrderId = order.id;
+          } else {
+            status = 'unmatched_amount';
+          }
+        } else {
+          status = 'unmatched_amount';
+        }
+      } else {
+        status = 'unmatched_code';
+      }
     }
 
     await supabaseAdmin('sepay_transactions', {
@@ -329,8 +376,9 @@ module.exports = async (req, res) => {
         account_number: accountNumber || null,
         transfer_amount: transferAmount || null,
         content: content || null,
-        ref_code_found: refCode,
+        ref_code_found: refCode || productOrderRefCode,
         matched_profile_id: matchedProfileId,
+        matched_product_order_id: matchedProductOrderId,
         days_granted: daysGranted,
         topup_luot_granted: topupLuotGranted,
         status,
