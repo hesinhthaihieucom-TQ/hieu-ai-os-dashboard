@@ -5,7 +5,7 @@
 <title>HIỂU AI OS — Bảng Điều Khiển</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #F2EFE4;
@@ -20,6 +20,7 @@
     --branch-hanh: #B8862E;
     --branch-kenh: #A6462E;
     --branch-vip:  #6B4A7A;
+    --content-accent: #2E6E8E;
 
     --st-confirmed: #2F6F62;
     --st-current:   #2563A6;
@@ -36,7 +37,7 @@
   body{
     background:var(--bg);
     color:var(--ink);
-    font-family:'Inter',sans-serif;
+    font-family:'Be Vietnam Pro',sans-serif;
     display:flex;
     min-height:100vh;
   }
@@ -55,7 +56,7 @@
     height:100vh;
   }
   .dock-brand{
-    font-family:'Fraunces',serif;
+    font-family:'Playfair Display',serif;
     font-size:20px;
     font-weight:700;
     letter-spacing:0.02em;
@@ -104,7 +105,7 @@
     position:sticky; top:0; background:var(--bg); z-index:5;
   }
   .topbar-row{ display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
-  .view-title{ font-family:'Fraunces',serif; font-size:26px; font-weight:600; margin:0; }
+  .view-title{ font-family:'Playfair Display',serif; font-size:26px; font-weight:600; margin:0; }
   .view-sub{ color:var(--ink-soft); font-size:13.5px; margin-top:4px; }
 
   .search-box{
@@ -144,7 +145,7 @@
 
   .branch-block{ margin-bottom:34px; }
   .branch-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-  .branch-head h2{ font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin:0; }
+  .branch-head h2{ font-family:'Playfair Display',serif; font-size:18px; font-weight:600; margin:0; }
   .branch-bar{ width:5px; height:20px; border-radius:3px; }
 
   .cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
@@ -194,14 +195,14 @@
     background:var(--bg-panel); border:1px solid var(--line); border-radius:14px;
     padding:26px 28px; margin-bottom:24px;
   }
-  .intro-card h1{ font-family:'Fraunces',serif; font-size:28px; margin:0 0 6px; }
+  .intro-card h1{ font-family:'Playfair Display',serif; font-size:28px; margin:0 0 6px; }
   .intro-flow{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; font-family:'IBM Plex Mono',monospace; font-size:13px; }
   .intro-flow span.step{ background:var(--bg); border:1px solid var(--line); padding:6px 12px; border-radius:100px; }
   .intro-flow span.arrow{ color:var(--ink-soft); }
 
   .three-branch-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:18px; }
   .branch-tile{ border-radius:12px; padding:18px; color:#fff; }
-  .branch-tile h3{ font-family:'Fraunces',serif; margin:0 0 6px; font-size:17px; }
+  .branch-tile h3{ font-family:'Playfair Display',serif; margin:0 0 6px; font-size:17px; }
   .branch-tile p{ margin:0; font-size:12.5px; opacity:0.92; line-height:1.5; }
 
   .gap-row{ display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
@@ -212,6 +213,30 @@
 
   .empty{ padding:40px 0; text-align:center; color:var(--ink-soft); font-size:13.5px; }
   .updated-tag{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+
+  .badge-pill{ display:inline-flex; align-items:center; gap:6px; background:var(--dock-bg); color:var(--dock-ink); font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.05em; padding:6px 14px; border-radius:100px; margin-bottom:14px; }
+  .stat-row{ display:flex; gap:36px; flex-wrap:wrap; margin-top:18px; }
+  .stat-num b{ font-family:'Playfair Display',serif; font-size:30px; display:block; color:var(--content-accent); line-height:1.15; }
+  .stat-num span{ font-size:11.5px; color:var(--ink-soft); }
+  .week-tabs{ display:flex; gap:20px; flex-wrap:wrap; margin-top:20px; border-bottom:1px solid var(--line); }
+  .week-tab{ padding:8px 2px 10px; font-size:13px; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent; user-select:none; }
+  .week-tab:hover{ color:var(--ink); }
+  .week-tab.active{ color:var(--ink); font-weight:600; border-bottom-color:var(--content-accent); }
+  .week-banner{ background:var(--content-accent); color:#fff; border-radius:12px; padding:18px 22px; margin:18px 0; }
+  .week-banner .tag{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.08em; opacity:0.85; text-transform:uppercase; }
+  .week-banner h3{ font-family:'Playfair Display',serif; font-size:20px; margin:6px 0 4px; }
+  .week-banner p{ margin:0; font-size:12.5px; opacity:0.9; }
+  .day-cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+  .day-card{ display:flex; gap:14px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; }
+  .day-num{ font-family:'Playfair Display',serif; font-size:30px; font-weight:700; color:var(--content-accent); line-height:1; flex-shrink:0; width:40px; }
+  .day-body{ flex:1; min-width:0; }
+  .pill-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  .platform-pill{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.04em; padding:3px 8px; border-radius:100px; color:#fff; white-space:nowrap; }
+  .level-pill{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.02em; padding:3px 8px; border-radius:100px; background:var(--st-needs); color:#fff; white-space:nowrap; }
+  .theme-pill{ font-size:9.5px; font-weight:600; padding:3px 8px; border-radius:100px; background:var(--bg); color:var(--ink-soft); white-space:nowrap; }
+  .hook-box{ margin-top:10px; background:var(--bg); border-radius:8px; padding:10px 12px; }
+  .hook-label{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:4px; text-transform:uppercase; }
+  .hook-text{ font-size:13px; font-style:italic; line-height:1.5; margin:0; }
 
   @media (max-width:820px){
     body{ flex-direction:column; }
@@ -229,6 +254,7 @@
   <div class="dock-nav" id="dockNav">
     <div class="dock-item active" data-view="overview"><span class="dot" style="background:#9CA396"></span>Tổng quan</div>
     <div class="dock-item" data-view="products"><span class="dot" style="background:var(--branch-manh)"></span>Sản phẩm &amp; Giá</div>
+    <div class="dock-item" data-view="content"><span class="dot" style="background:var(--content-accent)"></span>Content Marketing</div>
     <div class="dock-item" data-view="offers"><span class="dot" style="background:var(--branch-hanh)"></span>Offer đang chạy</div>
     <div class="dock-item" data-view="policy"><span class="dot" style="background:var(--branch-kenh)"></span>Policy</div>
     <div class="dock-item" data-view="resources"><span class="dot" style="background:var(--branch-vip)"></span>Link &amp; Resource</div>
@@ -279,13 +305,14 @@
         </div>
       </div>
       <div class="intro-card">
-        <h2 style="font-family:'Fraunces',serif;font-size:18px;margin:0 0 6px;">Chú giải trạng thái (Status Enum)</h2>
+        <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin:0 0 6px;">Chú giải trạng thái (Status Enum)</h2>
         <div class="view-sub" style="margin-top:0;">Bấm vào chip trạng thái ở thanh trên để lọc trên các tab khác.</div>
         <div class="legend" id="legendBig"></div>
       </div>
     </div>
 
     <div class="view" data-view="products"><div id="productsContainer"></div></div>
+    <div class="view" data-view="content"><div id="contentContainer"></div></div>
     <div class="view" data-view="offers"><div id="offersContainer"></div></div>
     <div class="view" data-view="policy"><div id="policyContainer"></div></div>
     <div class="view" data-view="resources"><div id="resourcesContainer"></div></div>
@@ -314,6 +341,12 @@ const BRANCH_META = {
 let DATA = null;
 let activeStatusFilter = null;
 let searchTerm = "";
+let activeContentTheme = null;
+let activeContentPlatform = null;
+let activeContentWeek = 1;
+const LEVEL_LABELS = { 1:"Cấp 1 – Nhận Biết", 2:"Cấp 2 – Cân Nhắc", 3:"Cấp 3 – Ứng Dụng", 4:"Cấp 4 – Chuyển Đổi" };
+const THEME_EMOJI = { "Tâm Thức":"🧠", "Tài Chính":"💰", "Sức Khỏe":"💪", "Quan Hệ":"🤝", "Mục Đích Sống":"🎯" };
+const PLATFORM_COLORS = { "TikTok":"#C2255C", "Facebook":"#2563A6", "Instagram":"#8E44AD" };
 
 function badge(status){
   const meta = STATUS_META[status] || { label:status, color:"var(--ink-soft)" };
@@ -326,7 +359,7 @@ function matchesStatus(status){ if(!activeStatusFilter) return true; return stat
 
 function renderTicker(){
   const counts = {};
-  const all = [...DATA.products, ...DATA.offers, ...DATA.policies, ...DATA.resources];
+  const all = [...DATA.products, ...DATA.offers, ...DATA.policies, ...DATA.resources, ...DATA.contentPlan, ...DATA.contentCalendar.days];
   all.forEach(x => counts[x.status] = (counts[x.status]||0)+1);
   const el = document.getElementById('statusTicker');
   el.innerHTML = Object.keys(STATUS_META).filter(s=>counts[s]).map(s=>{
@@ -369,13 +402,127 @@ function renderProducts(){
           ${badge(p.status)}
         </div>
         <div class="card-meta">${p.type} · ${p.role}${p.offerId? " · Offer: "+p.offerId:""}</div>
-        <div class="card-price">${p.price}${p.priceOld? `<span class="old">${p.priceOld}</span>`:""}</div>
+        ${p.priceOptions? `<div class="card-price">${p.priceOptions.map(o=>`${o.label}: ${o.price}${o.unit}${o.recommended? " ★":""}`).join(" &nbsp;·&nbsp; ")}</div>` : `<div class="card-price">${p.price}${p.priceOld? `<span class="old">${p.priceOld}</span>`:""}</div>`}
         ${p.notes? `<div class="card-notes">${p.notes}</div>`:""}
       </div>`;
     });
     html += `</div></div>`;
   });
   container.innerHTML = html || `<div class="empty">Không có sản phẩm phù hợp bộ lọc.</div>`;
+}
+function renderContent(){
+  const container = document.getElementById('contentContainer');
+  const branches = ["HIỂU MẠNH","HIỂU HẠNH","HIỂU KÊNH","VIP"];
+  const cal = DATA.contentCalendar;
+
+  let html = `<div class="intro-card">
+    <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin:0 0 6px;">Content Pillars theo nhánh</h2>
+    <div class="view-sub" style="margin-top:0;">Trụ nội dung xoay quanh, dùng làm khung lên ý tưởng cho từng nhánh.</div>
+    <div class="three-branch-grid">`;
+  DATA.contentPillars.forEach(cp=>{
+    html += `<div class="branch-tile" style="background:${BRANCH_META[cp.branch]?.color || 'var(--content-accent)'}">
+      <h3>${cp.branch}</h3>
+      <p>${cp.pillars.join(" · ")}</p>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // --- Lịch Nội Dung 30 Ngày ---
+  html += `<div class="intro-card">
+    <div class="badge-pill">📅 LỊCH NỘI DUNG · ${cal.days.length} NGÀY · ${cal.themes.length} CHỦ ĐỀ · 4 CẤP ĐỘ</div>
+    <h1 style="font-size:24px;">${cal.title}</h1>
+    <div class="view-sub" style="margin-top:0;">Kế hoạch nội dung xuyên nhánh cho toàn Hệ Sinh Thái HIỂU — xây dần theo tuần, cập nhật khi có bài mới.</div>
+    <div class="stat-row">
+      <div class="stat-num"><b>${cal.days.length}</b><span>Ngày nội dung</span></div>
+      <div class="stat-num"><b>${cal.themes.length}</b><span>Chủ đề</span></div>
+      <div class="stat-num"><b>4</b><span>Cấp độ</span></div>
+      <div class="stat-num"><b>${cal.platforms.length}</b><span>Nền tảng</span></div>
+    </div>
+    <div class="ticker" id="themeTicker" style="margin-top:20px;">
+      <div class="chip${activeContentTheme===null?' active':''}" data-theme-chip="" style="${activeContentTheme===null? 'background:var(--content-accent);color:#fff;':''}">Tất cả chủ đề</div>
+      ${cal.themes.map(t=>`<div class="chip${activeContentTheme===t?' active':''}" data-theme-chip="${t}" style="${activeContentTheme===t? 'background:var(--content-accent);color:#fff;':''}">${THEME_EMOJI[t]||""} ${t}</div>`).join("")}
+    </div>
+    <div class="ticker" id="platformTicker">
+      <div class="chip${activeContentPlatform===null?' active':''}" data-platform-chip="" style="${activeContentPlatform===null? 'background:var(--content-accent);color:#fff;':''}">Tất cả nền tảng</div>
+      ${cal.platforms.map(p=>`<div class="chip${activeContentPlatform===p?' active':''}" data-platform-chip="${p}" style="${activeContentPlatform===p? 'background:var(--content-accent);color:#fff;':''}">${p}</div>`).join("")}
+    </div>
+    <div class="week-tabs" id="weekTabs">
+      ${[1,2,3,4,5].map(w=>{
+        const label = cal.days.find(d=>d.week===w)?.weekLabel || `Tuần ${w}`;
+        return `<div class="week-tab${activeContentWeek===w?' active':''}" data-week-tab="${w}">${label}</div>`;
+      }).join("")}
+    </div>
+  </div>`;
+
+  const weekDays = cal.days.filter(d=>d.week===activeContentWeek);
+  const dayNums = weekDays.map(d=>d.day);
+  const weekLabelText = weekDays[0]?.weekLabel || `Tuần ${activeContentWeek}`;
+  html += `<div class="week-banner">
+    <div class="tag">Tuần ${activeContentWeek} · Ngày ${Math.min(...dayNums)}-${Math.max(...dayNums)}</div>
+    <h3>${weekLabelText.replace(/^Tuần \d+ ?[—-]?\s*/,'')}</h3>
+    <p>Bấm chủ đề/nền tảng ở trên để lọc riêng, hoặc xem toàn bộ ${weekDays.length} ngày của tuần này.</p>
+  </div>`;
+
+  const days = weekDays.filter(d=>
+    (activeContentTheme===null || d.theme===activeContentTheme) &&
+    (activeContentPlatform===null || d.platforms.includes(activeContentPlatform)) &&
+    matchesStatus(d.status) && matchesSearch(d.day+" "+d.title+" "+d.theme)
+  );
+  html += `<div class="day-cards">`;
+  if(days.length===0){
+    html += `<div class="empty">Không có ngày nào phù hợp bộ lọc trong tuần này.</div>`;
+  }
+  days.forEach(d=>{
+    html += `<div class="day-card">
+      <div class="day-num">${String(d.day).padStart(2,'0')}</div>
+      <div class="day-body">
+        <div class="pill-row">
+          ${d.platforms.map(p=>`<span class="platform-pill" style="background:${PLATFORM_COLORS[p]||'var(--ink-soft)'}">${p.toUpperCase()}</span>`).join("")}
+          <span class="level-pill">${LEVEL_LABELS[d.level]}</span>
+          <span class="theme-pill">${THEME_EMOJI[d.theme]||""} ${d.theme}</span>
+          ${badge(d.status)}
+        </div>
+        <div class="card-name">${d.title}</div>
+        ${d.hook? `<div class="hook-box"><div class="hook-label">Hook 3 giây</div><p class="hook-text">"${d.hook}"</p></div>`:""}
+        ${d.notes? `<div class="card-notes">${d.notes}</div>`:""}
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // --- Backlog theo nhánh (ý tưởng khác, chưa lên lịch cụ thể) ---
+  html += `<div class="branch-head" style="margin-top:30px;"><h2 style="font-family:'Playfair Display',serif;font-size:16px;">Ý tưởng khác / Backlog theo nhánh</h2></div>`;
+  branches.forEach(branch=>{
+    const items = DATA.contentPlan.filter(c=>c.branch===branch && matchesStatus(c.status) && matchesSearch(c.id+" "+c.title));
+    if(items.length===0) return;
+    html += `<div class="branch-block">
+      <div class="branch-head"><div class="branch-bar" style="background:${BRANCH_META[branch].color}"></div><h2>${branch}</h2></div>
+      <div class="cards">`;
+    items.forEach(c=>{
+      const product = DATA.products.find(p=>p.id===c.productId);
+      html += `<div class="card" style="--card-accent:${BRANCH_META[branch].color}">
+        <div class="card-top">
+          <div><div class="card-id">${c.id}</div><div class="card-name">${c.title}</div></div>
+          ${badge(c.status)}
+        </div>
+        <div class="card-meta">${c.funnelStage} · ${c.format} · ${c.channel}${product? " · SP: "+product.name:""}</div>
+        <div class="card-meta" style="margin-top:4px;"><b>Tần suất:</b> ${c.cadence}</div>
+        ${c.notes? `<div class="card-notes">${c.notes}</div>`:""}
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  container.innerHTML = html;
+
+  container.querySelectorAll('[data-theme-chip]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{ activeContentTheme = chip.dataset.themeChip || null; renderContent(); });
+  });
+  container.querySelectorAll('[data-platform-chip]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{ activeContentPlatform = chip.dataset.platformChip || null; renderContent(); });
+  });
+  container.querySelectorAll('[data-week-tab]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{ activeContentWeek = parseInt(chip.dataset.weekTab,10); renderContent(); });
+  });
 }
 function renderOffers(){
   const container = document.getElementById('offersContainer');
@@ -447,11 +594,16 @@ function renderGaps(){
   const needsConfirm = [
     ...DATA.products.filter(p=>p.status==="NEEDS_CONFIRMATION").map(p=>({id:p.id, text:p.name, cat:"Sản phẩm / Giá"})),
     ...DATA.policies.filter(p=>p.status==="NEEDS_CONFIRMATION").map(p=>({id:p.id, text:p.name, cat:"Policy"})),
+    ...DATA.contentPlan.filter(c=>c.status==="NEEDS_CONFIRMATION").map(c=>({id:c.id, text:c.title, cat:"Content Marketing"})),
+    ...DATA.contentCalendar.days.filter(d=>d.status==="NEEDS_CONFIRMATION").map(d=>({id:"Ngày "+d.day, text:d.title, cat:"Lịch Content 30 Ngày"})),
   ];
+  const missingCalendarDays = DATA.contentCalendar.days.filter(d=>d.status==="MISSING");
   const missing = [
     ...DATA.policies.filter(p=>p.status==="MISSING").map(p=>({id:p.id, text:p.name, cat:"Policy"})),
     ...DATA.resourcesMissing.map(x=>({id:"—", text:x, cat:"Resource"})),
     ...DATA.offersMissing.map(x=>({id:x, text:"Chưa có Offer xác nhận", cat:"Offer"})),
+    ...DATA.contentPlan.filter(c=>c.status==="MISSING").map(c=>({id:c.id, text:c.title, cat:"Content Marketing"})),
+    ...(missingCalendarDays.length? [{id:"Ngày "+missingCalendarDays.map(d=>d.day).join(", "), text:missingCalendarDays.length+" ngày trong Lịch Content 30 Ngày chưa lên ý tưởng", cat:"Lịch Content 30 Ngày"}] : []),
   ];
   let html = `<div class="branch-block">
     <div class="branch-head"><div class="branch-bar" style="background:var(--st-needs)"></div><h2>Cần xác nhận (NEEDS_CONFIRMATION)</h2></div>
@@ -466,7 +618,7 @@ function renderGaps(){
   container.innerHTML = html;
 }
 function renderAll(){
-  renderTicker(); renderProducts(); renderOffers(); renderPolicy(); renderResources(); renderGaps();
+  renderTicker(); renderProducts(); renderContent(); renderOffers(); renderPolicy(); renderResources(); renderGaps();
 }
 
 const dockItems = document.querySelectorAll('.dock-item');
@@ -474,6 +626,7 @@ const views = document.querySelectorAll('.view');
 const viewTitles = {
   overview:  { title:"Tổng quan", sub:"Toàn cảnh Hệ Sinh Thái HIỂU" },
   products:  { title:"Sản phẩm & Giá", sub:"Nguồn duy nhất: Product Catalog + Pricing Registry" },
+  content:   { title:"Content Marketing", sub:"Content Pillars & Kế hoạch nội dung theo phễu — Content Plan Registry" },
   offers:    { title:"Offer đang chạy", sub:"Đợt/cohort, bonus, điều kiện — Offer Registry" },
   policy:    { title:"Policy", sub:"Quyền lợi, điều kiện, chính sách — Policy Registry" },
   resources: { title:"Link & Resource", sub:"Nguồn URL duy nhất — Resource Registry" },

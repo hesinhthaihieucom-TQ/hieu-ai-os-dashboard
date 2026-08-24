@@ -34,7 +34,15 @@
       "notes":"Công cụ đi kèm dòng sản phẩm Xây Nhân Hiệu (định vị AI, sửa kênh, kho content/hook, viết content, chấm điểm, lịch đăng, tạo ảnh thương hiệu). Trả phí định kỳ, có 7 ngày dùng thử miễn phí, kích hoạt/gia hạn thủ công qua chuyển khoản (chưa có cổng thanh toán tự động). Giá chuẩn 499.000đ/tháng — gói dài: 6 tháng 2.390.000đ (~398.333đ/tháng, tiết kiệm ~20%), 12 tháng 3.990.000đ (~332.500đ/tháng, tiết kiệm ~33%). Ưu đãi riêng cho học viên đã học khoá Xây Nhân Hiệu (KENH_XNH_ELEARNING/ZOOM6/8/10): 299.000đ/tháng, để họ trải nghiệm công cụ với giá thấp hơn. NEEDS_CONFIRMATION: giá chưa có landing/case study, có thể cần thử nghiệm lại sau khi có học viên trả phí đầu tiên." },
 
     { "id":"VIP_COACHING_1Y", "name":"VIP Coaching Chuyên Sâu", "branch":"VIP", "type":"Coaching / Membership", "role":"Highest / Premium",
-      "price":"55.000.000đ", "offerId":null, "status":"NEEDS_CONFIRMATION", "notes":"Quyền lợi/điều kiện cần lấy từ Offer + Policy Registry — chưa xác nhận đầy đủ." }
+      "price":"55.000.000đ", "offerId":null, "status":"NEEDS_CONFIRMATION", "notes":"Quyền lợi/điều kiện cần lấy từ Offer + Policy Registry — chưa xác nhận đầy đủ." },
+    { "id":"VIP_TROLYAI_CRM", "name":"Trợ Lý AI Tư Vấn & CRM", "branch":"VIP", "type":"AI Assistant + CRM (SaaS)", "role":"Tool / Hệ thống vận hành",
+      "price":"3.990.000đ", "offerId":null, "status":"CURRENT",
+      "priceOptions":[
+        { "label":"Theo tháng", "price":"499.000đ", "unit":"/ tháng" },
+        { "label":"6 tháng", "price":"2.490.000đ", "unit":"/ 6 tháng", "recommended":true },
+        { "label":"Theo năm", "price":"3.990.000đ", "unit":"/ năm" }
+      ],
+      "notes":"Trợ lý AI tư vấn khách hàng theo quy trình + CRM riêng trên Lark, không giới hạn số khách quản lý. Hoàn tiền 100% nếu dùng thử 3 ngày đầu không hài lòng. Nguồn: trang-ban-dich-vu.html — trang chưa publish lên link online, hiện chỉ ở local." }
   ],
 
   "offers": [
@@ -87,6 +95,125 @@
     "Video/tài liệu mô hình kinh doanh hiện hành",
     "Tài liệu chính sách Unicity hiện hành"
   ],
+
+  "contentPillars": [
+    { "branch":"HIỂU MẠNH", "pillars":["Nhận diện dấu hiệu mất cân bằng cơ thể","Case study chuyển hóa thật","Kiến thức năng lượng & chuyển hóa","Myth-busting sức khỏe"] },
+    { "branch":"HIỂU HẠNH", "pillars":["Giải mã nghiệp & tài chính","Bài tập tâm linh ứng dụng hằng ngày","Case study học viên 21 Ngày/30 Ngày","Tư duy dòng tiền & thịnh vượng"] },
+    { "branch":"HIỂU KÊNH", "pillars":["Công thức xây kênh & nhân hiệu","Ứng dụng AI tạo nội dung","Case study 8 Dòng Tiền","Hậu trường xây kênh"] },
+    { "branch":"VIP", "pillars":["Thành quả học viên VIP","Bên trong chương trình Coaching"] }
+  ],
+
+  "contentPlan": [
+    { "id":"CT_MANH_CHECKSUCKHOE_01", "branch":"HIỂU MẠNH", "productId":"MANH_CHECKSUCKHOE",
+      "funnelStage":"Awareness", "format":"Bài post Facebook", "channel":"Fanpage",
+      "title":"Bạn có đang bỏ qua dấu hiệu cơ thể mất cân bằng?", "status":"NEEDS_CONFIRMATION",
+      "cadence":"2 lần/tuần, dẫn về công cụ Check Sức Khỏe miễn phí",
+      "notes":"Bản nháp copy đã có — xem content-drafts.md — chờ chị duyệt trước khi đăng." },
+    { "id":"CT_MANH_CASESTUDY_01", "branch":"HIỂU MẠNH", "productId":"MANH_CANBANG_1M",
+      "funnelStage":"Nurture", "format":"Bài post + ảnh/video học viên", "channel":"Fanpage",
+      "title":"Case study: hành trình chuyển hóa của học viên Cân Bằng Chuyển Hóa", "status":"MISSING",
+      "cadence":"1 lần/tuần", "notes":"Cần xin phép & thu thập câu chuyện học viên thật." },
+    { "id":"CT_MANH_COHORT_01", "branch":"HIỂU MẠNH", "productId":"MANH_CANBANG_1M",
+      "funnelStage":"Conversion", "format":"Bài post + livestream", "channel":"Fanpage",
+      "title":"Mở đợt mới Cân Bằng Chuyển Hóa — số lượng giới hạn", "status":"MISSING",
+      "cadence":"Theo lịch mở cohort", "notes":"Cần lịch cohort chính thức trước khi lên content." },
+
+    { "id":"CT_HANH_LAUNCH399_01", "branch":"HIỂU HẠNH", "productId":"HANH_21CHUYENNGHIEP",
+      "funnelStage":"Conversion", "format":"Bài post Facebook", "channel":"Fanpage + Landing",
+      "title":"Ưu đãi Launch 399k — 21 Ngày Giải Nghiệp", "status":"NEEDS_CONFIRMATION",
+      "cadence":"1 lần khi mở launch, nhắc lại giữa & cuối đợt",
+      "notes":"Bản nháp copy đã có — xem content-drafts.md — chờ chị duyệt trước khi đăng." },
+    { "id":"CT_HANH_SODONGTIEN_01", "branch":"HIỂU HẠNH", "productId":"HANH_SODONGTIEN",
+      "funnelStage":"Nurture", "format":"Bài post ngắn", "channel":"Fanpage",
+      "title":"Vì sao bạn nên ghi sổ dòng tiền mỗi ngày", "status":"MISSING",
+      "cadence":"1 lần/tuần", "notes":"Chưa có bản nháp." },
+    { "id":"CT_HANH_30TTTC_01", "branch":"HIỂU HẠNH", "productId":"HANH_30TTTC_ELEARNING",
+      "funnelStage":"Awareness", "format":"Bài post + trích đoạn bài học", "channel":"Fanpage",
+      "title":"Tâm linh và tài chính liên quan gì đến nhau?", "status":"MISSING",
+      "cadence":"2 lần/tuần", "notes":"Chưa có bản nháp." },
+
+    { "id":"CT_KENH_8DONGTIEN_01", "branch":"HIỂU KÊNH", "productId":"KENH_8DONGTIEN",
+      "funnelStage":"Awareness", "format":"Bài post Facebook", "channel":"Fanpage + Landing",
+      "title":"8 Dòng Tiền Từ Nhân Hiệu — bạn đang bỏ lỡ bao nhiêu?", "status":"NEEDS_CONFIRMATION",
+      "cadence":"2 lần/tuần",
+      "notes":"Bản nháp copy đã có — xem content-drafts.md — chờ chị duyệt trước khi đăng." },
+    { "id":"CT_KENH_XNH_01", "branch":"HIỂU KÊNH", "productId":"KENH_XNH_ELEARNING",
+      "funnelStage":"Nurture", "format":"Bài post + case study", "channel":"Fanpage",
+      "title":"Nhân hiệu là gì và vì sao ai cũng cần xây", "status":"MISSING",
+      "cadence":"1 lần/tuần", "notes":"Chưa có bản nháp." },
+    { "id":"CT_KENH_XNH_ZOOM_01", "branch":"HIỂU KÊNH", "productId":"KENH_XNH_ZOOM6",
+      "funnelStage":"Conversion", "format":"Bài post + livestream", "channel":"Fanpage",
+      "title":"Mở lớp Zoom 6 buổi Xây Nhân Hiệu — đăng ký ngay", "status":"MISSING",
+      "cadence":"Theo lịch mở lớp", "notes":"Cần lịch lớp chính thức trước khi lên content." },
+
+    { "id":"CT_VIP_CASESTUDY_01", "branch":"VIP", "productId":"VIP_COACHING_1Y",
+      "funnelStage":"Nurture", "format":"Bài post + video hậu trường", "channel":"Fanpage",
+      "title":"Bên trong chương trình VIP Coaching Chuyên Sâu", "status":"MISSING",
+      "cadence":"1 lần/tháng", "notes":"Cần xác nhận quyền lợi VIP (xem POLICY_VIP_ACCESS) trước khi viết content chi tiết." }
+  ],
+
+  "contentCalendar": {
+    "title": "Lịch Nội Dung 30 Ngày — Hệ Sinh Thái HIỂU",
+    "themes": ["Tâm Thức", "Tài Chính", "Sức Khỏe", "Quan Hệ", "Mục Đích Sống"],
+    "platforms": ["TikTok", "Facebook", "Instagram"],
+    "days": [
+      { "day":1, "week":1, "weekLabel":"Tuần 1 — Nền Tảng", "theme":"Sức Khỏe", "level":1, "platforms":["Facebook"],
+        "title":"Cơ Thể Đang \"Báo Động\" Mà Bạn Có Thể Đang Bỏ Qua",
+        "hook":"Mệt mỏi kéo dài, khó ngủ, dễ cáu gắt — bạn coi là bình thường, hay là dấu hiệu cơ thể đang mất cân bằng?",
+        "status":"NEEDS_CONFIRMATION", "notes":"Bản nháp đầy đủ đã có — xem content-drafts.md, bài Check Sức Khỏe." },
+      { "day":2, "week":1, "weekLabel":"Tuần 1 — Nền Tảng", "theme":"Tâm Thức", "level":4, "platforms":["Facebook"],
+        "title":"Vì Sao Bạn Cứ Lặp Lại Đúng Một Vòng Lặp Cũ",
+        "hook":"Cố gắng rất nhiều nhưng tiền vẫn không ở lại, cơ hội vẫn tuột tay? Có thể có một \"nghiệp\" cũ chưa được giải.",
+        "status":"NEEDS_CONFIRMATION", "notes":"Bản nháp đầy đủ đã có — xem content-drafts.md, bài Ưu đãi Launch 399k (21 Ngày Giải Nghiệp)." },
+      { "day":3, "week":1, "weekLabel":"Tuần 1 — Nền Tảng", "theme":"Mục Đích Sống", "level":2, "platforms":["Facebook"],
+        "title":"Bạn Đang Có Bao Nhiêu Dòng Tiền Từ Chính Con Người Mình?",
+        "hook":"Không phải ai cũng biết: nhân hiệu cá nhân có thể tạo ra tới 8 dòng tiền khác nhau.",
+        "status":"NEEDS_CONFIRMATION", "notes":"Bản nháp đầy đủ đã có — xem content-drafts.md, bài 8 Dòng Tiền Từ Nhân Hiệu." },
+      { "day":4, "week":1, "weekLabel":"Tuần 1 — Nền Tảng", "theme":"Tài Chính", "level":1, "platforms":["Facebook"],
+        "title":"Vì Sao Bạn Nên Ghi Sổ Dòng Tiền Mỗi Ngày",
+        "hook":"Không phải vì bạn nghèo mà vì bạn chưa từng nhìn thẳng vào tiền của mình.",
+        "status":"NEEDS_CONFIRMATION", "notes":"Mới có title + hook, chưa viết full script." },
+      { "day":5, "week":1, "weekLabel":"Tuần 1 — Nền Tảng", "theme":"Quan Hệ", "level":2, "platforms":["Facebook","Instagram"],
+        "title":"Nhân Hiệu Của Bạn Đang Nói Gì Về Bạn Với Người Khác?",
+        "hook":"Người ta tin bạn, giới thiệu bạn, hay quên bạn ngay sau buổi gặp — tất cả bắt đầu từ nhân hiệu.",
+        "status":"NEEDS_CONFIRMATION", "notes":"Mới có title + hook, chưa viết full script." },
+      { "day":6, "week":1, "weekLabel":"Tuần 1 — Nền Tảng", "theme":"Sức Khỏe", "level":3, "platforms":["Facebook"],
+        "title":"Một Hành Trình Chuyển Hóa Thật — Không Phải Quảng Cáo",
+        "hook":"Cách đây vài tháng, chị ấy cũng mệt mỏi như bạn bây giờ.",
+        "status":"NEEDS_CONFIRMATION", "notes":"Cần xin phép & thu thập câu chuyện học viên thật trước khi đăng." },
+      { "day":7, "week":1, "weekLabel":"Tuần 1 — Nền Tảng", "theme":"Tâm Thức", "level":1, "platforms":["Facebook"],
+        "title":"Tuần Đầu Tiên: Bạn Đã Hiểu Thêm Điều Gì Về Mình?",
+        "hook":"Một tuần trôi qua — đủ để bắt đầu nhận ra điều gì đó chưa từng để ý.",
+        "status":"NEEDS_CONFIRMATION", "notes":"Bài tổng kết Tuần 1, dẫn preview Tuần 2." },
+
+      { "day":8, "week":2, "weekLabel":"Tuần 2 — Đào Sâu", "theme":"Tài Chính", "level":2, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":9, "week":2, "weekLabel":"Tuần 2 — Đào Sâu", "theme":"Sức Khỏe", "level":3, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":10, "week":2, "weekLabel":"Tuần 2 — Đào Sâu", "theme":"Quan Hệ", "level":4, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":11, "week":2, "weekLabel":"Tuần 2 — Đào Sâu", "theme":"Mục Đích Sống", "level":1, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":12, "week":2, "weekLabel":"Tuần 2 — Đào Sâu", "theme":"Tâm Thức", "level":2, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":13, "week":2, "weekLabel":"Tuần 2 — Đào Sâu", "theme":"Tài Chính", "level":3, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":14, "week":2, "weekLabel":"Tuần 2 — Đào Sâu", "theme":"Sức Khỏe", "level":4, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+
+      { "day":15, "week":3, "weekLabel":"Tuần 3 — Ứng Dụng", "theme":"Quan Hệ", "level":1, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":16, "week":3, "weekLabel":"Tuần 3 — Ứng Dụng", "theme":"Mục Đích Sống", "level":2, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":17, "week":3, "weekLabel":"Tuần 3 — Ứng Dụng", "theme":"Tâm Thức", "level":3, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":18, "week":3, "weekLabel":"Tuần 3 — Ứng Dụng", "theme":"Tài Chính", "level":4, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":19, "week":3, "weekLabel":"Tuần 3 — Ứng Dụng", "theme":"Sức Khỏe", "level":1, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":20, "week":3, "weekLabel":"Tuần 3 — Ứng Dụng", "theme":"Quan Hệ", "level":2, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":21, "week":3, "weekLabel":"Tuần 3 — Ứng Dụng", "theme":"Mục Đích Sống", "level":3, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+
+      { "day":22, "week":4, "weekLabel":"Tuần 4 — Chuyển Hóa", "theme":"Tâm Thức", "level":4, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":23, "week":4, "weekLabel":"Tuần 4 — Chuyển Hóa", "theme":"Tài Chính", "level":1, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":24, "week":4, "weekLabel":"Tuần 4 — Chuyển Hóa", "theme":"Sức Khỏe", "level":2, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":25, "week":4, "weekLabel":"Tuần 4 — Chuyển Hóa", "theme":"Quan Hệ", "level":3, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":26, "week":4, "weekLabel":"Tuần 4 — Chuyển Hóa", "theme":"Mục Đích Sống", "level":4, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":27, "week":4, "weekLabel":"Tuần 4 — Chuyển Hóa", "theme":"Tâm Thức", "level":1, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":28, "week":4, "weekLabel":"Tuần 4 — Chuyển Hóa", "theme":"Tài Chính", "level":2, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+
+      { "day":29, "week":5, "weekLabel":"Tuần 5 — Tổng Kết & Phụ Lục", "theme":"Sức Khỏe", "level":3, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" },
+      { "day":30, "week":5, "weekLabel":"Tuần 5 — Tổng Kết & Phụ Lục", "theme":"Quan Hệ", "level":4, "platforms":["Facebook"], "title":"Chưa lên ý tưởng — chờ lên nội dung", "hook":"", "status":"MISSING", "notes":"" }
+    ]
+  },
 
   "lastUpdated": "2026-08-17"
 }
