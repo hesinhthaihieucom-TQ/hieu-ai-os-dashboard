@@ -321,6 +321,34 @@ function renderApp(){
   }
 }
 
+// 3 khối lợi ích CỤ THỂ — góp ý Quỳnh 2026-08-24: "để ngay STK, người ta bị sợ không? người ta
+// chưa biết tính năng app". Đưa thẻ QR/chuyển khoản đi thẳng vào mặt người chưa hiểu gì về app dễ
+// giống lừa đảo/quá vội — đặt khối lợi ích này NGAY TRƯỚC tcPaymentCardHtml() (cùng 1 trang, không
+// tách riêng landing page — thêm 1 bước bấm chỉ làm rơi mất người ĐÃ sẵn sàng trả tiền) để lập lòng
+// tin bằng giá trị thật trước khi hỏi tiền. Đúng 3 gạch đầu dòng Quỳnh chốt: thanh khoản nợ/gia
+// tăng tài sản/kiểm soát tài chính — nói bằng KẾT QUẢ cụ thể, không phải tên module (module tên ẩn
+// dụ tâm thức, người mới chưa hiểu "Hạt Giống Phước - Nghiệp" nghĩa là gì).
+function tcBenefitsHtml(){
+  const BENEFITS = [
+    { icon:'💳', title:'Thoát nợ nhanh hơn, đỡ tốn lãi', text:'Quản Lý Nợ tự tính chiến lược Snowball/Avalanche — biết chính xác nên dồn tiền trả khoản nào trước để tiết kiệm tiền lãi nhiều nhất, không phải đoán mò.' },
+    { icon:'📈', title:'Tài sản ròng tăng đều, nhìn thấy rõ từng tháng', text:'Tổng Kết Tháng tự vẽ biểu đồ Tài Sản Ròng qua từng tháng — biết ngay đang giàu lên hay đang lùi, không phải chỉ cảm giác chung chung.' },
+    { icon:'🎯', title:'Kiểm soát dòng tiền, không chỉ ghi cho có', text:'Mục Tiêu & Cam Kết đặt hạn mức từng danh mục TRƯỚC khi tiêu, Tổng Kết Tuần báo ngay lệch mục tiêu ở đâu — còn Hạt Giống Phước - Nghiệp giúp gỡ tận gốc niềm tin cũ khiến tiền cứ lặp lại đúng 1 vấn đề.' },
+  ];
+  return `
+    <div style="margin-bottom:20px;">
+      ${BENEFITS.map(b=>`
+        <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);">
+          <span style="font-size:20px;flex-shrink:0;">${b.icon}</span>
+          <div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:3px;">${esc(b.title)}</div>
+            <div style="font-size:13px;color:var(--ink-soft);line-height:1.55;">${esc(b.text)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 // Tách riêng thẻ QR/thông tin chuyển khoản để dùng lại được ở CẢ màn khoá tự động (renderUpgradeScreen,
 // hiện khi bấm vào route premium mà chưa có quyền) LẪN trang "Nâng Cấp" chủ động (module nang-cap.js,
 // vào được bất cứ lúc nào kể cả đang còn hạn dùng thử) — giống pattern paymentCardHtml() bên
@@ -390,7 +418,10 @@ function renderUpgradeScreen(content){
       ${weakest ? `<p>Bạn vừa làm Chấm Điểm Nghiệp Tiền và đang yếu nhất ở khâu <b>${esc(weakest.label)}</b> — ${esc(weakest.explain)}</p>` : ''}
       <p>Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.</p>
     </div>
-    <div class="card" style="max-width:460px;">${tcPaymentCardHtml()}</div>
+    <div class="card" style="max-width:460px;">
+      ${tcBenefitsHtml()}
+      ${tcPaymentCardHtml()}
+    </div>
   `;
   bindTcPaymentCard(content, renderApp);
 }

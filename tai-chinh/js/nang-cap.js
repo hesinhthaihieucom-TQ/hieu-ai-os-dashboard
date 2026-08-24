@@ -1,8 +1,9 @@
 (function(){
-// "Nâng Cấp" — vào được CHỦ ĐỘNG bất cứ lúc nào (kể cả đang còn hạn dùng thử), khác với màn khoá
-// tự động renderUpgradeScreen() (chỉ hiện khi bấm vào đúng route premium mà hết quyền). Tái dùng
-// tcPaymentCardHtml()/bindTcPaymentCard() từ app-shell.js (không lặp lại code QR/chuyển khoản) —
-// giống cách nhan-hieu tách paymentCardHtml() dùng chung giữa renderExpiredScreen và module Nâng Cấp.
+// "Nâng Cấp" — vào được CHỦ ĐỘNG bất cứ lúc nào, khác với màn khoá tự động renderUpgradeScreen()
+// (chỉ hiện khi bấm vào đúng route premium mà chưa trả phí). Tái dùng tcBenefitsHtml() (3 khối lợi
+// ích cụ thể — nợ/tài sản/kiểm soát tài chính) + tcPaymentCardHtml()/bindTcPaymentCard() từ
+// app-shell.js (không lặp code) — LUÔN hiện lợi ích TRƯỚC thẻ QR (góp ý Quỳnh 2026-08-24: đưa STK
+// ra trước khi người chưa hiểu tính năng gì dễ giống vội/đáng ngờ).
 function render(container, ctx){
   const p = ctx.profile;
   const alreadyPaid = !!(p && p.tc_has_paid);
@@ -21,7 +22,10 @@ function render(container, ctx){
           <div style="font-weight:600;font-size:15px;">Tài khoản của bạn đã ở bản trọn đời</div>
         </div>
       ` : `
-        <div class="card" style="max-width:460px;">${tcPaymentCardHtml()}</div>
+        <div class="card" style="max-width:460px;">
+          ${tcBenefitsHtml()}
+          ${tcPaymentCardHtml()}
+        </div>
       `}
     `;
     // Gọi renderApp() (không phải draw() cục bộ) sau khi tải lại hồ sơ — ctx.profile ở closure này
