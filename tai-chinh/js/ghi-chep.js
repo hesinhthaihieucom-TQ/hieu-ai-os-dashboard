@@ -174,11 +174,12 @@ function render(container, ctx){
           </div>
         `}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(chọn 1 mục — bấm "+ Khác" nếu chưa có sẵn, hoặc <a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
-        <div class="chips" id="gc-category-label-chips">
-          ${state.categories.filter(c=>c.type===state.form.type).map(c=>`<div class="chip ${state.form.category_label===c.label?'selected':''}" data-category-label="${esc(c.label)}" data-category-classification="${c.default_classification||''}">${esc(c.label)}</div>`).join('')}
-          <div class="chip ${state.showCustomCategory?'selected':''}" id="gc-category-label-custom-toggle">+ Khác</div>
-        </div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(<a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
+        <select id="gc-category-label-select" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+          <option value="" ${!state.form.category_label && !state.showCustomCategory?'selected':''}>— Chọn danh mục —</option>
+          ${state.categories.filter(c=>c.type===state.form.type).map(c=>`<option value="${esc(c.label)}" data-classification="${c.default_classification||''}" ${state.form.category_label===c.label && !state.showCustomCategory?'selected':''}>${esc(c.label)}</option>`).join('')}
+          <option value="__custom__" ${state.showCustomCategory?'selected':''}>+ Khác (thêm mới)...</option>
+        </select>
         ${state.showCustomCategory ? `
           <input type="text" id="gc-category-label-custom" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Cho thuê nhà...':'VD: Tiền điện nước...'}" style="width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
         ` : ''}
@@ -225,21 +226,23 @@ function render(container, ctx){
       el.onclick = ()=>{ state.form.vibe = el.getAttribute('data-vibe'); state.error = null; draw(); persistDraft(); };
     });
     container.querySelector('#gc-vibe-reason').oninput = (e)=>{ state.form.vibe_reason = e.target.value; persistDraft(); };
-    container.querySelectorAll('#gc-category-label-chips [data-category-label]').forEach(el=>{
-      el.onclick = ()=>{
-        state.form.category_label = el.getAttribute('data-category-label');
+    const categorySelect = container.querySelector('#gc-category-label-select');
+    if(categorySelect) categorySelect.onchange = (e)=>{
+      const val = e.target.value;
+      if(val === '__custom__'){
+        state.showCustomCategory = true;
+      } else {
+        state.form.category_label = val;
+        state.showCustomCategory = false;
         // Danh mục đã gắn sẵn CP cố định/CP biến đổi (thiết lập ở Quản Lý Danh Mục) thì tự điền
         // luôn "Phân loại (kế toán)" ở trên — đỡ phải chọn lại mỗi lần ghi cùng 1 danh mục quen.
-        // Danh mục chưa gắn (data-category-classification rỗng) thì giữ nguyên lựa chọn hiện tại.
-        const classification = el.getAttribute('data-category-classification');
+        // Danh mục chưa gắn (data-classification rỗng) thì giữ nguyên lựa chọn hiện tại.
+        const classification = e.target.selectedOptions[0] && e.target.selectedOptions[0].getAttribute('data-classification');
         if(classification) state.form.category = classification;
-        state.showCustomCategory = false;
-        draw();
-        persistDraft();
-      };
-    });
-    const customToggle = container.querySelector('#gc-category-label-custom-toggle');
-    if(customToggle) customToggle.onclick = ()=>{ state.showCustomCategory = !state.showCustomCategory; draw(); };
+      }
+      draw();
+      persistDraft();
+    };
     const customInput = container.querySelector('#gc-category-label-custom');
     if(customInput) customInput.oninput = (e)=>{ state.form.category_label = e.target.value; persistDraft(); };
     container.querySelector('#gc-desc').oninput = (e)=>{ state.form.description = e.target.value; persistDraft(); };
