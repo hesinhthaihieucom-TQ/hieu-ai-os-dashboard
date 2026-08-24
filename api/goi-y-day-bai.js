@@ -4,7 +4,7 @@
 // gợi ý trả lời bình luận người khác, và nên gắn tài sản quảng bá nào — phù hợp đúng giai đoạn đó.
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
-const { ADDRESS_FORM_RULE } = require('./_lib/post-schema');
+const { ADDRESS_FORM_RULE, contextBlockOf } = require('./_lib/post-schema');
 
 const MILESTONES = {
   m1: { label:'Trước 1.000 view đầu tiên', desc:'Giai đoạn khơi mào — mục tiêu duy nhất là kích người xem để lại bình luận đầu tiên, tuyệt đối chưa nên gắn link bán hàng vì dễ làm giảm reach.' },
@@ -28,6 +28,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Nếu người dùng không chỉ định tài sản nào (danh sách rỗng), tự chọn tuỳ theo có tài sản nào trong kho hay không — nếu kho cũng rỗng, để trống và giải thích rõ vì sao chưa nên gắn gì ở mốc đó.
 - Nếu tài sản được chọn có "câu CTA mẫu đã lưu" (xem danh sách tài sản), ưu tiên bám theo TINH THẦN/GIỌNG ĐIỆU câu mẫu đó khi viết cmt_tu_dang/tra_loi_tu_khoa_cta cho đúng tài sản đó — biến tấu lại câu chữ cho hợp mốc này, TUYỆT ĐỐI không copy y nguyên.
 - Gợi ý trả lời bình luận (goi_y_tra_loi_cmt) phải là các mẫu câu tự nhiên, đúng giọng, dùng được cho nhiều loại bình luận khác nhau (khen, hỏi, nghi ngờ...) — riêng cho từng mốc, không lặp lại y hệt giữa các mốc.
+- BÁN THẬT, KHÔNG CHỈ BẢO BẤM LINK (lỗi hay gặp nhất — đọc kỹ): mọi câu có CTA/tài sản (cmt_tu_dang, tra_loi_tu_khoa_cta) BẮT BUỘC phải có 1 vế nêu rõ người đọc ĐƯỢC GÌ hoặc GIẢI QUYẾT ĐƯỢC NỖI ĐAU/KHAO KHÁT NÀO khi dùng tài sản đó — TRƯỚC khi mời hành động, không được viết cụt lủn kiểu "Bình luận từ khoá X để nhận Y". Ưu tiên lấy đúng nỗi đau/khao khát/insight trong định vị (nếu có) để câu CTA chạm đúng người đang cần; nếu chưa có định vị, suy luận hợp lý từ tên/loại tài sản. Ví dụ SAI: "Cmt 'TIỀN' để nhận file miễn phí." Ví dụ ĐÚNG: "Nếu bạn đang loay hoay không biết tiền đi đâu hết mỗi tháng, file này chỉ mất 5 phút giúp bạn nhìn ra ngay — Cmt 'TIỀN' để nhận." Áp dụng y hệt cho tra_loi_tu_khoa_cta, không chỉ dán link trơn.
 - Output tiếng Việt.`;
 
 const TOOL_DAY_BAI_ALL = {
@@ -125,11 +126,12 @@ module.exports = async (req, res) => {
       ? assets.map(a => `- ${a.label}${a.url ? ` (${a.url})` : ''}${a.cta_mau ? ` — câu CTA mẫu đã lưu: "${a.cta_mau}"` : ''}`).join('\n')
       : '(chưa có tài sản quảng bá nào được lưu)';
 
-    const contextBlock = positioning && positioning.luot1
-      ? `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}`
-      : (quick_context && quick_context.trim()
-        ? `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`
-        : 'BỐI CẢNH: (không cung cấp — viết tự nhiên, phổ quát)');
+    // Trước đây chỉ gửi luot1 (giọng văn/trục) — THIẾU hẳn luot2 (nỗi đau/khao khát/insight khách
+    // hàng) dù frontend đã gửi kèm sẵn — khiến AI không có gì để "bán" ngoài tên tài sản, viết CTA
+    // khô khan kiểu chỉ bảo bấm link (phản hồi chị Quỳnh 2026-08-24: "không nêu bật được điểm mạnh,
+    // đề cao được sản phẩm... cứ chỉ bảo người ta bấm link"). Dùng chung contextBlockOf() với
+    // viet-content.js để luôn có đủ nỗi đau/khao khát làm chất liệu viết CTA thuyết phục hơn.
+    const contextBlock = contextBlockOf(positioning, quick_context);
 
     // Cho phép chọn NHIỀU tài sản (2026-08-20) — có nhiều mốc thì cần nhiều tài sản khác nhau để
     // phân bổ theo mức độ cam kết tăng dần, không còn giới hạn đúng 1 tài sản như bản cũ.
