@@ -41,9 +41,9 @@ function proofZoom(card) {
 // ---------- Quiz ----------
 (function () {
   var BRANCHES = {
-    hanh: { name: 'HIỂU HẠNH', color: '#B8862E', logo: 'assets/images/branch-hanh.png', link: 'https://docs.google.com/forms/d/e/1FAIpQLSdta1H-B_ewAEEUr291J7BsMfdEQK_lW-J2Gg1iNnenWy4Gdg/viewform' },
-    manh: { name: 'HIỂU MẠNH', color: '#2F6F62', logo: 'assets/images/branch-manh.png', link: 'https://hieu-de-khoe-manh.vercel.app/' },
-    kenh: { name: 'HIỂU KÊNH', color: '#262622', logo: 'assets/images/branch-kenh.png', link: 'https://xaynhanhieu8dongtien.netlify.app/' }
+    hanh: { name: 'HIỂU HẠNH', color: '#B8862E', logo: '/he-sinh-thai-hieu/assets/images/branch-hanh.png', link: 'https://docs.google.com/forms/d/e/1FAIpQLSdta1H-B_ewAEEUr291J7BsMfdEQK_lW-J2Gg1iNnenWy4Gdg/viewform' },
+    manh: { name: 'HIỂU MẠNH', color: '#2F6F62', logo: '/he-sinh-thai-hieu/assets/images/branch-manh.png', link: 'https://hieu-de-khoe-manh.vercel.app/' },
+    kenh: { name: 'HIỂU KÊNH', color: '#262622', logo: '/he-sinh-thai-hieu/assets/images/branch-kenh.png', link: 'https://xaynhanhieu8dongtien.netlify.app/' }
   };
   var TOTAL = 5;
   var state = { answers: {}, top: null };
