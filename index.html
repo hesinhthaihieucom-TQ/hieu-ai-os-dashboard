@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <title>HIỂU AI OS — Bảng Điều Khiển</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#14201B">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HIỂU AI OS">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -86,6 +92,7 @@
   }
   .dock-item:hover{ background:rgba(255,255,255,0.06); color:#fff; }
   .dock-item.active{ background:rgba(255,255,255,0.1); color:#fff; }
+  .dock-divider{ height:1px; background:rgba(255,255,255,0.08); margin:14px 10px; }
   .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
   .dock-foot{
     margin-top:auto;
@@ -158,7 +165,7 @@
     padding:14px 16px;
   }
   .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .card-id{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); letter-spacing:0.02em; }
+  .card-id{ display:none; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); letter-spacing:0.02em; }
   .card-name{ font-size:14.5px; font-weight:600; margin-top:3px; line-height:1.35; }
   .card-meta{ font-size:12px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
   .card-price{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; margin-top:10px; }
@@ -201,7 +208,8 @@
   .intro-flow span.arrow{ color:var(--ink-soft); }
 
   .three-branch-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:18px; }
-  .branch-tile{ border-radius:12px; padding:18px; color:#fff; }
+  .branch-tile{ border-radius:12px; padding:18px; color:#fff; cursor:pointer; transition:transform .12s ease; }
+  .branch-tile:hover{ transform:translateY(-2px); }
   .branch-tile h3{ font-family:'Playfair Display',serif; margin:0 0 6px; font-size:17px; }
   .branch-tile p{ margin:0; font-size:12.5px; opacity:0.92; line-height:1.5; }
 
@@ -237,11 +245,16 @@
   .hook-box{ margin-top:10px; background:var(--bg); border-radius:8px; padding:10px 12px; }
   .hook-label{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:4px; text-transform:uppercase; }
   .hook-text{ font-size:13px; font-style:italic; line-height:1.5; margin:0; }
+  .completeness-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); margin-top:8px; }
+  .completeness-tag b{ color:var(--ink); }
+  .back-link{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--st-current); font-size:13px; margin-bottom:18px; user-select:none; }
+  .back-link:hover{ text-decoration:underline; }
 
   @media (max-width:820px){
     body{ flex-direction:column; }
     .dock{ width:100%; height:auto; position:relative; flex-direction:row; overflow-x:auto; padding:14px; }
     .dock-nav{ flex-direction:row; margin-top:0; }
+    .dock-divider{ width:1px; height:auto; margin:0 6px; }
     .dock-foot{ display:none; }
     .content{ padding:18px; }
   }
@@ -253,12 +266,13 @@
   <div class="dock-brand">HIỂU AI OS<small>Bảng Điều Khiển</small></div>
   <div class="dock-nav" id="dockNav">
     <div class="dock-item active" data-view="overview"><span class="dot" style="background:#9CA396"></span>Tổng quan</div>
-    <div class="dock-item" data-view="products"><span class="dot" style="background:var(--branch-manh)"></span>Sản phẩm &amp; Giá</div>
-    <div class="dock-item" data-view="content"><span class="dot" style="background:var(--content-accent)"></span>Content Marketing</div>
-    <div class="dock-item" data-view="offers"><span class="dot" style="background:var(--branch-hanh)"></span>Offer đang chạy</div>
-    <div class="dock-item" data-view="policy"><span class="dot" style="background:var(--branch-kenh)"></span>Policy</div>
-    <div class="dock-item" data-view="resources"><span class="dot" style="background:var(--branch-vip)"></span>Link &amp; Resource</div>
     <div class="dock-item" data-view="gaps"><span class="dot" style="background:var(--st-missing)"></span>Cần xử lý</div>
+    <div class="dock-item" data-view="content"><span class="dot" style="background:var(--content-accent)"></span>Content Marketing</div>
+    <div class="dock-item" data-view="partner"><span class="dot" style="background:var(--branch-vip)"></span>HIỂU Partner</div>
+    <div class="dock-divider"></div>
+    <div class="dock-item" data-view="branch" data-branch="HIỂU MẠNH"><span class="dot" style="background:var(--branch-manh)"></span>HIỂU MẠNH</div>
+    <div class="dock-item" data-view="branch" data-branch="HIỂU HẠNH"><span class="dot" style="background:var(--branch-hanh)"></span>HIỂU HẠNH</div>
+    <div class="dock-item" data-view="branch" data-branch="HIỂU KÊNH"><span class="dot" style="background:var(--branch-kenh)"></span>HIỂU KÊNH</div>
   </div>
   <div class="dock-foot" id="dockFoot">Đang tải dữ liệu...</div>
 </div>
@@ -282,7 +296,7 @@
     <div class="view active" data-view="overview">
       <div class="intro-card">
         <h1>HIỂU → THAY ĐỔI → LÀM CHỦ → THỊNH VƯỢNG</h1>
-        <div class="view-sub" style="margin-top:0;">Triết lý tổng thể của Hệ Sinh Thái HIỂU, tổ chức quanh 3 trục bổ trợ cho nhau.</div>
+        <div class="view-sub" style="margin-top:0;">Triết lý tổng thể của Hệ Sinh Thái HIỂU, tổ chức quanh 3 trục bổ trợ cho nhau. Bấm vào 1 trụ để xem danh sách sản phẩm.</div>
         <div class="intro-flow">
           <span class="step">HIỂU</span><span class="arrow">→</span>
           <span class="step">THAY ĐỔI</span><span class="arrow">→</span>
@@ -290,15 +304,15 @@
           <span class="step">THỊNH VƯỢNG</span>
         </div>
         <div class="three-branch-grid">
-          <div class="branch-tile" style="background:var(--branch-manh)">
+          <div class="branch-tile" data-branch-link="HIỂU MẠNH" style="background:var(--branch-manh)">
             <h3>HIỂU MẠNH</h3>
             <p>Hiểu để khỏe mạnh — sức khỏe, cơ thể, chuyển hóa, năng lượng sống.</p>
           </div>
-          <div class="branch-tile" style="background:var(--branch-hanh)">
+          <div class="branch-tile" data-branch-link="HIỂU HẠNH" style="background:var(--branch-hanh)">
             <h3>HIỂU HẠNH</h3>
             <p>Hiểu để hạnh phúc — tâm thức, tâm linh, tài chính, nhận thức.</p>
           </div>
-          <div class="branch-tile" style="background:var(--branch-kenh)">
+          <div class="branch-tile" data-branch-link="HIỂU KÊNH" style="background:var(--branch-kenh)">
             <h3>HIỂU KÊNH</h3>
             <p>Hiểu để xây kênh — nhân hiệu, content, AI, cộng đồng.</p>
           </div>
@@ -311,12 +325,11 @@
       </div>
     </div>
 
-    <div class="view" data-view="products"><div id="productsContainer"></div></div>
-    <div class="view" data-view="content"><div id="contentContainer"></div></div>
-    <div class="view" data-view="offers"><div id="offersContainer"></div></div>
-    <div class="view" data-view="policy"><div id="policyContainer"></div></div>
-    <div class="view" data-view="resources"><div id="resourcesContainer"></div></div>
     <div class="view" data-view="gaps"><div id="gapsContainer"></div></div>
+    <div class="view" data-view="content"><div id="contentContainer"></div></div>
+    <div class="view" data-view="partner"><div id="partnerContainer"></div></div>
+    <div class="view" data-view="branch"><div id="branchContainer"></div></div>
+    <div class="view" data-view="product"><div id="productContainer"></div></div>
   </div>
 </div>
 
@@ -335,7 +348,6 @@ const BRANCH_META = {
   "HIỂU MẠNH": { color:"var(--branch-manh)" },
   "HIỂU HẠNH": { color:"var(--branch-hanh)" },
   "HIỂU KÊNH": { color:"var(--branch-kenh)" },
-  "VIP":       { color:"var(--branch-vip)" },
 };
 
 let DATA = null;
@@ -344,9 +356,21 @@ let searchTerm = "";
 let activeContentTheme = null;
 let activeContentPlatform = null;
 let activeContentWeek = 1;
+let currentBranch = null;
+let currentProductId = null;
 const LEVEL_LABELS = { 1:"Cấp 1 – Nhận Biết", 2:"Cấp 2 – Cân Nhắc", 3:"Cấp 3 – Ứng Dụng", 4:"Cấp 4 – Chuyển Đổi" };
 const THEME_EMOJI = { "Tâm Thức":"🧠", "Tài Chính":"💰", "Sức Khỏe":"💪", "Quan Hệ":"🤝", "Mục Đích Sống":"🎯" };
 const PLATFORM_COLORS = { "TikTok":"#C2255C", "Facebook":"#2563A6", "Instagram":"#8E44AD" };
+const LIFECYCLE_STEPS = [
+  { key:"research",      label:"1. Nghiên cứu thị trường & Định vị" },
+  { key:"productAccess", label:"2. Sản phẩm (Link sử dụng)" },
+  { key:"landing",       label:"3. Trang bán hàng" },
+  { key:"offer",         label:"4. Giá & Offer" },
+  { key:"policy",        label:"5. Chính sách" },
+  { key:"content",       label:"6. Content Marketing" },
+  { key:"partner",       label:"7. Affiliate / Partner" },
+  { key:"postSaleOps",   label:"8. Vận hành sau bán" },
+];
 
 function badge(status){
   const meta = STATUS_META[status] || { label:status, color:"var(--ink-soft)" };
@@ -356,10 +380,52 @@ function badge(status){
 }
 function matchesSearch(text){ if(!searchTerm) return true; return text.toLowerCase().includes(searchTerm.toLowerCase()); }
 function matchesStatus(status){ if(!activeStatusFilter) return true; return status === activeStatusFilter; }
+function aggregateStatus(list){
+  if(list.length===0) return "MISSING";
+  if(list.every(s=>s==="MISSING")) return "MISSING";
+  if(list.some(s=>s==="NEEDS_CONFIRMATION")) return "NEEDS_CONFIRMATION";
+  return "CURRENT";
+}
+function getLifecycleStatus(p, key){
+  if(key==="research") return p.lifecycle.research.status;
+  if(key==="productAccess") return p.lifecycle.productAccess.status;
+  if(key==="landing") return aggregateStatus(DATA.resources.filter(r=>r.productId===p.id).map(r=>r.status));
+  if(key==="offer"){
+    const offer = DATA.offers.find(o=>o.productId===p.id);
+    if(offer) return offer.status;
+    return p.status==="NEEDS_CONFIRMATION" ? "NEEDS_CONFIRMATION" : "CURRENT";
+  }
+  if(key==="policy"){
+    const pols = (p.policyIds||[]).map(id=>DATA.policies.find(x=>x.id===id)).filter(Boolean);
+    return pols.length ? aggregateStatus(pols.map(x=>x.status)) : "MISSING";
+  }
+  if(key==="content"){
+    const items = DATA.contentPlan.filter(c=>c.productId===p.id);
+    return items.length ? aggregateStatus(items.map(c=>c.status)) : "MISSING";
+  }
+  if(key==="partner"){
+    const entry = DATA.partnerProgram.perProduct.find(x=>x.productId===p.id);
+    return entry ? entry.status : "MISSING";
+  }
+  if(key==="postSaleOps") return p.lifecycle.postSaleOps.status;
+  return "MISSING";
+}
+function productCompleteness(p){
+  return LIFECYCLE_STEPS.filter(s=>!["MISSING","NEEDS_CONFIRMATION"].includes(getLifecycleStatus(p,s.key))).length;
+}
+function lifecycleEntries(){
+  const entries = [];
+  DATA.products.forEach(p=>{
+    entries.push({status:p.lifecycle.research.status});
+    entries.push({status:p.lifecycle.productAccess.status});
+    entries.push({status:p.lifecycle.postSaleOps.status});
+  });
+  return entries;
+}
 
 function renderTicker(){
   const counts = {};
-  const all = [...DATA.products, ...DATA.offers, ...DATA.policies, ...DATA.resources, ...DATA.contentPlan, ...DATA.contentCalendar.days];
+  const all = [...DATA.products, ...DATA.offers, ...DATA.policies, ...DATA.resources, ...DATA.contentPlan, ...DATA.contentCalendar.days, ...lifecycleEntries(), ...DATA.partnerProgram.perProduct];
   all.forEach(x => counts[x.status] = (counts[x.status]||0)+1);
   const el = document.getElementById('statusTicker');
   el.innerHTML = Object.keys(STATUS_META).filter(s=>counts[s]).map(s=>{
@@ -385,34 +451,91 @@ function renderLegend(){
     `<div class="legend-item"><span class="dot" style="background:${v.color}"></span>${v.label}</div>`
   ).join("");
 }
-function renderProducts(){
-  const branches = ["HIỂU MẠNH","HIỂU HẠNH","HIỂU KÊNH","VIP"];
-  const container = document.getElementById('productsContainer');
-  let html = "";
-  branches.forEach(branch=>{
-    const items = DATA.products.filter(p=>p.branch===branch && matchesStatus(p.status) && matchesSearch(p.id+" "+p.name));
-    if(items.length===0) return;
-    html += `<div class="branch-block">
-      <div class="branch-head"><div class="branch-bar" style="background:${BRANCH_META[branch].color}"></div><h2>${branch}</h2></div>
-      <div class="cards">`;
-    items.forEach(p=>{
-      html += `<div class="card" style="--card-accent:${BRANCH_META[branch].color}">
-        <div class="card-top">
-          <div><div class="card-id">${p.id}</div><div class="card-name">${p.name}</div></div>
-          ${badge(p.status)}
-        </div>
-        <div class="card-meta">${p.type} · ${p.role}${p.offerId? " · Offer: "+p.offerId:""}</div>
-        ${p.priceOptions? `<div class="card-price">${p.priceOptions.map(o=>`${o.label}: ${o.price}${o.unit}${o.recommended? " ★":""}`).join(" &nbsp;·&nbsp; ")}</div>` : `<div class="card-price">${p.price}${p.priceOld? `<span class="old">${p.priceOld}</span>`:""}</div>`}
-        ${p.notes? `<div class="card-notes">${p.notes}</div>`:""}
-      </div>`;
-    });
-    html += `</div></div>`;
+
+function renderBranch(){
+  const container = document.getElementById('branchContainer');
+  const items = DATA.products.filter(p=>p.branch===currentBranch && matchesStatus(p.status) && matchesSearch(p.id+" "+p.name));
+  let html = `<div class="cards">`;
+  items.forEach(p=>{
+    const done = productCompleteness(p);
+    html += `<div class="card" data-product-card="${p.id}" style="--card-accent:${BRANCH_META[currentBranch].color};cursor:pointer;">
+      <div class="card-top">
+        <div><div class="card-id">${p.id}</div><div class="card-name">${p.name}</div></div>
+        ${badge(p.status)}
+      </div>
+      <div class="card-meta">${p.type} · ${p.role}${p.offerId? " · Offer: "+p.offerId:""}</div>
+      ${p.priceOptions? `<div class="card-price">${p.priceOptions.map(o=>`${o.label}: ${o.price}${o.unit}${o.recommended? " ★":""}`).join(" &nbsp;·&nbsp; ")}</div>` : `<div class="card-price">${p.price}${p.priceOld? `<span class="old">${p.priceOld}</span>`:""}</div>`}
+      <div class="completeness-tag"><b>${done}/8</b> khâu đã xong — bấm để xem chi tiết</div>
+      ${p.notes? `<div class="card-notes">${p.notes}</div>`:""}
+    </div>`;
   });
+  html += `</div>`;
   container.innerHTML = html || `<div class="empty">Không có sản phẩm phù hợp bộ lọc.</div>`;
+  container.querySelectorAll('[data-product-card]').forEach(card=>{
+    card.addEventListener('click', ()=>{ currentProductId = card.dataset.productCard; switchView('product'); });
+  });
 }
+
+function lifecycleCard(title, status, bodyHtml){
+  return `<div class="policy-card">
+    <div class="policy-card-head">
+      <div class="policy-name">${title}</div>
+      ${badge(status)}
+    </div>
+    <div class="rule-box">${bodyHtml}</div>
+  </div>`;
+}
+function renderProduct(){
+  const container = document.getElementById('productContainer');
+  const p = DATA.products.find(x=>x.id===currentProductId);
+  if(!p){ container.innerHTML = `<div class="empty">Không tìm thấy sản phẩm.</div>`; return; }
+
+  let html = `<div class="back-link" id="backToBranch">← Quay lại ${p.branch}</div>`;
+
+  html += lifecycleCard(LIFECYCLE_STEPS[0].label, p.lifecycle.research.status,
+    p.lifecycle.research.notes || "Chưa có nội dung nghiên cứu thị trường & định vị.");
+
+  html += lifecycleCard(LIFECYCLE_STEPS[1].label, p.lifecycle.productAccess.status,
+    (p.lifecycle.productAccess.url ? `<a class="reslink" href="${p.lifecycle.productAccess.url}" target="_blank" rel="noopener">${p.lifecycle.productAccess.url}</a>` : "")
+    + (p.lifecycle.productAccess.notes ? `<div style="margin-top:6px;">${p.lifecycle.productAccess.notes}</div>` : (p.lifecycle.productAccess.url ? "" : "Chưa có link sử dụng sản phẩm.")));
+
+  const resList = DATA.resources.filter(r=>r.productId===p.id);
+  html += lifecycleCard(LIFECYCLE_STEPS[2].label, getLifecycleStatus(p,"landing"),
+    resList.length ? resList.map(r=>`<div style="margin-bottom:6px;">${badge(r.status)} <a class="reslink" href="${r.url}" target="_blank" rel="noopener">${r.name}</a>${r.note? " — "+r.note:""}</div>`).join("") : "Chưa gắn trang bán hàng nào cho sản phẩm này.");
+
+  const offer = DATA.offers.find(o=>o.productId===p.id);
+  let offerBody = `<div><b>Giá hiện tại:</b> ${p.priceOptions ? p.priceOptions.map(o=>`${o.label}: ${o.price}${o.unit}`).join(" · ") : p.price}${p.priceOld? ` (giá cũ: ${p.priceOld})`:""}</div>`;
+  if(offer) offerBody += `<div style="margin-top:6px;">${badge(offer.status)} <b>${offer.name}</b> — ${offer.price} (${offer.type})</div>`;
+  html += lifecycleCard(LIFECYCLE_STEPS[3].label, getLifecycleStatus(p,"offer"), offerBody);
+
+  const pols = (p.policyIds||[]).map(id=>DATA.policies.find(x=>x.id===id)).filter(Boolean);
+  html += lifecycleCard(LIFECYCLE_STEPS[4].label, getLifecycleStatus(p,"policy"),
+    pols.length ? pols.map(x=>`<div style="margin-bottom:6px;">${badge(x.status)} <b>${x.name}:</b> ${x.note}</div>`).join("") : "Chưa khai chính sách nào áp dụng cho sản phẩm này.");
+
+  const contentItems = DATA.contentPlan.filter(c=>c.productId===p.id);
+  html += lifecycleCard(LIFECYCLE_STEPS[5].label, getLifecycleStatus(p,"content"),
+    (contentItems.length ? contentItems.map(c=>`<div style="margin-bottom:6px;">${badge(c.status)} ${c.title}</div>`).join("") : "Chưa có content nào lên kế hoạch cho sản phẩm này.")
+    + `<div style="margin-top:8px;"><span class="reslink" id="gotoContent" style="cursor:pointer;text-decoration:underline;">Xem Lịch Content 30 Ngày đầy đủ →</span></div>`);
+
+  const partnerEntry = DATA.partnerProgram.perProduct.find(x=>x.productId===p.id);
+  html += lifecycleCard(LIFECYCLE_STEPS[6].label, getLifecycleStatus(p,"partner"),
+    partnerEntry ? `<div><b>Giảm giá người được giới thiệu:</b> ${partnerEntry.refereeDiscount || "chưa có số"}</div>
+      <div><b>Hoa hồng người giới thiệu:</b> ${partnerEntry.referrerReward || "chưa có số"}</div>
+      ${partnerEntry.partnerThreshold ? `<div><b>Ngưỡng Partner:</b> ${partnerEntry.partnerThreshold}</div>`:""}
+      ${partnerEntry.notes ? `<div style="margin-top:6px;">${partnerEntry.notes}</div>`:""}`
+      : "Chưa tham gia chương trình Partner nào.");
+
+  html += lifecycleCard(LIFECYCLE_STEPS[7].label, p.lifecycle.postSaleOps.status,
+    p.lifecycle.postSaleOps.notes || "Chưa có quy trình vận hành sau bán.");
+
+  container.innerHTML = html;
+  document.getElementById('backToBranch').addEventListener('click', ()=>switchView('branch'));
+  const gotoContent = document.getElementById('gotoContent');
+  if(gotoContent) gotoContent.addEventListener('click', ()=>{ document.querySelector('.dock-item[data-view="content"]').click(); });
+}
+
 function renderContent(){
   const container = document.getElementById('contentContainer');
-  const branches = ["HIỂU MẠNH","HIỂU HẠNH","HIỂU KÊNH","VIP"];
   const cal = DATA.contentCalendar;
 
   let html = `<div class="intro-card">
@@ -420,7 +543,7 @@ function renderContent(){
     <div class="view-sub" style="margin-top:0;">Trụ nội dung xoay quanh, dùng làm khung lên ý tưởng cho từng nhánh.</div>
     <div class="three-branch-grid">`;
   DATA.contentPillars.forEach(cp=>{
-    html += `<div class="branch-tile" style="background:${BRANCH_META[cp.branch]?.color || 'var(--content-accent)'}">
+    html += `<div class="branch-tile" style="background:${BRANCH_META[cp.branch]?.color || 'var(--content-accent)'};cursor:default;">
       <h3>${cp.branch}</h3>
       <p>${cp.pillars.join(" · ")}</p>
     </div>`;
@@ -489,29 +612,6 @@ function renderContent(){
     </div>`;
   });
   html += `</div>`;
-
-  // --- Backlog theo nhánh (ý tưởng khác, chưa lên lịch cụ thể) ---
-  html += `<div class="branch-head" style="margin-top:30px;"><h2 style="font-family:'Playfair Display',serif;font-size:16px;">Ý tưởng khác / Backlog theo nhánh</h2></div>`;
-  branches.forEach(branch=>{
-    const items = DATA.contentPlan.filter(c=>c.branch===branch && matchesStatus(c.status) && matchesSearch(c.id+" "+c.title));
-    if(items.length===0) return;
-    html += `<div class="branch-block">
-      <div class="branch-head"><div class="branch-bar" style="background:${BRANCH_META[branch].color}"></div><h2>${branch}</h2></div>
-      <div class="cards">`;
-    items.forEach(c=>{
-      const product = DATA.products.find(p=>p.id===c.productId);
-      html += `<div class="card" style="--card-accent:${BRANCH_META[branch].color}">
-        <div class="card-top">
-          <div><div class="card-id">${c.id}</div><div class="card-name">${c.title}</div></div>
-          ${badge(c.status)}
-        </div>
-        <div class="card-meta">${c.funnelStage} · ${c.format} · ${c.channel}${product? " · SP: "+product.name:""}</div>
-        <div class="card-meta" style="margin-top:4px;"><b>Tần suất:</b> ${c.cadence}</div>
-        ${c.notes? `<div class="card-notes">${c.notes}</div>`:""}
-      </div>`;
-    });
-    html += `</div></div>`;
-  });
   container.innerHTML = html;
 
   container.querySelectorAll('[data-theme-chip]').forEach(chip=>{
@@ -524,78 +624,69 @@ function renderContent(){
     chip.addEventListener('click', ()=>{ activeContentWeek = parseInt(chip.dataset.weekTab,10); renderContent(); });
   });
 }
-function renderOffers(){
-  const container = document.getElementById('offersContainer');
-  let html = "";
-  DATA.offers.filter(o=>matchesStatus(o.status) && matchesSearch(o.id+" "+o.name+" "+o.productId)).forEach(o=>{
+
+function renderPartner(){
+  const container = document.getElementById('partnerContainer');
+  const pp = DATA.partnerProgram;
+  let html = `<div class="intro-card">
+    <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin:0 0 6px;">${pp.vipTier.name}</h2>
+    <div class="view-sub" style="margin-top:0;">Chính sách đối tác xuyên toàn hệ sinh thái — áp dụng cộng thêm trên nền chương trình Partner theo từng sản phẩm bên dưới.</div>
+    <div class="rule-box">
+      <div><b>Điều kiện:</b> ${pp.vipTier.condition}</div>
+      <div><b>Quyền lợi:</b> ${pp.vipTier.bonus}</div>
+      <div><b>Hình thức trả:</b> ${pp.vipTier.payout}</div>
+      <div><b>Tự động hoá:</b> ${badge(pp.vipTier.automation)}</div>
+    </div>
+    ${pp.vipTier.notes? `<div class="card-notes">${pp.vipTier.notes}</div>`:""}
+  </div>`;
+  html += `<div class="branch-head"><h2 style="font-family:'Playfair Display',serif;font-size:16px;">Chương trình Partner theo sản phẩm</h2></div>`;
+  pp.perProduct.filter(x=>matchesStatus(x.status)).forEach(x=>{
+    const product = DATA.products.find(p=>p.id===x.productId);
     html += `<div class="offer-card">
       <div class="offer-card-head">
-        <div><div class="card-id">${o.id} · ${o.productId}</div><div class="policy-name">${o.name}</div></div>
-        ${badge(o.status)}
+        <div class="policy-name">${product? product.name : x.productId}</div>
+        ${badge(x.status)}
       </div>
       <div class="rule-box">
-        <div><b>Giá:</b> ${o.price} &nbsp; <b>Loại:</b> ${o.type}</div>
-        <div><b>Hiệu lực:</b> từ ${o.from} — đến ${o.until}</div>
-        <div><b>Thanh toán:</b> ${o.payment}</div>
-        <div><b>Điều kiện:</b> ${o.eligibility}</div>
-        <div><b>Bonus:</b></div>
-        <ul class="bonus-list">${o.bonus.map(b=>`<li>${b}</li>`).join("")}</ul>
+        <div><b>Giảm giá người được giới thiệu:</b> ${x.refereeDiscount || "chưa có số"}</div>
+        <div><b>Hoa hồng người giới thiệu:</b> ${x.referrerReward || "chưa có số"}</div>
+        ${x.partnerThreshold? `<div><b>Ngưỡng Partner:</b> ${x.partnerThreshold}</div>`:""}
       </div>
-      ${o.notes? `<div class="card-notes">${o.notes}</div>`:""}
+      ${x.notes? `<div class="card-notes">${x.notes}</div>`:""}
     </div>`;
   });
-  if(DATA.offersMissing.length && matchesStatus("NEEDS_CONFIRMATION") && !searchTerm){
-    html += `<div class="offer-card" style="border-left:4px solid var(--st-needs)">
-      <div class="policy-name">Chưa có Offer xác nhận cho các nhóm sau</div>
-      <div class="card-meta" style="margin-top:8px;">${DATA.offersMissing.map(x=>`<span class="badge" style="background:var(--st-needs);margin-right:6px;margin-bottom:6px;display:inline-block;">${x}</span>`).join("")}</div>
-    </div>`;
-  }
-  container.innerHTML = html || `<div class="empty">Không có offer phù hợp bộ lọc.</div>`;
-}
-function renderPolicy(){
-  const container = document.getElementById('policyContainer');
-  let html = "";
-  DATA.policies.filter(p=>matchesStatus(p.status) && matchesSearch(p.id+" "+p.name)).forEach(p=>{
-    html += `<div class="policy-card">
-      <div class="policy-card-head">
-        <div><div class="card-id">${p.id}</div><div class="policy-name">${p.name}</div><div class="policy-scope">${p.scope}</div></div>
-        ${badge(p.status)}
-      </div>
-      <div class="rule-box">${p.note}</div>
-    </div>`;
-  });
-  container.innerHTML = html || `<div class="empty">Không có policy phù hợp bộ lọc.</div>`;
-}
-function renderResources(){
-  const container = document.getElementById('resourcesContainer');
-  let html = `<div class="cards">`;
-  DATA.resources.filter(r=>matchesStatus(r.status) && matchesSearch(r.id+" "+r.name+" "+r.url)).forEach(r=>{
-    html += `<div class="card" style="--card-accent:${BRANCH_META[r.branch]?.color || 'var(--ink-soft)'}">
-      <div class="card-top">
-        <div><div class="card-id">${r.id}</div><div class="card-name">${r.name}</div></div>
-        ${badge(r.status)}
-      </div>
-      <div class="card-meta">${r.branch}</div>
-      <div style="margin-top:8px;"><a class="reslink" href="${r.url}" target="_blank" rel="noopener">${r.url}</a></div>
-      ${r.note? `<div class="card-notes">${r.note}</div>`:""}
-    </div>`;
-  });
-  html += `</div>`;
-  if(!searchTerm && matchesStatus("MISSING")){
-    html += `<div class="branch-block" style="margin-top:24px;">
-      <div class="branch-head"><div class="branch-bar" style="background:var(--st-missing)"></div><h2>Link còn thiếu (MISSING)</h2></div>
-      <div class="policy-card"><ul class="bonus-list">${DATA.resourcesMissing.map(x=>`<li>${x}</li>`).join("")}</ul></div>
-    </div>`;
-  }
   container.innerHTML = html;
 }
+
 function renderGaps(){
   const container = document.getElementById('gapsContainer');
+  const lifecycleNeedsConfirm = [];
+  const lifecycleMissingCounts = {};
+  LIFECYCLE_STEPS.filter(s=>["research","productAccess","postSaleOps"].includes(s.key)).forEach(s=>{
+    lifecycleMissingCounts[s.key] = 0;
+  });
+  DATA.products.forEach(p=>{
+    ["research","productAccess","postSaleOps"].forEach(key=>{
+      const st = p.lifecycle[key].status;
+      if(st==="NEEDS_CONFIRMATION") lifecycleNeedsConfirm.push({id:p.id, text:LIFECYCLE_STEPS.find(s=>s.key===key).label, cat:"Vòng đời sản phẩm"});
+      if(st==="MISSING") lifecycleMissingCounts[key]++;
+    });
+  });
+  const lifecycleMissingSummary = Object.entries(lifecycleMissingCounts).filter(([,c])=>c>0).map(([key,c])=>({
+    id: c+"/"+DATA.products.length+" SP", text:"chưa có "+LIFECYCLE_STEPS.find(s=>s.key===key).label, cat:"Vòng đời sản phẩm"
+  }));
+  const partnerNeedsConfirm = DATA.partnerProgram.perProduct.filter(x=>x.status==="NEEDS_CONFIRMATION").map(x=>{
+    const product = DATA.products.find(p=>p.id===x.productId);
+    return { id:x.productId, text:(product?product.name:x.productId)+" — % Partner chưa xác nhận", cat:"HIỂU Partner" };
+  });
+
   const needsConfirm = [
     ...DATA.products.filter(p=>p.status==="NEEDS_CONFIRMATION").map(p=>({id:p.id, text:p.name, cat:"Sản phẩm / Giá"})),
     ...DATA.policies.filter(p=>p.status==="NEEDS_CONFIRMATION").map(p=>({id:p.id, text:p.name, cat:"Policy"})),
     ...DATA.contentPlan.filter(c=>c.status==="NEEDS_CONFIRMATION").map(c=>({id:c.id, text:c.title, cat:"Content Marketing"})),
     ...DATA.contentCalendar.days.filter(d=>d.status==="NEEDS_CONFIRMATION").map(d=>({id:"Ngày "+d.day, text:d.title, cat:"Lịch Content 30 Ngày"})),
+    ...lifecycleNeedsConfirm,
+    ...partnerNeedsConfirm,
   ];
   const missingCalendarDays = DATA.contentCalendar.days.filter(d=>d.status==="MISSING");
   const missing = [
@@ -604,6 +695,7 @@ function renderGaps(){
     ...DATA.offersMissing.map(x=>({id:x, text:"Chưa có Offer xác nhận", cat:"Offer"})),
     ...DATA.contentPlan.filter(c=>c.status==="MISSING").map(c=>({id:c.id, text:c.title, cat:"Content Marketing"})),
     ...(missingCalendarDays.length? [{id:"Ngày "+missingCalendarDays.map(d=>d.day).join(", "), text:missingCalendarDays.length+" ngày trong Lịch Content 30 Ngày chưa lên ý tưởng", cat:"Lịch Content 30 Ngày"}] : []),
+    ...lifecycleMissingSummary,
   ];
   let html = `<div class="branch-block">
     <div class="branch-head"><div class="branch-bar" style="background:var(--st-needs)"></div><h2>Cần xác nhận (NEEDS_CONFIRMATION)</h2></div>
@@ -617,30 +709,52 @@ function renderGaps(){
   html += `</div></div>`;
   container.innerHTML = html;
 }
+
 function renderAll(){
-  renderTicker(); renderProducts(); renderContent(); renderOffers(); renderPolicy(); renderResources(); renderGaps();
+  renderTicker(); renderGaps(); renderContent(); renderPartner();
+  if(currentBranch) renderBranch();
+  if(currentProductId) renderProduct();
 }
 
 const dockItems = document.querySelectorAll('.dock-item');
 const views = document.querySelectorAll('.view');
 const viewTitles = {
-  overview:  { title:"Tổng quan", sub:"Toàn cảnh Hệ Sinh Thái HIỂU" },
-  products:  { title:"Sản phẩm & Giá", sub:"Nguồn duy nhất: Product Catalog + Pricing Registry" },
-  content:   { title:"Content Marketing", sub:"Content Pillars & Kế hoạch nội dung theo phễu — Content Plan Registry" },
-  offers:    { title:"Offer đang chạy", sub:"Đợt/cohort, bonus, điều kiện — Offer Registry" },
-  policy:    { title:"Policy", sub:"Quyền lợi, điều kiện, chính sách — Policy Registry" },
-  resources: { title:"Link & Resource", sub:"Nguồn URL duy nhất — Resource Registry" },
-  gaps:      { title:"Cần xử lý", sub:"Tổng hợp mọi phần NEEDS_CONFIRMATION / MISSING trong hệ thống" },
+  overview: { title:"Tổng quan", sub:"Toàn cảnh Hệ Sinh Thái HIỂU" },
+  gaps:     { title:"Cần xử lý", sub:"Tổng hợp mọi phần NEEDS_CONFIRMATION / MISSING trong hệ thống" },
+  content:  { title:"Content Marketing", sub:"Content Pillars & Lịch Nội Dung 30 Ngày — xuyên toàn hệ sinh thái" },
+  partner:  { title:"HIỂU Partner", sub:"Chính sách đối tác/affiliate — xuyên toàn hệ sinh thái" },
 };
-dockItems.forEach(item=>{
-  item.addEventListener('click', ()=>{
-    dockItems.forEach(i=>i.classList.remove('active'));
-    item.classList.add('active');
-    const v = item.dataset.view;
-    views.forEach(view=>view.classList.toggle('active', view.dataset.view===v));
+
+function switchView(v){
+  views.forEach(view=>view.classList.toggle('active', view.dataset.view===v));
+  dockItems.forEach(i=>i.classList.remove('active'));
+  if(v === 'branch'){
+    const match = document.querySelector(`.dock-item[data-branch="${currentBranch}"]`);
+    if(match) match.classList.add('active');
+    document.getElementById('viewTitle').textContent = currentBranch;
+    document.getElementById('viewSub').textContent = "Danh sách sản phẩm — bấm vào 1 sản phẩm để xem 8 khâu vòng đời";
+    renderBranch();
+  } else if(v === 'product'){
+    const p = DATA.products.find(x=>x.id===currentProductId);
+    document.getElementById('viewTitle').textContent = p ? p.name : "Sản phẩm";
+    document.getElementById('viewSub').textContent = p ? `${p.branch} · Vòng đời 8 khâu` : "";
+    renderProduct();
+  } else {
+    const match = document.querySelector(`.dock-item[data-view="${v}"]`);
+    if(match) match.classList.add('active');
     document.getElementById('viewTitle').textContent = viewTitles[v].title;
     document.getElementById('viewSub').textContent = viewTitles[v].sub;
+  }
+}
+dockItems.forEach(item=>{
+  item.addEventListener('click', ()=>{
+    const v = item.dataset.view;
+    if(v === 'branch') currentBranch = item.dataset.branch;
+    switchView(v);
   });
+});
+document.querySelectorAll('[data-branch-link]').forEach(tile=>{
+  tile.addEventListener('click', ()=>{ currentBranch = tile.dataset.branchLink; switchView('branch'); });
 });
 document.getElementById('searchInput').addEventListener('input', (e)=>{ searchTerm = e.target.value.trim(); renderAll(); });
 
@@ -656,6 +770,10 @@ fetch('./data.json')
     document.getElementById('dockFoot').textContent = "Lỗi tải data.json";
     console.error(err);
   });
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
 </script>
 </body>
 </html>
