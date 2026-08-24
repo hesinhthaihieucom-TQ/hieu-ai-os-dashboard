@@ -14,7 +14,7 @@ const STEPS = [
   { key:'muc-tieu', text:'Đặt mục tiêu tháng này TRƯỚC khi ghi chép — không phải chuyện cuối tháng mới nghĩ tới.' },
   { key:'tong-ket-tuan', text:'Cuối tuần quay lại đây xem tiền đi đâu nhiều nhất, tự đánh giá vài trục ngoài tài chính.' },
   { key:'tong-ket-thang', text:'Cập nhật tài sản/tiêu sản mỗi tháng — Tài Sản Ròng là con số quan trọng nhất của cuốn sổ này.' },
-  { key:'quan-ly-no', text:'Nhập từng khoản nợ để xem chiến lược trả nợ Snowball/Avalanche nào nhanh hơn, tiết kiệm lãi hơn.' },
+  { key:'quan-ly-no', text:'Nhập từng khoản nợ để xem chiến lược Đà Thắng Nhỏ hay Diệt Lãi Cao nhanh hơn, tiết kiệm lãi hơn cho bạn.' },
 ];
 
 const STORAGE_PREFIX = 'tc_onboarding_seen_';

@@ -412,6 +412,9 @@ function render(container, ctx){
     // cao nhất. Chỉ lưu tạm trong window (session), không lưu DB — đúng nguyên tắc "Điểm Nghiệp Tiền
     // không lưu lại".
     window.TcLastWeakestArea = state.result.weakestArea ? WEAKEST_AREA_INFO[state.result.weakestArea] : null;
+    // Dùng để xếp lại thứ tự 3 khối lợi ích ở màn nâng cấp (tcBenefitsHtml() ở app-shell.js) — có
+    // nợ thật thì đẩy "thanh khoản nợ" lên đầu, không nợ thì đẩy xuống cuối (2026-08-24, góp ý Quỳnh).
+    window.TcLastHasDebt = Number(state.form.debt_total) > 0;
     draw();
   }
 

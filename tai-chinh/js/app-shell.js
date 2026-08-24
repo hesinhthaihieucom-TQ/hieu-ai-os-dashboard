@@ -329,14 +329,33 @@ function renderApp(){
 // tăng tài sản/kiểm soát tài chính — nói bằng KẾT QUẢ cụ thể, không phải tên module (module tên ẩn
 // dụ tâm thức, người mới chưa hiểu "Hạt Giống Phước - Nghiệp" nghĩa là gì).
 function tcBenefitsHtml(){
-  const BENEFITS = [
-    { icon:'💳', title:'Thanh khoản nợ nhanh hơn, đỡ tốn lãi', text:'Quản Lý Nợ tự tính chiến lược Snowball/Avalanche — biết chính xác nên dồn tiền trả khoản nào trước để tiết kiệm tiền lãi nhiều nhất, không phải đoán mò.' },
-    { icon:'📈', title:'Tài sản ròng tăng đều, nhìn thấy rõ từng tháng', text:'Tổng Kết Tháng tự vẽ biểu đồ Tài Sản Ròng qua từng tháng — biết ngay đang giàu lên hay đang lùi, không phải chỉ cảm giác chung chung.' },
-    { icon:'🎯', title:'Kiểm soát dòng tiền, không chỉ ghi cho có', text:'Mục Tiêu & Cam Kết đặt hạn mức từng danh mục TRƯỚC khi tiêu, Tổng Kết Tuần báo ngay lệch mục tiêu ở đâu — còn Hạt Giống Phước - Nghiệp giúp gỡ tận gốc niềm tin cũ khiến tiền cứ lặp lại đúng 1 vấn đề.' },
-  ];
+  const BENEFITS = {
+    debt: { icon:'💳', title:'Thanh khoản nợ nhanh hơn, đỡ tốn lãi', text:'Quản Lý Nợ tự tính chiến lược Đà Thắng Nhỏ/Diệt Lãi Cao — biết chính xác nên dồn tiền trả khoản nào trước để tiết kiệm tiền lãi nhiều nhất, không phải đoán mò.' },
+    asset: { icon:'📈', title:'Tài sản ròng tăng đều, nhìn thấy rõ từng tháng', text:'Tổng Kết Tháng tự vẽ biểu đồ Tài Sản Ròng qua từng tháng — biết ngay đang giàu lên hay đang lùi, không phải chỉ cảm giác chung chung.' },
+    control: { icon:'🎯', title:'Kiểm soát dòng tiền, không chỉ ghi cho có', text:'Mục Tiêu & Cam Kết đặt hạn mức từng danh mục TRƯỚC khi tiêu, Tổng Kết Tuần báo ngay lệch mục tiêu ở đâu — còn Hạt Giống Phước - Nghiệp giúp gỡ tận gốc niềm tin cũ khiến tiền cứ lặp lại đúng 1 vấn đề.' },
+  };
+  // Xếp lại thứ tự theo ĐÚNG số liệu vừa nhập ở Chấm Điểm Nghiệp Tiền (window.TcLastHasDebt, xem
+  // thiet-lap-nhanh.js submit()) — góp ý Quỳnh 2026-08-24: "có [cá nhân hoá], và cần giải thích tại
+  // sao". CÓ nợ thật thì thanh khoản nợ lên đầu (đúng nỗi đau cấp bách nhất); KHÔNG nợ thì đẩy xuống
+  // cuối, ưu tiên kiểm soát dòng tiền/tài sản trước — kèm 1 dòng giải thích rõ vì sao xếp vậy, để
+  // không có cảm giác ngẫu nhiên. window.TcLastHasDebt undefined (chưa làm bài trong session này) =
+  // giữ thứ tự mặc định, không hiện dòng giải thích.
+  const hasDebt = window.TcLastHasDebt;
+  let order, reasonNote;
+  if(hasDebt === true){
+    order = ['debt','asset','control'];
+    reasonNote = 'Dựa trên số liệu bạn vừa nhập ở Chấm Điểm Nghiệp Tiền — bạn đang có khoản nợ, nên đây là điều nên ưu tiên trước.';
+  } else if(hasDebt === false){
+    order = ['control','asset','debt'];
+    reasonNote = 'Dựa trên số liệu bạn vừa nhập ở Chấm Điểm Nghiệp Tiền — bạn hiện không có nợ, nên phần này phù hợp hơn với bạn ngay bây giờ.';
+  } else {
+    order = ['debt','asset','control'];
+    reasonNote = null;
+  }
   return `
-    <div style="margin-bottom:20px;">
-      ${BENEFITS.map(b=>`
+    ${reasonNote ? `<div class="hint-box" style="margin-bottom:14px;">📌 ${esc(reasonNote)}</div>` : ''}
+    <div style="margin-bottom:16px;">
+      ${order.map(key=>BENEFITS[key]).map(b=>`
         <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);">
           <span style="font-size:20px;flex-shrink:0;">${b.icon}</span>
           <div>
@@ -346,6 +365,7 @@ function tcBenefitsHtml(){
         </div>
       `).join('')}
     </div>
+    <div class="hint-box" style="margin-bottom:20px;background:var(--accent-soft);">🔁 <b>Cam kết hoàn tiền 100%</b> trong 7 ngày đầu nếu bạn dùng thấy không hợp — không cần lý do, chỉ cần nhắn email đăng ký.</div>
   `;
 }
 

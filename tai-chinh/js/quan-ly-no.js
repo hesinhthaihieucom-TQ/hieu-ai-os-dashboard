@@ -173,15 +173,15 @@ function render(container, ctx){
     return `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
         <div class="source-card" style="text-align:left;padding:16px;">
-          <div style="font-weight:700;color:var(--ink);margin-bottom:6px;">❄️ Snowball (nợ nhỏ nhất trước)</div>
+          <div style="font-weight:700;color:var(--ink);margin-bottom:6px;">❄️ Đà Thắng Nhỏ (nợ nhỏ nhất trước)</div>
           <div style="font-size:13px;line-height:1.6;">${fmtResult(snowball)}</div>
         </div>
         <div class="source-card" style="text-align:left;padding:16px;">
-          <div style="font-weight:700;color:var(--ink);margin-bottom:6px;">🏔️ Avalanche (lãi cao nhất trước)</div>
+          <div style="font-weight:700;color:var(--ink);margin-bottom:6px;">🏔️ Diệt Lãi Cao (lãi cao nhất trước)</div>
           <div style="font-size:13px;line-height:1.6;">${fmtResult(avalanche)}</div>
         </div>
       </div>
-      <div class="hint-box" style="margin-top:12px;">Avalanche luôn tiết kiệm tiền lãi bằng hoặc nhiều hơn Snowball — nhưng Snowball tạo cảm giác chiến thắng nhanh (trả hết 1 khoản nhỏ sớm) nên nhiều người kiên trì hơn. Chọn theo tính cách của bạn, không có cách nào "sai".</div>
+      <div class="hint-box" style="margin-top:12px;">Diệt Lãi Cao luôn tiết kiệm tiền lãi bằng hoặc nhiều hơn Đà Thắng Nhỏ — nhưng Đà Thắng Nhỏ tạo cảm giác chiến thắng nhanh (trả hết 1 khoản nhỏ sớm) nên nhiều người kiên trì hơn. Chọn theo tính cách của bạn, không có cách nào "sai".</div>
     `;
   }
 
