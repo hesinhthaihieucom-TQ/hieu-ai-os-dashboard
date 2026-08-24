@@ -76,9 +76,13 @@ function trialQuotaHint(){
     const color = remaining<=10 ? 'var(--danger)' : '#9CA396';
     return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt tháng này</span>`;
   }
-  const remaining = Math.max(0, TRIAL_AI_LIMIT - (p.trial_ai_uses||0));
+  // trial_ai_limit chốt riêng lúc đăng ký (xem schema_full.sql) — người đăng ký trước/sau có thể
+  // khác nhau, KHÔNG dùng chung 1 số TRIAL_AI_LIMIT cho mọi người nữa. Cột null (tài khoản có từ
+  // trước cột này) coi như mức cũ, dùng TRIAL_AI_LIMIT làm dự phòng.
+  const trialLimit = p.trial_ai_limit || TRIAL_AI_LIMIT;
+  const remaining = Math.max(0, trialLimit - (p.trial_ai_uses||0));
   const color = remaining<=3 ? 'var(--danger)' : '#9CA396';
-  return `<span style="color:${color};">🎁 Còn ${remaining}/${TRIAL_AI_LIMIT} lượt dùng thử</span>`;
+  return `<span style="color:${color};">🎁 Còn ${remaining}/${trialLimit} lượt dùng thử</span>`;
 }
 // Chỉ hiện ảnh đại diện + tên hiển thị ở đây (không hiện email nữa) — email/thông tin đăng nhập,
 // đổi mật khẩu, đổi ảnh... chuyển hết vào mục "Tài khoản" (bấm vào đúng khối này để vào).
@@ -551,7 +555,7 @@ function renderExpiredScreen(){
   root.innerHTML = `
     <div class="auth-shell" style="max-width:460px;">
       <img src="assets/logo-hieu-kenh-badge.png" class="auth-logo" alt="" onerror="this.style.display='none'">
-      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử 7 ngày đã kết thúc'}</h1>
+      <h1>${hadAccessBefore ? 'Gói dùng đã hết hạn' : 'Dùng thử đã kết thúc'}</h1>
       <div class="sub">${hadAccessBefore
         ? `Gói của bạn đã hết hạn ngày ${esc(new Date(p.access_until).toLocaleDateString('vi-VN'))}. Chuyển khoản để tiếp tục dùng ngay.`
         : 'Chuyển khoản theo đúng hướng dẫn bên dưới — hệ thống tự kích hoạt trong vài phút, không cần chờ ai xác nhận.'}</div>

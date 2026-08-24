@@ -58,6 +58,16 @@ alter table profiles add column if not exists referred_by_ref_code text;
 -- không thưởng lại nữa (cờ này chặn double-reward).
 alter table profiles add column if not exists referral_reward_given boolean not null default false;
 
+-- Trần lượt dùng thử RIÊNG TỪNG NGƯỜI (2026-08-24, theo yêu cầu chị Quỳnh: "muốn những người đầu
+-- tiên là những người được ưu đãi nhất để họ không cảm thấy bị thiệt") — trước đây TRIAL_AI_LIMIT
+-- (api/_lib/trial-quota.js) là 1 số CỐ ĐỊNH áp dụng chung cho mọi tài khoản chưa trả phí, đổi số đó
+-- sẽ vô tình đổi luôn trần của những người đã đăng ký từ trước (ép họ về mức thấp hơn, đúng ngược
+-- lại điều chị muốn tránh). Cột này CHỐT NGAY LÚC ĐĂNG KÝ (handle_new_user), không đổi theo sau —
+-- ai đã đăng ký trước giữ nguyên mức cũ, chỉ người đăng ký MỚI TỪ NAY mới theo mức mới. NULL (tài
+-- khoản có từ trước migration này) coi như dùng mức cũ 100 — backfill 1 lần ngay dưới đây.
+alter table profiles add column if not exists trial_ai_limit integer;
+update profiles set trial_ai_limit = 100 where trial_ai_limit is null;
+
 update profiles p set email = u.email from auth.users u where p.id = u.id and p.email is null;
 
 create or replace function public.generate_ref_code()
@@ -76,13 +86,15 @@ begin
   end if;
 end $$;
 
--- Trigger tạo profile khi có user mới đăng ký: lưu email, cấp 7 ngày dùng thử, sinh ref_code,
+-- Trigger tạo profile khi có user mới đăng ký: lưu email, cấp hạn dùng thử, sinh ref_code,
 -- và lưu luôn is_student (hỏi ngay lúc đăng ký) — dùng để quyết định hiển thị bảng giá nào ở
 -- màn hình thanh toán, không hỏi lại lúc đó nữa.
--- LƯU Ý: từng rút xuống 3 ngày (2026-08-19) để giảm rủi ro chi phí AI trong lúc dùng thử, nhưng sau
--- khi thêm giới hạn lượt AI (api/_lib/trial-quota.js) thì chi phí đã được chặn bởi số LƯỢT chứ
--- không còn phụ thuộc số NGÀY nữa — trả lại 7 ngày để khách có đủ thời gian cân nhắc mua mà không
--- phát sinh thêm rủi ro chi phí (dùng hết lượt trong 1 ngày hay trải đều 7 ngày thì chi phí như nhau).
+-- LƯU Ý: từng rút xuống 3 ngày (2026-08-19) để giảm rủi ro chi phí AI trong lúc dùng thử, sau đó trả
+-- lại 7 ngày khi đã có giới hạn lượt AI chặn rủi ro chi phí rồi. Rút lại 3 ngày + 50 lượt lần nữa
+-- (2026-08-24, chiến dịch Zoom tối nay) — lần này KHÔNG phải vì rủi ro chi phí mà vì chị Quỳnh muốn
+-- người đăng ký TRƯỚC đó (7 ngày/100 lượt) vẫn là nhóm được ưu đãi nhất, không bị người đăng ký sau
+-- có mức ngang hoặc hơn. Chỉ áp dụng cho người đăng ký MỚI TỪ NAY — trial_ai_limit chốt ngay lúc
+-- đăng ký (xem cột ở trên), không đụng tới ai đã có tài khoản.
 create or replace function public.handle_new_user()
 returns trigger as $$
 declare
@@ -95,10 +107,10 @@ begin
   if v_ref_input is not null and v_ref_input <> '' then
     select ref_code into v_ref_valid from public.profiles where ref_code = v_ref_input;
   end if;
-  insert into public.profiles (id, full_name, email, access_until, ref_code, is_student, referred_by_ref_code)
+  insert into public.profiles (id, full_name, email, access_until, ref_code, is_student, referred_by_ref_code, trial_ai_limit)
   values (
-    new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '7 days',
-    public.generate_ref_code(), coalesce((new.raw_user_meta_data->>'is_student')::boolean, false), v_ref_valid
+    new.id, coalesce(new.raw_user_meta_data->>'full_name', ''), new.email, now() + interval '3 days',
+    public.generate_ref_code(), coalesce((new.raw_user_meta_data->>'is_student')::boolean, false), v_ref_valid, 50
   );
   return new;
 end;
@@ -141,12 +153,18 @@ begin
 
   v_is_admin := (v_profile.role = 'admin');
 
+  -- Trần dùng thử ĐÚNG CỦA NGƯỜI NÀY (chốt lúc đăng ký, xem profiles.trial_ai_limit) — p_trial_limit
+  -- chỉ còn là giá trị DỰ PHÒNG cho các dòng cũ hiếm hoi lỡ chưa được backfill (coalesce null).
   if not v_profile.has_paid then
-    if (not v_is_admin) and v_profile.trial_ai_uses + p_weight > p_trial_limit then
-      return jsonb_build_object('allowed', false, 'effective_limit', p_trial_limit, 'mode', 'trial');
-    end if;
-    update profiles set trial_ai_uses = trial_ai_uses + p_weight where id = p_user_id;
-    return jsonb_build_object('allowed', true);
+    declare
+      v_trial_limit int := coalesce(v_profile.trial_ai_limit, p_trial_limit);
+    begin
+      if (not v_is_admin) and v_profile.trial_ai_uses + p_weight > v_trial_limit then
+        return jsonb_build_object('allowed', false, 'effective_limit', v_trial_limit, 'mode', 'trial');
+      end if;
+      update profiles set trial_ai_uses = trial_ai_uses + p_weight where id = p_user_id;
+      return jsonb_build_object('allowed', true);
+    end;
   end if;
 
   if v_profile.paid_ai_month = v_month then

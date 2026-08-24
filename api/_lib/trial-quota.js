@@ -12,6 +12,11 @@
 // cùng "lọt qua" trần trước khi kịp cập nhật số mới cho nhau. Dùng SUPABASE_SERVICE_ROLE_KEY vì
 // đây là hàm chỉ service_role được gọi (xem grant trong supabase/schema_full.sql).
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
+// CHỈ còn là giá trị DỰ PHÒNG truyền vào consume_ai_quota (dùng khi profiles.trial_ai_limit là null,
+// tức tài khoản có từ trước 2026-08-24) — trần dùng thử THẬT chốt riêng từng người lúc đăng ký
+// (cột trial_ai_limit, xem handle_new_user() ở schema_full.sql), không còn đồng giá cho mọi người
+// nữa (theo yêu cầu chị Quỳnh: người đăng ký trước giữ mức cũ 100, người đăng ký từ 24/8 chỉ 50, để
+// nhóm đăng ký trước luôn là nhóm được ưu đãi nhất).
 const TRIAL_AI_LIMIT = 100;
 // 200/tháng — chưa từng nâng lên 250 dù có 1 lần bị hiểu nhầm là đã nâng (2026-08-20, chị Quỳnh xác
 // nhận lại: trả phí luôn là 200/tháng, chỉ có TRIAL_AI_LIMIT ở trên là mới nâng lên 100).

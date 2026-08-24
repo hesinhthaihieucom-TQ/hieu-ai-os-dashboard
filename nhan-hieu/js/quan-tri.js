@@ -14,9 +14,11 @@ function aiUsageLabel(p){
     // free" — trước đây chỉ hiện dòng dùng thử NẾU trial_ai_uses>0, ẩn mất với khách chưa dùng thử
     // lượt nào trước khi mua, gây cảm giác thiếu thông tin.
     const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (tháng này)`;
-    return `${paidLabel} · ${p.trial_ai_uses||0}/${TRIAL_AI_LIMIT} lượt dùng thử trọn đời đã dùng trước đó (không tính vào trần tháng)`;
+    return `${paidLabel} · ${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt dùng thử trọn đời đã dùng trước đó (không tính vào trần tháng)`;
   }
-  return `${p.trial_ai_uses||0}/${TRIAL_AI_LIMIT} lượt AI (dùng thử, trọn đời)`;
+  // trial_ai_limit chốt riêng lúc đăng ký — người đăng ký trước/sau có thể khác nhau (xem
+  // schema_full.sql), không còn đồng giá 1 số TRIAL_AI_LIMIT cho mọi người.
+  return `${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt AI (dùng thử, trọn đời)`;
 }
 
 // Cảnh báo dữ liệu lệch: admin đã gắn "Gói" (last_plan_days) bằng tay hoặc hạn dùng còn rất dài —
@@ -151,7 +153,7 @@ function render(container, ctx){
     const mismatchCount = state.profiles.filter(hasPaidMismatch).length;
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán. Xem doanh thu/chi phí/lợi nhuận ở tab <b>Tài chính</b>.</p></div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt: <b>${TRIAL_AI_LIMIT} lượt dùng thử</b> (trọn đời) → <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi trả phí — tổng tiềm năng ${TRIAL_AI_LIMIT + PAID_MONTHLY_AI_LIMIT} lượt qua cả 2 giai đoạn (2 bộ đếm tách biệt, không cộng dồn thật).</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt dùng thử (trọn đời) chốt riêng lúc mỗi người đăng ký, xem đúng số ở từng thẻ bên dưới (mục "Đã dùng") — hiện tại người đăng ký từ 24/8 là 50 lượt, người đăng ký trước đó là ${TRIAL_AI_LIMIT} lượt. Trả phí thì đổi sang <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> (bộ đếm khác, không cộng dồn với lượt dùng thử).</div>
 
       <div class="source-grid" style="margin-bottom:20px;">
         <div class="source-card"><div class="ic">${counts.active||0}</div><div class="label">Đang hoạt động</div></div>
@@ -160,7 +162,7 @@ function render(container, ctx){
         <div class="source-card"><div class="ic">${counts.none||0}</div><div class="label">Chưa kích hoạt</div></div>
       </div>
 
-      ${mismatchCount>0 ? `<div class="error-box" style="margin-bottom:20px;">⚠️ Có <b>${mismatchCount} tài khoản</b> đã gắn "Gói" (chắc chắn đã kích hoạt tay) nhưng CHƯA bấm "💰 Đánh dấu đã trả phí" — họ đang bị hiện SAI trần lượt (100 lượt dùng thử thay vì 200 lượt/tháng). Tìm nhãn "⚠️ Chưa đánh dấu trả phí" trên từng thẻ bên dưới để sửa nhanh.</div>` : ''}
+      ${mismatchCount>0 ? `<div class="error-box" style="margin-bottom:20px;">⚠️ Có <b>${mismatchCount} tài khoản</b> đã gắn "Gói" (chắc chắn đã kích hoạt tay) nhưng CHƯA bấm "💰 Đánh dấu đã trả phí" — họ đang bị hiện SAI trần lượt (trần dùng thử thay vì ${PAID_MONTHLY_AI_LIMIT} lượt/tháng). Tìm nhãn "⚠️ Chưa đánh dấu trả phí" trên từng thẻ bên dưới để sửa nhanh.</div>` : ''}
 
       ${state.referralPartners.length ? `
       <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
@@ -216,7 +218,7 @@ function render(container, ctx){
               <div><span style="color:var(--ink-soft);">Đã dùng:</span> ${esc(aiUsageLabel(p))}</div>
               <div><span style="color:var(--ink-soft);">Loại khách:</span> ${p.is_student?'🎓 Học viên':'Thường'}
                 <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-student="${p.id}|${!p.is_student}">đổi</span></div>
-              <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?`💰 Đã trả phí (trần ${PAID_MONTHLY_AI_LIMIT} lượt/tháng)`:`Chưa trả phí (trần dùng thử ${TRIAL_AI_LIMIT} lượt)`}
+              <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?`💰 Đã trả phí (trần ${PAID_MONTHLY_AI_LIMIT} lượt/tháng)`:`Chưa trả phí (trần dùng thử ${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt)`}
                 <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.has_paid}">đổi</span></div>
               ${p.ref_code ? `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Nội dung CK: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
               ${(() => {

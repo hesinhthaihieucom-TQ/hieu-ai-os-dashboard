@@ -114,8 +114,11 @@ function render(container, ctx){
       const limit = PAID_MONTHLY_AI_LIMIT + bonus;
       return { used, limit, remaining: Math.max(0, limit-used), isTrial:false };
     }
+    // p.trial_ai_limit chốt riêng lúc đăng ký (xem schema_full.sql) — không còn đồng giá cho mọi
+    // người, phải đọc đúng số của CHÍNH tài khoản này, không dùng chung hằng số TRIAL_AI_LIMIT.
     const used = p.trial_ai_uses || 0;
-    return { used, limit:TRIAL_AI_LIMIT, remaining: Math.max(0, TRIAL_AI_LIMIT-used), isTrial:true };
+    const limit = p.trial_ai_limit || TRIAL_AI_LIMIT;
+    return { used, limit, remaining: Math.max(0, limit-used), isTrial:true };
   }
 
   // Ghi rõ "tổng tiềm năng" 100 dùng thử + 200/tháng mua gói (2026-08-20, theo yêu cầu chị Quỳnh) —
@@ -124,7 +127,8 @@ function render(container, ctx){
   // giác "200/tháng nghe ít" khi nhìn tách rời từng con số.
   function limitLabel(){
     const { used, limit, isTrial } = remainingInfo();
-    const totalNote = `<div style="margin-top:6px;font-size:12px;opacity:.85;">Tổng lượt bạn có thể dùng qua cả 2 giai đoạn: <b>${TRIAL_AI_LIMIT} lượt dùng thử</b> (trọn đời) + <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi mua gói.</div>`;
+    const trialLimit = (ctx.profile && ctx.profile.trial_ai_limit) || TRIAL_AI_LIMIT;
+    const totalNote = `<div style="margin-top:6px;font-size:12px;opacity:.85;">Tổng lượt bạn có thể dùng qua cả 2 giai đoạn: <b>${trialLimit} lượt dùng thử</b> (trọn đời) + <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi mua gói.</div>`;
     return (isTrial
       ? `Đã dùng <b>${used}/${limit}</b> lượt AI dùng thử (trọn đời) — còn <b>${Math.max(0,limit-used)}</b> lượt.`
       : `Đã dùng <b>${used}/${limit}</b> lượt AI tháng này — còn <b>${Math.max(0,limit-used)}</b> lượt.`) + totalNote;

@@ -22,7 +22,7 @@ CÁC MỤC TRONG APP (theo đúng thứ tự nên làm):
 12. Tài khoản (bấm ảnh đại diện/tên ở cuối sidebar) — đổi mật khẩu, tên hiển thị, ảnh đại diện, và bảng tự lên kế hoạch dùng lượt AI trong tháng.
 13. Nâng cấp / Mua gói — xem bảng giá, quét mã QR chuyển khoản, hệ thống tự kích hoạt trong vài phút.
 
-VỀ LƯỢT AI: mỗi hành động tốn số lượt khác nhau tuỳ độ phức tạp (rẻ nhất 1 lượt như cải thiện hook, đắt nhất Định Vị 8 lượt) — không đồng giá. Người mới đăng ký được dùng thử 100 lượt trọn đời miễn phí; khách đã trả phí có 200 lượt/tháng, hết lượt trong tháng có thể mua thêm ở mục Nâng cấp. Xem chi tiết và tự lên kế hoạch ở mục Tài khoản.
+VỀ LƯỢT AI: mỗi hành động tốn số lượt khác nhau tuỳ độ phức tạp (rẻ nhất 1 lượt như cải thiện hook, đắt nhất Định Vị 8 lượt) — không đồng giá. Người mới đăng ký được dùng thử 1 số lượt trọn đời miễn phí (số lượt cụ thể tuỳ thời điểm đăng ký, xem đúng số ở mục Tài khoản); khách đã trả phí có lượt/tháng, hết lượt trong tháng có thể mua thêm ở mục Nâng cấp. Xem chi tiết và tự lên kế hoạch ở mục Tài khoản.
 
 VỀ DỮ LIỆU: dữ liệu mỗi người chỉ mình họ xem được, trừ "Kho chung"/"Kho Hook Viral" là nội dung dùng chung do đội ngũ quản lý. Tiến trình đang làm dở (câu trả lời, bài đang viết, ảnh đã tải lên) tự động lưu lại khi chuyển sang trang khác, không bị mất.
 
