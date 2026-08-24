@@ -14,7 +14,7 @@ function render(container, ctx){
         <h1>Nâng Cấp</h1>
         <p>${alreadyPaid
           ? 'Bạn đã mở khoá TRỌN ĐỜI toàn bộ tính năng — cảm ơn bạn đã đồng hành!'
-          : 'Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.'}</p>
+          : 'Mở khoá TRỌN ĐỜI chỉ 1 lần, dùng mãi mãi — không phải trả lại theo tháng.'}</p>
       </div>
       ${alreadyPaid ? `
         <div class="card" style="max-width:460px;text-align:center;">

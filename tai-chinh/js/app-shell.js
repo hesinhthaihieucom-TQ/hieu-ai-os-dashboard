@@ -330,7 +330,7 @@ function renderApp(){
 // dụ tâm thức, người mới chưa hiểu "Hạt Giống Phước - Nghiệp" nghĩa là gì).
 function tcBenefitsHtml(){
   const BENEFITS = [
-    { icon:'💳', title:'Thoát nợ nhanh hơn, đỡ tốn lãi', text:'Quản Lý Nợ tự tính chiến lược Snowball/Avalanche — biết chính xác nên dồn tiền trả khoản nào trước để tiết kiệm tiền lãi nhiều nhất, không phải đoán mò.' },
+    { icon:'💳', title:'Thanh khoản nợ nhanh hơn, đỡ tốn lãi', text:'Quản Lý Nợ tự tính chiến lược Snowball/Avalanche — biết chính xác nên dồn tiền trả khoản nào trước để tiết kiệm tiền lãi nhiều nhất, không phải đoán mò.' },
     { icon:'📈', title:'Tài sản ròng tăng đều, nhìn thấy rõ từng tháng', text:'Tổng Kết Tháng tự vẽ biểu đồ Tài Sản Ròng qua từng tháng — biết ngay đang giàu lên hay đang lùi, không phải chỉ cảm giác chung chung.' },
     { icon:'🎯', title:'Kiểm soát dòng tiền, không chỉ ghi cho có', text:'Mục Tiêu & Cam Kết đặt hạn mức từng danh mục TRƯỚC khi tiêu, Tổng Kết Tuần báo ngay lệch mục tiêu ở đâu — còn Hạt Giống Phước - Nghiệp giúp gỡ tận gốc niềm tin cũ khiến tiền cứ lặp lại đúng 1 vấn đề.' },
   ];
@@ -364,7 +364,8 @@ function tcPaymentCardHtml(){
     : null;
 
   return `
-    <div style="text-align:center;font-size:15px;font-weight:700;margin-bottom:14px;">${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
+    <div style="text-align:center;font-size:15px;font-weight:700;">${TC_LIFETIME_PRICE.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
+    <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Chưa tới ${Math.ceil(TC_LIFETIME_PRICE/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
     ${qrUrl ? `
       <div style="text-align:center;">
         <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
@@ -416,7 +417,7 @@ function renderUpgradeScreen(content){
     <div class="page-head">
       <h1>🔒 Tính năng trả phí</h1>
       ${weakest ? `<p>Bạn vừa làm Chấm Điểm Nghiệp Tiền và đang yếu nhất ở khâu <b>${esc(weakest.label)}</b> — ${esc(weakest.explain)}</p>` : ''}
-      <p>Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ — chỉ 1 lần, dùng mãi mãi, không phải trả lại theo tháng.</p>
+      <p>Mở khoá TRỌN ĐỜI chỉ 1 lần, dùng mãi mãi — không phải trả lại theo tháng.</p>
     </div>
     <div class="card" style="max-width:460px;">
       ${tcBenefitsHtml()}
