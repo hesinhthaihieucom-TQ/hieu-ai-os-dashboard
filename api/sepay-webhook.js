@@ -14,6 +14,18 @@ const crypto = require('crypto');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
+// Ưu đãi buổi Zoom "chốt sell" 26/8 (2026-08-24, theo yêu cầu chị Quỳnh) — mua gói 6/12 tháng ĐÚNG
+// NGÀY 26/8 được tặng thêm 1-2 tháng dùng, KHÔNG tặng lượt AI (chị Quỳnh nhận định: người mới chưa
+// dùng app thì chưa hiểu giá trị 1 lượt là gì, tặng thêm THỜI GIAN dùng dễ hiểu/hấp dẫn hơn hẳn với
+// người lần đầu quyết định mua). Chỉ áp dụng gói 6/12 tháng (days=180/365) — gói 1 tháng không có.
+// Không cộng vào last_plan_days (giữ đúng số ngày GỐC của gói) để Quản trị vẫn lọc đúng "6 tháng"/
+// "12 tháng" như bình thường — bonus chỉ cộng thêm vào access_until thực tế.
+const ZOOM_BONUS_DATE = '2026-08-26'; // giờ Việt Nam — xem isZoomBonusDay()
+const ZOOM_BONUS_DAYS_BY_PLAN = { 180: 30, 365: 60 }; // 6 tháng +1 tháng, 12 tháng +2 tháng
+function isZoomBonusDay() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }) === ZOOM_BONUS_DATE;
+}
+
 // Số tiền → số ngày được cộng thêm. Phải khớp CHÍNH XÁC 1 trong các mức giá đang bán, và
 // TUYỆT ĐỐI KHÔNG được trùng số tiền giữa 2 gói khác thời hạn — hệ thống chỉ nhận diện gói
 // qua đúng số tiền chuyển khoản, trùng số tiền sẽ cộng sai số ngày mà không có cách nào phát hiện.
@@ -40,20 +52,20 @@ const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 
 // Gói TRỌN ĐỜI của Sổ Dòng Tiền Tâm Thức (tai-chinh/, sản phẩm KHÁC, giá KHÁC — không đụng
 // access_until/has_paid ở trên, xem tc_has_paid/tc_paid_at trong schema_full.sql). 2 mức giá theo
-// thời gian (2026-08-24, chị Quỳnh chốt mốc giá ra mắt) — CẢ 2 số đã kiểm tra không trùng bất kỳ
-// giá trị nào trong AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT ở trên (đặc biệt tránh 499000 đang là giá
-// tháng chuẩn của Xây Nhân Hiệu) — webhook phân biệt 2 sản phẩm CHỈ qua số tiền chuyển khoản,
+// thời gian (2026-08-24, chị Quỳnh chốt mốc giá ra mắt; 2026-08-24 đổi giá sau mốc từ 599k lên
+// 999k) — CẢ 2 số đã kiểm tra không trùng bất kỳ giá trị nào trong AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT
+// ở trên (đặc biệt tránh 499000 đang là giá tháng chuẩn của Xây Nhân Hiệu) — webhook phân biệt 2 sản phẩm CHỈ qua số tiền chuyển khoản,
 // ref_code dùng chung định dạng "SEVQR <ref_code>" với nhan-hieu (cùng 1 tài khoản ngân hàng thật).
 // Chấp nhận CẢ 2 mức bất kể ngày hiện tại — không tự chốt theo ngày ở server để tránh trường hợp
 // khách chuyển đúng giá ra mắt sát giờ chốt nhưng webhook xử lý trễ vài phút qua ngày hôm sau.
 const TC_LAUNCH_AMOUNT = 299000;   // giá ra mắt, xem TC_LAUNCH_DEADLINE ở tai-chinh/js/app-shell.js
-const TC_REGULAR_AMOUNT = 599000;  // giá sau mốc ra mắt
+const TC_REGULAR_AMOUNT = 999000;  // giá sau mốc ra mắt
 const TC_LIFETIME_AMOUNTS = new Set([TC_LAUNCH_AMOUNT, TC_REGULAR_AMOUNT]);
 // Chương trình giới thiệu tai-chinh (2026-08-23, chị Quỳnh chốt "20% cho người giới thiệu") — MỘT
 // CHIỀU, referee vẫn trả nguyên giá đang bán lúc đó (khác nhan-hieu có giảm giá riêng cho referee).
 // Trả bằng TIỀN THẬT (không có hệ lượt AI như nhan-hieu để quy đổi) — ghi vào sổ tc_referrals, chị
 // Quỳnh tự chuyển khoản tay rồi đánh dấu đã trả trong Quản Trị (xem tai-chinh/js/quan-tri.js). Tính
-// theo ĐÚNG số tiền referee vừa trả (299k hay 599k) — không dùng 1 số cố định — để thưởng đúng 20%
+// theo ĐÚNG số tiền referee vừa trả (299k hay 999k) — không dùng 1 số cố định — để thưởng đúng 20%
 // giá trị đơn hàng thật, không lệch khi giá đổi qua mốc ra mắt.
 const TC_REFERRAL_REWARD_PERCENT = 0.20;
 
@@ -269,9 +281,10 @@ module.exports = async (req, res) => {
         const days = AMOUNT_TO_DAYS[transferAmount];
         const topupLuot = AMOUNT_TO_TOPUP_LUOT[transferAmount];
         if (days) {
+          const bonusDays = (isZoomBonusDay() && ZOOM_BONUS_DAYS_BY_PLAN[days]) ? ZOOM_BONUS_DAYS_BY_PLAN[days] : 0;
           const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
             ? new Date(profile.access_until) : new Date();
-          const next = new Date(base.getTime() + days * 86400000);
+          const next = new Date(base.getTime() + (days + bonusDays) * 86400000);
           // has_paid=true tắt hẳn giới hạn lượt AI dùng thử (xem api/_lib/trial-quota.js) — ngay
           // khi khớp được 1 giao dịch thật, không còn giới hạn nào áp dụng nữa.
           const patchBody = { access_until: next.toISOString(), has_paid: true, last_plan_days: days };
@@ -285,7 +298,7 @@ module.exports = async (req, res) => {
           if (updateResp.ok) {
             status = 'matched';
             matchedProfileId = profile.id;
-            daysGranted = days;
+            daysGranted = days + bonusDays; // ghi cả bonus vào log giao dịch để đối soát thấy rõ
             // Best-effort, KHÔNG để lỗi ở đây làm mất luôn việc ghi log sepay_transactions bên
             // dưới — referee đã kích hoạt xong gói của họ rồi, phần thưởng cho referrer là phụ.
             try { await creditReferralReward(profile, transferAmount); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
