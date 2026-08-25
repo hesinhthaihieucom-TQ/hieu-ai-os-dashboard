@@ -141,14 +141,14 @@ function render(container, ctx){
     const alreadyRewarded = !!(ctx.profile && ctx.profile.review_reward_given);
     return `
       <div style="margin-top:28px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Đánh giá từ mọi người</h3>
-        <div class="card" style="margin-bottom:16px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Đánh giá từ mọi người</h3>
+        <div class="card" style="margin-bottom:16px;background:var(--accent-soft);border:1px solid var(--accent);">
           ${state.reviewJustSubmitted
             ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
             : `
+            ${!alreadyRewarded ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:10px;">🎁 Tặng ngay 20 lượt AI miễn phí khi viết từ 30 từ trở lên!</div>` : ''}
             <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Kể ra 3-5 điều bạn thấy TỐT khi dùng app</label>
             <textarea id="rv-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây 2. AI bám đúng giọng văn của mình 3. Lên lịch tuần không còn phải nghĩ..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
-            ${!alreadyRewarded ? `<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Viết từ 30 từ trở lên được tặng 20 lượt AI miễn phí.</div>` : ''}
             ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
             <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
               <button class="btn btn-sm" data-action="submit-review" ${state.reviewSubmitting?'disabled':''}>${state.reviewSubmitting?'Đang gửi…':'Gửi đánh giá'}</button>
