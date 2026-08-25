@@ -42,6 +42,10 @@ const FINANCE_ENTRIES = [1,2,5,8,12,15,18,22,26].map((day,i)=>({
 // sách hiện đủ danh mục). Bắt đầu RỖNG để test được cả nhánh ensureCategoriesSeeded() seed lần đầu.
 const CATEGORIES = [];
 let categoryIdSeq = 1;
+// Mô phỏng thật tc_debts — để test luồng thêm/sửa khoản nợ (cost_type, 3 tiêu chí Nợ Kiến Tạo/Hoảng
+// Loạn) và chiến lược trả nợ ở quan-ly-no.js. Bắt đầu RỖNG, thêm qua form ngay trong trang.
+const DEBTS = [];
+let debtIdSeq = 1;
 const KARMA_HISTORY = [];
 let karmaHistoryIdSeq = 1;
 function makeChain(table){
@@ -77,6 +81,10 @@ function makeChain(table){
         return Promise.resolve({ data: NETWORTH_SNAPSHOTS[key] || null, error:null });
       }
       if(table === 'tc_karma_history') return Promise.resolve({ data: chain._insertedKarmaRow || null, error:null });
+      if(table === 'tc_debts'){
+        const rows = DEBTS.filter(d => Object.keys(chain._filters).every(k => k==='user_id' || String(d[k])===String(chain._filters[k])));
+        return Promise.resolve({ data: rows[0] || null, error:null });
+      }
       return Promise.resolve({ data: null, error:null });
     },
     update(payload){
@@ -85,6 +93,7 @@ function makeChain(table){
         return Promise.resolve({data:null,error:null});
       }, eq(col, val){
         if(table==='tc_categories') CATEGORIES.forEach(c=>{ if(c[col]===val) Object.assign(c, payload); });
+        if(table==='tc_debts') DEBTS.forEach(d=>{ if(String(d[col])===String(val)) Object.assign(d, payload); });
         return Promise.resolve({data:null,error:null});
       } };
     },
@@ -92,6 +101,10 @@ function makeChain(table){
       if(table==='tc_categories'){
         const rows = Array.isArray(payload) ? payload : [payload];
         rows.forEach(r=>CATEGORIES.push({ id:'cat'+(categoryIdSeq++), ...r }));
+      }
+      if(table==='tc_debts'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>DEBTS.push({ id:'debt'+(debtIdSeq++), is_paid_off:false, created_at:new Date().toISOString(), ...r }));
       }
       if(table==='tc_karma_history'){
         const rows = Array.isArray(payload) ? payload : [payload];
@@ -113,6 +126,10 @@ function makeChain(table){
             const idx = CATEGORIES.findIndex(c=>c.id===chain._filters.id);
             if(idx>=0) CATEGORIES.splice(idx,1);
           }
+          if(table==='tc_debts'){
+            const idx = DEBTS.findIndex(d=>d.id===chain._filters.id);
+            if(idx>=0) DEBTS.splice(idx,1);
+          }
           resolve({data:null,error:null});
         },
       };
@@ -126,6 +143,10 @@ function makeChain(table){
       }
       if(table === 'tc_categories'){
         const rows = CATEGORIES.filter(c => !chain._filters.type || c.type===chain._filters.type);
+        return resolve({ data: rows, error:null });
+      }
+      if(table === 'tc_debts'){
+        const rows = DEBTS.filter(d => Object.keys(chain._filters).every(k => k==='user_id' || String(d[k])===String(chain._filters[k])));
         return resolve({ data: rows, error:null });
       }
       if(table === 'tc_karma_history') return resolve({ data: KARMA_HISTORY.slice(0, 20), error:null });

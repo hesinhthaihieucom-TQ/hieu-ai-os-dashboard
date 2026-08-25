@@ -870,6 +870,22 @@ alter table tc_finance_entries add column if not exists vibe_reason text;
 -- từng viết, không phải hiệu ứng UI thoáng qua.
 alter table tc_debts add column if not exists gratitude_note text;
 
+-- Phân loại Nợ Kiến Tạo / Nợ Hoảng Loạn (2026-08-26, góp ý Quỳnh: "cũng cần biết nguồn đó có đảm
+-- bảo 3 yếu tố... để đến đoạn chiến lược trả nợ cho hiệu quả" — khái niệm này ĐÃ có sẵn ở
+-- GLOSSARY.no_xanh/no_do trong util.js, giờ mới thật sự gắn vào từng khoản nợ). Đủ cả 3 = Nợ Kiến
+-- Tạo, thiếu 1 trong 3 = Nợ Hoảng Loạn — dùng trong quan-ly-no.js để ưu tiên xử lý Nợ Hoảng Loạn
+-- trước, không chỉ sắp theo lãi suất/số dư như 2 chiến lược cũ.
+alter table tc_debts add column if not exists crit_legit_source boolean not null default false; -- vay từ nguồn chính thống
+alter table tc_debts add column if not exists crit_real_value boolean not null default false; -- dùng để tạo giá trị/tài sản tăng trưởng thật
+alter table tc_debts add column if not exists crit_clear_plan boolean not null default false; -- có kế hoạch trả rõ ràng, trong khả năng
+
+-- Không phải khoản nợ nào cũng tính lãi theo %/năm — thẻ tín dụng trả góp/đáo hạn thường tính phí
+-- CỐ ĐỊNH (2026-08-26, góp ý Quỳnh: "lãi % thì có thể là phí trả góp hay đáo thẻ... không cố định
+-- ghi lãi % mà tuỳ chứ nhỉ"). cost_type quyết định UI hiện ô nào; interest_rate/flat_fee_amount chỉ
+-- có ý nghĩa khi đúng cost_type tương ứng (không xoá cột cũ, giữ tương thích ngược).
+alter table tc_debts add column if not exists cost_type text not null default 'percent' check (cost_type in ('percent','flat_fee'));
+alter table tc_debts add column if not exists flat_fee_amount numeric;
+
 -- Mục tiêu tháng tiếp theo neo vào đúng 1 trong 5 Trụ Cột Năng Lượng Bản Thể (khoá học riêng "21
 -- Ngày Giải Nghiệp" của Quỳnh — ĐÃ THAY cho "5 Ngôi Nhà" theo góp ý 2026-08-21, vì "5 Ngôi Nhà" là
 -- khung của Thầy Bùi Quốc Tuấn, không phải của Quỳnh). Cột tên `goal_house` giữ nguyên (đỡ phải

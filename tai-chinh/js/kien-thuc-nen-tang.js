@@ -75,6 +75,18 @@ function html(){
       ${detailsSection('🎯 Neo mục tiêu thanh khoản nợ vào 5 Trụ Cột', `
         ${HOUSES.map(h=>`<p><b>${esc(h.label)}</b> — ${esc(HOUSE_GOAL_ANCHOR[h.key])}</p>`).join('')}
       `)}
+      ${detailsSection('☢️ Nhân Quả Của Khoản Nợ', `
+        <p>Không phải khoản nợ nào cũng "xấu" — cùng là đi vay, nhưng bản chất năng lượng phía sau mỗi khoản nợ có thể rất khác nhau. App gọi 2 dạng đối nghịch này là <b>${esc(GLOSSARY.no_xanh.term)}</b> và <b>${esc(GLOSSARY.no_do.term)}</b>.</p>
+        <p><b>🟢 ${esc(GLOSSARY.no_xanh.term)}</b> — ${esc(GLOSSARY.no_xanh.explain)}</p>
+        <p><b>🔴 ${esc(GLOSSARY.no_do.term)}</b> — ${esc(GLOSSARY.no_do.explain)}</p>
+        <p>Một khoản nợ được tính là ${esc(GLOSSARY.no_xanh.term)} khi đủ CẢ 3 điều sau — thiếu 1 điều là rơi về ${esc(GLOSSARY.no_do.term)}:</p>
+        <p>
+          1. Vay từ nguồn chính thống (ngân hàng, tổ chức tín dụng hợp pháp) — không phải vay nóng/tín dụng đen.<br>
+          2. Dùng để tạo giá trị/tài sản tăng trưởng thật (mua nhà, học tập, kinh doanh) — không phải tiêu xài mất giá ngay.<br>
+          3. Có kế hoạch trả rõ ràng, nằm trong khả năng chi trả — không vay trong lúc hoảng loạn.
+        </p>
+        <div class="hint-box" style="margin-top:10px;">Vì sao cần phân biệt? Vì cách xử lý nên khác nhau: ${esc(GLOSSARY.no_do.term)} nên được dồn lực xử lý TRƯỚC TIÊN, bất kể lãi suất cao hay thấp — vì nó đang rút cạn bạn theo cách khác (rủi ro pháp lý, vòng xoáy nợ chồng nợ), không chỉ chuyện lãi suất. Sang <a href="#quan-ly-no" style="color:var(--accent);font-weight:600;">Quản Lý Nợ →</a> để tự đánh giá từng khoản nợ của bạn theo đúng 3 tiêu chí này.</div>
+      `)}
       ${NUT_CHAN.map(n => detailsSection(n.title, `
         ${n.levels.map(([label,d])=>`<p><b>${esc(label)}</b> — ${esc(d)}</p>`).join('')}
         <div class="hint-box" style="margin-top:10px;">${esc(n.practice)}</div>
