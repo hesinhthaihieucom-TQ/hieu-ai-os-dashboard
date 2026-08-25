@@ -1,34 +1,52 @@
-// Sản Phẩm Số — shell: đăng nhập, kiểm tra quyền (can_sell_products), 2 tab (Sản phẩm của tôi /
-// Tạo Sản Phẩm Bằng AI) điều hướng qua location.hash, giống tinh thần app-shell.js của nhan-hieu
-// nhưng gọn hơn nhiều (chỉ 2 màn, không có sidebar/NAV phức tạp).
+// Sản Phẩm Số — shell: đăng nhập, kiểm tra quyền (can_sell_products), điều hướng qua location.hash,
+// giống tinh thần app-shell.js của nhan-hieu nhưng gọn hơn nhiều.
+//
+// Cấu trúc khung app (chốt với Quỳnh 2026-08-25): "Trang chủ" vào qua bấm logo (ẩn khỏi tab, giống
+// 'trang-chu' hidden ở nhan-hieu); 2 tab chính "✨ Sản Phẩm Số" (hub) và "🛒 Sản phẩm của tôi". Hub
+// liệt kê 6 mục con (chon-loai/tao-ai/tao-ebook/tao-landing-page/tao-template/nghien-cuu-thi-truong)
+// — các mục con này KHÔNG hiện trong tab bar, chỉ vào được qua bấm card trong hub hoặc quay lại từ
+// màn con, nhưng khi đang ở màn con vẫn tô sáng đúng tab "✨ Sản Phẩm Số" (xem activeTabKey).
 
 window.SanPhamSoScreens = window.SanPhamSoScreens || {}; // mỗi file màn tự đăng ký vào đây
 
-const ROUTES = [
+const NAV_TABS = [
+  { key: 'san-pham-so-hub', title: '✨ Sản Phẩm Số' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
-  { key: 'tao-ai', title: '✨ Tạo Sản Phẩm Bằng AI' },
 ];
-let currentRoute = 'san-pham';
+// Mọi route con thuộc hub "Sản Phẩm Số" — vẫn tô sáng tab hub dù đang ở màn con nào trong nhóm này.
+const HUB_CHILD_ROUTES = ['san-pham-so-hub', 'tao-ai', 'chon-loai', 'tao-ebook', 'tao-landing-page', 'tao-template', 'nghien-cuu-thi-truong'];
+let currentRoute = 'san-pham-so-hub';
 
 function currentRouteFromHash() {
   const h = (location.hash || '').replace('#', '');
-  return ROUTES.some(r => r.key === h) ? h : 'san-pham';
+  if (h === 'home') return 'home';
+  if (window.SanPhamSoScreens && window.SanPhamSoScreens[h]) return h;
+  return 'san-pham-so-hub';
+}
+
+function activeTabKey(route) {
+  if (route === 'san-pham') return 'san-pham';
+  if (HUB_CHILD_ROUTES.includes(route)) return 'san-pham-so-hub';
+  return null; // 'home' không tô sáng tab nào
 }
 
 function topbarHtml(profile) {
+  const active = activeTabKey(currentRoute);
   return `
     <div class="topbar">
-      <h1>🛒 Sản Phẩm Số</h1>
+      <h1 id="sps-logo-btn" style="cursor:pointer;">🛒 Sản Phẩm Số</h1>
       <span class="signout" id="signout-btn">${esc((profile && profile.full_name) || '')} — Đăng xuất</span>
     </div>
     <div class="tabs">
-      ${ROUTES.map(r => `<span class="tab ${currentRoute === r.key ? 'active' : ''}" data-route="${r.key}">${esc(r.title)}</span>`).join('')}
+      ${NAV_TABS.map(r => `<span class="tab ${active === r.key ? 'active' : ''}" data-route="${r.key}">${esc(r.title)}</span>`).join('')}
     </div>
   `;
 }
 function bindTopbar() {
   const btn = document.getElementById('signout-btn');
   if (btn) btn.onclick = async () => { await supabaseClient.auth.signOut(); };
+  const logo = document.getElementById('sps-logo-btn');
+  if (logo) logo.onclick = () => { location.hash = 'home'; };
   document.querySelectorAll('[data-route]').forEach(el => {
     el.onclick = () => { location.hash = el.getAttribute('data-route'); };
   });
