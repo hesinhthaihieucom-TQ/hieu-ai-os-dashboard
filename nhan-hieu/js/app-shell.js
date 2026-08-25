@@ -400,8 +400,8 @@ function maybeShowReviewPrompt(){
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
       <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Bạn thấy Xây Nhân Hiệu thế nào?</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Viết vài dòng cảm nhận giúp mình cải thiện app — viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên sẽ được tặng ngay <b>${REVIEW_REWARD_LUOT} lượt AI miễn phí</b>.</div>
-      <textarea id="rp-comment" placeholder="Bạn thấy app dùng thế nào, có gì nên cải thiện không..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Kể ra 3-5 điều bạn thấy TỐT khi dùng app (viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên sẽ được tặng ngay <b>${REVIEW_REWARD_LUOT} lượt AI miễn phí</b>) — không phải góp ý cải thiện, mà là những gì bạn thấy hài lòng nhất.</div>
+      <textarea id="rp-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây 2. AI bám đúng giọng văn của mình 3. Lên lịch tuần không còn phải nghĩ..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
       <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
         <span id="rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>

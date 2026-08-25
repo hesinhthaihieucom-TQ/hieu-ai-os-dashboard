@@ -146,8 +146,8 @@ function render(container, ctx){
           ${state.reviewJustSubmitted
             ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
             : `
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bạn thấy app dùng thế nào?</label>
-            <textarea id="rv-comment" placeholder="Viết cảm nhận của bạn..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
+            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Kể ra 3-5 điều bạn thấy TỐT khi dùng app</label>
+            <textarea id="rv-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây 2. AI bám đúng giọng văn của mình 3. Lên lịch tuần không còn phải nghĩ..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
             ${!alreadyRewarded ? `<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Viết từ 30 từ trở lên được tặng 20 lượt AI miễn phí.</div>` : ''}
             ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
             <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
