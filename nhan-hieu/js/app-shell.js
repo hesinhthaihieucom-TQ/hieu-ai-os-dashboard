@@ -399,9 +399,9 @@ function maybeShowReviewPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Bạn thấy Xây Nhân Hiệu thế nào?</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên — kể ra 3-5 điều bạn thấy TỐT khi dùng app (không phải góp ý cải thiện, mà là những gì bạn thấy hài lòng nhất).</div>
-      <textarea id="rp-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây 2. AI bám đúng giọng văn của mình 3. Lên lịch tuần không còn phải nghĩ..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Xây Nhân Hiệu 🎉</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái 3-5 điều bạn thích nhất — viết nhanh hơn bao nhiêu, tự tin hơn thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt, cảm nhận của bạn sẽ truyền cảm hứng cho rất nhiều người sau này.</div>
+      <textarea id="rp-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây, mỗi tuần tiết kiệm được vài tiếng 2. AI bám đúng giọng văn của mình, đọc lên như chính mình viết 3. Lên lịch tuần không còn phải nghĩ, cứ theo AI gợi ý là xong..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
       <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
         <span id="rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>

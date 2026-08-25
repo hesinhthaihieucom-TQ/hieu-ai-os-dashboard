@@ -147,8 +147,9 @@ function render(container, ctx){
             ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
             : `
             ${!alreadyRewarded ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:10px;">🎁 Tặng ngay 20 lượt AI miễn phí khi viết từ 30 từ trở lên!</div>` : ''}
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Kể ra 3-5 điều bạn thấy TỐT khi dùng app</label>
-            <textarea id="rv-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây 2. AI bám đúng giọng văn của mình 3. Lên lịch tuần không còn phải nghĩ..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
+            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoe trải nghiệm của bạn — kể thoải mái 3-5 điều bạn thích nhất</label>
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">Viết nhanh hơn bao nhiêu, tự tin hơn thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt, cảm nhận của bạn sẽ truyền cảm hứng cho rất nhiều người sau này.</div>
+            <textarea id="rv-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây, mỗi tuần tiết kiệm được vài tiếng 2. AI bám đúng giọng văn của mình, đọc lên như chính mình viết 3. Lên lịch tuần không còn phải nghĩ, cứ theo AI gợi ý là xong..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
             ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
             <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
               <button class="btn btn-sm" data-action="submit-review" ${state.reviewSubmitting?'disabled':''}>${state.reviewSubmitting?'Đang gửi…':'Gửi đánh giá'}</button>
