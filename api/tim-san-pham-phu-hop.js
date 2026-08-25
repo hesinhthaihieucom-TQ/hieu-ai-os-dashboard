@@ -18,7 +18,6 @@ const QUESTION_LABELS = {
   c2: 'Nếu hỏi thẳng 3 người mục tiêu, họ sẽ phản ứng thế nào',
   d1: 'Đối tượng cụ thể nhắm tới (không phải "mọi người")',
   d2: 'Phần nào hào hứng nhất, làm không thấy mệt',
-  d3: 'Mỗi tuần dành được bao nhiêu giờ cho việc này',
 };
 
 const SYSTEM_PROMPT = `Bạn là chuyên gia tìm sản phẩm số phù hợp — giúp người dùng chốt ra 1 sản phẩm số cụ thể (không phải định vị thương hiệu, không dạy marketing/bán hàng) dựa trên đúng 12 câu trả lời của họ, theo tinh thần mô hình Ikigai (giao điểm giữa giỏi, thị trường cần, được trả tiền, và hào hứng làm).

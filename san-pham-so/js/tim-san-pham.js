@@ -13,10 +13,14 @@ const GROUPS = [
   { key: 'N', title: 'Ngành' },
   { key: 'A', title: 'Con Người & Kênh' },
   { key: 'B', title: 'Vấn Đề & Thị Trường' },
-  { key: 'C', title: 'Bằng Chứng Trả Tiền' },
-  { key: 'D', title: 'Khả Năng & Đối Tượng' },
+  { key: 'C', title: 'Đối Tượng & Bằng Chứng Trả Tiền' },
+  { key: 'D', title: 'Khả Năng & Sở Thích' },
 ];
 
+// Thứ tự CỐ Ý: d1 (đối tượng cụ thể) đứng TRƯỚC c2 ("hỏi 3 người trong nhóm đối tượng đó") — c2
+// nhắc tới "nhóm đối tượng đó" nên phải hỏi RÕ đối tượng là ai trước, nếu không câu hỏi c2 vô nghĩa
+// (góp ý Quỳnh 2026-08-25, thứ tự cũ bị ngược). d3 (giờ rảnh/tuần) đã bỏ — không quan trọng bằng
+// các câu còn lại, cắt bớt cho wizard gọn hơn.
 const QUESTIONS = [
   { id: 'nganh', group: 'N', type: 'nganh', q: 'Sản phẩm này nên thuộc ngành/lĩnh vực nào?' },
   { id: 'a1', group: 'A', type: 'textarea', q: 'Bạn đang có kênh nào chưa (Facebook/TikTok/Zalo...)? Nếu có, khoảng bao nhiêu người theo dõi, họ thường quan tâm chủ đề gì nhất?', placeholder: 'Ví dụ: Có 1 nhóm Zalo ~200 người, hầu hết hỏi về cách quản lý chi tiêu khi mới có con nhỏ...' },
@@ -26,10 +30,9 @@ const QUESTIONS = [
   { id: 'b2', group: 'B', type: 'textarea', q: 'Bạn biết ai đang bán sản phẩm/dịch vụ gần giống chưa? Họ làm chưa tốt ở đâu mà bạn nghĩ mình có thể làm khác/tốt hơn?' },
   { id: 'b3', group: 'B', type: 'textarea', q: 'Dạy người mới điều này trong 7-21 ngày, có chia được thành các bước nhỏ rõ ràng không? Thử liệt kê 3 bước.' },
   { id: 'c1', group: 'C', type: 'textarea', q: 'Có ai từng trả tiền cho thứ gần giống chưa? Khoảng bao nhiêu?' },
+  { id: 'd1', group: 'C', type: 'textarea', q: 'Đối tượng cụ thể bạn nhắm tới là ai? (không viết "mọi người" — mô tả rõ độ tuổi/hoàn cảnh, VD "mẹ bỉm sữa mới sinh con đầu lòng")' },
   { id: 'c2', group: 'C', type: 'radio', q: 'Nếu hỏi thẳng 3 người trong nhóm đối tượng đó, họ sẽ...', options: ['Gật đầu ngay', 'Có thể, còn đắn đo', 'Chưa chắc'] },
-  { id: 'd1', group: 'D', type: 'textarea', q: 'Đối tượng cụ thể bạn nhắm tới là ai? (không viết "mọi người" — mô tả rõ độ tuổi/hoàn cảnh, VD "mẹ bỉm sữa mới sinh con đầu lòng")' },
   { id: 'd2', group: 'D', type: 'textarea', q: 'Trong những gì vừa kể, phần nào bạn thấy HÀO HỨNG nhất, làm không thấy mệt?' },
-  { id: 'd3', group: 'D', type: 'radio', q: 'Mỗi tuần bạn dành được khoảng bao nhiêu giờ cho việc này?', options: ['Dưới 2 giờ', '2-5 giờ', '5-10 giờ', 'Trên 10 giờ'] },
 ];
 
 function isAnswered(q, val) {
@@ -43,7 +46,7 @@ function render(container, profile) {
   const state = {
     screen: 'loading', qIndex: 0, answers: {}, result: null, chosenIndex: null, error: null,
     suggestLoading: false, suggestions: null, suggestForQ: null, suggestCounts: {}, suggestError: null,
-    editing: false, editForm: null, editSaving: false,
+    editing: false, editForm: null, editSaving: false, showNganhOther: false,
   };
 
   function persistWizardDraft() {
@@ -97,6 +100,7 @@ function render(container, profile) {
       const suggestUsed = (state.suggestCounts[q.id] || 0) >= SUGGEST_LIMIT_PER_QUESTION;
       inputHtml = `
         <textarea id="tsp-input" rows="4" placeholder="${esc(q.placeholder || '')}">${esc(val || '')}</textarea>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">💡 Bí ý tưởng hoặc chưa biết trả lời cụ thể thế nào? Bấm "Xem gợi ý" để AI đưa 3 ví dụ đúng mức độ chi tiết cần có — không phải để copy nguyên văn, chỉ để dễ hình dung rồi viết câu trả lời thật của riêng bạn.</div>
         <div class="btn-row" style="margin-top:6px;">
           <span class="btn-ghost btn btn-sm" id="tsp-suggest-btn" ${(state.suggestLoading || suggestUsed) ? 'style="opacity:.5;pointer-events:none;"' : ''}>${state.suggestLoading ? 'Đang tạo gợi ý…' : '💡 Xem gợi ý'}</span>
         </div>
@@ -110,7 +114,14 @@ function render(container, profile) {
     } else if (q.type === 'radio') {
       inputHtml = `<div class="chips">${q.options.map(o => `<div class="chip ${val === o ? 'selected' : ''}" data-radio="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
     } else if (q.type === 'nganh') {
-      inputHtml = `<div class="chips">${NGANH_OPTIONS.map(o => `<div class="chip ${val === o ? 'selected' : ''}" data-nganh="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
+      const isOther = val && !NGANH_OPTIONS.includes(val);
+      inputHtml = `
+        <div class="chips">
+          ${NGANH_OPTIONS.map(o => `<div class="chip ${val === o ? 'selected' : ''}" data-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
+          <div class="chip ${isOther || state.showNganhOther ? 'selected' : ''}" data-nganh-other="1">Khác (tự nhập)</div>
+        </div>
+        ${isOther || state.showNganhOther ? `<input id="tsp-nganh-other-input" type="text" placeholder="Nhập đúng ngành/lĩnh vực của bạn" value="${esc(isOther ? val : '')}" style="margin-top:8px;">` : ''}
+      `;
     }
     return `
       ${progressHtml()}
@@ -216,8 +227,17 @@ function render(container, profile) {
       });
     } else if (q.type === 'nganh') {
       container.querySelectorAll('[data-nganh]').forEach(el => {
-        el.onclick = () => { state.answers[q.id] = el.getAttribute('data-nganh'); persistWizardDraft(); draw(); };
+        el.onclick = () => { state.answers[q.id] = el.getAttribute('data-nganh'); state.showNganhOther = false; persistWizardDraft(); draw(); };
       });
+      const otherChip = container.querySelector('[data-nganh-other]');
+      if (otherChip) otherChip.onclick = () => { state.showNganhOther = true; state.answers[q.id] = ''; draw(); };
+      const otherInput = container.querySelector('#tsp-nganh-other-input');
+      if (otherInput) otherInput.oninput = () => {
+        state.answers[q.id] = otherInput.value;
+        persistWizardDraft();
+        const btn = container.querySelector('#tsp-next-btn');
+        if (btn) btn.disabled = !isAnswered(q, otherInput.value);
+      };
     }
     const backBtn = container.querySelector('#tsp-back-btn');
     if (backBtn) backBtn.onclick = () => { state.qIndex--; state.suggestions = null; state.suggestForQ = null; state.suggestError = null; draw(); };
