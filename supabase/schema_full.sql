@@ -1212,6 +1212,28 @@ alter table tc_categories enable row level security;
 drop policy if exists "tc_categories_owner_all" on tc_categories;
 create policy "tc_categories_owner_all" on tc_categories for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Lịch sử các lần làm bài Chấm Điểm Nghiệp Tiền — góp ý Quỳnh 2026-08-25: "để chị làm lại thì sau
+-- này xem lại được cả những điểm ngày trước đã từng làm theo ngày". KHÁC với vibeScore hiển thị ngay
+-- lúc làm bài (tính tươi từ tc_finance_entries/tc_weekly_reflections, không lưu — xem comment gốc ở
+-- thiet-lap-nhanh.js): bảng này CỐ Ý lưu lại 1 dòng SNAPSHOT mỗi lần bấm "Xem Kết Quả", để có được
+-- đúng lịch sử "điểm ngày X là bao nhiêu" mà không cách nào tính lại được sau này (dữ liệu Vibe Check
+-- gốc không lưu theo ngày). append-only — KHÔNG upsert, mỗi lần làm bài là 1 dòng mới.
+create table if not exists tc_karma_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  taken_at timestamptz not null default now(),
+  vibe_score integer,
+  weakest_area text,
+  than_tam_ban_the integer,
+  coi_nguon_sinh_thanh integer,
+  ban_doi_moi_quan_he integer,
+  tai_chinh_tam_thuc integer,
+  thuan_phap_nhan_qua integer
+);
+alter table tc_karma_history enable row level security;
+drop policy if exists "tc_karma_history_owner_all" on tc_karma_history;
+create policy "tc_karma_history_owner_all" on tc_karma_history for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 -- ============================================================
 -- 16. SẢN PHẨM SỐ (san-pham-so/ — landing page builder bán file tải về, ebook...)
 -- ============================================================
@@ -1330,3 +1352,26 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_review_prompt_dismissed() to authenticated;
+
+-- ============================================================
+-- 17. TẠO SẢN PHẨM BẰNG AI (san-pham-so/ — Giai đoạn 1 Tìm Sản Phẩm Phù Hợp + Giai đoạn 2 Xây Dựng
+-- Nội Dung). 1 dòng/user (giống positioning_results của Định Vị) — giả định 1 người làm 1 pipeline
+-- ý tưởng→nội dung tại 1 thời điểm.
+-- ============================================================
+create table if not exists product_idea_results (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  nganh text,
+  answers jsonb,          -- 12 câu trả lời Giai đoạn 1
+  result jsonb,            -- {du_lieu_du_manh, canh_bao, phuong_an:[...]}
+  chosen_index int,        -- phương án đã chọn trong result.phuong_an
+  outline_cap_2 jsonb,     -- Giai đoạn 2 bước 1 (mo_dau/phan/ket)
+  sections jsonb,          -- {[section_index]: {nghien_cuu, viet, review, status}} — từng phần đã viết
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists product_idea_results_user_unique on product_idea_results(user_id);
+alter table product_idea_results enable row level security;
+drop policy if exists "product_idea_results_owner_all" on product_idea_results;
+create policy "product_idea_results_owner_all" on product_idea_results for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);

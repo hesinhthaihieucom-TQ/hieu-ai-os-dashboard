@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Harness Preview</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const REFERRALS = [
+  { id:'r1', referrer_id:'admin-1', referee_id:'member-1', reward_amount:59800, paid:false, created_at:new Date().toISOString() },
+  { id:'r2', referrer_id:'admin-1', referee_id:'member-2', reward_amount:59800, paid:true, paid_at:new Date().toISOString(), created_at:new Date().toISOString() },
+];
+const PROFILES_BY_ID = {
+  'admin-1': { id:'admin-1', role:'admin', full_name:'Chị Quỳnh', email:'quynh@test.com', ref_code:'XNHADMIN1', tc_has_paid:true },
+  'member-1': { id:'member-1', role:'student', full_name:'Khách A', email:'a@test.com' },
+  'member-2': { id:'member-2', role:'student', full_name:'Khách B', email:'b@test.com' },
+};
+// Mô phỏng thật bảng module_drafts (key = module_key) để test đúng luồng lưu/khôi phục nháp —
+// trước đây upsert() chỉ trả về thành công giả, không lưu gì thật, nên KHÔNG test được vụ Quỳnh báo
+// "mất nội dung đang làm dở" (2026-08-24). Object riêng, sống theo session của tab, mất khi F5.
+const MODULE_DRAFTS = {};
+// Mô phỏng thật tc_networth_snapshots (key = snapshot_month) — để test đúng vụ vừa thêm cột
+// estimated_income/estimated_expense/passive_income/income_sources (2026-08-24, góp ý Quỳnh "cần
+// có chỗ cho những thứ đó") có thật sự đọc/ghi lại đúng hay không.
+const NETWORTH_SNAPSHOTS = {};
+// Dữ liệu giả cho tc_finance_entries — để test thật biểu đồ Chi tiết/Xu hướng kiểu Money Lover
+// (2026-08-24, góp ý Quỳnh) ở Tổng Kết Tuần/Tháng, rải đều vài ngày trong tháng hiện tại.
+function pad2(n){ return String(n).padStart(2,'0'); }
+const TODAY = new Date();
+const YM = `${TODAY.getFullYear()}-${pad2(TODAY.getMonth()+1)}`;
+const FINANCE_ENTRIES = [1,2,5,8,12,15,18,22,26].map((day,i)=>({
+  id:'e'+i, user_id:'admin-1', entry_date:`${YM}-${pad2(Math.min(day, new Date(TODAY.getFullYear(),TODAY.getMonth()+1,0).getDate()))}`,
+  type:'expense', amount: 200000 + i*150000,
+  category_label: ['Ăn uống','Di chuyển','Mua sắm','Ăn uống','Giải trí','Di chuyển','Ăn uống','Hoá đơn','Mua sắm'][i],
+  vibe: ['green','red','gray'][i%3],
+}));
+// Mô phỏng thật tc_categories (2026-08-24, góp ý Quỳnh "muốn danh mục là thiết lập ban đầu") — để
+// test luồng thiết lập/tự điền phân loại ở danh-muc.js + ghi-chep.js + muc-tieu-cam-ket.js (Ngân
+// sách hiện đủ danh mục). Bắt đầu RỖNG để test được cả nhánh ensureCategoriesSeeded() seed lần đầu.
+const CATEGORIES = [];
+let categoryIdSeq = 1;
+const KARMA_HISTORY = [];
+let karmaHistoryIdSeq = 1;
+function makeChain(table){
+  const chain = {
+    _filters: {}, _inFilters: {}, _range: {},
+    select(){ return chain; },
+    eq(col, val){ chain._filters[col]=val; return chain; },
+    in(col, vals){ chain._inFilters[col]=vals; return chain; },
+    gte(col, val){ chain._range[col] = chain._range[col]||{}; chain._range[col].gte = val; return chain; },
+    lte(col, val){ chain._range[col] = chain._range[col]||{}; chain._range[col].lte = val; return chain; },
+    lt(col, val){ chain._range[col] = chain._range[col]||{}; chain._range[col].lt = val; return chain; },
+    order(){ return chain; }, limit(){ return chain; }, not(){ return chain; },
+    upsert(payload){
+      if(table==='module_drafts'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>{ MODULE_DRAFTS[r.module_key] = r.data; });
+      }
+      if(table==='tc_networth_snapshots'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>{ NETWORTH_SNAPSHOTS[r.snapshot_month] = { ...(NETWORTH_SNAPSHOTS[r.snapshot_month]||{}), ...r }; });
+      }
+      return Promise.resolve({ data:null, error:null });
+    },
+    maybeSingle(){
+      if(table === 'profiles') return Promise.resolve({ data: PROFILES_BY_ID['admin-1'], error:null });
+      if(table === 'module_drafts'){
+        const key = chain._filters.module_key;
+        const has = Object.prototype.hasOwnProperty.call(MODULE_DRAFTS, key);
+        return Promise.resolve({ data: has ? { data: MODULE_DRAFTS[key] } : null, error:null });
+      }
+      if(table === 'tc_networth_snapshots'){
+        const key = chain._filters.snapshot_month;
+        return Promise.resolve({ data: NETWORTH_SNAPSHOTS[key] || null, error:null });
+      }
+      if(table === 'tc_karma_history') return Promise.resolve({ data: chain._insertedKarmaRow || null, error:null });
+      return Promise.resolve({ data: null, error:null });
+    },
+    update(payload){
+      return { in(col, vals){
+        if(table==='tc_referrals') REFERRALS.forEach(r=>{ if(vals.includes(r.id)) Object.assign(r, payload); });
+        return Promise.resolve({data:null,error:null});
+      }, eq(col, val){
+        if(table==='tc_categories') CATEGORIES.forEach(c=>{ if(c[col]===val) Object.assign(c, payload); });
+        return Promise.resolve({data:null,error:null});
+      } };
+    },
+    insert(payload){
+      if(table==='tc_categories'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>CATEGORIES.push({ id:'cat'+(categoryIdSeq++), ...r }));
+      }
+      if(table==='tc_karma_history'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>{
+          const row = { id:'kh'+(karmaHistoryIdSeq++), taken_at:new Date().toISOString(), ...r };
+          KARMA_HISTORY.unshift(row);
+          chain._insertedKarmaRow = row;
+        });
+        return chain; // để .select().maybeSingle() chain tiếp phía sau vẫn hoạt động
+      }
+      return Promise.resolve({ data:null, error:null });
+    },
+    delete(){
+      const delChain = {
+        eq(col, val){ chain._filters[col]=val; return delChain; },
+        then(resolve){
+          if(table==='module_drafts') delete MODULE_DRAFTS[chain._filters.module_key];
+          if(table==='tc_categories'){
+            const idx = CATEGORIES.findIndex(c=>c.id===chain._filters.id);
+            if(idx>=0) CATEGORIES.splice(idx,1);
+          }
+          resolve({data:null,error:null});
+        },
+      };
+      return delChain;
+    },
+    then(resolve){
+      if(table === 'tc_referrals') return resolve({ data: REFERRALS, error:null });
+      if(table === 'profiles'){
+        if(chain._inFilters.id) return resolve({ data: chain._inFilters.id.map(id=>PROFILES_BY_ID[id]).filter(Boolean), error:null });
+        return resolve({ data: [PROFILES_BY_ID['admin-1']], error:null });
+      }
+      if(table === 'tc_categories'){
+        const rows = CATEGORIES.filter(c => !chain._filters.type || c.type===chain._filters.type);
+        return resolve({ data: rows, error:null });
+      }
+      if(table === 'tc_karma_history') return resolve({ data: KARMA_HISTORY.slice(0, 20), error:null });
+      if(table === 'tc_finance_entries'){
+        const r = chain._range.entry_date || {};
+        const rows = FINANCE_ENTRIES.filter(e =>
+          (!r.gte || e.entry_date >= r.gte) && (!r.lte || e.entry_date <= r.lte) && (!r.lt || e.entry_date < r.lt)
+        );
+        return resolve({ data: rows, error:null });
+      }
+      resolve({ data: [], error:null });
+    },
+  };
+  return chain;
+}
+window.supabaseClient = {
+  auth: {
+    getSession(){ return Promise.resolve({ data: { session: { user: { id:'admin-1' } } } }); },
+    onAuthStateChange(){ return { data: { subscription: { unsubscribe(){} } } }; },
+    signOut(){ return Promise.resolve(); },
+  },
+  from(table){ return makeChain(table); },
+  rpc(){ return Promise.resolve({ data:null, error:null }); },
+};
+window.REFERRALS = REFERRALS;
+</script>
+
+<script src="js/util.js"></script>
+<script src="js/trang-chu.js"></script>
+<script src="js/thiet-lap-nhanh.js"></script>
+<script src="js/kien-thuc-nen-tang.js"></script>
+<script src="js/tang-thuc.js"></script>
+<script src="js/muc-tieu-cam-ket.js"></script>
+<script src="js/danh-muc.js"></script>
+<script src="js/ghi-chep.js"></script>
+<script src="js/tong-ket-tuan.js"></script>
+<script src="js/tong-ket-thang.js"></script>
+<script src="js/quan-ly-no.js"></script>
+<script src="js/tai-khoan.js"></script>
+<script src="js/quan-tri.js"></script>
+<script src="js/nang-cap.js"></script>
+<script src="js/onboarding-tour.js"></script>
+<script src="js/feature-tour.js"></script>
+<script src="js/install-prompt.js"></script>
+<script src="js/app-shell.js"></script>
+</body>
+</html>

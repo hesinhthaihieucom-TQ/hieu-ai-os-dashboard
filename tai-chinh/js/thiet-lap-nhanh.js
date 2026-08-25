@@ -75,7 +75,7 @@ const VIBE_QUESTIONS = {
   parents: {
     q: 'Khi nghĩ về cách bố mẹ đã dạy/truyền lại quan niệm về tiền cho bạn, bạn cảm thấy thế nào?',
     options: [
-      { k:'A', points:10, label:'🟢 Biết ơn', d:'Dù bài học gì, tôi thấy đó là món quà giúp tôi trưởng thành hôm nay.' },
+      { k:'A', points:10, label:'🟢 Biết ơn', d:'Không phải vì bài học đó đúng hay tốt, mà vì tôi chọn không để nó tiếp tục chi phối cách tôi nghĩ về tiền hôm nay.' },
       { k:'B', points:5, label:'🟡 Trung lập', d:'Không nghĩ nhiều, bố mẹ dạy sao thì biết vậy.' },
       { k:'C', points:0, label:'🔴 Oán trách', d:'Ước gì bố mẹ đã dạy mình khác đi về chuyện tiền bạc.' },
     ],
@@ -205,95 +205,115 @@ const PILLAR_IMPROVE_TIPS = {
 // trên. KHÔNG dùng khái niệm "Chiếc Gương AI" của tài liệu gốc (app này không có AI, xem CLAUDE.md) —
 // thay bằng đúng cơ chế thật app có: Ghi Chép Hàng Ngày (Vibe Check mỗi ngày), Hạt Giống Phước - Nghiệp,
 // Mục Tiêu & Cam Kết, quỹ "Cho Đi 5%".
+// NỘI DUNG DƯỚI ĐÂY tự tác giả viết (không phải input người dùng) nên render TRỰC TIẾP không qua
+// esc() — cố ý dùng <b> để nhấn từ khoá quan trọng (góp ý Quỳnh 2026-08-25: "10 dòng như 1 rất khó
+// đọc, cần nhấn vào các từ quan trọng"). KHÔNG áp dụng cách này cho dữ liệu người dùng nhập ở nơi khác.
 const PILLAR_DEEP_ANALYSIS = {
   than_tam_ban_the: {
-    wound: 'Có thể bạn đã lớn lên trong một gia đình mà mỗi lần có biến cố — mất việc, ốm đau, thiên tai — cả nhà lập tức rơi vào hoảng loạn vì không có gì để xoay xở. Đứa trẻ ngày ấy chứng kiến sự bất lực đó và âm thầm ghi vào Tàng Thức một niềm tin sinh tồn: "Thế giới này nguy hiểm, mình phải luôn cảnh giác vì tai hoạ có thể ập đến bất cứ lúc nào." Niềm tin ấy khiến bạn lớn lên với một hệ thần kinh luôn trong trạng thái phòng thủ trước tiền bạc, dù bên ngoài bạn có thể trông rất bình tĩnh.',
+    wound: 'Có thể bạn đã lớn lên trong một gia đình mà mỗi lần có biến cố — mất việc, ốm đau, thiên tai — cả nhà lập tức rơi vào hoảng loạn vì không có gì để xoay xở. Đứa trẻ ngày ấy chứng kiến sự bất lực đó và âm thầm ghi vào Tàng Thức một niềm tin sinh tồn: <b>"Thế giới này nguy hiểm, mình phải luôn cảnh giác vì tai hoạ có thể ập đến bất cứ lúc nào."</b> Niềm tin ấy khiến bạn lớn lên với một hệ thần kinh <b>luôn trong trạng thái phòng thủ</b> trước tiền bạc, dù bên ngoài bạn có thể trông rất bình tĩnh.',
     drains: [
-      { label:'Ví tiền của bạn', text:'Bạn tích luỹ nhưng không bao giờ thấy đủ — quỹ dự phòng dù đã có vẫn không mang lại cảm giác an toàn thật, vì gốc rễ nỗi sợ không nằm ở con số mà ở niềm tin bên trong.' },
-      { label:'Cơ thể vật lý', text:'Sự cảnh giác thường trực khiến hệ thần kinh của bạn không bao giờ được thả lỏng hoàn toàn — dễ mất ngủ, dễ hồi hộp vô cớ, đặc biệt vào cuối tháng hoặc trước ngày trả nợ.' },
-      { label:'Bạn đời & mối quan hệ', text:'Bạn khó chia sẻ thật lòng nỗi lo tài chính vì sợ làm người kia hoảng sợ theo, nên gánh một mình trong im lặng — điều này âm thầm tạo khoảng cách dù cả hai vẫn ở cạnh nhau.' },
-      { label:'Sự nghiệp', text:'Nỗi sợ thiếu hụt khiến bạn khó từ chối công việc, khó nghỉ ngơi đúng nghĩa, vì luôn có một tiếng nói bên trong nhắc rằng dừng lại là nguy hiểm.' },
-      { label:'Con cái của bạn', text:'Con cái cảm nhận được sự căng thẳng ngầm mỗi khi nhắc tới tiền, dù bạn không nói ra — và học được rằng tiền bạc là một chủ đề đầy lo âu, không phải trung tính.' },
+      { label:'Ví tiền của bạn', text:'Bạn tích luỹ nhưng <b>không bao giờ thấy đủ</b> — quỹ dự phòng dù đã có vẫn không mang lại cảm giác an toàn thật, vì gốc rễ nỗi sợ không nằm ở con số mà ở niềm tin bên trong.' },
+      { label:'Cơ thể vật lý', text:'Sự cảnh giác thường trực khiến hệ thần kinh của bạn <b>không bao giờ được thả lỏng hoàn toàn</b> — dễ mất ngủ, dễ hồi hộp vô cớ, đặc biệt vào cuối tháng hoặc trước ngày trả nợ.' },
+      { label:'Bạn đời & mối quan hệ', text:'Bạn khó chia sẻ thật lòng nỗi lo tài chính vì sợ làm người kia hoảng sợ theo, nên <b>gánh một mình trong im lặng</b> — điều này âm thầm tạo khoảng cách dù cả hai vẫn ở cạnh nhau.' },
+      { label:'Sự nghiệp', text:'Nỗi sợ thiếu hụt khiến bạn <b>khó từ chối công việc, khó nghỉ ngơi đúng nghĩa</b>, vì luôn có một tiếng nói bên trong nhắc rằng dừng lại là nguy hiểm.' },
+      { label:'Con cái của bạn', text:'Con cái cảm nhận được sự căng thẳng ngầm mỗi khi nhắc tới tiền, dù bạn không nói ra — và học được rằng <b>tiền bạc là một chủ đề đầy lo âu</b>, không phải trung tính.' },
     ],
-    future: 'Bạn có thể có nhiều tiền hơn, nhưng cảm giác an toàn thật sự vẫn sẽ lảng tránh bạn, vì bạn đang cố lấp đầy một nỗi sợ tâm lý bằng một con số vật chất — hai thứ không cùng một ngôn ngữ. Thân Tâm mệt mỏi sẽ khiến mọi quyết định tài chính khác, dù đúng đến đâu, cũng bị nhuốm màu hoảng loạn.',
-    secret: 'Bạn đã đọc nhiều về quản lý tài chính, đã lập quỹ dự phòng — nhưng vì sao cảm giác bất an vẫn không biến mất? Vì bạn đang cố giải quyết một vết thương cảm xúc bằng công cụ lý trí. Cách duy nhất để nó thật sự buông là bắt quả tang chính mình NGAY LÚC nỗi sợ đang vận hành, không phải nghĩ về nó sau. Đó là lý do mỗi lần Ghi Chép Hàng Ngày có ô Vibe Check: qua vài tuần nhìn lại, bạn sẽ tự thấy — "à, hoá ra cứ đầu tháng là mình lại hoảng lên như vậy, dù tháng nào cũng đủ tiền." Nhìn thấy tận mắt vòng lặp đó là bước đầu để nó không còn tự động điều khiển bạn nữa.',
+    future: 'Bạn có thể có nhiều tiền hơn, nhưng <b>cảm giác an toàn thật sự vẫn sẽ lảng tránh bạn</b>, vì bạn đang cố lấp đầy một nỗi sợ tâm lý bằng một con số vật chất — hai thứ không cùng một ngôn ngữ. Thân Tâm mệt mỏi sẽ khiến mọi quyết định tài chính khác, dù đúng đến đâu, cũng bị nhuốm màu hoảng loạn.',
+    secret: 'Bạn đã đọc nhiều về quản lý tài chính, đã lập quỹ dự phòng — nhưng vì sao cảm giác bất an vẫn không biến mất? Vì bạn đang cố <b>giải quyết một vết thương cảm xúc bằng công cụ lý trí</b>. Cách duy nhất để nó thật sự buông là <b>bắt quả tang chính mình NGAY LÚC nỗi sợ đang vận hành</b>, không phải nghĩ về nó sau. Đó là lý do mỗi lần Ghi Chép Hàng Ngày có ô Vibe Check: qua vài tuần nhìn lại, bạn sẽ tự thấy — "à, hoá ra cứ đầu tháng là mình lại hoảng lên như vậy, dù tháng nào cũng đủ tiền." Nhìn thấy tận mắt vòng lặp đó là bước đầu để nó không còn tự động điều khiển bạn nữa.',
   },
   coi_nguon_sinh_thanh: {
-    wound: 'Có thể cha mẹ bạn từng dạy về tiền bằng chính nỗi sợ của họ — tiết kiệm cực đoan vì từng trải qua đói khổ, hoặc chi tiêu hoang phí để bù đắp tuổi thơ thiếu thốn. Dù cách nào, đứa trẻ trong bạn ngày ấy không nhận được một hình mẫu bình an về tiền, chỉ nhận được nỗi lo hoặc sự thiếu vắng được truyền từ thế hệ trước. Bạn lớn lên mang theo đúng khuôn mẫu đó, dù có thể bạn từng thề sẽ khác đi.',
+    wound: 'Có thể cha mẹ bạn từng dạy về tiền bằng chính nỗi sợ của họ — tiết kiệm cực đoan vì từng trải qua đói khổ, hoặc chi tiêu hoang phí để bù đắp tuổi thơ thiếu thốn. Dù cách nào, đứa trẻ trong bạn ngày ấy <b>không nhận được một hình mẫu bình an về tiền</b>, chỉ nhận được nỗi lo hoặc sự thiếu vắng được truyền từ thế hệ trước. Bạn lớn lên mang theo đúng khuôn mẫu đó, dù có thể bạn từng thề sẽ khác đi.',
     drains: [
-      { label:'Ví tiền của bạn', text:'Bạn vô thức lặp lại đúng thói quen tiền bạc của cha mẹ — dù lý trí biết nó không còn phù hợp, tay bạn vẫn làm theo đúng khuôn cũ mỗi khi căng thẳng.' },
-      { label:'Cơ thể vật lý', text:'Mỗi lần nhắc tới chuyện tiền của cha mẹ ngày xưa, cơ thể bạn có thể chợt nặng nề, lồng ngực hơi nghẹn — dấu hiệu một ký ức chưa được xử lý trọn vẹn.' },
-      { label:'Bạn đời & mối quan hệ', text:'Bạn có thể vô thức mang đúng kịch bản tiền bạc của cha mẹ vào cuộc hôn nhân của mình — dù đã từng hứa sẽ làm khác đi.' },
-      { label:'Sự nghiệp', text:'Bạn có thể đang chứng minh điều gì đó với cha mẹ qua sự nghiệp — kiếm tiền không hẳn vì bản thân, mà để lấp một khoảng trống công nhận từ họ.' },
-      { label:'Con cái của bạn', text:'Nếu không dừng lại ở đây, đúng khuôn mẫu tiền bạc này (dù là nỗi sợ hay sự thiếu vắng) sẽ tiếp tục truyền sang thế hệ con bạn, như nó đã từng truyền tới bạn.' },
+      { label:'Ví tiền của bạn', text:'Bạn vô thức lặp lại đúng thói quen tiền bạc của cha mẹ — dù lý trí biết nó không còn phù hợp, <b>tay bạn vẫn làm theo đúng khuôn cũ</b> mỗi khi căng thẳng.' },
+      { label:'Cơ thể vật lý', text:'Mỗi lần nhắc tới chuyện tiền của cha mẹ ngày xưa, cơ thể bạn có thể chợt nặng nề, <b>lồng ngực hơi nghẹn</b> — dấu hiệu một ký ức chưa được xử lý trọn vẹn.' },
+      { label:'Bạn đời & mối quan hệ', text:'Bạn có thể vô thức mang <b>đúng kịch bản tiền bạc của cha mẹ</b> vào cuộc hôn nhân của mình — dù đã từng hứa sẽ làm khác đi.' },
+      { label:'Sự nghiệp', text:'Bạn có thể đang <b>chứng minh điều gì đó với cha mẹ</b> qua sự nghiệp — kiếm tiền không hẳn vì bản thân, mà để lấp một khoảng trống công nhận từ họ.' },
+      { label:'Con cái của bạn', text:'Nếu không dừng lại ở đây, đúng khuôn mẫu tiền bạc này (dù là nỗi sợ hay sự thiếu vắng) sẽ <b>tiếp tục truyền sang thế hệ con bạn</b>, như nó đã từng truyền tới bạn.' },
     ],
-    future: 'Bạn có thể có tài chính ổn định hơn cha mẹ, nhưng cảm xúc quanh tiền bạc vẫn sẽ mang hình dáng cũ — vẫn lo âu kiểu cũ, vẫn tủi thân kiểu cũ, chỉ là ở một mức thu nhập cao hơn. Con số thay đổi nhưng gốc rễ cảm xúc thì không, cho tới khi được nhìn thẳng.',
-    secret: 'Bạn không cần đổ lỗi cho cha mẹ — họ cũng chỉ đang làm tốt nhất với những gì họ được dạy. Nhưng bạn CẦN nhìn thẳng vào bài học đó thay vì để nó vận hành trong vô thức. Đây chính là lý do Hạt Giống Phước - Nghiệp tồn tại: viết ra rõ ràng niềm tin bạn đã thừa hưởng từ cha mẹ về tiền, rồi tự hỏi "niềm tin này còn đúng với tôi hôm nay không?" — đó là bước đầu tiên để bạn chọn giữ lại điều tốt và buông điều không còn phù hợp, thay vì lặp lại một cách vô thức.',
+    future: 'Bạn có thể có tài chính ổn định hơn cha mẹ, nhưng <b>cảm xúc quanh tiền bạc vẫn sẽ mang hình dáng cũ</b> — vẫn lo âu kiểu cũ, vẫn tủi thân kiểu cũ, chỉ là ở một mức thu nhập cao hơn. Con số thay đổi nhưng gốc rễ cảm xúc thì không, cho tới khi được nhìn thẳng.',
+    secret: '<b>Bạn không cần đổ lỗi cho cha mẹ</b> — họ cũng chỉ đang làm tốt nhất với những gì họ được dạy. Nhưng bạn CẦN nhìn thẳng vào bài học đó thay vì để nó vận hành trong vô thức. Đây chính là lý do Hạt Giống Phước - Nghiệp tồn tại: viết ra rõ ràng niềm tin bạn đã thừa hưởng từ cha mẹ về tiền, rồi tự hỏi <b>"niềm tin này còn đúng với tôi hôm nay không?"</b> — đó là bước đầu tiên để bạn chọn giữ lại điều tốt và buông điều không còn phù hợp, thay vì lặp lại một cách vô thức.',
   },
   ban_doi_moi_quan_he: {
-    wound: 'Có thể trong gia đình bạn từng chứng kiến (hoặc trải qua) những trận cãi vã về tiền bạc — tiền trở thành vũ khí, thành lý do trách móc, thành thứ không bao giờ được nói ra thật lòng vì sợ thành xung đột. Đứa trẻ chứng kiến điều đó học được: "Nói về tiền là nguy hiểm, tốt nhất nên né tránh hoặc chịu đựng trong im lặng."',
+    wound: 'Có thể trong gia đình bạn từng chứng kiến (hoặc trải qua) những trận cãi vã về tiền bạc — tiền trở thành vũ khí, thành lý do trách móc, thành thứ không bao giờ được nói ra thật lòng vì sợ thành xung đột. Đứa trẻ chứng kiến điều đó học được: <b>"Nói về tiền là nguy hiểm, tốt nhất nên né tránh hoặc chịu đựng trong im lặng."</b>',
     drains: [
-      { label:'Ví tiền của bạn', text:'Các quyết định tài chính lớn (mua nhà, đầu tư, trả nợ) bị trì hoãn vì hai người ngại ngồi xuống bàn bạc thẳng thắn — mỗi người tự quyết một phần, thiếu một bức tranh chung.' },
-      { label:'Cơ thể vật lý', text:'Sự căng thẳng dồn nén không được nói ra thường biểu hiện thành mệt mỏi âm ỉ, khó ngủ ngay trước hoặc sau những lần định bàn chuyện tiền mà rồi lại thôi.' },
-      { label:'Bạn đời', text:'Khoảng cách giữa hai người âm thầm lớn dần — không phải vì thiếu tình cảm, mà vì thiếu một kênh an toàn để nói thật về nỗi lo tài chính.' },
-      { label:'Sự nghiệp', text:'Bạn có thể tự mình gánh áp lực tài chính một mình vì ngại chia sẻ, dẫn đến kiệt sức trong công việc mà bạn đời không hề hay biết mức độ.' },
-      { label:'Con cái của bạn', text:'Con cái lớn lên trong bầu không khí né tránh chuyện tiền, rồi cũng học cách né tránh y hệt khi trưởng thành và có gia đình riêng.' },
+      { label:'Ví tiền của bạn', text:'Các quyết định tài chính lớn (mua nhà, đầu tư, trả nợ) <b>bị trì hoãn</b> vì hai người ngại ngồi xuống bàn bạc thẳng thắn — mỗi người tự quyết một phần, thiếu một bức tranh chung.' },
+      { label:'Cơ thể vật lý', text:'Sự căng thẳng dồn nén không được nói ra thường biểu hiện thành <b>mệt mỏi âm ỉ, khó ngủ</b> ngay trước hoặc sau những lần định bàn chuyện tiền mà rồi lại thôi.' },
+      { label:'Bạn đời', text:'<b>Khoảng cách giữa hai người âm thầm lớn dần</b> — không phải vì thiếu tình cảm, mà vì thiếu một kênh an toàn để nói thật về nỗi lo tài chính.' },
+      { label:'Sự nghiệp', text:'Bạn có thể <b>tự mình gánh áp lực tài chính một mình</b> vì ngại chia sẻ, dẫn đến kiệt sức trong công việc mà bạn đời không hề hay biết mức độ.' },
+      { label:'Con cái của bạn', text:'Con cái lớn lên trong bầu không khí né tránh chuyện tiền, rồi cũng <b>học cách né tránh y hệt</b> khi trưởng thành và có gia đình riêng.' },
     ],
-    future: 'Nếu cứ né tránh, những quyết định tài chính quan trọng của gia đình sẽ tiếp tục bị trì hoãn hoặc quyết định một chiều — và khoảng cách cảm xúc quanh chủ đề tiền bạc sẽ ngày càng khó thu hẹp lại, dù tình cảm hai người vẫn còn đó.',
-    secret: 'Vấn đề không phải là thiếu tình yêu, mà là thiếu một không gian an toàn để nói về tiền mà không thành cãi vã. Mục Tiêu & Cam Kết được thiết kế chính là không gian đó — đặt mục tiêu tài chính CHUNG, bằng con số cụ thể, ngoài lúc căng thẳng, để việc bàn tiền trở thành một cuộc trò chuyện về tương lai chung, thay vì một cuộc đối chất về quá khứ.',
+    future: 'Nếu cứ né tránh, những quyết định tài chính quan trọng của gia đình sẽ tiếp tục bị trì hoãn hoặc quyết định một chiều — và <b>khoảng cách cảm xúc quanh chủ đề tiền bạc sẽ ngày càng khó thu hẹp lại</b>, dù tình cảm hai người vẫn còn đó.',
+    secret: 'Vấn đề không phải là thiếu tình yêu, mà là <b>thiếu một không gian an toàn để nói về tiền mà không thành cãi vã</b>. Mục Tiêu & Cam Kết được thiết kế chính là không gian đó — đặt mục tiêu tài chính CHUNG, bằng con số cụ thể, ngoài lúc căng thẳng, để việc bàn tiền trở thành <b>một cuộc trò chuyện về tương lai chung</b>, thay vì một cuộc đối chất về quá khứ.',
   },
   tai_chinh_tam_thuc: {
-    wound: 'Trẻ con không biết tiền bạc là gì, nhưng nhạy cảm vô cùng với sự ngột ngạt của một gia đình thiếu tiền. Có thể bạn đã lớn lên trong tiếng thở dài cuối tháng, tiếng cãi vã về từng khoản chi, hoặc cảm giác tủi thân khi bị so sánh vì gia cảnh kém hơn bạn bè. Đứa trẻ ngày ấy âm thầm ghi vào Tàng Thức: "Không có tiền là nguy hiểm, là bị coi thường, là có thể mất tất cả." Nỗi sợ đó thúc bạn cày cuốc không ngừng nghỉ khi trưởng thành — nhưng động cơ kiếm tiền bằng sợ hãi chỉ tiếp tục kiến tạo ra một đời sống đầy sợ hãi.',
+    wound: 'Trẻ con không biết tiền bạc là gì, nhưng nhạy cảm vô cùng với sự ngột ngạt của một gia đình thiếu tiền. Có thể bạn đã lớn lên trong tiếng thở dài cuối tháng, tiếng cãi vã về từng khoản chi, hoặc cảm giác tủi thân khi bị so sánh vì gia cảnh kém hơn bạn bè. Đứa trẻ ngày ấy âm thầm ghi vào Tàng Thức: <b>"Không có tiền là nguy hiểm, là bị coi thường, là có thể mất tất cả."</b> Nỗi sợ đó thúc bạn cày cuốc không ngừng nghỉ khi trưởng thành — nhưng <b>động cơ kiếm tiền bằng sợ hãi chỉ tiếp tục kiến tạo ra một đời sống đầy sợ hãi</b>.',
     drains: [
-      { label:'Ví tiền của bạn', text:'Bạn kiếm được nhưng luôn thấy thiếu — mỗi lần trả hoá đơn hay trả nợ, lồng ngực co thắt trong xót xa thay vì bình an, và chính tần số đó khiến dòng tiền khó chảy vào thêm.' },
-      { label:'Cơ thể vật lý', text:'Đêm nằm lo nghĩ về tiền, mất ngủ, cơ thể rã rời — bạn đang bắt thân thể làm việc như một cách xoa dịu nỗi sợ, không phải vì đam mê hay giá trị thật.' },
-      { label:'Bạn đời & mối quan hệ', text:'Áp lực tài chính khiến bạn né tránh sự hiện diện ấm áp, hoặc trút cáu gắt lên người thân sau một ngày căng thẳng vì tiền.' },
-      { label:'Sự nghiệp', text:'Nỗi sợ thiếu hụt có thể đẩy bạn vào các quyết định liều lĩnh — đầu tư nóng vội, vay mượn quá sức — để nhanh chóng lấp đầy khoảng trống an toàn.' },
-      { label:'Con cái của bạn', text:'Con nhìn thấy một người luôn bận rộn, lo âu vì tiền, và vô tình học đúng tần số túng thiếu đó, dù gia đình có thể không hề thiếu thốn vật chất.' },
+      { label:'Ví tiền của bạn', text:'Bạn kiếm được nhưng luôn thấy thiếu — mỗi lần trả hoá đơn hay trả nợ, <b>lồng ngực co thắt trong xót xa</b> thay vì bình an, và chính tần số đó khiến dòng tiền khó chảy vào thêm.' },
+      { label:'Cơ thể vật lý', text:'Đêm nằm lo nghĩ về tiền, mất ngủ, cơ thể rã rời — bạn đang <b>bắt thân thể làm việc như một cách xoa dịu nỗi sợ</b>, không phải vì đam mê hay giá trị thật.' },
+      { label:'Bạn đời & mối quan hệ', text:'Áp lực tài chính khiến bạn <b>né tránh sự hiện diện ấm áp</b>, hoặc trút cáu gắt lên người thân sau một ngày căng thẳng vì tiền.' },
+      { label:'Sự nghiệp', text:'Nỗi sợ thiếu hụt có thể đẩy bạn vào <b>các quyết định liều lĩnh</b> — đầu tư nóng vội, vay mượn quá sức — để nhanh chóng lấp đầy khoảng trống an toàn.' },
+      { label:'Con cái của bạn', text:'Con nhìn thấy một người luôn bận rộn, lo âu vì tiền, và vô tình <b>học đúng tần số túng thiếu đó</b>, dù gia đình có thể không hề thiếu thốn vật chất.' },
     ],
-    future: 'Bạn có thể kiếm nhiều tiền hơn, nhưng lồng ngực sẽ ngày càng rỗng và kiệt sức — và số tiền cày cuốc được bằng nỗi sợ cuối cùng thường quay lại dưới dạng chi phí sức khoẻ hoặc chi phí cho những mối quan hệ đã rạn nứt.',
-    secret: 'Bạn đã đọc nhiều về tài chính, hiểu rõ lý thuyết — nhưng vì sao ví tiền vẫn rò rỉ, áp lực vẫn đè nặng mỗi ngày? Vì tâm trí luôn tìm được lý do rất hợp lý để che giấu nỗi sợ bên dưới: "mình chi tiêu xót xa vì đang gánh nhiều nghĩa vụ quá" — nhưng thực chất là lồng ngực đang hoảng sợ, không phải hoá đơn đang sai. Nghiệp tài chính chỉ buông khi bị bắt quả tang ngay lúc đang vận hành — đó là lý do mỗi câu Vibe Check ở Chấm Điểm Nghiệp Tiền và mỗi lần Ghi Chép Hàng Ngày đều hỏi CẢM XÚC ngay lúc tiền vào/ra, không chỉ con số. Nhìn lại sau vài tuần, bạn sẽ tự bắt quả tang được: "à, hoá ra mình toàn xót của vào đúng những lúc chi cho việc cần thiết nhất" — và đó là khoảnh khắc vòng lặp bắt đầu lỏng ra.',
+    future: 'Bạn có thể kiếm nhiều tiền hơn, nhưng <b>lồng ngực sẽ ngày càng rỗng và kiệt sức</b> — và số tiền cày cuốc được bằng nỗi sợ cuối cùng thường quay lại dưới dạng chi phí sức khoẻ hoặc chi phí cho những mối quan hệ đã rạn nứt.',
+    secret: 'Bạn đã đọc nhiều về tài chính, hiểu rõ lý thuyết — nhưng vì sao ví tiền vẫn rò rỉ, áp lực vẫn đè nặng mỗi ngày? Vì tâm trí luôn tìm được lý do rất hợp lý để che giấu nỗi sợ bên dưới: "mình chi tiêu xót xa vì đang gánh nhiều nghĩa vụ quá" — nhưng thực chất là <b>lồng ngực đang hoảng sợ, không phải hoá đơn đang sai</b>. Nghiệp tài chính chỉ buông khi <b>bị bắt quả tang ngay lúc đang vận hành</b> — đó là lý do mỗi câu Vibe Check ở Chấm Điểm Nghiệp Tiền và mỗi lần Ghi Chép Hàng Ngày đều hỏi CẢM XÚC ngay lúc tiền vào/ra, không chỉ con số. Nhìn lại sau vài tuần, bạn sẽ tự bắt quả tang được: "à, hoá ra mình toàn xót của vào đúng những lúc chi cho việc cần thiết nhất" — và đó là khoảnh khắc vòng lặp bắt đầu lỏng ra.',
   },
   thuan_phap_nhan_qua: {
-    wound: 'Có thể bạn từng chứng kiến của cải tan biến chỉ sau một biến cố, hoặc từng bị dạy rằng phải giữ chặt những gì mình có vì "cho đi là mất, là dại". Đứa trẻ ngày ấy học được: "Thế giới này khan hiếm, ai giữ được nhiều hơn thì an toàn hơn." Niềm tin khan hiếm đó khiến việc tích luỹ trở thành một cuộc chạy trốn nỗi sợ, thay vì một hành trình kiến tạo giá trị.',
+    wound: 'Có thể bạn từng chứng kiến của cải tan biến chỉ sau một biến cố, hoặc từng bị dạy rằng phải giữ chặt những gì mình có vì "cho đi là mất, là dại". Đứa trẻ ngày ấy học được: <b>"Thế giới này khan hiếm, ai giữ được nhiều hơn thì an toàn hơn."</b> Niềm tin khan hiếm đó khiến việc tích luỹ trở thành <b>một cuộc chạy trốn nỗi sợ</b>, thay vì một hành trình kiến tạo giá trị.',
     drains: [
-      { label:'Ví tiền của bạn', text:'Bạn có thể tích luỹ được tài sản, nhưng luôn thấy chưa đủ — vì gốc rễ động cơ là nỗi sợ thiếu, mà nỗi sợ thì không bao giờ được thoả mãn bằng con số.' },
-      { label:'Cơ thể vật lý', text:'Nỗi lo giữ của khiến bạn khó thật sự thư giãn, ngay cả khi tài chính đã ổn định — cơ thể vẫn ở trạng thái phòng thủ.' },
-      { label:'Bạn đời & mối quan hệ', text:'Sự khan hiếm trong tâm trí có thể khiến bạn tính toán ngay cả với người thân, làm mối quan hệ nặng nề hơn cần thiết.' },
-      { label:'Sự nghiệp', text:'Bạn có thể bỏ lỡ những cơ hội hợp tác hoặc cho đi giá trị (thời gian, kiến thức, sự giúp đỡ) vì sợ "mất phần" — trong khi chính sự cởi mở đó thường lại là thứ mở ra cơ hội mới.' },
-      { label:'Con cái của bạn', text:'Con học được rằng tiền bạc là thứ phải giữ chặt, phải đề phòng, thay vì một dòng chảy có thể luân chuyển tự nhiên.' },
+      { label:'Ví tiền của bạn', text:'Bạn có thể tích luỹ được tài sản, nhưng <b>luôn thấy chưa đủ</b> — vì gốc rễ động cơ là nỗi sợ thiếu, mà nỗi sợ thì không bao giờ được thoả mãn bằng con số.' },
+      { label:'Cơ thể vật lý', text:'Nỗi lo giữ của khiến bạn <b>khó thật sự thư giãn</b>, ngay cả khi tài chính đã ổn định — cơ thể vẫn ở trạng thái phòng thủ.' },
+      { label:'Bạn đời & mối quan hệ', text:'Sự khan hiếm trong tâm trí có thể khiến bạn <b>tính toán ngay cả với người thân</b>, làm mối quan hệ nặng nề hơn cần thiết.' },
+      { label:'Sự nghiệp', text:'Bạn có thể <b>bỏ lỡ những cơ hội hợp tác</b> hoặc cho đi giá trị (thời gian, kiến thức, sự giúp đỡ) vì sợ "mất phần" — trong khi chính sự cởi mở đó thường lại là thứ mở ra cơ hội mới.' },
+      { label:'Con cái của bạn', text:'Con học được rằng <b>tiền bạc là thứ phải giữ chặt, phải đề phòng</b>, thay vì một dòng chảy có thể luân chuyển tự nhiên.' },
     ],
-    future: 'Bạn có thể tích luỹ được nhiều tài sản hơn, nhưng cảm giác đủ đầy thật sự vẫn sẽ lảng tránh — vì bạn đang cố lấp một nỗi sợ khan hiếm bằng con số, trong khi gốc rễ vấn đề nằm ở niềm tin, không phải ở số dư tài khoản.',
-    secret: 'Phước phần đúng gốc rễ không nằm ở việc giữ được bao nhiêu, mà ở việc dòng chảy cho-nhận có được lưu thông hay không. Đây là lý do quỹ "🎁 Cho Đi 5%" tồn tại trong Ghi Chép Hàng Ngày — không phải để bạn nghèo đi, mà để mỗi tháng bạn thực chứng lại một điều: cho đi trong sự đủ đầy không làm bạn thiếu hụt, mà thường mở ra đúng lúc một cánh cửa khác. Nhìn lại sau vài tháng thực hành, bạn sẽ tự thấy — nỗi sợ "cho rồi sẽ thiếu" hoá ra không đúng như tâm trí từng doạ bạn.',
+    future: 'Bạn có thể tích luỹ được nhiều tài sản hơn, nhưng <b>cảm giác đủ đầy thật sự vẫn sẽ lảng tránh</b> — vì bạn đang cố lấp một nỗi sợ khan hiếm bằng con số, trong khi gốc rễ vấn đề nằm ở niềm tin, không phải ở số dư tài khoản.',
+    secret: 'Phước phần đúng gốc rễ <b>không nằm ở việc giữ được bao nhiêu, mà ở việc dòng chảy cho-nhận có được lưu thông hay không</b>. Đây là lý do quỹ "🎁 Cho Đi 5%" tồn tại trong Ghi Chép Hàng Ngày — không phải để bạn nghèo đi, mà để mỗi tháng bạn thực chứng lại một điều: <b>cho đi trong sự đủ đầy không làm bạn thiếu hụt</b>, mà thường mở ra đúng lúc một cánh cửa khác. Nhìn lại sau vài tháng thực hành, bạn sẽ tự thấy — nỗi sợ "cho rồi sẽ thiếu" hoá ra không đúng như tâm trí từng doạ bạn.',
   },
 };
+const DRAIN_ICONS = ['💰','🫀','💞','💼','👶'];
 function deepAnalysisHtml(houseKey, houseLabel){
   const d = PILLAR_DEEP_ANALYSIS[houseKey];
+  function stepHead(num, icon, title, tint){
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:${tint};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">${num}</span>
+      <span style="font-weight:700;font-size:15px;">${icon} ${esc(title)}</span>
+    </div>`;
+  }
   return `
-    <div class="card" style="margin-top:16px;border-color:var(--gold);background:var(--gold-soft, #FBEEDD);">
-      <div style="font-weight:700;font-size:16px;margin-bottom:4px;">🔬 Bản Giải Phẫu Chi Tiết — ${esc(houseLabel)}</div>
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;">Đây là trụ đang có điểm thấp nhất trong 5 Trụ Cột của bạn hôm nay. Hãy đọc chậm rãi — chỗ nào khiến bạn nhói lên hoặc nghẹn lại, chỗ đó chính là sự thật cần nhìn thẳng, không phải để phán xét bản thân.</div>
-
-      <div style="margin-bottom:14px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">1. Vết thương gốc bắt nguồn từ đâu?</div>
-        <div style="font-size:13.5px;line-height:1.7;">${esc(d.wound)}</div>
+    <div class="card" style="margin-top:16px;border:1px solid var(--gold);background:var(--panel);padding:0;overflow:hidden;">
+      <div style="padding:18px 20px;background:var(--gold);color:#fff;">
+        <div style="font-weight:700;font-size:17px;margin-bottom:4px;">🔬 Bản Giải Phẫu Chi Tiết</div>
+        <div style="font-size:14px;opacity:.95;">${esc(houseLabel)} — trụ đang thấp điểm nhất của bạn hôm nay</div>
       </div>
+      <div style="padding:20px;">
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;font-style:italic;">Đọc chậm rãi — chỗ nào khiến bạn nhói lên hoặc nghẹn lại, chỗ đó chính là sự thật cần nhìn thẳng, không phải để phán xét bản thân.</div>
 
-      <div style="margin-bottom:14px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">2. 5 vị trí đang âm thầm rút cạn sinh khí của bạn mỗi ngày</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          ${d.drains.map(x=>`<div style="font-size:13.5px;line-height:1.6;">▸ <b>${esc(x.label)}</b>: ${esc(x.text)}</div>`).join('')}
+        <div style="margin-bottom:20px;">
+          ${stepHead(1, '💔', 'Vết thương gốc bắt nguồn từ đâu?', 'var(--ink-soft)')}
+          <div style="font-size:14px;line-height:1.75;padding-left:38px;">${d.wound}</div>
         </div>
-      </div>
 
-      <div style="margin-bottom:14px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">3. Năm năm nữa, nếu bạn vẫn để yên như cũ?</div>
-        <div style="font-size:13.5px;line-height:1.7;">${esc(d.future)}</div>
-      </div>
+        <div style="margin-bottom:20px;padding:16px;border-radius:10px;background:rgba(166,70,46,.06);border:1px solid rgba(166,70,46,.18);">
+          ${stepHead(2, '🩸', '5 vị trí đang âm thầm rút cạn sinh khí của bạn', 'var(--danger)')}
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+            ${d.drains.map((x,i)=>`
+              <div style="background:var(--panel);border-radius:8px;padding:10px 12px;">
+                <div style="font-weight:700;font-size:13px;margin-bottom:3px;">${DRAIN_ICONS[i]||'▸'} ${esc(x.label)}</div>
+                <div style="font-size:13px;line-height:1.55;">${x.text}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
 
-      <div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">4. Bí mật để đập tan vòng nghiệp</div>
-        <div style="font-size:13.5px;line-height:1.7;">${esc(d.secret)}</div>
+        <div style="margin-bottom:20px;padding:16px;border-radius:10px;background:rgba(184,134,46,.10);border:1px solid rgba(184,134,46,.28);">
+          ${stepHead(3, '⏳', 'Năm năm nữa, nếu bạn vẫn để yên như cũ?', 'var(--gold)')}
+          <div style="font-size:14px;line-height:1.75;padding-left:38px;">${d.future}</div>
+        </div>
+
+        <div style="padding:16px;border-radius:10px;background:var(--accent-soft);border:1px solid var(--accent);">
+          ${stepHead(4, '🔑', 'Bí mật để đập tan vòng nghiệp', 'var(--accent)')}
+          <div style="font-size:14px;line-height:1.75;padding-left:38px;">${d.secret}</div>
+        </div>
       </div>
     </div>
   `;
@@ -354,6 +374,7 @@ function render(container, ctx){
     dashboardLoading: true,
     monthIncome: 0, monthExpense: 0, netWorth: null, netWorthMonth: null, totalDebt: 0,
     upcomingDebts: [], karmaAxes: [], activeBeliefsCount: 0, selectedPillarKey: null,
+    karmaHistory: [],
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
 
@@ -364,7 +385,7 @@ function render(container, ctx){
     const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
     const fourteenDaysAgo = new Date(); fourteenDaysAgo.setDate(fourteenDaysAgo.getDate()-14);
     const monthStart = `${month}-01`;
-    const [entriesRes, netWorthRes, debtsRes, vibeRes, recentDatesRes, monthGoalRes, monthNetworthRes, weeklyRes, activeBeliefsRes] = await Promise.all([
+    const [entriesRes, netWorthRes, debtsRes, vibeRes, recentDatesRes, monthGoalRes, monthNetworthRes, weeklyRes, activeBeliefsRes, karmaHistoryRes] = await Promise.all([
       ctx.supabase.from('tc_finance_entries').select('type, amount')
         .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', nextMonthKey(month)+'-01'),
       ctx.supabase.from('tc_networth_snapshots').select('*')
@@ -382,7 +403,9 @@ function render(container, ctx){
       ctx.supabase.from('tc_weekly_reflections').select('relationship_score,health_score,purpose_score,parents_connection_score,finance_mindset_score')
         .eq('user_id', ctx.user.id).order('week_start', { ascending:false }).limit(4),
       ctx.supabase.from('tc_core_beliefs').select('id').eq('user_id', ctx.user.id).eq('still_active', true),
+      ctx.supabase.from('tc_karma_history').select('*').eq('user_id', ctx.user.id).order('taken_at', { ascending:false }).limit(20),
     ]);
+    state.karmaHistory = karmaHistoryRes.data || [];
     const entries = entriesRes.data || [];
     state.monthIncome = entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
     state.monthExpense = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0);
@@ -592,7 +615,38 @@ function render(container, ctx){
     // Dùng để xếp lại thứ tự 3 khối lợi ích ở màn nâng cấp (tcBenefitsHtml() ở app-shell.js) — có
     // nợ thật thì đẩy "thanh khoản nợ" lên đầu, không nợ thì đẩy xuống cuối (2026-08-24, góp ý Quỳnh).
     window.TcLastHasDebt = Number(state.form.debt_total) > 0;
+    logKarmaHistory();
     draw();
+  }
+
+  // Ghi 1 dòng SNAPSHOT vào tc_karma_history mỗi lần bấm "Xem Kết Quả" — góp ý Quỳnh 2026-08-25:
+  // "để chị làm lại thì sau này xem lại được cả những điểm ngày trước đã từng làm theo ngày". KHÁC
+  // nguyên tắc "không lưu điểm suy ra được" ở chỗ: đây là bảng LỊCH SỬ theo thời gian, không phải
+  // điểm hiện tại — không cách nào tính lại được "điểm ngày 20/8 là bao nhiêu" nếu không lưu lại
+  // đúng lúc đó, khác các chỗ khác trong app luôn tính tươi từ dữ liệu hiện có. append-only, không
+  // upsert. best-effort — lỗi ở đây không được chặn luồng xem kết quả chính.
+  async function logKarmaHistory(){
+    if(state.result.vibeScore == null) return;
+    const pillarScores = {};
+    HOUSES.forEach(h=>{
+      const insight = pillarInsight(state.vibe, h.key);
+      pillarScores[h.key] = insight ? Math.round(insight.avgPoints * 10) : null;
+    });
+    const row = {
+      user_id: ctx.user.id,
+      vibe_score: state.result.vibeScore,
+      weakest_area: state.result.weakestArea,
+      than_tam_ban_the: pillarScores.than_tam_ban_the,
+      coi_nguon_sinh_thanh: pillarScores.coi_nguon_sinh_thanh,
+      ban_doi_moi_quan_he: pillarScores.ban_doi_moi_quan_he,
+      tai_chinh_tam_thuc: pillarScores.tai_chinh_tam_thuc,
+      thuan_phap_nhan_qua: pillarScores.thuan_phap_nhan_qua,
+    };
+    try{
+      const { data } = await ctx.supabase.from('tc_karma_history').insert(row).select().maybeSingle();
+      state.karmaHistory.unshift(data || { ...row, taken_at: new Date().toISOString() });
+      draw();
+    } catch(e){ /* best-effort — không chặn luồng xem kết quả nếu ghi lịch sử lỗi */ }
   }
 
   function fieldHtml(dataKey, label, hint, unit){
@@ -648,9 +702,34 @@ function render(container, ctx){
               <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
             </div>
           ` : ''}
-          <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
+          <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm "Xem Kết Quả" đều lưu lại 1 mốc vào lịch sử bên dưới — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao qua thời gian.</div>
           <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
         </div>
+
+        ${state.karmaHistory.length>0 ? `
+        <div class="section">
+          <h3>📈 Lịch sử các lần chấm điểm</h3>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">${state.karmaHistory.length>=20?'20 lần gần nhất — ':''}Mới nhất ở trên cùng.</p>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead><tr>
+                <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);text-transform:uppercase;">Ngày</th>
+                <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);text-transform:uppercase;">Điểm Nghiệp Tiền</th>
+                <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);text-transform:uppercase;">Khâu yếu nhất</th>
+              </tr></thead>
+              <tbody>
+                ${state.karmaHistory.map(row=>`
+                  <tr>
+                    <td style="padding:7px 8px;border-bottom:1px solid var(--line-soft);white-space:nowrap;">${esc(new Date(row.taken_at).toLocaleDateString('vi-VN'))}</td>
+                    <td style="text-align:right;padding:7px 8px;border-bottom:1px solid var(--line-soft);font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);">${row.vibe_score==null?'—':row.vibe_score+'/100'}</td>
+                    <td style="padding:7px 8px;border-bottom:1px solid var(--line-soft);">${row.weakest_area && WEAKEST_AREA_INFO[row.weakest_area] ? esc(WEAKEST_AREA_INFO[row.weakest_area].label) : '—'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        ` : ''}
 
         <div class="section">
           <h3>🌿 Soi theo 5 Trụ Cột Năng Lượng</h3>
