@@ -1,9 +1,12 @@
 (function(){
+// CHỈ Tài sản/Tiêu sản — 2026-08-26, góp ý Quỳnh: "để mỗi tài sản tiêu sản thui chứ" (trước đây gộp
+// chung 4 lựa chọn tài_sản/tiêu_sản/CP cố định/CP biến đổi vào 1 nhóm chip duy nhất, dù đây là 2 TRỤC
+// PHÂN LOẠI khác nhau: tài sản/tiêu sản biến đổi TỪNG GIAO DỊCH nên hỏi lại mỗi lần ghi là đúng; CP cố
+// định/biến đổi là thuộc tính CỦA DANH MỤC, đã thiết lập sẵn ở Quản Lý Danh Mục (danh-muc.js,
+// tc_categories.default_classification) — không cần hỏi lại ở đây nữa).
 const EXPENSE_CATEGORIES = [
   { key:'tai_san', label:'Tài sản', hint:'mua vàng, gửi TK, đầu tư...' },
   { key:'tieu_san', label:'Tiêu sản', hint:'mất giá trị, thu phí hàng tháng...' },
-  { key:'cp_co_dinh', label:'CP cố định', hint:'thuê nhà, bảo hiểm...' },
-  { key:'cp_bien_doi', label:'CP biến đổi', hint:'ăn uống, mua sắm...' },
 ];
 
 // Nếu đang có khoản nợ lãi ≥15%/năm (xem loadDebtWarning), gợi ý ưu tiên trả nợ thay vì chia
@@ -39,7 +42,7 @@ function render(container, ctx){
     loading: true,
     date: isoDate(new Date()),
     entries: [],
-    form: { type:'expense', amount:'', description:'', category:'cp_bien_doi', category_label:'', vibe:null, vibe_reason:'' },
+    form: { type:'expense', amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' },
     saving: false,
     error: null,
     debtWarning: null,
@@ -102,7 +105,7 @@ function render(container, ctx){
       type: state.form.type,
       amount: amt,
       description: state.form.description.trim(),
-      category: state.form.type === 'expense' ? state.form.category : null,
+      category: (state.form.type === 'expense' && state.form.category) ? state.form.category : null,
       category_label: state.form.category_label.trim() || null,
       vibe: state.form.vibe,
       vibe_reason: state.form.vibe_reason.trim() || null,
@@ -113,12 +116,15 @@ function render(container, ctx){
     // Gõ danh mục mới qua "+ Khác" ngay lúc ghi (không bắt phải qua Quản Lý Danh Mục trước) — lưu
     // luôn vào tc_categories để lần sau hiện lại ở đúng 1 nơi, cả đây và màn Quản Lý Danh Mục.
     if(payload.category_label && !state.categories.some(c=>c.type===payload.type && c.label===payload.category_label)){
+      // default_classification (CP cố định/biến đổi) KHÔNG lấy từ payload.category nữa — đó giờ chỉ
+      // là Tài sản/Tiêu sản (trục khác hẳn, xem comment ở EXPENSE_CATEGORIES). Danh mục mới thêm ở
+      // đây chưa có CP cố định/biến đổi — vào Quản Lý Danh Mục để gắn thêm nếu cần cho Ngân sách.
       await ctx.supabase.from('tc_categories').insert({
         user_id: ctx.user.id, type: payload.type, label: payload.category_label,
-        default_classification: payload.type==='expense' ? payload.category : null,
+        default_classification: null,
       });
     }
-    state.form = { type: state.form.type, amount:'', description:'', category:'cp_bien_doi', category_label:'', vibe:null, vibe_reason:'' };
+    state.form = { type: state.form.type, amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' };
     state.showCustomCategory = false;
     await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
@@ -168,16 +174,21 @@ function render(container, ctx){
         ${isIncome ? `
           <div class="hint-box" id="gc-fund-split" style="margin-top:14px;">${fundSplitHtml(state.form.amount, state.debtWarning)}</div>
         ` : `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Phân loại (kế toán)', 'tai_san', 'tieu_san', 'cp_co_dinh', 'cp_bien_doi')}</label>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Khoản này là Tài sản hay Tiêu sản? <span style="font-weight:400;">(không bắt buộc)</span></label>
           <div class="chips" id="gc-category-chips">
             ${EXPENSE_CATEGORIES.map(c=>`<div class="chip ${state.form.category===c.key?'selected':''}" data-category="${c.key}" title="${esc(c.hint)}">${esc(c.label)}</div>`).join('')}
+          </div>
+          <div class="hint-box" style="margin-top:10px;">
+            <b>🏦 Tài sản</b> — ${esc(GLOSSARY.tai_san.explain)}<br><br>
+            <b>🔴 Tiêu sản</b> — ${esc(GLOSSARY.tieu_san.explain)}<br><br>
+            VD dễ nhớ: mua vàng/gửi tiết kiệm/mua cổ phiếu = <b>Tài sản</b> (tiền vẫn của bạn, còn sinh thêm) · ăn uống/mua quần áo/trả lãi thẻ tín dụng = <b>Tiêu sản</b> (tiền đã tiêu, không quay lại).
           </div>
         `}
 
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(<a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
         <select id="gc-category-label-select" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
           <option value="" ${!state.form.category_label && !state.showCustomCategory?'selected':''}>— Chọn danh mục —</option>
-          ${state.categories.filter(c=>c.type===state.form.type).map(c=>`<option value="${esc(c.label)}" data-classification="${c.default_classification||''}" ${state.form.category_label===c.label && !state.showCustomCategory?'selected':''}>${esc(c.label)}</option>`).join('')}
+          ${state.categories.filter(c=>c.type===state.form.type).map(c=>`<option value="${esc(c.label)}" ${state.form.category_label===c.label && !state.showCustomCategory?'selected':''}>${esc(c.label)}</option>`).join('')}
           <option value="__custom__" ${state.showCustomCategory?'selected':''}>+ Khác (thêm mới)...</option>
         </select>
         ${state.showCustomCategory ? `
@@ -234,11 +245,9 @@ function render(container, ctx){
       } else {
         state.form.category_label = val;
         state.showCustomCategory = false;
-        // Danh mục đã gắn sẵn CP cố định/CP biến đổi (thiết lập ở Quản Lý Danh Mục) thì tự điền
-        // luôn "Phân loại (kế toán)" ở trên — đỡ phải chọn lại mỗi lần ghi cùng 1 danh mục quen.
-        // Danh mục chưa gắn (data-classification rỗng) thì giữ nguyên lựa chọn hiện tại.
-        const classification = e.target.selectedOptions[0] && e.target.selectedOptions[0].getAttribute('data-classification');
-        if(classification) state.form.category = classification;
+        // KHÔNG tự điền Tài sản/Tiêu sản từ default_classification của danh mục nữa — 2 trục khác
+        // nhau (xem comment ở EXPENSE_CATEGORIES). default_classification giờ chỉ còn ý nghĩa cho
+        // CP cố định/biến đổi (dùng ở Ngân sách, muc-tieu-cam-ket.js), không liên quan Tài sản/Tiêu sản.
       }
       draw();
       persistDraft();
