@@ -76,10 +76,30 @@ function html(){
         ${HOUSES.map(h=>`<p><b>${esc(h.label)}</b> — ${esc(HOUSE_GOAL_ANCHOR[h.key])}</p>`).join('')}
       `)}
       ${detailsSection('☢️ Nhân Quả Của Khoản Nợ', `
-        <p><b>Nợ là gì?</b> Là tiền bạn vay của người khác (ngân hàng, tổ chức tín dụng, hoặc cá nhân) và có nghĩa vụ trả lại, thường kèm thêm 1 khoản lãi hoặc phí. Bản thân việc vay nợ KHÔNG phải điều xấu — nó chỉ là 1 công cụ, giống như dao có thể dùng để nấu ăn hay để làm hại người khác, tuỳ vào cách dùng.</p>
         <p>Không phải khoản nợ nào cũng "xấu" — cùng là đi vay, nhưng bản chất năng lượng phía sau mỗi khoản nợ có thể rất khác nhau. App chia nợ thành 2 loại đối nghịch: <b>${esc(GLOSSARY.no_xanh.term)}</b> và <b>${esc(GLOSSARY.no_do.term)}</b>.</p>
-        <p><b>🟢 ${esc(GLOSSARY.no_xanh.term)}</b> — ${esc(GLOSSARY.no_xanh.explain)}</p>
         <p><b>🔴 ${esc(GLOSSARY.no_do.term)}</b> — ${esc(GLOSSARY.no_do.explain)}</p>
+        <div class="hint-box" style="margin:8px 0;">
+          <p style="margin-bottom:6px;"><b>Nhân — vì sao khoản nợ này hình thành:</b></p>
+          <p style="margin-bottom:2px;">• Vay vì nôn nóng làm giàu nhanh: lướt sóng, tiền ảo, đa cấp rủi ro, sàn không rõ nguồn gốc.</p>
+          <p style="margin-bottom:2px;">• Vay vì sĩ diện: cố mua sắm cho hào nhoáng, sợ bị người khác coi thường.</p>
+          <p style="margin-bottom:2px;">• Vay từ nguồn cũng đang bất ổn: tín dụng đen, vay nóng lãi cao, người thân đang túng thiếu.</p>
+          <p style="margin-bottom:8px;">• Dùng thẻ tín dụng/vay trả góp quá khả năng mà không có kế hoạch trả — dễ chịu 30 ngày đầu, sau đó thành áp lực thật.</p>
+          <p style="margin-bottom:6px;"><b>Quả — hậu quả thường gặp:</b></p>
+          <p style="margin-bottom:2px;">• Mất ngủ, lo âu, cơ thể mệt mỏi vì gánh nặng tâm lý kéo dài.</p>
+          <p style="margin-bottom:2px;">• Né tránh: sợ mở app ngân hàng, né tin nhắn nhắc nợ, oán trách chủ nợ hoặc tự trách mình.</p>
+          <p>• Vay chỗ này đắp chỗ kia — nợ chồng nợ, phình to dần ngoài kiểm soát.</p>
+        </div>
+        <p><b>🟢 ${esc(GLOSSARY.no_xanh.term)}</b> — ${esc(GLOSSARY.no_xanh.explain)}</p>
+        <div class="hint-box" style="margin:8px 0;">
+          <p style="margin-bottom:6px;"><b>Nhân — vì sao khoản nợ này khác hẳn:</b></p>
+          <p style="margin-bottom:2px;">• Nhìn nhận khoản nợ như 1 bàn đạp để làm được điều lớn hơn khả năng hiện tại (mua nhà, đầu tư có tính toán, học nâng cao kỹ năng) — không sợ hãi, không oán thán.</p>
+          <p style="margin-bottom:2px;">• Vay từ nguồn sạch, hợp pháp: ngân hàng, tổ chức tín dụng chính thống, lãi suất hợp lý — nếu vay chung, có sự đồng thuận rõ ràng của cả 2 bên (vd vợ chồng).</p>
+          <p style="margin-bottom:8px;">• Có kế hoạch trả rõ ràng, nằm trong khả năng chi trả thật — không vay trong lúc hoảng loạn hay vì bị thúc ép.</p>
+          <p style="margin-bottom:6px;"><b>Quả — điều thường thấy khi xử lý đúng cách:</b></p>
+          <p style="margin-bottom:2px;">• Tâm lý bình an hơn hẳn — vì biết chính xác mình đang vay để làm gì và trả bằng cách nào.</p>
+          <p style="margin-bottom:2px;">• Mỗi lần trả là 1 lần thực hành biết ơn (người/tổ chức đã tin tưởng cho mình vay đúng lúc cần), không phải gánh nặng phải né tránh.</p>
+          <p>• Vì đối diện đúng cách ngay từ đầu, khoản nợ được xử lý đúng tiến độ, không rơi vào vòng xoáy nợ chồng nợ.</p>
+        </div>
         <p>Một khoản nợ được tính là ${esc(GLOSSARY.no_xanh.term)} khi đủ CẢ 3 điều sau — thiếu 1 điều là rơi về ${esc(GLOSSARY.no_do.term)}:</p>
         <p>
           1. Vay từ nguồn chính thống (ngân hàng, tổ chức tín dụng hợp pháp) — không phải vay nóng/tín dụng đen.<br>
