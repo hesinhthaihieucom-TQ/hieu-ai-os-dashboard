@@ -190,13 +190,34 @@ const REFERRAL_REGULAR_PLANS = [
   { key:'6m_ref', label:'6 tháng (giá giới thiệu)', amount:2032000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 2.032.000đ so với giá thường 2.390.000đ.', recommended:true },
   { key:'12m_ref', label:'12 tháng (giá giới thiệu)', amount:3392000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 3.392.000đ so với giá thường 3.990.000đ.', recommended:true },
 ];
+// Ưu đãi "mua sớm trong 3 ngày đầu dùng thử" (2026-08-26, chính sách lâu dài — khớp
+// isWithinEarlyBirdWindow ở api/sepay-webhook.js, nơi thật sự cộng thêm ngày dùng) — PHẢI hiện rõ
+// ngay ở bảng giá thì mới có tác dụng thúc đẩy mua ngay trong lúc còn hào hứng dùng thử, không thì
+// khách chỉ vô tình "được tặng" mà không biết để tranh thủ mua sớm.
+const EARLY_BIRD_WINDOW_DAYS = 3;
+const EARLY_BIRD_BONUS_MONTHS = { '6m':1, '12m':2 }; // áp cho mọi biến thể có tiền tố này (thường/học viên/giới thiệu)
+function isInEarlyBirdWindow(profile){
+  if(!profile || !profile.created_at) return false;
+  return (Date.now() - new Date(profile.created_at).getTime()) <= EARLY_BIRD_WINDOW_DAYS * 86400000;
+}
+function decorateEarlyBird(plans, profile){
+  if(!isInEarlyBirdWindow(profile)) return plans;
+  return plans.map(pl=>{
+    if(pl.flash) return pl; // flash-sale đã là ưu đãi riêng theo ngày lịch, không cộng dồn thêm
+    const prefix = Object.keys(EARLY_BIRD_BONUS_MONTHS).find(k=>pl.key.startsWith(k));
+    if(!prefix) return pl;
+    const bonusMonths = EARLY_BIRD_BONUS_MONTHS[prefix];
+    return { ...pl, note: `🎁 Mua trong 3 ngày đầu dùng thử được TẶNG THÊM ${bonusMonths} tháng dùng! ${pl.note||''}`.trim() };
+  });
+}
 function currentPaymentPlans(){
   const p = AppState.profile;
   const isStudent = !!(p && p.is_student);
   const base = isStudent
     ? buildStudentPlans(p)
     : (p && p.referred_by_ref_code) ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS;
-  return isFlashSaleActive() ? [...FLASH_SALE_PLANS, ...base] : base;
+  const withFlash = isFlashSaleActive() ? [...FLASH_SALE_PLANS, ...base] : base;
+  return decorateEarlyBird(withFlash, p);
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
 // - Gói 1 tháng: so với giá thường CÙNG 1 tháng (499.000đ) — không hiện gì nếu đã hết ưu đãi
