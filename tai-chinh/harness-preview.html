@@ -149,6 +149,10 @@ function makeChain(table){
         const rows = DEBTS.filter(d => Object.keys(chain._filters).every(k => k==='user_id' || String(d[k])===String(chain._filters[k])));
         return resolve({ data: rows, error:null });
       }
+      if(table === 'tc_networth_snapshots'){
+        const rows = Object.values(NETWORTH_SNAPSHOTS).sort((a,b)=> a.snapshot_month < b.snapshot_month ? -1 : 1);
+        return resolve({ data: rows, error:null });
+      }
       if(table === 'tc_karma_history') return resolve({ data: KARMA_HISTORY.slice(0, 20), error:null });
       if(table === 'tc_finance_entries'){
         const r = chain._range.entry_date || {};

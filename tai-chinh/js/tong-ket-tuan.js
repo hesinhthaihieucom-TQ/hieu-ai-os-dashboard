@@ -11,6 +11,31 @@ const REACTION_OPTIONS = [
 ];
 function reactionExplain(key){ const f = REACTION_OPTIONS.find(o=>o.key===key); return f ? f.explain : ''; }
 
+// Mỗi mức 1-5 có mô tả riêng — góp ý Quỳnh 2026-08-26: "các mục đánh sticker đang hơi qua loa" (trước
+// đây chỉ có 5 emoji trơn, không nói rõ mức nào nghĩa là gì, khác hẳn độ sâu ở REACTION_OPTIONS/
+// VIBE_QUESTIONS). Không đổi thang điểm 1-5 hay tên cột DB, chỉ thêm mô tả hiện ra SAU khi chọn.
+const SELF_RATING_LEVELS = {
+  relationship_score: ['Căng thẳng, xa cách, ít nói chuyện thật lòng', 'Bình thường, không có gì đặc biệt', 'Ổn, có lắng nghe nhau', 'Gắn kết, chia sẻ thật lòng', 'Rất gắn kết, thấu hiểu và biết ơn nhau'],
+  health_score: ['Mệt mỏi, mất ngủ, bỏ bê cơ thể', 'Tạm ổn, chưa chăm chút gì thêm', 'Có vận động/ăn uống điều độ 1 phần', 'Ngủ đủ, ăn uống lành mạnh, có vận động', 'Tràn đầy năng lượng, chăm sóc bản thân trọn vẹn'],
+  purpose_score: ['Trống rỗng, không biết mình đang sống vì điều gì', 'Làm theo quán tính, chưa nghĩ nhiều', 'Có lúc thấy ý nghĩa, có lúc mơ hồ', 'Thấy công việc/cuộc sống có ý nghĩa rõ ràng', 'Tràn đầy cảm hứng, biết chính xác mình đang tạo giá trị gì'],
+  parents_connection_score: ['Né tránh, chưa muốn liên lạc', 'Có liên lạc nhưng hời hợt', 'Bình thường, hỏi thăm đủ lễ', 'Có trò chuyện thật lòng, quan tâm nhau', 'Rất gắn kết, biết ơn sâu sắc'],
+  finance_mindset_score: ['Lo âu, sợ hãi mỗi khi nghĩ tới tiền', 'Thấy tiền là chuyện hiển nhiên, vô cảm', 'Bình tĩnh, không quá lo cũng không quá vui', 'Biết ơn, thấy tiền là dòng chảy tự nhiên', 'Hoàn toàn an tâm, tin tưởng dòng tiền luôn đủ'],
+};
+function scoreLevelExplain(field, value){
+  const levels = SELF_RATING_LEVELS[field];
+  return levels && value ? levels[value-1] : 'Chọn 1 mức thật nhất theo cảm nhận tuần này.';
+}
+function scoreChipGroupHtml(field, question, idSuffix, value, extraHint){
+  return `
+    <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">${question}</label>
+    <div class="chips" id="tt-${idSuffix}-chips">
+      ${[1,2,3,4,5].map(v=>`<div class="chip ${value===v?'selected':''}" data-score-field="${field}" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
+    </div>
+    <div class="hint-box" id="tt-${idSuffix}-explain" style="margin-top:8px;">${esc(scoreLevelExplain(field, value))}</div>
+    ${extraHint || ''}
+  `;
+}
+
 function render(container, ctx){
   const state = {
     loading: true,
@@ -168,31 +193,12 @@ function render(container, ctx){
 
           <div class="hint-box" style="margin:16px 0 10px;">5 câu chấm điểm dưới đây tương ứng đúng 5 Trụ Cột ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a> — chấm thật theo cảm nhận tuần này, không cần nghĩ nhiều.</div>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Mối quan hệ tuần này thế nào?</label>
-          <div class="chips" id="tt-relationship-chips" style="margin-bottom:14px;">
-            ${[1,2,3,4,5].map(v=>`<div class="chip ${state.reflection.relationship_score===v?'selected':''}" data-score-field="relationship_score" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
-          </div>
-
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Sức khoẻ tuần này thế nào?</label>
-          <div class="chips" id="tt-health-chips" style="margin-bottom:14px;">
-            ${[1,2,3,4,5].map(v=>`<div class="chip ${state.reflection.health_score===v?'selected':''}" data-score-field="health_score" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
-          </div>
-
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Cảm giác về mục đích sống tuần này?</label>
-          <div class="chips" id="tt-purpose-chips" style="margin-bottom:14px;">
-            ${[1,2,3,4,5].map(v=>`<div class="chip ${state.reflection.purpose_score===v?'selected':''}" data-score-field="purpose_score" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
-          </div>
-
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Kết nối với bố mẹ/cội nguồn tuần này thế nào?</label>
-          <div class="chips" id="tt-parents-chips" style="margin-bottom:14px;">
-            ${[1,2,3,4,5].map(v=>`<div class="chip ${state.reflection.parents_connection_score===v?'selected':''}" data-score-field="parents_connection_score" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
-          </div>
-
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">${glossaryWrap('Tâm thức về tiền của bạn tuần này thế nào?', 'karma_score')}</label>
-          <div class="chips" id="tt-finance-mindset-chips">
-            ${[1,2,3,4,5].map(v=>`<div class="chip ${state.reflection.finance_mindset_score===v?'selected':''}" data-score-field="finance_mindset_score" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
-          </div>
-          <div class="hint-box" style="margin-top:10px;">Câu này CHECK trực tiếp Trụ Tài Chính Tâm Thức — vì tài chính bất ổn kéo theo mọi mặt khác, điểm này còn ảnh hưởng nhẹ tới cả 4 trụ còn lại ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a>.</div>
+          ${scoreChipGroupHtml('relationship_score', 'Mối quan hệ tuần này thế nào?', 'relationship', state.reflection.relationship_score)}
+          ${scoreChipGroupHtml('health_score', 'Sức khoẻ tuần này thế nào?', 'health', state.reflection.health_score)}
+          ${scoreChipGroupHtml('purpose_score', 'Cảm giác về mục đích sống tuần này?', 'purpose', state.reflection.purpose_score)}
+          ${scoreChipGroupHtml('parents_connection_score', 'Kết nối với bố mẹ/cội nguồn tuần này thế nào?', 'parents', state.reflection.parents_connection_score)}
+          ${scoreChipGroupHtml('finance_mindset_score', glossaryWrap('Tâm thức về tiền của bạn tuần này thế nào?', 'karma_score'), 'finance-mindset', state.reflection.finance_mindset_score,
+            `<div class="hint-box" style="margin-top:6px;">Câu này CHECK trực tiếp Trụ Tài Chính Tâm Thức — vì tài chính bất ổn kéo theo mọi mặt khác, điểm này còn ảnh hưởng nhẹ tới cả 4 trụ còn lại ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a>.</div>`)}
 
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Tuần này khi thấy người khác (đồng nghiệp, bạn bè) nhận tin vui về tiền, bạn cảm thấy thế nào?</label>
           <div class="chips" id="tt-reaction-chips">

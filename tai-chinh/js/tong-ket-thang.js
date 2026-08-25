@@ -91,6 +91,7 @@ function render(container, ctx){
     month: new Date().toISOString().slice(0,7),
     cashFlow: { income:0, expense:0 },
     networth: { ...EMPTY_NETWORTH },
+    networthCarriedForward: false,
     networthHistory: [],
     reflection: { ...EMPTY_REFLECTION },
     budgetActuals: {},
@@ -145,10 +146,21 @@ function render(container, ctx){
     });
     state.totalMinPayments = (debtsRes.data||[]).reduce((s,d)=>s+Number(d.minimum_payment||0),0);
     const snap = snapshotRes.data;
-    state.networth = snap
-      ? Object.fromEntries([...ASSET_FIELDS, ...DEBT_FIELDS].map(f=>[f.key, snap[f.key]!=null ? String(snap[f.key]) : '']))
-      : { ...EMPTY_NETWORTH };
     state.networthHistory = historyRes.data || [];
+    if(snap){
+      state.networth = Object.fromEntries([...ASSET_FIELDS, ...DEBT_FIELDS].map(f=>[f.key, snap[f.key]!=null ? String(snap[f.key]) : '']));
+      state.networthCarriedForward = false;
+    } else {
+      // Tự nhảy số từ tháng gần nhất đã có, không bắt gõ lại từ đầu mỗi tháng — góp ý Quỳnh
+      // 2026-08-26: "phần cân đối tài sản tiêu sản... có tự nhảy không hay phải điền". CHỈ áp dụng
+      // khi tháng này CHƯA có snapshot nào (chưa bấm Lưu) — không đè lên dữ liệu thật đã lưu.
+      const priorRows = state.networthHistory.filter(r => r.snapshot_month < state.month);
+      const lastPrior = priorRows[priorRows.length - 1];
+      state.networth = lastPrior
+        ? Object.fromEntries([...ASSET_FIELDS, ...DEBT_FIELDS].map(f=>[f.key, lastPrior[f.key]!=null ? String(lastPrior[f.key]) : '']))
+        : { ...EMPTY_NETWORTH };
+      state.networthCarriedForward = !!lastPrior;
+    }
     const refl = reflectionRes.data;
     state.reflection = refl
       ? Object.fromEntries(Object.keys(EMPTY_REFLECTION).map(k=>[k, refl[k]!=null ? String(refl[k]) : '']))
@@ -235,6 +247,7 @@ function render(container, ctx){
 
         <div class="section">
           <h3>B. Cân đối tài sản & tiêu sản</h3>
+          ${state.networthCarriedForward ? `<div class="hint-box" style="margin-bottom:14px;">Số liệu dưới đây tự lấy từ tháng trước — chỉnh lại đúng số thật của tháng này rồi bấm "Lưu cân đối tháng này".</div>` : ''}
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
             <div>
               <div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:8px;">🏦 Tài sản sinh lợi</div>
@@ -256,6 +269,7 @@ function render(container, ctx){
 
           <button class="btn no-print" style="margin-top:14px;" id="tk-save-networth" ${state.savingNetworth?'disabled':''}>${state.savingNetworth?'Đang lưu…':'Lưu cân đối tháng này'}</button>
           <span class="no-print" id="tk-networth-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedNetworthMsg}</span>
+          <div class="hint-box" style="margin-top:12px;">Lưu cân đối tháng này giúp cộng thêm điểm cho Trụ Thân Tâm Bản Thể ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp →</a> — bỏ trống tháng nào, Điểm Nghiệp tháng đó cũng bị kéo nhẹ xuống theo.</div>
 
           ${historyRows.length>1 ? `
             <div style="margin-top:20px;">
