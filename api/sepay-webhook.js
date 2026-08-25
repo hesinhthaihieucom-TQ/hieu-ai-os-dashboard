@@ -51,21 +51,27 @@ const AMOUNT_TO_DAYS = {
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 
 // Gói TRỌN ĐỜI của Sổ Dòng Tiền Tâm Thức (tai-chinh/, sản phẩm KHÁC, giá KHÁC — không đụng
-// access_until/has_paid ở trên, xem tc_has_paid/tc_paid_at trong schema_full.sql). 2 mức giá theo
-// thời gian (2026-08-24, chị Quỳnh chốt mốc giá ra mắt; 2026-08-24 đổi giá sau mốc từ 599k lên
-// 999k) — CẢ 2 số đã kiểm tra không trùng bất kỳ giá trị nào trong AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT
-// ở trên (đặc biệt tránh 499000 đang là giá tháng chuẩn của Xây Nhân Hiệu) — webhook phân biệt 2 sản phẩm CHỈ qua số tiền chuyển khoản,
-// ref_code dùng chung định dạng "SEVQR <ref_code>" với nhan-hieu (cùng 1 tài khoản ngân hàng thật).
-// Chấp nhận CẢ 2 mức bất kể ngày hiện tại — không tự chốt theo ngày ở server để tránh trường hợp
-// khách chuyển đúng giá ra mắt sát giờ chốt nhưng webhook xử lý trễ vài phút qua ngày hôm sau.
-const TC_LAUNCH_AMOUNT = 299000;   // giá ra mắt, xem TC_LAUNCH_DEADLINE ở tai-chinh/js/app-shell.js
-const TC_REGULAR_AMOUNT = 999000;  // giá sau mốc ra mắt
-const TC_LIFETIME_AMOUNTS = new Set([TC_LAUNCH_AMOUNT, TC_REGULAR_AMOUNT]);
+// access_until/has_paid ở trên, xem tc_has_paid/tc_paid_at trong schema_full.sql). 3 mức giá THEO
+// TỪNG NGƯỜI DÙNG (2026-08-26, chị Quỳnh chốt — THAY hẳn mốc giá ra mắt theo lịch chung trước đó):
+// đếm từ lúc người đó vào app lần đầu, xem tcCurrentPrice()/TC_PRICE_TIER_* ở tai-chinh/js/app-shell.js
+// — ngày 0-15: 299k, 15-30: 599k, sau 30: 999k (giá chuẩn). Webhook KHÔNG tự tính lại mốc ngày của
+// từng người — chỉ cần khớp ĐÚNG 1 trong 3 số tiền này thì coi là mua trọn đời tai-chinh, kích hoạt
+// tc_has_paid ngay (validate "đúng mức giá của đúng người" là việc của UI lúc hiện mã QR, không phải
+// của webhook — không có cách nào server tự chặn ai đó cố ý trả ít hơn giá đang hiện cho họ, coi
+// đây là rủi ro chấp nhận được, giống hệt rủi ro đã có sẵn từ trước ở mốc giá ra mắt theo lịch cũ).
+// CẢ 3 số đã kiểm tra không trùng bất kỳ giá trị nào trong AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT ở trên
+// (đặc biệt tránh 499000 đang là giá tháng chuẩn của Xây Nhân Hiệu) — webhook phân biệt 2 sản phẩm
+// CHỈ qua số tiền chuyển khoản, ref_code dùng chung định dạng "SEVQR <ref_code>" với nhan-hieu (cùng
+// 1 tài khoản ngân hàng thật).
+const TC_PRICE_TIER_1_AMOUNT = 299000; // ngày 0-15 kể từ lần đầu vào app
+const TC_PRICE_TIER_2_AMOUNT = 599000; // ngày 15-30
+const TC_PRICE_TIER_3_AMOUNT = 999000; // sau ngày 30 — giá chuẩn
+const TC_LIFETIME_AMOUNTS = new Set([TC_PRICE_TIER_1_AMOUNT, TC_PRICE_TIER_2_AMOUNT, TC_PRICE_TIER_3_AMOUNT]);
 // Chương trình giới thiệu tai-chinh (2026-08-23, chị Quỳnh chốt "20% cho người giới thiệu") — MỘT
 // CHIỀU, referee vẫn trả nguyên giá đang bán lúc đó (khác nhan-hieu có giảm giá riêng cho referee).
 // Trả bằng TIỀN THẬT (không có hệ lượt AI như nhan-hieu để quy đổi) — ghi vào sổ tc_referrals, chị
 // Quỳnh tự chuyển khoản tay rồi đánh dấu đã trả trong Quản Trị (xem tai-chinh/js/quan-tri.js). Tính
-// theo ĐÚNG số tiền referee vừa trả (299k hay 999k) — không dùng 1 số cố định — để thưởng đúng 20%
+// theo ĐÚNG số tiền referee vừa trả (299k/599k/999k tuỳ mốc ngày của họ) — không dùng 1 số cố định — để thưởng đúng 20%
 // giá trị đơn hàng thật, không lệch khi giá đổi qua mốc ra mắt.
 const TC_REFERRAL_REWARD_PERCENT = 0.20;
 

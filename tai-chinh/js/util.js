@@ -515,9 +515,7 @@ const HOUSE_GOAL_ANCHOR = {
 };
 function houseLabel(key){ const f = HOUSES.find(h=>h.key===key); return f ? f.label : ''; }
 
-// 4 khâu "Nút Chặn Dòng Tiền" đo được ở Vibe Check (Chấm Điểm Nghiệp Tiền, thiet-lap-nhanh.js) —
-// CHUYỂN ra util.js (2026-08-25) vì theo-doi-ket-qua.js cũng cần đọc label này để hiện "khâu yếu
-// nhất" trong lịch sử, mà thiet-lap-nhanh.js bọc IIFE nên không share được biến module-scope.
+// 4 khâu "Nút Chặn Dòng Tiền" đo được ở Vibe Check (Chấm Điểm Nghiệp Tiền, thiet-lap-nhanh.js).
 const WEAKEST_AREA_INFO = {
   income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2, seedBelief:'Tôi khó đón nhận trọn vẹn khi tiền về — nỗi lo thường che mất niềm vui.' },
   expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3, seedBelief:'Tôi hay thấy xót của mỗi khi phải chi tiền ra, dù là chi cho việc cần thiết.' },

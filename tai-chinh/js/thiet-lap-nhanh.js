@@ -358,6 +358,10 @@ function render(container, ctx){
     dashboardLoading: true,
     monthIncome: 0, monthExpense: 0, netWorth: null, netWorthMonth: null, totalDebt: 0,
     upcomingDebts: [], karmaAxes: [], activeBeliefsCount: 0, selectedPillarKey: null,
+    // Tab "Theo Dõi Kết Quả" — 1 TAB của trang này, KHÔNG phải route riêng (2026-08-25, góp ý Quỳnh:
+    // "là 1 mục của chấm điểm nghiệp chứ không phải trang mới ẩn trong sidebar"). Load lười (chỉ query
+    // khi bấm sang tab lần đầu) để không tốn query nếu người dùng không bao giờ xem lịch sử.
+    activeTab: 'lam-bai', karmaHistory: [], karmaHistoryLoading: false, karmaHistoryLoaded: false,
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
 
@@ -630,10 +634,23 @@ function render(container, ctx){
       tai_chinh_tam_thuc: pillarScores.tai_chinh_tam_thuc,
       thuan_phap_nhan_qua: pillarScores.thuan_phap_nhan_qua,
     };
-    // Chỉ ghi, không giữ lại state ở đây nữa — trang riêng "Theo Dõi Kết Quả" (theo-doi-ket-qua.js)
-    // tự đọc lại từ DB (2026-08-25, tách khỏi trang này cho gọn, xem góp ý Quỳnh ở NAV/app-shell.js).
-    try{ await ctx.supabase.from('tc_karma_history').insert(row); }
-    catch(e){ /* best-effort — không chặn luồng xem kết quả nếu ghi lịch sử lỗi */ }
+    try{
+      const { data } = await ctx.supabase.from('tc_karma_history').insert(row).select().maybeSingle();
+      // Cập nhật luôn state nếu tab "Theo Dõi Kết Quả" đã từng load — để không cần bấm lại tab mới
+      // thấy mốc vừa ghi (2026-08-25, "Theo Dõi Kết Quả" là 1 TAB của trang này, không phải trang riêng).
+      if(state.karmaHistoryLoaded) state.karmaHistory.unshift(data || { ...row, taken_at: new Date().toISOString() });
+    } catch(e){ /* best-effort — không chặn luồng xem kết quả nếu ghi lịch sử lỗi */ }
+  }
+
+  async function loadKarmaHistory(){
+    if(state.karmaHistoryLoaded) return;
+    state.karmaHistoryLoading = true; draw();
+    const { data } = await ctx.supabase.from('tc_karma_history').select('*')
+      .eq('user_id', ctx.user.id).order('taken_at', { ascending:false }).limit(50);
+    state.karmaHistory = data || [];
+    state.karmaHistoryLoaded = true;
+    state.karmaHistoryLoading = false;
+    draw();
   }
 
   function fieldHtml(dataKey, label, hint, unit){
@@ -689,7 +706,7 @@ function render(container, ctx){
               <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
             </div>
           ` : ''}
-          <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm "Xem Kết Quả" đều lưu lại 1 mốc — sang <a href="#theo-doi-ket-qua" style="color:var(--accent);font-weight:600;">📈 Theo Dõi Kết Quả →</a> để xem tâm thức tiền của bạn đã dịch chuyển ra sao qua thời gian.</div>
+          <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm "Xem Kết Quả" đều lưu lại 1 mốc — bấm sang tab <span data-tc-tab="theo-doi" style="color:var(--accent);font-weight:600;cursor:pointer;">📈 Theo Dõi Kết Quả →</span> để xem tâm thức tiền của bạn đã dịch chuyển ra sao qua thời gian.</div>
           <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
         </div>
 
@@ -735,9 +752,14 @@ function render(container, ctx){
             ${r.weakestArea
               ? `Bạn đang yếu nhất ở khâu <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b>. Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp (chữa lành gốc rễ), Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật, không chỉ dừng ở việc nhìn thấy vấn đề.`
               : `Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để đi tiếp từ bức tranh này.`}
-            ${Date.now() <= TC_LAUNCH_DEADLINE.getTime()
-              ? `Chỉ <b>${TC_LAUNCH_PRICE.toLocaleString('vi-VN')}đ</b> nếu mở khoá trước <b>${tcLaunchDeadlineLabel()}</b> — sau ngày đó tăng lên ${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ. Trả 1 lần, dùng mãi mãi.`
-              : `Chỉ <b>${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.`}
+            ${(()=>{
+              const price = tcCurrentPrice(ctx.profile);
+              const tierDaysLeft = tcPriceTierDaysLeft(ctx.profile);
+              const nextPrice = tcNextTierPrice(ctx.profile);
+              return nextPrice
+                ? `Chỉ <b>${price.toLocaleString('vi-VN')}đ</b> — còn <b>${tierDaysLeft} ngày</b> ở mức giá này, sau đó tăng lên ${nextPrice.toLocaleString('vi-VN')}đ. Trả 1 lần, dùng mãi mãi.`
+                : `Chỉ <b>${price.toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.`;
+            })()}
           </div>
           <span class="btn btn-full" data-goto="nang-cap">Nâng Cấp Ngay →</span>
         </div>
@@ -790,6 +812,47 @@ function render(container, ctx){
     `;
   }
 
+  function tabsHtml(){
+    return `
+      <div class="chips" style="margin-bottom:18px;">
+        <div class="chip ${state.activeTab==='lam-bai'?'selected':''}" data-tc-tab="lam-bai">📝 Làm Bài & Kết Quả</div>
+        <div class="chip ${state.activeTab==='theo-doi'?'selected':''}" data-tc-tab="theo-doi">📈 Theo Dõi Kết Quả</div>
+      </div>
+    `;
+  }
+
+  function historyTabHtml(){
+    if(state.karmaHistoryLoading) return `<div class="loading"><div class="spinner"></div></div>`;
+    if(state.karmaHistory.length === 0) return `<div class="hint-box">Chưa có lần chấm điểm nào được lưu — sang tab "📝 Làm Bài & Kết Quả" và bấm "Xem Kết Quả" để bắt đầu theo dõi.</div>`;
+    return `
+      <div class="section">
+        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">${state.karmaHistory.length>=50?'50 lần gần nhất — ':''}Mới nhất ở trên cùng.</p>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr>
+              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">Ngày</th>
+              <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">Điểm Nghiệp Tiền</th>
+              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">Khâu yếu nhất</th>
+              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">5 Trụ Cột</th>
+            </tr></thead>
+            <tbody>
+              ${state.karmaHistory.map(row=>`
+                <tr>
+                  <td style="padding:8px;border-bottom:1px solid var(--line-soft);white-space:nowrap;vertical-align:top;">${esc(new Date(row.taken_at).toLocaleDateString('vi-VN'))}</td>
+                  <td style="text-align:right;padding:8px;border-bottom:1px solid var(--line-soft);font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);vertical-align:top;">${row.vibe_score==null?'—':row.vibe_score+'/100'}</td>
+                  <td style="padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:top;">${row.weakest_area && WEAKEST_AREA_INFO[row.weakest_area] ? esc(WEAKEST_AREA_INFO[row.weakest_area].label) : '—'}</td>
+                  <td style="padding:8px;border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--ink-soft);vertical-align:top;">
+                    ${HOUSES.map(h=>`${esc(h.label.replace(/^\S+\s/,''))}: <b>${row[h.key]==null?'—':row[h.key]}</b>`).join(' · ')}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
   function html(){
     return `
       <div class="page-head">
@@ -797,6 +860,10 @@ function render(container, ctx){
         <p><b>Điểm Nghiệp theo 5 Trụ Cột</b> + số liệu tháng này ngay dưới đây — tự cập nhật mỗi khi bạn ghi chép/tổng kết.</p>
         <p><b>7 câu hỏi số liệu + 10 câu Vibe Check</b> bên dưới vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra <b>khâu nào đang bị tâm thức sợ hãi chi phối</b> — kể cả khi thấy người khác nhận tiền, không chỉ riêng chuyện tiền của bạn. Làm lại bất cứ lúc nào để cập nhật.</p>
       </div>
+
+      ${tabsHtml()}
+
+      ${state.activeTab === 'theo-doi' ? historyTabHtml() : `
 
       ${state.dashboardLoading ? `<div class="loading"><div class="spinner"></div></div>` : dashboardHtml()}
 
@@ -857,10 +924,18 @@ function render(container, ctx){
 
         ${state.result ? resultHtml() : ''}
       `}
+      `}
     `;
   }
 
   function bind(){
+    container.querySelectorAll('[data-tc-tab]').forEach(el=>{
+      el.onclick = ()=>{
+        state.activeTab = el.getAttribute('data-tc-tab');
+        if(state.activeTab === 'theo-doi') loadKarmaHistory();
+        draw();
+      };
+    });
     container.querySelectorAll('[data-axis-key]').forEach(el=>{
       el.onclick = ()=>{ state.selectedPillarKey = el.getAttribute('data-axis-key'); draw(); };
     });

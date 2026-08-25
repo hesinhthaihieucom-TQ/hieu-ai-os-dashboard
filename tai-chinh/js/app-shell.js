@@ -29,8 +29,7 @@ const TC_REF_STORAGE_KEY = 'tc_referred_by_ref_code';
 // sidebar vẫn dùng được bình thường, chỉ đúng route premium hiện màn nâng cấp.
 const NAV = [
   { key:'trang-chu', title:'Trang chủ', hidden:true }, // không hiện trong sidebar (giống nhan-hieu) — 2026-08-24 góp ý Quỳnh, vào lại qua bấm logo/"SỔ DÒNG TIỀN TÂM THỨC" ở đầu sidebar (đã có sẵn #sidebar-brand-home)
-  { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền' }, // KHÔNG premium — free mãi mãi, dùng làm bài chẩn đoán mồi trước khi mời nâng cấp (2026-08-24)
-  { key:'theo-doi-ket-qua', title:'Theo Dõi Kết Quả', hidden:true }, // 2026-08-25, góp ý Quỳnh: "mục lưu lại nên riêng 1 mục, không thì Chấm Điểm Nghiệp Tiền dài quá" — không hiện sidebar, vào qua link "📈 Theo Dõi Kết Quả →" ở kết quả Chấm Điểm Nghiệp Tiền. KHÔNG premium (cùng free với bài chấm điểm).
+  { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền' }, // KHÔNG premium — free mãi mãi, dùng làm bài chẩn đoán mồi trước khi mời nâng cấp (2026-08-24). "Theo Dõi Kết Quả" là 1 TAB bên trong route này (xem thiet-lap-nhanh.js), KHÔNG phải route riêng — 2026-08-25, góp ý Quỳnh: "là 1 mục của chấm điểm nghiệp chứ không phải trang mới ẩn trong sidebar".
   { key:'kien-thuc', title:'Kiến Thức Nền Tảng' },
   { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp', premium:true },
   { key:'muc-tieu', title:'Mục Tiêu & Cam Kết', premium:true },
@@ -45,19 +44,41 @@ const NAV = [
 ];
 const PREMIUM_ROUTES = new Set(NAV.filter(n=>n.premium).map(n=>n.key));
 const TC_TRIAL_DAYS = 0; // 2026-08-24: bỏ hẳn dùng thử, xem comment NAV phía trên
-// Giá ra mắt (2026-08-24, chị Quỳnh chốt) — 299k cho người mua TRƯỚC mốc TC_LAUNCH_DEADLINE, sau
-// đó tăng lên 999k. Đây là mốc THẬT (không phải giá gốc bịa ra để giảm ảo — chưa từng có ai mua ở
-// giá nào khác trước đó) — chị PHẢI thực sự tăng giá đúng lúc để giữ uy tín. 999k (không phải 499k
-// như đề xuất ban đầu, và không phải 599k như bản đầu tiên) vì 499.000đ đang là giá gói 1 tháng
-// chuẩn của Xây Nhân Hiệu — webhook chỉ phân biệt 2 sản phẩm qua đúng số tiền, trùng số sẽ kích
-// hoạt sai sản phẩm (xem TC_LIFETIME_AMOUNTS ở api/sepay-webhook.js — phải sửa CẢ 2 nơi cùng lúc
-// nếu đổi số tiền).
-const TC_LAUNCH_PRICE = 299000;
-const TC_REGULAR_PRICE = 999000;
-const TC_LAUNCH_DEADLINE = new Date('2026-09-15T23:59:59+07:00'); // 2026-08-25: chị Quỳnh rút mốc từ 30/9 xuống 15/9
-function tcCurrentPrice(){ return Date.now() <= TC_LAUNCH_DEADLINE.getTime() ? TC_LAUNCH_PRICE : TC_REGULAR_PRICE; }
-function tcLaunchDaysLeft(){ return Math.max(0, Math.ceil((TC_LAUNCH_DEADLINE.getTime() - Date.now()) / 86400000)); }
-function tcLaunchDeadlineLabel(){ return TC_LAUNCH_DEADLINE.toLocaleDateString('vi-VN'); }
+// Giá 3 mức THEO TỪNG NGƯỜI DÙNG (2026-08-26, chị Quỳnh chốt — THAY hẳn mốc giá ra mắt theo lịch
+// chung 15/9 trước đó): đếm từ lúc NGƯỜI ĐÓ vào app tai-chinh lần đầu (tc_trial_started_at — mượn
+// lại cột này từ hệ thống dùng thử cũ đã bỏ, KHÔNG liên quan gì tới TC_TRIAL_DAYS/hasActiveAccess()
+// vẫn khoá thẳng như cũ, chỉ mượn đúng cái MỐC THỜI GIAN). Ngày 0-15: 299k, 15-30: 599k, sau 30: 999k
+// (giá chuẩn). KHÁC "giá ra mắt" ở chỗ: đây là chính sách giá THƯỜNG TRỰC cho MỌI người dùng mới,
+// không phải 1 sự kiện chung có ngày hết hạn — vẫn là mốc THẬT (mỗi người chỉ có đúng 1 lần 15 ngày
+// đầu của chính họ, không reset/lặp lại), không phải giá gốc bịa ra để giảm ảo. 3 số tiền (299k/599k/
+// 999k) đã kiểm tra không trùng bất kỳ giá trị nào ở AMOUNT_TO_DAYS/AMOUNT_TO_TOPUP_LUOT (xem
+// TC_LIFETIME_AMOUNTS ở api/sepay-webhook.js — phải sửa CẢ 2 nơi cùng lúc nếu đổi số tiền/mốc ngày).
+const TC_PRICE_TIER_1 = 299000; // ngày 0-15 kể từ lần đầu vào app
+const TC_PRICE_TIER_2 = 599000; // ngày 15-30
+const TC_PRICE_TIER_3 = 999000; // sau ngày 30 — giá chuẩn
+function tcSignupElapsedDays(profile){
+  const p = profile || AppState.profile;
+  if(!p || !p.tc_trial_started_at) return 0; // chưa có mốc (vd chưa load xong profile) — coi như ngày 0, an toàn hơn là báo giá cao nhầm
+  return (Date.now() - new Date(p.tc_trial_started_at).getTime()) / 86400000;
+}
+function tcCurrentPrice(profile){
+  const days = tcSignupElapsedDays(profile);
+  return days < 15 ? TC_PRICE_TIER_1 : days < 30 ? TC_PRICE_TIER_2 : TC_PRICE_TIER_3;
+}
+// Số ngày còn lại ở ĐÚNG mức giá hiện tại (không phải tổng số ngày dùng thử) — null nếu đã ở mức giá
+// chuẩn cuối cùng (không còn "sắp tăng" nữa).
+function tcPriceTierDaysLeft(profile){
+  const days = tcSignupElapsedDays(profile);
+  if(days < 15) return Math.max(0, Math.ceil(15 - days));
+  if(days < 30) return Math.max(0, Math.ceil(30 - days));
+  return null;
+}
+function tcNextTierPrice(profile){
+  const days = tcSignupElapsedDays(profile);
+  if(days < 15) return TC_PRICE_TIER_2;
+  if(days < 30) return TC_PRICE_TIER_3;
+  return null;
+}
 // Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code
 // dùng chung cơ chế "SEVQR <ref_code>" nhưng số tiền là DUY NHẤT, không trùng bất kỳ gói nào của
 // nhan-hieu (xem AMOUNT_TO_DAYS ở api/sepay-webhook.js) nên webhook phân biệt được đúng sản phẩm
@@ -389,9 +410,9 @@ function tcBenefitsHtml(){
 function tcPaymentCardHtml(){
   const p = AppState.profile;
   const refCode = p && p.ref_code;
-  const price = tcCurrentPrice();
-  const daysLeft = tcLaunchDaysLeft();
-  const inLaunchWindow = price === TC_LAUNCH_PRICE;
+  const price = tcCurrentPrice(p);
+  const tierDaysLeft = tcPriceTierDaysLeft(p);
+  const nextPrice = tcNextTierPrice(p);
   // VietinBank CHỈ báo biến động số dư về SePay nếu nội dung chuyển khoản bắt đầu bằng "SEVQR"
   // (yêu cầu riêng SePay cho VietinBank) — xem api/sepay-webhook.js.
   const transferContent = refCode ? `SEVQR ${refCode}` : null;
@@ -400,7 +421,7 @@ function tcPaymentCardHtml(){
     : null;
 
   return `
-    ${inLaunchWindow ? `<div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-bottom:6px;">🔥 GIÁ RA MẮT đến hết ${tcLaunchDeadlineLabel()} (còn ${daysLeft} ngày) — sau đó tăng lên ${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ</div>` : ''}
+    ${nextPrice ? `<div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-bottom:6px;">🎁 Giá người mới — còn ${tierDaysLeft} ngày ở mức này, sau đó tăng lên ${nextPrice.toLocaleString('vi-VN')}đ</div>` : ''}
     <div style="text-align:center;font-size:15px;font-weight:700;">${price.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
     <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Chưa tới ${Math.ceil(price/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
     ${qrUrl ? `
