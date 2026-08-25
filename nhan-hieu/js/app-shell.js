@@ -18,7 +18,7 @@ const NAV = [
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, profileLoadError:null };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, pastReviewThreshold:false, profileLoadError:null };
 // Điều kiện hiện popup xin đánh giá (2026-08-24, theo yêu cầu chị Quỳnh) — đã dùng có kết quả thật
 // (từ 3 bài đã viết) HOẶC đã dùng app đủ lâu (từ 3 ngày), không hỏi ngay lúc mới vào khi chưa kịp
 // thấy giá trị gì.
@@ -373,17 +373,24 @@ function maybeShowFeatureAnnouncement(){
 // Chỉ tính điều kiện 1 LẦN lúc vào app (giống loadAnnouncementQueue) — nếu đã bị "dismissed" (đã
 // bấm Để sau HOẶC đã từng gửi đánh giá, xem submit-review.js) thì bỏ qua luôn, khỏi tốn thêm 1 truy
 // vấn đếm bài viết mỗi lần vào app cho người chắc chắn không cần hỏi lại nữa.
+// pastReviewThreshold: KHÔNG bị "tiêu thụ"/reset như reviewPromptEligible (cái đó tắt hẳn sau khi
+// popup hiện 1 lần) — dùng để Trang chủ tự đẩy mục "Đánh giá" lên vị trí nổi bật hơn khi người dùng
+// đã đủ điều kiện (đã dùng có kết quả thật), kể cả khi họ đã bấm "Để sau"/đã gửi đánh giá rồi (xem
+// home.js) — 2 mục đích khác nhau nên tách 2 cờ riêng dù cùng 1 điều kiện tính.
 async function loadReviewPromptEligibility(){
-  if(!AppState.user || !AppState.profile) { AppState.reviewPromptEligible = false; return; }
-  if(AppState.profile.review_prompt_dismissed){ AppState.reviewPromptEligible = false; return; }
+  if(!AppState.user || !AppState.profile) { AppState.reviewPromptEligible = false; AppState.pastReviewThreshold = false; return; }
   const daysSinceSignup = AppState.profile.created_at
     ? (Date.now() - new Date(AppState.profile.created_at).getTime()) / 86400000 : 0;
-  if(daysSinceSignup >= REVIEW_PROMPT_MIN_DAYS){ AppState.reviewPromptEligible = true; return; }
-  const { count } = await withTimeout(
-    supabaseClient.from('posts').select('id', { count:'exact', head:true }).eq('user_id', AppState.user.id),
-    8000
-  );
-  AppState.reviewPromptEligible = (count || 0) >= REVIEW_PROMPT_MIN_POSTS;
+  let qualifies = daysSinceSignup >= REVIEW_PROMPT_MIN_DAYS;
+  if(!qualifies){
+    const { count } = await withTimeout(
+      supabaseClient.from('posts').select('id', { count:'exact', head:true }).eq('user_id', AppState.user.id),
+      8000
+    );
+    qualifies = (count || 0) >= REVIEW_PROMPT_MIN_POSTS;
+  }
+  AppState.pastReviewThreshold = qualifies;
+  AppState.reviewPromptEligible = qualifies && !AppState.profile.review_prompt_dismissed;
 }
 
 // Popup xin cảm nhận — CHỈ hiện nếu không có overlay nào khác đang mở (thông báo tính năng/onboarding

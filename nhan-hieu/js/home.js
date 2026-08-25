@@ -86,6 +86,10 @@ function render(container, ctx){
   function html(){
     const name = (ctx.profile && ctx.profile.full_name) ? ctx.profile.full_name.split(' ').slice(-1)[0] : '';
     const nextIdx = STEPS.findIndex(s => !state.done[s.key]);
+    // Đã dùng đủ lâu để có ý kiến thật (cùng điều kiện với popup xin đánh giá, xem AppState.pastReviewThreshold
+    // ở app-shell.js) — đẩy mục Đánh giá lên NGAY SAU checklist thay vì để tít dưới cùng nơi ít ai
+    // lướt tới, kèm luôn lời mời nâng cấp ngay bên dưới (theo yêu cầu chị Quỳnh 2026-08-24).
+    const isProminent = !!AppState.pastReviewThreshold;
     return `
       <div class="page-head">
         <h1>Chào mừng${name?` ${esc(name)}`:''} đến với Xây Nhân Hiệu 👋</h1>
@@ -116,6 +120,8 @@ function render(container, ctx){
         `;}).join('')}
       </div>
 
+      ${isProminent ? reviewSectionHtml() + upgradeBannerHtml() : ''}
+
       <div class="card" style="margin-top:20px;background:var(--accent-soft);">
         <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Lưu ý quan trọng</h3>
         ${IMPORTANT_NOTES.map(n=>`
@@ -133,7 +139,18 @@ function render(container, ctx){
         </div>
       </div>
 
-      ${reviewSectionHtml()}
+      ${!isProminent ? reviewSectionHtml() : ''}
+    `;
+  }
+
+  function upgradeBannerHtml(){
+    if(!ctx.profile || ctx.profile.has_paid) return '';
+    return `
+      <div class="card" style="margin-top:16px;margin-bottom:24px;background:var(--accent);color:#fff;">
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px;">Dùng quen tay rồi đúng không? 🚀</div>
+        <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;opacity:.95;">Nâng cấp ngay để dùng không giới hạn thời gian dùng thử, không lo hết lượt giữa chừng.</div>
+        <span class="btn-ghost btn btn-sm" style="background:#fff;color:var(--accent);border:none;font-weight:600;" data-key="nang-cap">Xem bảng giá →</span>
+      </div>
     `;
   }
 
