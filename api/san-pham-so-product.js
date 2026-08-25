@@ -26,15 +26,6 @@ module.exports = async (req, res) => {
   if (!user) { res.status(401).json({ error: 'Chưa đăng nhập.' }); return; }
 
   try {
-    // MVP: chỉ tài khoản được chị Quỳnh bật cờ can_sell_products (qua Quản trị/SQL trực tiếp) mới
-    // dùng được tính năng này — chưa mở đại trà cho mọi user Xây Nhân Hiệu.
-    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=can_sell_products`);
-    const profRows = profResp.ok ? await profResp.json() : [];
-    if (!profRows[0] || !profRows[0].can_sell_products) {
-      res.status(403).json({ error: 'Tài khoản chưa được bật tính năng bán Sản Phẩm Số.' });
-      return;
-    }
-
     const { action, id } = req.body || {};
 
     if (action === 'list') {

@@ -1,4 +1,6 @@
-// Sản Phẩm Số — shell: đăng nhập, kiểm tra quyền (can_sell_products), điều hướng qua location.hash.
+// Sản Phẩm Số — shell: đăng nhập, điều hướng qua location.hash. Mở cho MỌI tài khoản Xây Nhân Hiệu
+// đã đăng nhập (bỏ cổng allowlist can_sell_products theo yêu cầu Quỳnh 2026-08-25 — chặn/mở qua SQL
+// tay gây phiền, không cần allowlist nữa).
 // Y HỆT khung nhan-hieu/js/app-shell.js (theo yêu cầu Quỳnh 2026-08-25): sidebar cố định bên trái,
 // danh sách mục PHẲNG có đánh số (không phân nhóm/hub), sidebar-foot có tên + đăng xuất, sập thành
 // ngăn kéo (drawer) trên di động qua nút ☰. Dùng lại nguyên CSS class .app-layout/.sidebar/... từ
@@ -52,18 +54,6 @@ function renderLogin(err) {
     if (error) { renderLogin(error.message); return; }
     boot();
   };
-}
-
-function renderNotEnabled(profile) {
-  const app = document.getElementById('app');
-  app.innerHTML = `
-    <div class="wrap" style="max-width:460px;">
-      <h1>🛒 Sản Phẩm Số</h1>
-      <div class="card">Tài khoản của bạn (${esc((profile && profile.full_name) || '')}) chưa được bật tính năng bán Sản Phẩm Số. Liên hệ để được hỗ trợ.</div>
-      <div class="btn-row"><span class="btn-ghost btn" id="signout-btn-ne">Đăng xuất</span></div>
-    </div>
-  `;
-  document.getElementById('signout-btn-ne').onclick = async () => { await supabaseClient.auth.signOut(); };
 }
 
 function renderShell(profile) {
@@ -128,8 +118,7 @@ async function boot() {
   const { data } = await supabaseClient.auth.getSession();
   if (!data.session) { renderLogin(); return; }
   currentUser = data.session.user;
-  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,can_sell_products').eq('id', currentUser.id).maybeSingle();
-  if (!profile || !profile.can_sell_products) { renderNotEnabled(profile); return; }
+  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name').eq('id', currentUser.id).maybeSingle();
   currentProfile = profile;
   renderShell(profile);
 }
