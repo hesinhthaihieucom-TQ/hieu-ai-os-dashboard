@@ -688,7 +688,21 @@ function render(container, ctx){
       el.onclick = async ()=>{
         const id = el.getAttribute('data-remove');
         if(!(await confirmModal('Xoá bài đã xếp ở ô này?'))) return;
+        const entry = state.entries.find(x=>x.id===id);
         await ctx.supabase.from('calendar_entries').delete().eq('id', id);
+        // Ô vừa xoá đã tích "Đã đăng" và có gắn bài cụ thể — trả lại đúng trạng thái "chưa đăng" cho
+        // bài đó ở Kho Content, TRỪ KHI bài này còn "đã đăng" qua 1 ô lịch KHÁC chưa xoá (1 bài có
+        // thể được xếp vào nhiều ô, xem "Đưa vào lịch thêm" ở Viết Content) — trước đây xoá nhầm 1 ô
+        // đã tích đã đăng thì Kho Content vĩnh viễn hiện sai "Đã đăng" cho bài chưa từng đăng thật
+        // (phản hồi chị Quỳnh 2026-08-24: "liên kết linh hoạt giữa các phần").
+        if(entry && entry.posted && entry.post_id){
+          const { data: stillPosted } = await ctx.supabase.from('calendar_entries')
+            .select('id').eq('post_id', entry.post_id).eq('posted', true).neq('id', id).limit(1);
+          if(!stillPosted || !stillPosted.length){
+            await ctx.supabase.from('posts').update({ posted: false }).eq('id', entry.post_id);
+            await loadPosts();
+          }
+        }
         await loadEntries();
         draw();
       };

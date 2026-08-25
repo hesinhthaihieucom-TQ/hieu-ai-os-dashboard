@@ -41,7 +41,7 @@ function render(container, ctx){
     addingPersonal:false, addPersonalError:null, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
-    chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedExtraIds:new Set(),
+    chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(),
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'',
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
   };
@@ -298,44 +298,48 @@ function render(container, ctx){
       <div class="section">
         ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
         ${isEditing ? editPostHtml(p) : contentBodyHtml('post:'+p.id, p.content)}
-        ${isEditing ? '' : postExtrasHtml(p)}
-        ${isEditing ? '' : `
-          <div class="btn-row" style="margin-top:14px;">
-            ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>` : ''}
-            <span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">${p.day_bai_plan?'✓ ':''}Đẩy bài &amp; CTA Comment →</span>
-          </div>
-          <div style="margin-top:10px;">${writeActionHtml('post:'+p.id)}</div>
-          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
-            <span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>
-            <span style="color:var(--danger);font-size:12.5px;cursor:pointer;" data-delete-post="${p.id}">Xoá bài</span>
-          </div>
-        `}
+        ${isEditing ? '' : postOptionsPanelHtml(p)}
       </div>
     `;}).join('');
   }
 
-  // Bình luận ghim/CTA sản phẩm/từ khoá KHÔNG phải 1 phần của "content" (đó là bình luận đăng RIÊNG
-  // sau bài, không phải nội dung bài đăng) — gộp chung vào 1 mục "Tuỳ chọn bài viết" thu gọn, bấm ra
-  // mới hiện từng mục kèm nút Copy (theo phản hồi chị Quỳnh 22/8 lần 2: "gộp lại thành 1 cái gì đó
-  // chung xong khi bấm nó hiện ra để ngta copy thôi" — hiện dàn trải hết ngay cả khi thu gọn vẫn dài
-  // dòng, mỗi mục 1 khối riêng ăn hết chỗ trên màn hình).
-  function postExtrasHtml(p){
-    const s = p.structure;
-    if(!s) return '';
-    const parts = [];
-    if(s.tu_khoa_cta) parts.push({ label:'Từ khoá CTA', value: s.tu_khoa_cta });
-    if(s.cau_cmt_ghim) parts.push({ label:'Bình luận ghim', value: s.cau_cmt_ghim });
-    (s.cmt_cta_san_pham||[]).filter(Boolean).forEach((c,i)=>{
-      parts.push({ label:`Bình luận CTA sản phẩm/group${(s.cmt_cta_san_pham.length>1)?` #${i+1}`:''}`, value: c });
-    });
-    if(!parts.length) return '';
-    const isOpen = state.expandedExtraIds.has(p.id);
+  // Trước đây mỗi hành động (đưa vào lịch, đẩy bài, viết lại, giọng mẫu, tuỳ chọn CTA, sửa, xoá) nằm
+  // rải rác thành nhiều hàng/nút riêng ngay trên card, và "Tuỳ chọn bài viết" (CTA/bình luận ghim)
+  // chỉ hiện với bài CÓ dữ liệu đó — khiến các card trông khác hình dạng nhau, rối mắt khi kho có
+  // nhiều bài (phản hồi chị Quỳnh 2026-08-24: "nhiều content nhìn rối mắt quá... sao vài cái có vài
+  // cái không vậy"). Gộp hết vào ĐÚNG 1 khối "Tuỳ chọn ▾" duy nhất mỗi bài — mọi card giờ cùng 1
+  // hình dạng ngoài (tiêu đề + preview + 1 nút Tuỳ chọn), khác nhau ở NỘI DUNG bên trong khi mở ra.
+  function postOptionsPanelHtml(p){
+    const isOpen = state.expandedOptionsIds.has(p.id);
     return `
-      <div style="margin-top:10px;">
-        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-extras="${p.id}">${isOpen?'▾':'▸'} Tuỳ chọn bài viết (${parts.length})</span>
-        ${isOpen ? `
-          <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;">
-            ${parts.map(part=>`
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
+        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-options="${p.id}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
+        ${isOpen ? postOptionsBodyHtml(p) : ''}
+      </div>
+    `;
+  }
+
+  function postOptionsBodyHtml(p){
+    const key = 'post:'+p.id;
+    const s = p.structure;
+    const ctaParts = [];
+    if(s){
+      if(s.tu_khoa_cta) ctaParts.push({ label:'Từ khoá CTA', value: s.tu_khoa_cta });
+      if(s.cau_cmt_ghim) ctaParts.push({ label:'Bình luận ghim', value: s.cau_cmt_ghim });
+      (s.cmt_cta_san_pham||[]).filter(Boolean).forEach((c,i)=>{
+        ctaParts.push({ label:`Bình luận CTA sản phẩm/group${(s.cmt_cta_san_pham.length>1)?` #${i+1}`:''}`, value: c });
+      });
+    }
+    return `
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:12px;">
+        <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
+          ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>` : ''}
+          <span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">${p.day_bai_plan?'✓ ':''}Đẩy bài &amp; CTA Comment →</span>
+        </div>
+        ${writeActionHtml(key)}
+        ${ctaParts.length ? `
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${ctaParts.map(part=>`
               <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
                 <div>
                   <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(part.label)}</div>
@@ -346,6 +350,10 @@ function render(container, ctx){
             `).join('')}
           </div>
         ` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--line);">
+          <span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>
+          <span style="color:var(--danger);font-size:12.5px;cursor:pointer;" data-delete-post="${p.id}">Xoá bài</span>
+        </div>
       </div>
     `;
   }
@@ -529,10 +537,10 @@ function render(container, ctx){
         draw();
       };
     });
-    container.querySelectorAll('[data-toggle-extras]').forEach(el=>{
+    container.querySelectorAll('[data-toggle-options]').forEach(el=>{
       el.onclick = ()=>{
-        const id = el.getAttribute('data-toggle-extras');
-        if(state.expandedExtraIds.has(id)) state.expandedExtraIds.delete(id); else state.expandedExtraIds.add(id);
+        const id = el.getAttribute('data-toggle-options');
+        if(state.expandedOptionsIds.has(id)) state.expandedOptionsIds.delete(id); else state.expandedOptionsIds.add(id);
         draw();
       };
     });
