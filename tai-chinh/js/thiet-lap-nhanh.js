@@ -369,7 +369,7 @@ function render(container, ctx){
     // Lưu kết quả vào lịch sử giờ cần BẤM NÚT, không tự lưu ngầm nữa (2026-08-26, góp ý Quỳnh: "vẫn
     // chưa có nút ấn lưu kết quả") — reset về false mỗi khi có 1 kết quả MỚI (submit lại hoặc tự
     // khôi phục từ draft) để nút "💾 Lưu kết quả" luôn xuất hiện đúng lúc cần bấm lại.
-    historySaved: false, savingHistory: false,
+    historySaved: false, savingHistory: false, expandedHistoryId: null,
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
 
@@ -834,12 +834,68 @@ function render(container, ctx){
     `;
   }
 
+  // Biểu đồ Điểm Nghiệp Tiền theo tháng — góp ý Quỳnh 2026-08-26: "sẽ có cái bảng tỷ lệ theo tháng
+  // như ở tổng kết tháng". Gộp theo tháng (trung bình vibe_score các lần chấm trong tháng đó), vẽ
+  // cột giống networthChartHtml() ở tong-ket-thang.js (0-100 nên không cần đường mốc 0 âm/dương).
+  function karmaHistoryChartHtml(rows){
+    const byMonth = {};
+    rows.forEach(r=>{
+      if(r.vibe_score == null) return;
+      const m = new Date(r.taken_at).toISOString().slice(0,7);
+      (byMonth[m] = byMonth[m] || []).push(r.vibe_score);
+    });
+    const months = Object.keys(byMonth).sort();
+    if(months.length < 2) return '';
+    const buckets = months.map(m => ({ month:m, avg: Math.round(byMonth[m].reduce((s,v)=>s+v,0)/byMonth[m].length) }));
+    const w = 680, h = 170, padTop = 16, padBottom = 28, padSide = 12;
+    const innerW = w - padSide*2, innerH = h - padTop - padBottom;
+    const n = buckets.length;
+    const slot = innerW / n;
+    const barW = Math.max(10, Math.min(40, slot * 0.6));
+    const parts = buckets.map((b,i)=>{
+      const x = padSide + slot*i + (slot-barW)/2;
+      const barH = Math.max(1, innerH * (b.avg/100));
+      const y = padTop + (innerH - barH);
+      const [yy, mm] = b.month.split('-');
+      return `<text x="${(x+barW/2).toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--ink-soft)" font-family="IBM Plex Mono, monospace">${b.avg}</text><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" fill="var(--accent)" rx="2"/><text x="${(x+barW/2).toFixed(1)}" y="${h-8}" text-anchor="middle" font-size="9" fill="var(--ink-soft)" font-family="IBM Plex Mono, monospace">${mm}/${yy.slice(2)}</text>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;margin-bottom:16px;">${parts}</svg>`;
+  }
+
+  // Đọc lại TOÀN BỘ phân tích của 1 lần chấm điểm CŨ — góp ý Quỳnh 2026-08-26: "phần theo dõi kết
+  // quả là lưu cả cái phân tích ý, bấm vào từng ngày đọc được hết". KHÔNG lưu thêm cột text nào mới —
+  // dựng lại 100% từ 5 điểm trụ cột ĐÃ lưu trong row (than_tam_ban_the...), vì PILLAR_ANALYSIS/
+  // PILLAR_DEEP_ANALYSIS chỉ phụ thuộc vào điểm + trụ yếu nhất, không phụ thuộc thời điểm xem lại.
+  function historyRowAnalysisHtml(row){
+    const scored = HOUSES.map(h=>({ h, score: row[h.key] })).filter(x=>x.score!=null);
+    if(scored.length === 0) return `<div class="hint-box">Lần này chưa có đủ điểm 5 Trụ Cột để xem lại phân tích.</div>`;
+    const weakest = scored.reduce((worst,cur)=> cur.score < worst.score ? cur : worst);
+    return `
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+        ${scored.map(({h,score})=>{
+          const tier = pillarTier(score);
+          return `
+            <div class="hint-box" style="text-align:left;">
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px;">
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:16px;color:var(--accent);">${score}<span style="font-size:10px;font-weight:600;color:var(--ink-soft);">/100</span></span>
+                <span style="font-weight:700;font-size:13px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
+              </div>
+              <div style="font-size:12.5px;line-height:1.6;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      ${deepAnalysisHtml(weakest.h.key, weakest.h.label)}
+    `;
+  }
+
   function historyTabHtml(){
     if(state.karmaHistoryLoading) return `<div class="loading"><div class="spinner"></div></div>`;
     if(state.karmaHistory.length === 0) return `<div class="hint-box">Chưa có lần chấm điểm nào được lưu — sang tab "📝 Làm Bài & Kết Quả" và bấm "Xem Kết Quả" để bắt đầu theo dõi.</div>`;
     return `
       <div class="section">
-        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">${state.karmaHistory.length>=50?'50 lần gần nhất — ':''}Mới nhất ở trên cùng.</p>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">${state.karmaHistory.length>=50?'50 lần gần nhất — ':''}Mới nhất ở trên cùng. Bấm vào 1 dòng để đọc lại toàn bộ phân tích lúc đó.</p>
+        ${karmaHistoryChartHtml(state.karmaHistory)}
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead><tr>
@@ -850,14 +906,19 @@ function render(container, ctx){
             </tr></thead>
             <tbody>
               ${state.karmaHistory.map(row=>`
-                <tr>
-                  <td style="padding:8px;border-bottom:1px solid var(--line-soft);white-space:nowrap;vertical-align:top;">${esc(new Date(row.taken_at).toLocaleDateString('vi-VN'))}</td>
+                <tr data-history-row="${row.id}" style="cursor:pointer;">
+                  <td style="padding:8px;border-bottom:1px solid var(--line-soft);white-space:nowrap;vertical-align:top;">${esc(new Date(row.taken_at).toLocaleDateString('vi-VN'))} ${state.expandedHistoryId===row.id?'▲':'▼'}</td>
                   <td style="text-align:right;padding:8px;border-bottom:1px solid var(--line-soft);font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);vertical-align:top;">${row.vibe_score==null?'—':row.vibe_score+'/100'}</td>
                   <td style="padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:top;">${row.weakest_area && WEAKEST_AREA_INFO[row.weakest_area] ? esc(WEAKEST_AREA_INFO[row.weakest_area].label) : '—'}</td>
                   <td style="padding:8px;border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--ink-soft);vertical-align:top;">
                     ${HOUSES.map(h=>`${esc(h.label.replace(/^\S+\s/,''))}: <b>${row[h.key]==null?'—':row[h.key]}</b>`).join(' · ')}
                   </td>
                 </tr>
+                ${state.expandedHistoryId===row.id ? `
+                  <tr><td colspan="4" style="padding:12px 4px;border-bottom:1px solid var(--line-soft);background:var(--bg);">
+                    ${historyRowAnalysisHtml(row)}
+                  </td></tr>
+                ` : ''}
               `).join('')}
             </tbody>
           </table>
@@ -951,6 +1012,13 @@ function render(container, ctx){
     });
     const saveKarmaBtn = container.querySelector('[data-save-karma]');
     if(saveKarmaBtn) saveKarmaBtn.onclick = saveKarmaHistory;
+    container.querySelectorAll('[data-history-row]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-history-row');
+        state.expandedHistoryId = state.expandedHistoryId === id ? null : id;
+        draw();
+      };
+    });
     container.querySelectorAll('[data-axis-key]').forEach(el=>{
       el.onclick = ()=>{ state.selectedPillarKey = el.getAttribute('data-axis-key'); draw(); };
     });
