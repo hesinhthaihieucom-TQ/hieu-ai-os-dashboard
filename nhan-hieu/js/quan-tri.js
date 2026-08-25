@@ -40,7 +40,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{} };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{}, expandedMemberIds:new Set() };
 
   // Ai giới thiệu >= ngưỡng này được coi là "partner" — chị Quỳnh tự nhắn/chuyển khoản tay trả hoa
   // hồng tiền mặt cho họ (KHÔNG tự động chuyển tiền — SePay chỉ nhận tiền vào, không có API chuyển
@@ -196,9 +196,10 @@ function render(container, ctx){
         const st = statusOf(p);
         const miniLabel = `font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;`;
         const planUnclear = planKeyOf(p) === 'none';
+        const isExpanded = state.expandedMemberIds.has(p.id);
         return `
         <div class="section">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;cursor:pointer;" data-toggle-member="${p.id}">
             <div>
               <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}</h3>
               <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
@@ -208,7 +209,10 @@ function render(container, ctx){
               color:${st.cls==='active'?'var(--accent)':st.cls==='soon'?'var(--gold)':st.cls==='expired'?'var(--danger)':'var(--ink-soft)'};">${esc(st.label)}</span>
           </div>
 
-          ${p.role!=='admin' ? `
+          ${p.role!=='admin' && !isExpanded ? `<span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-member="${p.id}">▸ Xem chi tiết</span>` : ''}
+          ${p.role!=='admin' && isExpanded ? `<span style="display:block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-member="${p.id}">▾ Thu gọn</span>` : ''}
+
+          ${p.role!=='admin' && isExpanded ? `
             <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:13px;">
               <div><span style="color:var(--ink-soft);">Hạn dùng:</span> ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
               <div><span style="color:var(--ink-soft);">Gói:</span> <b>${esc((PLAN_TABS.find(t=>t.key===planKeyOf(p))||{}).label||'Chưa rõ')}</b>
@@ -283,6 +287,13 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-toggle-member]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-toggle-member');
+        if(state.expandedMemberIds.has(id)) state.expandedMemberIds.delete(id); else state.expandedMemberIds.add(id);
+        draw();
+      };
+    });
     const search = container.querySelector('#q-search');
     if(search) search.oninput = ()=>{
       state.q = search.value;

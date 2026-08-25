@@ -14,34 +14,32 @@
 // sau khi đã tự xác thực người gọi qua requireUser(). Không cho client tự khai reward.
 const { requireUser } = require('./_lib/auth');
 const { TRIAL_AI_LIMIT } = require('./_lib/trial-quota');
+const { supabaseAdmin } = require('./_lib/supabase-admin');
+const { sendPushToUser } = require('./_lib/push');
 
-const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 const MIN_WORDS_FOR_REWARD = 50;
 const REWARD_LUOT = 20;
 
-async function supabaseAdmin(path, opts = {}) {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
-  try {
-    return await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      ...opts,
-      headers: {
-        'content-type': 'application/json',
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        Prefer: opts.prefer || 'return=representation',
-        ...(opts.headers || {}),
-      },
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 function countWords(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+// Báo ngay cho quản trị viên khi có đánh giá mới (2026-08-26, theo yêu cầu chị Quỳnh: "mỗi khi có
+// ai đánh giá mới thì phải popup thông báo cho quản trị viên là em biết") — dùng lại hạ tầng Web
+// Push đã có (api/_lib/push.js), không qua notifyOnce() vì đây là sự kiện MỚI mỗi lần, không phải
+// nhắc lặp lại cần chống gửi trùng. Best-effort — lỗi ở đây không được làm hỏng việc lưu đánh giá.
+async function notifyAdminsOfNewReview(targetApp, comment) {
+  try {
+    const resp = await supabaseAdmin('profiles?role=eq.admin&select=id');
+    const admins = resp.ok ? await resp.json() : [];
+    const appLabel = targetApp === 'tai-chinh' ? 'Sổ Dòng Tiền Tâm Thức' : 'Xây Nhân Hiệu';
+    const preview = comment.length > 100 ? comment.slice(0, 100) + '…' : comment;
+    await Promise.all(admins.map(a => sendPushToUser(a.id, {
+      title: `⭐ Đánh giá mới — ${appLabel}`,
+      body: preview,
+      url: './#quan-tri-hub',
+    })));
+  } catch (e) { /* best-effort */ }
 }
 
 module.exports = async (req, res) => {
@@ -69,6 +67,11 @@ module.exports = async (req, res) => {
       body: JSON.stringify({ user_id: user.id, comment: trimmed, display_name: (profile && profile.full_name) || null, app: targetApp }),
     });
     if (!insertResp.ok) { res.status(500).json({ error: 'Không lưu được đánh giá, thử lại giúp mình.' }); return; }
+
+    // PHẢI await — đây là serverless function, không đảm bảo code chạy tiếp sau khi đã res.json()
+    // trả lời xong (không giống 1 server thường chạy nền được), không await thì có rủi ro hàm bị
+    // huỷ giữa chừng trước khi kịp gửi push, khiến chị Quỳnh không nhận được thông báo mà không rõ vì sao.
+    await notifyAdminsOfNewReview(targetApp, trimmed);
 
     // tai-chinh không có hệ lượt AI để thưởng — chỉ lưu + đánh dấu đã gửi, không tính thưởng gì cả.
     if (targetApp === 'tai-chinh') {
