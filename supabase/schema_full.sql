@@ -893,6 +893,11 @@ alter table tc_debts add column if not exists flat_fee_amount numeric;
 alter table tc_monthly_reflections add column if not exists goal_house text
   check (goal_house in ('than_tam_ban_the','coi_nguon_sinh_thanh','ban_doi_moi_quan_he','tai_chinh_tam_thuc','thuan_phap_nhan_qua'));
 
+-- Lý do CHO TỪNG trụ, không chỉ 1 trụ chính (goal_house ở trên) — 2026-08-26, góp ý Quỳnh: "phải
+-- cho tự ghi ra lý do tại sao ở mỗi trục... để người dùng gia tăng cảm xúc". Không bắt buộc, chỉ
+-- khuyến khích — {house_key: "lý do tự viết"}, thiếu key nào nghĩa là chưa viết cho trụ đó.
+alter table tc_monthly_reflections add column if not exists goal_house_reasons jsonb;
+
 -- ============================================================
 -- 14. LỚP TÂM THỨC — Tầng 2 (Mục Tiêu & Cam Kết, Nhật Ký Rắc Rối, Karma Score 5 trục, Soi Nút
 -- Thắt, 2026-08-21). LƯU Ý: KHÔNG dùng "A'"/"Lệnh Ấn Định"/"Khoá Van Tiền" làm tên trong code hay

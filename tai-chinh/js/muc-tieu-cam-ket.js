@@ -19,7 +19,7 @@ function render(container, ctx){
   const state = {
     loading: true,
     step: 'goal', // 'goal' | 'reaction' | 'summary'
-    goal: { goal_income:'', goal_savings:'', goal_debt_reduction:'', goal_new_asset:'', goal_new_asset_type:'', goal_house:'' },
+    goal: { goal_income:'', goal_savings:'', goal_debt_reduction:'', goal_new_asset:'', goal_new_asset_type:'', goal_house:'', goal_house_reasons:{} },
     goal_first_reaction: '',
     selectedResistance: null,
     saving: false,
@@ -71,6 +71,7 @@ function render(container, ctx){
         goal_income: r.goal_income!=null?String(r.goal_income):'', goal_savings: r.goal_savings!=null?String(r.goal_savings):'',
         goal_debt_reduction: r.goal_debt_reduction!=null?String(r.goal_debt_reduction):'', goal_new_asset: r.goal_new_asset!=null?String(r.goal_new_asset):'',
         goal_new_asset_type: r.goal_new_asset_type||'', goal_house: r.goal_house||'',
+        goal_house_reasons: r.goal_house_reasons || {},
       };
       state.goal_first_reaction = r.goal_first_reaction || '';
       state.step = hasAnyGoal(state.goal) ? 'summary' : 'goal';
@@ -118,6 +119,7 @@ function render(container, ctx){
       goal_income: Number(state.goal.goal_income)||0, goal_savings: Number(state.goal.goal_savings)||0,
       goal_debt_reduction: Number(state.goal.goal_debt_reduction)||0, goal_new_asset: Number(state.goal.goal_new_asset)||0,
       goal_new_asset_type: state.goal.goal_new_asset_type.trim() || null, goal_house: state.goal.goal_house || null,
+      goal_house_reasons: Object.keys(state.goal.goal_house_reasons||{}).length ? state.goal.goal_house_reasons : null,
       updated_at: new Date().toISOString(),
     }, { onConflict:'user_id,month' });
     state.saving = false;
@@ -187,6 +189,14 @@ function render(container, ctx){
       </div>
       <div class="hint-box" id="mt-house-anchor" style="margin-top:10px;">${state.goal.goal_house ? esc(HOUSE_GOAL_ANCHOR[state.goal.goal_house]) : 'Chọn 1 Trụ Cột để xem mục tiêu này thật sự phục vụ điều gì.'}</div>
 
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:20px 0 6px;">Vì sao từng Trụ Cột này quan trọng với bạn? <span style="font-weight:400;">(không bắt buộc, nhưng viết ra giúp mục tiêu có cảm xúc thật, không chỉ là con số)</span></label>
+      ${HOUSES.map(h=>`
+        <div style="margin-top:10px;">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">${esc(h.label)}</label>
+          <textarea data-house-reason="${h.key}" placeholder="${esc(HOUSE_GOAL_ANCHOR[h.key])}">${esc((state.goal.goal_house_reasons||{})[h.key] || '')}</textarea>
+        </div>
+      `).join('')}
+
       <button class="btn btn-full" style="margin-top:18px;" id="mt-save-goal" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu Lời Cam Kết →'}</button>
     `;
   }
@@ -207,6 +217,9 @@ function render(container, ctx){
           </div>
         `).join('')}
         ${state.goal.goal_house?`<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Phục vụ: ${houseLabel(state.goal.goal_house)}</div>`:''}
+        ${Object.entries(state.goal.goal_house_reasons||{}).filter(([,v])=>v && v.trim()).map(([key,val])=>`
+          <div class="hint-box" style="margin-top:10px;"><b>${esc(houseLabel(key))}</b>: "${esc(val)}"</div>
+        `).join('')}
         ${state.goal_first_reaction?`<div class="hint-box" style="margin-top:14px;">💛 Tiếng Lòng lúc đặt mục tiêu: "${esc(state.goal_first_reaction)}"</div>`:''}
         <button class="btn-ghost btn btn-sm" style="margin-top:14px;" id="mt-edit-goal">Sửa lại</button>
       </div>
@@ -309,6 +322,13 @@ function render(container, ctx){
     const houseChips = container.querySelector('#mt-house-chips');
     if(houseChips) houseChips.querySelectorAll('[data-house]').forEach(el=>{
       el.onclick = ()=>{ state.goal.goal_house = el.getAttribute('data-house'); draw(); persistDraft(); };
+    });
+    container.querySelectorAll('[data-house-reason]').forEach(el=>{
+      el.oninput = ()=>{
+        state.goal.goal_house_reasons = state.goal.goal_house_reasons || {};
+        state.goal.goal_house_reasons[el.getAttribute('data-house-reason')] = el.value;
+        persistDraft();
+      };
     });
     const resistanceChips = container.querySelector('#mt-resistance-chips');
     if(resistanceChips) resistanceChips.querySelectorAll('[data-resistance]').forEach(el=>{
