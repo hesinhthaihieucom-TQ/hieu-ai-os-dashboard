@@ -184,6 +184,16 @@ function tierBadgeHtml(tier){
   const info = { cao:['🟢 Đang vững','var(--accent)'], trungBinh:['🟡 Đang dao động','var(--gold)'], thap:['🔴 Cần chú ý','var(--danger)'] }[tier];
   return `<span style="font-size:11px;font-weight:600;color:${info[1]};margin-left:6px;white-space:nowrap;">${info[0]}</span>`;
 }
+// Cách nâng điểm — góp ý Quỳnh 2026-08-25: "Soi theo 5 Trụ Cột" cần nói rõ cách nâng điểm lên, không
+// chỉ mô tả hiện trạng. 1 gợi ý/trụ, LUÔN gắn với 1 tính năng THẬT đã có trong app (không bịa hành
+// động chung chung "hãy suy nghĩ tích cực hơn") để người đọc biết đúng việc cần làm tiếp theo ở đâu.
+const PILLAR_IMPROVE_TIPS = {
+  than_tam_ban_the: 'Xây quỹ dự phòng dần đều mỗi tháng (dù chỉ một khoản nhỏ) và ghi Vibe Check ở Ghi Chép Hàng Ngày đều đặn — nội lực vững lên từ việc THẤY mình xoay xở được nhiều lần, không phải từ có ngay một số tiền lớn.',
+  coi_nguon_sinh_thanh: 'Viết ra niềm tin về tiền bạn thừa hưởng từ cha mẹ vào Hạt Giống Phước - Nghiệp, rồi tự hỏi niềm tin đó còn đúng với mình hôm nay không — nhìn thẳng vào nó là bước đầu để chuyển hoá.',
+  ban_doi_moi_quan_he: 'Đặt 1 mục tiêu tài chính CHUNG ở Mục Tiêu & Cam Kết, bàn vào lúc không căng thẳng — biến chuyện tiền thành cuộc trò chuyện về tương lai chung, thay vì một cuộc đối chất.',
+  tai_chinh_tam_thuc: 'Ghi Vibe Check mỗi ngày ở Ghi Chép Hàng Ngày để bắt quả tang đúng lúc cảm xúc xảy ra, và làm lại Chấm Điểm Nghiệp Tiền định kỳ để tự thấy điểm dịch chuyển theo thời gian.',
+  thuan_phap_nhan_qua: 'Thực hành quỹ "🎁 Cho Đi 5%" ở Ghi Chép Hàng Ngày đều đặn — mỗi lần cho đi trong đủ đầy là một lần thực chứng lại rằng cho đi không khiến bạn thiếu hụt.',
+};
 
 // "Bản Giải Phẫu Chi Tiết" — góp ý Quỳnh 2026-08-25: mục phân tích 5 Trụ Cột ở trên (PILLAR_ANALYSIS,
 // 2-3 câu/trụ) vẫn "hời hợt" so với bản phân tích 4 phần (vết thương gốc → 5 vị trí rút cạn sinh khí →
@@ -446,6 +456,16 @@ function render(container, ctx){
       if(draft.form) Object.assign(state.form, draft.form);
       if(draft.vibe) Object.assign(state.vibe, draft.vibe);
     }
+    // Tự động hiện lại kết quả + phân tích nếu đã từng làm bài trước đó — góp ý Quỳnh 2026-08-25:
+    // "thoát trang là mất kết quả, cần lưu lại để xem sau". Form/vibe đã lưu VĨNH VIỄN trong draft
+    // (không xoá sau submit, xem comment ở submit() bên dưới) nên chỉ cần TÍNH LẠI kết quả ngay khi
+    // vào trang thay vì bắt bấm lại "Xem Kết Quả" — vẫn đúng nguyên tắc "không lưu điểm suy ra được"
+    // (kết quả luôn tính tươi từ số liệu gốc đã lưu, không lưu thẳng con số kết quả).
+    if(Object.values(state.vibe).some(v=>v!=null)){
+      state.result = computeResult();
+      window.TcLastWeakestArea = state.result.weakestArea ? WEAKEST_AREA_INFO[state.result.weakestArea] : null;
+      window.TcLastHasDebt = Number(state.form.debt_total) > 0;
+    }
     state.loading = false;
     draw();
   }
@@ -638,10 +658,15 @@ function render(container, ctx){
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${HOUSES.map(h=>{
               const insight = pillarInsight(state.vibe, h.key);
+              const score = insight ? Math.round(insight.avgPoints * 10) : null;
               return `
                 <div class="hint-box" style="text-align:left;">
-                  <div style="font-weight:700;font-size:13.5px;margin-bottom:5px;">${esc(h.label)}${insight ? tierBadgeHtml(insight.tier) : ''}</div>
+                  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px;">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:${insight?'var(--accent)':'var(--ink-faint)'};">${score==null?'—':score}<span style="font-size:11px;font-weight:600;color:var(--ink-soft);">/100</span></span>
+                    <span style="font-weight:700;font-size:13.5px;">${esc(h.label)}${insight ? tierBadgeHtml(insight.tier) : ''}</span>
+                  </div>
                   <div style="font-size:13px;line-height:1.65;">${insight ? esc(insight.text) : 'Chưa có câu Vibe Check nào liên quan tới trụ này được trả lời — trả lời thêm ở các Bước phía trên để soi rõ trụ này.'}</div>
+                  ${insight ? `<div style="font-size:12.5px;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);"><b>💡 Cách nâng điểm:</b> ${esc(PILLAR_IMPROVE_TIPS[h.key])}</div>` : ''}
                 </div>
               `;
             }).join('')}
