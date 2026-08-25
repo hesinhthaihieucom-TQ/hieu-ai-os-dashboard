@@ -13,6 +13,11 @@ const SOURCE_MAP = {
 // thật, không phải AI bịa kiến thức chung chung.
 const SOURCE_OPTIONS = ['ca_nhan', 'case_hoc_vien', 'cau_hoi_kh', 'xu_huong', 'quan_diem_nguoc_dong', 'bai_mau', 'kien_thuc_nganh'];
 
+// Nhãn 5 mốc lượt xem — khớp đúng MILESTONES ở api/goi-y-day-bai.js (trùng lặp nhỏ, ổn định, không
+// đáng để export riêng chỉ vì 5 dòng chữ) — dùng để hiện lại bản đẩy bài ĐÃ CÓ SẴN ngay tại Kho
+// Content, không bắt người dùng làm lại (xem postOptionsBodyHtml).
+const DAY_BAI_MILESTONE_LABELS = { m1:'Trước 1.000 view', m2:'Đạt 10.000 view', m3:'Đạt 100.000 view', m4:'Đạt 1 triệu view', m5:'Trên 1 triệu view' };
+
 // select mặc định trong style.css bị width:100%/padding:14px (dùng cho form nhập liệu dài) — ép lại
 // gọn như 1 chip để dùng làm bộ lọc trục/trạng thái, đỡ chiếm cả hàng ngang dài như trước.
 const COMPACT_SELECT_STYLE = 'width:auto;min-width:150px;margin-top:0;padding:8px 30px 8px 12px;font-size:13px;border-radius:999px;';
@@ -41,7 +46,7 @@ function render(container, ctx){
     addingPersonal:false, addPersonalError:null, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
-    chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(),
+    chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(), expandedDayBaiIds:new Set(),
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'',
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
   };
@@ -178,6 +183,22 @@ function render(container, ctx){
     `;
   }
 
+  // Riêng "Bài đã viết" — chỉ hiện TIÊU ĐỀ, không hiện đoạn trích nào cả (khác contentBodyHtml ở
+  // trên vẫn hiện 160 ký tự đầu) — theo phản hồi chị Quỳnh 2026-08-24: "chỉ cần để tiêu đề thôi là
+  // được, muốn đọc hết thì bấm đọc full, cho gọn" (kho nhiều bài, mỗi bài lộ vài dòng nội dung cộng
+  // dồn lại rất dài, tiêu đề đã đủ để nhận ra đúng bài cần tìm). Dùng chung state.expandedIds/
+  // data-toggle-full với contentBodyHtml nên không cần thêm binding riêng.
+  function titleOnlyBodyHtml(key, content){
+    const isExpanded = state.expandedIds.has(key);
+    if(!isExpanded){
+      return `<span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">Đọc full →</span>`;
+    }
+    return `
+      <div class="body">${esc(content||'')}</div>
+      <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">Thu gọn ↑</span>
+    `;
+  }
+
   // Thanh chip lọc theo trục — LUÔN hiển thị cùng danh sách đầy đủ ngay bên dưới, không còn là
   // màn hình chặn phải chọn trục xong mới thấy item (gây khó tìm khi người dùng chưa rõ trục nào).
   function pillarChipsHtml(items, currentKey, dataAttr){
@@ -297,7 +318,7 @@ function render(container, ctx){
       return `
       <div class="section">
         ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
-        ${isEditing ? editPostHtml(p) : contentBodyHtml('post:'+p.id, p.content)}
+        ${isEditing ? editPostHtml(p) : titleOnlyBodyHtml('post:'+p.id, p.content)}
         ${isEditing ? '' : postOptionsPanelHtml(p)}
       </div>
     `;}).join('');
@@ -319,6 +340,50 @@ function render(container, ctx){
     `;
   }
 
+  // 1 khối "nhãn + nội dung + nút Copy" dùng chung cho mọi mục copy-only trong Tuỳ chọn (CTA/bình
+  // luận ghim của bài, và các mục Đẩy Bài đã có sẵn bên dưới) — data-copy-value đã có binding chung.
+  function copyRowHtml(label, value){
+    if(!value) return '';
+    return `
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div>
+          <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(label)}</div>
+          <div style="font-size:13px;">${esc(value)}</div>
+        </div>
+        <span class="btn-ghost btn btn-sm" style="flex-shrink:0;padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(value)}">Copy</span>
+      </div>
+    `;
+  }
+
+  // Bài ĐÃ từng làm Đẩy Bài (posts.day_bai_plan đã có, xem day-bai.js) — theo phản hồi chị Quỳnh
+  // 2026-08-24: "nếu bài đó đã từng làm đẩy bài thì cái nút đấy hiện ra các mục để copy thôi chứ
+  // không phải làm lại nữa". Hiện thẳng lại đúng kết quả đã lưu (5 mốc, mỗi mốc có bình luận tự
+  // đăng + trả lời từ khoá CTA) để copy tại chỗ, không điều hướng sang trang Đẩy Bài/không gọi AI lại.
+  function dayBaiPlanCopyHtml(p){
+    const isOpen = state.expandedDayBaiIds.has(p.id);
+    return `
+      <div>
+        <span class="btn-ghost btn btn-sm" data-toggle-daybai="${p.id}">${isOpen?'Đóng':'✓ Xem lại Đẩy Bài & CTA Comment để copy'}</span>
+        ${isOpen ? dayBaiPlanBodyHtml(p) : ''}
+      </div>
+    `;
+  }
+  function dayBaiPlanBodyHtml(p){
+    const plan = p.day_bai_plan;
+    if(!plan || !Array.isArray(plan.moc)) return '';
+    return `
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+        ${plan.moc.map(m=>`
+          <div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.03em;">${esc(DAY_BAI_MILESTONE_LABELS[m.moc]||m.moc)}</div>
+            ${copyRowHtml('Bình luận tự đăng', m.cmt_tu_dang)}
+            ${copyRowHtml('Trả lời từ khoá CTA', m.tra_loi_tu_khoa_cta)}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   function postOptionsBodyHtml(p){
     const key = 'post:'+p.id;
     const s = p.structure;
@@ -334,20 +399,13 @@ function render(container, ctx){
       <div style="margin-top:10px;display:flex;flex-direction:column;gap:12px;">
         <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
           ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>` : ''}
-          <span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">${p.day_bai_plan?'✓ ':''}Đẩy bài &amp; CTA Comment →</span>
+          ${!p.day_bai_plan ? `<span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">Đẩy bài &amp; CTA Comment →</span>` : ''}
         </div>
+        ${p.day_bai_plan ? dayBaiPlanCopyHtml(p) : ''}
         ${writeActionHtml(key)}
         ${ctaParts.length ? `
           <div style="display:flex;flex-direction:column;gap:8px;">
-            ${ctaParts.map(part=>`
-              <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-                <div>
-                  <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(part.label)}</div>
-                  <div style="font-size:13px;">${esc(part.value)}</div>
-                </div>
-                <span class="btn-ghost btn btn-sm" style="flex-shrink:0;padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(part.value)}">Copy</span>
-              </div>
-            `).join('')}
+            ${ctaParts.map(part=>copyRowHtml(part.label, part.value)).join('')}
           </div>
         ` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--line);">
@@ -541,6 +599,13 @@ function render(container, ctx){
       el.onclick = ()=>{
         const id = el.getAttribute('data-toggle-options');
         if(state.expandedOptionsIds.has(id)) state.expandedOptionsIds.delete(id); else state.expandedOptionsIds.add(id);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-toggle-daybai]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-toggle-daybai');
+        if(state.expandedDayBaiIds.has(id)) state.expandedDayBaiIds.delete(id); else state.expandedDayBaiIds.add(id);
         draw();
       };
     });
