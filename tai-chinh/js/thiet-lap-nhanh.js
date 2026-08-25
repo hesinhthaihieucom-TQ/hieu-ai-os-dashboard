@@ -308,22 +308,26 @@ function deepAnalysisHtml(houseKey, houseLabel){
 // là màn chào + checklist quy trình (xem trang-chu.js, đổi hẳn sang kiểu y hệt nhan-hieu/js/home.js).
 // LUÔN tính lại từ dữ liệu thô mỗi lần render (không lưu điểm tích luỹ) — xem giải thích đầy đủ ở
 // comment gốc lúc mới thêm tính năng này (trước đây nằm ở trang-chu.js).
+// Mặc định 0 khi CHƯA CÓ dữ liệu gì (không phải 50 trung tính như trước) — góp ý Quỳnh 2026-08-26:
+// "người lần đầu làm thì radar phải là 0 tất cả, sau khi làm xong mới nhảy điểm". Đổi cả 3 hàm dưới
+// đây (nguồn duy nhất mọi Trụ Cột đọc điểm) để radar KHỞI ĐIỂM luôn là 0, tăng dần đúng theo hành
+// động thật của người dùng — không còn cảm giác "đã có sẵn điểm" trước khi làm gì cả.
 function computeFinanceScore(entries){
   const counts = { green:0, red:0, gray:0 };
   entries.forEach(e=>{ counts[e.vibe||'gray'] = (counts[e.vibe||'gray']||0) + 1; });
   const total = counts.green + counts.red + counts.gray;
-  if(total === 0) return 50;
+  if(total === 0) return 0;
   return Math.round(50 + ((counts.green - counts.red) / total) * 50);
 }
 function computeMindScore({ distinctDaysLogged, hasGoal, hasNetworthThisMonth }){
-  let score = 30 + Math.min(40, distinctDaysLogged * 4);
+  let score = Math.min(40, distinctDaysLogged * 4);
   if(hasGoal) score += 15;
   if(hasNetworthThisMonth) score += 15;
   return Math.min(100, score);
 }
 function avgSelfScore(rows, field){
   const vals = rows.map(r=>r[field]).filter(v=>v!=null);
-  if(vals.length === 0) return 50;
+  if(vals.length === 0) return 0;
   const avg = vals.reduce((s,v)=>s+v,0) / vals.length;
   return Math.round((avg/5)*100);
 }
@@ -362,6 +366,10 @@ function render(container, ctx){
     // "là 1 mục của chấm điểm nghiệp chứ không phải trang mới ẩn trong sidebar"). Load lười (chỉ query
     // khi bấm sang tab lần đầu) để không tốn query nếu người dùng không bao giờ xem lịch sử.
     activeTab: 'lam-bai', karmaHistory: [], karmaHistoryLoading: false, karmaHistoryLoaded: false,
+    // Lưu kết quả vào lịch sử giờ cần BẤM NÚT, không tự lưu ngầm nữa (2026-08-26, góp ý Quỳnh: "vẫn
+    // chưa có nút ấn lưu kết quả") — reset về false mỗi khi có 1 kết quả MỚI (submit lại hoặc tự
+    // khôi phục từ draft) để nút "💾 Lưu kết quả" luôn xuất hiện đúng lúc cần bấm lại.
+    historySaved: false, savingHistory: false,
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
 
@@ -473,6 +481,7 @@ function render(container, ctx){
       state.result = computeResult();
       window.TcLastWeakestArea = state.result.weakestArea ? WEAKEST_AREA_INFO[state.result.weakestArea] : null;
       window.TcLastHasDebt = Number(state.form.debt_total) > 0;
+      state.historySaved = false;
     }
     state.loading = false;
     draw();
@@ -605,20 +614,22 @@ function render(container, ctx){
     // Dùng để xếp lại thứ tự 3 khối lợi ích ở màn nâng cấp (tcBenefitsHtml() ở app-shell.js) — có
     // nợ thật thì đẩy "thanh khoản nợ" lên đầu, không nợ thì đẩy xuống cuối (2026-08-24, góp ý Quỳnh).
     window.TcLastHasDebt = Number(state.form.debt_total) > 0;
-    await logKarmaHistory();
+    state.historySaved = false;
     draw();
   }
 
-  // Ghi 1 dòng SNAPSHOT vào tc_karma_history mỗi lần bấm "Xem Kết Quả" — góp ý Quỳnh 2026-08-25:
-  // "để chị làm lại thì sau này xem lại được cả những điểm ngày trước đã từng làm theo ngày". KHÁC
-  // nguyên tắc "không lưu điểm suy ra được" ở chỗ: đây là bảng LỊCH SỬ theo thời gian, không phải
-  // điểm hiện tại — không cách nào tính lại được "điểm ngày 20/8 là bao nhiêu" nếu không lưu lại
-  // đúng lúc đó, khác các chỗ khác trong app luôn tính tươi từ dữ liệu hiện có. append-only, không
-  // upsert. best-effort — lỗi ở đây không được chặn luồng xem kết quả chính. Đọc điểm từ
+  // Ghi 1 dòng SNAPSHOT vào tc_karma_history khi bấm nút "💾 Lưu kết quả này" — góp ý Quỳnh:
+  // (2026-08-25) "để chị làm lại thì sau này xem lại được cả những điểm ngày trước đã từng làm theo
+  // ngày"; (2026-08-26) "vẫn chưa có nút ấn lưu kết quả" — ĐỔI từ tự lưu ngầm mỗi lần "Xem Kết Quả"
+  // sang phải bấm nút riêng, để người dùng chủ động chọn đúng lúc kết quả "thật" mới lưu, không lưu
+  // lộn xộn mỗi lần chỉnh sửa qua lại câu trả lời. KHÁC nguyên tắc "không lưu điểm suy ra được" ở chỗ:
+  // đây là bảng LỊCH SỬ theo thời gian, không phải điểm hiện tại — không cách nào tính lại được "điểm
+  // ngày 20/8 là bao nhiêu" nếu không lưu lại đúng lúc đó. append-only, không upsert. Đọc điểm từ
   // state.karmaAxes (ĐÃ refresh qua bootDashboard() ở trên) — KHÔNG tính riêng từ vibe nữa, để số ghi
   // vào lịch sử luôn khớp đúng với số đang hiện ở radar/"Soi theo 5 Trụ Cột" ngay lúc lưu.
-  async function logKarmaHistory(){
-    if(state.result.vibeScore == null) return;
+  async function saveKarmaHistory(){
+    if(!state.result || state.result.vibeScore == null || state.historySaved || state.savingHistory) return;
+    state.savingHistory = true; draw();
     const pillarScores = {};
     HOUSES.forEach(h=>{
       const axis = state.karmaAxes.find(a=>a.key===h.key);
@@ -639,7 +650,10 @@ function render(container, ctx){
       // Cập nhật luôn state nếu tab "Theo Dõi Kết Quả" đã từng load — để không cần bấm lại tab mới
       // thấy mốc vừa ghi (2026-08-25, "Theo Dõi Kết Quả" là 1 TAB của trang này, không phải trang riêng).
       if(state.karmaHistoryLoaded) state.karmaHistory.unshift(data || { ...row, taken_at: new Date().toISOString() });
-    } catch(e){ /* best-effort — không chặn luồng xem kết quả nếu ghi lịch sử lỗi */ }
+      state.historySaved = true;
+    } catch(e){ /* best-effort — báo lỗi nhẹ, không chặn luồng xem kết quả */ }
+    state.savingHistory = false;
+    draw();
   }
 
   async function loadKarmaHistory(){
@@ -706,7 +720,12 @@ function render(container, ctx){
               <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
             </div>
           ` : ''}
-          <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm "Xem Kết Quả" đều lưu lại 1 mốc — bấm sang tab <span data-tc-tab="theo-doi" style="color:var(--accent);font-weight:600;cursor:pointer;">📈 Theo Dõi Kết Quả →</span> để xem tâm thức tiền của bạn đã dịch chuyển ra sao qua thời gian.</div>
+          <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+            ${state.historySaved
+              ? `<span class="btn-ghost btn btn-sm" data-tc-tab="theo-doi" style="cursor:pointer;">✅ Đã lưu — xem 📈 Theo Dõi Kết Quả →</span>`
+              : `<span class="btn btn-sm" data-save-karma="1">${state.savingHistory?'Đang lưu…':'💾 Lưu kết quả này'}</span>`}
+          </div>
+          <div class="hint-box" style="margin-top:10px;">Bấm "💾 Lưu kết quả này" để ghi lại 1 mốc — xem lại theo thời gian ở tab <span data-tc-tab="theo-doi" style="color:var(--accent);font-weight:600;cursor:pointer;">📈 Theo Dõi Kết Quả →</span>.</div>
           <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
         </div>
 
@@ -930,6 +949,8 @@ function render(container, ctx){
         draw();
       };
     });
+    const saveKarmaBtn = container.querySelector('[data-save-karma]');
+    if(saveKarmaBtn) saveKarmaBtn.onclick = saveKarmaHistory;
     container.querySelectorAll('[data-axis-key]').forEach(el=>{
       el.onclick = ()=>{ state.selectedPillarKey = el.getAttribute('data-axis-key'); draw(); };
     });

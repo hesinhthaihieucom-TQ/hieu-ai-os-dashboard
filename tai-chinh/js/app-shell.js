@@ -91,12 +91,19 @@ function tcPriceAnchorHtml(profile){
     return `<div style="text-align:center;font-size:24px;font-weight:800;color:var(--accent);">${price.toLocaleString('vi-VN')}đ</div>`;
   }
   const savings = TC_PRICE_TIER_3 - price;
+  // Giá GỐC to hơn giá phải trả (2026-08-26, góp ý Quỳnh: "để giá gốc to hơn... mới tạo hiệu ứng giá
+  // phải trả ít hơn, bé hơn") — đảo lại so với bản trước (giá phải trả to, giá gốc bé). Mỗi phần XUỐNG
+  // DÒNG riêng (trước đây 2 số nằm cùng 1 dòng, dễ dính chữ ở màn hẹp — đây là lỗi che chữ Quỳnh báo).
+  // Roadmap 1 dòng hiện ĐỦ CẢ 3 mức (không chỉ mức kế tiếp) nhưng gọn — mốc mức 2 diễn đạt tương đối
+  // ("15 ngày tiếp") thay vì số ngày tuyệt đối, để không phải nhồi 2 con số ngày khác gốc vào 1 dòng.
+  const roadmap = price === TC_PRICE_TIER_1
+    ? `${TC_PRICE_TIER_1.toLocaleString('vi-VN')}đ (còn ${tierDaysLeft} ngày) → ${TC_PRICE_TIER_2.toLocaleString('vi-VN')}đ (15 ngày tiếp) → ${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ`
+    : `${TC_PRICE_TIER_2.toLocaleString('vi-VN')}đ (còn ${tierDaysLeft} ngày) → ${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ`;
   return `
-    <div style="text-align:center;">
-      <span style="font-size:14px;color:var(--ink-soft);text-decoration:line-through;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</span>
-      <span style="font-size:26px;font-weight:800;color:var(--accent);margin-left:8px;">${price.toLocaleString('vi-VN')}đ</span>
-    </div>
-    <div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-top:4px;">🎁 Tiết kiệm ${savings.toLocaleString('vi-VN')}đ nếu bắt đầu ngay — còn ${tierDaysLeft} ngày ở mức giá này, sau đó tăng lên ${nextPrice.toLocaleString('vi-VN')}đ</div>
+    <div style="text-align:center;font-size:20px;color:var(--ink-soft);text-decoration:line-through;line-height:1.3;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</div>
+    <div style="text-align:center;font-size:17px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${price.toLocaleString('vi-VN')}đ</div>
+    <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Tiết kiệm ${savings.toLocaleString('vi-VN')}đ nếu bắt đầu ngay</div>
+    <div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-top:3px;line-height:1.5;">${roadmap}</div>
   `;
 }
 // Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code

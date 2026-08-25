@@ -183,8 +183,13 @@ function renderThanhVien(container, ctx){
 
   async function load(){
     state.loading = true; draw();
+    // Chỉ lấy người dùng ĐÃ TỪNG vào app tai-chinh (tc_trial_started_at chỉ được set ở loadProfile()
+    // của tai-chinh/js/app-shell.js lúc vào lần đầu) — góp ý Quỳnh 2026-08-26: "Quản Trị đang hiện cả
+    // bên app Xây Nhân Hiệu, quản trị app nào hiện người dùng bên đó thôi". `profiles` là bảng CHUNG
+    // giữa 2 app nên phải lọc rõ, không thể lấy hết rồi hiện — sẽ lẫn cả người chỉ dùng nhan-hieu.
     const { data } = await ctx.supabase.from('profiles')
       .select('id,email,full_name,role,tc_has_paid,tc_trial_started_at,tc_paid_at,created_at')
+      .not('tc_trial_started_at', 'is', null)
       .order('created_at', { ascending:false }).limit(200);
     state.rows = data || [];
     state.loading = false;
