@@ -370,11 +370,15 @@ function renderHoaHong(container, ctx){
   load();
 }
 
-// Tab "Tài Chính" — doanh thu thật từ sepay_transactions (status='matched'), lọc đúng 3 mức giá
-// tai-chinh (299k/599k/999k, xem TC_PRICE_TIER_* ở app-shell.js) để KHÔNG lẫn doanh thu nhan-hieu
-// (bảng sepay_transactions dùng CHUNG cho cả 2 app). Kèm luôn danh sách giao dịch gần nhất — không
-// tách tab riêng "Giao dịch SePay" như nhan-hieu vì tai-chinh ít dữ liệu hơn hẳn (1 sản phẩm, 3 mức
-// giá cố định), gộp vào đây đủ dùng.
+// Tab "Tài Chính" — mirror layout của nhan-hieu/js/quan-tri-taichinh.js (page-head, source-grid,
+// bảng theo tháng) nhưng KHÔNG có cột lượt dùng/chi phí AI/lợi nhuận — tai-chinh không có hệ lượt
+// (app này không gate tính năng AI theo lượt, xem app-shell.js dòng comment "app này không có hệ
+// lượt"), nên "chi phí AI ước tính" của nhan-hieu không có gì tương ứng để hiển thị. Lọc đúng 3
+// mức giá tai-chinh (299k/599k/999k, TC_PRICE_TIER_* ở app-shell.js) để KHÔNG lẫn doanh thu Xây
+// Nhân Hiệu — sepay_transactions dùng CHUNG bảng cho cả 2 app. Không tách tab riêng "Giao dịch
+// SePay" như nhan-hieu — lý do nhan-hieu tách ra là danh sách giao dịch dài sẽ đẩy danh sách thành
+// viên xuống xa (xem comment quan-tri-giaodich.js), nhưng tab này không đứng cạnh danh sách thành
+// viên nào cả nên không có vấn đề đó; danh sách giao dịch gần nhất vẫn đủ dùng gộp ở cuối tab này.
 function renderTaiChinh(container, ctx){
   const TC_AMOUNTS = [299000, 599000, 999000];
   const state = { loading:true, rows:[] };
@@ -392,49 +396,75 @@ function renderTaiChinh(container, ctx){
   }
 
   function html(){
+    if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
+
     const totalRevenue = state.rows.reduce((s,r)=>s+Number(r.transfer_amount||0), 0);
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+    const revenueThisMonth = state.rows.filter(r=>new Date(r.created_at).getTime() >= startOfMonth).reduce((s,r)=>s+Number(r.transfer_amount||0),0);
     const byMonth = {};
     state.rows.forEach(r=>{
       const m = (r.created_at||'').slice(0,7);
-      byMonth[m] = (byMonth[m]||0) + Number(r.transfer_amount||0);
+      if(!byMonth[m]) byMonth[m] = { month:m, revenue:0, count:0 };
+      byMonth[m].revenue += Number(r.transfer_amount||0);
+      byMonth[m].count += 1;
     });
-    const months = Object.keys(byMonth).sort((a,b)=> b<a?-1:1);
+    const monthlyRows = Object.values(byMonth).sort((a,b)=> b.month.localeCompare(a.month));
     const byTier = {};
     TC_AMOUNTS.forEach(a=>{ byTier[a] = state.rows.filter(r=>Number(r.transfer_amount)===a).length; });
 
     return `
-      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Chỉ tính giao dịch ĐÃ khớp (status='matched') và đúng 1 trong 3 mức giá tai-chinh — không lẫn doanh thu Xây Nhân Hiệu dù dùng chung bảng giao dịch.</p>
-      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
-        <div class="source-grid" style="margin-bottom:20px;">
-          <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${totalRevenue.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu (tất cả)</div></div>
-          <div class="source-card"><div class="ic" style="font-size:18px;">${state.rows.length}</div><div class="label">Số giao dịch đã khớp</div></div>
-        </div>
-        <div class="section">
-          <h3 style="font-size:14px;">Theo mức giá</h3>
-          ${TC_AMOUNTS.map(a=>`
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-              <span>${a.toLocaleString('vi-VN')}đ</span><b>${byTier[a]} người</b>
-            </div>
-          `).join('')}
-        </div>
-        <div class="section">
-          <h3 style="font-size:14px;">Theo tháng</h3>
-          ${months.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào.</div>` : months.map(m=>`
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-              <span>${esc(m)}</span><b>${byMonth[m].toLocaleString('vi-VN')}đ</b>
-            </div>
-          `).join('')}
-        </div>
-        <div class="section">
-          <h3 style="font-size:14px;">Giao dịch gần nhất</h3>
-          ${state.rows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào.</div>` : state.rows.slice(0,50).map(r=>`
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;">
-              <span>${esc(new Date(r.created_at).toLocaleString('vi-VN'))} · ${esc(r.ref_code_found||'—')}</span>
-              <b style="color:var(--accent);">${Number(r.transfer_amount).toLocaleString('vi-VN')}đ</b>
-            </div>
-          `).join('')}
-        </div>
+      <div class="page-head"><h1>Tài chính</h1><p>Doanh thu thật (chỉ 3 mức giá tai-chinh) — tổng quan và theo từng tháng. Tai-chinh không có hệ lượt AI như Xây Nhân Hiệu nên không có mục chi phí/lợi nhuận ước tính.</p></div>
+
+      <div class="source-grid" style="margin-bottom:12px;">
+        <div class="source-card"><div class="ic" style="font-size:18px;">${totalRevenue.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;">${revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;">${state.rows.length}</div><div class="label">Số giao dịch đã khớp</div></div>
+      </div>
+
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo mức giá</div>
+      <div class="card" style="overflow-x:auto;padding:0;margin-bottom:24px;">
+        <table style="width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;">
+          <thead><tr style="text-align:left;border-bottom:1px solid var(--line);">
+            <th style="padding:10px 14px;">Mức giá</th><th style="padding:10px 14px;">Số người mua</th>
+          </tr></thead>
+          <tbody>
+            ${TC_AMOUNTS.map(a=>`
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px;font-weight:600;">${a.toLocaleString('vi-VN')}đ</td>
+                <td style="padding:10px 14px;">${byTier[a]}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo từng tháng</div>
+      ${monthlyRows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;margin-bottom:24px;">Chưa có dữ liệu.</div>` : `
+      <div class="card" style="overflow-x:auto;padding:0;margin-bottom:24px;">
+        <table style="width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;">
+          <thead><tr style="text-align:left;border-bottom:1px solid var(--line);">
+            <th style="padding:10px 14px;">Tháng</th><th style="padding:10px 14px;">Doanh thu</th><th style="padding:10px 14px;">Số giao dịch</th>
+          </tr></thead>
+          <tbody>
+            ${monthlyRows.map(row=>`
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px;font-weight:600;">${esc(row.month)}</td>
+                <td style="padding:10px 14px;">${row.revenue.toLocaleString('vi-VN')}đ</td>
+                <td style="padding:10px 14px;">${row.count}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
       `}
+
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Giao dịch gần nhất</div>
+      ${state.rows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào.</div>` : state.rows.slice(0,50).map(r=>`
+        <div class="section" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:13px;">${esc(new Date(r.created_at).toLocaleString('vi-VN'))} · <span style="font-family:'IBM Plex Mono',monospace;">${esc(r.ref_code_found||'—')}</span></span>
+          <b style="color:var(--accent);">${Number(r.transfer_amount).toLocaleString('vi-VN')}đ</b>
+        </div>
+      `).join('')}
     `;
   }
 
@@ -463,7 +493,7 @@ function renderDanhGia(container, ctx){
     const list = filtered();
     const pendingCount = state.reviews.filter(r=>!r.approved).length;
     return `
-      <div style="margin-bottom:16px;color:var(--ink-soft);font-size:13.5px;">${pendingCount} đánh giá đang chờ duyệt. Duyệt xong mới hiện công khai ở Trang chủ.</div>
+      <div class="page-head"><h1>Đánh giá app</h1><p>${pendingCount} đánh giá đang chờ duyệt. Duyệt xong mới hiện công khai ở Trang chủ.</p></div>
       <div class="card" style="margin-bottom:20px;">
         <input id="dg-search" type="text" placeholder="Tìm theo nội dung hoặc tên..." value="${esc(state.q)}"
           style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
