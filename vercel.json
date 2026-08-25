@@ -2,7 +2,8 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" },
-    { "source": "/san-pham-so/api/:path*", "destination": "/api/:path*" }
+    { "source": "/san-pham-so/api/:path*", "destination": "/api/:path*" },
+    { "source": "/tai-chinh/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300 },

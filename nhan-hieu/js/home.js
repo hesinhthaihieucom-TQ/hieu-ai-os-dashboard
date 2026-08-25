@@ -64,7 +64,7 @@ function render(container, ctx){
 
   async function loadReviews(){
     const { data } = await ctx.supabase.from('app_reviews').select('display_name,comment,created_at')
-      .eq('approved', true).order('created_at', { ascending:false }).limit(20);
+      .eq('approved', true).eq('app', 'nhan-hieu').order('created_at', { ascending:false }).limit(20);
     state.reviews = data || [];
     state.reviewsLoading = false;
     draw();

@@ -112,7 +112,7 @@ function tcPriceAnchorHtml(profile){
 // nào đang được thanh toán chỉ qua số tiền, không cần đổi định dạng ref_code.
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null, tcReviewPromptEligible:false };
 
 function sidebarFootHtml(){
   const p = AppState.profile;
@@ -141,7 +141,11 @@ async function initApp(){
   const { data } = await supabaseClient.auth.getSession();
   if(data.session){
     AppState.user = data.session.user;
-    await Promise.all([loadProfile(), loadLatestAnnouncement()]);
+    // loadProfile() TRƯỚC, riêng — loadTcReviewPromptEligibility() cần profile.tc_trial_started_at/
+    // tc_review_prompt_dismissed đã tải xong, chạy song song với loadLatestAnnouncement() có thể đọc
+    // trúng profile rỗng lúc mới vào (cùng lý do nhan-hieu/js/app-shell.js làm tuần tự).
+    await loadProfile();
+    await Promise.all([loadLatestAnnouncement(), loadTcReviewPromptEligibility()]);
     AppState.route = currentRouteFromHash();
     renderApp();
   } else {
@@ -164,7 +168,7 @@ async function initApp(){
       if(AppState.user && AppState.user.id === session.user.id) return;
       AppState.user = session.user;
       AppState.route = 'trang-chu';
-      Promise.all([loadProfile(), loadLatestAnnouncement()]).then(()=>{
+      loadProfile().then(()=>Promise.all([loadLatestAnnouncement(), loadTcReviewPromptEligibility()])).then(()=>{
         location.hash = 'trang-chu';
         renderApp();
       });
@@ -195,6 +199,71 @@ async function loadProfile(){
     const { data: refreshed } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
     if(refreshed) AppState.profile = refreshed;
   }
+}
+
+// Popup xin đánh giá — 2026-08-26, "từ giờ làm app nào cũng có phần review, auto" (mirror
+// maybeShowReviewPrompt() ở nhan-hieu/js/app-shell.js, KHÔNG có phần thưởng lượt AI vì app này
+// không có hệ lượt). Đủ điều kiện khi: đã dùng đủ 14 ngày (tc_trial_started_at) HOẶC đã hoàn thành
+// Tổng Kết Tuần ít nhất 1 lần (đúng như đề xuất ban đầu: "sau 14 ngày hoặc sau khi hoàn thành Tổng
+// Kết Tuần lần đầu") — và profile.tc_review_prompt_dismissed chưa true (chưa từng bấm "Để sau"
+// hoặc đã gửi đánh giá rồi, xem api/submit-review.js).
+const TC_REVIEW_PROMPT_MIN_DAYS = 14;
+async function loadTcReviewPromptEligibility(){
+  if(!AppState.user || !AppState.profile) { AppState.tcReviewPromptEligible = false; return; }
+  const daysSinceSignup = AppState.profile.tc_trial_started_at
+    ? (Date.now() - new Date(AppState.profile.tc_trial_started_at).getTime()) / 86400000 : 0;
+  let qualifies = daysSinceSignup >= TC_REVIEW_PROMPT_MIN_DAYS;
+  if(!qualifies){
+    const { count } = await supabaseClient.from('tc_weekly_reflections').select('user_id', { count:'exact', head:true }).eq('user_id', AppState.user.id);
+    qualifies = (count || 0) >= 1;
+  }
+  AppState.tcReviewPromptEligible = qualifies && !AppState.profile.tc_review_prompt_dismissed;
+}
+
+function maybeShowTcReviewPrompt(){
+  if(!AppState.tcReviewPromptEligible) return;
+  if(document.getElementById('onboarding-tour-overlay') || document.getElementById('tc-review-prompt-overlay')) return;
+  AppState.tcReviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tc-review-prompt-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Sổ Dòng Tiền Tâm Thức 🌱</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Kể thoải mái điều bạn thấy thay đổi rõ nhất — dòng tiền bớt hoảng loạn hơn, thấy rõ tiền đi đâu, hay đơn giản là thói quen ghi chép đều hơn trước. Cảm nhận thật của bạn sẽ giúp rất nhiều người khác quyết định bắt đầu.</div>
+      <textarea id="tcrp-comment" placeholder="Ví dụ: Trước đây mình không biết tiền đi đâu hết, giờ nhìn Tổng Kết Tháng là biết ngay..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+      <div id="tcrp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
+        <span id="tcrp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="tcrp-submit" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close(){ overlay.remove(); }
+  overlay.querySelector('#tcrp-skip').onclick = async ()=>{
+    close();
+    if(AppState.profile) AppState.profile.tc_review_prompt_dismissed = true;
+    try{ await supabaseClient.rpc('mark_tc_review_prompt_dismissed'); } catch(e){}
+  };
+  overlay.querySelector('#tcrp-submit').onclick = async ()=>{
+    const textarea = overlay.querySelector('#tcrp-comment');
+    const errorEl = overlay.querySelector('#tcrp-error');
+    const comment = textarea.value.trim();
+    if(!comment){ errorEl.textContent = 'Chưa nhập cảm nhận.'; errorEl.style.display = 'block'; return; }
+    const btn = overlay.querySelector('#tcrp-submit');
+    btn.disabled = true; btn.textContent = 'Đang gửi…';
+    try{
+      await callApi('/api/submit-review', { comment, app:'tai-chinh' });
+      if(AppState.profile) AppState.profile.tc_review_prompt_dismissed = true;
+      close();
+    } catch(e){
+      errorEl.textContent = e.message; errorEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Gửi đánh giá';
+    }
+  };
 }
 
 function tcTrialDaysLeft(){
@@ -368,6 +437,7 @@ function renderApp(){
   }
 
   maybeShowFeatureAnnouncement();
+  maybeShowTcReviewPrompt();
 
   const content = root.querySelector('#main-content');
   if(PREMIUM_ROUTES.has(AppState.route) && !canAccess){

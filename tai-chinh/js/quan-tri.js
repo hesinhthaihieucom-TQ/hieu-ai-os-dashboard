@@ -1,10 +1,14 @@
 (function(){
 // Trang Quản Trị cho Sổ Dòng Tiền Tâm Thức — áp dụng quy tắc bên nhan-hieu/js/quan-tri-thongbao.js
-// (2026-08-23, theo yêu cầu chị Quỳnh). 3 tab: Thông báo (đăng feature announcement) + Thành viên
-// (xem/gán tc_has_paid, gia hạn dùng thử) + Hoa Hồng (chương trình giới thiệu 20%, trả tay) — KHÔNG
-// làm hub nhiều tab như bên nhan-hieu (tài chính/giao dịch SePay/kho nội dung) vì tai-chinh chỉ có
-// ĐÚNG 1 gói (trọn đời), không có nhiều gói/tháng cần đối soát phức tạp như bên đó. Route này chỉ
-// hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js NAV, cờ adminOnly) — nhưng RLS ở
+// (2026-08-23, theo yêu cầu chị Quỳnh). 5 tab: Thông báo (đăng feature announcement) + Thành viên
+// (xem/gán tc_has_paid, gia hạn dùng thử) + Hoa Hồng (chương trình giới thiệu 20%, trả tay) + Tài
+// Chính (doanh thu, kèm luôn danh sách giao dịch SePay gần nhất — KHÔNG tách riêng "Giao dịch SePay"
+// thành 1 tab như nhan-hieu vì tai-chinh chỉ 1 sản phẩm/3 mức giá, ít dữ liệu hơn hẳn) + Đánh Giá
+// (duyệt review trước khi hiện công khai ở Trang chủ — dùng CHUNG bảng app_reviews với nhan-hieu, lọc
+// theo cột `app`, xem api/submit-review.js). 2026-08-26, góp ý Quỳnh: "Quản trị cũng cần y hệt bên
+// Xây Nhân Hiệu" — thêm Tài Chính/Đánh Giá cho gần với cấu trúc bên đó, phần nào còn thiếu (vd Kho
+// nội dung) là do tai-chinh không có khái niệm tương ứng, không phải bỏ sót. Route này chỉ hiện
+// trong sidebar khi profiles.role==='admin' (xem app-shell.js NAV, cờ adminOnly) — nhưng RLS ở
 // Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ rối giao diện cho user thường.
 const EMOJI_OPTIONS = ['🎉','🚀','🎁','⚠️','✨','🔥','📢','💡'];
 const TC_TRIAL_DAYS_FOR_ADMIN = 0; // khớp TC_TRIAL_DAYS ở app-shell.js (2026-08-24: bỏ hẳn dùng thử) — chỉ để hiện đúng số ngày còn lại; admin vẫn "Gia hạn" tay được qua extendTrial() nếu cần cho 1 tài khoản cụ thể
@@ -18,6 +22,8 @@ function render(container, ctx){
         <div class="chip ${hubState.tab==='thongbao'?'selected':''}" data-hub-tab="thongbao">Thông báo</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành viên</div>
         <div class="chip ${hubState.tab==='hoahong'?'selected':''}" data-hub-tab="hoahong">Hoa Hồng</div>
+        <div class="chip ${hubState.tab==='taichinh'?'selected':''}" data-hub-tab="taichinh">Tài Chính</div>
+        <div class="chip ${hubState.tab==='danhgia'?'selected':''}" data-hub-tab="danhgia">Đánh Giá</div>
       </div>
       <div id="qt-hub-sub"></div>
     `;
@@ -27,7 +33,9 @@ function render(container, ctx){
     const sub = container.querySelector('#qt-hub-sub');
     if(hubState.tab === 'thongbao') renderThongBao(sub, ctx);
     else if(hubState.tab === 'thanhvien') renderThanhVien(sub, ctx);
-    else renderHoaHong(sub, ctx);
+    else if(hubState.tab === 'hoahong') renderHoaHong(sub, ctx);
+    else if(hubState.tab === 'taichinh') renderTaiChinh(sub, ctx);
+    else renderDanhGia(sub, ctx);
   }
   drawHub();
 }
@@ -360,6 +368,155 @@ function renderHoaHong(container, ctx){
   }
 
   load();
+}
+
+// Tab "Tài Chính" — doanh thu thật từ sepay_transactions (status='matched'), lọc đúng 3 mức giá
+// tai-chinh (299k/599k/999k, xem TC_PRICE_TIER_* ở app-shell.js) để KHÔNG lẫn doanh thu nhan-hieu
+// (bảng sepay_transactions dùng CHUNG cho cả 2 app). Kèm luôn danh sách giao dịch gần nhất — không
+// tách tab riêng "Giao dịch SePay" như nhan-hieu vì tai-chinh ít dữ liệu hơn hẳn (1 sản phẩm, 3 mức
+// giá cố định), gộp vào đây đủ dùng.
+function renderTaiChinh(container, ctx){
+  const TC_AMOUNTS = [299000, 599000, 999000];
+  const state = { loading:true, rows:[] };
+
+  function draw(){ container.innerHTML = html(); }
+
+  async function load(){
+    state.loading = true; draw();
+    const { data } = await ctx.supabase.from('sepay_transactions').select('*')
+      .eq('status', 'matched').in('transfer_amount', TC_AMOUNTS)
+      .order('created_at', { ascending:false }).limit(200);
+    state.rows = data || [];
+    state.loading = false;
+    draw();
+  }
+
+  function html(){
+    const totalRevenue = state.rows.reduce((s,r)=>s+Number(r.transfer_amount||0), 0);
+    const byMonth = {};
+    state.rows.forEach(r=>{
+      const m = (r.created_at||'').slice(0,7);
+      byMonth[m] = (byMonth[m]||0) + Number(r.transfer_amount||0);
+    });
+    const months = Object.keys(byMonth).sort((a,b)=> b<a?-1:1);
+    const byTier = {};
+    TC_AMOUNTS.forEach(a=>{ byTier[a] = state.rows.filter(r=>Number(r.transfer_amount)===a).length; });
+
+    return `
+      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Chỉ tính giao dịch ĐÃ khớp (status='matched') và đúng 1 trong 3 mức giá tai-chinh — không lẫn doanh thu Xây Nhân Hiệu dù dùng chung bảng giao dịch.</p>
+      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
+        <div class="source-grid" style="margin-bottom:20px;">
+          <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${totalRevenue.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu (tất cả)</div></div>
+          <div class="source-card"><div class="ic" style="font-size:18px;">${state.rows.length}</div><div class="label">Số giao dịch đã khớp</div></div>
+        </div>
+        <div class="section">
+          <h3 style="font-size:14px;">Theo mức giá</h3>
+          ${TC_AMOUNTS.map(a=>`
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+              <span>${a.toLocaleString('vi-VN')}đ</span><b>${byTier[a]} người</b>
+            </div>
+          `).join('')}
+        </div>
+        <div class="section">
+          <h3 style="font-size:14px;">Theo tháng</h3>
+          ${months.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào.</div>` : months.map(m=>`
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+              <span>${esc(m)}</span><b>${byMonth[m].toLocaleString('vi-VN')}đ</b>
+            </div>
+          `).join('')}
+        </div>
+        <div class="section">
+          <h3 style="font-size:14px;">Giao dịch gần nhất</h3>
+          ${state.rows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào.</div>` : state.rows.slice(0,50).map(r=>`
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;">
+              <span>${esc(new Date(r.created_at).toLocaleString('vi-VN'))} · ${esc(r.ref_code_found||'—')}</span>
+              <b style="color:var(--accent);">${Number(r.transfer_amount).toLocaleString('vi-VN')}đ</b>
+            </div>
+          `).join('')}
+        </div>
+      `}
+    `;
+  }
+
+  load();
+}
+
+// Tab "Đánh Giá" — mirror nhan-hieu/js/quan-tri-danhgia.js nhưng lọc app='tai-chinh' (app_reviews
+// dùng CHUNG bảng với nhan-hieu, xem api/submit-review.js).
+function renderDanhGia(container, ctx){
+  const state = { reviews:[], q:'', busyId:null };
+
+  function draw(){ container.innerHTML = html(); bind(); }
+
+  async function load(){
+    const { data } = await ctx.supabase.from('app_reviews').select('*').eq('app', 'tai-chinh').order('created_at', { ascending:false }).limit(100);
+    state.reviews = data || [];
+  }
+
+  function filtered(){
+    const q = state.q.trim().toLowerCase();
+    if(!q) return state.reviews;
+    return state.reviews.filter(r => (r.comment||'').toLowerCase().includes(q) || (r.display_name||'').toLowerCase().includes(q));
+  }
+
+  function html(){
+    const list = filtered();
+    const pendingCount = state.reviews.filter(r=>!r.approved).length;
+    return `
+      <div style="margin-bottom:16px;color:var(--ink-soft);font-size:13.5px;">${pendingCount} đánh giá đang chờ duyệt. Duyệt xong mới hiện công khai ở Trang chủ.</div>
+      <div class="card" style="margin-bottom:20px;">
+        <input id="dg-search" type="text" placeholder="Tìm theo nội dung hoặc tên..." value="${esc(state.q)}"
+          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+      </div>
+      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào.</div>` : ''}
+      ${list.map(r=>`
+        <div class="section">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:13px;color:var(--ink-soft);">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleString('vi-VN'))}</div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 10px;border-radius:999px;
+              background:${r.approved?'var(--accent-soft)':'#FBF6E9'};color:${r.approved?'var(--accent)':'var(--gold)'};">${r.approved?'Đã duyệt':'Chờ duyệt'}</span>
+          </div>
+          <div class="body" style="margin-top:10px;white-space:pre-wrap;">${esc(r.comment)}</div>
+          <div class="btn-row" style="margin-top:12px;justify-content:flex-start;">
+            ${!r.approved ? `<button class="btn btn-sm" data-approve="${r.id}" ${state.busyId===r.id?'disabled':''}>Duyệt, hiện công khai</button>` : `<span class="btn-ghost btn btn-sm" data-unapprove="${r.id}" ${state.busyId===r.id?'disabled':''}>Ẩn khỏi Trang chủ</span>`}
+            <span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-delete="${r.id}" ${state.busyId===r.id?'disabled':''}>Xoá</span>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  }
+
+  function bind(){
+    const search = container.querySelector('#dg-search');
+    if(search) search.oninput = ()=>{ state.q = search.value; draw(); search.focus(); search.selectionStart = search.selectionEnd = search.value.length; };
+    container.querySelectorAll('[data-approve]').forEach(el=>{
+      el.onclick = ()=>setApproved(el.getAttribute('data-approve'), true);
+    });
+    container.querySelectorAll('[data-unapprove]').forEach(el=>{
+      el.onclick = ()=>setApproved(el.getAttribute('data-unapprove'), false);
+    });
+    container.querySelectorAll('[data-delete]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-delete');
+        if(!(await confirmModal('Xoá vĩnh viễn đánh giá này? Không khôi phục được.'))) return;
+        state.busyId = id; draw();
+        await ctx.supabase.from('app_reviews').delete().eq('id', id);
+        await load();
+        state.busyId = null;
+        draw();
+      };
+    });
+  }
+
+  async function setApproved(id, approved){
+    state.busyId = id; draw();
+    await ctx.supabase.from('app_reviews').update({ approved }).eq('id', id);
+    await load();
+    state.busyId = null;
+    draw();
+  }
+
+  (async ()=>{ draw(); await load(); draw(); })();
 }
 
 window.Modules = window.Modules || {};

@@ -32,9 +32,62 @@ const EXPLORE = [
 ];
 
 function render(container, ctx){
-  const state = { loading:true, done:{} };
+  const state = {
+    loading:true, done:{},
+    reviews:[], reviewsLoading:true, reviewComment:'', reviewSubmitting:false, reviewError:null, reviewJustSubmitted:false,
+  };
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
+
+  async function loadReviews(){
+    const { data } = await ctx.supabase.from('app_reviews').select('display_name,comment,created_at')
+      .eq('approved', true).eq('app', 'tai-chinh').order('created_at', { ascending:false }).limit(20);
+    state.reviews = data || [];
+    state.reviewsLoading = false;
+    draw();
+  }
+
+  async function submitReview(){
+    if(state.reviewSubmitting || !state.reviewComment.trim()) return;
+    state.reviewSubmitting = true; state.reviewError = null; draw();
+    try{
+      await callApi('/api/submit-review', { comment: state.reviewComment.trim(), app:'tai-chinh' });
+      if(ctx.profile) ctx.profile.tc_review_prompt_dismissed = true;
+      state.reviewComment = '';
+      state.reviewJustSubmitted = true;
+      loadReviews();
+    } catch(e){ state.reviewError = e.message; }
+    state.reviewSubmitting = false; draw();
+  }
+
+  function reviewSectionHtml(){
+    return `
+      <div style="margin-top:28px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Đánh giá từ mọi người</h3>
+        <div class="card" style="margin-bottom:16px;background:var(--accent-soft);border:1px solid var(--accent);">
+          ${state.reviewJustSubmitted
+            ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
+            : `
+            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoe trải nghiệm của bạn với Sổ Dòng Tiền Tâm Thức</label>
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">Điều gì bạn thấy thay đổi rõ nhất — dòng tiền bớt hoảng loạn hơn, thấy rõ tiền đi đâu, hay đơn giản là thói quen ghi chép đều hơn trước.</div>
+            <textarea id="rv-comment" placeholder="Ví dụ: Trước đây mình không biết tiền đi đâu hết, giờ nhìn Tổng Kết Tháng là biết ngay...">${esc(state.reviewComment)}</textarea>
+            ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
+            <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+              <button class="btn btn-sm" data-action="submit-review" ${state.reviewSubmitting?'disabled':''}>${state.reviewSubmitting?'Đang gửi…':'Gửi đánh giá'}</button>
+            </div>
+          `}
+        </div>
+        ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải…</div>`
+          : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào được duyệt.</div>`
+          : state.reviews.map(r=>`
+            <div class="section">
+              <div class="body" style="white-space:pre-wrap;">${esc(r.comment)}</div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
+            </div>
+          `).join('')}
+      </div>
+    `;
+  }
 
   async function boot(){
     const month = new Date().toISOString().slice(0,7);
@@ -58,6 +111,7 @@ function render(container, ctx){
     };
     state.loading = false;
     draw();
+    loadReviews();
   }
 
   function html(){
@@ -105,6 +159,8 @@ function render(container, ctx){
           ${EXPLORE.map(e=>`<div class="chip" data-key="${e.key}">${esc(e.label)}</div>`).join('')}
         </div>
       </div>
+
+      ${reviewSectionHtml()}
     `;
   }
 
@@ -112,6 +168,10 @@ function render(container, ctx){
     container.querySelectorAll('[data-key]').forEach(el=>{
       el.onclick = ()=>{ location.hash = el.getAttribute('data-key'); };
     });
+    const rvComment = container.querySelector('#rv-comment');
+    if(rvComment) rvComment.oninput = ()=>{ state.reviewComment = rvComment.value; };
+    const rvSubmit = container.querySelector('[data-action="submit-review"]');
+    if(rvSubmit) rvSubmit.onclick = submitReview;
   }
 
   boot();

@@ -14,7 +14,7 @@ const REFERRALS = [
   { id:'r2', referrer_id:'admin-1', referee_id:'member-2', reward_amount:59800, paid:true, paid_at:new Date().toISOString(), created_at:new Date().toISOString() },
 ];
 const PROFILES_BY_ID = {
-  'admin-1': { id:'admin-1', role:'admin', full_name:'Chị Quỳnh', email:'quynh@test.com', ref_code:'XNHADMIN1', tc_has_paid:true },
+  'admin-1': { id:'admin-1', role:'admin', full_name:'Chị Quỳnh', email:'quynh@test.com', ref_code:'XNHADMIN1', tc_has_paid:true, tc_trial_started_at:new Date(Date.now()-86400000*20).toISOString(), tc_review_prompt_dismissed:false },
   'member-1': { id:'member-1', role:'student', full_name:'Khách A', email:'a@test.com' },
   'member-2': { id:'member-2', role:'student', full_name:'Khách B', email:'b@test.com' },
 };
@@ -48,6 +48,20 @@ const DEBTS = [];
 let debtIdSeq = 1;
 const KARMA_HISTORY = [];
 let karmaHistoryIdSeq = 1;
+// Mô phỏng app_reviews (CHUNG bảng với nhan-hieu, lọc app='tai-chinh') — để test popup xin đánh giá,
+// khối review ở Trang chủ, và tab Đánh Giá bên Quản Trị (2026-08-26).
+const APP_REVIEWS = [
+  { id:'rev1', user_id:'member-1', app:'tai-chinh', comment:'App giúp em hiểu tiền vào ra do đâu, rất hay!', display_name:'Khách A', approved:true, created_at:new Date().toISOString() },
+  { id:'rev2', user_id:'member-2', app:'tai-chinh', comment:'Chờ duyệt: phần quản lý nợ dễ hiểu.', display_name:'Khách B', approved:false, created_at:new Date().toISOString() },
+];
+let appReviewIdSeq = 1;
+// Mô phỏng sepay_transactions (CHUNG bảng với nhan-hieu) — để test tab Tài Chính bên Quản Trị chỉ
+// tính đúng 3 mức giá tai-chinh (299k/599k/999k), không lẫn doanh thu nhan-hieu.
+const SEPAY_TXNS = [
+  { id:'tx1', transfer_amount:299000, status:'matched', ref_code_found:'ABC123', matched_profile_id:'member-1', created_at:new Date().toISOString() },
+  { id:'tx2', transfer_amount:599000, status:'matched', ref_code_found:'DEF456', matched_profile_id:'member-2', created_at:new Date(Date.now()-86400000*40).toISOString() },
+  { id:'tx3', transfer_amount:150000, status:'matched', ref_code_found:'NHANHIEU1', matched_profile_id:'member-1', created_at:new Date().toISOString() },
+];
 function makeChain(table){
   const chain = {
     _filters: {}, _inFilters: {}, _range: {},
@@ -87,6 +101,7 @@ function makeChain(table){
       }
       return Promise.resolve({ data: null, error:null });
     },
+    single(){ return chain.maybeSingle(); },
     update(payload){
       return { in(col, vals){
         if(table==='tc_referrals') REFERRALS.forEach(r=>{ if(vals.includes(r.id)) Object.assign(r, payload); });
@@ -94,6 +109,8 @@ function makeChain(table){
       }, eq(col, val){
         if(table==='tc_categories') CATEGORIES.forEach(c=>{ if(c[col]===val) Object.assign(c, payload); });
         if(table==='tc_debts') DEBTS.forEach(d=>{ if(String(d[col])===String(val)) Object.assign(d, payload); });
+        if(table==='app_reviews') APP_REVIEWS.forEach(r=>{ if(String(r[col])===String(val)) Object.assign(r, payload); });
+        if(table==='profiles') Object.assign(PROFILES_BY_ID['admin-1'], payload);
         return Promise.resolve({data:null,error:null});
       } };
     },
@@ -115,6 +132,10 @@ function makeChain(table){
         });
         return chain; // để .select().maybeSingle() chain tiếp phía sau vẫn hoạt động
       }
+      if(table==='app_reviews'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>APP_REVIEWS.unshift({ id:'rev'+(appReviewIdSeq++), approved:false, created_at:new Date().toISOString(), ...r }));
+      }
       return Promise.resolve({ data:null, error:null });
     },
     delete(){
@@ -129,6 +150,10 @@ function makeChain(table){
           if(table==='tc_debts'){
             const idx = DEBTS.findIndex(d=>d.id===chain._filters.id);
             if(idx>=0) DEBTS.splice(idx,1);
+          }
+          if(table==='app_reviews'){
+            const idx = APP_REVIEWS.findIndex(r=>r.id===chain._filters.id);
+            if(idx>=0) APP_REVIEWS.splice(idx,1);
           }
           resolve({data:null,error:null});
         },
@@ -154,6 +179,18 @@ function makeChain(table){
         return resolve({ data: rows, error:null });
       }
       if(table === 'tc_karma_history') return resolve({ data: KARMA_HISTORY.slice(0, 20), error:null });
+      if(table === 'app_reviews'){
+        let rows = APP_REVIEWS;
+        if(chain._filters.app) rows = rows.filter(r=>r.app===chain._filters.app);
+        if(chain._filters.approved !== undefined) rows = rows.filter(r=>r.approved===chain._filters.approved);
+        return resolve({ data: rows, error:null });
+      }
+      if(table === 'sepay_transactions'){
+        let rows = SEPAY_TXNS;
+        if(chain._filters.status) rows = rows.filter(r=>r.status===chain._filters.status);
+        if(chain._inFilters.transfer_amount) rows = rows.filter(r=>chain._inFilters.transfer_amount.includes(r.transfer_amount));
+        return resolve({ data: rows, error:null });
+      }
       if(table === 'tc_finance_entries'){
         const r = chain._range.entry_date || {};
         const rows = FINANCE_ENTRIES.filter(e =>
@@ -173,7 +210,10 @@ window.supabaseClient = {
     signOut(){ return Promise.resolve(); },
   },
   from(table){ return makeChain(table); },
-  rpc(){ return Promise.resolve({ data:null, error:null }); },
+  rpc(name){
+    if(name==='mark_tc_review_prompt_dismissed') PROFILES_BY_ID['admin-1'].tc_review_prompt_dismissed = true;
+    return Promise.resolve({ data:null, error:null });
+  },
 };
 window.REFERRALS = REFERRALS;
 </script>

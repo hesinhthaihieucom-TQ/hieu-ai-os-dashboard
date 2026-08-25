@@ -14,7 +14,7 @@ function render(container, ctx){
   }
 
   async function load(){
-    const { data } = await ctx.supabase.from('app_reviews').select('*').order('created_at', { ascending:false }).limit(100);
+    const { data } = await ctx.supabase.from('app_reviews').select('*').eq('app', 'nhan-hieu').order('created_at', { ascending:false }).limit(100);
     state.reviews = data || [];
   }
 

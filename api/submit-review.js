@@ -4,6 +4,11 @@
 // lượt AI nếu đánh giá đủ dài (chống viết 1-2 chữ cho có để lấy thưởng) — theo yêu cầu chị Quỳnh
 // 2026-08-24: "viết cảm nhận thôi + cho họ 20 lượt AI free khi đánh giá trên [X] từ".
 //
+// DÙNG CHUNG cho CẢ nhan-hieu VÀ tai-chinh (2026-08-26, "từ giờ làm app nào cũng có phần review,
+// auto") — client gửi kèm `app` ('nhan-hieu'|'tai-chinh', mặc định 'nhan-hieu' để KHÔNG phá code
+// nhan-hieu cũ chưa từng gửi field này). Thưởng lượt AI CHỈ áp dụng cho nhan-hieu (app đó mới có hệ
+// lượt AI) — tai-chinh chỉ lưu + đánh dấu đã hỏi, không có gì để thưởng.
+//
 // Bảo mật: profiles.trial_ai_limit/paid_ai_bonus/review_reward_given không có policy client nào ghi
 // được (RLS đã khoá tự update profiles từ v3) — CHỈ sửa được qua đây bằng SUPABASE_SERVICE_ROLE_KEY,
 // sau khi đã tự xác thực người gọi qua requireUser(). Không cho client tự khai reward.
@@ -49,7 +54,8 @@ module.exports = async (req, res) => {
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
   try {
-    const { comment } = req.body || {};
+    const { comment, app } = req.body || {};
+    const targetApp = app === 'tai-chinh' ? 'tai-chinh' : 'nhan-hieu';
     if (!comment || !comment.trim()) { res.status(400).json({ error: 'Chưa nhập cảm nhận.' }); return; }
     const trimmed = comment.trim();
     if (trimmed.length > 3000) { res.status(400).json({ error: 'Cảm nhận quá dài, rút gọn lại giúp mình.' }); return; }
@@ -60,9 +66,18 @@ module.exports = async (req, res) => {
 
     const insertResp = await supabaseAdmin('app_reviews', {
       method: 'POST',
-      body: JSON.stringify({ user_id: user.id, comment: trimmed, display_name: (profile && profile.full_name) || null }),
+      body: JSON.stringify({ user_id: user.id, comment: trimmed, display_name: (profile && profile.full_name) || null, app: targetApp }),
     });
     if (!insertResp.ok) { res.status(500).json({ error: 'Không lưu được đánh giá, thử lại giúp mình.' }); return; }
+
+    // tai-chinh không có hệ lượt AI để thưởng — chỉ lưu + đánh dấu đã gửi, không tính thưởng gì cả.
+    if (targetApp === 'tai-chinh') {
+      await supabaseAdmin(`profiles?id=eq.${user.id}`, {
+        method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify({ tc_review_prompt_dismissed: true }),
+      });
+      res.status(200).json({ rewarded: false });
+      return;
+    }
 
     const wordCount = countWords(trimmed);
     let rewarded = false;
