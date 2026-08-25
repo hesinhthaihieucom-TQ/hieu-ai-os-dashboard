@@ -14,16 +14,24 @@ const crypto = require('crypto');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
-// Ưu đãi buổi Zoom "chốt sell" 26/8 (2026-08-24, theo yêu cầu chị Quỳnh) — mua gói 6/12 tháng ĐÚNG
-// NGÀY 26/8 được tặng thêm 1-2 tháng dùng, KHÔNG tặng lượt AI (chị Quỳnh nhận định: người mới chưa
-// dùng app thì chưa hiểu giá trị 1 lượt là gì, tặng thêm THỜI GIAN dùng dễ hiểu/hấp dẫn hơn hẳn với
-// người lần đầu quyết định mua). Chỉ áp dụng gói 6/12 tháng (days=180/365) — gói 1 tháng không có.
-// Không cộng vào last_plan_days (giữ đúng số ngày GỐC của gói) để Quản trị vẫn lọc đúng "6 tháng"/
-// "12 tháng" như bình thường — bonus chỉ cộng thêm vào access_until thực tế.
-const ZOOM_BONUS_DATE = '2026-08-26'; // giờ Việt Nam — xem isZoomBonusDay()
-const ZOOM_BONUS_DAYS_BY_PLAN = { 180: 30, 365: 60 }; // 6 tháng +1 tháng, 12 tháng +2 tháng
-function isZoomBonusDay() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }) === ZOOM_BONUS_DATE;
+// Ưu đãi "mua sớm trong lúc dùng thử" — CHUẨN HOÁ THÀNH QUY TẮC LÂU DÀI (2026-08-26, theo quyết
+// định chị Quỳnh: "sẽ luôn có chế độ ưu đãi mua 6 tặng 1 và mua 12 tặng 2 trong 3 ngày đầu dùng
+// thử, sau 3 ngày thì giá về như cũ"), thay cho bản một-lần-duy-nhất "đúng ngày Zoom 26/8" trước đó
+// (ZOOM_BONUS_DATE cũ so 1 NGÀY LỊCH chung cho mọi người — giờ so ĐÚNG 3 NGÀY ĐẦU của TỪNG người kể
+// từ lúc HỌ đăng ký, không phụ thuộc ngày nào trên lịch). Hợp lý vì hạn dùng thử mới cũng chỉ còn 3
+// ngày (xem handle_new_user() ở schema_full.sql) — tạo lý do cụ thể để quyết định mua NGAY trong
+// lúc còn đang hào hứng dùng thử, thay vì để nguội rồi quên mất.
+// KHÔNG tặng lượt AI (chị Quỳnh nhận định: người mới chưa dùng app thì chưa hiểu giá trị 1 lượt là
+// gì, tặng thêm THỜI GIAN dùng dễ hiểu/hấp dẫn hơn hẳn với người lần đầu quyết định mua). Chỉ áp
+// dụng gói 6/12 tháng (days=180/365) — gói 1 tháng không có. Không cộng vào last_plan_days (giữ
+// đúng số ngày GỐC của gói) để Quản trị vẫn lọc đúng "6 tháng"/"12 tháng" như bình thường — bonus
+// chỉ cộng thêm vào access_until thực tế.
+const EARLY_BIRD_WINDOW_DAYS = 3;
+const EARLY_BIRD_BONUS_DAYS_BY_PLAN = { 180: 30, 365: 60 }; // 6 tháng +1 tháng, 12 tháng +2 tháng
+function isWithinEarlyBirdWindow(profileCreatedAt) {
+  if (!profileCreatedAt) return false;
+  const ageMs = Date.now() - new Date(profileCreatedAt).getTime();
+  return ageMs <= EARLY_BIRD_WINDOW_DAYS * 86400000;
 }
 
 // Số tiền → số ngày được cộng thêm. Phải khớp CHÍNH XÁC 1 trong các mức giá đang bán, và
@@ -279,7 +287,7 @@ module.exports = async (req, res) => {
     let topupLuotGranted = null;
 
     if (refCode) {
-      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given`);
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given,created_at`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
@@ -287,7 +295,7 @@ module.exports = async (req, res) => {
         const days = AMOUNT_TO_DAYS[transferAmount];
         const topupLuot = AMOUNT_TO_TOPUP_LUOT[transferAmount];
         if (days) {
-          const bonusDays = (isZoomBonusDay() && ZOOM_BONUS_DAYS_BY_PLAN[days]) ? ZOOM_BONUS_DAYS_BY_PLAN[days] : 0;
+          const bonusDays = (isWithinEarlyBirdWindow(profile.created_at) && EARLY_BIRD_BONUS_DAYS_BY_PLAN[days]) ? EARLY_BIRD_BONUS_DAYS_BY_PLAN[days] : 0;
           const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
             ? new Date(profile.access_until) : new Date();
           const next = new Date(base.getTime() + (days + bonusDays) * 86400000);
