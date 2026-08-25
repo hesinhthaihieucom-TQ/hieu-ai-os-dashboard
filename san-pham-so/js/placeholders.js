@@ -1,5 +1,5 @@
-// Sản Phẩm Số — placeholder cho các mục trong hub chưa build chi tiết (giống
-// nhan-hieu/js/placeholders.js). Xây dần từng mục theo thứ tự đã bàn với Quỳnh.
+// Sản Phẩm Số — placeholder cho các mục sidebar chưa build chi tiết (giống nhan-hieu/js/placeholders.js).
+// Xây dần từng mục theo thứ tự đã bàn với Quỳnh.
 (function () {
 function comingSoon(title, desc) {
   return function render(container) {
@@ -9,9 +9,7 @@ function comingSoon(title, desc) {
       <div class="card" style="text-align:center;color:var(--ink-soft);padding:50px 24px;">
         Đang được xây dựng — sẽ cập nhật trong bản tiếp theo.
       </div>
-      <div class="btn-row"><span class="btn-ghost btn" id="ph-back-btn">← Quay lại Sản Phẩm Số</span></div>
     `;
-    container.querySelector('#ph-back-btn').onclick = () => { location.hash = 'san-pham-so-hub'; };
   };
 }
 

@@ -1,55 +1,26 @@
-// Sản Phẩm Số — shell: đăng nhập, kiểm tra quyền (can_sell_products), điều hướng qua location.hash,
-// giống tinh thần app-shell.js của nhan-hieu nhưng gọn hơn nhiều.
-//
-// Cấu trúc khung app (chốt với Quỳnh 2026-08-25): "Trang chủ" vào qua bấm logo (ẩn khỏi tab, giống
-// 'trang-chu' hidden ở nhan-hieu); 2 tab chính "✨ Sản Phẩm Số" (hub) và "🛒 Sản phẩm của tôi". Hub
-// liệt kê 6 mục con (chon-loai/tao-ai/tao-ebook/tao-landing-page/tao-template/nghien-cuu-thi-truong)
-// — các mục con này KHÔNG hiện trong tab bar, chỉ vào được qua bấm card trong hub hoặc quay lại từ
-// màn con, nhưng khi đang ở màn con vẫn tô sáng đúng tab "✨ Sản Phẩm Số" (xem activeTabKey).
+// Sản Phẩm Số — shell: đăng nhập, kiểm tra quyền (can_sell_products), điều hướng qua location.hash.
+// Y HỆT khung nhan-hieu/js/app-shell.js (theo yêu cầu Quỳnh 2026-08-25): sidebar cố định bên trái,
+// danh sách mục PHẲNG có đánh số (không phân nhóm/hub), sidebar-foot có tên + đăng xuất, sập thành
+// ngăn kéo (drawer) trên di động qua nút ☰. Dùng lại nguyên CSS class .app-layout/.sidebar/... từ
+// nhan-hieu/style.css (đã copy sang san-pham-so/app.css).
 
 window.SanPhamSoScreens = window.SanPhamSoScreens || {}; // mỗi file màn tự đăng ký vào đây
 
-const NAV_TABS = [
-  { key: 'san-pham-so-hub', title: '✨ Sản Phẩm Số' },
+const NAV = [
+  { key: 'home', title: 'Trang chủ', hidden: true }, // không hiện trong sidebar — vào qua bấm logo
+  { key: 'tao-ai', title: '🧭 Tìm Sản Phẩm Phù Hợp' },
+  { key: 'chon-loai', title: '🗂️ Chọn Loại Sản Phẩm Số' },
+  { key: 'tao-ebook', title: '📖 Tạo Ebook/Workbook' },
+  { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
+  { key: 'tao-template', title: '🎨 Tạo Template' },
+  { key: 'nghien-cuu-thi-truong', title: '📊 Nghiên Cứu Thị Trường & Giá/Marketing' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
 ];
-// Mọi route con thuộc hub "Sản Phẩm Số" — vẫn tô sáng tab hub dù đang ở màn con nào trong nhóm này.
-const HUB_CHILD_ROUTES = ['san-pham-so-hub', 'tao-ai', 'chon-loai', 'tao-ebook', 'tao-landing-page', 'tao-template', 'nghien-cuu-thi-truong'];
-let currentRoute = 'san-pham-so-hub';
+let currentRoute = 'home';
 
 function currentRouteFromHash() {
   const h = (location.hash || '').replace('#', '');
-  if (h === 'home') return 'home';
-  if (window.SanPhamSoScreens && window.SanPhamSoScreens[h]) return h;
-  return 'san-pham-so-hub';
-}
-
-function activeTabKey(route) {
-  if (route === 'san-pham') return 'san-pham';
-  if (HUB_CHILD_ROUTES.includes(route)) return 'san-pham-so-hub';
-  return null; // 'home' không tô sáng tab nào
-}
-
-function topbarHtml(profile) {
-  const active = activeTabKey(currentRoute);
-  return `
-    <div class="topbar">
-      <h1 id="sps-logo-btn" style="cursor:pointer;">🛒 Sản Phẩm Số</h1>
-      <span class="signout" id="signout-btn">${esc((profile && profile.full_name) || '')} — Đăng xuất</span>
-    </div>
-    <div class="tabs">
-      ${NAV_TABS.map(r => `<span class="tab ${active === r.key ? 'active' : ''}" data-route="${r.key}">${esc(r.title)}</span>`).join('')}
-    </div>
-  `;
-}
-function bindTopbar() {
-  const btn = document.getElementById('signout-btn');
-  if (btn) btn.onclick = async () => { await supabaseClient.auth.signOut(); };
-  const logo = document.getElementById('sps-logo-btn');
-  if (logo) logo.onclick = () => { location.hash = 'home'; };
-  document.querySelectorAll('[data-route]').forEach(el => {
-    el.onclick = () => { location.hash = el.getAttribute('data-route'); };
-  });
+  return NAV.some(n => n.key === h) ? h : 'home';
 }
 
 function renderLogin(err) {
@@ -87,22 +58,63 @@ function renderNotEnabled(profile) {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="wrap" style="max-width:460px;">
-      ${topbarHtml(profile)}
-      <div class="card">Tài khoản của bạn chưa được bật tính năng bán Sản Phẩm Số. Liên hệ để được hỗ trợ.</div>
+      <h1>🛒 Sản Phẩm Số</h1>
+      <div class="card">Tài khoản của bạn (${esc((profile && profile.full_name) || '')}) chưa được bật tính năng bán Sản Phẩm Số. Liên hệ để được hỗ trợ.</div>
+      <div class="btn-row"><span class="btn-ghost btn" id="signout-btn-ne">Đăng xuất</span></div>
     </div>
   `;
-  bindTopbar();
+  document.getElementById('signout-btn-ne').onclick = async () => { await supabaseClient.auth.signOut(); };
 }
 
 function renderShell(profile) {
   currentRoute = currentRouteFromHash();
   const app = document.getElementById('app');
-  app.innerHTML = `<div class="wrap">${topbarHtml(profile)}<div id="sps-body"></div></div>`;
-  bindTopbar();
-  const bodyEl = document.getElementById('sps-body');
+  app.innerHTML = `
+    <div class="topbar-mobile">
+      <span class="menu-toggle" id="menu-toggle-btn">☰</span>
+      <span class="topbar-title">Sản Phẩm Số</span>
+    </div>
+    <div class="app-layout">
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand" id="sidebar-brand-home">
+          <div class="brand-text">🛒 SẢN PHẨM SỐ</div>
+        </div>
+        <div class="sidebar-nav" id="sidebar-nav"></div>
+        <div class="sidebar-foot">
+          <div style="margin-bottom:6px;">${esc((profile && profile.full_name) || '')}</div>
+          <span class="signout" id="signout-btn">Đăng xuất</span>
+        </div>
+      </div>
+      <div class="main"><div class="main-inner" id="main-content"></div></div>
+    </div>
+  `;
+
+  const visibleNav = NAV.filter(n => !n.hidden);
+  const nav = app.querySelector('#sidebar-nav');
+  nav.innerHTML = visibleNav.map((n, i) => `
+    <div class="sidebar-item ${currentRoute === n.key ? 'active' : ''}" data-key="${n.key}">
+      <span class="num">${i + 1}</span><span>${esc(n.title)}</span>
+    </div>
+  `).join('');
+
+  const sidebar = app.querySelector('#sidebar');
+  const overlay = app.querySelector('#sidebar-overlay');
+  const closeDrawer = () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); };
+  const menuBtn = app.querySelector('#menu-toggle-btn');
+  if (menuBtn) menuBtn.onclick = () => { sidebar.classList.add('open'); overlay.classList.add('open'); };
+  overlay.onclick = closeDrawer;
+  app.querySelector('#sidebar-brand-home').onclick = () => { location.hash = 'home'; closeDrawer(); };
+
+  nav.querySelectorAll('.sidebar-item').forEach(el => {
+    el.onclick = () => { location.hash = el.getAttribute('data-key'); closeDrawer(); };
+  });
+  app.querySelector('#signout-btn').onclick = async () => { await supabaseClient.auth.signOut(); };
+
+  const content = app.querySelector('#main-content');
   const screen = window.SanPhamSoScreens[currentRoute];
-  if (screen) screen(bodyEl, profile);
-  else bodyEl.innerHTML = `<div class="card">Màn đang được xây dựng.</div>`;
+  if (screen) screen(content, profile);
+  else content.innerHTML = `<div class="card">Màn đang được xây dựng.</div>`;
 }
 
 window.addEventListener('hashchange', () => {
