@@ -125,27 +125,14 @@ const PILLAR_SEED_MAP = {
   purpose_score: ['asset', 'giving'],        // Trụ 5 — Thuận Pháp & Nhân Quả (tích sản + cho đi)
 };
 function pointsToRating(points){ return points>=10 ? 5 : points>=5 ? 3 : 1; }
-const WEAKEST_AREA_INFO = {
-  income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2, seedBelief:'Tôi khó đón nhận trọn vẹn khi tiền về — nỗi lo thường che mất niềm vui.' },
-  expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3, seedBelief:'Tôi hay thấy xót của mỗi khi phải chi tiền ra, dù là chi cho việc cần thiết.' },
-  debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm.', nutChan:null, seedBelief:'Tôi đang né tránh đối diện thẳng với khoản nợ của mình.' },
-  witness_receive: { label:'Đón Nhận Của Người Khác', explain:'Bạn đang khó vui thật lòng khi người khác nhận được tiền — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #1 (Khi thấy người khác nhận tiền), khiến tâm thức tin rằng thịnh vượng là có hạn.', nutChan:1, seedBelief:'Tôi khó vui thật lòng khi thấy người khác nhận được tiền hoặc tin vui tài chính.' },
-};
+// WEAKEST_AREA_INFO chuyển sang util.js (2026-08-25) — xem comment ở đó.
 
-// Phân tích kết quả Vibe Check THEO ĐÚNG 5 Trụ Cột Năng Lượng Bản Thể (HOUSES ở util.js) — góp ý
-// Quỳnh 2026-08-24: "mục phân tích cần sâu sắc hơn, đánh vào 5 trụ cột, giống cách Điểm Nghiệp ở
-// trên đang phân tích". Trước đây kết quả chỉ nói tới weakestArea (1 trong 4 Nút Chặn) — giờ soi
-// đủ cả 5 trụ, dùng ĐÚNG câu Vibe Check nào seed trụ đó (xem PILLAR_SEED_MAP, đối chiếu bằng
-// key HOUSES tương ứng ở PILLAR_HOUSE_KEYS) để không lặp lại công vô ích. 3 mức cao/trungBinh/thap
-// tính từ avgPoints (0/5/10 mỗi câu) — NGƯỠNG khớp đúng pointsToRating() ở trên (>=8 ~ rating 5,
-// >=4 ~ rating 3, còn lại ~ rating 1) để nhất quán với điểm đã seed vào Điểm Nghiệp.
-const PILLAR_HOUSE_KEYS = {
-  than_tam_ban_the: ['ef', 'passive'],
-  coi_nguon_sinh_thanh: ['parents'],
-  ban_doi_moi_quan_he: ['partner'],
-  tai_chinh_tam_thuc: ['income', 'expense', 'debt', 'witness_receive'],
-  thuan_phap_nhan_qua: ['asset', 'giving'],
-};
+// Phân tích kết quả THEO ĐÚNG 5 Trụ Cột Năng Lượng Bản Thể (HOUSES ở util.js) — góp ý Quỳnh
+// 2026-08-24: "mục phân tích cần sâu sắc hơn, đánh vào 5 trụ cột, giống cách Điểm Nghiệp ở trên
+// đang phân tích". Trước đây kết quả chỉ nói tới weakestArea (1 trong 4 Nút Chặn) — giờ soi đủ cả 5
+// trụ. Text theo tier (cao/trungBinh/thap) chọn dựa trên ĐÚNG điểm 0-100 ở state.karmaAxes (radar) —
+// xem pillarTier() bên dưới, KHÔNG tính riêng từ vibe Check (đã bỏ, xem lịch sử sửa 2026-08-25 vì
+// "điểm nghiệp bên dưới chưa khớp với cái radar bên trên").
 const PILLAR_ANALYSIS = {
   than_tam_ban_the: {
     cao: 'Nội lực của bạn đang vững: nghĩ tới rủi ro mất thu nhập không khiến bạn hoảng loạn, và bạn tin mình xứng đáng có dòng tiền tự động chảy về. Một Thân Tâm bình an như vậy chính là nền để mọi quyết định tài chính khác không bị chi phối bởi sợ hãi.',
@@ -173,13 +160,10 @@ const PILLAR_ANALYSIS = {
     thap: 'Nỗi sợ đói khổ đang là động cơ chính khiến bạn tích sản, và việc cho đi khiến bạn lo sẽ thiếu — chính vòng lặp "giữ chặt vì sợ thiếu" này thường lại là thứ khiến dòng chảy Nhân Quả bị nghẽn, tích mà không lưu thông được.',
   },
 };
-function pillarInsight(vibe, houseKey){
-  const vibeKeys = PILLAR_HOUSE_KEYS[houseKey].filter(k => vibe[k] != null);
-  if(vibeKeys.length === 0) return null;
-  const avgPoints = vibeKeys.reduce((s,k)=> s + VIBE_QUESTIONS[k].options.find(o=>o.k===vibe[k]).points, 0) / vibeKeys.length;
-  const tier = avgPoints >= 8 ? 'cao' : avgPoints >= 4 ? 'trungBinh' : 'thap';
-  return { tier, avgPoints, text: PILLAR_ANALYSIS[houseKey][tier] };
-}
+// Mức trụ tính TRỰC TIẾP từ điểm 0-100 đã hiện ở radar (state.karmaAxes) — KHÔNG tính riêng từ vibe
+// Check nữa (trước đây pillarInsight() tự tính avgPoints riêng, ra tier lệch với radar phía trên,
+// đúng cái Quỳnh báo "chưa khớp"). Ngưỡng 80/40 tương đương ngưỡng cũ 8/4 trên thang 0-10 (×10).
+function pillarTier(score){ return score >= 80 ? 'cao' : score >= 40 ? 'trungBinh' : 'thap'; }
 function tierBadgeHtml(tier){
   const info = { cao:['🟢 Đang vững','var(--accent)'], trungBinh:['🟡 Đang dao động','var(--gold)'], thap:['🔴 Cần chú ý','var(--danger)'] }[tier];
   return `<span style="font-size:11px;font-weight:600;color:${info[1]};margin-left:6px;white-space:nowrap;">${info[0]}</span>`;
@@ -374,7 +358,6 @@ function render(container, ctx){
     dashboardLoading: true,
     monthIncome: 0, monthExpense: 0, netWorth: null, netWorthMonth: null, totalDebt: 0,
     upcomingDebts: [], karmaAxes: [], activeBeliefsCount: 0, selectedPillarKey: null,
-    karmaHistory: [],
   };
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
 
@@ -385,7 +368,7 @@ function render(container, ctx){
     const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
     const fourteenDaysAgo = new Date(); fourteenDaysAgo.setDate(fourteenDaysAgo.getDate()-14);
     const monthStart = `${month}-01`;
-    const [entriesRes, netWorthRes, debtsRes, vibeRes, recentDatesRes, monthGoalRes, monthNetworthRes, weeklyRes, activeBeliefsRes, karmaHistoryRes] = await Promise.all([
+    const [entriesRes, netWorthRes, debtsRes, vibeRes, recentDatesRes, monthGoalRes, monthNetworthRes, weeklyRes, activeBeliefsRes] = await Promise.all([
       ctx.supabase.from('tc_finance_entries').select('type, amount')
         .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', nextMonthKey(month)+'-01'),
       ctx.supabase.from('tc_networth_snapshots').select('*')
@@ -403,9 +386,7 @@ function render(container, ctx){
       ctx.supabase.from('tc_weekly_reflections').select('relationship_score,health_score,purpose_score,parents_connection_score,finance_mindset_score')
         .eq('user_id', ctx.user.id).order('week_start', { ascending:false }).limit(4),
       ctx.supabase.from('tc_core_beliefs').select('id').eq('user_id', ctx.user.id).eq('still_active', true),
-      ctx.supabase.from('tc_karma_history').select('*').eq('user_id', ctx.user.id).order('taken_at', { ascending:false }).limit(20),
     ]);
-    state.karmaHistory = karmaHistoryRes.data || [];
     const entries = entriesRes.data || [];
     state.monthIncome = entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
     state.monthExpense = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0);
@@ -598,6 +579,11 @@ function render(container, ctx){
       }, { onConflict:'user_id,snapshot_month' }),
       seedWeeklyPillars(),
     ]);
+    // Tính lại Điểm Nghiệp (radar) NGAY sau khi seedWeeklyPillars() vừa ghi dữ liệu mới — góp ý
+    // Quỳnh 2026-08-25: "điểm nghiệp bên dưới chưa khớp với cái radar bên trên". Trước đây radar chỉ
+    // tính 1 lần lúc mới vào trang, nên nếu vừa làm bài xong thì "Soi theo 5 Trụ Cột" + Bản Giải Phẫu
+    // (đọc trực tiếp state.karmaAxes, xem bên dưới) vẫn hiện đúng số MỚI, khớp hẳn với radar phía trên.
+    await bootDashboard();
 
     // KHÔNG xoá draft sau khi lưu (khác hầu hết module khác) — góp ý Quỳnh 2026-08-24: "không lưu
     // những gì làm dở khi bấm sang phần khác". 4 câu số (income/expense/passive_income/
@@ -615,7 +601,7 @@ function render(container, ctx){
     // Dùng để xếp lại thứ tự 3 khối lợi ích ở màn nâng cấp (tcBenefitsHtml() ở app-shell.js) — có
     // nợ thật thì đẩy "thanh khoản nợ" lên đầu, không nợ thì đẩy xuống cuối (2026-08-24, góp ý Quỳnh).
     window.TcLastHasDebt = Number(state.form.debt_total) > 0;
-    logKarmaHistory();
+    await logKarmaHistory();
     draw();
   }
 
@@ -624,13 +610,15 @@ function render(container, ctx){
   // nguyên tắc "không lưu điểm suy ra được" ở chỗ: đây là bảng LỊCH SỬ theo thời gian, không phải
   // điểm hiện tại — không cách nào tính lại được "điểm ngày 20/8 là bao nhiêu" nếu không lưu lại
   // đúng lúc đó, khác các chỗ khác trong app luôn tính tươi từ dữ liệu hiện có. append-only, không
-  // upsert. best-effort — lỗi ở đây không được chặn luồng xem kết quả chính.
+  // upsert. best-effort — lỗi ở đây không được chặn luồng xem kết quả chính. Đọc điểm từ
+  // state.karmaAxes (ĐÃ refresh qua bootDashboard() ở trên) — KHÔNG tính riêng từ vibe nữa, để số ghi
+  // vào lịch sử luôn khớp đúng với số đang hiện ở radar/"Soi theo 5 Trụ Cột" ngay lúc lưu.
   async function logKarmaHistory(){
     if(state.result.vibeScore == null) return;
     const pillarScores = {};
     HOUSES.forEach(h=>{
-      const insight = pillarInsight(state.vibe, h.key);
-      pillarScores[h.key] = insight ? Math.round(insight.avgPoints * 10) : null;
+      const axis = state.karmaAxes.find(a=>a.key===h.key);
+      pillarScores[h.key] = axis ? axis.value : null;
     });
     const row = {
       user_id: ctx.user.id,
@@ -642,11 +630,10 @@ function render(container, ctx){
       tai_chinh_tam_thuc: pillarScores.tai_chinh_tam_thuc,
       thuan_phap_nhan_qua: pillarScores.thuan_phap_nhan_qua,
     };
-    try{
-      const { data } = await ctx.supabase.from('tc_karma_history').insert(row).select().maybeSingle();
-      state.karmaHistory.unshift(data || { ...row, taken_at: new Date().toISOString() });
-      draw();
-    } catch(e){ /* best-effort — không chặn luồng xem kết quả nếu ghi lịch sử lỗi */ }
+    // Chỉ ghi, không giữ lại state ở đây nữa — trang riêng "Theo Dõi Kết Quả" (theo-doi-ket-qua.js)
+    // tự đọc lại từ DB (2026-08-25, tách khỏi trang này cho gọn, xem góp ý Quỳnh ở NAV/app-shell.js).
+    try{ await ctx.supabase.from('tc_karma_history').insert(row); }
+    catch(e){ /* best-effort — không chặn luồng xem kết quả nếu ghi lịch sử lỗi */ }
   }
 
   function fieldHtml(dataKey, label, hint, unit){
@@ -702,62 +689,41 @@ function render(container, ctx){
               <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
             </div>
           ` : ''}
-          <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm "Xem Kết Quả" đều lưu lại 1 mốc vào lịch sử bên dưới — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao qua thời gian.</div>
+          <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm "Xem Kết Quả" đều lưu lại 1 mốc — sang <a href="#theo-doi-ket-qua" style="color:var(--accent);font-weight:600;">📈 Theo Dõi Kết Quả →</a> để xem tâm thức tiền của bạn đã dịch chuyển ra sao qua thời gian.</div>
           <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
         </div>
-
-        ${state.karmaHistory.length>0 ? `
-        <div class="section">
-          <h3>📈 Lịch sử các lần chấm điểm</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">${state.karmaHistory.length>=20?'20 lần gần nhất — ':''}Mới nhất ở trên cùng.</p>
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-              <thead><tr>
-                <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);text-transform:uppercase;">Ngày</th>
-                <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);text-transform:uppercase;">Điểm Nghiệp Tiền</th>
-                <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);text-transform:uppercase;">Khâu yếu nhất</th>
-              </tr></thead>
-              <tbody>
-                ${state.karmaHistory.map(row=>`
-                  <tr>
-                    <td style="padding:7px 8px;border-bottom:1px solid var(--line-soft);white-space:nowrap;">${esc(new Date(row.taken_at).toLocaleDateString('vi-VN'))}</td>
-                    <td style="text-align:right;padding:7px 8px;border-bottom:1px solid var(--line-soft);font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);">${row.vibe_score==null?'—':row.vibe_score+'/100'}</td>
-                    <td style="padding:7px 8px;border-bottom:1px solid var(--line-soft);">${row.weakest_area && WEAKEST_AREA_INFO[row.weakest_area] ? esc(WEAKEST_AREA_INFO[row.weakest_area].label) : '—'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        ` : ''}
 
         <div class="section">
           <h3>🌿 Soi theo 5 Trụ Cột Năng Lượng</h3>
           <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Không chỉ 1 điểm số — đây là cách câu trả lời của bạn đang tác động tới TỪNG trụ trong 5 Trụ Cột Năng Lượng Bản Thể ở Điểm Nghiệp phía trên ↑.</p>
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${HOUSES.map(h=>{
-              const insight = pillarInsight(state.vibe, h.key);
-              const score = insight ? Math.round(insight.avgPoints * 10) : null;
+              // Điểm ở đây LUÔN lấy từ state.karmaAxes (đúng số đang hiện trên radar Điểm Nghiệp phía
+              // trên ↑) — góp ý Quỳnh 2026-08-25: "điểm nghiệp bên dưới chưa khớp với cái radar bên
+              // trên" (trước đây tự tính riêng từ avgPoints Vibe Check, ra số khác hẳn radar).
+              const axis = state.karmaAxes.find(a=>a.key===h.key);
+              const score = axis ? axis.value : 50;
+              const tier = pillarTier(score);
               return `
                 <div class="hint-box" style="text-align:left;">
                   <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px;">
-                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:${insight?'var(--accent)':'var(--ink-faint)'};">${score==null?'—':score}<span style="font-size:11px;font-weight:600;color:var(--ink-soft);">/100</span></span>
-                    <span style="font-weight:700;font-size:13.5px;">${esc(h.label)}${insight ? tierBadgeHtml(insight.tier) : ''}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:var(--accent);">${score}<span style="font-size:11px;font-weight:600;color:var(--ink-soft);">/100</span></span>
+                    <span style="font-weight:700;font-size:13.5px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
                   </div>
-                  <div style="font-size:13px;line-height:1.65;">${insight ? esc(insight.text) : 'Chưa có câu Vibe Check nào liên quan tới trụ này được trả lời — trả lời thêm ở các Bước phía trên để soi rõ trụ này.'}</div>
-                  ${insight ? `<div style="font-size:12.5px;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);"><b>💡 Cách nâng điểm:</b> ${esc(PILLAR_IMPROVE_TIPS[h.key])}</div>` : ''}
+                  <div style="font-size:13px;line-height:1.65;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
+                  <div style="font-size:12.5px;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);"><b>💡 Cách nâng điểm:</b> ${esc(PILLAR_IMPROVE_TIPS[h.key])}</div>
                 </div>
               `;
             }).join('')}
           </div>
           ${(()=>{
-            // Bản giải phẫu đầy đủ CHỈ hiện cho ĐÚNG 1 trụ thấp điểm nhất — xem comment ở
-            // PILLAR_DEEP_ANALYSIS phía trên vì sao (khớp hành vi tài liệu gốc, tránh dàn trải 5 bài
-            // dài như nhau khiến không ai đọc hết được).
-            const scored = HOUSES.map(h=>({ h, insight: pillarInsight(state.vibe, h.key) })).filter(x=>x.insight);
-            if(scored.length === 0) return '';
-            const weakest = scored.reduce((worst,cur)=> cur.insight.avgPoints < worst.insight.avgPoints ? cur : worst);
-            return deepAnalysisHtml(weakest.h.key, weakest.h.label);
+            // Bản giải phẫu đầy đủ CHỈ hiện cho ĐÚNG 1 trụ thấp điểm nhất theo state.karmaAxes (cùng
+            // nguồn số liệu với khối ở trên và với radar) — xem comment ở PILLAR_DEEP_ANALYSIS phía
+            // trên vì sao chỉ chọn 1 trụ (khớp hành vi tài liệu gốc, tránh dàn trải 5 bài dài như nhau).
+            if(state.karmaAxes.length === 0) return '';
+            const weakest = state.karmaAxes.reduce((worst,cur)=> cur.value < worst.value ? cur : worst);
+            const weakestHouse = HOUSES.find(h=>h.key===weakest.key);
+            return deepAnalysisHtml(weakest.key, weakestHouse.label);
           })()}
         </div>
       ` : ''}
@@ -769,7 +735,9 @@ function render(container, ctx){
             ${r.weakestArea
               ? `Bạn đang yếu nhất ở khâu <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b>. Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp (chữa lành gốc rễ), Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật, không chỉ dừng ở việc nhìn thấy vấn đề.`
               : `Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để đi tiếp từ bức tranh này.`}
-            Chỉ <b>${tcCurrentPrice().toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.
+            ${Date.now() <= TC_LAUNCH_DEADLINE.getTime()
+              ? `Chỉ <b>${TC_LAUNCH_PRICE.toLocaleString('vi-VN')}đ</b> nếu mở khoá trước <b>${tcLaunchDeadlineLabel()}</b> — sau ngày đó tăng lên ${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ. Trả 1 lần, dùng mãi mãi.`
+              : `Chỉ <b>${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.`}
           </div>
           <span class="btn btn-full" data-goto="nang-cap">Nâng Cấp Ngay →</span>
         </div>

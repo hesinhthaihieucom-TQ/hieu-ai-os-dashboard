@@ -515,6 +515,16 @@ const HOUSE_GOAL_ANCHOR = {
 };
 function houseLabel(key){ const f = HOUSES.find(h=>h.key===key); return f ? f.label : ''; }
 
+// 4 khâu "Nút Chặn Dòng Tiền" đo được ở Vibe Check (Chấm Điểm Nghiệp Tiền, thiet-lap-nhanh.js) —
+// CHUYỂN ra util.js (2026-08-25) vì theo-doi-ket-qua.js cũng cần đọc label này để hiện "khâu yếu
+// nhất" trong lịch sử, mà thiet-lap-nhanh.js bọc IIFE nên không share được biến module-scope.
+const WEAKEST_AREA_INFO = {
+  income: { label:'Đón Nhận', explain:'Bạn đang khó đón nhận trọn vẹn — mỗi khi tiền về, nỗi lo che mất niềm vui. Đây là gốc rễ dễ tạo ra Dòng Tiền Sợ Hãi lặp lại.', nutChan:2, seedBelief:'Tôi khó đón nhận trọn vẹn khi tiền về — nỗi lo thường che mất niềm vui.' },
+  expense: { label:'Chi Dùng', explain:'Bạn đang xót của mỗi khi chi tiền ra — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #3 (Khi chính mình chi tiền ra).', nutChan:3, seedBelief:'Tôi hay thấy xót của mỗi khi phải chi tiền ra, dù là chi cho việc cần thiết.' },
+  debt: { label:'Đối Diện Nợ', explain:'Bạn đang né tránh đối diện với nợ — điều này dễ khiến gánh nặng tâm lý về khoản nợ càng lúc càng nặng thêm.', nutChan:null, seedBelief:'Tôi đang né tránh đối diện thẳng với khoản nợ của mình.' },
+  witness_receive: { label:'Đón Nhận Của Người Khác', explain:'Bạn đang khó vui thật lòng khi người khác nhận được tiền — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #1 (Khi thấy người khác nhận tiền), khiến tâm thức tin rằng thịnh vượng là có hạn.', nutChan:1, seedBelief:'Tôi khó vui thật lòng khi thấy người khác nhận được tiền hoặc tin vui tài chính.' },
+};
+
 // 4 dạng "Tiếng Lòng" (phản ứng cảm xúc) thường gặp ngay sau khi đặt mục tiêu — dùng ở
 // muc-tieu-cam-ket.js (chip tự nhận diện, không bắt buộc) và kien-thuc-nen-tang.js (đọc đầy đủ).
 const RESISTANCE_PATTERNS = [

@@ -30,6 +30,7 @@ const TC_REF_STORAGE_KEY = 'tc_referred_by_ref_code';
 const NAV = [
   { key:'trang-chu', title:'Trang chủ', hidden:true }, // không hiện trong sidebar (giống nhan-hieu) — 2026-08-24 góp ý Quỳnh, vào lại qua bấm logo/"SỔ DÒNG TIỀN TÂM THỨC" ở đầu sidebar (đã có sẵn #sidebar-brand-home)
   { key:'thiet-lap-nhanh', title:'Chấm Điểm Nghiệp Tiền' }, // KHÔNG premium — free mãi mãi, dùng làm bài chẩn đoán mồi trước khi mời nâng cấp (2026-08-24)
+  { key:'theo-doi-ket-qua', title:'Theo Dõi Kết Quả', hidden:true }, // 2026-08-25, góp ý Quỳnh: "mục lưu lại nên riêng 1 mục, không thì Chấm Điểm Nghiệp Tiền dài quá" — không hiện sidebar, vào qua link "📈 Theo Dõi Kết Quả →" ở kết quả Chấm Điểm Nghiệp Tiền. KHÔNG premium (cùng free với bài chấm điểm).
   { key:'kien-thuc', title:'Kiến Thức Nền Tảng' },
   { key:'tang-thuc', title:'Hạt Giống Phước - Nghiệp', premium:true },
   { key:'muc-tieu', title:'Mục Tiêu & Cam Kết', premium:true },
@@ -53,9 +54,10 @@ const TC_TRIAL_DAYS = 0; // 2026-08-24: bỏ hẳn dùng thử, xem comment NAV 
 // nếu đổi số tiền).
 const TC_LAUNCH_PRICE = 299000;
 const TC_REGULAR_PRICE = 999000;
-const TC_LAUNCH_DEADLINE = new Date('2026-09-30T23:59:59+07:00');
+const TC_LAUNCH_DEADLINE = new Date('2026-09-15T23:59:59+07:00'); // 2026-08-25: chị Quỳnh rút mốc từ 30/9 xuống 15/9
 function tcCurrentPrice(){ return Date.now() <= TC_LAUNCH_DEADLINE.getTime() ? TC_LAUNCH_PRICE : TC_REGULAR_PRICE; }
 function tcLaunchDaysLeft(){ return Math.max(0, Math.ceil((TC_LAUNCH_DEADLINE.getTime() - Date.now()) / 86400000)); }
+function tcLaunchDeadlineLabel(){ return TC_LAUNCH_DEADLINE.toLocaleDateString('vi-VN'); }
 // Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code
 // dùng chung cơ chế "SEVQR <ref_code>" nhưng số tiền là DUY NHẤT, không trùng bất kỳ gói nào của
 // nhan-hieu (xem AMOUNT_TO_DAYS ở api/sepay-webhook.js) nên webhook phân biệt được đúng sản phẩm
@@ -398,7 +400,7 @@ function tcPaymentCardHtml(){
     : null;
 
   return `
-    ${inLaunchWindow ? `<div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-bottom:6px;">🔥 GIÁ RA MẮT — còn ${daysLeft} ngày trước khi tăng lên ${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ</div>` : ''}
+    ${inLaunchWindow ? `<div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-bottom:6px;">🔥 GIÁ RA MẮT đến hết ${tcLaunchDeadlineLabel()} (còn ${daysLeft} ngày) — sau đó tăng lên ${TC_REGULAR_PRICE.toLocaleString('vi-VN')}đ</div>` : ''}
     <div style="text-align:center;font-size:15px;font-weight:700;">${price.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
     <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Chưa tới ${Math.ceil(price/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
     ${qrUrl ? `
