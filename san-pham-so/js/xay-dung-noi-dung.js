@@ -13,6 +13,8 @@ function flattenSections(outline2) {
   ];
 }
 
+const XDND_INTRO_DRAFT_KEY = 'xay-dung-noi-dung-intro';
+
 function render(container, ideaRow) {
   const idea = ideaRow.result.phuong_an[ideaRow.chosen_index];
   const state = {
@@ -26,6 +28,12 @@ function render(container, ideaRow) {
   };
 
   function draw() { container.innerHTML = html(); bind(); }
+  // Bọc lỗi render (không chỉ lỗi gọi API) — nếu html() throw vì dữ liệu AI bất thường, màn hình sẽ
+  // đứng im ở màn "Đang xử lý…" trước đó vô thời hạn thay vì báo lỗi rõ ràng. Dùng ở cuối mỗi chuỗi
+  // gọi AI thay cho draw() trần.
+  function safeDraw(fallbackScreen) {
+    try { draw(); } catch (e) { state.screen = fallbackScreen; state.error = 'Có lỗi khi hiển thị kết quả — thử lại giúp mình.'; draw(); }
+  }
 
   function html() {
     if (state.screen === 'intro') return introHtml();
@@ -49,7 +57,7 @@ function render(container, ideaRow) {
       <div class="card">
         <h2 style="font-size:18px;">Trước khi viết: bạn có sẵn tài liệu/kinh nghiệm gì không?</h2>
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — nếu chưa có, AI sẽ tự tổng hợp kiến thức nền giúp bạn trước khi viết.</div>
-        <textarea id="xdnd-tailieu" rows="3" placeholder="VD: có 1 file ghi chú cũ về chủ đề này; từng giúp 1 người bạn xử lý việc tương tự và họ đã cải thiện rõ rệt sau 2 tuần..."></textarea>
+        <textarea id="xdnd-tailieu" rows="3" placeholder="VD: có 1 file ghi chú cũ về chủ đề này; từng giúp 1 người bạn xử lý việc tương tự và họ đã cải thiện rõ rệt sau 2 tuần...">${esc(state.taiLieu)}</textarea>
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         <div class="btn-row"><button class="btn" id="xdnd-outline2-btn">Xây outline chi tiết → (3 lượt AI)</button></div>
       </div>
@@ -123,7 +131,7 @@ function render(container, ideaRow) {
   function bind() {
     if (state.screen === 'intro') {
       const ta = container.querySelector('#xdnd-tailieu');
-      ta.oninput = () => { state.taiLieu = ta.value; };
+      ta.oninput = () => { state.taiLieu = ta.value; saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu }); };
       container.querySelector('#xdnd-outline2-btn').onclick = generateOutline2;
     } else if (state.screen === 'outline2') {
       container.querySelectorAll('[data-open-section]').forEach(el => {
@@ -143,14 +151,16 @@ function render(container, ideaRow) {
       const data = await callApi('api/xay-dung-noi-dung', {
         step: 'outline2', idea, outlineCap1: idea.outline_cap_1, taiLieuKinhNghiem: state.taiLieu || null,
       });
+      if (!data.result || !Array.isArray(data.result.phan)) throw new Error('AI trả về outline không đúng định dạng — thử lại giúp mình.');
       state.outline2 = data.result;
       await saveIdeaResult({ outline_cap_2: state.outline2 });
+      await clearDraft(XDND_INTRO_DRAFT_KEY);
       state.screen = 'outline2';
     } catch (e) {
-      state.error = e.message;
+      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'intro';
     }
-    draw();
+    safeDraw('intro');
   }
 
   async function openSection(index) {
@@ -172,10 +182,10 @@ function render(container, ideaRow) {
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-draft';
     } catch (e) {
-      state.error = e.message;
+      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'outline2';
     }
-    draw();
+    safeDraw('outline2');
   }
 
   async function runReview() {
@@ -188,13 +198,21 @@ function render(container, ideaRow) {
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-final';
     } catch (e) {
-      state.error = e.message;
+      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'section-draft';
     }
-    draw();
+    safeDraw('section-draft');
   }
 
-  draw();
+  // Khôi phục nội dung textarea "tài liệu/kinh nghiệm" nếu người dùng gõ dở rồi rời trang trước khi
+  // bấm "Xây outline chi tiết" — không để mất chữ đã gõ khi quay lại (auto-save mọi màn đang làm dở).
+  (async () => {
+    if (state.screen === 'intro') {
+      const draft = await loadDraft(XDND_INTRO_DRAFT_KEY);
+      if (draft && draft.taiLieu) state.taiLieu = draft.taiLieu;
+    }
+    draw();
+  })();
 }
 
 window.renderXayDungNoiDung = render;

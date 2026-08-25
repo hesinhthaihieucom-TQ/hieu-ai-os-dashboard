@@ -320,15 +320,23 @@ function render(container, profile) {
     state.screen = 'generating'; state.error = null; draw();
     try {
       const data = await callApi('api/tim-san-pham-phu-hop', { answers: state.answers });
+      if (!data.result || !Array.isArray(data.result.phuong_an)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
       state.result = data.result;
       await clearDraft(WIZARD_DRAFT_KEY);
       await saveIdeaResult({ nganh: state.answers.nganh || null, answers: state.answers, result: state.result, chosen_index: null });
       state.screen = 'result';
     } catch (e) {
-      state.error = e.message;
+      // Bọc cả lỗi render (không chỉ lỗi gọi API) — nếu không, màn hình sẽ đứng im ở "Đang tổng hợp
+      // kết quả…" vô thời hạn khi có bug hiếm gặp lúc dựng HTML kết quả, thay vì báo lỗi rõ ràng.
+      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'wizard';
     }
-    draw();
+    try {
+      draw();
+    } catch (e) {
+      state.result = null; state.screen = 'wizard'; state.error = 'Có lỗi khi hiển thị kết quả — thử lại giúp mình.';
+      draw();
+    }
   }
 
   boot();

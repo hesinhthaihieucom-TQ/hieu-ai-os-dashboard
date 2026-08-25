@@ -14,14 +14,30 @@ function esc(s) {
 
 // Đường dẫn TƯƠNG ĐỐI ("api/...", không phải "/api/...") — tự khớp đúng dù app chạy ở gốc Vercel
 // hay dưới tiền tố hesinhthaihieu.com/apptaosanphamso sau này (xem CLAUDE.md).
+//
+// fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu server bị kẹt/quá tải, trang có thể đứng
+// im ở màn "Đang xử lý…" vô thời hạn thay vì báo lỗi cho người dùng biết mà thử lại (phát hiện
+// 2026-08-25: wizard Tìm Sản Phẩm Phù Hợp bị đứng ở "Đang tổng hợp kết quả…"). Đặt trần 90s giống
+// nhan-hieu/js/util.js.
 async function callApi(path, body) {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData && sessionData.session ? sessionData.session.access_token : null;
-  const resp = await fetch(path, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 90000);
+  let resp;
+  try {
+    resp = await fetch(path, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Yêu cầu mất quá lâu (quá 90 giây) — server có thể đang quá tải, thử lại giúp mình.');
+    throw new Error('Không kết nối được tới server — kiểm tra lại mạng và thử lại.');
+  } finally {
+    clearTimeout(timer);
+  }
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
   return data;

@@ -48,7 +48,10 @@ async function callClaude({ apiKey, system, userContent, tool }) {
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 4000,
+        // 2-3 phương án đầy đủ (outline 4-7 phần/phương án + lý do) ra khá dài bằng tiếng Việt —
+        // 4000 token cũ từng bị cắt giữa chừng (xem lưu ý tương tự ở dinh-vi-goi-y.js), khiến
+        // tool_use trả về input rỗng/thiếu mà code không phát hiện, UI đứng im ở "Đang tổng hợp".
+        max_tokens: 8000,
         system,
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
@@ -64,8 +67,10 @@ async function callClaude({ apiKey, system, userContent, tool }) {
   }
   if (!resp.ok) throw new Error(`Anthropic API lỗi (${resp.status}): ${await resp.text()}`);
   const data = await resp.json();
+  if (data.stop_reason === 'max_tokens') throw new Error('AI trả lời quá dài bị cắt giữa chừng — thử lại giúp mình.');
   const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
   if (!toolUse) throw new Error('Không nhận được kết quả có cấu trúc từ AI.');
+  if (!Array.isArray(toolUse.input.phuong_an)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
   return toolUse.input;
 }
 
