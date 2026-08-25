@@ -11,7 +11,7 @@ const { requireUser } = require('./_lib/auth');
 const { TRIAL_AI_LIMIT } = require('./_lib/trial-quota');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
-const MIN_WORDS_FOR_REWARD = 30;
+const MIN_WORDS_FOR_REWARD = 50;
 const REWARD_LUOT = 20;
 
 async function supabaseAdmin(path, opts = {}) {

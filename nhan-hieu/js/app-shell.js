@@ -24,7 +24,7 @@ const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login',
 // thấy giá trị gì.
 const REVIEW_PROMPT_MIN_POSTS = 3;
 const REVIEW_PROMPT_MIN_DAYS = 3;
-const REVIEW_MIN_WORDS_FOR_REWARD = 30;
+const REVIEW_MIN_WORDS_FOR_REWARD = 50;
 const REVIEW_REWARD_LUOT = 20;
 
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
