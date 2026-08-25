@@ -178,11 +178,115 @@ function pillarInsight(vibe, houseKey){
   if(vibeKeys.length === 0) return null;
   const avgPoints = vibeKeys.reduce((s,k)=> s + VIBE_QUESTIONS[k].options.find(o=>o.k===vibe[k]).points, 0) / vibeKeys.length;
   const tier = avgPoints >= 8 ? 'cao' : avgPoints >= 4 ? 'trungBinh' : 'thap';
-  return { tier, text: PILLAR_ANALYSIS[houseKey][tier] };
+  return { tier, avgPoints, text: PILLAR_ANALYSIS[houseKey][tier] };
 }
 function tierBadgeHtml(tier){
   const info = { cao:['🟢 Đang vững','var(--accent)'], trungBinh:['🟡 Đang dao động','var(--gold)'], thap:['🔴 Cần chú ý','var(--danger)'] }[tier];
   return `<span style="font-size:11px;font-weight:600;color:${info[1]};margin-left:6px;white-space:nowrap;">${info[0]}</span>`;
+}
+
+// "Bản Giải Phẫu Chi Tiết" — góp ý Quỳnh 2026-08-25: mục phân tích 5 Trụ Cột ở trên (PILLAR_ANALYSIS,
+// 2-3 câu/trụ) vẫn "hời hợt" so với bản phân tích 4 phần (vết thương gốc → 5 vị trí rút cạn sinh khí →
+// hệ quả 5 năm → bí mật đập tan vòng nghiệp) chị đang dùng ở landing page Chấm Điểm Nghiệp của khoá
+// "21 Ngày Giải Nghiệp" (xem kho-tai-lieu/ban-giai-phau-5-truc-vong-nghiep-tam-thuc-v2.md — tài liệu
+// GỐC, 5 trục KHÁC với 5 Trụ Cột ở app này nên không copy nguyên văn được, chỉ mượn ĐÚNG cấu trúc +
+// độ sâu). Chỉ hiện bản giải phẫu đầy đủ cho ĐÚNG 1 trụ đang thấp điểm nhất (giống hành vi tài liệu
+// gốc "hiển thị khi trục X có điểm thấp nhất") — 4 trụ còn lại vẫn đủ ở khối "Soi theo 5 Trụ Cột" phía
+// trên. KHÔNG dùng khái niệm "Chiếc Gương AI" của tài liệu gốc (app này không có AI, xem CLAUDE.md) —
+// thay bằng đúng cơ chế thật app có: Ghi Chép Hàng Ngày (Vibe Check mỗi ngày), Hạt Giống Phước - Nghiệp,
+// Mục Tiêu & Cam Kết, quỹ "Cho Đi 5%".
+const PILLAR_DEEP_ANALYSIS = {
+  than_tam_ban_the: {
+    wound: 'Có thể bạn đã lớn lên trong một gia đình mà mỗi lần có biến cố — mất việc, ốm đau, thiên tai — cả nhà lập tức rơi vào hoảng loạn vì không có gì để xoay xở. Đứa trẻ ngày ấy chứng kiến sự bất lực đó và âm thầm ghi vào Tàng Thức một niềm tin sinh tồn: "Thế giới này nguy hiểm, mình phải luôn cảnh giác vì tai hoạ có thể ập đến bất cứ lúc nào." Niềm tin ấy khiến bạn lớn lên với một hệ thần kinh luôn trong trạng thái phòng thủ trước tiền bạc, dù bên ngoài bạn có thể trông rất bình tĩnh.',
+    drains: [
+      { label:'Ví tiền của bạn', text:'Bạn tích luỹ nhưng không bao giờ thấy đủ — quỹ dự phòng dù đã có vẫn không mang lại cảm giác an toàn thật, vì gốc rễ nỗi sợ không nằm ở con số mà ở niềm tin bên trong.' },
+      { label:'Cơ thể vật lý', text:'Sự cảnh giác thường trực khiến hệ thần kinh của bạn không bao giờ được thả lỏng hoàn toàn — dễ mất ngủ, dễ hồi hộp vô cớ, đặc biệt vào cuối tháng hoặc trước ngày trả nợ.' },
+      { label:'Bạn đời & mối quan hệ', text:'Bạn khó chia sẻ thật lòng nỗi lo tài chính vì sợ làm người kia hoảng sợ theo, nên gánh một mình trong im lặng — điều này âm thầm tạo khoảng cách dù cả hai vẫn ở cạnh nhau.' },
+      { label:'Sự nghiệp', text:'Nỗi sợ thiếu hụt khiến bạn khó từ chối công việc, khó nghỉ ngơi đúng nghĩa, vì luôn có một tiếng nói bên trong nhắc rằng dừng lại là nguy hiểm.' },
+      { label:'Con cái của bạn', text:'Con cái cảm nhận được sự căng thẳng ngầm mỗi khi nhắc tới tiền, dù bạn không nói ra — và học được rằng tiền bạc là một chủ đề đầy lo âu, không phải trung tính.' },
+    ],
+    future: 'Bạn có thể có nhiều tiền hơn, nhưng cảm giác an toàn thật sự vẫn sẽ lảng tránh bạn, vì bạn đang cố lấp đầy một nỗi sợ tâm lý bằng một con số vật chất — hai thứ không cùng một ngôn ngữ. Thân Tâm mệt mỏi sẽ khiến mọi quyết định tài chính khác, dù đúng đến đâu, cũng bị nhuốm màu hoảng loạn.',
+    secret: 'Bạn đã đọc nhiều về quản lý tài chính, đã lập quỹ dự phòng — nhưng vì sao cảm giác bất an vẫn không biến mất? Vì bạn đang cố giải quyết một vết thương cảm xúc bằng công cụ lý trí. Cách duy nhất để nó thật sự buông là bắt quả tang chính mình NGAY LÚC nỗi sợ đang vận hành, không phải nghĩ về nó sau. Đó là lý do mỗi lần Ghi Chép Hàng Ngày có ô Vibe Check: qua vài tuần nhìn lại, bạn sẽ tự thấy — "à, hoá ra cứ đầu tháng là mình lại hoảng lên như vậy, dù tháng nào cũng đủ tiền." Nhìn thấy tận mắt vòng lặp đó là bước đầu để nó không còn tự động điều khiển bạn nữa.',
+  },
+  coi_nguon_sinh_thanh: {
+    wound: 'Có thể cha mẹ bạn từng dạy về tiền bằng chính nỗi sợ của họ — tiết kiệm cực đoan vì từng trải qua đói khổ, hoặc chi tiêu hoang phí để bù đắp tuổi thơ thiếu thốn. Dù cách nào, đứa trẻ trong bạn ngày ấy không nhận được một hình mẫu bình an về tiền, chỉ nhận được nỗi lo hoặc sự thiếu vắng được truyền từ thế hệ trước. Bạn lớn lên mang theo đúng khuôn mẫu đó, dù có thể bạn từng thề sẽ khác đi.',
+    drains: [
+      { label:'Ví tiền của bạn', text:'Bạn vô thức lặp lại đúng thói quen tiền bạc của cha mẹ — dù lý trí biết nó không còn phù hợp, tay bạn vẫn làm theo đúng khuôn cũ mỗi khi căng thẳng.' },
+      { label:'Cơ thể vật lý', text:'Mỗi lần nhắc tới chuyện tiền của cha mẹ ngày xưa, cơ thể bạn có thể chợt nặng nề, lồng ngực hơi nghẹn — dấu hiệu một ký ức chưa được xử lý trọn vẹn.' },
+      { label:'Bạn đời & mối quan hệ', text:'Bạn có thể vô thức mang đúng kịch bản tiền bạc của cha mẹ vào cuộc hôn nhân của mình — dù đã từng hứa sẽ làm khác đi.' },
+      { label:'Sự nghiệp', text:'Bạn có thể đang chứng minh điều gì đó với cha mẹ qua sự nghiệp — kiếm tiền không hẳn vì bản thân, mà để lấp một khoảng trống công nhận từ họ.' },
+      { label:'Con cái của bạn', text:'Nếu không dừng lại ở đây, đúng khuôn mẫu tiền bạc này (dù là nỗi sợ hay sự thiếu vắng) sẽ tiếp tục truyền sang thế hệ con bạn, như nó đã từng truyền tới bạn.' },
+    ],
+    future: 'Bạn có thể có tài chính ổn định hơn cha mẹ, nhưng cảm xúc quanh tiền bạc vẫn sẽ mang hình dáng cũ — vẫn lo âu kiểu cũ, vẫn tủi thân kiểu cũ, chỉ là ở một mức thu nhập cao hơn. Con số thay đổi nhưng gốc rễ cảm xúc thì không, cho tới khi được nhìn thẳng.',
+    secret: 'Bạn không cần đổ lỗi cho cha mẹ — họ cũng chỉ đang làm tốt nhất với những gì họ được dạy. Nhưng bạn CẦN nhìn thẳng vào bài học đó thay vì để nó vận hành trong vô thức. Đây chính là lý do Hạt Giống Phước - Nghiệp tồn tại: viết ra rõ ràng niềm tin bạn đã thừa hưởng từ cha mẹ về tiền, rồi tự hỏi "niềm tin này còn đúng với tôi hôm nay không?" — đó là bước đầu tiên để bạn chọn giữ lại điều tốt và buông điều không còn phù hợp, thay vì lặp lại một cách vô thức.',
+  },
+  ban_doi_moi_quan_he: {
+    wound: 'Có thể trong gia đình bạn từng chứng kiến (hoặc trải qua) những trận cãi vã về tiền bạc — tiền trở thành vũ khí, thành lý do trách móc, thành thứ không bao giờ được nói ra thật lòng vì sợ thành xung đột. Đứa trẻ chứng kiến điều đó học được: "Nói về tiền là nguy hiểm, tốt nhất nên né tránh hoặc chịu đựng trong im lặng."',
+    drains: [
+      { label:'Ví tiền của bạn', text:'Các quyết định tài chính lớn (mua nhà, đầu tư, trả nợ) bị trì hoãn vì hai người ngại ngồi xuống bàn bạc thẳng thắn — mỗi người tự quyết một phần, thiếu một bức tranh chung.' },
+      { label:'Cơ thể vật lý', text:'Sự căng thẳng dồn nén không được nói ra thường biểu hiện thành mệt mỏi âm ỉ, khó ngủ ngay trước hoặc sau những lần định bàn chuyện tiền mà rồi lại thôi.' },
+      { label:'Bạn đời', text:'Khoảng cách giữa hai người âm thầm lớn dần — không phải vì thiếu tình cảm, mà vì thiếu một kênh an toàn để nói thật về nỗi lo tài chính.' },
+      { label:'Sự nghiệp', text:'Bạn có thể tự mình gánh áp lực tài chính một mình vì ngại chia sẻ, dẫn đến kiệt sức trong công việc mà bạn đời không hề hay biết mức độ.' },
+      { label:'Con cái của bạn', text:'Con cái lớn lên trong bầu không khí né tránh chuyện tiền, rồi cũng học cách né tránh y hệt khi trưởng thành và có gia đình riêng.' },
+    ],
+    future: 'Nếu cứ né tránh, những quyết định tài chính quan trọng của gia đình sẽ tiếp tục bị trì hoãn hoặc quyết định một chiều — và khoảng cách cảm xúc quanh chủ đề tiền bạc sẽ ngày càng khó thu hẹp lại, dù tình cảm hai người vẫn còn đó.',
+    secret: 'Vấn đề không phải là thiếu tình yêu, mà là thiếu một không gian an toàn để nói về tiền mà không thành cãi vã. Mục Tiêu & Cam Kết được thiết kế chính là không gian đó — đặt mục tiêu tài chính CHUNG, bằng con số cụ thể, ngoài lúc căng thẳng, để việc bàn tiền trở thành một cuộc trò chuyện về tương lai chung, thay vì một cuộc đối chất về quá khứ.',
+  },
+  tai_chinh_tam_thuc: {
+    wound: 'Trẻ con không biết tiền bạc là gì, nhưng nhạy cảm vô cùng với sự ngột ngạt của một gia đình thiếu tiền. Có thể bạn đã lớn lên trong tiếng thở dài cuối tháng, tiếng cãi vã về từng khoản chi, hoặc cảm giác tủi thân khi bị so sánh vì gia cảnh kém hơn bạn bè. Đứa trẻ ngày ấy âm thầm ghi vào Tàng Thức: "Không có tiền là nguy hiểm, là bị coi thường, là có thể mất tất cả." Nỗi sợ đó thúc bạn cày cuốc không ngừng nghỉ khi trưởng thành — nhưng động cơ kiếm tiền bằng sợ hãi chỉ tiếp tục kiến tạo ra một đời sống đầy sợ hãi.',
+    drains: [
+      { label:'Ví tiền của bạn', text:'Bạn kiếm được nhưng luôn thấy thiếu — mỗi lần trả hoá đơn hay trả nợ, lồng ngực co thắt trong xót xa thay vì bình an, và chính tần số đó khiến dòng tiền khó chảy vào thêm.' },
+      { label:'Cơ thể vật lý', text:'Đêm nằm lo nghĩ về tiền, mất ngủ, cơ thể rã rời — bạn đang bắt thân thể làm việc như một cách xoa dịu nỗi sợ, không phải vì đam mê hay giá trị thật.' },
+      { label:'Bạn đời & mối quan hệ', text:'Áp lực tài chính khiến bạn né tránh sự hiện diện ấm áp, hoặc trút cáu gắt lên người thân sau một ngày căng thẳng vì tiền.' },
+      { label:'Sự nghiệp', text:'Nỗi sợ thiếu hụt có thể đẩy bạn vào các quyết định liều lĩnh — đầu tư nóng vội, vay mượn quá sức — để nhanh chóng lấp đầy khoảng trống an toàn.' },
+      { label:'Con cái của bạn', text:'Con nhìn thấy một người luôn bận rộn, lo âu vì tiền, và vô tình học đúng tần số túng thiếu đó, dù gia đình có thể không hề thiếu thốn vật chất.' },
+    ],
+    future: 'Bạn có thể kiếm nhiều tiền hơn, nhưng lồng ngực sẽ ngày càng rỗng và kiệt sức — và số tiền cày cuốc được bằng nỗi sợ cuối cùng thường quay lại dưới dạng chi phí sức khoẻ hoặc chi phí cho những mối quan hệ đã rạn nứt.',
+    secret: 'Bạn đã đọc nhiều về tài chính, hiểu rõ lý thuyết — nhưng vì sao ví tiền vẫn rò rỉ, áp lực vẫn đè nặng mỗi ngày? Vì tâm trí luôn tìm được lý do rất hợp lý để che giấu nỗi sợ bên dưới: "mình chi tiêu xót xa vì đang gánh nhiều nghĩa vụ quá" — nhưng thực chất là lồng ngực đang hoảng sợ, không phải hoá đơn đang sai. Nghiệp tài chính chỉ buông khi bị bắt quả tang ngay lúc đang vận hành — đó là lý do mỗi câu Vibe Check ở Chấm Điểm Nghiệp Tiền và mỗi lần Ghi Chép Hàng Ngày đều hỏi CẢM XÚC ngay lúc tiền vào/ra, không chỉ con số. Nhìn lại sau vài tuần, bạn sẽ tự bắt quả tang được: "à, hoá ra mình toàn xót của vào đúng những lúc chi cho việc cần thiết nhất" — và đó là khoảnh khắc vòng lặp bắt đầu lỏng ra.',
+  },
+  thuan_phap_nhan_qua: {
+    wound: 'Có thể bạn từng chứng kiến của cải tan biến chỉ sau một biến cố, hoặc từng bị dạy rằng phải giữ chặt những gì mình có vì "cho đi là mất, là dại". Đứa trẻ ngày ấy học được: "Thế giới này khan hiếm, ai giữ được nhiều hơn thì an toàn hơn." Niềm tin khan hiếm đó khiến việc tích luỹ trở thành một cuộc chạy trốn nỗi sợ, thay vì một hành trình kiến tạo giá trị.',
+    drains: [
+      { label:'Ví tiền của bạn', text:'Bạn có thể tích luỹ được tài sản, nhưng luôn thấy chưa đủ — vì gốc rễ động cơ là nỗi sợ thiếu, mà nỗi sợ thì không bao giờ được thoả mãn bằng con số.' },
+      { label:'Cơ thể vật lý', text:'Nỗi lo giữ của khiến bạn khó thật sự thư giãn, ngay cả khi tài chính đã ổn định — cơ thể vẫn ở trạng thái phòng thủ.' },
+      { label:'Bạn đời & mối quan hệ', text:'Sự khan hiếm trong tâm trí có thể khiến bạn tính toán ngay cả với người thân, làm mối quan hệ nặng nề hơn cần thiết.' },
+      { label:'Sự nghiệp', text:'Bạn có thể bỏ lỡ những cơ hội hợp tác hoặc cho đi giá trị (thời gian, kiến thức, sự giúp đỡ) vì sợ "mất phần" — trong khi chính sự cởi mở đó thường lại là thứ mở ra cơ hội mới.' },
+      { label:'Con cái của bạn', text:'Con học được rằng tiền bạc là thứ phải giữ chặt, phải đề phòng, thay vì một dòng chảy có thể luân chuyển tự nhiên.' },
+    ],
+    future: 'Bạn có thể tích luỹ được nhiều tài sản hơn, nhưng cảm giác đủ đầy thật sự vẫn sẽ lảng tránh — vì bạn đang cố lấp một nỗi sợ khan hiếm bằng con số, trong khi gốc rễ vấn đề nằm ở niềm tin, không phải ở số dư tài khoản.',
+    secret: 'Phước phần đúng gốc rễ không nằm ở việc giữ được bao nhiêu, mà ở việc dòng chảy cho-nhận có được lưu thông hay không. Đây là lý do quỹ "🎁 Cho Đi 5%" tồn tại trong Ghi Chép Hàng Ngày — không phải để bạn nghèo đi, mà để mỗi tháng bạn thực chứng lại một điều: cho đi trong sự đủ đầy không làm bạn thiếu hụt, mà thường mở ra đúng lúc một cánh cửa khác. Nhìn lại sau vài tháng thực hành, bạn sẽ tự thấy — nỗi sợ "cho rồi sẽ thiếu" hoá ra không đúng như tâm trí từng doạ bạn.',
+  },
+};
+function deepAnalysisHtml(houseKey, houseLabel){
+  const d = PILLAR_DEEP_ANALYSIS[houseKey];
+  return `
+    <div class="card" style="margin-top:16px;border-color:var(--gold);background:var(--gold-soft, #FBEEDD);">
+      <div style="font-weight:700;font-size:16px;margin-bottom:4px;">🔬 Bản Giải Phẫu Chi Tiết — ${esc(houseLabel)}</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;">Đây là trụ đang có điểm thấp nhất trong 5 Trụ Cột của bạn hôm nay. Hãy đọc chậm rãi — chỗ nào khiến bạn nhói lên hoặc nghẹn lại, chỗ đó chính là sự thật cần nhìn thẳng, không phải để phán xét bản thân.</div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">1. Vết thương gốc bắt nguồn từ đâu?</div>
+        <div style="font-size:13.5px;line-height:1.7;">${esc(d.wound)}</div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">2. 5 vị trí đang âm thầm rút cạn sinh khí của bạn mỗi ngày</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${d.drains.map(x=>`<div style="font-size:13.5px;line-height:1.6;">▸ <b>${esc(x.label)}</b>: ${esc(x.text)}</div>`).join('')}
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">3. Năm năm nữa, nếu bạn vẫn để yên như cũ?</div>
+        <div style="font-size:13.5px;line-height:1.7;">${esc(d.future)}</div>
+      </div>
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">4. Bí mật để đập tan vòng nghiệp</div>
+        <div style="font-size:13.5px;line-height:1.7;">${esc(d.secret)}</div>
+      </div>
+    </div>
+  `;
 }
 
 // Điểm Nghiệp (radar 5 Trụ Cột) — DI CHUYỂN nguyên từ trang-chu.js sang đây (2026-08-24, góp ý
@@ -542,6 +646,15 @@ function render(container, ctx){
               `;
             }).join('')}
           </div>
+          ${(()=>{
+            // Bản giải phẫu đầy đủ CHỈ hiện cho ĐÚNG 1 trụ thấp điểm nhất — xem comment ở
+            // PILLAR_DEEP_ANALYSIS phía trên vì sao (khớp hành vi tài liệu gốc, tránh dàn trải 5 bài
+            // dài như nhau khiến không ai đọc hết được).
+            const scored = HOUSES.map(h=>({ h, insight: pillarInsight(state.vibe, h.key) })).filter(x=>x.insight);
+            if(scored.length === 0) return '';
+            const weakest = scored.reduce((worst,cur)=> cur.insight.avgPoints < worst.insight.avgPoints ? cur : worst);
+            return deepAnalysisHtml(weakest.h.key, weakest.h.label);
+          })()}
         </div>
       ` : ''}
 
