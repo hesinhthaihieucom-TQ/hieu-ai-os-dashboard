@@ -76,7 +76,8 @@ function html(){
         ${HOUSES.map(h=>`<p><b>${esc(h.label)}</b> — ${esc(HOUSE_GOAL_ANCHOR[h.key])}</p>`).join('')}
       `)}
       ${detailsSection('☢️ Nhân Quả Của Khoản Nợ', `
-        <p>Không phải khoản nợ nào cũng "xấu" — cùng là đi vay, nhưng bản chất năng lượng phía sau mỗi khoản nợ có thể rất khác nhau. App gọi 2 dạng đối nghịch này là <b>${esc(GLOSSARY.no_xanh.term)}</b> và <b>${esc(GLOSSARY.no_do.term)}</b>.</p>
+        <p><b>Nợ là gì?</b> Là tiền bạn vay của người khác (ngân hàng, tổ chức tín dụng, hoặc cá nhân) và có nghĩa vụ trả lại, thường kèm thêm 1 khoản lãi hoặc phí. Bản thân việc vay nợ KHÔNG phải điều xấu — nó chỉ là 1 công cụ, giống như dao có thể dùng để nấu ăn hay để làm hại người khác, tuỳ vào cách dùng.</p>
+        <p>Không phải khoản nợ nào cũng "xấu" — cùng là đi vay, nhưng bản chất năng lượng phía sau mỗi khoản nợ có thể rất khác nhau. App chia nợ thành 2 loại đối nghịch: <b>${esc(GLOSSARY.no_xanh.term)}</b> và <b>${esc(GLOSSARY.no_do.term)}</b>.</p>
         <p><b>🟢 ${esc(GLOSSARY.no_xanh.term)}</b> — ${esc(GLOSSARY.no_xanh.explain)}</p>
         <p><b>🔴 ${esc(GLOSSARY.no_do.term)}</b> — ${esc(GLOSSARY.no_do.explain)}</p>
         <p>Một khoản nợ được tính là ${esc(GLOSSARY.no_xanh.term)} khi đủ CẢ 3 điều sau — thiếu 1 điều là rơi về ${esc(GLOSSARY.no_do.term)}:</p>

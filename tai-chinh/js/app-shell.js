@@ -440,16 +440,19 @@ function renderApp(){
   maybeShowTcReviewPrompt();
 
   const content = root.querySelector('#main-content');
-  if(PREMIUM_ROUTES.has(AppState.route) && !canAccess){
-    renderUpgradeScreen(content);
-    return;
-  }
   const mod = window.Modules && window.Modules[AppState.route];
   if(mod && mod.render){
     mod.render(content, { supabase: supabaseClient, user: AppState.user, profile: AppState.profile });
   } else {
     content.innerHTML = `<div class="card">Module đang được xây dựng.</div>`;
   }
+  // Route premium khi chưa mở khoá: vẫn RENDER thật trang đó (để thấy trước có gì trong đây, không
+  // bị hỏi mua "mù" — góp ý Quỳnh 2026-08-26: "phải cho ngta thấy preview chứ") rồi che 1 lớp mờ +
+  // popup khoá đè lên trên (chặn hết click xuống nội dung thật phía dưới bằng pointer-events, không
+  // cho sửa/lưu dữ liệu premium khi chưa trả phí) — KHÁC hẳn trước đây (render thẳng renderUpgradeScreen
+  // thay hoàn toàn nội dung, không cho thấy trang thật là gì trước khi mua).
+  if(PREMIUM_ROUTES.has(AppState.route) && !canAccess) renderLockOverlay(content);
+  else removeLockOverlay();
 }
 
 // 3 khối lợi ích CỤ THỂ — góp ý Quỳnh 2026-08-24: "để ngay STK, người ta bị sợ không? người ta
@@ -577,6 +580,41 @@ function renderUpgradeScreen(content){
     </div>
   `;
   bindTcPaymentCard(content, renderApp);
+}
+
+// Lớp mờ + popup khoá đè lên trang premium THẬT (xem renderApp() — render module thật vào content
+// TRƯỚC, gọi hàm này SAU) — góp ý Quỳnh 2026-08-26: "phải cho ngta thấy preview chứ" thay vì nhảy
+// thẳng vào renderUpgradeScreen thay hết nội dung. Gắn vào document.body (KHÔNG phải con của
+// content) vì nhiều module tự vẽ lại content.innerHTML sau khi load xong dữ liệu (async) — nếu overlay
+// là con của content sẽ bị xoá mất theo lần vẽ lại đó, dù người dùng chưa hề bấm gì. fixed theo đúng
+// vùng bên phải sidebar (trừ mobile — sidebar là ngăn kéo ẩn, không chiếm chỗ) để không che luôn cả
+// sidebar, và pointer-events phủ kín để chặn hẳn việc sửa/lưu dữ liệu premium phía dưới khi chưa mở khoá.
+function removeLockOverlay(){
+  const el = document.getElementById('tc-lock-overlay');
+  if(el) el.remove();
+}
+function renderLockOverlay(content){
+  removeLockOverlay();
+  const sidebarEl = document.querySelector('.sidebar');
+  const isNarrow = window.innerWidth <= 820; // khớp breakpoint sidebar thành ngăn kéo ở style.css
+  const leftOffset = (sidebarEl && !isNarrow) ? sidebarEl.getBoundingClientRect().width : 0;
+  const weakest = window.TcLastWeakestArea;
+  const overlay = document.createElement('div');
+  overlay.id = 'tc-lock-overlay';
+  overlay.style.cssText = `position:fixed;top:0;left:${leftOffset}px;right:0;bottom:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(20,24,20,.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);`;
+  overlay.innerHTML = `
+    <div class="card" style="max-width:400px;text-align:center;pointer-events:auto;">
+      <div style="font-size:30px;margin-bottom:6px;">🔒</div>
+      <div style="font-family:'Playfair Display',serif;font-size:18px;color:#1E2420;margin-bottom:8px;">Tính năng trả phí</div>
+      ${weakest ? `<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Bạn đang yếu nhất ở khâu <b>${esc(weakest.label)}</b> — mở khoá để đi sâu vào đúng chỗ này.</p>` : `<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Đây là bản xem trước trang này — mở khoá trọn đời để dùng đầy đủ, lưu được dữ liệu.</p>`}
+      <button id="tc-lock-cta" class="btn" style="width:100%;">Mở khoá ngay — ${tcCurrentPrice().toLocaleString('vi-VN')}đ</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#tc-lock-cta').onclick = ()=>{
+    removeLockOverlay();
+    renderUpgradeScreen(document.querySelector('#main-content'));
+  };
 }
 
 window.Modules = window.Modules || {};
