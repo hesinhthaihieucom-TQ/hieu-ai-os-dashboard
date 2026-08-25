@@ -752,16 +752,10 @@ function render(container, ctx){
             ${r.weakestArea
               ? `Bạn đang yếu nhất ở khâu <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b>. Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp (chữa lành gốc rễ), Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật, không chỉ dừng ở việc nhìn thấy vấn đề.`
               : `Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để đi tiếp từ bức tranh này.`}
-            ${(()=>{
-              const price = tcCurrentPrice(ctx.profile);
-              const tierDaysLeft = tcPriceTierDaysLeft(ctx.profile);
-              const nextPrice = tcNextTierPrice(ctx.profile);
-              return nextPrice
-                ? `Chỉ <b>${price.toLocaleString('vi-VN')}đ</b> — còn <b>${tierDaysLeft} ngày</b> ở mức giá này, sau đó tăng lên ${nextPrice.toLocaleString('vi-VN')}đ. Trả 1 lần, dùng mãi mãi.`
-                : `Chỉ <b>${price.toLocaleString('vi-VN')}đ</b>, trả 1 lần, dùng mãi mãi.`;
-            })()}
+            Trả 1 lần, dùng mãi mãi.
           </div>
-          <span class="btn btn-full" data-goto="nang-cap">Nâng Cấp Ngay →</span>
+          ${tcPriceAnchorHtml(ctx.profile)}
+          <span class="btn btn-full" style="margin-top:14px;" data-goto="nang-cap">Nâng Cấp Ngay →</span>
         </div>
       ` : ''}
 

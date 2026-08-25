@@ -79,6 +79,26 @@ function tcNextTierPrice(profile){
   if(days < 30) return TC_PRICE_TIER_3;
   return null;
 }
+// Khối giá DÙNG CHUNG ở MỌI nơi mời nâng cấp (2026-08-26, góp ý Quỳnh: "hiển thị đều cho người ta
+// thấy được cái sự rẻ của bắt đầu ngay với 299k") — gạch ngang giá chuẩn 999k bên cạnh giá hiện tại +
+// nói rõ số tiền tiết kiệm được, thay vì chỉ nói giá suông. 999k là mốc giá THẬT (chính người này sẽ
+// phải trả nếu chờ đủ 30 ngày), không phải giá bịa ra để so sánh — an toàn về mặt không lừa dối.
+function tcPriceAnchorHtml(profile){
+  const price = tcCurrentPrice(profile);
+  const tierDaysLeft = tcPriceTierDaysLeft(profile);
+  const nextPrice = tcNextTierPrice(profile);
+  if(!nextPrice){
+    return `<div style="text-align:center;font-size:24px;font-weight:800;color:var(--accent);">${price.toLocaleString('vi-VN')}đ</div>`;
+  }
+  const savings = TC_PRICE_TIER_3 - price;
+  return `
+    <div style="text-align:center;">
+      <span style="font-size:14px;color:var(--ink-soft);text-decoration:line-through;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</span>
+      <span style="font-size:26px;font-weight:800;color:var(--accent);margin-left:8px;">${price.toLocaleString('vi-VN')}đ</span>
+    </div>
+    <div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-top:4px;">🎁 Tiết kiệm ${savings.toLocaleString('vi-VN')}đ nếu bắt đầu ngay — còn ${tierDaysLeft} ngày ở mức giá này, sau đó tăng lên ${nextPrice.toLocaleString('vi-VN')}đ</div>
+  `;
+}
 // Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code
 // dùng chung cơ chế "SEVQR <ref_code>" nhưng số tiền là DUY NHẤT, không trùng bất kỳ gói nào của
 // nhan-hieu (xem AMOUNT_TO_DAYS ở api/sepay-webhook.js) nên webhook phân biệt được đúng sản phẩm
@@ -411,8 +431,6 @@ function tcPaymentCardHtml(){
   const p = AppState.profile;
   const refCode = p && p.ref_code;
   const price = tcCurrentPrice(p);
-  const tierDaysLeft = tcPriceTierDaysLeft(p);
-  const nextPrice = tcNextTierPrice(p);
   // VietinBank CHỈ báo biến động số dư về SePay nếu nội dung chuyển khoản bắt đầu bằng "SEVQR"
   // (yêu cầu riêng SePay cho VietinBank) — xem api/sepay-webhook.js.
   const transferContent = refCode ? `SEVQR ${refCode}` : null;
@@ -421,9 +439,8 @@ function tcPaymentCardHtml(){
     : null;
 
   return `
-    ${nextPrice ? `<div style="text-align:center;font-size:12.5px;font-weight:700;color:var(--gold);margin-bottom:6px;">🎁 Giá người mới — còn ${tierDaysLeft} ngày ở mức này, sau đó tăng lên ${nextPrice.toLocaleString('vi-VN')}đ</div>` : ''}
-    <div style="text-align:center;font-size:15px;font-weight:700;">${price.toLocaleString('vi-VN')}đ — 1 lần duy nhất</div>
-    <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Chưa tới ${Math.ceil(price/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
+    ${tcPriceAnchorHtml(p)}
+    <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:6px;margin-bottom:14px;">1 lần duy nhất — chưa tới ${Math.ceil(price/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
     ${qrUrl ? `
       <div style="text-align:center;">
         <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">

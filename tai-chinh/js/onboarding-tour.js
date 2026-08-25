@@ -72,7 +72,9 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
         <div style="max-width:380px;background:#fff;border-radius:14px;padding:26px 24px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,.3);">
           <div style="font-size:34px;margin-bottom:10px;">🌱</div>
           <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:10px;">Trước khi bắt đầu</div>
-          <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:18px;">Ghi Chép Hàng Ngày, Kiến Thức Nền Tảng và Chấm Điểm Nghiệp Tiền dùng <b>miễn phí mãi mãi</b>. Các tính năng phân tích sâu hơn (Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ) mở khoá <b>TRỌN ĐỜI chỉ ${tcCurrentPrice().toLocaleString('vi-VN')}đ</b>, trả 1 lần dùng mãi mãi — không có giai đoạn dùng thử.</div>
+          <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:14px;">Ghi Chép Hàng Ngày, Kiến Thức Nền Tảng và Chấm Điểm Nghiệp Tiền dùng <b>miễn phí mãi mãi</b>. Các tính năng phân tích sâu hơn (Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ) mở khoá <b>TRỌN ĐỜI</b>, trả 1 lần dùng mãi mãi — không có giai đoạn dùng thử.</div>
+          ${tcPriceAnchorHtml()}
+          <div style="height:4px;"></div>
           <button id="ot-start" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;">Đã hiểu, bắt đầu dùng →</button>
         </div>
       </div>
