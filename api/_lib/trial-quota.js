@@ -56,6 +56,14 @@ const AI_WEIGHTS = {
   'sua-kenh': 4,
   'dinh-vi': 8,
   'dinh-vi-parse': 6,
+  // Tạo Sản Phẩm Bằng AI (san-pham-so/) — Giai đoạn 1 chốt 8 lượt (bằng dinh-vi, theo Quỳnh 2026-08-25).
+  // 4 mức Giai đoạn 2 là ĐỀ XUẤT ban đầu, CHƯA xác nhận với Quỳnh — cần hỏi lại khi tính năng chạy
+  // thử ổn để chốt số cuối cùng (xem plan atomic-wiggling-rabbit.md).
+  'tim-san-pham-phu-hop': 8,
+  'xay-dung-noi-dung-outline2': 3,
+  'xay-dung-noi-dung-nghien-cuu': 2,
+  'xay-dung-noi-dung-viet': 3,
+  'xay-dung-noi-dung-review': 1,
 };
 
 // Trước đây fetch() này KHÔNG có giới hạn thời gian chờ — nếu RPC bị kẹt (vd khoá dòng "for

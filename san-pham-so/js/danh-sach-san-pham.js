@@ -1,48 +1,6 @@
-// Sản Phẩm Số — app ĐỘC LẬP, KHÔNG nằm trong sidebar Xây Nhân Hiệu (dù dùng chung Supabase, cùng
-// email/mật khẩu đăng nhập được ở cả 2 nơi). Sau này lên domain thật sẽ là
-// hesinhthaihieu.com/apptaosanphamso (qua Cloudflare Worker, giống cách nhan-hieu/ đang lên
-// hesinhthaihieu.com/webxaynhanhieu — xem CLAUDE.md) — KHÔNG được hard-code path tuyệt đối
-// bắt đầu bằng "/san-pham-so" ở đây, mọi lệnh gọi api phải dùng đường dẫn TƯƠNG ĐỐI để tự khớp
-// đúng theo bất kỳ tiền tố nào trang đang được phục vụ dưới đó (giống lý do callApi() ở
-// nhan-hieu/js/util.js dùng path tương đối).
-
-const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-}
-
-const app = document.getElementById('app');
+// Sản Phẩm Số — màn "🛒 Sản phẩm của tôi": tạo/sửa/xoá sản phẩm, upload file, bật/tắt công khai.
+(function () {
 const DRAFT_KEY = 'san-pham-so';
-let currentUser = null;
-
-async function callApi(path, body) {
-  const { data: sessionData } = await supabaseClient.auth.getSession();
-  const token = sessionData && sessionData.session ? sessionData.session.access_token : null;
-  const resp = await fetch(path, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(body),
-  });
-  const data = await resp.json().catch(() => ({}));
-  if (!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
-  return data;
-}
-
-async function loadDraft() {
-  try {
-    const { data } = await supabaseClient.from('module_drafts').select('data').eq('user_id', currentUser.id).eq('module_key', DRAFT_KEY).maybeSingle();
-    return data ? data.data : null;
-  } catch (e) { return null; }
-}
-async function saveDraft(d) {
-  try { await supabaseClient.from('module_drafts').upsert({ user_id: currentUser.id, module_key: DRAFT_KEY, data: d, updated_at: new Date().toISOString() }, { onConflict: 'user_id,module_key' }); } catch (e) {}
-}
-async function clearDraft() {
-  try { await supabaseClient.from('module_drafts').delete().eq('user_id', currentUser.id).eq('module_key', DRAFT_KEY); } catch (e) {}
-}
 
 function newForm() {
   return { id: null, title: '', description: '', price: '', cover_image_url: null, file_storage_path: null, file_name: null, published: false };
@@ -55,64 +13,11 @@ function publicLink(slug) {
   return `https://hesinhthaihieu.com/apptaosanphamso/p/?slug=${encodeURIComponent(slug)}`;
 }
 
-function topbarHtml(profile) {
-  return `
-    <div class="topbar">
-      <h1>🛒 Sản Phẩm Số</h1>
-      <span class="signout" id="signout-btn">${esc((profile && profile.full_name) || '')} — Đăng xuất</span>
-    </div>
-  `;
-}
-function bindTopbar() {
-  const btn = document.getElementById('signout-btn');
-  if (btn) btn.onclick = async () => { await supabaseClient.auth.signOut(); };
-}
-
-function renderLogin(err) {
-  app.innerHTML = `
-    <div class="wrap" style="max-width:400px;">
-      <h1 style="text-align:center;">Sản Phẩm Số</h1>
-      <div class="card">
-        <label>Email</label>
-        <input id="login-email" type="email" placeholder="ban@email.com">
-        <label>Mật khẩu</label>
-        <input id="login-pass" type="password" placeholder="Mật khẩu">
-        <div class="btn-row" style="justify-content:center;">
-          <button class="btn btn-full" id="login-btn">Đăng nhập</button>
-        </div>
-        ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
-        <div class="hint-box">Dùng đúng email/mật khẩu tài khoản Xây Nhân Hiệu — không cần tạo tài khoản mới ở đây.</div>
-      </div>
-    </div>
-  `;
-  const passEl = document.getElementById('login-pass');
-  passEl.onkeydown = (e) => { if (e.key === 'Enter') document.getElementById('login-btn').click(); };
-  document.getElementById('login-btn').onclick = async () => {
-    const email = document.getElementById('login-email').value.trim();
-    const pass = passEl.value;
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true; btn.textContent = 'Đang đăng nhập…';
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
-    if (error) { renderLogin(error.message); return; }
-    boot();
-  };
-}
-
-function renderNotEnabled(profile) {
-  app.innerHTML = `
-    <div class="wrap" style="max-width:460px;">
-      ${topbarHtml(profile)}
-      <div class="card">Tài khoản của bạn chưa được bật tính năng bán Sản Phẩm Số. Liên hệ để được hỗ trợ.</div>
-    </div>
-  `;
-  bindTopbar();
-}
-
-async function renderDashboard(profile) {
+function render(container) {
   const state = { view: 'list', products: [], loading: true, saving: false, error: null, form: null };
 
   function persistDraft() {
-    if (state.view === 'edit' && state.form) saveDraft(state.form);
+    if (state.view === 'edit' && state.form) saveDraft(DRAFT_KEY, state.form);
   }
 
   async function fetchList() {
@@ -124,14 +29,14 @@ async function renderDashboard(profile) {
 
   async function boot() {
     state.products = await fetchList();
-    const draft = await loadDraft();
+    const draft = await loadDraft(DRAFT_KEY);
     if (draft) { state.view = 'edit'; state.form = draft; }
     state.loading = false;
     draw();
   }
 
   function draw() {
-    document.getElementById('sps-body').innerHTML = bodyHtml();
+    container.innerHTML = bodyHtml();
     bind();
   }
 
@@ -202,10 +107,10 @@ async function renderDashboard(profile) {
 
   function bind() {
     if (state.view === 'list') {
-      const newBtn = document.getElementById('sps-new-btn');
+      const newBtn = container.querySelector('#sps-new-btn');
       if (newBtn) newBtn.onclick = () => { state.form = newForm(); state.error = null; state.view = 'edit'; draw(); persistDraft(); };
 
-      document.querySelectorAll('[data-edit]').forEach(el => {
+      container.querySelectorAll('[data-edit]').forEach(el => {
         el.onclick = () => {
           const p = state.products.find(x => x.id === el.getAttribute('data-edit'));
           if (!p) return;
@@ -214,7 +119,7 @@ async function renderDashboard(profile) {
         };
       });
 
-      document.querySelectorAll('[data-delete]').forEach(el => {
+      container.querySelectorAll('[data-delete]').forEach(el => {
         el.onclick = async () => {
           if (!confirm('Xoá sản phẩm này? Không thể hoàn tác, khách đã mua vẫn giữ được link tải cũ.')) return;
           try {
@@ -225,7 +130,7 @@ async function renderDashboard(profile) {
         };
       });
 
-      document.querySelectorAll('[data-copy-link]').forEach(el => {
+      container.querySelectorAll('[data-copy-link]').forEach(el => {
         el.onclick = async () => {
           try {
             await navigator.clipboard.writeText(el.getAttribute('data-copy-link'));
@@ -239,16 +144,16 @@ async function renderDashboard(profile) {
     }
 
     // view === 'edit'
-    const titleEl = document.getElementById('sps-title');
+    const titleEl = container.querySelector('#sps-title');
     titleEl.oninput = () => { state.form.title = titleEl.value; persistDraft(); };
-    const descEl = document.getElementById('sps-desc');
+    const descEl = container.querySelector('#sps-desc');
     descEl.oninput = () => { state.form.description = descEl.value; persistDraft(); };
-    const priceEl = document.getElementById('sps-price');
+    const priceEl = container.querySelector('#sps-price');
     priceEl.oninput = () => { state.form.price = priceEl.value; persistDraft(); };
-    const publishedEl = document.getElementById('sps-published');
+    const publishedEl = container.querySelector('#sps-published');
     publishedEl.onchange = () => { state.form.published = publishedEl.checked; persistDraft(); };
 
-    const coverEl = document.getElementById('sps-cover');
+    const coverEl = container.querySelector('#sps-cover');
     coverEl.onchange = () => {
       const file = coverEl.files[0];
       if (!file) return;
@@ -257,12 +162,12 @@ async function renderDashboard(profile) {
       reader.readAsDataURL(file);
     };
 
-    const fileEl = document.getElementById('sps-file');
+    const fileEl = container.querySelector('#sps-file');
     fileEl.onchange = async () => {
       const file = fileEl.files[0];
       if (!file) return;
       if (!state.form.title.trim()) { state.error = 'Vui lòng nhập tên sản phẩm trước khi upload file.'; draw(); return; }
-      const statusEl = document.getElementById('sps-file-status');
+      const statusEl = container.querySelector('#sps-file-status');
       try {
         state.error = null;
         if (statusEl) statusEl.textContent = 'Đang chuẩn bị…';
@@ -292,14 +197,14 @@ async function renderDashboard(profile) {
       }
     };
 
-    document.getElementById('sps-back-btn').onclick = async () => {
+    container.querySelector('#sps-back-btn').onclick = async () => {
       state.view = 'list';
       state.error = null;
-      await clearDraft();
+      await clearDraft(DRAFT_KEY);
       draw();
     };
 
-    document.getElementById('sps-save-btn').onclick = async () => {
+    container.querySelector('#sps-save-btn').onclick = async () => {
       const priceNum = Number(state.form.price);
       if (!state.form.title.trim()) { state.error = 'Vui lòng nhập tên sản phẩm.'; draw(); return; }
       if (!priceNum || priceNum <= 0) { state.error = 'Giá sản phẩm phải lớn hơn 0.'; draw(); return; }
@@ -314,7 +219,7 @@ async function renderDashboard(profile) {
         });
         state.form.id = data.product.id;
         state.saving = false;
-        await clearDraft();
+        await clearDraft(DRAFT_KEY);
         state.view = 'list';
         state.products = await fetchList();
         draw();
@@ -326,23 +231,9 @@ async function renderDashboard(profile) {
     };
   }
 
-  app.innerHTML = `<div class="wrap">${topbarHtml(profile)}<div id="sps-body"></div></div>`;
-  bindTopbar();
-  await boot();
+  boot();
 }
 
-async function boot() {
-  app.innerHTML = `<div class="wrap"><div class="loading">Đang tải…</div></div>`;
-  const { data } = await supabaseClient.auth.getSession();
-  if (!data.session) { renderLogin(); return; }
-  currentUser = data.session.user;
-  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,can_sell_products').eq('id', currentUser.id).maybeSingle();
-  if (!profile || !profile.can_sell_products) { renderNotEnabled(profile); return; }
-  renderDashboard(profile);
-}
-
-supabaseClient.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') { currentUser = null; renderLogin(); }
-});
-
-boot();
+window.SanPhamSoScreens = window.SanPhamSoScreens || {};
+window.SanPhamSoScreens['san-pham'] = render;
+})();

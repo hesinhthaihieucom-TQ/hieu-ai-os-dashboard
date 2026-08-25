@@ -41,3 +41,13 @@ input[type="checkbox"]{ width:auto; }
 .topbar h1{ font-size:20px; }
 .topbar .signout{ cursor:pointer; color:var(--ink-soft); font-size:13px; }
 .mono{ font-family:'IBM Plex Mono',monospace; }
+.tabs{ display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.tab{ padding:8px 16px; border-radius:999px; font-size:13.5px; cursor:pointer; color:var(--ink-soft); border:1px solid var(--line); }
+.tab.active{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+.chips{ display:flex; flex-wrap:wrap; gap:9px; margin-top:4px; }
+.chip{ padding:10px 16px; border-radius:999px; border:1px solid var(--line); font-size:13.5px; cursor:pointer; background:#FDFCF8; color:var(--ink); }
+.chip.selected{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.progress-bar{ display:flex; gap:4px; margin-bottom:10px; }
+.progress-seg{ flex:1; height:6px; border-radius:3px; background:var(--line); }
+.progress-seg.done{ background:var(--accent); }
+.progress-seg.current{ background:#D9A441; }
