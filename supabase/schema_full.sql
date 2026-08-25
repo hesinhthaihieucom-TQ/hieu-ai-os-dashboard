@@ -1374,6 +1374,25 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_review_prompt_dismissed() to authenticated;
 
+-- Đánh giá app CHUNG cho mọi sản phẩm (2026-08-26, góp ý Quỳnh: "từ giờ làm app nào cũng có phần
+-- review, auto" — áp dụng cho tai-chinh trước, dùng LẠI bảng app_reviews có sẵn thay vì tạo bảng
+-- riêng, chỉ thêm cột phân biệt sản phẩm). api/submit-review.js đọc `app` từ request body (mặc định
+-- 'nhan-hieu' để KHÔNG phá code nhan-hieu cũ chưa từng gửi field này). MỌI truy vấn đọc app_reviews
+-- ở cả 2 app PHẢI lọc theo đúng cột `app` này — không thì review sẽ lẫn qua app khác.
+alter table app_reviews add column if not exists app text not null default 'nhan-hieu' check (app in ('nhan-hieu','tai-chinh'));
+
+-- Cờ "đã hỏi/đã gửi đánh giá" RIÊNG cho tai-chinh — KHÔNG dùng chung review_prompt_dismissed của
+-- nhan-hieu ở trên (1 người có thể đã trả lời popup bên nhan-hieu nhưng chưa bên tai-chinh, và
+-- ngược lại), cùng lý do với tc_onboarding_seen tách riêng onboarding_seen phía trên.
+alter table profiles add column if not exists tc_review_prompt_dismissed boolean not null default false;
+create or replace function public.mark_tc_review_prompt_dismissed()
+returns void as $$
+begin
+  update public.profiles set tc_review_prompt_dismissed = true where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_tc_review_prompt_dismissed() to authenticated;
+
 -- ============================================================
 -- 17. TẠO SẢN PHẨM BẰNG AI (san-pham-so/ — Giai đoạn 1 Tìm Sản Phẩm Phù Hợp + Giai đoạn 2 Xây Dựng
 -- Nội Dung). 1 dòng/user (giống positioning_results của Định Vị) — giả định 1 người làm 1 pipeline
@@ -1396,3 +1415,15 @@ alter table product_idea_results enable row level security;
 drop policy if exists "product_idea_results_owner_all" on product_idea_results;
 create policy "product_idea_results_owner_all" on product_idea_results for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Kết quả thật (view/like/cmt/share) lưu THÊM ở posts (2026-08-26, theo yêu cầu chị Quỳnh: "mục
+-- view khi điền ở lịch thì cũng auto cập nhật ở kho luôn, sau này muốn sửa view cũng sửa được, mục
+-- đích để theo dõi hiệu quả bài đăng" — chuẩn bị cho mục phân tích hiệu quả bài đăng sắp tới). Trước
+-- đây 4 cột này CHỈ có ở calendar_entries (gắn với 1 LẦN xếp lịch cụ thể) — nay đồng bộ 2 chiều với
+-- posts (gắn với BÀI, ổn định lâu dài hơn, không mất khi ô lịch bị xoá) — xem lich-dang.js (sync khi
+-- điền ở Lịch Đăng Bài) và kho-content.js (sửa trực tiếp tại Kho Content, đồng bộ ngược lại
+-- calendar_entries). NULL nghĩa "chưa điền", khác 0 thật.
+alter table posts add column if not exists views integer;
+alter table posts add column if not exists likes integer;
+alter table posts add column if not exists comments integer;
+alter table posts add column if not exists shares integer;

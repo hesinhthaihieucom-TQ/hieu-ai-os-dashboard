@@ -656,6 +656,11 @@ function render(container, ctx){
         await ctx.supabase.from('calendar_entries').update({ [field]: val }).eq('id', id);
         const entry = state.entries.find(x=>x.id===id);
         if(entry) entry[field] = val;
+        // Đồng bộ sang posts (2026-08-26, theo yêu cầu chị Quỳnh) — để Kho Content xem/sửa lại được
+        // số liệu này lâu dài, không mất khi ô lịch bị xoá. Chỉ khi ô này gắn 1 bài cụ thể.
+        if(entry && entry.post_id){
+          await ctx.supabase.from('posts').update({ [field]: val }).eq('id', entry.post_id);
+        }
       };
     });
 

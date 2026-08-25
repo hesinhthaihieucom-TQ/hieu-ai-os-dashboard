@@ -47,18 +47,26 @@ function render(container, ctx){
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(), expandedDayBaiIds:new Set(),
-    daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'',
+    daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'', scheduledPostIds:new Set(),
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
+
+  // Đánh dấu bài nào đã có trong Lịch Đăng Bài rồi (giống pattern đã có ở viet-content.js) — theo
+  // yêu cầu chị Quỳnh 2026-08-26: "content nào đã cho vào lịch thì nút đưa vào lịch phải hiện là
+  // đang trong lịch", tránh lỡ tay đưa trùng 1 bài vào lịch nhiều lần mà không hay.
+  async function loadScheduledPostIds(){
+    const { data } = await ctx.supabase.from('calendar_entries').select('post_id').eq('user_id', ctx.user.id).not('post_id', 'is', null);
+    state.scheduledPostIds = new Set((data || []).map(e => e.post_id));
+  }
 
   async function boot(){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
     state.positioningId = pos ? pos.id : null;
-    await Promise.all([loadPosts(), loadPersonal(), loadShared()]);
+    await Promise.all([loadPosts(), loadPersonal(), loadShared(), loadScheduledPostIds()]);
     // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung
     // trong Kho Content Viral thay vì bắt người dùng tự chọn lại từ đầu.
     if(window.PendingPillar){
@@ -310,6 +318,12 @@ function render(container, ctx){
     else if(state.daVietStatus==='not_posted') items = items.filter(p=>!p.posted);
     const q = state.daVietSearch.trim().toLowerCase();
     if(q) items = items.filter(p=>(p.title||'').toLowerCase().includes(q));
+    // Bài đã đăng đẩy xuống cuối (theo yêu cầu chị Quỳnh 2026-08-26) — bài CHƯA đăng mới cần chú ý
+    // tiếp theo (viết lại/đưa vào lịch/sửa), bài đã đăng chỉ còn cần xem lại số liệu thỉnh thoảng.
+    items = items
+      .map((item,i)=>({ item, i }))
+      .sort((a,b)=> (!!a.item.posted)===(!!b.item.posted) ? a.i-b.i : (a.item.posted?1:-1))
+      .map(x=>x.item);
 
     if(items.length===0) return hint + filterBar + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp bộ lọc.</div>`;
 
@@ -317,11 +331,31 @@ function render(container, ctx){
       const isEditing = state.editingPostId === p.id;
       return `
       <div class="section">
-        ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
+        ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--danger);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
+        ${isEditing ? '' : (p.posted ? postMetricsHtml(p) : '')}
         ${isEditing ? editPostHtml(p) : titleOnlyBodyHtml('post:'+p.id, p.content)}
         ${isEditing ? '' : postOptionsPanelHtml(p)}
       </div>
     `;}).join('');
+  }
+
+  // Kết quả thật (view/like/cmt/share) — hiện + SỬA ĐƯỢC ngay tại đây (2026-08-26, theo yêu cầu chị
+  // Quỳnh: "mục view khi điền ở lịch thì cũng auto cập nhật ở kho luôn, sau này muốn sửa view cũng
+  // sửa được, mục đích để theo dõi hiệu quả bài đăng") — số liệu lưu ở posts (đồng bộ 2 chiều với
+  // calendar_entries.views/likes/comments/shares, xem lich-dang.js + bind() bên dưới), chỉ hiện khi
+  // bài đã đăng vì số liệu chỉ có ý nghĩa sau khi đã thật sự đăng.
+  function postMetricsHtml(p){
+    const field = (key, label, placeholder)=>`
+      <div style="flex:1;min-width:70px;">
+        <label style="display:block;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;">${esc(label)}</label>
+        <input type="number" min="0" inputmode="numeric" data-post-metric-field="${key}" data-post-metric-id="${p.id}" value="${p[key]==null?'':p[key]}" placeholder="${esc(placeholder)}" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--line);font-size:12.5px;">
+      </div>
+    `;
+    return `
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        ${field('views','View','0')}${field('likes','Like','0')}${field('comments','Cmt','0')}${field('shares','Share','0')}
+      </div>
+    `;
   }
 
   // Trước đây mỗi hành động (đưa vào lịch, đẩy bài, viết lại, giọng mẫu, tuỳ chọn CTA, sửa, xoá) nằm
@@ -398,7 +432,7 @@ function render(container, ctx){
     return `
       <div style="margin-top:10px;display:flex;flex-direction:column;gap:12px;">
         <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
-          ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">Đưa vào lịch →</button>` : ''}
+          ${!p.posted ? `<button class="btn btn-sm" data-schedule="${p.id}">${state.scheduledPostIds.has(p.id)?'✓ Đang trong lịch — Thêm nữa →':'Đưa vào lịch →'}</button>` : ''}
           ${!p.day_bai_plan ? `<span class="btn-ghost btn btn-sm" data-day-bai="${p.id}">Đẩy bài &amp; CTA Comment →</span>` : ''}
         </div>
         ${p.day_bai_plan ? dayBaiPlanCopyHtml(p) : ''}
@@ -607,6 +641,19 @@ function render(container, ctx){
         const id = el.getAttribute('data-toggle-daybai');
         if(state.expandedDayBaiIds.has(id)) state.expandedDayBaiIds.delete(id); else state.expandedDayBaiIds.add(id);
         draw();
+      };
+    });
+    container.querySelectorAll('[data-post-metric-field]').forEach(el=>{
+      el.onchange = async ()=>{
+        const field = el.getAttribute('data-post-metric-field');
+        const id = el.getAttribute('data-post-metric-id');
+        const val = el.value.trim() === '' ? null : Math.max(0, parseInt(el.value, 10) || 0);
+        await ctx.supabase.from('posts').update({ [field]: val }).eq('id', id);
+        const post = state.posts.find(x=>x.id===id);
+        if(post) post[field] = val;
+        // Đồng bộ ngược lại calendar_entries (mọi ô lịch đang gắn đúng bài này) — để Lịch Đăng Bài
+        // cũng thấy đúng số mới nếu sửa từ đây thay vì từ đó (liên kết 2 chiều, theo yêu cầu chị Quỳnh).
+        await ctx.supabase.from('calendar_entries').update({ [field]: val }).eq('post_id', id);
       };
     });
 
