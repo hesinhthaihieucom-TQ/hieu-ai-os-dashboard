@@ -132,6 +132,59 @@ const WEAKEST_AREA_INFO = {
   witness_receive: { label:'Đón Nhận Của Người Khác', explain:'Bạn đang khó vui thật lòng khi người khác nhận được tiền — phản ứng này âm thầm nuôi Nút Chặn Dòng Tiền #1 (Khi thấy người khác nhận tiền), khiến tâm thức tin rằng thịnh vượng là có hạn.', nutChan:1, seedBelief:'Tôi khó vui thật lòng khi thấy người khác nhận được tiền hoặc tin vui tài chính.' },
 };
 
+// Phân tích kết quả Vibe Check THEO ĐÚNG 5 Trụ Cột Năng Lượng Bản Thể (HOUSES ở util.js) — góp ý
+// Quỳnh 2026-08-24: "mục phân tích cần sâu sắc hơn, đánh vào 5 trụ cột, giống cách Điểm Nghiệp ở
+// trên đang phân tích". Trước đây kết quả chỉ nói tới weakestArea (1 trong 4 Nút Chặn) — giờ soi
+// đủ cả 5 trụ, dùng ĐÚNG câu Vibe Check nào seed trụ đó (xem PILLAR_SEED_MAP, đối chiếu bằng
+// key HOUSES tương ứng ở PILLAR_HOUSE_KEYS) để không lặp lại công vô ích. 3 mức cao/trungBinh/thap
+// tính từ avgPoints (0/5/10 mỗi câu) — NGƯỠNG khớp đúng pointsToRating() ở trên (>=8 ~ rating 5,
+// >=4 ~ rating 3, còn lại ~ rating 1) để nhất quán với điểm đã seed vào Điểm Nghiệp.
+const PILLAR_HOUSE_KEYS = {
+  than_tam_ban_the: ['ef', 'passive'],
+  coi_nguon_sinh_thanh: ['parents'],
+  ban_doi_moi_quan_he: ['partner'],
+  tai_chinh_tam_thuc: ['income', 'expense', 'debt', 'witness_receive'],
+  thuan_phap_nhan_qua: ['asset', 'giving'],
+};
+const PILLAR_ANALYSIS = {
+  than_tam_ban_the: {
+    cao: 'Nội lực của bạn đang vững: nghĩ tới rủi ro mất thu nhập không khiến bạn hoảng loạn, và bạn tin mình xứng đáng có dòng tiền tự động chảy về. Một Thân Tâm bình an như vậy chính là nền để mọi quyết định tài chính khác không bị chi phối bởi sợ hãi.',
+    trungBinh: 'Nội lực của bạn còn dao động — biết mình có thể xoay xở nhưng vẫn né tránh nghĩ sâu về rủi ro, hoặc còn hoài nghi liệu mình có đủ tốt để có thu nhập tự động. Niềm tin này cần thêm thời gian để bén rễ chắc hơn.',
+    thap: 'Nội lực đang khá mỏng: nghĩ tới việc mất thu nhập dễ khiến bạn hoảng loạn, và bạn chưa tin mình đủ tốt để xứng đáng có dòng tiền tự động. Đây thường là gốc rễ cần được chăm sóc trước, vì một Thân Tâm bất an sẽ lan nỗi sợ sang mọi quyết định tiền bạc khác.',
+  },
+  coi_nguon_sinh_thanh: {
+    cao: 'Bạn đã biết ơn trọn vẹn với những gì cha mẹ truyền lại về tiền bạc, dù bài học đó từng khó khăn. Cội nguồn thông suốt như vậy là mạch phước báu chảy thẳng vào dòng tiền của bạn hôm nay, không bị nghẽn bởi oán trách quá khứ.',
+    trungBinh: 'Bạn chưa oán trách nhưng cũng chưa thật biết ơn quan niệm tiền bạc từ cha mẹ — nó vẫn đang ở trạng thái trung lập, chưa được nhìn lại để chuyển hoá thành nguồn lực chủ động.',
+    thap: 'Bạn vẫn còn ước cha mẹ đã dạy mình khác đi về chuyện tiền — mỗi lần nhớ tới điều này là một lần mạch phước báu từ cội nguồn bị nghẽn lại. Đây thường là gốc rễ sâu nhất, rất đáng được chữa lành ở Hạt Giống Phước - Nghiệp.',
+  },
+  ban_doi_moi_quan_he: {
+    cao: 'Bạn cởi mở, đồng lòng khi bàn chuyện tiền với người bạn đời — nền tảng hiếm có này giúp tiền bạc trở thành điểm gắn kết, không phải điểm rạn nứt trong quan hệ.',
+    trungBinh: 'Bạn có né tránh nhẹ khi cần bàn tiền với người thân — chưa tới mức xung đột, nhưng cũng chưa thật cởi mở, khiến các quyết định tài chính chung dễ bị trì hoãn.',
+    thap: 'Chuyện tiền bạc với người bạn đời của bạn thường thành căng thẳng, đối đầu — mối quan hệ đang phải gánh thêm áp lực từ chính những cuộc trò chuyện lẽ ra phải giúp hai người gắn kết hơn.',
+  },
+  tai_chinh_tam_thuc: {
+    cao: 'Trong 4 khâu lặp lại hàng ngày quanh tiền — đón nhận, chi dùng, đối diện nợ, và chứng kiến người khác nhận tiền — bạn đang phản ứng bằng sự hoan hỷ, biết ơn nhiều hơn là sợ hãi. Đây là trụ "gốc" ảnh hưởng lan sang cả 4 trụ còn lại, nên khi trụ này vững, mọi quyết định tài chính khác cũng nhẹ nhàng hơn.',
+    trungBinh: 'Trong 4 khâu lặp lại hàng ngày quanh tiền — đón nhận, chi dùng, đối diện nợ, và chứng kiến người khác nhận tiền — bạn đang ở trạng thái tặc lưỡi, làm theo quán tính nhiều hơn là thật sự cảm nhận. Đây là trụ "gốc" ảnh hưởng lan sang cả 4 trụ còn lại, nên một chút biết ơn thêm vào mỗi khâu sẽ giúp cả 5 trụ nhẹ nhàng hơn.',
+    thap: 'Trong 4 khâu lặp lại hàng ngày quanh tiền — đón nhận, chi dùng, đối diện nợ, và chứng kiến người khác nhận tiền — nỗi sợ và sự né tránh đang chiếm phần lớn phản ứng của bạn. Đây là trụ "gốc" ảnh hưởng lan sang cả 4 trụ còn lại (đúng như Điểm Nghiệp phía trên ↑ đang bị kéo xuống theo), nên đây là nơi nên ưu tiên chữa lành trước tiên.',
+  },
+  thuan_phap_nhan_qua: {
+    cao: 'Động cơ tích sản của bạn xuất phát từ phụng sự, và bạn cho đi trong sự đủ đầy, không toan tính — đây chính là vòng Nhân Quả thuận chiều: cho ra bao nhiêu, dòng chảy sẽ quay lại đúng lúc bấy nhiêu.',
+    trungBinh: 'Bạn tích sản một phần vì muốn được công nhận, và việc cho đi nhiều khi vẫn theo thói quen/nghĩa vụ hơn là từ tâm — vòng Nhân Quả đang chảy nhưng chưa thật tự nhiên, thong dong.',
+    thap: 'Nỗi sợ đói khổ đang là động cơ chính khiến bạn tích sản, và việc cho đi khiến bạn lo sẽ thiếu — chính vòng lặp "giữ chặt vì sợ thiếu" này thường lại là thứ khiến dòng chảy Nhân Quả bị nghẽn, tích mà không lưu thông được.',
+  },
+};
+function pillarInsight(vibe, houseKey){
+  const vibeKeys = PILLAR_HOUSE_KEYS[houseKey].filter(k => vibe[k] != null);
+  if(vibeKeys.length === 0) return null;
+  const avgPoints = vibeKeys.reduce((s,k)=> s + VIBE_QUESTIONS[k].options.find(o=>o.k===vibe[k]).points, 0) / vibeKeys.length;
+  const tier = avgPoints >= 8 ? 'cao' : avgPoints >= 4 ? 'trungBinh' : 'thap';
+  return { tier, text: PILLAR_ANALYSIS[houseKey][tier] };
+}
+function tierBadgeHtml(tier){
+  const info = { cao:['🟢 Đang vững','var(--accent)'], trungBinh:['🟡 Đang dao động','var(--gold)'], thap:['🔴 Cần chú ý','var(--danger)'] }[tier];
+  return `<span style="font-size:11px;font-weight:600;color:${info[1]};margin-left:6px;white-space:nowrap;">${info[0]}</span>`;
+}
+
 // Điểm Nghiệp (radar 5 Trụ Cột) — DI CHUYỂN nguyên từ trang-chu.js sang đây (2026-08-24, góp ý
 // Quỳnh: "cái màn hình radar điểm nghiệp này ở luôn cái mục chấm điểm nghiệp"). Trang chủ giờ chỉ còn
 // là màn chào + checklist quy trình (xem trang-chu.js, đổi hẳn sang kiểu y hệt nhan-hieu/js/home.js).
@@ -473,6 +526,22 @@ function render(container, ctx){
           ` : ''}
           <div class="hint-box" style="margin-top:10px;">Điểm này KHÔNG lưu lại — làm lại bài này bất cứ lúc nào để thấy tâm thức tiền của bạn đã dịch chuyển ra sao.</div>
           <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
+        </div>
+
+        <div class="section">
+          <h3>🌿 Soi theo 5 Trụ Cột Năng Lượng</h3>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Không chỉ 1 điểm số — đây là cách câu trả lời của bạn đang tác động tới TỪNG trụ trong 5 Trụ Cột Năng Lượng Bản Thể ở Điểm Nghiệp phía trên ↑.</p>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            ${HOUSES.map(h=>{
+              const insight = pillarInsight(state.vibe, h.key);
+              return `
+                <div class="hint-box" style="text-align:left;">
+                  <div style="font-weight:700;font-size:13.5px;margin-bottom:5px;">${esc(h.label)}${insight ? tierBadgeHtml(insight.tier) : ''}</div>
+                  <div style="font-size:13px;line-height:1.65;">${insight ? esc(insight.text) : 'Chưa có câu Vibe Check nào liên quan tới trụ này được trả lời — trả lời thêm ở các Bước phía trên để soi rõ trụ này.'}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
       ` : ''}
 

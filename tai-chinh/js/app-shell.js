@@ -45,13 +45,14 @@ const NAV = [
 const PREMIUM_ROUTES = new Set(NAV.filter(n=>n.premium).map(n=>n.key));
 const TC_TRIAL_DAYS = 0; // 2026-08-24: bỏ hẳn dùng thử, xem comment NAV phía trên
 // Giá ra mắt (2026-08-24, chị Quỳnh chốt) — 299k cho người mua TRƯỚC mốc TC_LAUNCH_DEADLINE, sau
-// đó tăng lên 599k. Đây là mốc THẬT (không phải giá gốc bịa ra để giảm ảo — chưa từng có ai mua ở
-// giá nào khác trước đó) — chị PHẢI thực sự tăng giá đúng lúc để giữ uy tín. 599k (không phải 499k
-// như đề xuất ban đầu) vì 499.000đ đang là giá gói 1 tháng chuẩn của Xây Nhân Hiệu — webhook chỉ
-// phân biệt 2 sản phẩm qua đúng số tiền, trùng số sẽ kích hoạt sai sản phẩm (xem TC_LIFETIME_AMOUNTS
-// ở api/sepay-webhook.js — phải sửa CẢ 2 nơi cùng lúc nếu đổi số tiền).
+// đó tăng lên 999k. Đây là mốc THẬT (không phải giá gốc bịa ra để giảm ảo — chưa từng có ai mua ở
+// giá nào khác trước đó) — chị PHẢI thực sự tăng giá đúng lúc để giữ uy tín. 999k (không phải 499k
+// như đề xuất ban đầu, và không phải 599k như bản đầu tiên) vì 499.000đ đang là giá gói 1 tháng
+// chuẩn của Xây Nhân Hiệu — webhook chỉ phân biệt 2 sản phẩm qua đúng số tiền, trùng số sẽ kích
+// hoạt sai sản phẩm (xem TC_LIFETIME_AMOUNTS ở api/sepay-webhook.js — phải sửa CẢ 2 nơi cùng lúc
+// nếu đổi số tiền).
 const TC_LAUNCH_PRICE = 299000;
-const TC_REGULAR_PRICE = 599000;
+const TC_REGULAR_PRICE = 999000;
 const TC_LAUNCH_DEADLINE = new Date('2026-09-30T23:59:59+07:00');
 function tcCurrentPrice(){ return Date.now() <= TC_LAUNCH_DEADLINE.getTime() ? TC_LAUNCH_PRICE : TC_REGULAR_PRICE; }
 function tcLaunchDaysLeft(){ return Math.max(0, Math.ceil((TC_LAUNCH_DEADLINE.getTime() - Date.now()) / 86400000)); }
