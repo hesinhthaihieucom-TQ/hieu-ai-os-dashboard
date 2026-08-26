@@ -53,7 +53,13 @@ function render(container, ctx){
 
   function bind(){
     const search = container.querySelector('#dg-search');
-    if(search) search.oninput = ()=>{ state.q = search.value; draw(); search.focus(); search.selectionStart = search.selectionEnd = search.value.length; };
+    if(search) search.oninput = ()=>{
+      state.q = search.value;
+      const pos = search.selectionStart;
+      draw();
+      const newEl = container.querySelector('#dg-search');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
     container.querySelectorAll('[data-approve]').forEach(el=>{
       el.onclick = ()=>setApproved(el.getAttribute('data-approve'), true);
     });

@@ -269,7 +269,16 @@ function renderThanhVien(container, ctx){
 
   function bind(){
     const searchEl = container.querySelector('#tv-search');
-    if(searchEl) searchEl.oninput = (e)=>{ state.search = e.target.value; draw(); };
+    // Danh sách thành viên lọc SỐNG theo state.search nên vẫn cần draw() lại, nhưng draw() thay
+    // toàn bộ innerHTML → input cũ bị huỷ, phải lưu vị trí con trỏ trước rồi query lại NODE MỚI để
+    // focus + đặt lại con trỏ, không thì gõ tiếng Việt có dấu (Telex/VNI) sẽ bị nhảy chữ.
+    if(searchEl) searchEl.oninput = (e)=>{
+      state.search = e.target.value;
+      const pos = searchEl.selectionStart;
+      draw();
+      const newEl = container.querySelector('#tv-search');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
     container.querySelectorAll('[data-mark-paid]').forEach(el=>{
       el.onclick = ()=>markPaid(el.getAttribute('data-mark-paid'), true);
     });
@@ -518,7 +527,16 @@ function renderDanhGia(container, ctx){
 
   function bind(){
     const search = container.querySelector('#dg-search');
-    if(search) search.oninput = ()=>{ state.q = search.value; draw(); search.focus(); search.selectionStart = search.selectionEnd = search.value.length; };
+    // Danh sách đánh giá lọc SỐNG theo state.q nên vẫn cần draw() lại, nhưng draw() thay toàn bộ
+    // innerHTML → node `search` cũ bị huỷ, gán lại .focus()/.selectionStart trên node cũ vô tác
+    // dụng (đã bị gỡ khỏi DOM) — phải lưu vị trí con trỏ trước rồi query lại NODE MỚI sau draw().
+    if(search) search.oninput = ()=>{
+      state.q = search.value;
+      const pos = search.selectionStart;
+      draw();
+      const newEl = container.querySelector('#dg-search');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
     container.querySelectorAll('[data-approve]').forEach(el=>{
       el.onclick = ()=>setApproved(el.getAttribute('data-approve'), true);
     });

@@ -226,7 +226,15 @@ function render(container, ctx){
   function bind(){
     const search = container.querySelector('#fmt-search');
     if(search){
-      search.oninput = () => { state.query = search.value; draw(); container.querySelector('#fmt-search').focus(); };
+      search.oninput = () => {
+        state.query = search.value;
+        const pos = search.selectionStart;
+        draw();
+        // draw() vẽ lại toàn bộ innerHTML nên ô search cũ bị xoá khỏi DOM — phải lấy lại đúng ô MỚI
+        // rồi khôi phục vị trí con trỏ, không thì gõ tiếng Việt có dấu (Telex/VNI) bị nhảy con trỏ/vỡ chữ.
+        const newEl = container.querySelector('#fmt-search');
+        if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      };
     }
     const retry = container.querySelector('[data-action="retry-suggest"]');
     if(retry) retry.onclick = fetchSuggestions;

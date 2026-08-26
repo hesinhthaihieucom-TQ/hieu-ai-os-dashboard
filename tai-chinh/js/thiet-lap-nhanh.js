@@ -720,12 +720,6 @@ function render(container, ctx){
               <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
             </div>
           ` : ''}
-          <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
-            ${state.historySaved
-              ? `<span class="btn-ghost btn btn-sm" data-tc-tab="theo-doi" style="cursor:pointer;">✅ Đã lưu — xem 📈 Theo Dõi Kết Quả →</span>`
-              : `<span class="btn btn-sm" data-save-karma="1">${state.savingHistory?'Đang lưu…':'💾 Lưu kết quả này'}</span>`}
-          </div>
-          <div class="hint-box" style="margin-top:10px;">Bấm "💾 Lưu kết quả này" để ghi lại 1 mốc — xem lại theo thời gian ở tab <span data-tc-tab="theo-doi" style="color:var(--accent);font-weight:600;cursor:pointer;">📈 Theo Dõi Kết Quả →</span>.</div>
           <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
         </div>
 
@@ -762,6 +756,15 @@ function render(container, ctx){
             return deepAnalysisHtml(weakest.key, weakestHouse.label);
           })()}
         </div>
+
+        <div class="section">
+          <div class="btn-row" style="justify-content:flex-start;">
+            ${state.historySaved
+              ? `<span class="btn-ghost btn btn-sm" data-tc-tab="theo-doi" style="cursor:pointer;">✅ Đã lưu — xem 📈 Theo Dõi Kết Quả →</span>`
+              : `<span class="btn btn-sm" data-save-karma="1">${state.savingHistory?'Đang lưu…':'💾 Lưu kết quả này'}</span>`}
+          </div>
+          <div class="hint-box" style="margin-top:10px;">Bấm "💾 Lưu kết quả này" để ghi lại đúng bức tranh + toàn bộ phân tích 5 Trụ Cột ở trên ↑ thành 1 mốc — xem lại theo thời gian ở tab <span data-tc-tab="theo-doi" style="color:var(--accent);font-weight:600;cursor:pointer;">📈 Theo Dõi Kết Quả →</span>.</div>
+        </div>
       ` : ''}
 
       ${!(ctx.profile && ctx.profile.tc_has_paid) ? `
@@ -774,7 +777,7 @@ function render(container, ctx){
             Trả 1 lần, dùng mãi mãi.
           </div>
           ${tcPriceAnchorHtml(ctx.profile)}
-          <span class="btn btn-full" style="margin-top:14px;" data-goto="nang-cap">Nâng Cấp Ngay →</span>
+          <button class="btn btn-full" style="margin-top:14px;" data-goto="nang-cap">Nâng Cấp Ngay →</button>
         </div>
       ` : ''}
 

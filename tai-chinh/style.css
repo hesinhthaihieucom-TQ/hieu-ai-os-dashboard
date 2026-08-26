@@ -81,7 +81,7 @@ a{ color:inherit; }
 .btn-sm{ padding:9px 18px; font-size:13.5px; }
 .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); padding:11px 20px; font-size:14px; }
 .btn-row{ display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap; }
-.btn-full{ width:100%; text-align:center; margin-top:22px; }
+.btn-full{ display:block; width:100%; text-align:center; margin-top:22px; }
 
 .error-box{ background:#FBEAE5; border:1px solid var(--danger); color:var(--danger); padding:14px 16px; border-radius:10px; font-size:13.5px; line-height:1.6; margin-top:16px; }
 .hint-box{ background:var(--accent-soft); border:1px solid var(--line); color:var(--accent); padding:14px 16px; border-radius:10px; font-size:13.5px; line-height:1.6; margin-top:16px; }
