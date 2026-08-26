@@ -28,6 +28,10 @@ const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 // chỉ cộng thêm vào access_until thực tế.
 const EARLY_BIRD_WINDOW_DAYS = 3;
 const EARLY_BIRD_BONUS_DAYS_BY_PLAN = { 180: 30, 365: 60 }; // 6 tháng +1 tháng, 12 tháng +2 tháng
+// 2026-08-26, chị Quỳnh chốt: học viên KHÔNG được cộng dồn ưu đãi mua sớm (giá học viên đã là mức
+// giảm riêng rồi) — loại 2 số tiền giá học viên 6/12 tháng khỏi bonus, dù cùng days=180/365 với giá
+// thường. Gói flash-sale cũng loại tương tự (đã là ưu đãi riêng theo ngày lịch, xem app-shell.js).
+const EARLY_BIRD_EXCLUDED_AMOUNTS = new Set([1912000, 3192000, 1890000, 2790000]);
 function isWithinEarlyBirdWindow(profileCreatedAt) {
   if (!profileCreatedAt) return false;
   const ageMs = Date.now() - new Date(profileCreatedAt).getTime();
@@ -295,7 +299,7 @@ module.exports = async (req, res) => {
         const days = AMOUNT_TO_DAYS[transferAmount];
         const topupLuot = AMOUNT_TO_TOPUP_LUOT[transferAmount];
         if (days) {
-          const bonusDays = (isWithinEarlyBirdWindow(profile.created_at) && EARLY_BIRD_BONUS_DAYS_BY_PLAN[days]) ? EARLY_BIRD_BONUS_DAYS_BY_PLAN[days] : 0;
+          const bonusDays = (!EARLY_BIRD_EXCLUDED_AMOUNTS.has(transferAmount) && isWithinEarlyBirdWindow(profile.created_at) && EARLY_BIRD_BONUS_DAYS_BY_PLAN[days]) ? EARLY_BIRD_BONUS_DAYS_BY_PLAN[days] : 0;
           const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
             ? new Date(profile.access_until) : new Date();
           const next = new Date(base.getTime() + (days + bonusDays) * 86400000);

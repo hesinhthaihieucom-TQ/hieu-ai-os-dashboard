@@ -194,8 +194,12 @@ const REFERRAL_REGULAR_PLANS = [
 // isWithinEarlyBirdWindow ở api/sepay-webhook.js, nơi thật sự cộng thêm ngày dùng) — PHẢI hiện rõ
 // ngay ở bảng giá thì mới có tác dụng thúc đẩy mua ngay trong lúc còn hào hứng dùng thử, không thì
 // khách chỉ vô tình "được tặng" mà không biết để tranh thủ mua sớm.
+// 2026-08-26: chị Quỳnh chốt học viên KHÔNG được cộng dồn ưu đãi này (giá học viên đã là mức giảm
+// riêng, mua sớm chỉ áp cho giá thường/giới thiệu) — currentPaymentPlans() bên dưới bỏ qua bước
+// decorateEarlyBird() hẳn khi isStudent, khớp đúng phía api/sepay-webhook.js (nơi thật sự cộng
+// thêm ngày dùng) đã loại 2 số tiền giá học viên khỏi EARLY_BIRD_EXCLUDED_AMOUNTS.
 const EARLY_BIRD_WINDOW_DAYS = 3;
-const EARLY_BIRD_BONUS_MONTHS = { '6m':1, '12m':2 }; // áp cho mọi biến thể có tiền tố này (thường/học viên/giới thiệu)
+const EARLY_BIRD_BONUS_MONTHS = { '6m':1, '12m':2 }; // áp cho biến thể thường/giới thiệu (không áp cho học viên)
 function isInEarlyBirdWindow(profile){
   if(!profile || !profile.created_at) return false;
   return (Date.now() - new Date(profile.created_at).getTime()) <= EARLY_BIRD_WINDOW_DAYS * 86400000;
@@ -217,7 +221,7 @@ function currentPaymentPlans(){
     ? buildStudentPlans(p)
     : (p && p.referred_by_ref_code) ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS;
   const withFlash = isFlashSaleActive() ? [...FLASH_SALE_PLANS, ...base] : base;
-  return decorateEarlyBird(withFlash, p);
+  return isStudent ? withFlash : decorateEarlyBird(withFlash, p);
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
 // - Gói 1 tháng: so với giá thường CÙNG 1 tháng (499.000đ) — không hiện gì nếu đã hết ưu đãi
