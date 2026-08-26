@@ -189,7 +189,6 @@ function render(container, ctx){
       <input type="text" data-goal="goal_new_asset_type" value="${esc(state.goal.goal_new_asset_type)}" placeholder="VD: vàng, cổ phiếu, gửi tiết kiệm..." style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
 
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Mục tiêu này phục vụ Trụ Cột nào?', 'ngoi_nha')} <span style="font-weight:400;">(không bắt buộc, chọn được nhiều trụ)</span></label>
-      <div class="hint-box" style="margin-bottom:10px;">Gắn mục tiêu vào 1 trụ giúp mục tiêu có ý nghĩa cảm xúc thật, không chỉ là con số khô khan — tâm thức khó "sập nguồn" trước 1 mục tiêu có ý nghĩa rõ ràng.</div>
       <div class="chips" id="mt-house-chips">
         ${HOUSES.map(h=>`<div class="chip ${state.goal.goal_houses.includes(h.key)?'selected':''}" data-house="${h.key}">${h.label}</div>`).join('')}
       </div>
