@@ -1,0 +1,15 @@
+{
+  "name": "Hiểu Để Khoẻ Mạnh",
+  "short_name": "Hiểu Để\nKhoẻ Mạnh",
+  "description": "Hệ sinh thái Hiểu — Kiểm tra & theo dõi sức khỏe, lịch trình theo gói, thư viện sức khỏe, sản phẩm Unicity, tích điểm & hoa hồng.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4EC",
+  "theme_color": "#14201B",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -3,7 +3,8 @@
   "rewrites": [
     { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" },
     { "source": "/san-pham-so/api/:path*", "destination": "/api/:path*" },
-    { "source": "/tai-chinh/api/:path*", "destination": "/api/:path*" }
+    { "source": "/tai-chinh/api/:path*", "destination": "/api/:path*" },
+    { "source": "/suc-khoe/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300 },
@@ -59,6 +60,22 @@
     },
     {
       "source": "/san-pham-so/app.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/suc-khoe/js/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/suc-khoe/style.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/suc-khoe/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/suc-khoe/manifest.json",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     }
   ]
