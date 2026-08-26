@@ -49,7 +49,7 @@ function render(container, ctx){
     newPassword:'', confirmPassword:'', passwordSaving:false, passwordError:null, passwordSaved:false,
     goals: { viet:0, taicheviral:0, chamdiemcontent:0, lich:0, chamdiemhook:0, hook:0, suakenh:0 },
     actualUsage: {}, actualLuot: {},
-    referralCount: 0, referralLuotEarned: 0, referralLinkCopied: false,
+    referralCount: 0, referralLuotEarned: 0, referralLinkCopied: false, hieuPartnerCount: 0,
   };
 
   const DRAFT_KEY = 'tai-khoan-goals';
@@ -90,10 +90,17 @@ function render(container, ctx){
   // khi referee đã trả tiền THẬT (xem creditReferralReward trong api/sepay-webhook.js), nên đây
   // đúng nghĩa "đã giới thiệu thành công", không tính người mới bấm link nhưng chưa mua gì.
   async function loadReferralStats(){
-    const { data } = await ctx.supabase.from('referrals').select('reward_luot').eq('referrer_id', ctx.user.id);
+    const [{ data }, { data: tcData }] = await Promise.all([
+      ctx.supabase.from('referrals').select('reward_luot').eq('referrer_id', ctx.user.id),
+      // Hạng "Hiểu Partner" (xem PARTNER_REFERRAL_THRESHOLD) đếm CỘNG DỒN cả referrals (app này) lẫn
+      // tc_referrals (Sổ Dòng Tiền) — không lưu tổng ở profiles, tính trực tiếp mỗi lần cần (xem
+      // comment is_vip_partner ở schema_full.sql).
+      ctx.supabase.from('tc_referrals').select('id').eq('referrer_id', ctx.user.id),
+    ]);
     const rows = data || [];
     state.referralCount = rows.length;
     state.referralLuotEarned = rows.reduce((sum,r)=> sum + (r.reward_luot||0), 0);
+    state.hieuPartnerCount = rows.length + (tcData || []).length;
     draw();
   }
 
@@ -180,18 +187,21 @@ function render(container, ctx){
 
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
-        <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — bạn bè bấm vào đăng ký sẽ được <b>giảm 15%</b> khi mua gói giá thường (không áp dụng gói ưu đãi/flash-sale), còn bạn được <b>tặng lượt AI</b> tương đương 15% giá trị đơn hàng của họ ngay khi họ thanh toán thành công lần đầu.<br><br>🌟 Giới thiệu thành công từ <b>${PARTNER_REFERRAL_THRESHOLD} người trở lên</b>, bạn sẽ được coi là <b>Partner</b> của hệ sinh thái — từ đó thay vì tặng lượt AI, bạn sẽ được thưởng bằng <b>hoa hồng tiền mặt</b> — liên hệ để nhận sau khi đạt mốc.</div>
+        <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — bạn bè bấm vào đăng ký sẽ được <b>giảm 15%</b> khi mua gói giá thường (không áp dụng gói ưu đãi/flash-sale), còn bạn được <b>tặng lượt AI</b> tương đương 15% giá trị đơn hàng của họ ngay khi họ thanh toán thành công lần đầu${ctx.profile&&ctx.profile.is_vip_partner?' (VIP Partner: 25%)':''}.<br><br>🌟 Giới thiệu thành công từ <b>${PARTNER_REFERRAL_THRESHOLD} người trở lên</b> — cộng dồn cả Xây Nhân Hiệu lẫn Sổ Dòng Tiền Tâm Thức — bạn sẽ được coi là <b>Hiểu Partner</b> của hệ sinh thái — từ đó thay vì tặng lượt AI, bạn sẽ được thưởng bằng <b>hoa hồng tiền mặt</b> — liên hệ để nhận sau khi đạt mốc.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--panel);" onclick="this.select()">
           <button class="btn btn-sm" data-action="copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>
         </div>
         <div style="display:flex;gap:24px;margin-top:14px;flex-wrap:wrap;">
-          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.hieuPartnerCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công (mọi sản phẩm)</div></div>
           <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralLuotEarned}</div><div style="font-size:12px;color:var(--ink-soft);">lượt AI đã được tặng</div></div>
         </div>
-        ${state.referralCount >= PARTNER_REFERRAL_THRESHOLD
-          ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:13px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Partner của hệ sinh thái! Liên hệ để nhận hoa hồng tiền mặt.</div>`
-          : `<div style="margin-top:12px;font-size:12.5px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - state.referralCount}</b> người nữa để trở thành Partner 🌟</div>`}
+        ${state.hieuPartnerCount >= PARTNER_REFERRAL_THRESHOLD
+          ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:13px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái! Liên hệ để nhận hoa hồng tiền mặt.</div>`
+          : `<div style="margin-top:12px;font-size:12.5px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - state.hieuPartnerCount}</b> người nữa để trở thành Hiểu Partner 🌟</div>`}
+        ${ctx.profile&&ctx.profile.is_vip_partner
+          ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:13px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
+          : `<div style="margin-top:10px;font-size:12.5px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
       </div>
 
       <div class="card">

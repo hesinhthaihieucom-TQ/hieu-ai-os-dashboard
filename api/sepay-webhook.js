@@ -87,6 +87,16 @@ const TC_LIFETIME_AMOUNTS = new Set([TC_PRICE_TIER_1_AMOUNT, TC_PRICE_TIER_2_AMO
 // giá trị đơn hàng thật, không lệch khi giá đổi qua mốc ra mắt.
 const TC_REFERRAL_REWARD_PERCENT = 0.20;
 
+// Gói VIP Partner — mua trọn 55.000.000đ (Unicity Cân Bằng Chuyển Hoá 2 tháng + coaching 1:1 hàng
+// tuần 2 tháng + dùng mọi chương trình đào tạo/sản phẩm số 1 năm, 2026-08-27 chị Quỳnh chốt). Mua 1
+// lần, set is_vip_partner=true VĨNH VIỄN trên profiles — không hết hạn theo năm dùng sản phẩm đi kèm,
+// không liên quan số lượt giới thiệu (khác hẳn "Hiểu Partner" ở PARTNER_REFERRAL_THRESHOLD, xem
+// quan-tri.js/tai-khoan.js). VIP Partner cộng thêm +10 điểm % hoa hồng trên MỌI sản phẩm có cơ chế
+// giới thiệu ở FILE NÀY (nhan-hieu + tai-chinh) — không cần loại trừ Unicity riêng vì Unicity không
+// có mặt trong file này, hoa hồng Unicity xử lý hoàn toàn ngoài hệ thống theo đúng chính sách Unicity.
+const VIP_PARTNER_AMOUNT = 55000000;
+const VIP_PARTNER_BONUS_PERCENT = 0.10;
+
 // Số tiền giá giới thiệu — khớp 1 trong 3 số này thì mới kích hoạt thưởng cho người đã giới thiệu
 // (gói ưu đãi/flash-sale và giá học viên KHÔNG bao giờ tính hoa hồng, theo yêu cầu chị Quỳnh).
 const REFERRAL_AMOUNTS = new Set([424000, 2032000, 3392000]);
@@ -143,13 +153,15 @@ async function creditReferralReward(refereeProfile, transferAmount) {
   if (!refereeProfile.referred_by_ref_code || refereeProfile.referral_reward_given) return;
 
   const referrerResp = await supabaseAdmin(
-    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus`
+    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,is_vip_partner`
   );
   const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
   const referrer = referrerRows[0];
   if (!referrer) return; // mã giới thiệu không còn khớp ai (vd tài khoản đã bị xoá) — bỏ qua, không lỗi
 
-  const rewardLuot = Math.round((transferAmount * REFERRAL_REWARD_PERCENT) / REFERRAL_LUOT_PER_DONG);
+  // VIP Partner (xem VIP_PARTNER_AMOUNT ở trên) cộng thêm +10 điểm % — 15% thành 25%.
+  const rewardPercent = REFERRAL_REWARD_PERCENT + (referrer.is_vip_partner ? VIP_PARTNER_BONUS_PERCENT : 0);
+  const rewardLuot = Math.round((transferAmount * rewardPercent) / REFERRAL_LUOT_PER_DONG);
   if (rewardLuot <= 0) return;
 
   const rewardPatch = referrer.has_paid
@@ -193,18 +205,20 @@ async function creditReferralReward(refereeProfile, transferAmount) {
 async function creditTcReferralReward(refereeProfile, transferAmount) {
   if (!refereeProfile.referred_by_ref_code || refereeProfile.tc_referral_reward_given) return;
 
-  const referrerResp = await supabaseAdmin(`profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id`);
+  const referrerResp = await supabaseAdmin(`profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,is_vip_partner`);
   const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
   const referrer = referrerRows[0];
   if (!referrer) return; // mã giới thiệu không còn khớp ai (vd tài khoản đã bị xoá) — bỏ qua, không lỗi
 
+  // VIP Partner (xem VIP_PARTNER_AMOUNT ở trên) cộng thêm +10 điểm % — 20% thành 30%.
+  const rewardPercent = TC_REFERRAL_REWARD_PERCENT + (referrer.is_vip_partner ? VIP_PARTNER_BONUS_PERCENT : 0);
   await supabaseAdmin('tc_referrals', {
     method: 'POST',
     prefer: 'return=minimal',
     body: JSON.stringify({
       referrer_id: referrer.id,
       referee_id: refereeProfile.id,
-      reward_amount: Math.round(transferAmount * TC_REFERRAL_REWARD_PERCENT),
+      reward_amount: Math.round(transferAmount * rewardPercent),
     }),
   });
   // Đánh dấu đã thưởng SAU KHI ghi sổ thành công — nếu ghi sổ lỗi, lần webhook sau (nếu SePay retry)
@@ -355,6 +369,20 @@ module.exports = async (req, res) => {
             status = 'matched';
             matchedProfileId = profile.id;
             try { await creditTcReferralReward(profile, transferAmount); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
+          } else {
+            status = 'unmatched_amount';
+          }
+        } else if (transferAmount === VIP_PARTNER_AMOUNT) {
+          // Gói VIP Partner (55tr, xem VIP_PARTNER_AMOUNT ở trên) — mua cho CHÍNH mình (nội dung CK
+          // là ref_code của người mua, không phải người giới thiệu), set is_vip_partner VĨNH VIỄN.
+          // Idempotent tự nhiên giống tc_has_paid ở trên — PATCH lại true nếu lỡ chuyển trùng không sao.
+          const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ is_vip_partner: true }),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProfileId = profile.id;
           } else {
             status = 'unmatched_amount';
           }

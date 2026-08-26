@@ -3,6 +3,9 @@
 // để hiển thị đúng con số cho người dùng thấy, không dùng để tính toán gì (webhook mới là nơi ghi
 // sổ thật).
 const TC_REFERRAL_REWARD_PERCENT = 20;
+// Ngưỡng "Hiểu Partner" — đếm CỘNG DỒN cả tc_referrals (app này) lẫn referrals (Xây Nhân Hiệu),
+// PHẢI khớp tay với PARTNER_REFERRAL_THRESHOLD ở nhan-hieu/js/tai-khoan.js + quan-tri.js.
+const PARTNER_REFERRAL_THRESHOLD = 5;
 
 function render(container, ctx){
   const state = {
@@ -15,6 +18,7 @@ function render(container, ctx){
     passMsg: '',
     passError: '',
     referrals: [],
+    xnhReferralCount: 0,
     referralLinkCopied: false,
   };
 
@@ -22,8 +26,14 @@ function render(container, ctx){
   draw();
 
   async function loadReferrals(){
-    const { data } = await ctx.supabase.from('tc_referrals').select('*').eq('referrer_id', ctx.user.id).order('created_at', { ascending:false });
+    const [{ data }, { data: xnhData }] = await Promise.all([
+      ctx.supabase.from('tc_referrals').select('*').eq('referrer_id', ctx.user.id).order('created_at', { ascending:false }),
+      // Hạng "Hiểu Partner" đếm CỘNG DỒN cả tc_referrals (app này) lẫn referrals (Xây Nhân Hiệu) —
+      // không lưu tổng ở profiles, tính trực tiếp mỗi lần cần (xem comment is_vip_partner ở schema_full.sql).
+      ctx.supabase.from('referrals').select('id').eq('referrer_id', ctx.user.id),
+    ]);
     state.referrals = data || [];
+    state.xnhReferralCount = (xnhData || []).length;
     draw();
   }
   loadReferrals();
@@ -95,19 +105,28 @@ function render(container, ctx){
         const totalEarned = state.referrals.reduce((s,r)=>s+Number(r.reward_amount),0);
         const totalPaid = state.referrals.filter(r=>r.paid).reduce((s,r)=>s+Number(r.reward_amount),0);
         const totalPending = totalEarned - totalPaid;
+        const hieuPartnerCount = totalCount + state.xnhReferralCount;
+        const isVip = ctx.profile && ctx.profile.is_vip_partner;
+        const effectivePercent = TC_REFERRAL_REWARD_PERCENT + (isVip ? 10 : 0);
         return `
           <div class="section">
             <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
-            <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — khi bạn bè bấm vào đăng ký rồi mua trọn đời, bạn được thưởng <b>${TC_REFERRAL_REWARD_PERCENT}%</b> giá trị đơn hàng của họ (~${Math.round(tcCurrentPrice()*TC_REFERRAL_REWARD_PERCENT/100).toLocaleString('vi-VN')}đ mỗi người ở giá hiện tại). Trả bằng chuyển khoản tay, không tự động — bên dưới là số bạn đang được ghi nợ.</div>
+            <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — khi bạn bè bấm vào đăng ký rồi mua trọn đời, bạn được thưởng <b>${effectivePercent}%</b> giá trị đơn hàng của họ${isVip?' (VIP Partner: +10 điểm %)':''} (~${Math.round(tcCurrentPrice()*effectivePercent/100).toLocaleString('vi-VN')}đ mỗi người ở giá hiện tại). Trả bằng chuyển khoản tay, không tự động — bên dưới là số bạn đang được ghi nợ.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
               <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg);color:var(--ink);" onclick="this.select()">
               <button class="btn btn-sm" id="tk-copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>
             </div>
             <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
-              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công</div></div>
+              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công (app này)</div></div>
               <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalPaid.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">đã nhận</div></div>
               <div><div style="font-size:20px;font-weight:700;color:${totalPending>0?'var(--danger)':'var(--ink)'};">${totalPending.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">đang chờ chuyển khoản</div></div>
             </div>
+            ${hieuPartnerCount >= PARTNER_REFERRAL_THRESHOLD
+              ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:13px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái (${hieuPartnerCount} người, cộng dồn mọi sản phẩm)!</div>`
+              : `<div style="margin-top:12px;font-size:12.5px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - hieuPartnerCount}</b> người nữa (cộng dồn mọi sản phẩm) để trở thành Hiểu Partner 🌟</div>`}
+            ${isVip
+              ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:13px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
+              : `<div style="margin-top:10px;font-size:12.5px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
           </div>
         `;
       })()}

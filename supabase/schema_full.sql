@@ -58,6 +58,19 @@ alter table profiles add column if not exists referred_by_ref_code text;
 -- không thưởng lại nữa (cờ này chặn double-reward).
 alter table profiles add column if not exists referral_reward_given boolean not null default false;
 
+-- Chính sách CTV toàn hệ sinh thái (2026-08-27, chị Quỳnh chốt) — 2 trục ĐỘC LẬP nhau:
+-- 1) "Hiểu Partner": đủ >=5 giới thiệu thành công CỘNG DỒN cả referrals (nhan-hieu) lẫn tc_referrals
+--    (tai-chinh) — KHÔNG lưu tổng ở đây, tính trực tiếp bằng count() mỗi lần cần (đúng nguyên tắc
+--    "không lưu tổng suy ra được" đã áp dụng xuyên suốt tai-chinh, xem comment ở tc_referrals bên dưới
+--    — tránh lệch nếu 1 dòng referrals/tc_referrals bị sửa/xoá tay mà quên cập nhật số đếm ở chỗ khác).
+-- 2) "VIP Partner": mua gói riêng 55.000.000đ (Unicity Cân Bằng Chuyển Hoá 2 tháng + coaching 1:1
+--    hàng tuần 2 tháng + dùng mọi chương trình đào tạo/sản phẩm số 1 năm) — set boolean này thẳng qua
+--    api/sepay-webhook.js khi khớp đúng số tiền, VĨNH VIỄN (không hết hạn theo năm dùng sản phẩm đi
+--    kèm). Cộng thêm +10 điểm % hoa hồng trên MỌI sản phẩm có cơ chế giới thiệu ở hệ thống này (xem
+--    REFERRAL_REWARD_PERCENT/TC_REFERRAL_REWARD_PERCENT + VIP_PARTNER_BONUS_PERCENT ở sepay-webhook.js)
+--    TRỪ Unicity — hoa hồng Unicity nằm ngoài hệ thống này, xử lý riêng theo đúng chính sách Unicity.
+alter table profiles add column if not exists is_vip_partner boolean not null default false;
+
 -- Trần lượt dùng thử RIÊNG TỪNG NGƯỜI (2026-08-24, theo yêu cầu chị Quỳnh: "muốn những người đầu
 -- tiên là những người được ưu đãi nhất để họ không cảm thấy bị thiệt") — trước đây TRIAL_AI_LIMIT
 -- (api/_lib/trial-quota.js) là 1 số CỐ ĐỊNH áp dụng chung cho mọi tài khoản chưa trả phí, đổi số đó

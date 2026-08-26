@@ -311,7 +311,7 @@ function renderHoaHong(container, ctx){
     state.rows = rows || [];
     const ids = [...new Set(state.rows.flatMap(r=>[r.referrer_id, r.referee_id]))];
     if(ids.length > 0){
-      const { data: profs } = await ctx.supabase.from('profiles').select('id,email,full_name').in('id', ids);
+      const { data: profs } = await ctx.supabase.from('profiles').select('id,email,full_name,is_vip_partner').in('id', ids);
       state.profileById = {};
       (profs||[]).forEach(p=>{ state.profileById[p.id] = p; });
     }
@@ -351,12 +351,12 @@ function renderHoaHong(container, ctx){
   function html(){
     const groups = groupByReferrer();
     return `
-      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Mỗi người giới thiệu thành công 1 khách mua trọn đời được thưởng 20% (~59.800đ). Không có chuyển khoản tự động — chị tự chuyển khoản tay cho người giới thiệu rồi bấm "Đánh dấu đã trả" bên dưới.</p>
+      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Mỗi người giới thiệu thành công 1 khách mua trọn đời được thưởng 20% (~59.800đ), VIP Partner được 30%. Không có chuyển khoản tự động — chị tự chuyển khoản tay cho người giới thiệu rồi bấm "Đánh dấu đã trả" bên dưới.</p>
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : groups.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có ai được thưởng hoa hồng.</div>` : groups.map(g=>`
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
             <div>
-              <div style="font-weight:600;font-size:14.5px;">${esc(nameOf(g.referrerId))}</div>
+              <div style="font-weight:600;font-size:14.5px;">${esc(nameOf(g.referrerId))}${(state.profileById[g.referrerId]&&state.profileById[g.referrerId].is_vip_partner)?' <span style="color:var(--gold,var(--accent));">👑 VIP Partner</span>':''}</div>
               <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">Đã giới thiệu: ${g.rows.map(r=>esc(nameOf(r.referee_id))).join(', ')}</div>
             </div>
             <div style="text-align:right;">

@@ -94,13 +94,23 @@ function render(container, ctx){
   }
 
   async function loadReferralPartners(){
-    const { data } = await ctx.supabase.from('referrals').select('referrer_id, reward_luot');
+    const [{ data }, { data: tcData }] = await Promise.all([
+      ctx.supabase.from('referrals').select('referrer_id, reward_luot'),
+      // Hạng "Hiểu Partner" đếm CỘNG DỒN cả referrals (Xây Nhân Hiệu) lẫn tc_referrals (Sổ Dòng
+      // Tiền) — không lưu tổng ở profiles, tính trực tiếp mỗi lần cần (xem comment is_vip_partner
+      // ở schema_full.sql).
+      ctx.supabase.from('tc_referrals').select('referrer_id'),
+    ]);
     const rows = data || [];
     const byReferrer = {};
     rows.forEach(r=>{
       if(!byReferrer[r.referrer_id]) byReferrer[r.referrer_id] = { count:0, luot:0 };
       byReferrer[r.referrer_id].count++;
       byReferrer[r.referrer_id].luot += (r.reward_luot||0);
+    });
+    (tcData || []).forEach(r=>{
+      if(!byReferrer[r.referrer_id]) byReferrer[r.referrer_id] = { count:0, luot:0 };
+      byReferrer[r.referrer_id].count++;
     });
     // Giữ lại TOÀN BỘ map (không chỉ ai đủ ngưỡng partner) để hiện số liệu giới thiệu ngay trên
     // từng thẻ tài khoản bên dưới — không phải chỉ ai đạt >= PARTNER_REFERRAL_THRESHOLD mới thấy.
@@ -166,7 +176,7 @@ function render(container, ctx){
 
       ${state.referralPartners.length ? `
       <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
-        <h3 style="margin-bottom:6px;">🌟 Partner giới thiệu (≥ ${PARTNER_REFERRAL_THRESHOLD} người)</h3>
+        <h3 style="margin-bottom:6px;">🌟 Hiểu Partner (≥ ${PARTNER_REFERRAL_THRESHOLD} người, cộng dồn mọi sản phẩm)</h3>
         <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Đủ ngưỡng để cân nhắc trả hoa hồng tiền mặt — tự nhắn/chuyển khoản tay, hệ thống không tự động chuyển tiền.</div>
         ${state.referralPartners.map(rp=>`
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;flex-wrap:wrap;">
@@ -225,12 +235,13 @@ function render(container, ctx){
               <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?`💰 Đã trả phí (trần ${PAID_MONTHLY_AI_LIMIT} lượt/tháng)`:`Chưa trả phí (trần dùng thử ${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt)`}
                 <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.has_paid}">đổi</span></div>
               ${p.ref_code ? `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Nội dung CK: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
+              ${p.is_vip_partner ? `<div style="grid-column:1/-1;color:var(--gold,var(--accent));font-size:12.5px;font-weight:600;">👑 VIP Partner (+10 điểm % hoa hồng)</div>` : ''}
               ${(() => {
                 const rc = state.referralCounts[p.id];
                 const referrer = p.referred_by_ref_code ? state.profiles.find(x=>x.ref_code===p.referred_by_ref_code) : null;
                 if(!rc && !referrer) return '';
                 const parts = [];
-                if(rc) parts.push(`đã giới thiệu <b>${rc.count}</b> người (tặng ${rc.luot} lượt)${rc.count>=PARTNER_REFERRAL_THRESHOLD?' 🌟':''}`);
+                if(rc) parts.push(`đã giới thiệu <b>${rc.count}</b> người (tặng ${rc.luot} lượt)${rc.count>=PARTNER_REFERRAL_THRESHOLD?' 🌟 Hiểu Partner':''}`);
                 if(referrer) parts.push(`được giới thiệu bởi <b>${esc(referrer.email||referrer.ref_code)}</b>`);
                 return `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Giới thiệu: ${parts.join(' · ')}</div>`;
               })()}
