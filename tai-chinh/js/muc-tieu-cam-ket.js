@@ -189,19 +189,24 @@ function render(container, ctx){
       <input type="text" data-goal="goal_new_asset_type" value="${esc(state.goal.goal_new_asset_type)}" placeholder="VD: vàng, cổ phiếu, gửi tiết kiệm..." style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
 
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Mục tiêu này phục vụ Trụ Cột nào?', 'ngoi_nha')} <span style="font-weight:400;">(không bắt buộc, chọn được nhiều trụ)</span></label>
-      <div class="hint-box" style="margin-bottom:10px;">${HOUSES.map(h=>`<b>${esc(h.label)}</b> — ${esc(h.desc)}`).join('<br>')}</div>
+      <div class="hint-box" style="margin-bottom:10px;">Gắn mục tiêu vào 1 trụ giúp mục tiêu có ý nghĩa cảm xúc thật, không chỉ là con số khô khan — tâm thức khó "sập nguồn" trước 1 mục tiêu có ý nghĩa rõ ràng.</div>
       <div class="chips" id="mt-house-chips">
         ${HOUSES.map(h=>`<div class="chip ${state.goal.goal_houses.includes(h.key)?'selected':''}" data-house="${h.key}">${h.label}</div>`).join('')}
       </div>
       <div class="hint-box" id="mt-house-anchor" style="margin-top:10px;">${state.goal.goal_houses.length ? state.goal.goal_houses.map(k=>esc(HOUSE_GOAL_ANCHOR[k])).join('<br><br>') : 'Chọn 1 hoặc nhiều Trụ Cột để xem mục tiêu này thật sự phục vụ điều gì.'}</div>
 
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:20px 0 6px;">Vì sao từng Trụ Cột này quan trọng với bạn? <span style="font-weight:400;">(không bắt buộc, nhưng viết ra giúp mục tiêu có cảm xúc thật, không chỉ là con số)</span></label>
-      ${HOUSES.map(h=>`
-        <div style="margin-top:10px;">
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">${esc(h.label)}</label>
-          <textarea data-house-reason="${h.key}" placeholder="${esc(HOUSE_GOAL_ANCHOR[h.key])}">${esc((state.goal.goal_house_reasons||{})[h.key] || '')}</textarea>
-        </div>
-      `).join('')}
+      ${state.goal.goal_houses.length ? `
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:20px 0 6px;">Vì sao trụ này quan trọng với bạn? <span style="font-weight:400;">(không bắt buộc, nhưng viết ra giúp mục tiêu có cảm xúc thật, không chỉ là con số)</span></label>
+        ${state.goal.goal_houses.map(key=>{
+          const h = HOUSES.find(x=>x.key===key);
+          return `
+            <div style="margin-top:10px;">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">${esc(h.label)}</label>
+              <textarea data-house-reason="${h.key}" placeholder="${esc(HOUSE_GOAL_ANCHOR[h.key])}">${esc((state.goal.goal_house_reasons||{})[h.key] || '')}</textarea>
+            </div>
+          `;
+        }).join('')}
+      ` : ''}
 
       <button class="btn btn-full" style="margin-top:18px;" id="mt-save-goal" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu Lời Cam Kết →'}</button>
     `;
