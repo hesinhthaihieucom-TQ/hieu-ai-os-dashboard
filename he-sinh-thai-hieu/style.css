@@ -303,7 +303,17 @@ h1,h2,h3,h4{ font-family:'Playfair Display', serif; margin:0; font-weight:700; }
 
 /* ============ CTV / AFFILIATE ============ */
 .ctv{ padding:56px 0; border-top:1px solid var(--line); }
-.ctv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start; }
+.tier-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:28px; }
+.tier-card{ border:1px solid var(--line); border-radius:var(--radius); padding:20px 18px; background:var(--panel-soft); display:flex; flex-direction:column; gap:10px; }
+.tier-card.vip{ border-color:var(--gold); background:var(--gold-soft); }
+.tier-card .tier-badge{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); }
+.tier-card.vip .tier-badge{ color:#8A5A00; }
+.tier-card h4{ font-size:17px; margin:2px 0 0; }
+.tier-card .tier-cond{ font-size:12.5px; color:var(--ink-soft); }
+.tier-card ul{ margin:6px 0 0; padding-left:18px; font-size:13px; color:var(--ink); line-height:1.55; }
+.tier-card ul li{ margin-bottom:4px; }
+@media (max-width:860px){ .tier-grid{ grid-template-columns:1fr; } }
+.ctv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start; margin-top:32px; }
 .ctv-list{ display:flex; flex-direction:column; gap:14px; margin:20px 0 24px; }
 .ctv-panel{ background:var(--accent-soft); border-radius:var(--radius); padding:26px 24px; }
 .ctv-panel h4{ font-size:15px; font-family:'Be Vietnam Pro',sans-serif; font-weight:700; margin-bottom:10px; }
