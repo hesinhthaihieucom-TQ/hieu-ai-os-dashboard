@@ -48,6 +48,9 @@ const DEBTS = [];
 let debtIdSeq = 1;
 const KARMA_HISTORY = [];
 let karmaHistoryIdSeq = 1;
+// Mô phỏng tc_monthly_reflections (key = month) — để test luồng chọn NHIỀU trụ (goal_houses jsonb
+// array, 2026-08-26 góp ý Quỳnh) đọc/ghi đúng hay không.
+const MONTHLY_REFLECTIONS = {};
 // Mô phỏng app_reviews (CHUNG bảng với nhan-hieu, lọc app='tai-chinh') — để test popup xin đánh giá,
 // khối review ở Trang chủ, và tab Đánh Giá bên Quản Trị (2026-08-26).
 const APP_REVIEWS = [
@@ -81,6 +84,10 @@ function makeChain(table){
         const rows = Array.isArray(payload) ? payload : [payload];
         rows.forEach(r=>{ NETWORTH_SNAPSHOTS[r.snapshot_month] = { ...(NETWORTH_SNAPSHOTS[r.snapshot_month]||{}), ...r }; });
       }
+      if(table==='tc_monthly_reflections'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>{ MONTHLY_REFLECTIONS[r.month] = { ...(MONTHLY_REFLECTIONS[r.month]||{}), ...r }; });
+      }
       return Promise.resolve({ data:null, error:null });
     },
     maybeSingle(){
@@ -89,6 +96,10 @@ function makeChain(table){
         const key = chain._filters.module_key;
         const has = Object.prototype.hasOwnProperty.call(MODULE_DRAFTS, key);
         return Promise.resolve({ data: has ? { data: MODULE_DRAFTS[key] } : null, error:null });
+      }
+      if(table === 'tc_monthly_reflections'){
+        const key = chain._filters.month;
+        return Promise.resolve({ data: MONTHLY_REFLECTIONS[key] || null, error:null });
       }
       if(table === 'tc_networth_snapshots'){
         const key = chain._filters.snapshot_month;

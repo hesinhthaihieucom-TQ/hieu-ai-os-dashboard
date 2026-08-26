@@ -19,7 +19,7 @@ function render(container, ctx){
   const state = {
     loading: true,
     step: 'goal', // 'goal' | 'reaction' | 'summary'
-    goal: { goal_income:'', goal_savings:'', goal_debt_reduction:'', goal_new_asset:'', goal_new_asset_type:'', goal_house:'', goal_house_reasons:{} },
+    goal: { goal_income:'', goal_savings:'', goal_debt_reduction:'', goal_new_asset:'', goal_new_asset_type:'', goal_houses:[], goal_house_reasons:{} },
     goal_first_reaction: '',
     selectedResistance: null,
     saving: false,
@@ -70,7 +70,11 @@ function render(container, ctx){
       state.goal = {
         goal_income: r.goal_income!=null?String(r.goal_income):'', goal_savings: r.goal_savings!=null?String(r.goal_savings):'',
         goal_debt_reduction: r.goal_debt_reduction!=null?String(r.goal_debt_reduction):'', goal_new_asset: r.goal_new_asset!=null?String(r.goal_new_asset):'',
-        goal_new_asset_type: r.goal_new_asset_type||'', goal_house: r.goal_house||'',
+        goal_new_asset_type: r.goal_new_asset_type||'',
+        // Cho chọn NHIỀU trụ thay vì đúng 1 (2026-08-26, góp ý Quỳnh) — cột mới goal_houses (jsonb
+        // array). Dữ liệu CŨ chỉ có goal_house (1 giá trị) thì seed thành mảng 1 phần tử để không
+        // mất lựa chọn cũ đã lưu trước khi đổi sang chọn nhiều.
+        goal_houses: Array.isArray(r.goal_houses) ? r.goal_houses : (r.goal_house ? [r.goal_house] : []),
         goal_house_reasons: r.goal_house_reasons || {},
       };
       state.goal_first_reaction = r.goal_first_reaction || '';
@@ -118,7 +122,8 @@ function render(container, ctx){
       user_id: ctx.user.id, month,
       goal_income: Number(state.goal.goal_income)||0, goal_savings: Number(state.goal.goal_savings)||0,
       goal_debt_reduction: Number(state.goal.goal_debt_reduction)||0, goal_new_asset: Number(state.goal.goal_new_asset)||0,
-      goal_new_asset_type: state.goal.goal_new_asset_type.trim() || null, goal_house: state.goal.goal_house || null,
+      goal_new_asset_type: state.goal.goal_new_asset_type.trim() || null,
+      goal_houses: state.goal.goal_houses.length ? state.goal.goal_houses : null,
       goal_house_reasons: Object.keys(state.goal.goal_house_reasons||{}).length ? state.goal.goal_house_reasons : null,
       updated_at: new Date().toISOString(),
     }, { onConflict:'user_id,month' });
@@ -183,11 +188,12 @@ function render(container, ctx){
       <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:12px 0 4px;">Loại tài sản sẽ mua/đầu tư</label>
       <input type="text" data-goal="goal_new_asset_type" value="${esc(state.goal.goal_new_asset_type)}" placeholder="VD: vàng, cổ phiếu, gửi tiết kiệm..." style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
 
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Mục tiêu này phục vụ Trụ Cột nào?', 'ngoi_nha')} <span style="font-weight:400;">(không bắt buộc)</span></label>
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Mục tiêu này phục vụ Trụ Cột nào?', 'ngoi_nha')} <span style="font-weight:400;">(không bắt buộc, chọn được nhiều trụ)</span></label>
+      <div class="hint-box" style="margin-bottom:10px;">${HOUSES.map(h=>`<b>${esc(h.label)}</b> — ${esc(h.desc)}`).join('<br>')}</div>
       <div class="chips" id="mt-house-chips">
-        ${HOUSES.map(h=>`<div class="chip ${state.goal.goal_house===h.key?'selected':''}" data-house="${h.key}">${h.label}</div>`).join('')}
+        ${HOUSES.map(h=>`<div class="chip ${state.goal.goal_houses.includes(h.key)?'selected':''}" data-house="${h.key}">${h.label}</div>`).join('')}
       </div>
-      <div class="hint-box" id="mt-house-anchor" style="margin-top:10px;">${state.goal.goal_house ? esc(HOUSE_GOAL_ANCHOR[state.goal.goal_house]) : 'Chọn 1 Trụ Cột để xem mục tiêu này thật sự phục vụ điều gì.'}</div>
+      <div class="hint-box" id="mt-house-anchor" style="margin-top:10px;">${state.goal.goal_houses.length ? state.goal.goal_houses.map(k=>esc(HOUSE_GOAL_ANCHOR[k])).join('<br><br>') : 'Chọn 1 hoặc nhiều Trụ Cột để xem mục tiêu này thật sự phục vụ điều gì.'}</div>
 
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:20px 0 6px;">Vì sao từng Trụ Cột này quan trọng với bạn? <span style="font-weight:400;">(không bắt buộc, nhưng viết ra giúp mục tiêu có cảm xúc thật, không chỉ là con số)</span></label>
       ${HOUSES.map(h=>`
@@ -216,7 +222,7 @@ function render(container, ctx){
             <span>${esc(label)}</span><b>${val}</b>
           </div>
         `).join('')}
-        ${state.goal.goal_house?`<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Phục vụ: ${houseLabel(state.goal.goal_house)}</div>`:''}
+        ${state.goal.goal_houses.length?`<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Phục vụ: ${state.goal.goal_houses.map(k=>houseLabel(k)).join(', ')}</div>`:''}
         ${Object.entries(state.goal.goal_house_reasons||{}).filter(([,v])=>v && v.trim()).map(([key,val])=>`
           <div class="hint-box" style="margin-top:10px;"><b>${esc(houseLabel(key))}</b>: "${esc(val)}"</div>
         `).join('')}
@@ -321,7 +327,12 @@ function render(container, ctx){
   function bind(){
     const houseChips = container.querySelector('#mt-house-chips');
     if(houseChips) houseChips.querySelectorAll('[data-house]').forEach(el=>{
-      el.onclick = ()=>{ state.goal.goal_house = el.getAttribute('data-house'); draw(); persistDraft(); };
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-house');
+        const idx = state.goal.goal_houses.indexOf(key);
+        if(idx>=0) state.goal.goal_houses.splice(idx,1); else state.goal.goal_houses.push(key);
+        draw(); persistDraft();
+      };
     });
     container.querySelectorAll('[data-house-reason]').forEach(el=>{
       el.oninput = ()=>{

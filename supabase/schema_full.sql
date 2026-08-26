@@ -893,9 +893,16 @@ alter table tc_debts add column if not exists flat_fee_amount numeric;
 alter table tc_monthly_reflections add column if not exists goal_house text
   check (goal_house in ('than_tam_ban_the','coi_nguon_sinh_thanh','ban_doi_moi_quan_he','tai_chinh_tam_thuc','thuan_phap_nhan_qua'));
 
--- Lý do CHO TỪNG trụ, không chỉ 1 trụ chính (goal_house ở trên) — 2026-08-26, góp ý Quỳnh: "phải
--- cho tự ghi ra lý do tại sao ở mỗi trục... để người dùng gia tăng cảm xúc". Không bắt buộc, chỉ
--- khuyến khích — {house_key: "lý do tự viết"}, thiếu key nào nghĩa là chưa viết cho trụ đó.
+-- Cho chọn NHIỀU trụ thay vì đúng 1 (2026-08-26, góp ý Quỳnh: "chỉ cho chọn 1 trụ cho mục tiêu thì
+-- ko đúng lắm") — cột MỚI goal_houses (jsonb array các house_key), thay cho goal_house ở trên.
+-- KHÔNG xoá goal_house (giữ lại làm dữ liệu cũ/lịch sử, code không viết vào cột này nữa) — tránh
+-- vỡ constraint/mất dữ liệu cũ; app đọc goal_house làm fallback khi goal_houses chưa có (seed từ
+-- giá trị cũ), xem load() ở muc-tieu-cam-ket.js.
+alter table tc_monthly_reflections add column if not exists goal_houses jsonb;
+
+-- Lý do CHO TỪNG trụ, không chỉ 1 trụ chính (goal_house/goal_houses ở trên) — 2026-08-26, góp ý
+-- Quỳnh: "phải cho tự ghi ra lý do tại sao ở mỗi trục... để người dùng gia tăng cảm xúc". Không bắt
+-- buộc, chỉ khuyến khích — {house_key: "lý do tự viết"}, thiếu key nào nghĩa là chưa viết cho trụ đó.
 alter table tc_monthly_reflections add column if not exists goal_house_reasons jsonb;
 
 -- ============================================================
