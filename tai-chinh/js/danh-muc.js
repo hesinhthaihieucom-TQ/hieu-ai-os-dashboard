@@ -94,7 +94,7 @@ function render(container, ctx){
         <div class="chip ${state.tab==='income'?'selected':''}" data-tab="income">Danh mục thu nhập</div>
       </div>
 
-      ${state.tab==='expense' ? `<div class="hint-box" style="margin-bottom:14px;">Chọn sẵn <b>CP cố định</b> (lặp lại đều mỗi tháng, vd tiền nhà, trả góp) hoặc <b>CP biến đổi</b> (thay đổi theo thói quen, vd ăn uống, mua sắm) cho từng danh mục — Ghi Chép Hàng Ngày sẽ tự điền sẵn đúng loại này, không phải chọn lại mỗi lần.</div>` : ''}
+      ${state.tab==='expense' ? `<div class="hint-box" style="margin-bottom:14px;">Chọn sẵn ${glossaryWrap('CP cố định', 'cp_co_dinh')} hoặc ${glossaryWrap('CP biến đổi', 'cp_bien_doi')} cho từng danh mục — Ghi Chép Hàng Ngày sẽ tự điền sẵn đúng loại này, không phải chọn lại mỗi lần.</div>` : ''}
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">

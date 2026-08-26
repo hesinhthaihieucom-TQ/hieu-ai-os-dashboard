@@ -174,14 +174,9 @@ function render(container, ctx){
         ${isIncome ? `
           <div class="hint-box" id="gc-fund-split" style="margin-top:14px;">${fundSplitHtml(state.form.amount, state.debtWarning)}</div>
         ` : `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Khoản này là Tài sản hay Tiêu sản? <span style="font-weight:400;">(không bắt buộc)</span></label>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Khoản này là Tài sản hay Tiêu sản?', 'tai_san', 'tieu_san')} <span style="font-weight:400;">(không bắt buộc)</span></label>
           <div class="chips" id="gc-category-chips">
             ${EXPENSE_CATEGORIES.map(c=>`<div class="chip ${state.form.category===c.key?'selected':''}" data-category="${c.key}" title="${esc(c.hint)}">${esc(c.label)}</div>`).join('')}
-          </div>
-          <div class="hint-box" style="margin-top:10px;">
-            <b>🏦 Tài sản</b> — ${esc(GLOSSARY.tai_san.explain)}<br><br>
-            <b>🔴 Tiêu sản</b> — ${esc(GLOSSARY.tieu_san.explain)}<br><br>
-            VD dễ nhớ: mua vàng/gửi tiết kiệm/mua cổ phiếu = <b>Tài sản</b> (tiền vẫn của bạn, còn sinh thêm) · ăn uống/mua quần áo/trả lãi thẻ tín dụng = <b>Tiêu sản</b> (tiền đã tiêu, không quay lại).
           </div>
         `}
 

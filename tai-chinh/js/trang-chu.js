@@ -21,7 +21,7 @@ const IMPORTANT_NOTES = [
   { icon:'📈', text:'<b>Điểm Nghiệp không lưu số cố định</b> — luôn tính lại từ đúng dữ liệu bạn vừa ghi, xem ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Chấm Điểm Nghiệp Tiền →</a>.' },
   { icon:'💾', text:'<b>Không lo mất dữ liệu khi chuyển trang</b> — mọi tiến trình đang làm dở (số đang gõ, câu vừa chọn...) tự động lưu lại, quay lại vẫn còn nguyên.' },
   { icon:'🌱', text:'<b>Niềm tin cũ chưa chuyển hoá sẽ kéo điểm xuống</b> — ghi lại ở <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Hạt Giống Phước - Nghiệp →</a> khi thấy 1 Nút Chặn Dòng Tiền lặp lại mãi.' },
-  { icon:'💛', text:'<b>Vibe Check mỗi lần ghi chép là bước quan trọng nhất</b> — không phải ô điền cho có, đây là chỗ tâm thức tiền thật sự được nhìn thấy.' },
+  { icon:'💛', text:`<b>${glossaryWrap('Vibe Check', 'vibe_check')} mỗi lần ghi chép là bước quan trọng nhất</b> — không phải ô điền cho có, đây là chỗ tâm thức tiền thật sự được nhìn thấy.` },
   { icon:'🔓', text:'<b>Dùng thử miễn phí, mở khoá trọn đời chỉ 1 lần</b> — xem chi tiết ở <a href="#nang-cap" style="color:var(--accent);font-weight:600;">Nâng Cấp →</a>.' },
 ];
 
