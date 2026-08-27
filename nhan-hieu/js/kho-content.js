@@ -42,7 +42,7 @@ function render(container, ctx){
   const isAdmin = !!(ctx.profile && ctx.profile.role==='admin');
   const state = {
     tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
-    newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null },
+    newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null, caseStudyImage:null },
     addingPersonal:false, addPersonalError:null, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
@@ -518,6 +518,14 @@ function render(container, ctx){
           ` : `<input type="file" accept="image/*" id="ne-screenshot">`}
         ` : ''}
 
+        <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:12px 0 4px;">Ảnh case study thật (không bắt buộc) — nếu có, lịch Fanpage tự động sẽ đăng ĐÚNG ảnh này thay vì tự tạo ảnh AI khi dùng bài này</label>
+        ${state.newEntry.caseStudyImage ? `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="${state.newEntry.caseStudyImage}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--line);">
+            <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-action="clear-case-study-image">Xoá ảnh</span>
+          </div>
+        ` : `<input type="file" accept="image/*" id="ne-case-study-image">`}
+
         <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add-personal" ${state.addingPersonal?'disabled':''}>${state.addingPersonal?'Đang phân loại…':'Thêm vào kho của tôi'}</button></div>
         ${state.addPersonalError?`<div class="error-box">${esc(state.addPersonalError)}</div>`:''}
       </div>
@@ -773,6 +781,32 @@ function render(container, ctx){
     };
     const clearScreenshotBtn = container.querySelector('[data-action="clear-viral-screenshot"]');
     if(clearScreenshotBtn) clearScreenshotBtn.onclick = ()=>{ state.newEntry.viralScreenshot = null; draw(); };
+    // Ảnh case study thật (2026-08-27, theo yêu cầu chị Quỳnh: dùng ảnh thật thay vì ảnh AI khi
+    // auto-đăng Fanpage) — cùng cách nén/resize base64 như ảnh chụp màn hình viral ở trên, không
+    // liên quan tới is_viral (bài nào cũng gắn được ảnh case study riêng).
+    const caseStudyInput = container.querySelector('#ne-case-study-image');
+    if(caseStudyInput) caseStudyInput.onchange = ()=>{
+      const file = caseStudyInput.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          state.newEntry.caseStudyImage = c.toDataURL('image/jpeg', 0.85);
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    const clearCaseStudyBtn = container.querySelector('[data-action="clear-case-study-image"]');
+    if(clearCaseStudyBtn) clearCaseStudyBtn.onclick = ()=>{ state.newEntry.caseStudyImage = null; draw(); };
     const addBtn = container.querySelector('[data-action="add-personal"]');
     if(addBtn) addBtn.onclick = addPersonal;
     container.querySelectorAll('[data-del-personal]').forEach(el=>{
@@ -867,6 +901,7 @@ function render(container, ctx){
       is_viral: entry.isViral===true, viral_views: entry.isViral===true ? (entry.viralViews||null) : null,
       viral_likes: entry.isViral===true ? (entry.viralLikes||null) : null,
       viral_screenshot: entry.isViral===true ? (entry.viralScreenshot||null) : null,
+      case_study_image: entry.caseStudyImage || null,
     }).select().single();
 
     state.addingPersonal = false;
@@ -876,7 +911,7 @@ function render(container, ctx){
       return;
     }
     const wasViral = entry.isViral===true;
-    state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null };
+    state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null, caseStudyImage:null };
     await loadPersonal();
     if(wasViral) state.sharePromptFor = row.id;
     draw();

@@ -1640,3 +1640,16 @@ alter table calendar_entries add column if not exists fb_publish_error text;
 -- cho Fanpage). Dòng cũ mặc định 'ca_nhan' — đúng bản chất dữ liệu cũ, không cần migrate tay.
 alter table calendar_entries add column if not exists channel text not null default 'ca_nhan'
   check (channel in ('ca_nhan','fanpage'));
+
+-- Ảnh case study thật (2026-08-27, theo yêu cầu chị Quỳnh — Fanpage dùng để bán hàng, ảnh case study
+-- thật đáng tin hơn ảnh AI) — cùng cách nén base64 client-side (canvas, JPEG, max 1000px) như
+-- content_bank_personal.viral_screenshot đã có sẵn, KHÔNG dùng Supabase Storage (repo chỉ mới dùng
+-- Storage 1 lần cho digital-products, ảnh nhỏ cỡ này lưu thẳng cột text vẫn ổn, đỡ phải dựng thêm
+-- bucket/policy). Chỉ ở content_bank_personal (giống viral_screenshot, không copy sang shared).
+alter table content_bank_personal add column if not exists case_study_image text;
+
+-- posts.image_data: ảnh THẬT copy nguyên từ content_bank_personal.case_study_image lúc
+-- api/cron/auto-fill-schedule.js viết bài (nếu nguồn viết ra có gắn ảnh case study) — để
+-- api/cron/auto-publish-fb.js lúc đăng biết đây là bài có ảnh thật, ưu tiên dùng thay vì tự tạo ảnh
+-- AI. Tách cột riêng khỏi `structure` (jsonb) vì đây là dữ liệu ảnh, không phải nội dung bài viết.
+alter table posts add column if not exists image_data text;

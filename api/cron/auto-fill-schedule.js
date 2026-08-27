@@ -75,28 +75,36 @@ async function loadCandidatePool(userId) {
   const [hp, hs, cp, cs] = await Promise.all([
     supabaseAdmin(`hooks_bank_personal?user_id=eq.${userId}&select=id,hook_text,category,tags&order=created_at.desc`),
     supabaseAdmin(`hooks_bank_shared?select=id,hook_text,category,tags&order=created_at.desc`),
-    supabaseAdmin(`content_bank_personal?user_id=eq.${userId}&select=id,title,content,tags&order=created_at.desc`),
+    // case_study_image: ảnh thật (base64) chị Quỳnh tự tải lên ở Kho Content — chỉ có ở
+    // content_bank_personal (giống viral_screenshot, không copy sang shared). Ưu tiên dùng ảnh này
+    // khi đăng Fanpage thay vì tự tạo ảnh AI (xem pickUnusedCandidate + auto-publish-fb.js).
+    supabaseAdmin(`content_bank_personal?user_id=eq.${userId}&select=id,title,content,tags,case_study_image&order=created_at.desc`),
     supabaseAdmin(`content_bank_shared?select=id,title,content,tags&order=pin_order.asc,created_at.desc`),
   ]);
   const [hpRows, hsRows, cpRows, csRows] = await Promise.all([
     hp.ok ? hp.json() : [], hs.ok ? hs.json() : [], cp.ok ? cp.json() : [], cs.ok ? cs.json() : [],
   ]);
   return [
-    ...hpRows.map((h) => ({ table: 'hooks_bank_personal', id: h.id, text: h.hook_text, title: h.category, tags: h.tags })),
-    ...hsRows.map((h) => ({ table: 'hooks_bank_shared', id: h.id, text: h.hook_text, title: h.category, tags: h.tags })),
-    ...cpRows.map((c) => ({ table: 'content_bank_personal', id: c.id, text: c.content, title: c.title, tags: c.tags })),
-    ...csRows.map((c) => ({ table: 'content_bank_shared', id: c.id, text: c.content, title: c.title, tags: c.tags })),
+    ...hpRows.map((h) => ({ table: 'hooks_bank_personal', id: h.id, text: h.hook_text, title: h.category, tags: h.tags, image: null })),
+    ...hsRows.map((h) => ({ table: 'hooks_bank_shared', id: h.id, text: h.hook_text, title: h.category, tags: h.tags, image: null })),
+    ...cpRows.map((c) => ({ table: 'content_bank_personal', id: c.id, text: c.content, title: c.title, tags: c.tags, image: c.case_study_image || null })),
+    ...csRows.map((c) => ({ table: 'content_bank_shared', id: c.id, text: c.content, title: c.title, tags: c.tags, image: null })),
   ].filter((c) => c.text && c.text.trim());
 }
 
 // Y hệt usageCountFor()/sortUnusedFirst() ở nhan-hieu/js/kho-hook.js và kho-content.js — ưu tiên ứng
 // viên CHƯA TỪNG được viết thành bài (posts.source_table/source_id), rơi về ứng viên đã dùng nếu hết
 // ứng viên chưa dùng. usedRefs được cập nhật NGAY trong vòng lặp (không chỉ đọc 1 lần từ DB) để
-// không chọn trùng 1 nguồn cho 2 ô trống khác nhau trong cùng 1 lượt chạy.
+// không chọn trùng 1 nguồn cho 2 ô trống khác nhau trong cùng 1 lượt chạy. Trong nhóm đang xét (chưa
+// dùng, hoặc rơi về tất cả nếu hết), ƯU TIÊN ứng viên có sẵn ảnh case study thật (theo yêu cầu chị
+// Quỳnh 2026-08-27 — Fanpage bán hàng, ảnh thật đáng tin hơn ảnh AI) — nếu không có ứng viên nào có
+// ảnh, rơi về thứ tự bình thường.
 function pickUnusedCandidate(candidates, usedRefs) {
   const isUsed = (c) => usedRefs.some((r) => r.table === c.table && r.id === c.id);
   const unused = candidates.filter((c) => !isUsed(c));
-  return (unused.length ? unused : candidates)[0] || null;
+  const pool = unused.length ? unused : candidates;
+  const withImage = pool.filter((c) => c.image);
+  return (withImage.length ? withImage : pool)[0] || null;
 }
 
 async function findEmptySlots(userId, dateStrs) {
@@ -165,6 +173,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
       tags: candidate.tags || null,
       source_table: candidate.table,
       source_id: candidate.id,
+      image_data: candidate.image || null,
     }),
   });
   if (!postResp.ok) throw new Error(`Lưu bài thất bại: ${await postResp.text()}`);

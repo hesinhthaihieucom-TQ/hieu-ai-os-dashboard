@@ -78,7 +78,7 @@ async function publishOne(entry, pageId, pageToken) {
   // buộc phải khoá lại, không thể chỉ dựa vào cửa sổ thời gian).
   await markEntry(entry.id, { fb_publish_status: 'pending' });
 
-  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,title,structure`);
+  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,title,structure,image_data`);
   const posts = postResp.ok ? await postResp.json() : [];
   const post = posts[0];
   if (!post || !post.content) {
@@ -87,11 +87,19 @@ async function publishOne(entry, pageId, pageToken) {
   }
 
   try {
-    // Thử đăng kèm ảnh AI trước — chỉ khi có cấu hình OPENAI_API_KEY. Lỗi ở BẤT KỲ bước nào (thiếu
-    // key, OpenAI lỗi/timeout, sharp lỗi, Facebook từ chối ảnh) đều rơi về đăng bài chữ thường
-    // (/feed) — không bao giờ để phần ảnh (không bắt buộc) chặn việc đăng bài chính.
+    // Thứ tự ưu tiên đăng: (1) ảnh case study THẬT chị Quỳnh tự tải lên Kho Content (post.image_data,
+    // đăng nguyên ảnh, KHÔNG đè chữ lên — sợ che mất nội dung ảnh chứng minh/testimonial thật) → (2)
+    // ảnh AI tự tạo (chỉ khi có OPENAI_API_KEY) → (3) rơi về đăng bài chữ thường (/feed). Lỗi ở BẤT
+    // KỲ bước ảnh nào (thiếu key, OpenAI lỗi/timeout, sharp lỗi, Facebook từ chối ảnh, base64 hỏng)
+    // đều rơi xuống bước sau — không bao giờ để phần ảnh (không bắt buộc) chặn việc đăng bài chính.
     let result = null;
-    if (process.env.OPENAI_API_KEY) {
+    if (post.image_data) {
+      try {
+        const base64 = post.image_data.replace(/^data:image\/\w+;base64,/, '');
+        result = await fbPostPhoto(pageId, pageToken, Buffer.from(base64, 'base64'), post.content);
+      } catch (e) { result = null; }
+    }
+    if (!result && process.env.OPENAI_API_KEY) {
       try {
         const image = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: post.title || post.content.slice(0, 80) });
         result = await fbPostPhoto(pageId, pageToken, image, post.content);
