@@ -1,28 +1,7 @@
 // Serverless function — tự chọn 1 trục nội dung phù hợp nhất cho 1 bài/tư liệu/hook, để không
 // còn bắt người dùng tự chọn trục thủ công và không còn mục "Chưa phân loại".
 const { requireUser } = require('./_lib/auth');
-const { PILLARS } = require('./_lib/pillars');
-
-const PILLAR_KEYS = PILLARS.map((p) => p.key);
-
-const SYSTEM_PROMPT = `Bạn là chuyên gia phân loại nội dung mạng xã hội theo trục nội dung (content pillar) tại Việt Nam.
-
-Đây là danh sách trục nội dung:
-${PILLARS.map((p) => `- ${p.key}: ${p.label}`).join('\n')}
-
-NHIỆM VỤ: Đọc tiêu đề/nội dung được đưa, chọn ĐÚNG 1 trục phù hợp nhất trong danh sách trên — không được bịa trục mới ngoài danh sách. Nếu nội dung pha trộn nhiều chủ đề, chọn trục NỔI BẬT NHẤT.`;
-
-const TOOL_PHAN_LOAI = {
-  name: 'xuat_phan_loai_truc',
-  description: 'Xuất đúng 1 trục nội dung phù hợp nhất.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      truc: { type: 'string', enum: PILLAR_KEYS },
-    },
-    required: ['truc'],
-  },
-};
+const { TEXT_CLASSIFY_SYSTEM_PROMPT: SYSTEM_PROMPT, TOOL_PHAN_LOAI_TRUC: TOOL_PHAN_LOAI } = require('./_lib/pillars');
 
 async function callClaude({ apiKey, system, userContent, tool }) {
   // fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Anthropic bị treo/chậm bất thường,

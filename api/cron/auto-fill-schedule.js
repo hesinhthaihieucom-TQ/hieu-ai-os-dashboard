@@ -18,6 +18,7 @@ const {
 } = require('../_lib/post-schema');
 const { FORMAT_GUIDE } = require('../_lib/formats');
 const { compositeCaseStudyImage } = require('../_lib/image-gen');
+const { TEXT_CLASSIFY_SYSTEM_PROMPT, TOOL_PHAN_LOAI_TRUC } = require('../_lib/pillars');
 
 const MAX_FILL_PER_RUN = 3;
 const LOOKAHEAD_DAYS = 3; // hôm nay + 2 ngày tới
@@ -149,6 +150,21 @@ async function writeExtrasAndSave({
   userId, tags, sourceTable, sourceId, imageDataBase64, slotInfo, slotTime,
 }) {
   const bodyText = assemblePost(core);
+
+  // Kế thừa trục nội dung từ nguồn (hook/content/case study) nếu có. Nếu KHÔNG có (nguồn chưa từng
+  // được phân loại) — để AI tự phân loại ngay, y hệt cách viet-content.js làm khi lưu bài viết tay —
+  // tránh bài tự-viết nào cũng rơi vào "Chưa phân loại" trong Kho Content (phản hồi chị Quỳnh 2026-08-28).
+  let finalTags = Array.isArray(tags) && tags.length ? tags : null;
+  if (!finalTags) {
+    try {
+      const classified = await callClaude({
+        apiKey, system: TEXT_CLASSIFY_SYSTEM_PROMPT, tool: TOOL_PHAN_LOAI_TRUC,
+        userContent: `TIÊU ĐỀ: ${core.tieu_de || '(không có)'}\nNỘI DUNG:\n${bodyText.slice(0, 3000)}`,
+      });
+      if (classified && classified.truc) finalTags = [classified.truc];
+    } catch (e) { /* không phân loại được (vd lỗi mạng) — vẫn lưu bài, chỉ để trống trục */ }
+  }
+
   const extras = await callClaude({
     apiKey, system: EXTRAS_SYSTEM_PROMPT, tool: TOOL_POST_EXTRAS,
     userContent: `${contextBlockOf(positioning, null)}
@@ -178,7 +194,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
         hashtag: hashtags, format: extras.dinh_dang_de_xuat,
         cmt_cta_san_pham: Array.isArray(extras.cmt_cta_san_pham) ? extras.cmt_cta_san_pham : [],
       },
-      tags: tags || null,
+      tags: finalTags,
       source_table: sourceTable || null,
       source_id: sourceId || null,
       image_data: imageDataBase64 || null,
