@@ -8,8 +8,7 @@
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300 },
-    "api/cron/*.js": { "maxDuration": 60 },
-    "api/cron/auto-fill-schedule.js": { "maxDuration": 300 }
+    "api/cron/*.js": { "maxDuration": 300 }
   },
   "crons": [
     { "path": "/api/cron/send-reminders", "schedule": "*/15 * * * *" },
