@@ -1641,15 +1641,29 @@ alter table calendar_entries add column if not exists fb_publish_error text;
 alter table calendar_entries add column if not exists channel text not null default 'ca_nhan'
   check (channel in ('ca_nhan','fanpage'));
 
--- Ảnh case study thật (2026-08-27, theo yêu cầu chị Quỳnh — Fanpage dùng để bán hàng, ảnh case study
--- thật đáng tin hơn ảnh AI) — cùng cách nén base64 client-side (canvas, JPEG, max 1000px) như
--- content_bank_personal.viral_screenshot đã có sẵn, KHÔNG dùng Supabase Storage (repo chỉ mới dùng
--- Storage 1 lần cho digital-products, ảnh nhỏ cỡ này lưu thẳng cột text vẫn ổn, đỡ phải dựng thêm
--- bucket/policy). Chỉ ở content_bank_personal (giống viral_screenshot, không copy sang shared).
+-- Ảnh case study thật (2026-08-27) — cột này ĐÃ THAY THẾ bởi bảng case_studies riêng bên dưới (chị
+-- Quỳnh phản hồi: chỉ muốn tải ẢNH thôi, không muốn gõ tiêu đề/nội dung mà form content_bank_personal
+-- bắt buộc phải có). Giữ nguyên cột này không dùng nữa — KHÔNG xoá để tránh rủi ro mất dữ liệu nếu
+-- đã lỡ upload gì qua bản cũ, chị Quỳnh tự xoá sau nếu chắc chắn không cần.
 alter table content_bank_personal add column if not exists case_study_image text;
 
--- posts.image_data: ảnh THẬT copy nguyên từ content_bank_personal.case_study_image lúc
--- api/cron/auto-fill-schedule.js viết bài (nếu nguồn viết ra có gắn ảnh case study) — để
+-- posts.image_data: ảnh THẬT được api/cron/auto-fill-schedule.js gán khi viết bài (nếu tìm được 1
+-- ảnh case study cùng trục nội dung với bài đang viết — xem bảng case_studies bên dưới) — để
 -- api/cron/auto-publish-fb.js lúc đăng biết đây là bài có ảnh thật, ưu tiên dùng thay vì tự tạo ảnh
 -- AI. Tách cột riêng khỏi `structure` (jsonb) vì đây là dữ liệu ảnh, không phải nội dung bài viết.
 alter table posts add column if not exists image_data text;
+
+-- Kho Case Study riêng (2026-08-27, theo yêu cầu chị Quỳnh) — CHỈ ảnh, KHÔNG có tiêu đề/nội dung, AI
+-- tự phân loại trục nội dung ngay khi tải lên (api/phan-loai-truc-anh.js, cùng PILLARS dùng chung ở
+-- api/_lib/pillars.js). api/cron/auto-fill-schedule.js ghép ảnh vào bài đang viết theo TRỤC TRÙNG
+-- nhau (không cần ảnh "thuộc về" đúng bài đó, chỉ cần đúng ngành) — xem posts.image_data ở trên.
+create table if not exists case_studies (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  image text not null,
+  tags text[],
+  created_at timestamptz not null default now()
+);
+alter table case_studies enable row level security;
+drop policy if exists "case_studies_owner_all" on case_studies;
+create policy "case_studies_owner_all" on case_studies for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

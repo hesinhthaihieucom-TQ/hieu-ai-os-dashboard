@@ -75,36 +75,38 @@ async function loadCandidatePool(userId) {
   const [hp, hs, cp, cs] = await Promise.all([
     supabaseAdmin(`hooks_bank_personal?user_id=eq.${userId}&select=id,hook_text,category,tags&order=created_at.desc`),
     supabaseAdmin(`hooks_bank_shared?select=id,hook_text,category,tags&order=created_at.desc`),
-    // case_study_image: ảnh thật (base64) chị Quỳnh tự tải lên ở Kho Content — chỉ có ở
-    // content_bank_personal (giống viral_screenshot, không copy sang shared). Ưu tiên dùng ảnh này
-    // khi đăng Fanpage thay vì tự tạo ảnh AI (xem pickUnusedCandidate + auto-publish-fb.js).
-    supabaseAdmin(`content_bank_personal?user_id=eq.${userId}&select=id,title,content,tags,case_study_image&order=created_at.desc`),
+    supabaseAdmin(`content_bank_personal?user_id=eq.${userId}&select=id,title,content,tags&order=created_at.desc`),
     supabaseAdmin(`content_bank_shared?select=id,title,content,tags&order=pin_order.asc,created_at.desc`),
   ]);
   const [hpRows, hsRows, cpRows, csRows] = await Promise.all([
     hp.ok ? hp.json() : [], hs.ok ? hs.json() : [], cp.ok ? cp.json() : [], cs.ok ? cs.json() : [],
   ]);
   return [
-    ...hpRows.map((h) => ({ table: 'hooks_bank_personal', id: h.id, text: h.hook_text, title: h.category, tags: h.tags, image: null })),
-    ...hsRows.map((h) => ({ table: 'hooks_bank_shared', id: h.id, text: h.hook_text, title: h.category, tags: h.tags, image: null })),
-    ...cpRows.map((c) => ({ table: 'content_bank_personal', id: c.id, text: c.content, title: c.title, tags: c.tags, image: c.case_study_image || null })),
-    ...csRows.map((c) => ({ table: 'content_bank_shared', id: c.id, text: c.content, title: c.title, tags: c.tags, image: null })),
+    ...hpRows.map((h) => ({ table: 'hooks_bank_personal', id: h.id, text: h.hook_text, title: h.category, tags: h.tags })),
+    ...hsRows.map((h) => ({ table: 'hooks_bank_shared', id: h.id, text: h.hook_text, title: h.category, tags: h.tags })),
+    ...cpRows.map((c) => ({ table: 'content_bank_personal', id: c.id, text: c.content, title: c.title, tags: c.tags })),
+    ...csRows.map((c) => ({ table: 'content_bank_shared', id: c.id, text: c.content, title: c.title, tags: c.tags })),
   ].filter((c) => c.text && c.text.trim());
 }
 
 // Y hệt usageCountFor()/sortUnusedFirst() ở nhan-hieu/js/kho-hook.js và kho-content.js — ưu tiên ứng
 // viên CHƯA TỪNG được viết thành bài (posts.source_table/source_id), rơi về ứng viên đã dùng nếu hết
 // ứng viên chưa dùng. usedRefs được cập nhật NGAY trong vòng lặp (không chỉ đọc 1 lần từ DB) để
-// không chọn trùng 1 nguồn cho 2 ô trống khác nhau trong cùng 1 lượt chạy. Trong nhóm đang xét (chưa
-// dùng, hoặc rơi về tất cả nếu hết), ƯU TIÊN ứng viên có sẵn ảnh case study thật (theo yêu cầu chị
-// Quỳnh 2026-08-27 — Fanpage bán hàng, ảnh thật đáng tin hơn ảnh AI) — nếu không có ứng viên nào có
-// ảnh, rơi về thứ tự bình thường.
+// không chọn trùng 1 nguồn cho 2 ô trống khác nhau trong cùng 1 lượt chạy.
 function pickUnusedCandidate(candidates, usedRefs) {
   const isUsed = (c) => usedRefs.some((r) => r.table === c.table && r.id === c.id);
   const unused = candidates.filter((c) => !isUsed(c));
-  const pool = unused.length ? unused : candidates;
-  const withImage = pool.filter((c) => c.image);
-  return (withImage.length ? withImage : pool)[0] || null;
+  return (unused.length ? unused : candidates)[0] || null;
+}
+
+// Ghép 1 ảnh case study (kho riêng case_studies, xem schema_full.sql) có TRỤC NỘI DUNG trùng với
+// candidate.tags — không cần ảnh "thuộc về" đúng bài đó, chỉ cần đúng ngành (theo yêu cầu chị Quỳnh
+// 2026-08-27: Fanpage bán hàng, ảnh case study thật đáng tin hơn ảnh AI). Chọn ngẫu nhiên 1 nếu có
+// nhiều ảnh khớp; không có ảnh nào khớp trục thì trả về null (rơi về ảnh AI ở auto-publish-fb.js).
+function pickMatchingCaseStudy(caseStudies, candidateTags) {
+  if (!candidateTags || !candidateTags.length) return null;
+  const matches = caseStudies.filter((cs) => cs.tags && cs.tags.some((t) => candidateTags.includes(t)));
+  return matches.length ? matches[Math.floor(Math.random() * matches.length)] : null;
 }
 
 async function findEmptySlots(userId, dateStrs) {
@@ -123,7 +125,7 @@ async function findEmptySlots(userId, dateStrs) {
   return empty;
 }
 
-async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName }) {
+async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, caseStudyImage }) {
   const core = await callClaude({
     apiKey, system: KHO_GOC_SYSTEM_PROMPT, tool: TOOL_POST_KHO_GOC,
     userContent: `${contextBlockOf(positioning, null)}
@@ -173,7 +175,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
       tags: candidate.tags || null,
       source_table: candidate.table,
       source_id: candidate.id,
-      image_data: candidate.image || null,
+      image_data: caseStudyImage || null,
     }),
   });
   if (!postResp.ok) throw new Error(`Lưu bài thất bại: ${await postResp.text()}`);
@@ -192,7 +194,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
 }
 
 async function autoFillForAdmin(admin, apiKey) {
-  const [posResp, profResp, poolCandidates, assetsResp] = await Promise.all([
+  const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp] = await Promise.all([
     supabaseAdmin(`positioning_results?user_id=eq.${admin.id}&select=luot1,luot2&limit=1`),
     supabaseAdmin(`profiles?id=eq.${admin.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`),
     loadCandidatePool(admin.id),
@@ -200,6 +202,9 @@ async function autoFillForAdmin(admin, apiKey) {
     // dùng để CTA trong bài trỏ đúng sản phẩm thật, không để AI tự bịa (theo yêu cầu chị Quỳnh
     // 2026-08-27). Group phân biệt bằng kind='cong_dong', còn lại coi là sản phẩm/dịch vụ.
     supabaseAdmin(`promo_assets?user_id=eq.${admin.id}&select=id,label,url,kind,cta_mau&order=created_at.asc`),
+    // case_studies: kho ảnh case study riêng (chỉ ảnh + trục, xem schema_full.sql) — ghép vào bài
+    // theo trục trùng nhau ở pickMatchingCaseStudy(), không theo nguồn hook/content.
+    supabaseAdmin(`case_studies?user_id=eq.${admin.id}&select=id,image,tags`),
   ]);
   const posRows = posResp.ok ? await posResp.json() : [];
   const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
@@ -211,6 +216,8 @@ async function autoFillForAdmin(admin, apiKey) {
   const assets = assetsResp.ok ? await assetsResp.json() : [];
   const products = assets.filter((a) => a.kind !== 'cong_dong');
   const groups = assets.filter((a) => a.kind === 'cong_dong');
+
+  const caseStudies = caseStudiesResp.ok ? await caseStudiesResp.json() : [];
 
   const postsResp = await supabaseAdmin(`posts?user_id=eq.${admin.id}&select=source_table,source_id`);
   const postsRows = postsResp.ok ? await postsResp.json() : [];
@@ -234,10 +241,12 @@ async function autoFillForAdmin(admin, apiKey) {
     // nhiều lượt chạy sẽ tự dàn đều các sản phẩm/group đã lưu, không lặp mãi 1 sản phẩm.
     const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
     const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
+    const matchedCaseStudy = pickMatchingCaseStudy(caseStudies, candidate.tags);
     try {
       filled.push(await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
+        caseStudyImage: matchedCaseStudy && matchedCaseStudy.image,
       }));
     } catch (e) {
       skippedNoCandidate.push({ ...slotInfo, error: e.message });

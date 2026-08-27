@@ -42,13 +42,14 @@ function render(container, ctx){
   const isAdmin = !!(ctx.profile && ctx.profile.role==='admin');
   const state = {
     tab:'da-viet', posts:[], personalBank:[], sharedBank:[], positioning:null,
-    newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null, caseStudyImage:null },
+    newEntry:{ title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null },
     addingPersonal:false, addPersonalError:null, sharePromptFor:null, shareSubmitting:false, shareDoneFor:null,
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(), expandedDayBaiIds:new Set(),
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'', scheduledPostIds:new Set(),
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
+    caseStudies:[], caseStudyUploading:false, caseStudyError:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -66,7 +67,7 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
     state.positioningId = pos ? pos.id : null;
-    await Promise.all([loadPosts(), loadPersonal(), loadShared(), loadScheduledPostIds()]);
+    await Promise.all([loadPosts(), loadPersonal(), loadShared(), loadScheduledPostIds(), loadCaseStudies()]);
     // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung
     // trong Kho Content Viral thay vì bắt người dùng tự chọn lại từ đầu.
     if(window.PendingPillar){
@@ -94,6 +95,12 @@ function render(container, ctx){
   async function loadPersonal(){
     const { data } = await ctx.supabase.from('content_bank_personal').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
     state.personalBank = data || [];
+  }
+  // Kho Case Study (2026-08-27, theo yêu cầu chị Quỳnh) — CHỈ ảnh, không có tiêu đề/nội dung, tách
+  // hẳn khỏi content_bank_personal vì form đó bắt buộc phải điền tiêu đề+nội dung mới lưu được.
+  async function loadCaseStudies(){
+    const { data } = await ctx.supabase.from('case_studies').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
+    state.caseStudies = data || [];
   }
   async function loadShared(){
     const { data } = await ctx.supabase.from('content_bank_shared').select('*')
@@ -169,8 +176,9 @@ function render(container, ctx){
         <div class="tab-btn ${state.tab==='da-viet'?'active':''}" data-tab="da-viet">Bài đã viết (${state.posts.length})</div>
         <div class="tab-btn ${state.tab==='kho-toi'?'active':''}" data-tab="kho-toi">Kho của tôi (${state.personalBank.length})</div>
         <div class="tab-btn ${state.tab==='kho-chung'?'active':''}" data-tab="kho-chung">Kho Content Viral (${state.sharedBank.length})</div>
+        <div class="tab-btn ${state.tab==='case-study'?'active':''}" data-tab="case-study">Case Study (${state.caseStudies.length})</div>
       </div>
-      ${state.tab==='da-viet' ? daVietTab() : state.tab==='kho-toi' ? khoToiTab() : khoChungTab()}
+      ${state.tab==='da-viet' ? daVietTab() : state.tab==='kho-toi' ? khoToiTab() : state.tab==='kho-chung' ? khoChungTab() : caseStudyTab()}
     `;
   }
 
@@ -518,14 +526,6 @@ function render(container, ctx){
           ` : `<input type="file" accept="image/*" id="ne-screenshot">`}
         ` : ''}
 
-        <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:12px 0 4px;">Ảnh case study thật (không bắt buộc) — nếu có, lịch Fanpage tự động sẽ đăng ĐÚNG ảnh này thay vì tự tạo ảnh AI khi dùng bài này</label>
-        ${state.newEntry.caseStudyImage ? `
-          <div style="display:flex;align-items:center;gap:10px;">
-            <img src="${state.newEntry.caseStudyImage}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--line);">
-            <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-action="clear-case-study-image">Xoá ảnh</span>
-          </div>
-        ` : `<input type="file" accept="image/*" id="ne-case-study-image">`}
-
         <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="add-personal" ${state.addingPersonal?'disabled':''}>${state.addingPersonal?'Đang phân loại…':'Thêm vào kho của tôi'}</button></div>
         ${state.addPersonalError?`<div class="error-box">${esc(state.addPersonalError)}</div>`:''}
       </div>
@@ -581,6 +581,33 @@ function render(container, ctx){
     `).join('');
   }
 
+  // Kho Case Study (2026-08-27, theo yêu cầu chị Quỳnh) — CHỈ tải ảnh, không tiêu đề/nội dung, AI tự
+  // đọc ảnh xếp vào đúng trục ngay khi tải lên. Ảnh này KHÔNG gắn với 1 bài viết cụ thể nào — lịch
+  // Fanpage tự động (api/cron/auto-fill-schedule.js) sẽ tự ghép ảnh vào bất kỳ bài nào CÙNG TRỤC khi
+  // đăng, không cần chọn tay từng cặp.
+  function caseStudyTab(){
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh case study/kết quả thật của khách hàng — AI tự đọc ảnh và xếp vào đúng trục nội dung, không cần gõ tiêu đề gì cả. Khi lịch Fanpage tự động viết 1 bài thuộc đúng trục này, nó sẽ tự ghép ảnh đây vào thay vì tự tạo ảnh AI.</div>`;
+    const uploadHtml = state.caseStudyUploading
+      ? `<div class="hint-box">Đang tải ảnh lên và phân loại…</div>`
+      : `<input type="file" accept="image/*" id="cs-upload">`;
+    const errorHtml = state.caseStudyError ? `<div class="error-box" style="margin-top:10px;">${esc(state.caseStudyError)}</div>` : '';
+    if(state.caseStudies.length===0){
+      return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:14px;">Chưa có ảnh case study nào.</div>`;
+    }
+    const grid = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
+      ${state.caseStudies.map(cs=>{
+        const pillarKey = (cs.tags && cs.tags[0]) || null;
+        const pillar = PILLARS.find(p=>p.key===pillarKey);
+        return `<div style="width:160px;">
+          <img src="${cs.image}" style="width:160px;height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">${pillar?esc(pillar.label):'Chưa rõ trục'}</div>
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-case-study="${cs.id}">Xoá</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+    return hint + uploadHtml + errorHtml + grid;
+  }
+
   function bind(){
     container.querySelectorAll('[data-copy-value]').forEach(el=>{
       el.onclick = async ()=>{
@@ -593,6 +620,49 @@ function render(container, ctx){
       };
     });
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
+    // Kho Case Study — chọn ảnh xong TỰ ĐỘNG nén + gọi AI phân loại trục + lưu, không cần bấm nút
+    // riêng nào (đúng yêu cầu chị Quỳnh: chỉ tải ảnh, không gõ gì thêm).
+    const csUpload = container.querySelector('#cs-upload');
+    if(csUpload) csUpload.onchange = ()=>{
+      const file = csUpload.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = async ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = c.toDataURL('image/jpeg', 0.85);
+          state.caseStudyUploading = true; state.caseStudyError = null; draw();
+          try{
+            const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+            const data = await callApi('/api/phan-loai-truc-anh', { image_base64: base64, media_type: 'image/jpeg' });
+            const truc = data.result && data.result.truc;
+            const { error } = await ctx.supabase.from('case_studies').insert({
+              user_id: ctx.user.id, image: dataUrl, tags: truc ? [truc] : null,
+            });
+            if(error) throw error;
+            await loadCaseStudies();
+          } catch(e){ state.caseStudyError = `Không lưu được: ${e.message}`; }
+          state.caseStudyUploading = false;
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    container.querySelectorAll('[data-del-case-study]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-del-case-study');
+        if(!(await confirmModal('Xoá ảnh case study này? Không khôi phục được.'))) return;
+        await ctx.supabase.from('case_studies').delete().eq('id', id);
+        await loadCaseStudies(); draw();
+      };
+    });
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
     });
@@ -781,32 +851,6 @@ function render(container, ctx){
     };
     const clearScreenshotBtn = container.querySelector('[data-action="clear-viral-screenshot"]');
     if(clearScreenshotBtn) clearScreenshotBtn.onclick = ()=>{ state.newEntry.viralScreenshot = null; draw(); };
-    // Ảnh case study thật (2026-08-27, theo yêu cầu chị Quỳnh: dùng ảnh thật thay vì ảnh AI khi
-    // auto-đăng Fanpage) — cùng cách nén/resize base64 như ảnh chụp màn hình viral ở trên, không
-    // liên quan tới is_viral (bài nào cũng gắn được ảnh case study riêng).
-    const caseStudyInput = container.querySelector('#ne-case-study-image');
-    if(caseStudyInput) caseStudyInput.onchange = ()=>{
-      const file = caseStudyInput.files[0];
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = ()=>{
-        const img = new Image();
-        img.onload = ()=>{
-          const maxW = 1000;
-          const scale = Math.min(1, maxW / img.width);
-          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          c.getContext('2d').drawImage(img, 0, 0, w, h);
-          state.newEntry.caseStudyImage = c.toDataURL('image/jpeg', 0.85);
-          draw();
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    };
-    const clearCaseStudyBtn = container.querySelector('[data-action="clear-case-study-image"]');
-    if(clearCaseStudyBtn) clearCaseStudyBtn.onclick = ()=>{ state.newEntry.caseStudyImage = null; draw(); };
     const addBtn = container.querySelector('[data-action="add-personal"]');
     if(addBtn) addBtn.onclick = addPersonal;
     container.querySelectorAll('[data-del-personal]').forEach(el=>{
@@ -901,7 +945,6 @@ function render(container, ctx){
       is_viral: entry.isViral===true, viral_views: entry.isViral===true ? (entry.viralViews||null) : null,
       viral_likes: entry.isViral===true ? (entry.viralLikes||null) : null,
       viral_screenshot: entry.isViral===true ? (entry.viralScreenshot||null) : null,
-      case_study_image: entry.caseStudyImage || null,
     }).select().single();
 
     state.addingPersonal = false;
@@ -911,7 +954,7 @@ function render(container, ctx){
       return;
     }
     const wasViral = entry.isViral===true;
-    state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null, caseStudyImage:null };
+    state.newEntry = { title:'', content:'', source_type:'', isViral:null, viralViews:'', viralLikes:'', viralScreenshot:null };
     await loadPersonal();
     if(wasViral) state.sharePromptFor = row.id;
     draw();
