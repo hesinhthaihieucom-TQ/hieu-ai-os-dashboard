@@ -2,6 +2,13 @@ function esc(s){
   return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
 
+// Khách (chưa đăng nhập) làm Chấm Điểm Nghiệp Tiền TRƯỚC, đăng ký SAU khi muốn lưu (2026-08-26,
+// góp ý Quỳnh: "gửi link cho người ta làm bài, người ta ko phải đăng ký, làm xong muốn lưu thì mới
+// hiện popup đăng ký") — câu trả lời đang gõ dở lưu tạm vào localStorage (không có user_id để lưu
+// module_drafts qua Supabase), dùng CHUNG key này ở cả thiet-lap-nhanh.js (đọc/ghi lúc còn là khách)
+// và app-shell.js (đọc lúc vừa đăng ký xong để tự lưu kết quả, không bắt làm lại bài từ đầu).
+const TC_GUEST_QUIZ_KEY = 'tc_guest_quiz_v1';
+
 // Phóng to 1 ảnh minh hoạ nhỏ (VD ảnh mẫu ở Dạng Content) thành lightbox toàn màn hình — dùng
 // chung cho mọi module cần xem ảnh rõ hơn, đóng bằng cách bấm ra ngoài hoặc nhấn Esc.
 function openImageLightbox(src, alt){

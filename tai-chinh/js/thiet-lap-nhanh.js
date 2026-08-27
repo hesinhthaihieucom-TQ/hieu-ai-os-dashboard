@@ -352,14 +352,20 @@ function computeUpcomingDebts(debts){
 function render(container, ctx){
   const month = new Date().toISOString().slice(0,7);
   const DRAFT_KEY = 'thiet-lap-nhanh';
+  // Khách chưa đăng nhập vẫn làm được bài này (2026-08-26, góp ý Quỳnh — xem TC_GUEST_QUIZ_KEY ở
+  // util.js) — mọi query/ghi Supabase bên dưới đều cần ctx.user.id nên phải né hết khi isGuest.
+  const isGuest = !ctx.user;
   const state = {
-    loading: true,
+    // Khách không có gì để tải (load() chỉ chạy khi đã đăng nhập, xem cuối file) — tắt sẵn loading
+    // để form Bước 1-8 hiện luôn, không kẹt ở spinner.
+    loading: !isGuest,
     form: { income:'', expense:'', ef_current:'', ef_monthly_min:'', debt_total:'', debt_monthly:'', assets_total:'', passive_income:'', income_sources:'' },
     vibe: { income:null, expense:null, ef:null, debt:null, asset:null, passive:null, parents:null, partner:null, witness_receive:null, giving:null },
     saving: false,
     result: null,
-    // Điểm Nghiệp — cùng bộ state di chuyển từ trang-chu.js, xem bootDashboard() bên dưới.
-    dashboardLoading: true,
+    // Điểm Nghiệp — cùng bộ state di chuyển từ trang-chu.js, xem bootDashboard() bên dưới. Khách
+    // không có lịch sử gì để tính (bootDashboard() không chạy) nên tắt sẵn loading, khỏi treo spinner.
+    dashboardLoading: !isGuest,
     monthIncome: 0, monthExpense: 0, netWorth: null, netWorthMonth: null, totalDebt: 0,
     upcomingDebts: [], karmaAxes: [], activeBeliefsCount: 0, selectedPillarKey: null,
     // Tab "Theo Dõi Kết Quả" — 1 TAB của trang này, KHÔNG phải route riêng (2026-08-25, góp ý Quỳnh:
@@ -371,7 +377,13 @@ function render(container, ctx){
     // khôi phục từ draft) để nút "💾 Lưu kết quả" luôn xuất hiện đúng lúc cần bấm lại.
     historySaved: false, savingHistory: false, expandedHistoryId: null,
   };
-  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe }); }
+  function persistDraft(){
+    if(isGuest){
+      try{ localStorage.setItem(TC_GUEST_QUIZ_KEY, JSON.stringify({ form: state.form, vibe: state.vibe })); }catch(e){}
+      return;
+    }
+    saveModuleDraft(ctx, DRAFT_KEY, { form: state.form, vibe: state.vibe });
+  }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -558,6 +570,20 @@ function render(container, ctx){
 
   async function submit(){
     state.saving = true; draw();
+    // Khách chưa đăng nhập: không có user_id để ghi bất kỳ bảng nào — chỉ tính kết quả TRÊN MÁY và
+    // lưu tạm câu trả lời vào localStorage (persistDraft() đã tự biết dùng localStorage khi isGuest,
+    // xem TC_GUEST_QUIZ_KEY ở util.js), để tự ghi thật vào Supabase SAU khi họ đăng ký xong (xem
+    // convertGuestQuizIfAny() cuối file + onAuthStateChange ở app-shell.js).
+    if(isGuest){
+      persistDraft();
+      state.saving = false;
+      state.result = computeResult();
+      window.TcLastWeakestArea = state.result.weakestArea ? WEAKEST_AREA_INFO[state.result.weakestArea] : null;
+      window.TcLastHasDebt = Number(state.form.debt_total) > 0;
+      state.historySaved = false;
+      draw();
+      return;
+    }
     const f = state.form;
     // Nhân TRIEU vì ô nhập ở đây tính bằng đơn vị triệu, còn các bảng lưu bằng đồng thật.
     const efCurrent = (Number(f.ef_current)||0) * TRIEU;
@@ -716,13 +742,22 @@ function render(container, ctx){
           </div>
           ${r.weakestArea ? `
             <div class="hint-box">Khâu đang yếu nhất hiện tại: <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b> — ${esc(WEAKEST_AREA_INFO[r.weakestArea].explain)}</div>
-            <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
-              <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
-            </div>
+            ${!isGuest ? `
+              <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+                <span class="btn-ghost btn btn-sm" data-tangthuc-area="${r.weakestArea}">🌱 Lưu hạt giống này vào Hạt Giống Phước - Nghiệp →</span>
+              </div>
+            ` : ''}
           ` : ''}
-          <div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>
+          ${!isGuest ? `<div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>` : ''}
         </div>
 
+        ${isGuest ? `
+          <div class="card" style="margin-bottom:20px;background:var(--accent-soft);border-color:var(--accent);">
+            <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">💾 Lưu lại kết quả này</div>
+            <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">Đăng ký miễn phí (30 giây, không cần thẻ) để lưu lại đúng kết quả này, xem đủ Soi theo 5 Trụ Cột Năng Lượng + Bản Giải Phẫu Chi Tiết cho khâu yếu nhất, và theo dõi Điểm Nghiệp thay đổi theo thời gian.</div>
+            <button class="btn btn-full" id="tc-guest-save-cta">Lưu kết quả — Đăng ký miễn phí →</button>
+          </div>
+        ` : `
         <div class="section">
           <h3>🌿 Soi theo 5 Trụ Cột Năng Lượng</h3>
           <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Không chỉ 1 điểm số — đây là cách câu trả lời của bạn đang tác động tới TỪNG trụ trong 5 Trụ Cột Năng Lượng Bản Thể ở Điểm Nghiệp phía trên ↑.</p>
@@ -765,9 +800,10 @@ function render(container, ctx){
           </div>
           <div class="hint-box" style="margin-top:10px;">Bấm "💾 Lưu kết quả này" để ghi lại đúng bức tranh + toàn bộ phân tích 5 Trụ Cột ở trên ↑ thành 1 mốc — xem lại theo thời gian ở tab <span data-tc-tab="theo-doi" style="color:var(--accent);font-weight:600;cursor:pointer;">📈 Theo Dõi Kết Quả →</span>.</div>
         </div>
+        `}
       ` : ''}
 
-      ${!(ctx.profile && ctx.profile.tc_has_paid) ? `
+      ${(!isGuest && !(ctx.profile && ctx.profile.tc_has_paid)) ? `
         <div class="card" style="margin-top:20px;background:var(--accent-soft);border-color:var(--accent);">
           <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">🔓 Đây chỉ là bức tranh khởi đầu</div>
           <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">
@@ -783,8 +819,10 @@ function render(container, ctx){
 
       <div class="section">
         <div class="btn-row" style="justify-content:flex-start;">
-          <span class="btn btn-sm" data-goto="trang-chu">Về Trang chủ →</span>
-          <span class="btn-ghost btn btn-sm" data-goto="quan-ly-no">Xem Quản Lý Nợ →</span>
+          ${!isGuest ? `
+            <span class="btn btn-sm" data-goto="trang-chu">Về Trang chủ →</span>
+            <span class="btn-ghost btn btn-sm" data-goto="quan-ly-no">Xem Quản Lý Nợ →</span>
+          ` : ''}
         </div>
       </div>
     `;
@@ -934,15 +972,20 @@ function render(container, ctx){
     return `
       <div class="page-head">
         <h1>Chấm Điểm Nghiệp Tiền</h1>
-        <p><b>Điểm Nghiệp theo 5 Trụ Cột</b> + số liệu tháng này ngay dưới đây — tự cập nhật mỗi khi bạn ghi chép/tổng kết.</p>
+        ${isGuest ? `
+          <p>Làm bài <b>miễn phí, không cần đăng ký</b> — chỉ khi muốn lưu lại kết quả mới cần tạo tài khoản (30 giây).</p>
+        ` : `
+          <p><b>Điểm Nghiệp theo 5 Trụ Cột</b> + số liệu tháng này ngay dưới đây — tự cập nhật mỗi khi bạn ghi chép/tổng kết.</p>
+        `}
         <p><b>7 câu hỏi số liệu + 10 câu Vibe Check</b> bên dưới vừa điền sẵn Quỹ Khẩn Cấp, Nợ, Cân Đối Tài Sản ban đầu, vừa soi ra <b>khâu nào đang bị tâm thức sợ hãi chi phối</b> — kể cả khi thấy người khác nhận tiền, không chỉ riêng chuyện tiền của bạn. Làm lại bất cứ lúc nào để cập nhật.</p>
       </div>
 
-      ${tabsHtml()}
+      ${!isGuest ? tabsHtml() : ''}
 
-      ${state.activeTab === 'theo-doi' ? historyTabHtml() : `
+      ${(!isGuest && state.activeTab === 'theo-doi') ? historyTabHtml() : `
 
-      ${state.dashboardLoading ? `<div class="loading"><div class="spinner"></div></div>` : dashboardHtml()}
+      ${(!isGuest && state.dashboardLoading) ? `<div class="loading"><div class="spinner"></div></div>` : ''}
+      ${!isGuest ? dashboardHtml() : ''}
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">
@@ -1015,6 +1058,11 @@ function render(container, ctx){
     });
     const saveKarmaBtn = container.querySelector('[data-save-karma]');
     if(saveKarmaBtn) saveKarmaBtn.onclick = saveKarmaHistory;
+    // Khách bấm "Lưu kết quả" → mở popup đăng ký (KHÔNG có nút này nếu isGuest false, xem
+    // resultHtml()) — câu trả lời đã có sẵn trong localStorage từ persistDraft() lúc submit(), tự
+    // được đọc lại + lưu thật ngay khi đăng ký xong (window.startTcAuthModal ở app-shell.js).
+    const guestSaveCta = container.querySelector('#tc-guest-save-cta');
+    if(guestSaveCta) guestSaveCta.onclick = ()=>{ if(window.startTcAuthModal) window.startTcAuthModal('signup'); };
     container.querySelectorAll('[data-history-row]').forEach(el=>{
       el.onclick = ()=>{
         const id = el.getAttribute('data-history-row');
@@ -1065,8 +1113,37 @@ function render(container, ctx){
     });
   }
 
-  load();
-  bootDashboard();
+  // Vừa đăng ký/đăng nhập xong SAU KHI làm bài lúc còn là khách (TC_GUEST_QUIZ_KEY còn trong
+  // localStorage) — khôi phục lại đúng câu trả lời đã gõ rồi lưu THẬT vào Supabase ngay (gọi submit()
+  // với ctx.user giờ đã có), không bắt làm lại bài từ đầu. Chỉ chạy khi KHÔNG còn là khách nữa.
+  async function convertGuestQuizIfAny(){
+    if(isGuest) return false;
+    let saved = null;
+    try{ const raw = localStorage.getItem(TC_GUEST_QUIZ_KEY); if(raw) saved = JSON.parse(raw); }catch(e){}
+    if(!saved) return false;
+    try{ localStorage.removeItem(TC_GUEST_QUIZ_KEY); }catch(e){}
+    if(saved.form) Object.assign(state.form, saved.form);
+    if(saved.vibe) Object.assign(state.vibe, saved.vibe);
+    await submit();
+    return true;
+  }
+
+  if(isGuest){
+    // Khôi phục câu trả lời đang gõ dở nếu khách lỡ tải lại trang giữa chừng (persistDraft() đã ghi
+    // liên tục vào localStorage, xem trên) — và tự tính lại kết quả luôn nếu đã có đủ câu trả lời.
+    try{
+      const raw = localStorage.getItem(TC_GUEST_QUIZ_KEY);
+      if(raw){
+        const saved = JSON.parse(raw);
+        if(saved.form) Object.assign(state.form, saved.form);
+        if(saved.vibe) Object.assign(state.vibe, saved.vibe);
+        if(Object.values(state.vibe).some(v=>v!=null)) state.result = computeResult();
+      }
+    }catch(e){}
+    draw();
+  } else {
+    convertGuestQuizIfAny().then(()=>{ load(); bootDashboard(); });
+  }
 }
 
 window.Modules = window.Modules || {};

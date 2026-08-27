@@ -31,7 +31,30 @@ const EXPLORE = [
   { key:'quan-ly-no', label:'Quản Lý Nợ' },
 ];
 
+// Khách chưa đăng nhập (2026-08-26, góp ý Quỳnh: "trang này không có màn đăng nhập, mà là trang chủ
+// chào mừng, nút đăng nhập/đăng ký ở góc phải, để gửi link cho người ta làm bài Chấm Điểm Nghiệp
+// không cần đăng ký, làm xong muốn lưu mới hiện popup đăng ký") — trang chủ đổi hẳn sang màn chào
+// mừng + CTA làm bài ngay, KHÔNG dùng lại checklist/review-box của người đã đăng nhập (những khối đó
+// cần ctx.user để query). Nút "Đăng nhập / Đăng ký" thật đã nằm sẵn ở góc phải khung khách (xem
+// renderGuestShell() ở app-shell.js) — trang này chỉ cần đúng 1 CTA rõ ràng.
+function guestWelcomeHtml(){
+  return `
+    <div style="max-width:640px;margin:40px auto;text-align:center;padding:0 16px;">
+      <div style="font-family:'Playfair Display',serif;font-size:30px;color:var(--ink);margin-bottom:14px;">Sổ Dòng Tiền Tâm Thức</div>
+      <p style="font-size:15px;line-height:1.7;color:var(--ink-soft);margin-bottom:28px;">"Số dư là Quả, rung động là Nhân." Làm bài <b>Chấm Điểm Nghiệp Tiền</b> miễn phí ngay bên dưới để biết Điểm Nghiệp theo 5 Trụ Cột Năng Lượng Bản Thể của bạn đang ở đâu — không cần đăng ký trước, làm xong muốn lưu lại mới cần tạo tài khoản.</p>
+      <button class="btn" style="padding:16px 32px;font-size:15.5px;" data-key="thiet-lap-nhanh">Làm bài Chấm Điểm Nghiệp Tiền →</button>
+    </div>
+  `;
+}
+
 function render(container, ctx){
+  if(!ctx.user){
+    container.innerHTML = guestWelcomeHtml();
+    container.querySelectorAll('[data-key]').forEach(el=>{
+      el.onclick = ()=>{ location.hash = el.getAttribute('data-key'); };
+    });
+    return;
+  }
   const state = {
     loading:true, done:{},
     reviews:[], reviewsLoading:true, reviewComment:'', reviewSubmitting:false, reviewError:null, reviewJustSubmitted:false,

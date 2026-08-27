@@ -54,6 +54,17 @@ a{ color:inherit; }
 .main{ flex:1; min-width:0; }
 .main-inner{ max-width:760px; margin:0 auto; padding:32px 24px 90px; }
 
+/* ===== Khách chưa đăng nhập (trang chào mừng + nút Đăng nhập/Đăng ký góc phải) ===== */
+.guest-shell{ min-height:100vh; }
+.guest-header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:16px 20px; border-bottom:1px solid var(--line); background:var(--bg);
+}
+.guest-brand{ display:flex; align-items:center; gap:10px; cursor:pointer; }
+.guest-brand img{ width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.guest-brand span{ font-family:'Playfair Display',serif; font-size:15px; font-weight:700; color:var(--ink); }
+.guest-content{ max-width:760px; margin:0 auto; padding:24px; }
+
 /* ===== Auth screen ===== */
 .auth-shell{ max-width:400px; margin:0 auto; padding:80px 20px; }
 .auth-shell .auth-logo{ display:block; width:64px; height:64px; border-radius:50%; object-fit:cover; margin:0 auto 14px; }

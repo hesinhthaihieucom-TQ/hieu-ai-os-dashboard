@@ -91,7 +91,7 @@ function makeChain(table){
       return Promise.resolve({ data:null, error:null });
     },
     maybeSingle(){
-      if(table === 'profiles') return Promise.resolve({ data: PROFILES_BY_ID['admin-1'], error:null });
+      if(table === 'profiles') return Promise.resolve({ data: PROFILES_BY_ID[chain._filters.id] || null, error:null });
       if(table === 'module_drafts'){
         const key = chain._filters.module_key;
         const has = Object.prototype.hasOwnProperty.call(MODULE_DRAFTS, key);
@@ -121,7 +121,7 @@ function makeChain(table){
         if(table==='tc_categories') CATEGORIES.forEach(c=>{ if(c[col]===val) Object.assign(c, payload); });
         if(table==='tc_debts') DEBTS.forEach(d=>{ if(String(d[col])===String(val)) Object.assign(d, payload); });
         if(table==='app_reviews') APP_REVIEWS.forEach(r=>{ if(String(r[col])===String(val)) Object.assign(r, payload); });
-        if(table==='profiles') Object.assign(PROFILES_BY_ID['admin-1'], payload);
+        if(table==='profiles' && PROFILES_BY_ID[val]) Object.assign(PROFILES_BY_ID[val], payload);
         return Promise.resolve({data:null,error:null});
       } };
     },
@@ -214,11 +214,31 @@ function makeChain(table){
   };
   return chain;
 }
+// Mô phỏng thật đăng nhập/đăng ký + onAuthStateChange — để test được luồng khách làm bài Chấm Điểm
+// Nghiệp Tiền không cần đăng nhập rồi đăng ký lúc muốn lưu (2026-08-26, góp ý Quỳnh). Mặc định vẫn
+// đăng nhập sẵn admin-1 (giữ nguyên hành vi cũ cho mọi test khác) — set window.MOCK_SESSION = null
+// TRƯỚC khi initApp() chạy để test ở trạng thái khách.
+window.MOCK_SESSION = /[?&]guest=1/.test(location.search) ? null : { user: { id:'admin-1' } };
+let authChangeCb = null;
 window.supabaseClient = {
   auth: {
-    getSession(){ return Promise.resolve({ data: { session: { user: { id:'admin-1' } } } }); },
-    onAuthStateChange(){ return { data: { subscription: { unsubscribe(){} } } }; },
-    signOut(){ return Promise.resolve(); },
+    getSession(){ return Promise.resolve({ data: { session: window.MOCK_SESSION } }); },
+    onAuthStateChange(cb){ authChangeCb = cb; return { data: { subscription: { unsubscribe(){} } } }; },
+    signOut(){ window.MOCK_SESSION = null; if(authChangeCb) authChangeCb('SIGNED_OUT', null); return Promise.resolve(); },
+    signInWithPassword({ email }){
+      const session = { user: { id:'guest-user-1', email } };
+      window.MOCK_SESSION = session;
+      PROFILES_BY_ID['guest-user-1'] = PROFILES_BY_ID['guest-user-1'] || { id:'guest-user-1', role:'student', full_name:'Khách Mới', email };
+      if(authChangeCb) authChangeCb('SIGNED_IN', session);
+      return Promise.resolve({ data:{ session }, error:null });
+    },
+    signUp({ email, options }){
+      const session = { user: { id:'guest-user-1', email } };
+      window.MOCK_SESSION = session;
+      PROFILES_BY_ID['guest-user-1'] = { id:'guest-user-1', role:'student', full_name:(options&&options.data&&options.data.full_name)||'', email };
+      if(authChangeCb) authChangeCb('SIGNED_IN', session);
+      return Promise.resolve({ data:{ session }, error:null });
+    },
   },
   from(table){ return makeChain(table); },
   rpc(name){

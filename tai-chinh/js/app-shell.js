@@ -43,6 +43,11 @@ const NAV = [
   { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin', xem renderApp()
 ];
 const PREMIUM_ROUTES = new Set(NAV.filter(n=>n.premium).map(n=>n.key));
+// Route khách (chưa đăng nhập) được vào thẳng — 2026-08-26, góp ý Quỳnh: "gửi link cho người ta làm
+// bài Chấm Điểm Nghiệp, người ta ko phải đăng ký, làm xong muốn lưu thì mới hiện popup đăng ký".
+// 'trang-chu' giờ là màn chào mừng công khai (xem trang-chu.js), 'thiet-lap-nhanh' là bài chẩn đoán
+// tự tính kết quả trên máy khách, không đụng Supabase (xem isGuest trong thiet-lap-nhanh.js).
+const GUEST_ALLOWED_ROUTES = new Set(['trang-chu', 'thiet-lap-nhanh']);
 const TC_TRIAL_DAYS = 0; // 2026-08-24: bỏ hẳn dùng thử, xem comment NAV phía trên
 // Giá 3 mức THEO TỪNG NGƯỜI DÙNG (2026-08-26, chị Quỳnh chốt — THAY hẳn mốc giá ra mắt theo lịch
 // chung 15/9 trước đó): đếm từ lúc NGƯỜI ĐÓ vào app tai-chinh lần đầu (tc_trial_started_at — mượn
@@ -146,11 +151,11 @@ async function initApp(){
     // trúng profile rỗng lúc mới vào (cùng lý do nhan-hieu/js/app-shell.js làm tuần tự).
     await loadProfile();
     await Promise.all([loadLatestAnnouncement(), loadTcReviewPromptEligibility()]);
-    AppState.route = currentRouteFromHash();
-    renderApp();
-  } else {
-    renderAuthScreen();
   }
+  // Chưa đăng nhập: KHÔNG còn màn hình đăng nhập chặn hết mọi thứ nữa — renderApp() tự biết render
+  // khung khách (renderGuestShell()) cho đúng route công khai, xem GUEST_ALLOWED_ROUTES ở trên.
+  AppState.route = currentRouteFromHash();
+  renderApp();
 
   // Kiểm tra định kỳ thông báo tính năng mới — để người ĐANG MỞ SẴN app (không tải lại trang) cũng
   // thấy popup mà không cần tắt/mở lại app (giống cơ chế bên nhan-hieu/js/app-shell.js).
@@ -167,9 +172,16 @@ async function initApp(){
       // lần bắn sự kiện, tránh xoá mất state tạm đang gõ dở ở module hiện tại.
       if(AppState.user && AppState.user.id === session.user.id) return;
       AppState.user = session.user;
-      AppState.route = 'trang-chu';
+      // Vừa đăng ký/đăng nhập ngay SAU KHI làm bài Chấm Điểm Nghiệp Tiền lúc còn là khách (câu trả
+      // lời còn nằm trong TC_GUEST_QUIZ_KEY, xem util.js) — giữ nguyên route ở đúng trang đó để
+      // thiet-lap-nhanh.js tự phát hiện + lưu thật kết quả, KHÔNG nhảy về Trang chủ như bình thường
+      // (mất ngữ cảnh, người dùng lại tưởng phải làm lại từ đầu).
+      let hasGuestQuiz = false;
+      try{ hasGuestQuiz = !!localStorage.getItem(TC_GUEST_QUIZ_KEY); }catch(e){}
+      if(!hasGuestQuiz) AppState.route = 'trang-chu';
       loadProfile().then(()=>Promise.all([loadLatestAnnouncement(), loadTcReviewPromptEligibility()])).then(()=>{
-        location.hash = 'trang-chu';
+        if(hasGuestQuiz) AppState.route = 'thiet-lap-nhanh';
+        location.hash = AppState.route;
         renderApp();
       });
     } else if(event === 'SIGNED_OUT'){
@@ -177,12 +189,11 @@ async function initApp(){
       AppState.profile = null;
       AppState.route = 'trang-chu';
       location.hash = '';
-      renderAuthScreen();
+      renderApp();
     }
   });
 
   window.addEventListener('hashchange', () => {
-    if(!AppState.user) return;
     AppState.route = currentRouteFromHash();
     renderApp();
   });
@@ -301,56 +312,95 @@ function maybeShowFeatureAnnouncement(){
 
 let authFields = { name:'', email:'', pass:'', passConfirm:'' };
 
-function renderAuthScreen(err, successMsg){
+// Khung cho khách chưa đăng nhập (2026-08-26) — thay hẳn cho renderAuthScreen() cũ (màn đăng nhập
+// chặn hết mọi thứ). Chỉ có logo/tên app + nút "Đăng nhập / Đăng ký" góc phải (mở modal, xem
+// renderTcAuthModal() bên dưới) — nội dung chính render qua ĐÚNG module đang route tới (trang-chu
+// hoặc thiet-lap-nhanh, xem GUEST_ALLOWED_ROUTES), y hệt cách render module cho người đã đăng nhập,
+// chỉ khác ctx.user/ctx.profile đều null.
+function renderGuestShell(){
   const root = document.getElementById('app');
-  const isLogin = AppState.authMode === 'login';
   root.innerHTML = `
-    <div class="auth-shell">
-      <img src="assets/logo-hieu-hanh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
-      <h1>SỔ DÒNG TIỀN TÂM THỨC</h1>
-      <div class="sub">Tâm an với tiền<br>Nợ nhẹ dần mỗi tháng<br>Tài sản ròng lớn lên<br><span class="sub-brand">Hệ sinh thái Hiểu - Hiểu Hạnh</span></div>
+    <div class="guest-shell">
+      <header class="guest-header">
+        <div class="guest-brand" id="guest-brand-home">
+          <img src="assets/logo-hieu-hanh.png" alt="" onerror="this.style.display='none'">
+          <span>SỔ DÒNG TIỀN TÂM THỨC</span>
+        </div>
+        <button class="btn btn-sm" id="guest-login-btn">Đăng nhập / Đăng ký</button>
+      </header>
+      <div class="guest-content" id="guest-content"></div>
+    </div>
+  `;
+  root.querySelector('#guest-brand-home').onclick = ()=>{ location.hash = 'trang-chu'; };
+  root.querySelector('#guest-login-btn').onclick = ()=>{ AppState.authMode = 'login'; renderTcAuthModal(); };
+  const content = root.querySelector('#guest-content');
+  const mod = window.Modules && window.Modules[AppState.route];
+  if(mod && mod.render) mod.render(content, { supabase: supabaseClient, user: null, profile: null });
+}
+
+// Popup đăng nhập/đăng ký (2026-08-26, góp ý Quỳnh: "làm xong bài mà muốn lưu thì mới hiện popup
+// đăng ký") — dùng CHUNG cho cả nút góc phải (renderGuestShell) lẫn nút "Lưu kết quả" của khách ở
+// Chấm Điểm Nghiệp Tiền (window.startTcAuthModal, gọi từ thiet-lap-nhanh.js). Đăng nhập/đăng ký
+// thành công thì onAuthStateChange (ở initApp()) tự lo phần còn lại — kể cả tự lưu lại bài vừa làm
+// nếu có (xem TC_GUEST_QUIZ_KEY) — modal này chỉ cần đóng lại khi xong.
+window.startTcAuthModal = function(mode){ AppState.authMode = mode || 'login'; renderTcAuthModal(); };
+function renderTcAuthModal(err, successMsg){
+  const existing = document.getElementById('tc-auth-modal');
+  if(existing) existing.remove();
+  const isLogin = AppState.authMode === 'login';
+  const overlay = document.createElement('div');
+  overlay.id = 'tc-auth-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+  overlay.innerHTML = `
+    <div class="auth-shell" style="max-width:380px;padding:28px 24px;margin:auto;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative;">
+      <span id="am-close" style="position:absolute;top:14px;right:16px;cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;">&times;</span>
+      <h1 style="font-size:20px;">${isLogin?'Đăng nhập':'Tạo tài khoản miễn phí'}</h1>
+      <div class="sub" style="margin-bottom:14px;">${isLogin?'Đăng nhập để lưu lại kết quả và dùng đầy đủ.':'30 giây, không cần thẻ — lưu lại kết quả vừa làm.'}</div>
       <div class="auth-tabs">
         <div class="auth-tab ${isLogin?'active':''}" data-mode="login">Đăng nhập</div>
         <div class="auth-tab ${!isLogin?'active':''}" data-mode="signup">Đăng ký</div>
       </div>
-      <div class="card">
-        ${!isLogin ? `<label>Họ tên</label><input id="af-name" type="text" placeholder="Tên của bạn" value="${esc(authFields.name)}">` : ''}
-        <label>Email</label>
-        <input id="af-email" type="email" placeholder="ban@email.com" value="${esc(authFields.email)}">
-        <label>Mật khẩu</label>
-        <input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.pass)}">
-        ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(authFields.passConfirm)}">` : ''}
-        <button class="btn btn-full" id="af-submit">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
-        ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
-        ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
-      </div>
+      ${!isLogin ? `<label>Họ tên</label><input id="am-name" type="text" placeholder="Tên của bạn" value="${esc(authFields.name)}">` : ''}
+      <label>Email</label>
+      <input id="am-email" type="email" placeholder="ban@email.com" value="${esc(authFields.email)}">
+      <label>Mật khẩu</label>
+      <input id="am-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.pass)}">
+      ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="am-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(authFields.passConfirm)}">` : ''}
+      <button class="btn btn-full" id="am-submit" style="margin-top:16px;">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
+      ${err ? `<div class="error-box" style="margin-top:10px;">${esc(err)}</div>` : ''}
+      ${successMsg ? `<div class="hint-box" style="margin-top:10px;">${esc(successMsg)}</div>` : ''}
     </div>
   `;
+  document.body.appendChild(overlay);
 
-  root.querySelectorAll('.auth-tab').forEach(el=>{
-    el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderAuthScreen(); };
+  overlay.querySelector('#am-close').onclick = ()=>overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+  overlay.querySelectorAll('.auth-tab').forEach(el=>{
+    el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderTcAuthModal(); };
   });
 
-  const nameEl = root.querySelector('#af-name'); if(nameEl) nameEl.oninput = ()=>{ authFields.name = nameEl.value; };
-  root.querySelector('#af-email').oninput = (e)=>{ authFields.email = e.target.value; };
-  root.querySelector('#af-pass').oninput = (e)=>{ authFields.pass = e.target.value; };
-  const confirmEl = root.querySelector('#af-pass-confirm'); if(confirmEl) confirmEl.oninput = ()=>{ authFields.passConfirm = confirmEl.value; };
+  const nameEl = overlay.querySelector('#am-name'); if(nameEl) nameEl.oninput = ()=>{ authFields.name = nameEl.value; };
+  overlay.querySelector('#am-email').oninput = (e)=>{ authFields.email = e.target.value; };
+  overlay.querySelector('#am-pass').oninput = (e)=>{ authFields.pass = e.target.value; };
+  const confirmEl = overlay.querySelector('#am-pass-confirm'); if(confirmEl) confirmEl.oninput = ()=>{ authFields.passConfirm = confirmEl.value; };
 
-  root.querySelector('#af-submit').onclick = async ()=>{
-    const email = root.querySelector('#af-email').value.trim();
-    const pass = root.querySelector('#af-pass').value;
-    const btn = root.querySelector('#af-submit');
+  overlay.querySelector('#am-submit').onclick = async ()=>{
+    const email = overlay.querySelector('#am-email').value.trim();
+    const pass = overlay.querySelector('#am-pass').value;
+    const btn = overlay.querySelector('#am-submit');
     try{
       if(isLogin){
         btn.disabled = true; btn.textContent = 'Đang xử lý…';
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
         if(error) throw error;
+        overlay.remove();
+        // onAuthStateChange lo phần còn lại (kể cả tự lưu bài vừa làm nếu có).
       } else {
-        const confirmPass = root.querySelector('#af-pass-confirm').value;
-        if(!email){ renderAuthScreen('Vui lòng nhập email.'); return; }
-        if(pass !== confirmPass){ renderAuthScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+        const confirmPass = overlay.querySelector('#am-pass-confirm').value;
+        if(!email){ renderTcAuthModal('Vui lòng nhập email.'); return; }
+        if(pass !== confirmPass){ renderTcAuthModal('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
         btn.disabled = true; btn.textContent = 'Đang xử lý…';
-        const full_name = root.querySelector('#af-name').value.trim();
+        const full_name = overlay.querySelector('#am-name').value.trim();
         let referredByRefCode = null;
         try { referredByRefCode = localStorage.getItem(TC_REF_STORAGE_KEY) || null; } catch(e){}
         const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name, referred_by_ref_code: referredByRefCode } } });
@@ -359,18 +409,24 @@ function renderAuthScreen(err, successMsg){
         if(!data.session){
           AppState.authMode = 'login';
           authFields = { name:'', email:'', pass:'', passConfirm:'' };
-          renderAuthScreen(null, 'Đăng ký thành công! Nếu tài khoản cần xác nhận email, kiểm tra hộp thư rồi quay lại đăng nhập bằng email/mật khẩu vừa tạo.');
+          renderTcAuthModal(null, 'Đăng ký thành công! Kiểm tra email để xác nhận rồi quay lại đăng nhập — kết quả vừa làm sẽ tự lưu (dùng đúng trình duyệt này).');
+        } else {
+          overlay.remove();
         }
         // Nếu có session ngay (không bật xác nhận email), onAuthStateChange sẽ tự đưa vào app.
       }
     } catch(e){
-      renderAuthScreen(e.message);
+      renderTcAuthModal(e.message);
     }
   };
 }
 
 function renderApp(){
-  if(!AppState.user){ renderAuthScreen(); return; }
+  if(!AppState.user){
+    if(!GUEST_ALLOWED_ROUTES.has(AppState.route)) AppState.route = 'trang-chu';
+    renderGuestShell();
+    return;
+  }
   const root = document.getElementById('app');
   root.innerHTML = `
     <div class="topbar-mobile">
