@@ -30,6 +30,11 @@ function render(container, ctx){
     choosingKhoFor:null,
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
     tab:'lich', weekLoadError:null,
+    // 2 lane độc lập trong cùng calendar_entries (cột channel) — 'ca_nhan' mặc định cho MỌI user
+    // (kế hoạch FB cá nhân, tự đăng tay, cách dùng gốc); 'fanpage' chỉ admin chuyển sang được, dùng
+    // cho lane auto-đăng Fanpage (xem toggle ở calendarTabHtml). Không lưu draft — luôn mở lại về
+    // 'ca_nhan', tránh admin quên đang ở lane nào giữa các lần vào lại trang.
+    channel:'ca_nhan',
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushPermission: window.Notification ? Notification.permission : 'denied',
     pushSubscribed: false, pushBusy: false, pushError: null,
@@ -199,7 +204,7 @@ function render(container, ctx){
   }
 
   function entryFor(dateStr, slotKey){
-    return state.entries.find(e=> e.scheduled_date===dateStr && e.slot===slotKey);
+    return state.entries.find(e=> e.scheduled_date===dateStr && e.slot===slotKey && (e.channel||'ca_nhan')===state.channel);
   }
 
   function suggestionFor(dayIndex, slotKey){
@@ -214,7 +219,7 @@ function render(container, ctx){
   function weekCompletionHtml(days, todayStr){
     const pastDays = days.filter(d=>isoDate(d) < todayStr);
     if(!pastDays.length) return '';
-    const doneCount = state.entries.filter(e=>e.scheduled_date < todayStr && e.posted).length;
+    const doneCount = state.entries.filter(e=>e.scheduled_date < todayStr && e.posted && (e.channel||'ca_nhan')===state.channel).length;
     if(doneCount > 0){
       return `<div class="hint-box" style="margin-bottom:16px;background:var(--accent-soft);border-color:var(--accent);display:flex;align-items:center;gap:10px;">
         <span style="font-size:22px;">🎉</span>
@@ -249,6 +254,13 @@ function render(container, ctx){
     const todayStr = isoDate(new Date());
     const weekLabel = `${fmtDate(days[0])} – ${fmtDate(days[6])}`;
     return `
+      ${isAdmin ? `
+        <div class="chips" style="margin-bottom:16px;">
+          <div class="chip ${state.channel==='ca_nhan'?'selected':''}" data-channel="ca_nhan">Cá nhân</div>
+          <div class="chip ${state.channel==='fanpage'?'selected':''}" data-channel="fanpage">Fanpage</div>
+        </div>
+      ` : ''}
+      ${state.channel==='ca_nhan' ? `
       <div class="card" style="margin-bottom:20px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tuần này bạn muốn đẩy mục tiêu gì nhất?</label>
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
@@ -268,6 +280,9 @@ function render(container, ctx){
         ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
       </div>
+      ` : `
+      <div class="hint-box" style="margin-bottom:20px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
+      `}
 
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:6px;">Lịch công việc content</h3>
@@ -329,7 +344,7 @@ function render(container, ctx){
             <div class="day">${DAY_NAMES[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</div>
             ${SLOTS.map(s=>{
               const e = entryFor(dateStr, s.key);
-              const suggestion = !e ? suggestionFor(thu, s.key) : null;
+              const suggestion = (!e && state.channel==='ca_nhan') ? suggestionFor(thu, s.key) : null;
 
               // Ngày đã qua mà không có bài: không còn gì để hành động (không thể xếp lịch cho quá
               // khứ) — ẩn bớt gợi ý/khung "+" mời bấm. CHỈ gắn nhãn "Đã bỏ lỡ" khi slot đó thực sự
@@ -376,7 +391,7 @@ function render(container, ctx){
                   <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span ${e.posted?'':`data-toggle-posted="${e.id}"`} style="${e.posted?'':'cursor:pointer;'}display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Đã đánh dấu đăng rồi':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
                   <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
                   ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
-                  ${isAdmin && e.post_id && (e.fb_publish_status || !isPast) ? `
+                  ${isAdmin && state.channel==='fanpage' && e.post_id && (e.fb_publish_status || !isPast) ? `
                     <div style="margin-top:8px;padding-top:8px;border-top:1px solid ${e.posted?'rgba(255,255,255,.25)':'var(--line)'};">
                       ${e.fb_publish_status==='published' ? `
                         <div style="font-size:10.5px;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}">✅ Đã tự động đăng lên Fanpage${e.fb_post_id?` · <a href="https://facebook.com/${e.fb_post_id}" target="_blank" style="color:inherit;text-decoration:underline;">Xem bài</a>`:''}</div>
@@ -526,6 +541,16 @@ function render(container, ctx){
     container.querySelectorAll('[data-posts-per-day]').forEach(el=>{
       el.onclick = ()=>{ state.postsPerDay = Number(el.getAttribute('data-posts-per-day')); saveDraftForCurrentWeek(); draw(); };
     });
+    // Chuyển lane Cá nhân/Fanpage — cả 2 lane đã cùng nằm trong state.entries của tuần đang xem
+    // (loadEntries() không lọc theo channel), không cần gọi lại DB. Reset trạng thái thao tác dở
+    // dang để khỏi lẫn giữa 2 lane (vd đang mở picker ở ô lane này mà chuyển sang lane kia).
+    container.querySelectorAll('[data-channel]').forEach(el=>{
+      el.onclick = ()=>{
+        state.channel = el.getAttribute('data-channel');
+        state.pickerFor = null; state.editingEntryId = null; state.pending = null;
+        draw();
+      };
+    });
     const aiBtn = container.querySelector('[data-action="ai-suggest"]');
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
 
@@ -547,6 +572,7 @@ function render(container, ctx){
         if(state.pending){
           await ctx.supabase.from('calendar_entries').insert({
             user_id: ctx.user.id, post_id: state.pending.id, scheduled_date: dateStr, slot: slotKey,
+            channel: state.channel,
             title: state.pending.title, format: (state.pending.structure && state.pending.structure.format) || null,
             cta: (state.pending.structure && state.pending.structure.cta) || null,
           });
@@ -569,6 +595,7 @@ function render(container, ctx){
         const matchedPost = s.bai_co_san ? state.posts.find(p=>p.title===s.bai_co_san) : null;
         await ctx.supabase.from('calendar_entries').insert({
           user_id: ctx.user.id, post_id: matchedPost ? matchedPost.id : null, scheduled_date: dateStr, slot: slotKey,
+          channel: state.channel,
           title: matchedPost ? matchedPost.title : s.chu_de, format: s.dinh_dang, cta: s.cta,
         });
         await loadEntries();
@@ -616,7 +643,7 @@ function render(container, ctx){
         if(state.editingEntryId){
           await ctx.supabase.from('calendar_entries').update(fields).eq('id', state.editingEntryId);
         } else {
-          await ctx.supabase.from('calendar_entries').insert({ user_id: ctx.user.id, scheduled_date: dateStr, slot: slotKey, ...fields });
+          await ctx.supabase.from('calendar_entries').insert({ user_id: ctx.user.id, scheduled_date: dateStr, slot: slotKey, channel: state.channel, ...fields });
         }
         state.pickerFor = null;
         state.editingEntryId = null;

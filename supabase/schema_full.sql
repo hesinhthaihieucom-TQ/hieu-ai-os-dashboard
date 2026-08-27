@@ -1632,3 +1632,11 @@ alter table calendar_entries add column if not exists fb_publish_status text
   check (fb_publish_status in ('pending','published','failed'));
 alter table calendar_entries add column if not exists fb_post_id text;
 alter table calendar_entries add column if not exists fb_publish_error text;
+
+-- Tách "Lịch Cá nhân" (kế hoạch đăng FB cá nhân, tự tay đăng — cách dùng gốc của mọi user) và "Lịch
+-- Fanpage" (auto-đăng ở trên) thành 2 LANE độc lập trong cùng bảng, thay vì 1 lịch chung — theo phản
+-- hồi chị Quỳnh 2026-08-27: "lịch hiện tại là đăng fb cá nhân, cho em 1 mục nữa là lịch fanpage để
+-- làm riêng" (chị đã điền kín lịch cá nhân tuần này, cron auto-fill tưởng hết chỗ nên không lấp được
+-- cho Fanpage). Dòng cũ mặc định 'ca_nhan' — đúng bản chất dữ liệu cũ, không cần migrate tay.
+alter table calendar_entries add column if not exists channel text not null default 'ca_nhan'
+  check (channel in ('ca_nhan','fanpage'));

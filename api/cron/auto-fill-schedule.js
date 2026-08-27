@@ -97,8 +97,11 @@ function pickUnusedCandidate(candidates, usedRefs) {
 }
 
 async function findEmptySlots(userId, dateStrs) {
+  // channel=eq.fanpage: chỉ xét lane Fanpage — ô đã điền bên lane "ca_nhan" (kế hoạch FB cá nhân,
+  // đăng thủ công) KHÔNG được tính là "đã có lịch" ở đây, 2 lane độc lập hoàn toàn (xem cột channel
+  // ở schema_full.sql, thêm 2026-08-27 theo phản hồi chị Quỳnh).
   const resp = await supabaseAdmin(
-    `calendar_entries?user_id=eq.${userId}&scheduled_date=in.(${dateStrs.join(',')})&select=scheduled_date,slot`
+    `calendar_entries?user_id=eq.${userId}&channel=eq.fanpage&scheduled_date=in.(${dateStrs.join(',')})&select=scheduled_date,slot`
   );
   const existing = resp.ok ? await resp.json() : [];
   const taken = new Set(existing.map((e) => `${e.scheduled_date}:${e.slot}`));
@@ -161,6 +164,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
     method: 'POST',
     body: JSON.stringify({
       user_id: userId, post_id: post.id, scheduled_date: slotInfo.dateStr, slot: slotInfo.slot,
+      channel: 'fanpage',
       scheduled_time: slotTime, title: core.tieu_de, cta: core.cta, posted: false, auto_publish_fb: true,
     }),
   });

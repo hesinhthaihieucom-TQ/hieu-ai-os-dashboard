@@ -110,7 +110,9 @@ async function checkAutoPublishFb() {
 
   const { dateStr, minutesOfDay } = vnNowParts();
   const entriesResp = await supabaseAdmin(
-    `calendar_entries?auto_publish_fb=eq.true&fb_publish_status=is.null&posted=eq.false&scheduled_date=eq.${dateStr}&select=id,user_id,post_id,slot,scheduled_time`
+    // channel=eq.fanpage: lớp an toàn thêm — UI chỉ cho bật auto_publish_fb trong lane Fanpage rồi,
+    // nhưng lọc thêm ở đây phòng hờ tuyệt đối không bao giờ đăng nhầm 1 dòng lịch cá nhân.
+    `calendar_entries?auto_publish_fb=eq.true&channel=eq.fanpage&fb_publish_status=is.null&posted=eq.false&scheduled_date=eq.${dateStr}&select=id,user_id,post_id,slot,scheduled_time`
   );
   const entries = entriesResp.ok ? await entriesResp.json() : [];
   const candidates = entries.filter((e) => e.post_id);
