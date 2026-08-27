@@ -627,8 +627,13 @@ function render(container, ctx){
   }
 
   // Ảnh cá nhân — làm nền cho ảnh ghép quote-card, không phân loại trục (dùng chung mọi bài).
+  // Chị Quỳnh tự chọn góc đặt khung case study cho TỪNG ảnh cá nhân (personal_photos.card_corner) —
+  // vị trí che mặt hay không tuỳ ảnh, không có cách nào AI đoán chắc chắn mà không tốn thêm 1 lượt
+  // AI/bài (đã chốt với chị Quỳnh 2026-08-28: chị tự chọn, không tốn thêm chi phí).
+  const CORNER_LABELS = { 'top-right':'Góc trên-phải', 'top-left':'Góc trên-trái', 'bottom-right':'Góc dưới-phải', 'bottom-left':'Góc dưới-trái' };
+
   function personalPhotosSection(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh cá nhân (chân dung/đời thường) — hệ thống sẽ tự chọn 1 ảnh ở đây làm nền, ghép cùng 1 ảnh case study khi tự viết bài Fanpage.</div>`;
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh cá nhân (chân dung/đời thường) — hệ thống sẽ tự chọn 1 ảnh ở đây làm nền, ghép cùng 1 ảnh case study khi tự viết bài Fanpage. Với mỗi ảnh, chọn giúp góc KHÔNG che mặt để đặt khung case study.</div>`;
     const uploadHtml = state.personalPhotoUploading
       ? `<div class="hint-box">Đang tải ảnh lên…</div>`
       : `<input type="file" accept="image/*" id="pp-upload">`;
@@ -639,6 +644,9 @@ function render(container, ctx){
     const grid = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
       ${state.personalPhotos.map(pp=>`<div style="width:160px;">
           <img src="${pp.image}" style="width:160px;height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
+          <select data-corner-select="${pp.id}" style="width:100%;margin-top:6px;font-size:11.5px;padding:2px;">
+            ${Object.keys(CORNER_LABELS).map(c=>`<option value="${c}" ${(pp.card_corner||'top-right')===c?'selected':''}>${CORNER_LABELS[c]}</option>`).join('')}
+          </select>
           <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal-photo="${pp.id}">Xoá</span>
         </div>`).join('')}
     </div>`;
@@ -731,6 +739,15 @@ function render(container, ctx){
       };
       reader.readAsDataURL(file);
     };
+    container.querySelectorAll('[data-corner-select]').forEach(el=>{
+      el.onchange = async ()=>{
+        const id = el.getAttribute('data-corner-select');
+        const corner = el.value;
+        await ctx.supabase.from('personal_photos').update({ card_corner: corner }).eq('id', id);
+        const pp = state.personalPhotos.find(p=>p.id===id);
+        if(pp) pp.card_corner = corner;
+      };
+    });
     container.querySelectorAll('[data-del-personal-photo]').forEach(el=>{
       el.onclick = async ()=>{
         const id = el.getAttribute('data-del-personal-photo');

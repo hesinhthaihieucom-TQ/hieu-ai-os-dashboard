@@ -58,6 +58,24 @@ async function callOpenAiImage(apiKey, prompt) {
   return Buffer.from(b64, 'base64');
 }
 
+const ACCENT_COLOR = '#ffd60a'; // vàng nhấn số liệu/từ khoá quan trọng trong tiêu đề (theo yêu cầu chị Quỳnh 2026-08-28)
+
+// Tách 1 dòng chữ thành các đoạn — đoạn nào chứa số (kể cả "%", "200%", "3 tháng"...) tô vàng, còn
+// lại giữ trắng — số liệu/kết quả là phần chị Quỳnh muốn nhấn mạnh nhất trong tiêu đề case study.
+function splitHighlight(line) {
+  const re = /\d[\d.,]*\s?%?/g;
+  const segments = [];
+  let last = 0;
+  let m;
+  while ((m = re.exec(line))) {
+    if (m.index > last) segments.push({ text: line.slice(last, m.index), accent: false });
+    segments.push({ text: m[0], accent: true });
+    last = m.index + m[0].length;
+  }
+  if (last < line.length) segments.push({ text: line.slice(last), accent: false });
+  return segments.length ? segments : [{ text: line, accent: false }];
+}
+
 function titleOverlaySvg(title) {
   const lines = wrapText(title, 24, 4);
   const fontSize = 46;
@@ -66,12 +84,35 @@ function titleOverlaySvg(title) {
   const boxHeight = lines.length * lineHeight + paddingBottom;
   const textTop = IMAGE_SIZE - boxHeight + lineHeight - 14;
   const tspans = lines
-    .map((line, i) => `<tspan x="56" dy="${i === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`)
+    .map((line, i) => splitHighlight(line)
+      .map((seg, j) => {
+        const posAttrs = j === 0 ? ` x="56" dy="${i === 0 ? 0 : lineHeight}"` : '';
+        return `<tspan${posAttrs} fill="${seg.accent ? ACCENT_COLOR : 'white'}">${escapeXml(seg.text)}</tspan>`;
+      })
+      .join(''))
     .join('');
   return `<svg width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="${IMAGE_SIZE - boxHeight}" width="${IMAGE_SIZE}" height="${boxHeight}" fill="black" fill-opacity="0.55" />
-    <text x="56" y="${textTop}" font-family="sans-serif" font-size="${fontSize}" font-weight="700" fill="white">${tspans}</text>
+    <text x="56" y="${textTop}" font-family="sans-serif" font-size="${fontSize}" font-weight="700">${tspans}</text>
   </svg>`;
+}
+
+// Vùng dành cho khối tiêu đề (tính theo mức tối đa 4 dòng của wrapText) — dùng để khung case study ở
+// góc DƯỚI không bị chữ tiêu đề đè lên khi applyTitleBar() chạy sau compositeCaseStudyImage().
+const TITLE_RESERVE = 4 * 58 + 56 + 20;
+
+// Toạ độ góc trên-trái của khung case study theo lựa chọn `corner` của chị Quỳnh (chọn tay khi tải
+// ảnh cá nhân lên, xem personal_photos.card_corner) — ảnh nào mặt ở đâu thì chị tự né góc đó.
+function cardPosition(corner, cardSize, margin) {
+  const right = IMAGE_SIZE - cardSize - margin;
+  const bottom = IMAGE_SIZE - cardSize - margin - TITLE_RESERVE;
+  switch (corner) {
+    case 'top-left': return { x: margin, y: margin };
+    case 'bottom-right': return { x: right, y: bottom };
+    case 'bottom-left': return { x: margin, y: bottom };
+    case 'top-right':
+    default: return { x: right, y: margin };
+  }
 }
 
 // Đè tiêu đề lên 1 ảnh IMAGE_SIZE x IMAGE_SIZE có sẵn — dùng chung cho cả ảnh AI thuần lẫn ảnh đã
@@ -107,14 +148,13 @@ async function generatePostImage({ apiKey, title }) {
   return applyTitleBar(bg, title);
 }
 
-// Ghép ảnh cá nhân (nền) + ảnh case study (khung nhỏ bo góc, góc trên phải, có viền trắng + đổ bóng
-// nhẹ) + tiêu đề đè lên — kiểu "quote card" theo yêu cầu chị Quỳnh 2026-08-28. Bản đơn giản hoá: KHÔNG
-// làm chữ nhiều màu nhấn từng cụm như ảnh mẫu chị gửi (mẫu đó là thiết kế tay), chỉ 1 style cố định.
-async function compositeCaseStudyImage({ personalImageBuffer, caseStudyImageBuffer, title }) {
+// Ghép ảnh cá nhân (nền) + ảnh case study (khung nhỏ bo góc, có viền trắng + đổ bóng nhẹ) + tiêu đề
+// đè lên — kiểu "quote card" theo yêu cầu chị Quỳnh 2026-08-28. `cardCorner` do chị tự chọn theo từng
+// ảnh cá nhân (personal_photos.card_corner) — vị trí an toàn không che mặt tuỳ ảnh, không đoán được.
+async function compositeCaseStudyImage({ personalImageBuffer, caseStudyImageBuffer, title, cardCorner }) {
   const CARD = 360;
   const MARGIN = 40;
-  const cardX = IMAGE_SIZE - CARD - MARGIN;
-  const cardY = MARGIN;
+  const { x: cardX, y: cardY } = cardPosition(cardCorner, CARD, MARGIN);
 
   const base = await sharp(personalImageBuffer).resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'cover' }).toBuffer();
   const card = await roundedCard(caseStudyImageBuffer, CARD, 20);

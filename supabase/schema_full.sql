@@ -1680,3 +1680,9 @@ create table if not exists personal_photos (
 alter table personal_photos enable row level security;
 drop policy if exists "personal_photos_owner_all" on personal_photos;
 create policy "personal_photos_owner_all" on personal_photos for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- card_corner (2026-08-28) — chị Quỳnh tự chọn góc đặt khung case study cho TỪNG ảnh cá nhân, vì vị
+-- trí che mặt hay không tuỳ ảnh, không có cách nào AI tự đoán chắc chắn mà không tốn thêm 1 lượt gọi
+-- AI/bài. Mặc định 'top-right' (khớp hành vi cũ trước khi có cột này).
+alter table personal_photos add column if not exists card_corner text not null default 'top-right'
+  check (card_corner in ('top-right','top-left','bottom-right','bottom-left'));

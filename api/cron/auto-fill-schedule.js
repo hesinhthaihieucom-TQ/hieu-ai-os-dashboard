@@ -256,6 +256,7 @@ Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguy
   // tự rơi về ảnh AI hoặc bỏ qua đăng theo đúng quy tắc "không đăng bài chữ trần").
   try {
     const image = await compositeCaseStudyImage({
+      cardCorner: personalPhoto.card_corner,
       personalImageBuffer: Buffer.from(stripDataUrlPrefix(personalPhoto.image), 'base64'),
       caseStudyImageBuffer: Buffer.from(stripDataUrlPrefix(caseStudy.image), 'base64'),
       title: core.tieu_de,
@@ -282,7 +283,7 @@ async function autoFillForAdmin(admin, apiKey) {
     // viết bài case study bằng vision + ghép ảnh (fillCaseStudySlot), theo yêu cầu chị Quỳnh
     // 2026-08-28 (không đăng ảnh case study trần trụi nữa).
     supabaseAdmin(`case_studies?user_id=eq.${admin.id}&select=id,image,tags`),
-    supabaseAdmin(`personal_photos?user_id=eq.${admin.id}&select=id,image`),
+    supabaseAdmin(`personal_photos?user_id=eq.${admin.id}&select=id,image,card_corner`),
   ]);
   const posRows = posResp.ok ? await posResp.json() : [];
   const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
