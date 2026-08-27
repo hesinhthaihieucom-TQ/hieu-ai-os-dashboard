@@ -1,0 +1,148 @@
+// Cron job (xem "crons" trong vercel.json, chạy mỗi 15 phút) — tự động đăng bài lên Fanpage của chị
+// Quỳnh đúng giờ đã hẹn trong Lịch Đăng Bài (calendar_entries.auto_publish_fb=true), rồi tự đăng
+// thêm 1 comment CTA (lấy từ posts.day_bai_plan.cmt_tu_dang, do module Đẩy Bài tạo sẵn) ngay dưới.
+// Theo yêu cầu chị Quỳnh 2026-08-27: "cài chế độ đăng bài tự động".
+//
+// QUAN TRỌNG — phạm vi CHỈ 1 Fanpage của chị Quỳnh: token đăng bài (FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN)
+// nằm ở biến môi trường server, không lưu Supabase, không phải OAuth theo từng user — vì đây KHÔNG
+// phải tính năng cho khách hàng Xây Nhân Hiệu khác dùng (đã xác nhận với chị Quỳnh). UI bật/tắt
+// (checkbox "Tự động đăng lên Fanpage" ở nhan-hieu/js/lich-dang.js) vì vậy cũng chỉ hiện cho admin.
+//
+// Facebook Graph API KHÔNG có endpoint để GHIM comment trên bài Page — bước dưới chỉ ĐĂNG được 1
+// comment thường (thường lên đầu vì mới đăng, không đảm bảo giữ vị trí đầu nếu có comment khác cùng
+// lúc). Muốn ghim thật vẫn phải làm tay trên Facebook.
+const { supabaseAdmin } = require('../_lib/supabase-admin');
+const { notifyOnce } = require('../_lib/push');
+
+const GRAPH_API = 'https://graph.facebook.com/v19.0';
+const WINDOW_MINUTES = 25;
+// Phải khớp tay với default ở cột profiles.slot_time_* trong schema_full.sql — cùng tầng ưu tiên
+// giờ như checkLichDangBai() ở send-reminders.js: giờ riêng của bài → giờ mặc định theo slot của
+// user → giờ mặc định chung.
+const DEFAULT_SLOT_TIME = { sang: '08:00', trua: '12:00', toi: '19:00' };
+
+function parseHHMM(s) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(s || '');
+  if (!m) return NaN;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function vnNowParts() {
+  const vn = new Date(Date.now() + 7 * 3600 * 1000);
+  return { dateStr: vn.toISOString().slice(0, 10), minutesOfDay: vn.getUTCHours() * 60 + vn.getUTCMinutes() };
+}
+
+function withinWindow(targetMinutesOfDay, nowMinutesOfDay) {
+  const diff = nowMinutesOfDay - targetMinutesOfDay;
+  return diff >= 0 && diff < WINDOW_MINUTES;
+}
+
+async function fbPost(path, params) {
+  const resp = await fetch(`${GRAPH_API}/${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(params).toString(),
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error((data.error && data.error.message) || `Facebook API lỗi (HTTP ${resp.status})`);
+  return data;
+}
+
+async function markEntry(id, fields) {
+  await supabaseAdmin(`calendar_entries?id=eq.${id}`, {
+    method: 'PATCH', prefer: 'return=minimal',
+    body: JSON.stringify(fields),
+  });
+}
+
+async function publishOne(entry, pageId, pageToken) {
+  // Set 'pending' NGAY khi bắt đầu xử lý — chặn đăng trùng nếu lượt cron sau chạy chồng lên (khác
+  // các loại nhắc push ở send-reminders.js, việc này có tác dụng phụ thật ngoài Facebook nên bắt
+  // buộc phải khoá lại, không thể chỉ dựa vào cửa sổ thời gian).
+  await markEntry(entry.id, { fb_publish_status: 'pending' });
+
+  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,day_bai_plan`);
+  const posts = postResp.ok ? await postResp.json() : [];
+  const post = posts[0];
+  if (!post || !post.content) {
+    await markEntry(entry.id, { fb_publish_status: 'failed', fb_publish_error: 'Không tìm thấy nội dung bài viết để đăng.' });
+    return { ok: false };
+  }
+
+  try {
+    const result = await fbPost(`${pageId}/feed`, { message: post.content, access_token: pageToken });
+    await markEntry(entry.id, {
+      fb_publish_status: 'published', fb_post_id: result.id, fb_publish_error: null,
+      posted: true, posted_at: new Date().toISOString(),
+    });
+
+    const cmt = post.day_bai_plan && post.day_bai_plan.cmt_tu_dang;
+    if (cmt) {
+      try { await fbPost(`${result.id}/comments`, { message: cmt, access_token: pageToken }); }
+      catch (e) { /* comment lỗi không làm fail bài đăng chính — đã đăng thành công rồi */ }
+    }
+
+    await notifyOnce(entry.user_id, `fb-publish:${entry.id}`, {
+      title: '✅ Đã tự động đăng lên Fanpage',
+      body: 'Bài đã lên lịch vừa được tự động đăng lên Fanpage.',
+      url: './#lich-dang',
+    });
+    return { ok: true };
+  } catch (e) {
+    await markEntry(entry.id, { fb_publish_status: 'failed', fb_publish_error: e.message });
+    await notifyOnce(entry.user_id, `fb-publish-fail:${entry.id}`, {
+      title: '❌ Đăng tự động lên Fanpage thất bại',
+      body: e.message,
+      url: './#lich-dang',
+    });
+    return { ok: false };
+  }
+}
+
+async function checkAutoPublishFb() {
+  const pageId = process.env.FB_PAGE_ID;
+  const pageToken = process.env.FB_PAGE_ACCESS_TOKEN;
+  if (!pageId || !pageToken) return { skipped: 'FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN chưa được cấu hình.' };
+
+  const { dateStr, minutesOfDay } = vnNowParts();
+  const entriesResp = await supabaseAdmin(
+    `calendar_entries?auto_publish_fb=eq.true&fb_publish_status=is.null&posted=eq.false&scheduled_date=eq.${dateStr}&select=id,user_id,post_id,slot,scheduled_time`
+  );
+  const entries = entriesResp.ok ? await entriesResp.json() : [];
+  const candidates = entries.filter((e) => e.post_id);
+  if (!candidates.length) return { published: 0, failed: 0 };
+
+  const userIds = [...new Set(candidates.map((e) => e.user_id))];
+  const profilesResp = await supabaseAdmin(
+    `profiles?id=in.(${userIds.join(',')})&select=id,slot_time_sang,slot_time_trua,slot_time_toi`
+  );
+  const profiles = profilesResp.ok ? await profilesResp.json() : [];
+  const profileById = Object.fromEntries(profiles.map((p) => [p.id, p]));
+
+  let published = 0, failed = 0;
+  for (const entry of candidates) {
+    const p = profileById[entry.user_id];
+    const slotTime = entry.scheduled_time || (p && p['slot_time_' + entry.slot]) || DEFAULT_SLOT_TIME[entry.slot];
+    if (!withinWindow(parseHHMM(slotTime), minutesOfDay)) continue;
+    const result = await publishOne(entry, pageId, pageToken);
+    if (result.ok) published++; else failed++;
+  }
+  return { published, failed };
+}
+
+module.exports = async (req, res) => {
+  // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người ngoài
+  // gọi thẳng URL này để đăng bài giả mạo.
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const auth = req.headers['authorization'] || '';
+    if (auth !== `Bearer ${secret}`) { res.status(401).json({ error: 'unauthorized' }); return; }
+  }
+
+  try {
+    const result = await checkAutoPublishFb();
+    res.status(200).json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+};

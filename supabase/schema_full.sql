@@ -1622,3 +1622,13 @@ drop policy if exists "sk_products_read" on sk_products;
 create policy "sk_products_read" on sk_products for select using (auth.role() = 'authenticated');
 drop policy if exists "sk_products_admin_write" on sk_products;
 create policy "sk_products_admin_write" on sk_products for all using (is_admin()) with check (is_admin());
+
+-- Auto-đăng Fanpage (2026-08-27, theo yêu cầu chị Quỳnh) — CHỈ dùng cho 1 Fanpage riêng của chị
+-- Quỳnh (token cấu hình ở biến môi trường Vercel FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN trên server, không
+-- lưu DB, không phải OAuth theo từng user), nên không cần bảng token riêng — chỉ thêm cột lên
+-- calendar_entries để cron api/cron/auto-publish-fb.js biết ô nào cần tự đăng + ghi lại kết quả.
+alter table calendar_entries add column if not exists auto_publish_fb boolean not null default false;
+alter table calendar_entries add column if not exists fb_publish_status text
+  check (fb_publish_status in ('pending','published','failed'));
+alter table calendar_entries add column if not exists fb_post_id text;
+alter table calendar_entries add column if not exists fb_publish_error text;

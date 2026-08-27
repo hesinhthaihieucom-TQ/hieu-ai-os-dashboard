@@ -241,6 +241,10 @@ function render(container, ctx){
   }
 
   function calendarTabHtml(){
+    // Auto-đăng Fanpage (2026-08-27) chỉ dùng cho Fanpage riêng của chị Quỳnh (1 token cấu hình ở
+    // biến môi trường server, không phải OAuth theo từng user) — nên chỉ admin mới thấy toggle này,
+    // khách thường bấm vào cũng không có Page nào để đăng.
+    const isAdmin = ctx.profile && ctx.profile.role === 'admin';
     const days = weekDays();
     const todayStr = isoDate(new Date());
     const weekLabel = `${fmtDate(days[0])} – ${fmtDate(days[6])}`;
@@ -372,6 +376,21 @@ function render(container, ctx){
                   <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span ${e.posted?'':`data-toggle-posted="${e.id}"`} style="${e.posted?'':'cursor:pointer;'}display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Đã đánh dấu đăng rồi':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
                   <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
                   ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
+                  ${isAdmin && e.post_id && (e.fb_publish_status || !isPast) ? `
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid ${e.posted?'rgba(255,255,255,.25)':'var(--line)'};">
+                      ${e.fb_publish_status==='published' ? `
+                        <div style="font-size:10.5px;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}">✅ Đã tự động đăng lên Fanpage${e.fb_post_id?` · <a href="https://facebook.com/${e.fb_post_id}" target="_blank" style="color:inherit;text-decoration:underline;">Xem bài</a>`:''}</div>
+                      ` : e.fb_publish_status==='failed' ? `
+                        <div style="font-size:10.5px;color:var(--danger);">❌ Đăng tự động thất bại: ${esc(e.fb_publish_error||'')}</div>
+                        <span style="font-size:10.5px;cursor:pointer;color:var(--accent);text-decoration:underline;" data-retry-fb="${e.id}">Thử lại</span>
+                      ` : `
+                        <label style="font-size:10.5px;display:flex;align-items:center;gap:5px;cursor:pointer;${e.posted?'color:#fff;opacity:.85;':'color:var(--ink-soft);'}">
+                          <input type="checkbox" data-toggle-auto-fb="${e.id}" ${e.auto_publish_fb?'checked':''}>
+                          Tự động đăng lên Fanpage${e.fb_publish_status==='pending'?' (đang xử lý...)':''}
+                        </label>
+                      `}
+                    </div>
+                  ` : ''}
                   ${e.posted ? `
                     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.25);">
                       <div style="font-size:9.5px;color:#fff;opacity:.75;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;">Kết quả (không bắt buộc)</div>
@@ -640,6 +659,30 @@ function render(container, ctx){
         await ctx.supabase.from('calendar_entries').update({ scheduled_time: el.value }).eq('id', id);
         const entry = state.entries.find(x=>x.id===id);
         if(entry) entry.scheduled_time = el.value;
+        draw();
+      };
+    });
+
+    // Bật/tắt "Tự động đăng lên Fanpage" (2026-08-27, chỉ admin thấy — xem isAdmin ở calendarTabHtml).
+    // Cron api/cron/auto-publish-fb.js quét cột này, không cần gọi API riêng ở đây.
+    container.querySelectorAll('[data-toggle-auto-fb]').forEach(el=>{
+      el.onclick = (ev)=>ev.stopPropagation();
+      el.onchange = async ()=>{
+        const id = el.getAttribute('data-toggle-auto-fb');
+        await ctx.supabase.from('calendar_entries').update({ auto_publish_fb: el.checked }).eq('id', id);
+        const entry = state.entries.find(x=>x.id===id);
+        if(entry) entry.auto_publish_fb = el.checked;
+      };
+    });
+    // "Thử lại" chỉ xoá trạng thái lỗi — cron sẽ tự nhặt lại ở lượt chạy kế tiếp (không gọi Graph API
+    // trực tiếp từ trình duyệt vì access token chỉ nằm ở server, không lộ ra client).
+    container.querySelectorAll('[data-retry-fb]').forEach(el=>{
+      el.onclick = async (ev)=>{
+        ev.stopPropagation();
+        const id = el.getAttribute('data-retry-fb');
+        await ctx.supabase.from('calendar_entries').update({ fb_publish_status: null, fb_publish_error: null }).eq('id', id);
+        const entry = state.entries.find(x=>x.id===id);
+        if(entry){ entry.fb_publish_status = null; entry.fb_publish_error = null; }
         draw();
       };
     });
