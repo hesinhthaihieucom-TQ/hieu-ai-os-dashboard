@@ -18,6 +18,19 @@ Sửa mảng `ROUTES` trong `worker.js` — mỗi app chỉ cần đúng 1 dòng
 `prefix` là phần path sau `hesinhthaihieu.com/`, `originPath` là thư mục tương ứng trong repo
 `hieu-dashboard` (đã deploy sẵn ở `hieu-ai-os-dashboard.vercel.app/<originPath>/`).
 
+## Thêm app mới — 2 bước, không chỉ sửa code
+
+Sửa `ROUTES` trong `worker.js` là CHƯA ĐỦ — phải thêm cả 1 **Cloudflare Route** riêng cho path đó
+thì request mới thật sự tới được worker này (route dạng `hesinhthaihieu.com/*` gộp chung KHÔNG tự
+động bắt hết mọi path mới, đã kiểm chứng thực tế 2026-08-27 — mỗi app cần đúng 1 route riêng, y hệt
+`hesinhthaihieu.com/webxaynhanhieu*` đang có cho nhan-hieu):
+
+1. Thêm 1 dòng vào `ROUTES` trong `worker.js` (xem phần trên).
+2. Vào **Cloudflare Dashboard → Workers & Pages → (worker đang chạy cho hesinhthaihieu.com) → tab
+   Domains → bấm "+ Add Route"** → điền Route `hesinhthaihieu.com/<prefix-mới>*`, Zone
+   `hesinhthaihieu.com`.
+3. Deploy code (xem bên dưới).
+
 ## Deploy (bắt buộc làm thủ công sau khi sửa `worker.js`)
 
 Hiện tại **chưa nối được Wrangler CLI** (cần Cloudflare account ID + tên Worker + xác thực tài
