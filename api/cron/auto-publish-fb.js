@@ -133,10 +133,8 @@ async function publishOne(entry, pageId, pageToken) {
       catch (e) { /* comment lỗi không làm fail bài đăng chính — đã đăng thành công rồi */ }
     }
     // cmt_cta_san_pham: 1-2 câu bình luận CTA dẫn LINK THẬT về đúng sản phẩm/group chị Quỳnh đã lưu
-    // sẵn ở promo_assets (xem auto-fill-schedule.js) — đăng thêm mỗi câu làm 1 comment riêng. Bỏ qua
-    // khi structure.cta_in_body=true (2026-08-28) — bài do auto-fill-schedule.js viết đã ghép thẳng
-    // đúng những câu này vào content của bài chính rồi, đăng lại y hệt thành comment sẽ bị lặp 2 lần.
-    const productComments = (!post.structure || !post.structure.cta_in_body) && post.structure && Array.isArray(post.structure.cmt_cta_san_pham) ? post.structure.cmt_cta_san_pham : [];
+    // sẵn ở promo_assets (xem auto-fill-schedule.js) — đăng thêm mỗi câu làm 1 comment riêng.
+    const productComments = (post.structure && Array.isArray(post.structure.cmt_cta_san_pham)) ? post.structure.cmt_cta_san_pham : [];
     for (const pc of productComments) {
       if (!pc) continue;
       try { await fbPost(`${result.id}/comments`, { message: pc, access_token: pageToken }); }

@@ -180,13 +180,7 @@ ${extraFieldsBlock({
 Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption gợi ý cho đúng bài này.`,
   });
   const hashtags = Array.isArray(extras.hashtag) ? extras.hashtag.map(stripDiacritics).filter(Boolean) : [];
-  const productCtaLines = (Array.isArray(extras.cmt_cta_san_pham) ? extras.cmt_cta_san_pham : []).filter(Boolean);
-  // Chị Quỳnh chốt 2026-08-28: CTA sản phẩm phải nằm NGAY TRONG bài chính, không chỉ nấp ở 1 comment
-  // riêng như thiết kế trước (lúc đó cố ý để CTA thật/link ở comment vì Facebook có xu hướng giảm
-  // reach bài có link ngay trong caption) — chị chấp nhận đánh đổi reach để CTA chắc chắn hiện ra
-  // ngay khi khách đọc bài, không phải tự mở phần bình luận mới thấy.
-  const bodyWithCta = productCtaLines.length ? `${bodyText}\n\n${productCtaLines.join('\n')}` : bodyText;
-  const content = hashtags.length ? `${bodyWithCta}\n\n${hashtags.map((h) => `#${h}`).join(' ')}` : bodyWithCta;
+  const content = hashtags.length ? `${bodyText}\n\n${hashtags.map((h) => `#${h}`).join(' ')}` : bodyText;
 
   const postResp = await supabaseAdmin('posts', {
     method: 'POST',
@@ -198,10 +192,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
         hook: core.hook, van_de: core.van_de, gia_tri: core.gia_tri, niem_tin: core.niem_tin,
         cta: core.cta, tu_khoa_cta: core.tu_khoa_cta, cau_cmt_ghim: core.cau_cmt_ghim,
         hashtag: hashtags, format: extras.dinh_dang_de_xuat,
-        cmt_cta_san_pham: productCtaLines,
-        // cta_in_body: đã ghép thẳng vào content ở trên — báo cho auto-publish-fb.js biết KHÔNG cần
-        // đăng lại y hệt câu này thành 1 comment riêng nữa (tránh lặp lại 2 lần cùng 1 câu trên 1 bài).
-        cta_in_body: productCtaLines.length > 0,
+        cmt_cta_san_pham: Array.isArray(extras.cmt_cta_san_pham) ? extras.cmt_cta_san_pham : [],
       },
       tags: finalTags,
       source_table: sourceTable || null,
