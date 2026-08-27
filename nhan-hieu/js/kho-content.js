@@ -50,6 +50,10 @@ function render(container, ctx){
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'', scheduledPostIds:new Set(),
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
     caseStudies:[], caseStudyUploading:false, caseStudyError:null,
+    // Ảnh cá nhân (2026-08-28, theo yêu cầu chị Quỳnh) — dùng làm NỀN ghép cùng ảnh case study khi
+    // lịch Fanpage tự động viết bài (compositeCaseStudyImage ở api/_lib/image-gen.js). Sống chung
+    // tab "Case Study" qua 1 sub-tab chip, không cần phân loại trục (dùng chung cho mọi bài).
+    photoSubTab:'case-study', personalPhotos:[], personalPhotoUploading:false, personalPhotoError:null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -67,7 +71,7 @@ function render(container, ctx){
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
     state.positioningId = pos ? pos.id : null;
-    await Promise.all([loadPosts(), loadPersonal(), loadShared(), loadScheduledPostIds(), loadCaseStudies()]);
+    await Promise.all([loadPosts(), loadPersonal(), loadShared(), loadScheduledPostIds(), loadCaseStudies(), loadPersonalPhotos()]);
     // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung
     // trong Kho Content Viral thay vì bắt người dùng tự chọn lại từ đầu.
     if(window.PendingPillar){
@@ -101,6 +105,11 @@ function render(container, ctx){
   async function loadCaseStudies(){
     const { data } = await ctx.supabase.from('case_studies').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
     state.caseStudies = data || [];
+  }
+  // Ảnh cá nhân (2026-08-28) — không có tags/phân loại, chỉ ảnh, dùng làm nền ghép chung mọi trục.
+  async function loadPersonalPhotos(){
+    const { data } = await ctx.supabase.from('personal_photos').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
+    state.personalPhotos = data || [];
   }
   async function loadShared(){
     const { data } = await ctx.supabase.from('content_bank_shared').select('*')
@@ -581,12 +590,21 @@ function render(container, ctx){
     `).join('');
   }
 
-  // Kho Case Study (2026-08-27, theo yêu cầu chị Quỳnh) — CHỈ tải ảnh, không tiêu đề/nội dung, AI tự
-  // đọc ảnh xếp vào đúng trục ngay khi tải lên. Ảnh này KHÔNG gắn với 1 bài viết cụ thể nào — lịch
-  // Fanpage tự động (api/cron/auto-fill-schedule.js) sẽ tự ghép ảnh vào bất kỳ bài nào CÙNG TRỤC khi
-  // đăng, không cần chọn tay từng cặp.
+  // Kho Case Study (2026-08-27) + Ảnh cá nhân (2026-08-28, theo yêu cầu chị Quỳnh) — 2 kho ảnh sống
+  // chung 1 tab qua sub-tab chip. Case study: CHỈ tải ảnh, AI tự đọc xếp trục (không gắn vào 1 bài cụ
+  // thể). Ảnh cá nhân: chỉ ảnh, không phân loại. Lịch Fanpage tự động (api/cron/auto-fill-schedule.js)
+  // khi có SẴN CẢ 2 kho sẽ tự chọn ngẫu nhiên 1 case study + 1 ảnh cá nhân, viết bài bằng vision rồi
+  // ghép ảnh lại (compositeCaseStudyImage) thay vì tự tạo ảnh AI hay đăng ảnh case study trần trụi.
   function caseStudyTab(){
-    const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh case study/kết quả thật của khách hàng — AI tự đọc ảnh và xếp vào đúng trục nội dung, không cần gõ tiêu đề gì cả. Khi lịch Fanpage tự động viết 1 bài thuộc đúng trục này, nó sẽ tự ghép ảnh đây vào thay vì tự tạo ảnh AI.</div>`;
+    const subTabHtml = `<div style="display:flex;gap:8px;margin-bottom:14px;">
+      <div class="tab-btn ${state.photoSubTab==='case-study'?'active':''}" data-photo-subtab="case-study">Case Study (${state.caseStudies.length})</div>
+      <div class="tab-btn ${state.photoSubTab==='personal'?'active':''}" data-photo-subtab="personal">Ảnh cá nhân (${state.personalPhotos.length})</div>
+    </div>`;
+    return subTabHtml + (state.photoSubTab==='personal' ? personalPhotosSection() : caseStudySection());
+  }
+
+  function caseStudySection(){
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh case study/kết quả thật của khách hàng — AI tự đọc ảnh và xếp vào đúng trục nội dung, không cần gõ tiêu đề gì cả. Khi lịch Fanpage tự động viết bài case study, nó sẽ tự chọn 1 ảnh ở đây (kèm 1 ảnh cá nhân) để ghép lại.</div>`;
     const uploadHtml = state.caseStudyUploading
       ? `<div class="hint-box">Đang tải ảnh lên và phân loại…</div>`
       : `<input type="file" accept="image/*" id="cs-upload">`;
@@ -608,6 +626,25 @@ function render(container, ctx){
     return hint + uploadHtml + errorHtml + grid;
   }
 
+  // Ảnh cá nhân — làm nền cho ảnh ghép quote-card, không phân loại trục (dùng chung mọi bài).
+  function personalPhotosSection(){
+    const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh cá nhân (chân dung/đời thường) — hệ thống sẽ tự chọn 1 ảnh ở đây làm nền, ghép cùng 1 ảnh case study khi tự viết bài Fanpage.</div>`;
+    const uploadHtml = state.personalPhotoUploading
+      ? `<div class="hint-box">Đang tải ảnh lên…</div>`
+      : `<input type="file" accept="image/*" id="pp-upload">`;
+    const errorHtml = state.personalPhotoError ? `<div class="error-box" style="margin-top:10px;">${esc(state.personalPhotoError)}</div>` : '';
+    if(state.personalPhotos.length===0){
+      return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:14px;">Chưa có ảnh cá nhân nào.</div>`;
+    }
+    const grid = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
+      ${state.personalPhotos.map(pp=>`<div style="width:160px;">
+          <img src="${pp.image}" style="width:160px;height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal-photo="${pp.id}">Xoá</span>
+        </div>`).join('')}
+    </div>`;
+    return hint + uploadHtml + errorHtml + grid;
+  }
+
   function bind(){
     container.querySelectorAll('[data-copy-value]').forEach(el=>{
       el.onclick = async ()=>{
@@ -620,6 +657,7 @@ function render(container, ctx){
       };
     });
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
+    container.querySelectorAll('[data-photo-subtab]').forEach(el=>{ el.onclick = ()=>{ state.photoSubTab = el.getAttribute('data-photo-subtab'); draw(); }; });
     // Kho Case Study — chọn ảnh xong TỰ ĐỘNG nén + gọi AI phân loại trục + lưu, không cần bấm nút
     // riêng nào (đúng yêu cầu chị Quỳnh: chỉ tải ảnh, không gõ gì thêm).
     const csUpload = container.querySelector('#cs-upload');
@@ -661,6 +699,44 @@ function render(container, ctx){
         if(!(await confirmModal('Xoá ảnh case study này? Không khôi phục được.'))) return;
         await ctx.supabase.from('case_studies').delete().eq('id', id);
         await loadCaseStudies(); draw();
+      };
+    });
+    // Ảnh cá nhân — chọn ảnh xong TỰ ĐỘNG nén + lưu, KHÔNG gọi AI phân loại (ảnh cá nhân dùng chung
+    // mọi trục, không cần xếp trục).
+    const ppUpload = container.querySelector('#pp-upload');
+    if(ppUpload) ppUpload.onchange = ()=>{
+      const file = ppUpload.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = async ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = c.toDataURL('image/jpeg', 0.85);
+          state.personalPhotoUploading = true; state.personalPhotoError = null; draw();
+          try{
+            const { error } = await ctx.supabase.from('personal_photos').insert({ user_id: ctx.user.id, image: dataUrl });
+            if(error) throw error;
+            await loadPersonalPhotos();
+          } catch(e){ state.personalPhotoError = `Không lưu được: ${e.message}`; }
+          state.personalPhotoUploading = false;
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    container.querySelectorAll('[data-del-personal-photo]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-del-personal-photo');
+        if(!(await confirmModal('Xoá ảnh cá nhân này? Không khôi phục được.'))) return;
+        await ctx.supabase.from('personal_photos').delete().eq('id', id);
+        await loadPersonalPhotos(); draw();
       };
     });
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{

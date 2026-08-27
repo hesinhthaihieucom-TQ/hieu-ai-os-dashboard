@@ -87,11 +87,12 @@ async function publishOne(entry, pageId, pageToken) {
   }
 
   try {
-    // Thứ tự ưu tiên đăng: (1) ảnh case study THẬT chị Quỳnh tự tải lên Kho Content (post.image_data,
-    // đăng nguyên ảnh, KHÔNG đè chữ lên — sợ che mất nội dung ảnh chứng minh/testimonial thật) → (2)
-    // ảnh AI tự tạo (chỉ khi có OPENAI_API_KEY) → (3) rơi về đăng bài chữ thường (/feed). Lỗi ở BẤT
-    // KỲ bước ảnh nào (thiếu key, OpenAI lỗi/timeout, sharp lỗi, Facebook từ chối ảnh, base64 hỏng)
-    // đều rơi xuống bước sau — không bao giờ để phần ảnh (không bắt buộc) chặn việc đăng bài chính.
+    // Thứ tự ưu tiên đăng: (1) ảnh đã ghép sẵn từ lúc viết bài (post.image_data — ảnh cá nhân + case
+    // study + tiêu đề, xem fillCaseStudySlot ở auto-fill-schedule.js, đăng nguyên vì đã hoàn chỉnh) →
+    // (2) ảnh AI tự tạo (chỉ khi có OPENAI_API_KEY). Lỗi ở bước ảnh AI (thiếu key, OpenAI lỗi/timeout,
+    // sharp lỗi) rơi xuống bước dưới. TUYỆT ĐỐI KHÔNG đăng bài chữ trần (/feed) nữa — theo yêu cầu chị
+    // Quỳnh 2026-08-28: "không được đăng mỗi bài chữ". Không có ảnh nào khả dụng → bỏ qua lượt đăng
+    // này, đánh dấu failed kèm lý do rõ, có thông báo — còn hơn đăng chữ không kèm ảnh.
     let result = null;
     if (post.image_data) {
       try {
@@ -106,7 +107,16 @@ async function publishOne(entry, pageId, pageToken) {
       } catch (e) { result = null; }
     }
     if (!result) {
-      result = await fbPost(`${pageId}/feed`, { message: post.content, access_token: pageToken });
+      await markEntry(entry.id, {
+        fb_publish_status: 'failed',
+        fb_publish_error: 'Không tạo được ảnh — bỏ qua đăng bài chữ trần theo yêu cầu chị Quỳnh.',
+      });
+      await notifyOnce(entry.user_id, `fb-publish-fail:${entry.id}`, {
+        title: '⚠️ Bỏ qua đăng bài Fanpage — thiếu ảnh',
+        body: 'Không tạo được ảnh cho bài này (chưa cấu hình OPENAI_API_KEY hoặc chưa có ảnh case study/ảnh cá nhân), nên hệ thống bỏ qua, không đăng bài chữ trần.',
+        url: './#lich-dang',
+      });
+      return { ok: false };
     }
     await markEntry(entry.id, {
       fb_publish_status: 'published', fb_post_id: result.id, fb_publish_error: null,

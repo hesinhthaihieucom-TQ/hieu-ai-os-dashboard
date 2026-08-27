@@ -1,11 +1,14 @@
-// Tự tạo ảnh cho bài auto-đăng Fanpage (2026-08-27, theo yêu cầu chị Quỳnh) — module Tạo Ảnh Thương
-// Hiệu (nhan-hieu/js/tao-anh.js) KHÔNG dùng lại được ở đây: nó chỉ vẽ chữ đè lên 1 ảnh NGƯỜI DÙNG TỰ
-// TẢI LÊN, chạy hoàn toàn bằng Canvas 2D trong trình duyệt, không có AI tạo ảnh, không gọi API nào —
-// cron chạy nền không có ai ngồi tải ảnh. Nên ở đây tự làm lại 2 bước: (1) OpenAI gpt-image-1 tạo 1
-// ảnh nền KHÔNG chữ (chữ tiếng Việt do AI vẽ trực tiếp trong ảnh thường lỗi dấu), (2) TỰ đè tiêu đề
-// lên bằng chữ THẬT (SVG qua sharp, không phải AI vẽ) — Unicode/dấu tiếng Việt hiển thị đúng, theo 1
-// style CỐ ĐỊNH đơn giản (đã chốt với chị Quỳnh: nền tối mờ dưới + chữ trắng đậm, không có đủ tuỳ
-// chọn font/màu/bố cục như bản tay Tạo Ảnh Thương Hiệu).
+// Tự tạo/ghép ảnh cho bài auto-đăng Fanpage (2026-08-27, theo yêu cầu chị Quỳnh) — module Tạo Ảnh
+// Thương Hiệu (nhan-hieu/js/tao-anh.js) KHÔNG dùng lại được ở đây: nó chỉ vẽ chữ đè lên 1 ảnh NGƯỜI
+// DÙNG TỰ TẢI LÊN, chạy hoàn toàn bằng Canvas 2D trong trình duyệt, không có AI tạo ảnh, không gọi
+// API nào — cron chạy nền không có ai ngồi tải ảnh. Nên ở đây tự làm lại:
+// (1) OpenAI gpt-image-1 tạo 1 ảnh nền KHÔNG chữ (chữ tiếng Việt do AI vẽ trực tiếp trong ảnh
+//     thường lỗi dấu) — dùng khi KHÔNG có ảnh case study/ảnh cá nhân nào (generatePostImage).
+// (2) Ghép "ảnh cá nhân làm nền + ảnh case study làm khung nhỏ góc" (2026-08-28, theo yêu cầu chị
+//     Quỳnh — kiểu quote-card đang thịnh hành cho content bán hàng) — compositeCaseStudyImage.
+// Cả 2 đường đều kết ở TỰ đè tiêu đề lên bằng chữ THẬT (SVG qua sharp, không phải AI vẽ) — Unicode/
+// dấu tiếng Việt hiển thị đúng 100%, theo 1 style CỐ ĐỊNH đơn giản (đã chốt với chị Quỳnh: nền tối mờ
+// dưới + chữ trắng đậm, không có đủ tuỳ chọn font/màu/bố cục như bản tay Tạo Ảnh Thương Hiệu).
 const sharp = require('sharp');
 
 const IMAGE_SIZE = 1024;
@@ -71,19 +74,68 @@ function titleOverlaySvg(title) {
   </svg>`;
 }
 
-// generatePostImage: gọi OpenAI tạo ảnh nền theo chủ đề `title`, đè tiêu đề lên, trả Buffer JPEG.
-// Ném lỗi nếu bất kỳ bước nào thất bại — nơi gọi (auto-publish-fb.js) tự rơi về đăng bài chữ thường,
-// không để lỗi ảnh chặn việc đăng bài chính.
-async function generatePostImage({ apiKey, title }) {
-  const prompt = `Ảnh minh hoạ chuyên nghiệp, phong cách biên tập/tạp chí, ánh sáng đẹp, chủ đề: ${title}. `
-    + 'TUYỆT ĐỐI KHÔNG có chữ, không watermark, không logo, không ký tự nào trong ảnh.';
-  const bg = await callOpenAiImage(apiKey, prompt);
+// Đè tiêu đề lên 1 ảnh IMAGE_SIZE x IMAGE_SIZE có sẵn — dùng chung cho cả ảnh AI thuần lẫn ảnh đã
+// ghép case study, để 2 luồng không phải viết lại đoạn vẽ chữ 2 lần.
+async function applyTitleBar(imageBuffer, title) {
   const svg = Buffer.from(titleOverlaySvg(title));
-  return sharp(bg)
+  return sharp(imageBuffer)
     .resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'cover' })
     .composite([{ input: svg, top: 0, left: 0 }])
     .jpeg({ quality: 88 })
     .toBuffer();
 }
 
-module.exports = { generatePostImage };
+// Resize ảnh về hình vuông rồi bo góc — trả PNG có nền trong suốt ngoài phần bo, dùng để ghép "khung
+// nhỏ" case study lên ảnh nền cá nhân.
+async function roundedCard(imageBuffer, size, radius) {
+  const maskSvg = Buffer.from(
+    `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="${size}" height="${size}" rx="${radius}" fill="white"/></svg>`
+  );
+  return sharp(imageBuffer)
+    .resize(size, size, { fit: 'cover' })
+    .composite([{ input: maskSvg, blend: 'dest-in' }])
+    .png()
+    .toBuffer();
+}
+
+// generatePostImage: gọi OpenAI tạo ảnh nền theo chủ đề `title`, đè tiêu đề lên, trả Buffer JPEG.
+// Ném lỗi nếu bất kỳ bước nào thất bại — nơi gọi (auto-publish-fb.js) tự xử lý fallback.
+async function generatePostImage({ apiKey, title }) {
+  const prompt = `Ảnh minh hoạ chuyên nghiệp, phong cách biên tập/tạp chí, ánh sáng đẹp, chủ đề: ${title}. `
+    + 'TUYỆT ĐỐI KHÔNG có chữ, không watermark, không logo, không ký tự nào trong ảnh.';
+  const bg = await callOpenAiImage(apiKey, prompt);
+  return applyTitleBar(bg, title);
+}
+
+// Ghép ảnh cá nhân (nền) + ảnh case study (khung nhỏ bo góc, góc trên phải, có viền trắng + đổ bóng
+// nhẹ) + tiêu đề đè lên — kiểu "quote card" theo yêu cầu chị Quỳnh 2026-08-28. Bản đơn giản hoá: KHÔNG
+// làm chữ nhiều màu nhấn từng cụm như ảnh mẫu chị gửi (mẫu đó là thiết kế tay), chỉ 1 style cố định.
+async function compositeCaseStudyImage({ personalImageBuffer, caseStudyImageBuffer, title }) {
+  const CARD = 360;
+  const MARGIN = 40;
+  const cardX = IMAGE_SIZE - CARD - MARGIN;
+  const cardY = MARGIN;
+
+  const base = await sharp(personalImageBuffer).resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'cover' }).toBuffer();
+  const card = await roundedCard(caseStudyImageBuffer, CARD, 20);
+
+  // Viền trắng + bóng mờ: 1 rect trắng hơi lớn hơn card (viền dày ~8px) + 1 rect mờ lệch xuống dưới
+  // 1 chút (bóng đổ, feGaussianBlur — filter="blur()" kiểu CSS không chắc được librsvg hỗ trợ nên
+  // dùng đúng cú pháp SVG filter chuẩn) — vẽ trước, card đè lên trên.
+  const frameSvg = Buffer.from(`<svg width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" xmlns="http://www.w3.org/2000/svg">
+    <defs><filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter></defs>
+    <rect x="${cardX - 6}" y="${cardY + 10}" width="${CARD + 12}" height="${CARD + 12}" rx="24" fill="black" fill-opacity="0.35" filter="url(#shadow)" />
+    <rect x="${cardX - 8}" y="${cardY - 8}" width="${CARD + 16}" height="${CARD + 16}" rx="26" fill="white" />
+  </svg>`);
+
+  const composited = await sharp(base)
+    .composite([
+      { input: frameSvg, top: 0, left: 0 },
+      { input: card, top: cardY, left: cardX },
+    ])
+    .toBuffer();
+
+  return applyTitleBar(composited, title);
+}
+
+module.exports = { generatePostImage, compositeCaseStudyImage, applyTitleBar };

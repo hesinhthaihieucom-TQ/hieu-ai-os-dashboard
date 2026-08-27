@@ -12,8 +12,12 @@
 // không đụng vào.
 const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { SYSTEM_PROMPT: KHO_GOC_SYSTEM_PROMPT, TOOL_POST_KHO_GOC } = require('../viet-tu-kho-goc');
-const { TOOL_POST_EXTRAS, HASHTAG_CAPTION_RULES, assemblePost, stripDiacritics, contextBlockOf, extraFieldsBlock } = require('../_lib/post-schema');
+const {
+  TOOL_POST_CORE, TOOL_POST_EXTRAS, HASHTAG_CAPTION_RULES, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES,
+  assemblePost, stripDiacritics, contextBlockOf, extraFieldsBlock,
+} = require('../_lib/post-schema');
 const { FORMAT_GUIDE } = require('../_lib/formats');
+const { compositeCaseStudyImage } = require('../_lib/image-gen');
 
 const MAX_FILL_PER_RUN = 3;
 const LOOKAHEAD_DAYS = 3; // hôm nay + 2 ngày tới
@@ -32,6 +36,28 @@ ${HASHTAG_CAPTION_RULES}
 
 ${FORMAT_GUIDE}
 (Chọn đúng 1 dạng khớp nhất với ngành + mục tiêu bài này.)`;
+
+// Viết bài TỪ 1 ẢNH CASE STUDY (2026-08-28, theo yêu cầu chị Quỳnh: "viết bài case study nghe thật
+// tự nhiên, dễ chốt khách") — khác hẳn KHO_GOC_SYSTEM_PROMPT (paraphrase từ 1 bài gốc có sẵn): ở đây
+// không có "bài gốc", chỉ có 1 TẤM ẢNH — AI phải THỰC SỰ NHÌN ảnh (vision) để viết đúng tinh thần kết
+// quả đang cho thấy, không đoán mò/bịa số liệu không có trong ảnh. Dùng chung TOOL_POST_CORE (cùng
+// shape hook/van_de/gia_tri/niem_tin/cta/tu_khoa_cta/cau_cmt_ghim) để phần lưu posts/EXTRAS/hashtag
+// phía sau dùng lại y hệt code hiện có.
+const SYSTEM_PROMPT_CASE_STUDY = `Bạn là trợ lý viết content bán hàng cho người xây thương hiệu cá nhân tại Việt Nam.
+
+Bạn được xem 1 ẢNH CASE STUDY/KẾT QUẢ THẬT — có thể là ảnh chụp màn hình số liệu, ảnh trước/sau, ảnh testimonial của khách hàng, hoặc bằng chứng kết quả khác của chính tác giả hoặc khách hàng của họ. NHIỆM VỤ: viết 1 bài đăng Facebook kể lại câu chuyện đằng sau kết quả trong ảnh này — giọng kể tự nhiên như chính tác giả đang chia sẻ thật, KHÔNG phải mô tả ảnh khô khan kiểu báo cáo.
+
+QUAN TRỌNG — TRÁNH BỊA SỐ LIỆU: bạn không biết chi tiết chính xác đằng sau ảnh (tên khách hàng thật, ngày tháng chính xác...). CHỈ nhắc tới những gì THỰC SỰ NHÌN THẤY RÕ trong ảnh, diễn đạt khéo léo. Nếu ảnh có số liệu cụ thể nhìn rõ được, có thể nhắc lại đúng số đó; nếu không chắc/không nhìn rõ, nói chung chung theo CẢM XÚC/Ý NGHĨA của kết quả (ví dụ "nhìn con số này mà...") thay vì bịa ra số liệu không có trong ảnh.
+
+${ANTI_AI_CLICHE_RULES}
+
+${CTA_COMMENT_RULES}`;
+
+// Bỏ prefix "data:image/...;base64," nếu có (ảnh lưu trong DB là data URL từ canvas.toDataURL phía
+// client) — Anthropic Messages API cần đúng phần base64 thuần.
+function stripDataUrlPrefix(dataUrl) {
+  return String(dataUrl || '').replace(/^data:image\/\w+;base64,/, '');
+}
 
 // Cùng khuôn callClaude() đang tự lặp lại ở viet-tu-kho-goc.js/viet-content-extras.js — repo chưa có
 // 1 helper dùng chung để import, nên viết lại đúng khuôn ở đây thay vì bịa cách khác.
@@ -99,16 +125,6 @@ function pickUnusedCandidate(candidates, usedRefs) {
   return (unused.length ? unused : candidates)[0] || null;
 }
 
-// Ghép 1 ảnh case study (kho riêng case_studies, xem schema_full.sql) có TRỤC NỘI DUNG trùng với
-// candidate.tags — không cần ảnh "thuộc về" đúng bài đó, chỉ cần đúng ngành (theo yêu cầu chị Quỳnh
-// 2026-08-27: Fanpage bán hàng, ảnh case study thật đáng tin hơn ảnh AI). Chọn ngẫu nhiên 1 nếu có
-// nhiều ảnh khớp; không có ảnh nào khớp trục thì trả về null (rơi về ảnh AI ở auto-publish-fb.js).
-function pickMatchingCaseStudy(caseStudies, candidateTags) {
-  if (!candidateTags || !candidateTags.length) return null;
-  const matches = caseStudies.filter((cs) => cs.tags && cs.tags.some((t) => candidateTags.includes(t)));
-  return matches.length ? matches[Math.floor(Math.random() * matches.length)] : null;
-}
-
 async function findEmptySlots(userId, dateStrs) {
   // channel=eq.fanpage: chỉ xét lane Fanpage — ô đã điền bên lane "ca_nhan" (kế hoạch FB cá nhân,
   // đăng thủ công) KHÔNG được tính là "đã có lịch" ở đây, 2 lane độc lập hoàn toàn (xem cột channel
@@ -125,23 +141,13 @@ async function findEmptySlots(userId, dateStrs) {
   return empty;
 }
 
-async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, caseStudyImage }) {
-  const core = await callClaude({
-    apiKey, system: KHO_GOC_SYSTEM_PROMPT, tool: TOOL_POST_KHO_GOC,
-    userContent: `${contextBlockOf(positioning, null)}
-
-TIÊU ĐỀ GỐC (tham khảo tinh thần, không bắt buộc giữ y hệt): ${candidate.title && candidate.title.trim() ? candidate.title.trim() : '(không có, tự đặt tiêu đề mới khớp hook)'}
-
-BÀI GỐC TỪ KHO CONTENT (giữ nguyên cấu trúc/trình tự từng đoạn, chỉ giữ y hệt câu hook — các đoạn còn lại paraphrase lại câu chữ, không copy nguyên văn):
-${candidate.text.trim()}
-
-CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): (không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)
-
-${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-
-Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`,
-  });
-
+// Dùng chung cho CẢ 2 luồng viết bài (paraphrase từ hook/content VÀ viết từ ảnh case study) — lượt
+// EXTRAS (hashtag/cmt_cta_san_pham), lưu posts + calendar_entries đều giống hệt nhau, chỉ khác nguồn
+// `core` (từ đâu ra tieu_de/hook/van_de/...) và cách có được ảnh (imageDataBase64).
+async function writeExtrasAndSave({
+  apiKey, positioning, core, channelHandle, brandName, product, group,
+  userId, tags, sourceTable, sourceId, imageDataBase64, slotInfo, slotTime,
+}) {
   const bodyText = assemblePost(core);
   const extras = await callClaude({
     apiKey, system: EXTRAS_SYSTEM_PROMPT, tool: TOOL_POST_EXTRAS,
@@ -172,10 +178,10 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
         hashtag: hashtags, format: extras.dinh_dang_de_xuat,
         cmt_cta_san_pham: Array.isArray(extras.cmt_cta_san_pham) ? extras.cmt_cta_san_pham : [],
       },
-      tags: candidate.tags || null,
-      source_table: candidate.table,
-      source_id: candidate.id,
-      image_data: caseStudyImage || null,
+      tags: tags || null,
+      source_table: sourceTable || null,
+      source_id: sourceId || null,
+      image_data: imageDataBase64 || null,
     }),
   });
   if (!postResp.ok) throw new Error(`Lưu bài thất bại: ${await postResp.text()}`);
@@ -193,8 +199,78 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
   return { date: slotInfo.dateStr, slot: slotInfo.slot, post_id: post.id, title: core.tieu_de };
 }
 
+async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName }) {
+  const core = await callClaude({
+    apiKey, system: KHO_GOC_SYSTEM_PROMPT, tool: TOOL_POST_KHO_GOC,
+    userContent: `${contextBlockOf(positioning, null)}
+
+TIÊU ĐỀ GỐC (tham khảo tinh thần, không bắt buộc giữ y hệt): ${candidate.title && candidate.title.trim() ? candidate.title.trim() : '(không có, tự đặt tiêu đề mới khớp hook)'}
+
+BÀI GỐC TỪ KHO CONTENT (giữ nguyên cấu trúc/trình tự từng đoạn, chỉ giữ y hệt câu hook — các đoạn còn lại paraphrase lại câu chữ, không copy nguyên văn):
+${candidate.text.trim()}
+
+CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): (không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)
+
+${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
+
+Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`,
+  });
+
+  // KHÔNG gán image_data ở đây — case study (ảnh thật) chỉ dùng qua fillCaseStudySlot() riêng, luôn
+  // ghép cùng ảnh cá nhân (theo yêu cầu chị Quỳnh 2026-08-28, không đăng ảnh case study trần trụi
+  // nữa). Luồng hook/content này để trống ảnh, auto-publish-fb.js tự tạo ảnh AI lúc đăng nếu có
+  // OPENAI_API_KEY.
+  return writeExtrasAndSave({
+    apiKey, positioning, core, channelHandle, brandName, product, group,
+    userId, tags: candidate.tags, sourceTable: candidate.table, sourceId: candidate.id,
+    imageDataBase64: null, slotInfo, slotTime,
+  });
+}
+
+// Viết bài TỪ 1 ảnh case study (vision) + ghép ảnh cá nhân làm nền — luồng ưu tiên khi có sẵn cả 2
+// kho ảnh (xem autoFillForAdmin). Không có "nguồn hook/content" nên source_table/source_id để trống.
+async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group, channelHandle, brandName }) {
+  const core = await callClaude({
+    apiKey, system: SYSTEM_PROMPT_CASE_STUDY, tool: TOOL_POST_CORE,
+    userContent: [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: stripDataUrlPrefix(caseStudy.image) } },
+      {
+        type: 'text',
+        text: `${contextBlockOf(positioning, null)}
+
+${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
+
+Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguyên tắc đã nêu.`,
+      },
+    ],
+  });
+
+  const result = await writeExtrasAndSave({
+    apiKey, positioning, core, channelHandle, brandName, product, group,
+    userId, tags: caseStudy.tags, sourceTable: null, sourceId: null,
+    imageDataBase64: null, slotInfo, slotTime,
+  });
+
+  // Ghép ảnh SAU khi đã lưu bài (composite tốn thời gian, không cần chặn việc lưu bài chính) — lỗi ở
+  // bước ghép ảnh không làm fail cả lượt lấp lịch, chỉ để bài đó không có ảnh (auto-publish-fb.js sẽ
+  // tự rơi về ảnh AI hoặc bỏ qua đăng theo đúng quy tắc "không đăng bài chữ trần").
+  try {
+    const image = await compositeCaseStudyImage({
+      personalImageBuffer: Buffer.from(stripDataUrlPrefix(personalPhoto.image), 'base64'),
+      caseStudyImageBuffer: Buffer.from(stripDataUrlPrefix(caseStudy.image), 'base64'),
+      title: core.tieu_de,
+    });
+    await supabaseAdmin(`posts?id=eq.${result.post_id}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: JSON.stringify({ image_data: image.toString('base64') }),
+    });
+  } catch (e) { /* không ghép được ảnh — bài vẫn đã lưu, chỉ thiếu ảnh, xử lý tiếp ở auto-publish-fb.js */ }
+
+  return result;
+}
+
 async function autoFillForAdmin(admin, apiKey) {
-  const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp] = await Promise.all([
+  const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp, personalPhotosResp] = await Promise.all([
     supabaseAdmin(`positioning_results?user_id=eq.${admin.id}&select=luot1,luot2&limit=1`),
     supabaseAdmin(`profiles?id=eq.${admin.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`),
     loadCandidatePool(admin.id),
@@ -202,9 +278,11 @@ async function autoFillForAdmin(admin, apiKey) {
     // dùng để CTA trong bài trỏ đúng sản phẩm thật, không để AI tự bịa (theo yêu cầu chị Quỳnh
     // 2026-08-27). Group phân biệt bằng kind='cong_dong', còn lại coi là sản phẩm/dịch vụ.
     supabaseAdmin(`promo_assets?user_id=eq.${admin.id}&select=id,label,url,kind,cta_mau&order=created_at.asc`),
-    // case_studies: kho ảnh case study riêng (chỉ ảnh + trục, xem schema_full.sql) — ghép vào bài
-    // theo trục trùng nhau ở pickMatchingCaseStudy(), không theo nguồn hook/content.
+    // case_studies + personal_photos: 2 kho ảnh riêng (xem schema_full.sql) — có ĐỦ CẢ 2 mới ưu tiên
+    // viết bài case study bằng vision + ghép ảnh (fillCaseStudySlot), theo yêu cầu chị Quỳnh
+    // 2026-08-28 (không đăng ảnh case study trần trụi nữa).
     supabaseAdmin(`case_studies?user_id=eq.${admin.id}&select=id,image,tags`),
+    supabaseAdmin(`personal_photos?user_id=eq.${admin.id}&select=id,image`),
   ]);
   const posRows = posResp.ok ? await posResp.json() : [];
   const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
@@ -218,6 +296,7 @@ async function autoFillForAdmin(admin, apiKey) {
   const groups = assets.filter((a) => a.kind === 'cong_dong');
 
   const caseStudies = caseStudiesResp.ok ? await caseStudiesResp.json() : [];
+  const personalPhotos = personalPhotosResp.ok ? await personalPhotosResp.json() : [];
 
   const postsResp = await supabaseAdmin(`posts?user_id=eq.${admin.id}&select=source_table,source_id`);
   const postsRows = postsResp.ok ? await postsResp.json() : [];
@@ -233,20 +312,27 @@ async function autoFillForAdmin(admin, apiKey) {
   const filled = [];
   const skippedNoCandidate = [];
   for (const slotInfo of toFill) {
-    const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
-    if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
-    usedRefs.push({ table: candidate.table, id: candidate.id }); // không chọn trùng trong cùng lượt chạy
     const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
     // Chọn ngẫu nhiên 1 sản phẩm + 1 group mỗi lần lấp — không có logic xoay vòng riêng, nhưng qua
     // nhiều lượt chạy sẽ tự dàn đều các sản phẩm/group đã lưu, không lặp mãi 1 sản phẩm.
     const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
     const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
-    const matchedCaseStudy = pickMatchingCaseStudy(caseStudies, candidate.tags);
     try {
+      if (caseStudies.length && personalPhotos.length) {
+        const caseStudy = caseStudies[Math.floor(Math.random() * caseStudies.length)];
+        const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
+        filled.push(await fillCaseStudySlot({
+          userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
+          channelHandle: profile.channel_handle, brandName: profile.brand_name,
+        }));
+        continue;
+      }
+      const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
+      if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
+      usedRefs.push({ table: candidate.table, id: candidate.id }); // không chọn trùng trong cùng lượt chạy
       filled.push(await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
-        caseStudyImage: matchedCaseStudy && matchedCaseStudy.image,
       }));
     } catch (e) {
       skippedNoCandidate.push({ ...slotInfo, error: e.message });

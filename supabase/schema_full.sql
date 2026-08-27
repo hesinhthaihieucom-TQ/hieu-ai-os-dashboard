@@ -1667,3 +1667,16 @@ create table if not exists case_studies (
 alter table case_studies enable row level security;
 drop policy if exists "case_studies_owner_all" on case_studies;
 create policy "case_studies_owner_all" on case_studies for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Kho Ảnh cá nhân (2026-08-28, theo yêu cầu chị Quỳnh) — ghép cùng 1 ảnh case study làm ảnh đăng
+-- Fanpage (ảnh cá nhân làm nền, case study làm khung nhỏ góc — xem api/_lib/image-gen.js
+-- compositeCaseStudyImage). Không cần trục/phân loại gì — ảnh cá nhân dùng chung cho mọi bài.
+create table if not exists personal_photos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  image text not null,
+  created_at timestamptz not null default now()
+);
+alter table personal_photos enable row level security;
+drop policy if exists "personal_photos_owner_all" on personal_photos;
+create policy "personal_photos_owner_all" on personal_photos for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
