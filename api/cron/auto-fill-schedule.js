@@ -1,9 +1,9 @@
 // Cron job (xem "crons" trong vercel.json, chạy 1 lần/ngày sáng sớm giờ VN) — Phase 2 của auto-đăng
 // Fanpage: tự động lấp các Ô LỊCH CÒN TRỐNG (chưa từng tạo trong Lịch Đăng Bài) của admin bằng 1 bài
-// viết mới — viết từ 1 hook/content viral CHƯA DÙNG trong kho, kèm hashtag — rồi bật
-// auto_publish_fb=true để api/cron/auto-publish-fb.js tự nhặt đúng giờ đăng lên Fanpage + tự cmt.
-// Theo yêu cầu chị Quỳnh 2026-08-27: "tự động chọn 1 trong số các content hoặc hook viral để viết
-// bài xong tự đăng đúng lịch kèm hashtag xong tự cmt".
+// viết mới — viết từ 1 hook/content viral CHƯA DÙNG trong kho (hoặc case study, xem fillCaseStudySlot),
+// kèm hashtag. auto_publish_fb LUÔN để false khi tự lấp (chốt lại 2026-08-28, chị Quỳnh muốn cron chỉ
+// tự VIẾT VÀ XẾP LỊCH, không tự ĐĂNG lên Facebook — chị tự xem/duyệt rồi tự bật checkbox "Tự động
+// đăng lên Fanpage" ở Lịch Đăng Bài cho từng bài muốn đăng thật).
 //
 // CHỈ chạy cho tài khoản admin (đúng chị Quỳnh, giống phạm vi Phase 1 — không phải tính năng cho
 // khách hàng khác). Mỗi lần chạy tối đa lấp 3 ô (an toàn, tránh sinh hàng loạt nếu có lỗi) — ô nào
@@ -203,12 +203,15 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
   if (!postResp.ok) throw new Error(`Lưu bài thất bại: ${await postResp.text()}`);
   const [post] = await postResp.json();
 
+  // auto_publish_fb: false — chỉ TỰ ĐỘNG LẤP LỊCH (viết sẵn bài + xếp vào đúng ô), KHÔNG tự động
+  // đăng lên Facebook (chốt lại 2026-08-28, chị Quỳnh muốn tự xem/duyệt trước khi đăng thật). Chị tự
+  // bật checkbox "Tự động đăng lên Fanpage" ở Lịch Đăng Bài cho từng bài muốn đăng tự động.
   await supabaseAdmin('calendar_entries', {
     method: 'POST',
     body: JSON.stringify({
       user_id: userId, post_id: post.id, scheduled_date: slotInfo.dateStr, slot: slotInfo.slot,
       channel: 'fanpage',
-      scheduled_time: slotTime, title: core.tieu_de, cta: core.cta, posted: false, auto_publish_fb: true,
+      scheduled_time: slotTime, title: core.tieu_de, cta: core.cta, posted: false, auto_publish_fb: false,
     }),
   });
 
