@@ -61,7 +61,7 @@ async function publishOne(entry, pageId, pageToken) {
   // buộc phải khoá lại, không thể chỉ dựa vào cửa sổ thời gian).
   await markEntry(entry.id, { fb_publish_status: 'pending' });
 
-  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,day_bai_plan`);
+  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,structure`);
   const posts = postResp.ok ? await postResp.json() : [];
   const post = posts[0];
   if (!post || !post.content) {
@@ -76,7 +76,11 @@ async function publishOne(entry, pageId, pageToken) {
       posted: true, posted_at: new Date().toISOString(),
     });
 
-    const cmt = post.day_bai_plan && post.day_bai_plan.cmt_tu_dang;
+    // Đọc cau_cmt_ghim (bình luận ghim, sinh sẵn cho MỌI bài viết ở cả Viết Content lẫn Viết từ Kho
+    // Content — xem posts.structure) thay vì day_bai_plan.cmt_tu_dang: field đó nằm trong
+    // day_bai_plan.moc[i].cmt_tu_dang (do module Đẩy Bài tạo), không phải top-level như đọc trước
+    // đây — bug khiến bước tự-comment chưa bao giờ chạy được, sửa 2026-08-27.
+    const cmt = post.structure && post.structure.cau_cmt_ghim;
     if (cmt) {
       try { await fbPost(`${result.id}/comments`, { message: cmt, access_token: pageToken }); }
       catch (e) { /* comment lỗi không làm fail bài đăng chính — đã đăng thành công rồi */ }

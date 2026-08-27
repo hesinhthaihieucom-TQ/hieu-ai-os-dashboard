@@ -143,3 +143,8 @@ Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyê
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi cá nhân hoá bài từ kho.' });
   }
 };
+
+// Cho api/cron/auto-fill-schedule.js dùng lại đúng prompt/schema này (không viết lại) — gắn thêm
+// property lên function export, không đổi hành vi endpoint HTTP đang chạy.
+module.exports.SYSTEM_PROMPT = SYSTEM_PROMPT;
+module.exports.TOOL_POST_KHO_GOC = TOOL_POST_KHO_GOC;
