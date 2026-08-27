@@ -12,12 +12,15 @@
 // không đụng vào.
 const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { SYSTEM_PROMPT: KHO_GOC_SYSTEM_PROMPT, TOOL_POST_KHO_GOC } = require('../viet-tu-kho-goc');
-const { TOOL_POST_EXTRAS, HASHTAG_CAPTION_RULES, assemblePost, stripDiacritics, contextBlockOf } = require('../_lib/post-schema');
+const { TOOL_POST_EXTRAS, HASHTAG_CAPTION_RULES, assemblePost, stripDiacritics, contextBlockOf, extraFieldsBlock } = require('../_lib/post-schema');
 const { FORMAT_GUIDE } = require('../_lib/formats');
 
 const MAX_FILL_PER_RUN = 3;
 const LOOKAHEAD_DAYS = 3; // hôm nay + 2 ngày tới
-const SLOTS = ['sang', 'trua', 'toi'];
+// Chị Quỳnh chốt (2026-08-27): chỉ tự động 1 bài/ngày, không phải lấp cả 3 buổi — cố định buổi sáng
+// cho bài tự-viết. Lưới lịch vẫn giữ nguyên 3 buổi, chị vẫn tự thêm tay buổi khác nếu muốn — chỉ
+// riêng phần TỰ ĐỘNG lấp giới hạn còn 1 buổi/ngày.
+const FANPAGE_DAILY_SLOT = 'sang';
 // Phải khớp tay với default ở cột profiles.slot_time_* trong schema_full.sql, giống send-reminders.js.
 const DEFAULT_SLOT_TIME = { sang: '08:00', trua: '12:00', toi: '19:00' };
 
@@ -107,14 +110,12 @@ async function findEmptySlots(userId, dateStrs) {
   const taken = new Set(existing.map((e) => `${e.scheduled_date}:${e.slot}`));
   const empty = [];
   for (const dateStr of dateStrs) {
-    for (const slot of SLOTS) {
-      if (!taken.has(`${dateStr}:${slot}`)) empty.push({ dateStr, slot });
-    }
+    if (!taken.has(`${dateStr}:${FANPAGE_DAILY_SLOT}`)) empty.push({ dateStr, slot: FANPAGE_DAILY_SLOT });
   }
   return empty;
 }
 
-async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey }) {
+async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName }) {
   const core = await callClaude({
     apiKey, system: KHO_GOC_SYSTEM_PROMPT, tool: TOOL_POST_KHO_GOC,
     userContent: `${contextBlockOf(positioning, null)}
@@ -126,6 +127,8 @@ ${candidate.text.trim()}
 
 CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): (không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)
 
+${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
+
 Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`,
   });
 
@@ -135,6 +138,12 @@ Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyê
     userContent: `${contextBlockOf(positioning, null)}
 
 BÀI VIẾT ĐÃ HOÀN CHỈNH:\n${bodyText}
+
+${extraFieldsBlock({
+      channel_handle: channelHandle, brand_name: brandName,
+      product_name: product && product.label, product_url: product && product.url, product_cta_mau: product && product.cta_mau,
+      group_name: group && group.label, group_url: group && group.url, group_cta_mau: group && group.cta_mau,
+    })}
 
 Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption gợi ý cho đúng bài này.`,
   });
@@ -151,6 +160,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
         hook: core.hook, van_de: core.van_de, gia_tri: core.gia_tri, niem_tin: core.niem_tin,
         cta: core.cta, tu_khoa_cta: core.tu_khoa_cta, cau_cmt_ghim: core.cau_cmt_ghim,
         hashtag: hashtags, format: extras.dinh_dang_de_xuat,
+        cmt_cta_san_pham: Array.isArray(extras.cmt_cta_san_pham) ? extras.cmt_cta_san_pham : [],
       },
       tags: candidate.tags || null,
       source_table: candidate.table,
@@ -173,10 +183,14 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
 }
 
 async function autoFillForAdmin(admin, apiKey) {
-  const [posResp, profResp, poolCandidates] = await Promise.all([
+  const [posResp, profResp, poolCandidates, assetsResp] = await Promise.all([
     supabaseAdmin(`positioning_results?user_id=eq.${admin.id}&select=luot1,luot2&limit=1`),
-    supabaseAdmin(`profiles?id=eq.${admin.id}&select=slot_time_sang,slot_time_trua,slot_time_toi`),
+    supabaseAdmin(`profiles?id=eq.${admin.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`),
     loadCandidatePool(admin.id),
+    // promo_assets: kho sản phẩm/dịch vụ/group chị Quỳnh đã tự lưu ở Định Vị (label/url/cta_mau) —
+    // dùng để CTA trong bài trỏ đúng sản phẩm thật, không để AI tự bịa (theo yêu cầu chị Quỳnh
+    // 2026-08-27). Group phân biệt bằng kind='cong_dong', còn lại coi là sản phẩm/dịch vụ.
+    supabaseAdmin(`promo_assets?user_id=eq.${admin.id}&select=id,label,url,kind,cta_mau&order=created_at.asc`),
   ]);
   const posRows = posResp.ok ? await posResp.json() : [];
   const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
@@ -184,6 +198,10 @@ async function autoFillForAdmin(admin, apiKey) {
 
   const profRows = profResp.ok ? await profResp.json() : [];
   const profile = profRows[0] || {};
+
+  const assets = assetsResp.ok ? await assetsResp.json() : [];
+  const products = assets.filter((a) => a.kind !== 'cong_dong');
+  const groups = assets.filter((a) => a.kind === 'cong_dong');
 
   const postsResp = await supabaseAdmin(`posts?user_id=eq.${admin.id}&select=source_table,source_id`);
   const postsRows = postsResp.ok ? await postsResp.json() : [];
@@ -203,8 +221,15 @@ async function autoFillForAdmin(admin, apiKey) {
     if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
     usedRefs.push({ table: candidate.table, id: candidate.id }); // không chọn trùng trong cùng lượt chạy
     const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
+    // Chọn ngẫu nhiên 1 sản phẩm + 1 group mỗi lần lấp — không có logic xoay vòng riêng, nhưng qua
+    // nhiều lượt chạy sẽ tự dàn đều các sản phẩm/group đã lưu, không lặp mãi 1 sản phẩm.
+    const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
+    const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
     try {
-      filled.push(await fillOneSlot({ userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey }));
+      filled.push(await fillOneSlot({
+        userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
+        channelHandle: profile.channel_handle, brandName: profile.brand_name,
+      }));
     } catch (e) {
       skippedNoCandidate.push({ ...slotInfo, error: e.message });
     }

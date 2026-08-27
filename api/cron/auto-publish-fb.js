@@ -1,7 +1,8 @@
 // Cron job (xem "crons" trong vercel.json, chạy mỗi 15 phút) — tự động đăng bài lên Fanpage của chị
-// Quỳnh đúng giờ đã hẹn trong Lịch Đăng Bài (calendar_entries.auto_publish_fb=true), rồi tự đăng
-// thêm 1 comment CTA (lấy từ posts.day_bai_plan.cmt_tu_dang, do module Đẩy Bài tạo sẵn) ngay dưới.
-// Theo yêu cầu chị Quỳnh 2026-08-27: "cài chế độ đăng bài tự động".
+// Quỳnh đúng giờ đã hẹn trong Lịch Đăng Bài (calendar_entries.auto_publish_fb=true), tự tạo 1 ảnh
+// minh hoạ AI kèm theo (nếu có cấu hình OPENAI_API_KEY), rồi tự đăng comment cau_cmt_ghim + các
+// comment CTA sản phẩm (cmt_cta_san_pham) ngay dưới. Theo yêu cầu chị Quỳnh 2026-08-27: "cài chế độ
+// đăng bài tự động" + "tự động làm hình" + "cta cố định các sản phẩm hiện có".
 //
 // QUAN TRỌNG — phạm vi CHỈ 1 Fanpage của chị Quỳnh: token đăng bài (FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN)
 // nằm ở biến môi trường server, không lưu Supabase, không phải OAuth theo từng user — vì đây KHÔNG
@@ -13,6 +14,7 @@
 // lúc). Muốn ghim thật vẫn phải làm tay trên Facebook.
 const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { notifyOnce } = require('../_lib/push');
+const { generatePostImage } = require('../_lib/image-gen');
 
 const GRAPH_API = 'https://graph.facebook.com/v19.0';
 const WINDOW_MINUTES = 25;
@@ -48,6 +50,21 @@ async function fbPost(path, params) {
   return data;
 }
 
+// Đăng bài kèm ảnh — multipart/form-data qua FormData/Blob toàn cục có sẵn trên Node 18+ (runtime
+// Vercel hiện tại), không cần thêm thư viện multipart riêng. /photos trả về post_id dạng
+// "{page-id}_{post-id}" (khác /feed chỉ trả "id" trần) — dùng post_id để khớp đúng định dạng link
+// facebook.com/{id} và endpoint {id}/comments đang dùng chung cho cả 2 nhánh đăng bài.
+async function fbPostPhoto(pageId, pageToken, imageBuffer, caption) {
+  const form = new FormData();
+  form.append('caption', caption);
+  form.append('access_token', pageToken);
+  form.append('source', new Blob([imageBuffer], { type: 'image/jpeg' }), 'post.jpg');
+  const resp = await fetch(`${GRAPH_API}/${pageId}/photos`, { method: 'POST', body: form });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error((data.error && data.error.message) || `Facebook API lỗi (HTTP ${resp.status})`);
+  return { id: data.post_id || data.id };
+}
+
 async function markEntry(id, fields) {
   await supabaseAdmin(`calendar_entries?id=eq.${id}`, {
     method: 'PATCH', prefer: 'return=minimal',
@@ -61,7 +78,7 @@ async function publishOne(entry, pageId, pageToken) {
   // buộc phải khoá lại, không thể chỉ dựa vào cửa sổ thời gian).
   await markEntry(entry.id, { fb_publish_status: 'pending' });
 
-  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,structure`);
+  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,title,structure`);
   const posts = postResp.ok ? await postResp.json() : [];
   const post = posts[0];
   if (!post || !post.content) {
@@ -70,7 +87,19 @@ async function publishOne(entry, pageId, pageToken) {
   }
 
   try {
-    const result = await fbPost(`${pageId}/feed`, { message: post.content, access_token: pageToken });
+    // Thử đăng kèm ảnh AI trước — chỉ khi có cấu hình OPENAI_API_KEY. Lỗi ở BẤT KỲ bước nào (thiếu
+    // key, OpenAI lỗi/timeout, sharp lỗi, Facebook từ chối ảnh) đều rơi về đăng bài chữ thường
+    // (/feed) — không bao giờ để phần ảnh (không bắt buộc) chặn việc đăng bài chính.
+    let result = null;
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const image = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: post.title || post.content.slice(0, 80) });
+        result = await fbPostPhoto(pageId, pageToken, image, post.content);
+      } catch (e) { result = null; }
+    }
+    if (!result) {
+      result = await fbPost(`${pageId}/feed`, { message: post.content, access_token: pageToken });
+    }
     await markEntry(entry.id, {
       fb_publish_status: 'published', fb_post_id: result.id, fb_publish_error: null,
       posted: true, posted_at: new Date().toISOString(),
@@ -84,6 +113,14 @@ async function publishOne(entry, pageId, pageToken) {
     if (cmt) {
       try { await fbPost(`${result.id}/comments`, { message: cmt, access_token: pageToken }); }
       catch (e) { /* comment lỗi không làm fail bài đăng chính — đã đăng thành công rồi */ }
+    }
+    // cmt_cta_san_pham: 1-2 câu bình luận CTA dẫn LINK THẬT về đúng sản phẩm/group chị Quỳnh đã lưu
+    // sẵn ở promo_assets (xem auto-fill-schedule.js) — đăng thêm mỗi câu làm 1 comment riêng.
+    const productComments = (post.structure && Array.isArray(post.structure.cmt_cta_san_pham)) ? post.structure.cmt_cta_san_pham : [];
+    for (const pc of productComments) {
+      if (!pc) continue;
+      try { await fbPost(`${result.id}/comments`, { message: pc, access_token: pageToken }); }
+      catch (e) { /* comment lỗi không làm fail bài đăng chính */ }
     }
 
     await notifyOnce(entry.user_id, `fb-publish:${entry.id}`, {
