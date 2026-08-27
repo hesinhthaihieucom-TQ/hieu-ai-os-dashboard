@@ -332,6 +332,34 @@ function avgSelfScore(rows, field){
   return Math.round((avg/5)*100);
 }
 function clampScore(v){ return Math.max(0, Math.min(100, Math.round(v))); }
+// Điểm Nghiệp cho KHÁCH (chưa đăng nhập) — góp ý Quỳnh 2026-08-26: "bài kiểm tra chưa hiện bản phân
+// tích cho người ta" — trước đó khách chỉ thấy 1 điểm số, không thấy Soi 5 Trụ Cột/Bản Giải Phẫu vì
+// bootDashboard() (nguồn karmaAxes cho người đã đăng nhập) cần query lịch sử Supabase mà khách không
+// có. Hàm này tính lại ĐÚNG công thức tương đương — chỉ dựa vào 10 câu Vibe Check vừa trả lời (giống
+// hệt PILLAR_SEED_MAP dùng để seed tc_weekly_reflections cho người đã đăng nhập ở seedWeeklyPillars())
+// — không cần lịch sử ghi chép/tổng kết nào cả, nên khách xem lần đầu vẫn ra đúng số như 1 người MỚI
+// đăng ký vừa làm xong bài này lần đầu.
+function computeGuestKarmaAxes(vibe){
+  const pillarScore = (vibeKeys) => {
+    const answered = vibeKeys.filter(k => vibe[k] != null);
+    if(answered.length === 0) return 0;
+    const avgPoints = answered.reduce((s,k)=> s + VIBE_QUESTIONS[k].options.find(o=>o.k===vibe[k]).points, 0) / answered.length;
+    return Math.round((pointsToRating(avgPoints)/5)*100);
+  };
+  const pillar1Raw = pillarScore(PILLAR_SEED_MAP.health_score);
+  const pillar2Raw = pillarScore(PILLAR_SEED_MAP.parents_connection_score);
+  const pillar3Raw = pillarScore(PILLAR_SEED_MAP.relationship_score);
+  const pillar4Raw = pillarScore(PILLAR_SEED_MAP.finance_mindset_score);
+  const pillar5Raw = pillarScore(PILLAR_SEED_MAP.purpose_score);
+  const crossPillarModifier = (pillar4Raw - 50) * 0.2;
+  return [
+    { key:'than_tam_ban_the', label:'Thân Tâm Bản Thể', value: clampScore(pillar1Raw + crossPillarModifier) },
+    { key:'coi_nguon_sinh_thanh', label:'Cội Nguồn Sinh Thành', value: clampScore(pillar2Raw + crossPillarModifier) },
+    { key:'ban_doi_moi_quan_he', label:'Mối Quan Hệ Thân Mật', value: clampScore(pillar3Raw + crossPillarModifier) },
+    { key:'tai_chinh_tam_thuc', label:'Tài Chính Tâm Thức', value: clampScore(pillar4Raw) },
+    { key:'thuan_phap_nhan_qua', label:'Thuận Pháp & Nhân Quả', value: clampScore(pillar5Raw + crossPillarModifier) },
+  ];
+}
 function nextMonthKey(m){
   const [y, mo] = m.split('-').map(Number);
   const d = new Date(y, mo, 1);
@@ -578,6 +606,7 @@ function render(container, ctx){
       persistDraft();
       state.saving = false;
       state.result = computeResult();
+      state.karmaAxes = computeGuestKarmaAxes(state.vibe);
       window.TcLastWeakestArea = state.result.weakestArea ? WEAKEST_AREA_INFO[state.result.weakestArea] : null;
       window.TcLastHasDebt = Number(state.form.debt_total) > 0;
       state.historySaved = false;
@@ -751,21 +780,15 @@ function render(container, ctx){
           ${!isGuest ? `<div class="hint-box" style="margin-top:10px;">🌀 Đã dùng câu trả lời ở trên để điền sẵn 1 số tự đánh giá tuần này ở <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> (chỗ nào bạn chưa tự chấm) — nhờ vậy Điểm Nghiệp ngay phía trên ↑ có dữ liệu thật ở cả 5 Trụ Cột ngay từ bây giờ.</div>` : ''}
         </div>
 
-        ${isGuest ? `
-          <div class="card" style="margin-bottom:20px;background:var(--accent-soft);border-color:var(--accent);">
-            <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">💾 Lưu lại kết quả này</div>
-            <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">Đăng ký miễn phí (30 giây, không cần thẻ) để lưu lại đúng kết quả này, xem đủ Soi theo 5 Trụ Cột Năng Lượng + Bản Giải Phẫu Chi Tiết cho khâu yếu nhất, và theo dõi Điểm Nghiệp thay đổi theo thời gian.</div>
-            <button class="btn btn-full" id="tc-guest-save-cta">Lưu kết quả — Đăng ký miễn phí →</button>
-          </div>
-        ` : `
         <div class="section">
           <h3>🌿 Soi theo 5 Trụ Cột Năng Lượng</h3>
           <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Không chỉ 1 điểm số — đây là cách câu trả lời của bạn đang tác động tới TỪNG trụ trong 5 Trụ Cột Năng Lượng Bản Thể ở Điểm Nghiệp phía trên ↑.</p>
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${HOUSES.map(h=>{
-              // Điểm ở đây LUÔN lấy từ state.karmaAxes (đúng số đang hiện trên radar Điểm Nghiệp phía
-              // trên ↑) — góp ý Quỳnh 2026-08-25: "điểm nghiệp bên dưới chưa khớp với cái radar bên
-              // trên" (trước đây tự tính riêng từ avgPoints Vibe Check, ra số khác hẳn radar).
+              // Điểm ở đây LUÔN lấy từ state.karmaAxes — đúng số đang hiện trên radar Điểm Nghiệp phía
+              // trên ↑ khi đã đăng nhập (từ bootDashboard(), có lịch sử thật); còn KHÁCH thì lấy từ
+              // computeGuestKarmaAxes() — chỉ dựa 10 câu Vibe Check vừa trả lời, không cần lịch sử gì
+              // (2026-08-26, góp ý Quỳnh: "bài kiểm tra chưa hiện bản phân tích cho người ta").
               const axis = state.karmaAxes.find(a=>a.key===h.key);
               const score = axis ? axis.value : 50;
               const tier = pillarTier(score);
@@ -792,6 +815,13 @@ function render(container, ctx){
           })()}
         </div>
 
+        ${isGuest ? `
+          <div class="card" style="margin-bottom:20px;background:var(--accent-soft);border-color:var(--accent);">
+            <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">💾 Lưu lại kết quả này</div>
+            <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">Đăng ký miễn phí (30 giây, không cần thẻ) để lưu lại đúng bức tranh + phân tích ở trên ↑, và theo dõi Điểm Nghiệp thay đổi theo thời gian.</div>
+            <button class="btn btn-full" id="tc-guest-save-cta">Lưu kết quả — Đăng ký miễn phí →</button>
+          </div>
+        ` : `
         <div class="section">
           <div class="btn-row" style="justify-content:flex-start;">
             ${state.historySaved
@@ -1137,7 +1167,7 @@ function render(container, ctx){
         const saved = JSON.parse(raw);
         if(saved.form) Object.assign(state.form, saved.form);
         if(saved.vibe) Object.assign(state.vibe, saved.vibe);
-        if(Object.values(state.vibe).some(v=>v!=null)) state.result = computeResult();
+        if(Object.values(state.vibe).some(v=>v!=null)){ state.result = computeResult(); state.karmaAxes = computeGuestKarmaAxes(state.vibe); }
       }
     }catch(e){}
     draw();
