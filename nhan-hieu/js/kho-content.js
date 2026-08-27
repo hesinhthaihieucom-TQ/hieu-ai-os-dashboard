@@ -49,12 +49,36 @@ function render(container, ctx){
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(), expandedDayBaiIds:new Set(),
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'', scheduledPostIds:new Set(),
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
-    caseStudies:[], caseStudyUploading:false, caseStudyError:null,
+    caseStudies:[], caseStudyUploading:false, caseStudyError:null, caseStudyUploadProgress:null,
     // Ảnh cá nhân (2026-08-28, theo yêu cầu chị Quỳnh) — dùng làm NỀN ghép cùng ảnh case study khi
     // lịch Fanpage tự động viết bài (compositeCaseStudyImage ở api/_lib/image-gen.js). Sống chung
     // tab "Case Study" qua 1 sub-tab chip, không cần phân loại trục (dùng chung cho mọi bài).
-    photoSubTab:'case-study', personalPhotos:[], personalPhotoUploading:false, personalPhotoError:null,
+    photoSubTab:'case-study', personalPhotos:[], personalPhotoUploading:false, personalPhotoError:null, personalPhotoUploadProgress:null,
   };
+
+  // Nén 1 file ảnh về base64 JPEG (max 1000px chiều rộng) — dùng chung cho cả upload Case Study lẫn
+  // Ảnh cá nhân, và cho cả luồng tải NHIỀU ảnh cùng lúc (2026-08-28, chị Quỳnh muốn tải nhanh hơn).
+  function compressImageFile(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -606,8 +630,8 @@ function render(container, ctx){
   function caseStudySection(){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh case study/kết quả thật của khách hàng — AI tự đọc ảnh và xếp vào đúng trục nội dung, không cần gõ tiêu đề gì cả. Khi lịch Fanpage tự động viết bài case study, nó sẽ tự chọn 1 ảnh ở đây (kèm 1 ảnh cá nhân) để ghép lại.</div>`;
     const uploadHtml = state.caseStudyUploading
-      ? `<div class="hint-box">Đang tải ảnh lên và phân loại…</div>`
-      : `<input type="file" accept="image/*" id="cs-upload">`;
+      ? `<div class="hint-box">Đang tải ảnh lên và phân loại… ${esc(state.caseStudyUploadProgress||'')}</div>`
+      : `<input type="file" accept="image/*" multiple id="cs-upload">`;
     const errorHtml = state.caseStudyError ? `<div class="error-box" style="margin-top:10px;">${esc(state.caseStudyError)}</div>` : '';
     if(state.caseStudies.length===0){
       return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:14px;">Chưa có ảnh case study nào.</div>`;
@@ -635,8 +659,8 @@ function render(container, ctx){
   function personalPhotosSection(){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Tải ảnh cá nhân (chân dung/đời thường) — hệ thống sẽ tự chọn 1 ảnh ở đây làm nền, ghép cùng 1 ảnh case study khi tự viết bài Fanpage. Với mỗi ảnh, chọn giúp góc KHÔNG che mặt để đặt khung case study.</div>`;
     const uploadHtml = state.personalPhotoUploading
-      ? `<div class="hint-box">Đang tải ảnh lên…</div>`
-      : `<input type="file" accept="image/*" id="pp-upload">`;
+      ? `<div class="hint-box">Đang tải ảnh lên… ${esc(state.personalPhotoUploadProgress||'')}</div>`
+      : `<input type="file" accept="image/*" multiple id="pp-upload">`;
     const errorHtml = state.personalPhotoError ? `<div class="error-box" style="margin-top:10px;">${esc(state.personalPhotoError)}</div>` : '';
     if(state.personalPhotos.length===0){
       return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:14px;">Chưa có ảnh cá nhân nào.</div>`;
@@ -667,39 +691,33 @@ function render(container, ctx){
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
     container.querySelectorAll('[data-photo-subtab]').forEach(el=>{ el.onclick = ()=>{ state.photoSubTab = el.getAttribute('data-photo-subtab'); draw(); }; });
     // Kho Case Study — chọn ảnh xong TỰ ĐỘNG nén + gọi AI phân loại trục + lưu, không cần bấm nút
-    // riêng nào (đúng yêu cầu chị Quỳnh: chỉ tải ảnh, không gõ gì thêm).
+    // riêng nào (đúng yêu cầu chị Quỳnh: chỉ tải ảnh, không gõ gì thêm). Cho chọn NHIỀU ảnh cùng lúc
+    // (2026-08-28, chị Quỳnh muốn tải nhanh hơn) — xử lý TUẦN TỰ từng ảnh (nén → phân loại → lưu) để
+    // không bắn hàng loạt lượt gọi AI cùng lúc, lỗi 1 ảnh không chặn các ảnh còn lại.
     const csUpload = container.querySelector('#cs-upload');
-    if(csUpload) csUpload.onchange = ()=>{
-      const file = csUpload.files[0];
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = ()=>{
-        const img = new Image();
-        img.onload = async ()=>{
-          const maxW = 1000;
-          const scale = Math.min(1, maxW / img.width);
-          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          c.getContext('2d').drawImage(img, 0, 0, w, h);
-          const dataUrl = c.toDataURL('image/jpeg', 0.85);
-          state.caseStudyUploading = true; state.caseStudyError = null; draw();
-          try{
-            const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-            const data = await callApi('/api/phan-loai-truc-anh', { image_base64: base64, media_type: 'image/jpeg' });
-            const truc = data.result && data.result.truc;
-            const { error } = await ctx.supabase.from('case_studies').insert({
-              user_id: ctx.user.id, image: dataUrl, tags: truc ? [truc] : null,
-            });
-            if(error) throw error;
-            await loadCaseStudies();
-          } catch(e){ state.caseStudyError = `Không lưu được: ${e.message}`; }
-          state.caseStudyUploading = false;
-          draw();
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+    if(csUpload) csUpload.onchange = async ()=>{
+      const files = Array.from(csUpload.files || []);
+      if(!files.length) return;
+      state.caseStudyUploading = true; state.caseStudyError = null; draw();
+      let failCount = 0;
+      for(let i=0;i<files.length;i++){
+        state.caseStudyUploadProgress = `${i+1}/${files.length}`;
+        draw();
+        try{
+          const dataUrl = await compressImageFile(files[i]);
+          const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+          const data = await callApi('/api/phan-loai-truc-anh', { image_base64: base64, media_type: 'image/jpeg' });
+          const truc = data.result && data.result.truc;
+          const { error } = await ctx.supabase.from('case_studies').insert({
+            user_id: ctx.user.id, image: dataUrl, tags: truc ? [truc] : null,
+          });
+          if(error) throw error;
+        } catch(e){ failCount++; }
+      }
+      state.caseStudyUploading = false; state.caseStudyUploadProgress = null;
+      state.caseStudyError = failCount ? `${failCount}/${files.length} ảnh tải lên thất bại, thử tải lại ảnh đó.` : null;
+      await loadCaseStudies();
+      draw();
     };
     container.querySelectorAll('[data-del-case-study]').forEach(el=>{
       el.onclick = async ()=>{
@@ -710,34 +728,26 @@ function render(container, ctx){
       };
     });
     // Ảnh cá nhân — chọn ảnh xong TỰ ĐỘNG nén + lưu, KHÔNG gọi AI phân loại (ảnh cá nhân dùng chung
-    // mọi trục, không cần xếp trục).
+    // mọi trục, không cần xếp trục). Cũng cho chọn nhiều ảnh cùng lúc, xử lý tuần tự như trên.
     const ppUpload = container.querySelector('#pp-upload');
-    if(ppUpload) ppUpload.onchange = ()=>{
-      const file = ppUpload.files[0];
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = ()=>{
-        const img = new Image();
-        img.onload = async ()=>{
-          const maxW = 1000;
-          const scale = Math.min(1, maxW / img.width);
-          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          c.getContext('2d').drawImage(img, 0, 0, w, h);
-          const dataUrl = c.toDataURL('image/jpeg', 0.85);
-          state.personalPhotoUploading = true; state.personalPhotoError = null; draw();
-          try{
-            const { error } = await ctx.supabase.from('personal_photos').insert({ user_id: ctx.user.id, image: dataUrl });
-            if(error) throw error;
-            await loadPersonalPhotos();
-          } catch(e){ state.personalPhotoError = `Không lưu được: ${e.message}`; }
-          state.personalPhotoUploading = false;
-          draw();
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+    if(ppUpload) ppUpload.onchange = async ()=>{
+      const files = Array.from(ppUpload.files || []);
+      if(!files.length) return;
+      state.personalPhotoUploading = true; state.personalPhotoError = null; draw();
+      let failCount = 0;
+      for(let i=0;i<files.length;i++){
+        state.personalPhotoUploadProgress = `${i+1}/${files.length}`;
+        draw();
+        try{
+          const dataUrl = await compressImageFile(files[i]);
+          const { error } = await ctx.supabase.from('personal_photos').insert({ user_id: ctx.user.id, image: dataUrl });
+          if(error) throw error;
+        } catch(e){ failCount++; }
+      }
+      state.personalPhotoUploading = false; state.personalPhotoUploadProgress = null;
+      state.personalPhotoError = failCount ? `${failCount}/${files.length} ảnh tải lên thất bại, thử tải lại ảnh đó.` : null;
+      await loadPersonalPhotos();
+      draw();
     };
     container.querySelectorAll('[data-corner-select]').forEach(el=>{
       el.onchange = async ()=>{
