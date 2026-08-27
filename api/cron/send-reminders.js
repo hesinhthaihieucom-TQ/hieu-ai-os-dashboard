@@ -11,6 +11,13 @@
 // chống bỏ sót nếu cron chạy trễ) để xác định "vừa tới lúc cần nhắc" — qua khỏi cửa sổ đó tự động
 // hết khớp, không cần cờ "đã xử lý" riêng cho việc NÀY (chỉ cần notification_log chống gửi trùng
 // nếu lỡ khớp 2 lần trong cùng cửa sổ do cron chạy dồn).
+//
+// QUAN TRỌNG: mọi `url` gửi kèm push PHẢI là đường dẫn TƯƠNG ĐỐI (bắt đầu bằng "./"), KHÔNG được
+// viết cứng "/nhan-hieu/..." — app còn chạy qua domain riêng hesinhthaihieu.com/webxaynhanhieu/
+// (proxy qua Cloudflare Worker, xem cloudflare-worker/worker.js), route đó KHÔNG proxy "/nhan-hieu/"
+// nên bấm vào thông báo trên domain đó sẽ ra 404 nếu dùng đường dẫn tuyệt đối (bug thật đã xảy ra,
+// phát hiện 2026-08-27 khi chị Quỳnh báo "bấm vào thông báo trên iPhone bị lỗi 404"). Đường dẫn
+// tương đối tự resolve theo đúng scope của sw.js (nơi nó đang thực sự chạy), đúng cho CẢ 2 domain.
 const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { notifyOnce, vapidConfigured } = require('../_lib/push');
 
@@ -67,7 +74,7 @@ async function checkLichDangBai() {
     const result = await notifyOnce(entry.user_id, `lich:${entry.id}`, {
       title: 'Đến giờ đăng bài rồi',
       body: entry.title ? `"${entry.title}" đang chờ bạn đăng.` : 'Có bài đã lên lịch cần đăng ngay bây giờ.',
-      url: '/nhan-hieu/#lich-dang',
+      url: './#lich-dang',
     });
     if (result.sent) count++;
   }
@@ -88,7 +95,7 @@ async function checkDayBaiCheckpoints() {
         const result = await notifyOnce(row.user_id, `daybai:${row.id}:${milestone}h`, {
           title: `Đã đăng được ${milestone} giờ`,
           body: row.title ? `Vào Đẩy Bài kiểm tra view bài "${row.title}" đã đạt mốc nào chưa.` : 'Vào Đẩy Bài kiểm tra view đã đạt mốc nào chưa.',
-          url: '/nhan-hieu/#day-bai',
+          url: './#day-bai',
         });
         if (result.sent) count++;
       }
@@ -109,7 +116,7 @@ async function checkRecordingSchedule() {
     const result = await notifyOnce(row.user_id, `quay:${row.id}`, {
       title: 'Đến giờ công việc content rồi',
       body: row.title ? `"${row.title}" đã đến giờ.` : 'Đã đến lịch công việc content bạn đặt.',
-      url: '/nhan-hieu/#lich-dang',
+      url: './#lich-dang',
     });
     if (result.sent) count++;
   }
@@ -136,7 +143,7 @@ async function checkNewSignups() {
       const result = await notifyOnce(admin.id, `signup:${signup.id}:${admin.id}`, {
         title: 'Có người đăng ký mới',
         body: `${who} vừa tạo tài khoản — vào Quản trị để xem.`,
-        url: '/nhan-hieu/#quan-tri-hub',
+        url: './#quan-tri-hub',
       });
       if (result.sent) count++;
     }
@@ -167,7 +174,7 @@ async function checkNewAnnouncements() {
       const result = await notifyOnce(userId, `announce:${ann.id}:${userId}`, {
         title: '🎉 Tính năng mới: ' + ann.title,
         body: ann.body,
-        url: '/nhan-hieu/#trang-chu',
+        url: './#trang-chu',
       });
       if (result.sent) count++;
     }
@@ -193,7 +200,7 @@ async function checkTrialEnding() {
     const result = await notifyOnce(row.id, 'trial-ending-24h', {
       title: 'Dùng thử sắp hết hạn',
       body: 'Còn khoảng 24 giờ nữa là hết 7 ngày dùng thử — nâng cấp ngay để không bị gián đoạn.',
-      url: '/nhan-hieu/#nang-cap',
+      url: './#nang-cap',
     });
     if (result.sent) count++;
   }
@@ -208,7 +215,7 @@ async function checkTrialEnding() {
     const result = await notifyOnce(row.id, 'trial-expired', {
       title: 'Dùng thử đã kết thúc',
       body: '7 ngày dùng thử đã hết — nâng cấp ngay để tiếp tục dùng app.',
-      url: '/nhan-hieu/#nang-cap',
+      url: './#nang-cap',
     });
     if (result.sent) count++;
   }

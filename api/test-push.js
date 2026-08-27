@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
   const result = await sendPushToUser(user.id, {
     title: '🔔 Thông báo test',
     body: 'Nếu bạn thấy được thông báo này, hệ thống đang hoạt động bình thường!',
-    url: '/nhan-hieu/#lich-dang',
+    url: './#lich-dang',
   });
 
   if (result.sent > 0) {
