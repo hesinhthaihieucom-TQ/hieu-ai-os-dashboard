@@ -28,6 +28,7 @@ function render(container, ctx){
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
+    regenWeekLoading:false, regenWeekError:null,
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
     tab:'lich', weekLoadError:null,
     // 2 lane độc lập trong cùng calendar_entries (cột channel) — 'ca_nhan' mặc định cho MỌI user
@@ -281,7 +282,15 @@ function render(container, ctx){
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
       </div>
       ` : `
-      <div class="hint-box" style="margin-bottom:20px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
+      <div class="hint-box" style="margin-bottom:20px;">
+        <div style="margin-bottom:10px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
+        <div class="btn-row">
+          <button class="btn btn-sm" data-action="regen-week" ${state.regenWeekLoading?'disabled':''}>${state.regenWeekLoading?'Đang viết lại…':'Làm lại cả tuần này'}</button>
+          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Xoá hết bài Fanpage tuần đang xem rồi viết lại từ đầu (tốn tối đa ~14 lượt AI cho 7 ngày)</span>
+        </div>
+        <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Có thể mất 1-2 phút — đừng thoát trang khi đang đợi.</div>
+        ${state.regenWeekError?`<div class="error-box" style="margin-top:10px;">${esc(state.regenWeekError)}</div>`:''}
+      </div>
       `}
 
       <div class="card" style="margin-bottom:20px;">
@@ -553,6 +562,8 @@ function render(container, ctx){
     });
     const aiBtn = container.querySelector('[data-action="ai-suggest"]');
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
+    const regenBtn = container.querySelector('[data-action="regen-week"]');
+    if(regenBtn) regenBtn.onclick = regenFanpageWeek;
 
     const prev = container.querySelector('[data-action="prev-week"]');
     if(prev) prev.onclick = ()=>{ state.weekStart.setDate(state.weekStart.getDate()-7); changeWeek(); };
@@ -823,6 +834,26 @@ function render(container, ctx){
     } catch(e){ state.aiError = e.message; }
     stopProgress(); releaseWakeLock();
     state.aiLoading = false;
+    draw();
+  }
+
+  // "Làm lại cả tuần" (2026-08-28, theo yêu cầu chị Quỳnh) — xoá hết bài Fanpage đã lên lịch trong
+  // TUẦN ĐANG XEM rồi viết lại từ đầu qua api/regen-fanpage-week.js (dùng lại đúng logic cron, áp
+  // prompt case study mới nhất). Khác fetchAiSchedule() ở chỗ đây là XOÁ + GHI ĐÈ nên cần xác nhận
+  // trước — bài gốc ở Kho Content không mất, chỉ gỡ khỏi lịch.
+  async function regenFanpageWeek(){
+    if(state.regenWeekLoading) return;
+    if(!(await confirmModal('Xoá hết bài Fanpage đã lên lịch trong tuần đang xem rồi viết lại từ đầu? Bài gốc vẫn còn trong Kho Content, chỉ gỡ khỏi lịch tuần này.'))) return;
+    state.regenWeekLoading = true; state.regenWeekError = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="regen-week"]'), 90, 'Đang viết lại');
+    acquireWakeLock();
+    try{
+      const dates = weekDays().map(isoDate);
+      await callApi('/api/regen-fanpage-week', { dates }, 280000);
+      await loadEntries();
+    } catch(e){ state.regenWeekError = e.message; }
+    stopProgress(); releaseWakeLock();
+    state.regenWeekLoading = false;
     draw();
   }
 

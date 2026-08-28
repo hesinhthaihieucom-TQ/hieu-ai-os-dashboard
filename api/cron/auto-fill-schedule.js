@@ -298,7 +298,11 @@ Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguy
   return result;
 }
 
-async function autoFillForAdmin(admin, apiKey) {
+// Nhận thẳng danh sách slotInfos CẦN LẤP (đã biết trước, không tự tính "ô nào đang trống") — tách
+// riêng khỏi autoFillForAdmin() để dùng lại được cho cả cron (tự tìm ô trống, giới hạn an toàn
+// MAX_FILL_PER_RUN) LẪN api/regen-fanpage-week.js (admin chủ động chọn nguyên 1 tuần, xoá rồi viết
+// lại từ đầu — không qua findEmptySlots vì lúc đó các ô đã bị xoá sạch, không còn gì để "tìm trống").
+async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
   const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp, personalPhotosResp] = await Promise.all([
     supabaseAdmin(`positioning_results?user_id=eq.${admin.id}&select=luot1,luot2&limit=1`),
     supabaseAdmin(`profiles?id=eq.${admin.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`),
@@ -333,14 +337,9 @@ async function autoFillForAdmin(admin, apiKey) {
     .filter((p) => p.source_table && p.source_id)
     .map((p) => ({ table: p.source_table, id: p.source_id }));
 
-  const dateStrs = Array.from({ length: LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
-  const emptySlots = await findEmptySlots(admin.id, dateStrs);
-  const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN);
-  const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN);
-
   const filled = [];
   const skippedNoCandidate = [];
-  for (const slotInfo of toFill) {
+  for (const slotInfo of slotInfos) {
     const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
     // Chọn ngẫu nhiên 1 sản phẩm + 1 group mỗi lần lấp — không có logic xoay vòng riêng, nhưng qua
     // nhiều lượt chạy sẽ tự dàn đều các sản phẩm/group đã lưu, không lặp mãi 1 sản phẩm.
@@ -389,7 +388,16 @@ async function autoFillForAdmin(admin, apiKey) {
     }
   }
 
-  return { filled, skipped_cap: skippedCap, skipped_no_candidate: skippedNoCandidate };
+  return { filled, skipped_no_candidate: skippedNoCandidate };
+}
+
+async function autoFillForAdmin(admin, apiKey) {
+  const dateStrs = Array.from({ length: LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
+  const emptySlots = await findEmptySlots(admin.id, dateStrs);
+  const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN);
+  const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN);
+  const result = await fillSlotsForAdmin(admin, apiKey, toFill);
+  return { ...result, skipped_cap: skippedCap };
 }
 
 module.exports = async (req, res) => {
@@ -416,3 +424,10 @@ module.exports = async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 };
+
+// Export thêm để api/regen-fanpage-week.js tái dùng đúng logic viết bài (không copy lại) — Vercel vẫn
+// gọi được file này như cũ (require(...)(req,res)) vì default export vẫn là 1 hàm, chỉ gắn thêm
+// thuộc tính lên chính hàm đó.
+module.exports.fillSlotsForAdmin = fillSlotsForAdmin;
+module.exports.vnDateStr = vnDateStr;
+module.exports.FANPAGE_DAILY_SLOT = FANPAGE_DAILY_SLOT;
