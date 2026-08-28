@@ -27,6 +27,10 @@ const LOOKAHEAD_DAYS = 3; // hôm nay + 2 ngày tới
 const FANPAGE_DAILY_SLOT = 'sang';
 // Phải khớp tay với default ở cột profiles.slot_time_* trong schema_full.sql, giống send-reminders.js.
 const DEFAULT_SLOT_TIME = { sang: '08:00', trua: '12:00', toi: '19:00' };
+// Tỷ lệ ưu tiên bài case study (bán hàng/bằng chứng) so với bài hook/content thường (giá trị/giáo
+// dục) khi cả 2 nguồn đều sẵn sàng — chốt 2026-08-28 sau khi kho ảnh case study/cá nhân đầy khiến
+// MỌI bài đều rơi vào case study, mất đa dạng. Xem nhánh chọn ở autoFillForAdmin().
+const CASE_STUDY_RATIO = 0.3;
 
 // Giống hệt SYSTEM_PROMPT ghép ở api/viet-content-extras.js — viết lại tại đây (4 dòng) thay vì sửa
 // file đó, vì nó vẫn đang phục vụ endpoint HTTP riêng, không muốn đổi hành vi chỗ đang chạy thật.
@@ -336,8 +340,16 @@ async function autoFillForAdmin(admin, apiKey) {
     // nhiều lượt chạy sẽ tự dàn đều các sản phẩm/group đã lưu, không lặp mãi 1 sản phẩm.
     const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
     const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
+    // Trộn nội dung thay vì luôn ưu tiên tuyệt đối case study khi có đủ ảnh (phản hồi chị Quỳnh
+    // 2026-08-28: có nhiều ảnh trong kho khiến MỌI bài đều rơi vào case study, mất đa dạng nội dung).
+    // CASE_STUDY_RATIO=0.3: ~30% số bài là case study (bán hàng/bằng chứng), 70% còn lại là hook/
+    // content thường (giá trị/giáo dục) — tránh cảm giác ngày nào cũng chốt sale. Vẫn có fallback 2
+    // chiều: hết hook/content chưa dùng thì dùng case study thay, hết ảnh case study/cá nhân thì
+    // dùng hook/content thay — chỉ thật sự bỏ qua khi CẢ 2 nguồn đều cạn.
+    const hasCaseStudyAssets = caseStudies.length > 0 && personalPhotos.length > 0;
+    const preferCaseStudy = hasCaseStudyAssets && Math.random() < CASE_STUDY_RATIO;
     try {
-      if (caseStudies.length && personalPhotos.length) {
+      if (preferCaseStudy) {
         const caseStudy = caseStudies[Math.floor(Math.random() * caseStudies.length)];
         const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
         filled.push(await fillCaseStudySlot({
@@ -347,7 +359,20 @@ async function autoFillForAdmin(admin, apiKey) {
         continue;
       }
       const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
-      if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
+      if (!candidate) {
+        // Kho hook/content không còn ứng viên nào — dùng case study thay thế nếu có ảnh, còn hơn bỏ
+        // qua cả lượt chỉ vì kho hook/content tạm cạn.
+        if (hasCaseStudyAssets) {
+          const caseStudy = caseStudies[Math.floor(Math.random() * caseStudies.length)];
+          const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
+          filled.push(await fillCaseStudySlot({
+            userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
+            channelHandle: profile.channel_handle, brandName: profile.brand_name,
+          }));
+          continue;
+        }
+        skippedNoCandidate.push(slotInfo); continue;
+      }
       usedRefs.push({ table: candidate.table, id: candidate.id }); // không chọn trùng trong cùng lượt chạy
       filled.push(await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
