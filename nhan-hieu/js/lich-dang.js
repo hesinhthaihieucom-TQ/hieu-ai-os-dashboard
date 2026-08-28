@@ -572,7 +572,7 @@ function render(container, ctx){
         if(state.pending){
           await ctx.supabase.from('calendar_entries').insert({
             user_id: ctx.user.id, post_id: state.pending.id, scheduled_date: dateStr, slot: slotKey,
-            channel: state.channel,
+            channel: state.channel, auto_publish_fb: state.channel==='fanpage',
             title: state.pending.title, format: (state.pending.structure && state.pending.structure.format) || null,
             cta: (state.pending.structure && state.pending.structure.cta) || null,
           });
@@ -595,7 +595,7 @@ function render(container, ctx){
         const matchedPost = s.bai_co_san ? state.posts.find(p=>p.title===s.bai_co_san) : null;
         await ctx.supabase.from('calendar_entries').insert({
           user_id: ctx.user.id, post_id: matchedPost ? matchedPost.id : null, scheduled_date: dateStr, slot: slotKey,
-          channel: state.channel,
+          channel: state.channel, auto_publish_fb: state.channel==='fanpage',
           title: matchedPost ? matchedPost.title : s.chu_de, format: s.dinh_dang, cta: s.cta,
         });
         await loadEntries();
@@ -643,7 +643,7 @@ function render(container, ctx){
         if(state.editingEntryId){
           await ctx.supabase.from('calendar_entries').update(fields).eq('id', state.editingEntryId);
         } else {
-          await ctx.supabase.from('calendar_entries').insert({ user_id: ctx.user.id, scheduled_date: dateStr, slot: slotKey, channel: state.channel, ...fields });
+          await ctx.supabase.from('calendar_entries').insert({ user_id: ctx.user.id, scheduled_date: dateStr, slot: slotKey, channel: state.channel, auto_publish_fb: state.channel==='fanpage', ...fields });
         }
         state.pickerFor = null;
         state.editingEntryId = null;
