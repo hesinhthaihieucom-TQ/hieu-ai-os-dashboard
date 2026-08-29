@@ -17,7 +17,6 @@ const { notifyOnce } = require('../_lib/push');
 const { generatePostImage } = require('../_lib/image-gen');
 
 const GRAPH_API = 'https://graph.facebook.com/v19.0';
-const WINDOW_MINUTES = 25;
 // Phải khớp tay với default ở cột profiles.slot_time_* trong schema_full.sql — cùng tầng ưu tiên
 // giờ như checkLichDangBai() ở send-reminders.js: giờ riêng của bài → giờ mặc định theo slot của
 // user → giờ mặc định chung.
@@ -34,9 +33,12 @@ function vnNowParts() {
   return { dateStr: vn.toISOString().slice(0, 10), minutesOfDay: vn.getUTCHours() * 60 + vn.getUTCMinutes() };
 }
 
+// Trước đây chỉ đăng được trong đúng 25 phút đầu sau giờ hẹn — lỡ khung đó (vd lỗi tạm thời như
+// thiếu OPENAI_API_KEY, hoặc chị bấm "Thử lại" trễ) thì coi như bỏ lỡ VĨNH VIỄN cả ngày hôm đó, dù
+// scheduled_date=eq.${dateStr} đã tự giới hạn CHỈ xét đúng ngày hôm nay rồi. Bỏ luôn giới hạn trần —
+// chỉ cần đã tới giờ hẹn (đăng trễ còn hơn không đăng), sửa 2026-08-29 theo phản hồi chị Quỳnh.
 function withinWindow(targetMinutesOfDay, nowMinutesOfDay) {
-  const diff = nowMinutesOfDay - targetMinutesOfDay;
-  return diff >= 0 && diff < WINDOW_MINUTES;
+  return nowMinutesOfDay >= targetMinutesOfDay;
 }
 
 async function fbPost(path, params) {
