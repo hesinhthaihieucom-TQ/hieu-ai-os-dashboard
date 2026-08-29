@@ -32,6 +32,11 @@ function render(container, ctx){
     autoFillMode:'kho', autoFillBusy:false, autoFillError:null, autoFillResult:null,
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
     tab:'lich', weekLoadError:null, highlightAutoFill:false,
+    // Bố cục mới (2026-08-29, theo phản hồi chị Quỳnh "khó nhìn quá, rối"): 3 khối công cụ (mục tiêu
+    // tuần, AI tự viết cả tuần, lịch công việc content) thu gọn mặc định, chỉ hiện 1 dòng tóm tắt —
+    // bấm mới bung ra. Luôn thu gọn lại từ đầu mỗi lần vào trang, không nhớ qua lần sau — đơn giản
+    // hơn thêm 1 tầng lưu trữ chỉ để nhớ trạng thái mở/đóng của UI.
+    toolsExpanded: { goal:false, autofill:false, recording:false },
     // 2 lane độc lập trong cùng calendar_entries (cột channel) — 'ca_nhan' mặc định cho MỌI user
     // (kế hoạch FB cá nhân, tự đăng tay, cách dùng gốc); 'fanpage' chỉ admin chuyển sang được, dùng
     // cho lane auto-đăng Fanpage (xem toggle ở calendarTabHtml). Không lưu draft — luôn mở lại về
@@ -76,7 +81,7 @@ function render(container, ctx){
       state.screen='error';
       state.bootError = e.message;
     }
-    if(pendingAutoFill && state.screen==='main'){ state.tab='lich'; state.highlightAutoFill = true; }
+    if(pendingAutoFill && state.screen==='main'){ state.tab='lich'; state.highlightAutoFill = true; state.toolsExpanded.autofill = true; }
     draw();
     if(pendingAutoFill && state.screen==='main'){
       const card = document.getElementById('autofill-card');
@@ -273,16 +278,27 @@ function render(container, ctx){
     const emptySlotCount = days.reduce((sum,d)=> sum + SLOTS.filter(s => !entryFor(isoDate(d), s.key)).length, 0);
     const autoFillPerPostCost = state.autoFillMode==='new_hook' ? 4 : 3; // new_hook = 1 (sinh hook) + 3 (viết) lượt/bài
     const autoFillToFillCount = Math.min(emptySlotCount, 9); // MAX_FILL_PER_CLICK ở api/auto-fill-week.js
-    return `
-      ${isAdmin ? `
-        <div class="chips" style="margin-bottom:16px;">
-          <div class="chip ${state.channel==='ca_nhan'?'selected':''}" data-channel="ca_nhan">Cá nhân</div>
-          <div class="chip ${state.channel==='fanpage'?'selected':''}" data-channel="fanpage">Fanpage</div>
+
+    // "sắp xếp lại bố cục ... khó nhìn, rối" (2026-08-29, theo phản hồi chị Quỳnh) — LỊCH TUẦN mới là
+    // thứ quan trọng nhất/xem nhiều nhất của trang này, nhưng trước đây bị chôn dưới 3 khối công cụ
+    // (mục tiêu tuần, AI tự viết cả tuần, lịch công việc content) luôn mở sẵn full nội dung. Giờ lịch
+    // lên NGAY ĐẦU trang, 3 khối công cụ dồn xuống dưới dạng thẻ THU GỌN (chỉ hiện 1 dòng tóm tắt),
+    // bấm mới bung ra — vẫn còn nguyên chức năng, chỉ đỡ rối mắt khi không cần dùng tới.
+    function toolCardHtml(key, icon, title, bodyHtml, collapsedHint, opts){
+      opts = opts || {};
+      const expanded = !!state.toolsExpanded[key];
+      return `
+        <div ${opts.id?`id="${opts.id}"`:''} class="card${opts.pulse?' autofill-pulse':''}" style="margin-bottom:14px;${opts.bg?`background:${opts.bg};`:''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;" data-toggle-tool="${key}">
+            <h3 style="margin:0;font-size:15px;">${icon} ${title}</h3>
+            <span style="color:var(--accent);font-size:12px;font-weight:600;white-space:nowrap;">${expanded?'Thu gọn ▴':'Mở rộng ▾'}</span>
+          </div>
+          ${expanded ? `<div style="margin-top:14px;">${bodyHtml}</div>` : `<div style="margin-top:6px;font-size:12.5px;color:var(--ink-soft);">${collapsedHint}</div>`}
         </div>
-      ` : ''}
-      ${state.channel==='ca_nhan' ? `
-      ${isAdmin ? `<div class="hint-box" style="margin-bottom:16px;">Hệ thống cũng tự động viết + xếp <b>3 bài/ngày</b> (Sáng/Trưa/Tối) vào ô trống mỗi sáng sớm — Tối luôn là "Video Ngồi Nói", Trưa luôn là bài case study, Sáng là bài thường. Chị chỉ cần tự đăng tay lên Facebook (không thể tự đăng hộ trang cá nhân).</div>` : ''}
-      <div class="card" style="margin-bottom:20px;">
+      `;
+    }
+
+    const goalCardBody = `
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tuần này bạn muốn đẩy mục tiêu gì nhất?</label>
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mỗi ngày muốn đăng mấy bài?</label>
@@ -300,10 +316,10 @@ function render(container, ctx){
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để xếp xong cả tuần — đừng thoát trang khi đang đợi.</div>
         ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
-      </div>
+    `;
+    const goalCardHint = state.weeklyGoal ? `Mục tiêu: "${esc(excerpt(state.weeklyGoal, 60))}"` : (state.aiSuggestions ? 'Đã có gợi ý AI cho tuần này.' : 'Chưa đặt mục tiêu cho tuần này.');
 
-      <div id="autofill-card" class="card${state.highlightAutoFill?' autofill-pulse':''}" style="margin-bottom:20px;background:var(--accent-soft);">
-        <h3 style="margin-bottom:6px;">🪄 AI tự viết + xếp cả tuần</h3>
+    const autoFillCardBody = `
         <div class="hint-box" style="margin-bottom:12px;">Khác với "AI gợi ý lịch tuần" ở trên (chỉ ra chủ đề, bạn vẫn phải tự viết) — cái này AI viết bài HOÀN CHỈNH và xếp thẳng vào ô trống luôn. Bấm "Xem chi tiết" trong lịch để đọc lại/sửa trước khi đăng.</div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chọn cách AI lấy nguồn để viết</label>
         <div class="chips" style="margin-bottom:12px;">
@@ -320,21 +336,10 @@ function render(container, ctx){
         ${!state.positioning ? `<div class="hint-box" style="margin-top:10px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — cần làm Định Vị trước để dùng được tính năng này.</div>` : ''}
         ${state.autoFillError?`<div class="error-box" style="margin-top:10px;">${esc(state.autoFillError)}</div>`:''}
         ${state.autoFillResult?`<div class="hint-box" style="margin-top:10px;">${esc(state.autoFillResult)}</div>`:''}
-      </div>
-      ` : `
-      <div class="hint-box" style="margin-bottom:20px;">
-        <div style="margin-bottom:10px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
-        <div class="btn-row">
-          <button class="btn btn-sm" data-action="regen-week" ${state.regenWeekLoading?'disabled':''}>${state.regenWeekLoading?'Đang viết lại…':'Làm lại cả tuần này'}</button>
-          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Xoá hết bài Fanpage tuần đang xem rồi viết lại từ đầu (tốn tối đa ~14 lượt AI cho 7 ngày)</span>
-        </div>
-        <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Có thể mất 1-2 phút — đừng thoát trang khi đang đợi.</div>
-        ${state.regenWeekError?`<div class="error-box" style="margin-top:10px;">${esc(state.regenWeekError)}</div>`:''}
-      </div>
-      `}
+    `;
+    const autoFillCardHint = emptySlotCount===0 ? 'Tuần này đã kín lịch.' : `Còn ${emptySlotCount} ô trống — bấm để AI viết luôn.`;
 
-      <div class="card" style="margin-bottom:20px;">
-        <h3 style="margin-bottom:6px;">Lịch công việc content</h3>
+    const recordingCardBody = `
         <div class="hint-box" style="margin-bottom:12px;">Đặt lịch cho việc content sắp tới — quay video, lên kịch bản, họp nhóm, deadline bất kỳ... không chỉ riêng buổi quay. Nếu đã <span style="text-decoration:underline;cursor:pointer;" data-tab="thong-bao">bật thông báo</span>, bạn sẽ được nhắc ngay khi đến giờ.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
           <div style="flex:2;min-width:160px;">
@@ -370,7 +375,17 @@ function render(container, ctx){
             `;}).join('')}
           </div>
         ` : `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Chưa có việc nào sắp tới.</div>`}
-      </div>
+    `;
+    const recordingCardHint = state.recordingSchedule.length ? `${state.recordingSchedule.length} việc sắp tới.` : 'Chưa có việc nào sắp tới.';
+
+    return `
+      ${isAdmin ? `
+        <div class="chips" style="margin-bottom:16px;">
+          <div class="chip ${state.channel==='ca_nhan'?'selected':''}" data-channel="ca_nhan">Cá nhân</div>
+          <div class="chip ${state.channel==='fanpage'?'selected':''}" data-channel="fanpage">Fanpage</div>
+        </div>
+      ` : ''}
+      ${isAdmin && state.channel==='ca_nhan' ? `<div class="hint-box" style="margin-bottom:16px;">Hệ thống cũng tự động viết + xếp <b>3 bài/ngày</b> (Sáng/Trưa/Tối) vào ô trống mỗi sáng sớm — Tối luôn là "Video Ngồi Nói", Trưa luôn là bài case study, Sáng là bài thường. Chị chỉ cần tự đăng tay lên Facebook (không thể tự đăng hộ trang cá nhân).</div>` : ''}
 
       ${state.pending ? `
         <div class="hint-box" style="display:flex;justify-content:space-between;align-items:center;">
@@ -511,6 +526,23 @@ function render(container, ctx){
           </div>`;
         }).join('')}
       </div>
+
+      <div style="margin:26px 0 10px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">🛠️ Công cụ lên lịch</div>
+      ${state.channel==='ca_nhan' ? `
+        ${toolCardHtml('goal', '🎯', 'AI gợi ý lịch tuần', goalCardBody, goalCardHint)}
+        ${toolCardHtml('autofill', '🪄', 'AI tự viết + xếp cả tuần', autoFillCardBody, autoFillCardHint, { id:'autofill-card', bg:'var(--accent-soft)', pulse: state.highlightAutoFill })}
+      ` : `
+        <div class="hint-box" style="margin-bottom:14px;">
+          <div style="margin-bottom:10px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
+          <div class="btn-row">
+            <button class="btn btn-sm" data-action="regen-week" ${state.regenWeekLoading?'disabled':''}>${state.regenWeekLoading?'Đang viết lại…':'Làm lại cả tuần này'}</button>
+            <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Xoá hết bài Fanpage tuần đang xem rồi viết lại từ đầu (tốn tối đa ~14 lượt AI cho 7 ngày)</span>
+          </div>
+          <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Có thể mất 1-2 phút — đừng thoát trang khi đang đợi.</div>
+          ${state.regenWeekError?`<div class="error-box" style="margin-top:10px;">${esc(state.regenWeekError)}</div>`:''}
+        </div>
+      `}
+      ${toolCardHtml('recording', '🎬', 'Lịch công việc content', recordingCardBody, recordingCardHint)}
     `;
   }
 
@@ -567,6 +599,14 @@ function render(container, ctx){
 
     container.querySelectorAll('[data-tab]').forEach(el=>{
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
+    });
+    container.querySelectorAll('[data-toggle-tool]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-toggle-tool');
+        state.toolsExpanded[key] = !state.toolsExpanded[key];
+        if(key==='autofill') state.highlightAutoFill = false; // bấm mở tay thì tắt hẳn nháy sáng, khỏi lặp 2 hiệu ứng
+        draw();
+      };
     });
 
     const slotSangInput = container.querySelector('#ld-slot-sang');
