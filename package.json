@@ -1,9 +1,10 @@
 {
   "name": "hieu-ai-os-dashboard",
   "private": true,
-  "description": "Không có build step cho phần static (nhan-hieu/, tai-chinh/, index.html) — package.json này CHỈ tồn tại để Vercel cài dependency cho các serverless function trong api/ (hiện tại: web-push để gửi thông báo đẩy, sharp để ghép chữ lên ảnh tự tạo ở api/_lib/image-gen.js). Không thêm devDependencies/bundler/script build vào đây.",
+  "description": "Không có build step cho phần static (nhan-hieu/, tai-chinh/, index.html) — package.json này CHỈ tồn tại để Vercel cài dependency cho các serverless function trong api/ (hiện tại: web-push để gửi thông báo đẩy; sharp để resize/ghép ảnh; @resvg/resvg-js để vẽ CHỮ lên ảnh tự tạo ở api/_lib/image-gen.js — sharp/librsvg không hỗ trợ nhúng font thật (@font-face) nên phải dùng riêng resvg cho phần chữ, xem comment đầu file đó). Không thêm devDependencies/bundler/script build vào đây.",
   "dependencies": {
     "web-push": "^3.6.7",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "@resvg/resvg-js": "^2.6.2"
   }
 }

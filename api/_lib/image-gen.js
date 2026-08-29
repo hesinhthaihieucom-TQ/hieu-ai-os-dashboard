@@ -1,21 +1,55 @@
 // Tự tạo/ghép ảnh cho bài auto-đăng Fanpage (2026-08-27, theo yêu cầu chị Quỳnh) — module Tạo Ảnh
-// Thương Hiệu (nhan-hieu/js/tao-anh.js) KHÔNG dùng lại được ở đây: nó chỉ vẽ chữ đè lên 1 ảnh NGƯỜI
-// DÙNG TỰ TẢI LÊN, chạy hoàn toàn bằng Canvas 2D trong trình duyệt, không có AI tạo ảnh, không gọi
-// API nào — cron chạy nền không có ai ngồi tải ảnh. Nên ở đây tự làm lại:
-// (1) OpenAI gpt-image-1 tạo 1 ảnh nền KHÔNG chữ (chữ tiếng Việt do AI vẽ trực tiếp trong ảnh
-//     thường lỗi dấu) — dùng khi KHÔNG có ảnh case study/ảnh cá nhân nào (generatePostImage).
-// (2) Ghép "ảnh cá nhân làm nền + ảnh case study làm khung nhỏ góc" (2026-08-28, theo yêu cầu chị
-//     Quỳnh — kiểu quote-card đang thịnh hành cho content bán hàng) — compositeCaseStudyImage.
-// Cả 2 đường đều kết ở TỰ đè tiêu đề lên bằng chữ THẬT (SVG qua sharp, không phải AI vẽ) — Unicode/
-// dấu tiếng Việt hiển thị đúng 100%, theo 1 style CỐ ĐỊNH đơn giản (đã chốt với chị Quỳnh: nền tối mờ
-// dưới + chữ trắng đậm, không có đủ tuỳ chọn font/màu/bố cục như bản tay Tạo Ảnh Thương Hiệu).
+// Thương Hiệu (nhan-hieu/js/tao-anh.js) chạy hoàn toàn bằng Canvas 2D trong trình duyệt (đo chữ bằng
+// ctx.measureText), không gọi API nào — cron chạy nền không có Canvas/DOM nên không import thẳng
+// file đó được, phải viết lại bằng SVG. Thứ tự ưu tiên nguồn ảnh khi đăng (xem auto-publish-fb.js):
+// (1) posts.image_data có sẵn (case study đã ghép — xem compositeCaseStudyImage).
+// (2) renderPersonalTemplateImage: bài KHÔNG phải trục "Tâm linh" — dùng 1 ảnh cá nhân thật (bảng
+//     personal_photos, chị tự tải lên ở Kho Content), đè 1 trong 4 "Bố cục chữ" của Tạo Ảnh Thương
+//     Hiệu lên, CHỌN NGẪU NHIÊN mỗi lần đăng (2026-08-29, theo yêu cầu chị Quỳnh — không muốn AI tự vẽ
+//     người lạ nữa cho bài thường).
+// (3) Bài trục "Tâm linh" — generateSpiritualBackground() cho AI vẽ 1 ảnh nền tâm linh (hoa sen/ánh
+//     sáng/thiền định, theo đúng tinh thần ảnh mẫu chị gửi), rồi VẪN đi qua renderPersonalTemplateImage
+//     để đè chữ đúng 1 trong 4 mẫu — ảnh cá nhân của chị không hợp bài tâm linh nên tách nhánh riêng.
+// (4) generatePostImage: lưới an toàn cuối cùng — AI tự vẽ 1 ảnh nền chung chung KHÔNG chữ, chỉ dùng
+//     khi chị CHƯA tải ảnh cá nhân nào lên (personal_photos rỗng) và bài không phải trục Tâm linh.
+//
+// Chữ luôn được ĐÈ THẬT lên ảnh (không để AI tự vẽ chữ — chữ tiếng Việt AI vẽ trực tiếp thường lỗi
+// dấu/sai font, đây cũng là lý do luôn dặn AI "TUYỆT ĐỐI KHÔNG có chữ" ở mọi prompt). Bug "chữ ra ô
+// vuông/mất dấu" (2026-08-29) là do server không có sẵn font nào hỗ trợ tiếng Việt — sharp dùng
+// librsvg để vẽ SVG, và librsvg KHÔNG hỗ trợ nhúng font qua @font-face (đã tự kiểm chứng, không phải
+// suy đoán) nên không thể nhúng font kiểu web thông thường. Thay vào đó dùng @resvg/resvg-js (renderer
+// SVG khác, hỗ trợ nạp thẳng file font thật qua fontFiles) để vẽ riêng lớp CHỮ ra PNG trong suốt, rồi
+// mới ghép PNG đó lên ảnh nền bằng sharp như bình thường — sharp vẫn dùng cho mọi việc còn lại (resize,
+// ghép ảnh, mask không chữ, encode JPEG) vì không có vấn đề font gì ở các bước đó.
+const fs = require('fs');
+const path = require('path');
 const sharp = require('sharp');
+const { Resvg } = require('@resvg/resvg-js');
 
 const IMAGE_SIZE = 1024;
+
+const FONT_DIR = path.join(__dirname, 'fonts');
+// Nạp font TRỰC TIẾP từ file gốc (TTF thật lấy từ kho google/fonts, không phải bản .woff2 cắt nhỏ
+// theo subset của Google Fonts CDN — file gốc có ĐỦ mọi glyph, kể cả tiếng Việt, trong 1 file duy
+// nhất). resvg đọc font-family theo đúng tên THẬT lưu trong file (vd "Playfair Display"), không phải
+// tên tự đặt như CSS @font-face — khai báo font-family trong SVG bên dưới phải khớp đúng tên gốc.
+const FONT_FILES = [
+  path.join(FONT_DIR, 'PlayfairDisplay-Variable.ttf'),
+  path.join(FONT_DIR, 'Oswald-Variable.ttf'),
+  path.join(FONT_DIR, 'BeVietnamPro-Bold.ttf'),
+  path.join(FONT_DIR, 'BeVietnamPro-MediumItalic.ttf'),
+];
 
 function escapeXml(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Vẽ 1 chuỗi SVG (chỉ chứa chữ + hình trang trí, không có ảnh nền) ra PNG có nền trong suốt, dùng
+// font thật nạp từ FONT_FILES — dùng chung cho mọi chỗ cần chữ trong file này.
+function rasterizeSvg(svgString) {
+  const resvg = new Resvg(svgString, { font: { loadSystemFonts: false, fontFiles: FONT_FILES } });
+  return resvg.render().asPng();
 }
 
 // Word-wrap thô theo số ký tự/dòng — đủ dùng cho tiêu đề ngắn, không cần đo độ rộng chữ thật chính
@@ -58,6 +92,8 @@ async function callOpenAiImage(apiKey, prompt) {
   return Buffer.from(b64, 'base64');
 }
 
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
 const ACCENT_COLOR = '#ffd60a'; // vàng nhấn số liệu/từ khoá quan trọng trong tiêu đề (theo yêu cầu chị Quỳnh 2026-08-28)
 
 // Tách 1 dòng chữ thành các đoạn — đoạn nào chứa số (kể cả "%", "200%", "3 tháng"...) tô vàng, còn
@@ -93,7 +129,7 @@ function titleOverlaySvg(title) {
     .join('');
   return `<svg width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="${IMAGE_SIZE - boxHeight}" width="${IMAGE_SIZE}" height="${boxHeight}" fill="black" fill-opacity="0.55" />
-    <text x="56" y="${textTop}" font-family="sans-serif" font-size="${fontSize}" font-weight="700">${tspans}</text>
+    <text xml:space="preserve" x="56" y="${textTop}" font-family="Be Vietnam Pro" font-size="${fontSize}" font-weight="700">${tspans}</text>
   </svg>`;
 }
 
@@ -118,16 +154,17 @@ function cardPosition(corner, cardSize, margin) {
 // Đè tiêu đề lên 1 ảnh IMAGE_SIZE x IMAGE_SIZE có sẵn — dùng chung cho cả ảnh AI thuần lẫn ảnh đã
 // ghép case study, để 2 luồng không phải viết lại đoạn vẽ chữ 2 lần.
 async function applyTitleBar(imageBuffer, title) {
-  const svg = Buffer.from(titleOverlaySvg(title));
+  const overlayPng = rasterizeSvg(titleOverlaySvg(title));
   return sharp(imageBuffer)
     .resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'cover' })
-    .composite([{ input: svg, top: 0, left: 0 }])
+    .composite([{ input: overlayPng, top: 0, left: 0 }])
     .jpeg({ quality: 88 })
     .toBuffer();
 }
 
 // Resize ảnh về hình vuông rồi bo góc — trả PNG có nền trong suốt ngoài phần bo, dùng để ghép "khung
-// nhỏ" case study lên ảnh nền cá nhân.
+// nhỏ" case study lên ảnh nền cá nhân. Chỉ vẽ hình (không chữ) nên dùng thẳng sharp/librsvg như cũ,
+// không cần qua resvg (librsvg vẽ hình/mask bình thường, chỉ riêng CHỮ mới có vấn đề font).
 async function roundedCard(imageBuffer, size, radius) {
   const maskSvg = Buffer.from(
     `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="${size}" height="${size}" rx="${radius}" fill="white"/></svg>`
@@ -139,13 +176,30 @@ async function roundedCard(imageBuffer, size, radius) {
     .toBuffer();
 }
 
-// generatePostImage: gọi OpenAI tạo ảnh nền theo chủ đề `title`, đè tiêu đề lên, trả Buffer JPEG.
-// Ném lỗi nếu bất kỳ bước nào thất bại — nơi gọi (auto-publish-fb.js) tự xử lý fallback.
+// generatePostImage: gọi OpenAI tạo ảnh nền chung chung theo chủ đề `title`, đè tiêu đề lên, trả
+// Buffer JPEG. Lưới an toàn CUỐI CÙNG khi chưa có ảnh cá nhân nào — xem đầu file. Ném lỗi nếu bất kỳ
+// bước nào thất bại — nơi gọi (auto-publish-fb.js) tự xử lý fallback.
 async function generatePostImage({ apiKey, title }) {
   const prompt = `Ảnh minh hoạ chuyên nghiệp, phong cách biên tập/tạp chí, ánh sáng đẹp, chủ đề: ${title}. `
     + 'TUYỆT ĐỐI KHÔNG có chữ, không watermark, không logo, không ký tự nào trong ảnh.';
   const bg = await callOpenAiImage(apiKey, prompt);
   return applyTitleBar(bg, title);
+}
+
+// generateSpiritualBackground: bài trục "Tâm linh" (xem PILLARS ở api/_lib/pillars.js) dùng ảnh cá
+// nhân thật thì lệch tông hẳn — theo yêu cầu chị Quỳnh 2026-08-29 ("bài nào về tâm linh thì AI làm
+// ảnh tâm linh... phù hợp nội dung bài post"), tạo riêng 1 prompt cố định đúng tinh thần ảnh mẫu chị
+// gửi (hoa sen vàng, ánh sáng ấm, thiền định/tâm linh, phong cách biên tập cao cấp) — xoay vòng vài
+// biến thể cho đỡ lặp lại y hệt qua từng bài. Trả về ẢNH NỀN THÔ (chưa đè chữ) — nơi gọi tự đưa qua
+// renderPersonalTemplateImage() để đè đúng 1 trong 4 mẫu, y hệt cách xử lý ảnh cá nhân thường.
+const SPIRITUAL_PROMPTS = [
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: 1 người ngồi thiền an nhiên, ánh sáng vàng ấm áp bao quanh, hoa sen vàng phát sáng, vòng tròn mandala ánh kim phía sau, không gian đền chùa/vũ trụ huyền ảo, bố cục điện ảnh, tông màu nâu vàng ấm.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: đôi bàn tay chắp lại cầu nguyện, ánh sáng vàng rực rỡ bao quanh, hoa sen vàng nở rộ, các biểu tượng tâm linh mờ ảo phía sau, không khí thiêng liêng ấm áp, tông màu nâu vàng.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: 1 người đứng an nhiên giữa ánh sáng vàng toả ra từ vòng tròn năng lượng phía sau, hoa sen vàng, cảnh chùa/tháp cổ mờ ảo phía xa, cảm giác bình an sâu lắng, tông màu nâu vàng ấm.',
+];
+async function generateSpiritualBackground({ apiKey }) {
+  const prompt = `${pickRandom(SPIRITUAL_PROMPTS)} TUYỆT ĐỐI KHÔNG có chữ, không watermark, không logo, không ký tự nào trong ảnh.`;
+  return callOpenAiImage(apiKey, prompt);
 }
 
 // Ghép ảnh cá nhân (nền) + ảnh case study (khung nhỏ bo góc, có viền trắng + đổ bóng nhẹ) + tiêu đề
@@ -178,4 +232,143 @@ async function compositeCaseStudyImage({ personalImageBuffer, caseStudyImageBuff
   return applyTitleBar(composited, title);
 }
 
-module.exports = { generatePostImage, compositeCaseStudyImage, applyTitleBar };
+// ============================================================
+// renderPersonalTemplateImage — bản server-side của 4 "Bố cục chữ" ở Tạo Ảnh Thương Hiệu
+// ============================================================
+
+// Giữ đúng key/label/decor như LAYOUTS ở nhan-hieu/js/tao-anh.js (đồng bộ tay — file đó chạy trong
+// trình duyệt, không import chung được). zoneTop/zoneBottom là % chiều cao ảnh dành cho khối chữ.
+const TEMPLATE_LAYOUTS = [
+  { key: 'bottom-center', align: 'center', decor: 'gradient-bottom', textPos: 'bottom', zoneTop: 0.42, zoneBottom: 0.86, fontSize: 52 },
+  { key: 'top-center', align: 'center', decor: 'gradient-top', textPos: 'top', zoneTop: 0.08, zoneBottom: 0.46, fontSize: 48 },
+  { key: 'quote-left', align: 'left', decor: 'accent-bar', textPos: 'middle', zoneTop: 0.28, zoneBottom: 0.74, fontSize: 42 },
+  { key: 'caption-bar', align: 'center', decor: 'solid-bar', textPos: 'bottom', zoneTop: 0.66, zoneBottom: 0.95, fontSize: 38 },
+];
+// family: PHẢI đúng tên thật lưu trong file font (resvg đọc theo tên gốc, không phải tên tự đặt).
+const TEMPLATE_FONTS = [
+  { key: 'oswald', family: 'Oswald', weight: 700, widthFactor: 0.56 },
+  { key: 'playfair', family: 'Playfair Display', weight: 800, widthFactor: 0.62 },
+  { key: 'bevietnam', family: 'Be Vietnam Pro', weight: 700, widthFactor: 0.56 },
+];
+const TEMPLATE_COLORS = ['#FFC93C', '#FF7FAE', '#4FC3F7', '#FF6B4A', '#8BD17C'];
+
+// Tách theo **...** để biết từ nào tô màu nhấn — y hệt parseWords() ở tao-anh.js.
+function parseTemplateWords(text) {
+  const segments = String(text || '').split('**');
+  const words = [];
+  segments.forEach((seg, i) => {
+    const highlight = i % 2 === 1;
+    seg.split(/\s+/).filter(Boolean).forEach((w) => words.push({ text: w, highlight }));
+  });
+  return words;
+}
+
+// Wrap thô theo số ký tự (không đo chữ thật như ctx.measureText bên Canvas — chấp nhận sai số nhỏ,
+// đủ dùng cho tiêu đề ngắn kiểu hook/content).
+function wrapTemplateWords(words, maxCharsPerLine, maxLines) {
+  const lines = [];
+  let current = [];
+  let currentLen = 0;
+  for (const w of words) {
+    const addLen = current.length ? w.text.length + 1 : w.text.length;
+    if (currentLen + addLen > maxCharsPerLine && current.length) {
+      lines.push(current);
+      if (lines.length >= maxLines) return lines;
+      current = [w]; currentLen = w.text.length;
+    } else { current.push(w); currentLen += addLen; }
+  }
+  if (current.length && lines.length < maxLines) lines.push(current);
+  return lines;
+}
+
+function templateOverlaySvg({ title, handle, layout, font, colorHex }) {
+  const marginX = 56;
+  const isAccent = layout.decor === 'accent-bar';
+  const maxWidthPx = IMAGE_SIZE - marginX * 2 - (isAccent ? 24 : 0);
+
+  const titleLen = String(title || '').replace(/\*\*/g, '').length;
+  let fontSize = layout.fontSize;
+  if (titleLen > 50) fontSize -= 8;
+  if (titleLen > 90) fontSize -= 8;
+
+  const avgCharWidth = fontSize * font.widthFactor;
+  const maxCharsPerLine = Math.max(8, Math.floor(maxWidthPx / avgCharWidth));
+  const lines = wrapTemplateWords(parseTemplateWords(title), maxCharsPerLine, 4);
+  const lineHeight = Math.round(fontSize * 1.25);
+  const blockHeight = Math.max(lines.length, 1) * lineHeight;
+
+  const handleFontSize = 26;
+  const handleGap = 14;
+  const zoneTopPx = layout.zoneTop * IMAGE_SIZE;
+  const zoneBottomPx = layout.zoneBottom * IMAGE_SIZE;
+
+  let startY;
+  if (layout.textPos === 'bottom') startY = (zoneBottomPx - handleFontSize - handleGap) - (lines.length - 1) * lineHeight;
+  else if (layout.textPos === 'top') startY = zoneTopPx + fontSize * 0.85;
+  else startY = zoneTopPx + ((zoneBottomPx - zoneTopPx) - blockHeight) / 2 + fontSize * 0.75;
+
+  let decorSvg = '';
+  if (layout.decor === 'gradient-bottom') {
+    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0"/><stop offset="1" stop-color="black" stop-opacity="0.8"/></linearGradient></defs><rect x="0" y="${0.42 * IMAGE_SIZE}" width="${IMAGE_SIZE}" height="${IMAGE_SIZE - 0.42 * IMAGE_SIZE}" fill="url(#g)"/>`;
+  } else if (layout.decor === 'gradient-top') {
+    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0.65"/><stop offset="1" stop-color="black" stop-opacity="0"/></linearGradient></defs><rect x="0" y="0" width="${IMAGE_SIZE}" height="${0.48 * IMAGE_SIZE}" fill="url(#g)"/>`;
+  } else if (layout.decor === 'solid-bar') {
+    const padding = 26;
+    const barHeight = Math.min(Math.max(blockHeight + handleFontSize + handleGap + padding * 2, 0.18 * IMAGE_SIZE), 0.42 * IMAGE_SIZE);
+    decorSvg = `<rect x="0" y="${IMAGE_SIZE - barHeight}" width="${IMAGE_SIZE}" height="${barHeight}" fill="rgba(10,12,10,0.9)"/>`;
+    startY = (IMAGE_SIZE - padding - handleFontSize - handleGap) - (lines.length - 1) * lineHeight;
+  } else if (layout.decor === 'accent-bar') {
+    const boxTop = startY - lineHeight * 0.75;
+    const boxHeight = blockHeight + lineHeight * 0.35;
+    decorSvg = `<rect x="${marginX - 22}" y="${boxTop}" width="${maxWidthPx + 40}" height="${boxHeight}" fill="rgba(8,10,8,0.5)"/><rect x="${marginX - 22}" y="${boxTop}" width="6" height="${boxHeight}" fill="${colorHex}"/>`;
+  }
+
+  // Chỉ đặt x/y (vị trí tuyệt đối) cho tspan ĐẦU dòng — các tspan sau trong CÙNG dòng để trống x,
+  // cho renderer tự nối tiếp bằng độ rộng chữ THẬT (đo chính xác hơn avgCharWidth ước lượng nhiều) —
+  // đặt x cho từng tspan theo avgCharWidth làm khoảng cách giữa các từ bị lệch/dính liền nhau (chữ
+  // hoa/đậm thường rộng hơn ước lượng, cộng dồn sai số qua từng từ — đã tự kiểm chứng lúc code).
+  // avgCharWidth chỉ còn dùng để ước lượng độ rộng CẢ DÒNG (canh giữa), sai số nhỏ ở đây không đáng kể.
+  const linesSvg = lines.map((line, i) => {
+    const y = startY + i * lineHeight;
+    const totalChars = line.reduce((sum, w, idx) => sum + w.text.length + (idx > 0 ? 1 : 0), 0);
+    const lineWidthPx = totalChars * avgCharWidth;
+    const startX = layout.align === 'center' ? (IMAGE_SIZE - lineWidthPx) / 2 : marginX;
+    return line.map((w, idx) => {
+      const txt = escapeXml(w.text) + (idx < line.length - 1 ? ' ' : '');
+      const fill = w.highlight ? colorHex : '#fff';
+      return idx === 0
+        ? `<tspan x="${startX.toFixed(1)}" y="${y.toFixed(1)}" fill="${fill}">${txt}</tspan>`
+        : `<tspan fill="${fill}">${txt}</tspan>`;
+    }).join('');
+  }).join('');
+
+  const handleY = startY + (lines.length - 1) * lineHeight + lineHeight * 0.62;
+  const handleWidthPx = String(handle || '').length * handleFontSize * 0.5;
+  const handleX = layout.align === 'center' ? (IMAGE_SIZE - handleWidthPx) / 2 : marginX;
+
+  return `<svg width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" xmlns="http://www.w3.org/2000/svg">
+    ${decorSvg}
+    <text xml:space="preserve" font-family="${font.family}" font-weight="${font.weight}" font-size="${fontSize}" style="paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:3px;">${linesSvg}</text>
+    ${handle ? `<text x="${handleX.toFixed(1)}" y="${handleY.toFixed(1)}" font-family="Be Vietnam Pro" font-style="italic" font-weight="500" font-size="${handleFontSize}" fill="#E8E4D6">${escapeXml(handle)}</text>` : ''}
+  </svg>`;
+}
+
+// photoBuffer: 1 ảnh làm nền — hoặc ảnh cá nhân thật lấy ngẫu nhiên từ personal_photos (bài thường),
+// hoặc ảnh AI vẽ từ generateSpiritualBackground() (bài trục Tâm linh) — nơi gọi (auto-publish-fb.js)
+// tự quyết định nguồn nào rồi truyền buffer vào đây. layout/font/màu nhấn CHỌN NGẪU NHIÊN mỗi lần
+// đăng, cho đa dạng qua từng bài như dùng tay ở Tạo Ảnh Thương Hiệu, thay vì lặp lại đúng 1 kiểu mãi.
+async function renderPersonalTemplateImage({ photoBuffer, title, handle }) {
+  const layout = pickRandom(TEMPLATE_LAYOUTS);
+  const font = pickRandom(TEMPLATE_FONTS);
+  const colorHex = pickRandom(TEMPLATE_COLORS);
+  const overlayPng = rasterizeSvg(templateOverlaySvg({ title, handle, layout, font, colorHex }));
+  return sharp(photoBuffer)
+    .resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'cover' })
+    .composite([{ input: overlayPng, top: 0, left: 0 }])
+    .jpeg({ quality: 88 })
+    .toBuffer();
+}
+
+module.exports = {
+  generatePostImage, compositeCaseStudyImage, applyTitleBar, renderPersonalTemplateImage, generateSpiritualBackground,
+};

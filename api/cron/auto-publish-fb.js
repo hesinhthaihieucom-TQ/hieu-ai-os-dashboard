@@ -14,7 +14,7 @@
 // lúc). Muốn ghim thật vẫn phải làm tay trên Facebook.
 const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { notifyOnce } = require('../_lib/push');
-const { generatePostImage } = require('../_lib/image-gen');
+const { generatePostImage, generateSpiritualBackground, renderPersonalTemplateImage } = require('../_lib/image-gen');
 
 const GRAPH_API = 'https://graph.facebook.com/v19.0';
 // Phải khớp tay với default ở cột profiles.slot_time_* trong schema_full.sql — cùng tầng ưu tiên
@@ -74,13 +74,13 @@ async function markEntry(id, fields) {
   });
 }
 
-async function publishOne(entry, pageId, pageToken) {
+async function publishOne(entry, pageId, pageToken, profile) {
   // Set 'pending' NGAY khi bắt đầu xử lý — chặn đăng trùng nếu lượt cron sau chạy chồng lên (khác
   // các loại nhắc push ở send-reminders.js, việc này có tác dụng phụ thật ngoài Facebook nên bắt
   // buộc phải khoá lại, không thể chỉ dựa vào cửa sổ thời gian).
   await markEntry(entry.id, { fb_publish_status: 'pending' });
 
-  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,title,structure,image_data`);
+  const postResp = await supabaseAdmin(`posts?id=eq.${entry.post_id}&select=content,title,structure,image_data,tags`);
   const posts = postResp.ok ? await postResp.json() : [];
   const post = posts[0];
   if (!post || !post.content) {
@@ -89,18 +89,24 @@ async function publishOne(entry, pageId, pageToken) {
   }
 
   try {
-    // Thứ tự ưu tiên đăng: (1) ảnh đã ghép sẵn từ lúc viết bài (post.image_data — ảnh cá nhân + case
-    // study + tiêu đề, xem fillCaseStudySlot ở auto-fill-schedule.js, đăng nguyên vì đã hoàn chỉnh) →
-    // (2) ảnh AI tự tạo (chỉ khi có OPENAI_API_KEY). Lỗi ở bước ảnh AI (thiếu key, OpenAI lỗi/timeout,
-    // sharp lỗi) rơi xuống bước dưới. TUYỆT ĐỐI KHÔNG đăng bài chữ trần (/feed) nữa — theo yêu cầu chị
-    // Quỳnh 2026-08-28: "không được đăng mỗi bài chữ". Không có ảnh nào khả dụng → bỏ qua lượt đăng
-    // này, đánh dấu failed kèm lý do rõ, có thông báo — còn hơn đăng chữ không kèm ảnh.
+    // Thứ tự ưu tiên nguồn ảnh khi đăng (2026-08-29, theo yêu cầu chị Quỳnh — xem comment đầu file
+    // api/_lib/image-gen.js để hiểu đầy đủ lý do từng bước):
+    // (1) post.image_data có sẵn (case study đã ghép — đăng nguyên vì đã hoàn chỉnh).
+    // (2) Bài trục "Tâm linh" (post.tags) → AI vẽ ảnh nền tâm linh riêng, đè 1 trong 4 mẫu Tạo Ảnh
+    //     Thương Hiệu lên (renderPersonalTemplateImage) — ảnh cá nhân của chị không hợp bài tâm linh.
+    // (3) Bài khác → 1 ảnh cá nhân thật ngẫu nhiên (personal_photos), cũng đè 1 trong 4 mẫu lên —
+    //     KHÔNG để AI tự vẽ người lạ nữa (bug cũ: ảnh không phải chị + AI tự vẽ luôn cả chữ vào ảnh
+    //     dù đã dặn "không chữ", ra font/kiểu chữ không đúng ý).
+    // (4) Lưới an toàn cuối: chưa có ảnh cá nhân nào (personal_photos rỗng) → ảnh AI chung chung như
+    //     luồng cũ (generatePostImage). TUYỆT ĐỐI KHÔNG đăng bài chữ trần (/feed) — theo yêu cầu chị
+    //     Quỳnh 2026-08-28: "không được đăng mỗi bài chữ". Không có ảnh nào khả dụng → bỏ qua lượt
+    //     đăng này, đánh dấu failed kèm lý do rõ, có thông báo — còn hơn đăng chữ không kèm ảnh.
     let result = null;
-    // lastError/failedStep: trước đây gộp chung lỗi tạo ảnh (generatePostImage) VÀ lỗi đăng ảnh lên
-    // Facebook (fbPostPhoto) vào 1 câu "Không tạo được ảnh" — sai lệch khi lỗi thật KHÔNG phải do ảnh
-    // mà do token Facebook hết hạn (fbPostPhoto ném lỗi "Error validating access token"), khiến chị
-    // Quỳnh tưởng nhầm phải sửa OpenAI trong khi cần tạo lại FB_PAGE_ACCESS_TOKEN. Tách rõ 2 bước để
-    // fb_publish_error luôn chỉ đúng nguyên nhân + gọi thẳng tên bước lỗi (2026-08-29).
+    // lastError/failedStep: trước đây gộp chung lỗi tạo ảnh VÀ lỗi đăng ảnh lên Facebook (fbPostPhoto)
+    // vào 1 câu "Không tạo được ảnh" — sai lệch khi lỗi thật KHÔNG phải do ảnh mà do token Facebook hết
+    // hạn (fbPostPhoto ném lỗi "Error validating access token"), khiến chị Quỳnh tưởng nhầm phải sửa
+    // OpenAI trong khi cần tạo lại FB_PAGE_ACCESS_TOKEN. Tách rõ 2 bước để fb_publish_error luôn chỉ
+    // đúng nguyên nhân + gọi thẳng tên bước lỗi (2026-08-29).
     let lastError = null;
     let failedStep = null;
     if (post.image_data) {
@@ -109,18 +115,44 @@ async function publishOne(entry, pageId, pageToken) {
         result = await fbPostPhoto(pageId, pageToken, Buffer.from(base64, 'base64'), post.content);
       } catch (e) { result = null; lastError = e.message; failedStep = 'đăng ảnh lên Facebook'; }
     }
+    const handle = (profile && (profile.brand_name || profile.channel_handle)) || '';
+    const postTitle = post.title || post.content.slice(0, 80);
+    if (!result) {
+      const isSpiritual = Array.isArray(post.tags) && post.tags.includes('tam_linh');
+      let templatePhoto = null;
+      if (isSpiritual && process.env.OPENAI_API_KEY) {
+        try { templatePhoto = await generateSpiritualBackground({ apiKey: process.env.OPENAI_API_KEY }); }
+        catch (e) { lastError = e.message; failedStep = 'tạo ảnh nền tâm linh bằng AI'; }
+      }
+      if (!templatePhoto && !isSpiritual) {
+        try {
+          const photosResp = await supabaseAdmin(`personal_photos?user_id=eq.${entry.user_id}&select=image`);
+          const photos = photosResp.ok ? await photosResp.json() : [];
+          if (photos.length) {
+            const chosen = photos[Math.floor(Math.random() * photos.length)];
+            templatePhoto = Buffer.from(chosen.image.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+          }
+        } catch (e) { /* không chặn — rơi xuống ảnh AI chung ở dưới nếu có */ }
+      }
+      if (templatePhoto) {
+        try {
+          const composed = await renderPersonalTemplateImage({ photoBuffer: templatePhoto, title: postTitle, handle });
+          result = await fbPostPhoto(pageId, pageToken, composed, post.content);
+        } catch (e) { result = null; lastError = e.message; failedStep = 'đăng ảnh lên Facebook'; }
+      }
+    }
     if (!result) {
       if (process.env.OPENAI_API_KEY) {
         let aiImage = null;
         try {
-          aiImage = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: post.title || post.content.slice(0, 80) });
+          aiImage = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: postTitle });
         } catch (e) { lastError = e.message; failedStep = 'tạo ảnh bằng OpenAI'; }
         if (aiImage) {
           try {
             result = await fbPostPhoto(pageId, pageToken, aiImage, post.content);
           } catch (e) { result = null; lastError = e.message; failedStep = 'đăng ảnh lên Facebook'; }
         }
-      } else {
+      } else if (!lastError) {
         lastError = 'Chưa cấu hình OPENAI_API_KEY trên server.';
         failedStep = 'tạo ảnh dự phòng';
       }
@@ -198,7 +230,7 @@ async function checkAutoPublishFb() {
 
   const userIds = [...new Set(candidates.map((e) => e.user_id))];
   const profilesResp = await supabaseAdmin(
-    `profiles?id=in.(${userIds.join(',')})&select=id,slot_time_sang,slot_time_trua,slot_time_toi`
+    `profiles?id=in.(${userIds.join(',')})&select=id,slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`
   );
   const profiles = profilesResp.ok ? await profilesResp.json() : [];
   const profileById = Object.fromEntries(profiles.map((p) => [p.id, p]));
@@ -208,7 +240,7 @@ async function checkAutoPublishFb() {
     const p = profileById[entry.user_id];
     const slotTime = entry.scheduled_time || (p && p['slot_time_' + entry.slot]) || DEFAULT_SLOT_TIME[entry.slot];
     if (!withinWindow(parseHHMM(slotTime), minutesOfDay)) continue;
-    const result = await publishOne(entry, pageId, pageToken);
+    const result = await publishOne(entry, pageId, pageToken, p);
     if (result.ok) published++; else failed++;
   }
   return { published, failed };
