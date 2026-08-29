@@ -1,0 +1,15 @@
+{
+  "name": "Trợ Lý AI Tư Vấn & CRM",
+  "short_name": "Trợ Lý CRM",
+  "description": "Hệ sinh thái Hiểu — Tư vấn khách hàng bằng AI, CRM tự lưu, tự nhắc lịch follow.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4EC",
+  "theme_color": "#14201B",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

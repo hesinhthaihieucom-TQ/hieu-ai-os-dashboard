@@ -5,15 +5,34 @@
 <title>Trợ Lý AI Tư Vấn & CRM</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#14201B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trợ Lý CRM">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>
+  // Bắt sự kiện cài PWA CÀNG SỚM CÀNG TỐT — trình duyệt chỉ bắn đúng 1 lần, bắt muộn có thể lỡ mất
+  // (copy quy tắc từ nhan-hieu/index.html, 2026-08-29).
+  window.__deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.__deferredInstallPrompt = e;
+  });
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  }
+</script>
 </head>
 <body>
 <div id="app"></div>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/util.js"></script>
+<script src="js/install-prompt.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/trang-chu.js"></script>
 <script src="js/tu-van.js"></script>

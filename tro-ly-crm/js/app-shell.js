@@ -16,6 +16,10 @@ const NAV = [
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
 
+// Cùng cặp VAPID key với nhan-hieu/tai-chinh (server chỉ có 1 VAPID_PRIVATE_KEY dùng chung cho toàn
+// bộ hệ sinh thái HIỂU, xem api/_lib/push.js) — dùng khi bật thông báo nhắc follow khách.
+const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY4xz2SisvwpU3IWo_ciiGTMxoLJq42QzkE';
+
 function sidebarFootHtml(){
   const p = AppState.profile;
   const name = (p && p.full_name && p.full_name.trim()) || 'Chưa đặt tên';
@@ -36,6 +40,17 @@ function currentRouteFromHash(){
   return NAV.some(n=>n.key===h) ? h : 'trang-chu';
 }
 
+// App này không có tour hướng dẫn riêng như nhan-hieu/tai-chinh (nơi hỏi cài app ngay sau khi tour
+// kết thúc) — thay vào đó hỏi 1 lần duy nhất sau khi màn hình chính render xong, trễ 1.5s để không
+// chen ngang lúc trang đang vẽ lần đầu. installPromptShownOnce chặn hỏi lại nhiều lần trong 1 phiên
+// (vd sau khi đăng nhập rồi lại điều hướng qua vài route).
+let installPromptShownOnce = false;
+function maybeTriggerInstallPromptOnce(){
+  if(installPromptShownOnce) return;
+  installPromptShownOnce = true;
+  setTimeout(()=>{ if(window.maybeShowInstallPrompt) window.maybeShowInstallPrompt(); }, 1500);
+}
+
 async function initApp(){
   const root = document.getElementById('app');
   root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
@@ -46,6 +61,7 @@ async function initApp(){
     await loadProfile();
     AppState.route = currentRouteFromHash();
     renderApp();
+    maybeTriggerInstallPromptOnce();
   } else {
     renderAuthScreen();
   }
@@ -60,6 +76,7 @@ async function initApp(){
       loadProfile().then(()=>{
         location.hash = 'trang-chu';
         renderApp();
+        maybeTriggerInstallPromptOnce();
       });
     } else if(event === 'SIGNED_OUT'){
       AppState.user = null;

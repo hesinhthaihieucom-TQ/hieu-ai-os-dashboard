@@ -6,7 +6,9 @@
 // "lịch công việc content" nói chung, không riêng buổi quay, đổi 23/8 theo phản hồi chị Quỳnh),
 // (4) dùng thử sắp hết hạn (24h trước) hoặc vừa hết hạn (checkTrialEnding, thêm 23/8), (5) đã xong
 // Định Vị 12h mà chưa thử "AI tự viết + xếp cả tuần" (checkAutoFillNudge, thêm 29/8 — tối ưu chuyển
-// đổi dùng thử → mua gói).
+// đổi dùng thử → mua gói), (6) khách CRM (Trợ Lý AI Tư Vấn & CRM) đến hạn/quá hạn follow hôm nay
+// (checkCrmFollowReminders, thêm 29/8 — "AI có tự đặt lịch thông báo đến ngày follow khách được
+// không", theo yêu cầu chị Quỳnh).
 // Theo yêu cầu chị Quỳnh 2026-08-21.
 //
 // Mỗi loại dùng 1 CỬA SỔ THỜI GIAN ~25 phút (rộng hơn khoảng cách 15 phút giữa 2 lần cron 1 chút,
@@ -259,6 +261,35 @@ async function checkAutoFillNudge() {
   return count;
 }
 
+// Nhắc lịch follow khách CRM (Trợ Lý AI Tư Vấn & CRM, tro-ly-crm/, 2026-08-29) — ngay_follow_tiep
+// chỉ là NGÀY (không có giờ riêng như calendar_entries/recording_schedule), nên chỉ cần quét 1 LẦN/
+// NGÀY vào đúng 1 mốc giờ cố định (không dùng WINDOW_MINUTES theo kiểu "vừa tới giờ X" như các loại
+// nhắc khác — ở đây "vừa tới hôm nay" là đủ điều kiện rồi). Gửi GỘP 1 thông báo/ngày/user (không
+// phải 1 thông báo/khách) để tránh dồn dập nếu nhiều khách cùng đến hạn 1 ngày — event_key theo
+// (user_id, ngày hôm nay) nên notifyOnce tự chặn gửi lại nếu cron chạy nhiều lần trong cùng cửa sổ.
+const CRM_FOLLOW_REMINDER_TIME = '08:15';
+async function checkCrmFollowReminders() {
+  const { dateStr, minutesOfDay } = vnNowParts();
+  if (!withinWindow(parseHHMM(CRM_FOLLOW_REMINDER_TIME), minutesOfDay)) return 0;
+
+  const dueResp = await supabaseAdmin(`crm_customers?ngay_follow_tiep=lte.${dateStr}&select=user_id`);
+  const dueRows = dueResp.ok ? await dueResp.json() : [];
+  if (!dueRows.length) return 0;
+  const countByUser = {};
+  for (const row of dueRows) countByUser[row.user_id] = (countByUser[row.user_id] || 0) + 1;
+
+  let count = 0;
+  for (const [userId, n] of Object.entries(countByUser)) {
+    const result = await notifyOnce(userId, `crm-follow:${dateStr}`, {
+      title: n > 1 ? `Có ${n} khách cần follow hôm nay` : 'Có 1 khách cần follow hôm nay',
+      body: 'Vào Trợ Lý AI Tư Vấn & CRM để xem và follow đúng lúc.',
+      url: './#trang-chu',
+    });
+    if (result.sent) count++;
+  }
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -270,7 +301,7 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
@@ -278,8 +309,9 @@ module.exports = async (req, res) => {
       checkNewAnnouncements(),
       checkTrialEnding(),
       checkAutoFillNudge(),
+      checkCrmFollowReminders(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

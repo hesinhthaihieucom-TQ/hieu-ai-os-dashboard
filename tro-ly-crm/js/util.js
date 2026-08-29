@@ -5,6 +5,18 @@ function esc(s){
   return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
 
+// PushManager.subscribe() cần applicationServerKey dạng Uint8Array, nhưng VAPID public key ta có
+// là chuỗi base64url — chuyển đổi qua lại theo đúng chuẩn (copy nguyên từ nhan-hieu/js/util.js,
+// dùng chung khi bật thông báo nhắc follow khách ở trang-chu.js).
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
 // Phóng to 1 ảnh (vd ảnh chụp màn hình chat) thành lightbox toàn màn hình — đóng bằng bấm ra ngoài
 // hoặc Esc.
 function openImageLightbox(src, alt){
