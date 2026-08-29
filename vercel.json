@@ -4,7 +4,8 @@
     { "source": "/nhan-hieu/api/:path*", "destination": "/api/:path*" },
     { "source": "/san-pham-so/api/:path*", "destination": "/api/:path*" },
     { "source": "/tai-chinh/api/:path*", "destination": "/api/:path*" },
-    { "source": "/suc-khoe/api/:path*", "destination": "/api/:path*" }
+    { "source": "/suc-khoe/api/:path*", "destination": "/api/:path*" },
+    { "source": "/tro-ly-crm/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300 },
@@ -78,6 +79,14 @@
     },
     {
       "source": "/suc-khoe/manifest.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/tro-ly-crm/js/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/tro-ly-crm/style.css",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     }
   ]
