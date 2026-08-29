@@ -67,7 +67,10 @@ async function callClaude({ apiKey, contentBlocks }) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: 4000,
-        system: SYSTEM_PROMPT,
+        // cache_control trên system — SYSTEM_PROMPT + tool schema (đứng trước system trong thứ tự
+        // Anthropic ghép request) giống hệt nhau mỗi lượt, cache lại giảm ~90% chi phí phần đó từ
+        // lượt gọi thứ 2 trở đi trong vòng 5 phút — không đổi hành vi, chỉ giảm chi phí.
+        system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: contentBlocks }],
         tools: [TOOL_TU_VAN_CRM],
         tool_choice: { type: 'tool', name: TOOL_TU_VAN_CRM.name },
