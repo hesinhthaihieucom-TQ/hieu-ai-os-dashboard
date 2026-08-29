@@ -31,21 +31,31 @@ thì request mới thật sự tới được worker này (route dạng `hesinht
    `hesinhthaihieu.com`.
 3. Deploy code (xem bên dưới).
 
-## Deploy (bắt buộc làm thủ công sau khi sửa `worker.js`)
+## Deploy — đã nối Git, tự động (từ 2026-08-29)
 
-Hiện tại **chưa nối được Wrangler CLI** (cần Cloudflare account ID + tên Worker + xác thực tài
-khoản Cloudflare, chưa thiết lập). Cách deploy hiện tại — 100% qua giao diện web, không cần chia sẻ
-mật khẩu/API token với ai:
+Worker đang chạy tên là **`xaynhanhieu-proxy`** (xem `wrangler.toml` trong thư mục này). Đã nối
+Git — **git push lên `main` là Cloudflare tự deploy**, không cần copy/dán tay nữa.
+
+Nối 1 lần duy nhất trong Cloudflare Dashboard (nếu cần nối lại/nối máy khác):
+
+1. Vào **Cloudflare Dashboard → Workers & Pages → `xaynhanhieu-proxy`**.
+2. Vào tab **Settings** → mục **Builds** (hoặc "Git integration") → **Connect to Git**.
+3. Chọn đúng repo GitHub của `hieu-dashboard`, nhánh `main`.
+4. **Root directory** đặt đúng là `cloudflare-worker` (vì `wrangler.toml` + `worker.js` nằm ở đây,
+   không phải gốc repo).
+5. Build command để trống (không cần build gì, chỉ deploy thẳng `worker.js`).
+6. Lưu — Cloudflare sẽ tự chạy `wrangler deploy` bằng `wrangler.toml` mỗi lần có commit mới trên
+   `main` chạm tới thư mục `cloudflare-worker/`.
+
+Routes (`hesinhthaihieu.com/...`) vẫn quản lý thủ công ở tab **Domains & Routes** của worker này
+như trước — `wrangler.toml` CỐ TÌNH không khai routes để tránh 2 nơi cùng quản lý đá nhau. Thêm app
+mới vẫn cần thêm 1 Route riêng trong Dashboard như hướng dẫn ở mục trên, chỉ có bước "deploy code"
+là không cần làm tay nữa.
+
+### Cách cũ (copy/dán tay) — chỉ dùng khi Git integration bị lỗi
 
 1. Copy toàn bộ nội dung file `worker.js` sau khi sửa.
-2. Vào **Cloudflare Dashboard → Workers & Pages** → chọn đúng Worker đang chạy cho
-   `hesinhthaihieu.com`.
+2. Vào **Cloudflare Dashboard → Workers & Pages → `xaynhanhieu-proxy`**.
 3. Vào tab **Edit Code** (hoặc "Quick Edit") → dán đè nội dung mới vào.
 4. Bấm **Deploy** (hoặc **Save and Deploy**).
 5. Kiểm tra lại domain mới hoạt động (vd `hesinhthaihieu.com/hieudekhoemanh/`).
-
-## Muốn deploy tự động qua `wrangler deploy` sau này?
-
-Cần thêm 1 file `wrangler.toml` (khai báo `account_id`, tên Worker, route domain) + đăng nhập
-Cloudflare qua `wrangler login` (mở trình duyệt, tự xác thực — không cần dán token cho ai). Chưa
-làm ở bước này vì cần chị Quỳnh cung cấp `account_id`/tên Worker chính xác từ Dashboard trước.

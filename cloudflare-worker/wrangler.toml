@@ -1,0 +1,6 @@
+# Cấu hình để Cloudflare Workers Builds (nối Git) tự deploy đúng worker "xaynhanhieu-proxy" đang
+# chạy cho hesinhthaihieu.com — KHÔNG khai routes ở đây, routes vẫn quản lý thủ công trong Dashboard
+# (tab Domains & Routes của worker này), để tránh 2 nơi cùng quản lý routes đá nhau.
+name = "xaynhanhieu-proxy"
+main = "worker.js"
+compatibility_date = "2026-08-29"
