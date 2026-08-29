@@ -7,7 +7,12 @@ const GIAI_DOAN_BASE = ['Đang tư vấn', 'Chăm sóc', 'Follow', 'Chốt', 'Đ
 
 function render(container, ctx){
   const state = {
-    loading: true, customers: [], search: '', filterDoNong: null, filterGiaiDoan: null,
+    loading: true, customers: [], search: '',
+    // Bố cục lại theo góc nhìn CSKH (chị Quỳnh yêu cầu 2026-08-30: quá nhiều nút lọc riêng lẻ, khó
+    // nhìn) — thay 2 hàng chip lọc theo đúng giá trị tự do (do_nong/giai_doan, dễ phình ra chục nút
+    // vì AI ghi tự do nên nhiều cách viết khác nhau) bằng 4-5 TAB trạng thái cố định, việc CSKH thật
+    // sự cần mỗi ngày: khách nào PHẢI follow ngay > khách nào đang chăm sóc > đã chốt > đã mất.
+    activeTab: 'follow',
     detail: null, // { customer, editForm, interactions, loadingInteractions, saving, error }
     showNewForm: false, newForm: null, creating: false, newError: '',
     deleting: false,
@@ -25,8 +30,7 @@ function render(container, ctx){
     const draft = await loadModuleDraft(ctx, FILTER_DRAFT_KEY);
     if(draft){
       state.search = draft.search || '';
-      state.filterDoNong = draft.filterDoNong || null;
-      state.filterGiaiDoan = draft.filterGiaiDoan || null;
+      state.activeTab = draft.activeTab || 'follow';
     }
     await load();
     // Điều hướng sâu từ Trang chủ (bấm 1 khách "cần follow hôm nay") — luôn ưu tiên hơn bộ lọc/nhớ cũ.
@@ -48,13 +52,12 @@ function render(container, ctx){
   }
 
   function persistFilters(){
-    saveModuleDraft(ctx, FILTER_DRAFT_KEY, {
-      search: state.search, filterDoNong: state.filterDoNong, filterGiaiDoan: state.filterGiaiDoan,
-    });
+    saveModuleDraft(ctx, FILTER_DRAFT_KEY, { search: state.search, activeTab: state.activeTab });
   }
 
   // Luôn hiện đủ 3 mức "chuẩn" + mọi giá trị khác đang thực sự có trong dữ liệu — vì do_nong/giai_doan
-  // là text tự do (không enum ở DB), người dùng có thể đã gõ giá trị khác đi.
+  // là text tự do (không enum ở DB), người dùng có thể đã gõ giá trị khác đi. Vẫn dùng cho gợi ý
+  // datalist khi sửa/thêm khách (field tự do vẫn cần gõ đúng chính tả cũ để không phình thêm biến thể).
   function availableDoNong(){
     const present = state.customers.map(c => c.do_nong).filter(Boolean);
     return Array.from(new Set([...DO_NONG_BASE, ...present]));
@@ -64,18 +67,39 @@ function render(container, ctx){
     return Array.from(new Set([...GIAI_DOAN_BASE, ...present]));
   }
 
-  function filteredCustomers(){
-    const q = state.search.trim().toLowerCase();
-    return state.customers.filter(c => {
-      if(state.filterDoNong && c.do_nong !== state.filterDoNong) return false;
-      if(state.filterGiaiDoan && c.giai_doan !== state.filterGiaiDoan) return false;
-      if(q && !(c.ten_khach_hang || '').toLowerCase().includes(q)) return false;
-      return true;
-    });
+  // Gom giai_doan (text tự do, AI có thể viết lệch nhau vài chữ mỗi lần — "Đã mua/onboarding" vs
+  // "Đã mua / đang onboarding") về đúng 3 nhóm CỐ ĐỊNH bằng cách dò từ khoá, thay vì lọc khớp chính
+  // xác từng chuỗi — tránh phình thành chục nút lọc rời rạc theo đúng cách viết.
+  function bucketOf(c){
+    const g = (c.giai_doan || '').toLowerCase();
+    if(g.includes('mất')) return 'mat';
+    if(g.includes('chốt') || g.includes('đã mua') || g.includes('onboarding')) return 'chot';
+    return 'cham-soc';
   }
 
   function isOverdue(c){ return !!c.ngay_follow_tiep && c.ngay_follow_tiep < todayIso(); }
   function isDueToday(c){ return c.ngay_follow_tiep === todayIso(); }
+  function needsFollow(c){ return !!c.ngay_follow_tiep && c.ngay_follow_tiep <= todayIso() && bucketOf(c) !== 'mat'; }
+
+  function tabCounts(){
+    return {
+      follow: state.customers.filter(needsFollow).length,
+      'cham-soc': state.customers.filter(c => bucketOf(c) === 'cham-soc').length,
+      chot: state.customers.filter(c => bucketOf(c) === 'chot').length,
+      mat: state.customers.filter(c => bucketOf(c) === 'mat').length,
+      all: state.customers.length,
+    };
+  }
+
+  function filteredCustomers(){
+    const q = state.search.trim().toLowerCase();
+    return state.customers.filter(c => {
+      if(state.activeTab === 'follow' && !needsFollow(c)) return false;
+      else if(state.activeTab !== 'follow' && state.activeTab !== 'all' && bucketOf(c) !== state.activeTab) return false;
+      if(q && !(c.ten_khach_hang || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
 
   // ===== Panel chi tiết / sửa =====
   function toEditForm(c){
@@ -367,8 +391,14 @@ function render(container, ctx){
 
   function html(){
     const list = filteredCustomers();
-    const doNongOptions = availableDoNong();
-    const giaiDoanOptions = availableGiaiDoan();
+    const counts = tabCounts();
+    const TABS = [
+      { key:'follow', label:'Cần follow' },
+      { key:'cham-soc', label:'Đang chăm sóc' },
+      { key:'chot', label:'Đã chốt' },
+      { key:'mat', label:'Mất' },
+      { key:'all', label:'Tất cả' },
+    ];
     return `
       <div class="page-head">
         <h1>Khách Hàng</h1>
@@ -381,17 +411,14 @@ function render(container, ctx){
 
       <input type="text" id="kh-search" placeholder="Tìm theo tên khách..." value="${esc(state.search)}">
 
-      <div class="chips">
-        ${doNongOptions.map(v => `<div class="chip ${state.filterDoNong === v ? 'selected' : ''}" data-filter-do-nong="${esc(v)}">${esc(v)}</div>`).join('')}
-      </div>
-      <div class="chips">
-        ${giaiDoanOptions.map(v => `<div class="chip ${state.filterGiaiDoan === v ? 'selected' : ''}" data-filter-giai-doan="${esc(v)}">${esc(v)}</div>`).join('')}
+      <div class="tab-row" style="margin-top:16px;">
+        ${TABS.map(t => `<div class="tab-btn ${state.activeTab===t.key?'active':''}" data-tab="${t.key}">${esc(t.label)}${counts[t.key]?` (${counts[t.key]})`:''}</div>`).join('')}
       </div>
 
       <div style="margin-top:22px;">
         ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
           list.length === 0
-            ? `<div style="color:var(--ink-soft);font-size:14px;">${state.customers.length === 0 ? 'Chưa có khách hàng nào — bấm "+ Thêm khách" để tạo hồ sơ đầu tiên.' : 'Không tìm thấy khách phù hợp bộ lọc.'}</div>`
+            ? `<div style="color:var(--ink-soft);font-size:14px;">${state.customers.length === 0 ? 'Chưa có khách hàng nào — bấm "+ Thêm khách" để tạo hồ sơ đầu tiên.' : 'Không có khách nào ở mục này.'}</div>`
             : cardListHtml(list)
         )}
       </div>
@@ -415,18 +442,9 @@ function render(container, ctx){
       if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
     };
 
-    container.querySelectorAll('[data-filter-do-nong]').forEach(el => {
+    container.querySelectorAll('[data-tab]').forEach(el => {
       el.onclick = () => {
-        const v = el.getAttribute('data-filter-do-nong');
-        state.filterDoNong = state.filterDoNong === v ? null : v;
-        persistFilters();
-        draw();
-      };
-    });
-    container.querySelectorAll('[data-filter-giai-doan]').forEach(el => {
-      el.onclick = () => {
-        const v = el.getAttribute('data-filter-giai-doan');
-        state.filterGiaiDoan = state.filterGiaiDoan === v ? null : v;
+        state.activeTab = el.getAttribute('data-tab');
         persistFilters();
         draw();
       };

@@ -13,10 +13,31 @@ const MAX_IMAGES = 10;
 // tốn AI để tự viết lại là lãng phí — nhánh D đặc biệt ghi rõ "bắt buộc nguyên văn" nên càng không
 // nên để AI tự soạn). AI chỉ bắt đầu tính lượt từ khi khách đã trả lời và có ảnh/nội dung để phân tích.
 const NHANH_OPENERS = {
-  A: { label:'A — Sức khỏe (Hiểu Mạnh)', text:'Bạn đang có nhu cầu như thế nào về sức khỏe ạ?' },
-  B: { label:'B — Tâm linh/Tài chính (Hiểu Hạnh)', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?' },
-  C: { label:'C — Nhân hiệu/Content (Hiểu Kênh)', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?' },
-  D: { label:'D — Kinh doanh/Đối tác', text:'Cảm ơn c đã chủ động nhắn cho e nhé. Để e hiểu rõ hơn rồi định hướng đúng cho c, c chia sẻ thêm vài thông tin nha:\n1. Hiện tại c đang làm công việc gì?\n2. Thu nhập trung bình 1 tháng của c đang ở mức khoảng bao nhiêu? Hiện c có tích luỹ được chứ?\n3. Mục tiêu tài chính của c trong 6–12 tháng tới là gì? Muốn tăng thêm bao nhiêu thu nhập mỗi tháng?\n4. C đang quan tâm phát triển nguồn thu theo hướng nào: online, chăm sóc sức khỏe, hay xây hệ thống lâu dài?\nE hỏi kỹ để xem c phù hợp với mô hình nào nhất — vì team của e đang làm trong ngành chăm sóc sức khỏe & đào tạo phát triển con người, có quy trình rõ ràng, hỗ trợ từng bước, ai mới vào cũng làm được nè' },
+  A: { label:'A — Sức khỏe', text:'Bạn đang có nhu cầu như thế nào về sức khỏe ạ?',
+    steps:[
+      'Khách đã tự nói rõ vấn đề → 1 câu đồng cảm rồi hỏi thẳng câu #1 dưới. Chưa rõ → hỏi câu mở đầu trên trước.',
+      'Giảm cân/mỡ: (1) cao/nặng bao nhiêu (2) gửi bảng %mỡ, hỏi hiện tại/mục tiêu % (3) đã dùng cách gì, hiệu quả sao (4) đang ảnh hưởng gì tới sức khỏe/tự tin/công việc',
+      'Vấn đề sức khỏe khác: (1) vấn đề gì (2) bao lâu rồi (3) ảnh hưởng cuộc sống thế nào (4) đã dùng cách gì (5) hiệu quả sao — mỗi câu hỏi riêng, đợi trả lời mới hỏi tiếp',
+      'Đủ thông tin → 1 câu đồng cảm + set kỳ vọng nhẹ nhàng → kể chuyện bản thân liên quan → gửi case tương tự → chốt giá 3 mức (thấp/vừa/cao) → hỏi thẳng chốt CÓ/KHÔNG',
+    ] },
+  B: { label:'B — Tâm linh/Tài chính', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?',
+    steps:[
+      'Hỏi đang quan tâm/cần gì → điều gì đang cản trở → mong muốn đạt được gì',
+      'Phân tích ngắn hệ quả nếu giữ nguyên rào cản → gửi đúng link khóa (nếu đã có trong Thông tin sản phẩm) kèm lý do khớp → xin hẹn mốc thời gian xem',
+      'Đến hẹn: đã xem chưa → thấy gì phù hợp nhất → chốt thẳng CÓ/KHÔNG',
+    ] },
+  C: { label:'C — Nhân hiệu/Content', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?',
+    steps:[
+      'Hỏi đang quan tâm/cần gì → điều gì đang cản trở → mong muốn đạt được gì',
+      'Phân tích ngắn hệ quả nếu giữ nguyên rào cản → gửi đúng link gói phù hợp (entry hay chính, theo mức cam kết khách) kèm lý do khớp → xin hẹn mốc thời gian xem',
+      'Đến hẹn: đã xem chưa → thấy gì phù hợp nhất → chốt thẳng CÓ/KHÔNG',
+    ] },
+  D: { label:'D — Kinh doanh/Đối tác', text:'Cảm ơn c đã chủ động nhắn cho e nhé. Để e hiểu rõ hơn rồi định hướng đúng cho c, c chia sẻ thêm vài thông tin nha:\n1. Hiện tại c đang làm công việc gì?\n2. Thu nhập trung bình 1 tháng của c đang ở mức khoảng bao nhiêu? Hiện c có tích luỹ được chứ?\n3. Mục tiêu tài chính của c trong 6–12 tháng tới là gì? Muốn tăng thêm bao nhiêu thu nhập mỗi tháng?\n4. C đang quan tâm phát triển nguồn thu theo hướng nào: online, chăm sóc sức khỏe, hay xây hệ thống lâu dài?\nE hỏi kỹ để xem c phù hợp với mô hình nào nhất — vì team của e đang làm trong ngành chăm sóc sức khỏe & đào tạo phát triển con người, có quy trình rõ ràng, hỗ trợ từng bước, ai mới vào cũng làm được nè',
+    steps:[
+      'Sàng lọc xong 4 câu trên → nghe cảm xúc, đào lý do đằng sau con số, khen sự chủ động, kể chuyện bản thân liên quan, vẽ nỗi đau + viễn cảnh nếu thay đổi',
+      'Xin hẹn thời gian TRƯỚC → gửi Guide "Tìm Hiểu Kinh Doanh" SAU → follow đúng hẹn (đã xem chưa)',
+      'Khách nhắn xác nhận muốn đồng hành → hẹn buổi nói chuyện sâu → chốt mở mã (gói entry) → hỏi 4 câu (thu nhập mong muốn/giờ rảnh/thời gian/sẵn sàng) → chốt gói',
+    ] },
 };
 
 function render(container, ctx){
@@ -178,6 +199,13 @@ function render(container, ctx){
             <div class="hint-box" style="white-space:pre-line;">${esc(NHANH_OPENERS[state.pickedOpenerNhanh].text)}</div>
             <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
               <span class="btn-ghost btn btn-sm" id="tv-copy-opener">Sao chép</span>
+            </div>
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+              <div style="font-size:11.5px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:8px;">Các bước tiếp theo (tự hỏi tay, không cần AI)</div>
+              <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--ink);">
+                ${NHANH_OPENERS[state.pickedOpenerNhanh].steps.map(s=>`<li>${esc(s)}</li>`).join('')}
+              </ol>
+              <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">Nhắn qua lại trực tiếp với khách theo đúng các bước trên trước — xong rồi mới chụp gộp cả đoạn (tối đa ${MAX_IMAGES} ảnh) gửi 1 lần cho AI phân tích, không cần gọi AI sau mỗi câu hỏi.</div>
             </div>
           ` : ''}
         </div>
