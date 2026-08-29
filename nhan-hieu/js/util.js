@@ -42,7 +42,7 @@ function confirmModal(message, confirmLabel){
 
 // Xem nhanh nội dung đầy đủ 1 bài đã lưu (VD từ ô đã xếp lịch) mà không cần rời khỏi trang hiện
 // tại — có nút copy để tiện dán đi làm ảnh/đăng ngay. Đóng bằng bấm ra ngoài hoặc Esc.
-function openTextModal(title, body){
+function openTextModal(title, body, imageDataUrl){
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
@@ -51,7 +51,10 @@ function openTextModal(title, body){
         <h3 style="margin:0;font-size:16px;">${esc(title||'Bài viết')}</h3>
         <span data-close-text-modal="1" style="cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;">&times;</span>
       </div>
-      <div style="padding:16px 20px;overflow-y:auto;white-space:pre-line;font-size:14.5px;line-height:1.7;">${esc(body||'')}</div>
+      <div style="padding:16px 20px;overflow-y:auto;">
+        ${imageDataUrl?`<img src="${imageDataUrl}" alt="Ảnh AI tạo cho bài này" style="width:100%;border-radius:10px;margin-bottom:14px;display:block;">`:''}
+        <div style="white-space:pre-line;font-size:14.5px;line-height:1.7;">${esc(body||'')}</div>
+      </div>
       <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;">
         <button class="btn btn-sm" data-copy-text-modal="1">Copy nội dung</button>
         ${title?`<span class="btn-ghost btn btn-sm" data-copy-title-modal="1">Copy tiêu đề</span>`:''}

@@ -871,7 +871,13 @@ function render(container, ctx){
       el.onclick = ()=>{
         const entry = state.entries.find(x=>x.id===el.getAttribute('data-view-post'));
         const post = entry && entry.post_id ? state.posts.find(p=>p.id===entry.post_id) : null;
-        if(post) openTextModal(post.title, post.content);
+        if(!post) return;
+        // Bài case study (slot Trưa, tự viết + ghép ảnh qua api/cron/auto-fill-schedule.js) có sẵn
+        // ảnh THẬT trong posts.image_data (base64 JPEG) — trước đây lưu xong không hiện ở đâu cả, chỉ
+        // dùng lúc auto-đăng Fanpage. Theo yêu cầu chị Quỳnh 2026-08-29: "cho hiện luôn cái hình mà
+        // AI làm" — hiện ngay trong modal Xem bài, khỏi phải đợi tới lúc đăng mới thấy.
+        const imageDataUrl = post.image_data ? `data:image/jpeg;base64,${post.image_data.replace(/^data:image\/\w+;base64,/, '')}` : null;
+        openTextModal(post.title, post.content, imageDataUrl);
       };
     });
     container.querySelectorAll('[data-remove]').forEach(el=>{
