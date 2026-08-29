@@ -337,6 +337,11 @@ function render(container, ctx){
         <h1>Định vị thương hiệu của bạn</h1>
       </div>
       ${state.saveError?`<div class="error-box" style="margin-bottom:14px;">${esc(state.saveError)}</div>`:''}
+      <div class="card" style="margin-bottom:14px;background:var(--accent-soft);text-align:center;">
+        <h3 style="margin-bottom:6px;">🪄 Định vị xong rồi — để AI viết luôn cả tuần content</h3>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">AI viết bài HOÀN CHỈNH và xếp thẳng vào lịch tuần này, đúng trục/giọng văn bạn vừa định vị — cách nhanh nhất để thấy app làm được gì.</div>
+        <button class="btn" data-action="go-autofill-week">Xếp lịch cả tuần ngay</button>
+      </div>
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên kênh Facebook/TikTok</label>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Lưu 1 lần ở đây — Viết Content sẽ tự lấy tên kênh này để ghép hashtag, khỏi phải nhập lại mỗi bài.</div>
@@ -551,6 +556,12 @@ function render(container, ctx){
 
     const viewResultsBtn = container.querySelector('[data-action="view-results"]');
     if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results'; draw(); };
+
+    const goAutoFillBtn = container.querySelector('[data-action="go-autofill-week"]');
+    if(goAutoFillBtn) goAutoFillBtn.onclick = ()=>{
+      window.PendingAutoFillWeek = true;
+      location.hash = '#lich-dang';
+    };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
     if(redoFromDoneBtn) redoFromDoneBtn.onclick = async ()=>{
       await maybeReconstructAnswers();

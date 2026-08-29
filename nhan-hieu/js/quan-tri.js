@@ -40,7 +40,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{}, expandedMemberIds:new Set() };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{}, expandedMemberIds:new Set(), journeyDinhVi:new Set(), journeyPosted:new Set() };
 
   // Ai giới thiệu >= ngưỡng này được coi là "partner" — chị Quỳnh tự nhắn/chuyển khoản tay trả hoa
   // hồng tiền mặt cho họ (KHÔNG tự động chuyển tiền — SePay chỉ nhận tiền vào, không có API chuyển
@@ -66,9 +66,32 @@ function render(container, ctx){
     // load() TRƯỚC (không gộp Promise.all) — loadReferralPartners() cần state.profiles đã có sẵn
     // để tra email theo referrer_id, chạy song song sẽ có lúc profiles vẫn còn rỗng.
     await load();
-    await Promise.all([loadRevenue(), loadReferralPartners()]);
+    await Promise.all([loadRevenue(), loadReferralPartners(), loadJourneySignals()]);
     state.screen = 'main';
     draw();
+  }
+
+  // Hành trình dùng thử → mua gói (theo yêu cầu chị Quỳnh 2026-08-29: tối ưu chuyển đổi) — đủ 3 mốc
+  // để nhìn 1 phát biết khách đang kẹt ở đâu: Định Vị xong chưa (positioning_results.luot1), đã thử
+  // "AI tự viết + xếp cả tuần" chưa (profiles.used_auto_fill_week_at, xem api/auto-fill-week.js), và
+  // đã ĐĂNG bài thật chưa (calendar_entries.posted). 2 mốc đầu cần join riêng vì không nằm trên
+  // profiles hoặc load() chỉ select('*') từ profiles.
+  async function loadJourneySignals(){
+    const [{ data: pos }, { data: posted }] = await Promise.all([
+      ctx.supabase.from('positioning_results').select('user_id').not('luot1', 'is', null),
+      ctx.supabase.from('calendar_entries').select('user_id').eq('posted', true),
+    ]);
+    state.journeyDinhVi = new Set((pos||[]).map(r=>r.user_id));
+    state.journeyPosted = new Set((posted||[]).map(r=>r.user_id));
+  }
+
+  function journeyBadgesHtml(p){
+    const steps = [
+      { label:'Định Vị', done: state.journeyDinhVi.has(p.id) },
+      { label:'AI xếp cả tuần', done: !!p.used_auto_fill_week_at },
+      { label:'Đã đăng bài', done: state.journeyPosted.has(p.id) },
+    ];
+    return steps.map(s=>`<span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:${s.done?'var(--accent-soft)':'var(--line)'};color:${s.done?'var(--accent)':'var(--ink-soft)'};white-space:nowrap;">${s.done?'✓':'○'} ${s.label}</span>`).join('');
   }
 
   // Đăng ký mới (theo phản hồi chị Quỳnh 21/8: "người đăng ký mới sẽ đẩy lên đầu danh sách để kiểm
@@ -213,6 +236,7 @@ function render(container, ctx){
             <div>
               <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}</h3>
               <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
+              ${p.role!=='admin' && !p.has_paid ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">${journeyBadgesHtml(p)}</div>` : ''}
             </div>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;
               background:${st.cls==='active'?'var(--accent-soft)':st.cls==='soon'?'#FBF6E9':st.cls==='expired'?'#FBEAE4':st.cls==='admin'?'#EDEAE0':'var(--line)'};

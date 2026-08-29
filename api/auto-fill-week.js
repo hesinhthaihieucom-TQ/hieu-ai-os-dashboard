@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
     const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
     if (!positioning) { res.status(400).json({ error: 'Cần làm Định Vị trước khi dùng tính năng này — AI cần biết trục nội dung/giọng văn của bạn.' }); return; }
 
-    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`);
+    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name,used_auto_fill_week_at`);
     const profRows = profResp.ok ? await profResp.json() : [];
     const profile = profRows[0] || {};
 
@@ -151,6 +151,15 @@ module.exports = async (req, res) => {
         await refundTrialQuota(user.id, 'viet-tu-kho-goc');
         skippedNoCandidate.push({ ...slotInfo, error: e.message });
       }
+    }
+
+    // Đánh dấu "đã chạm tới khoảnh khắc aha" — CHỈ 1 LẦN đầu tiên thật sự điền được ít nhất 1 ô (nếu
+    // filled rỗng vì hết ô/hết lượt thì chưa thấy được giá trị thật, không tính). Không await chặn
+    // response — khách đang đợi kết quả AI viết xong, không cần chờ thêm 1 lượt gọi phụ này.
+    if (filled.length && !profile.used_auto_fill_week_at) {
+      supabaseAdmin(`profiles?id=eq.${user.id}`, {
+        method: 'PATCH', body: JSON.stringify({ used_auto_fill_week_at: new Date().toISOString() }),
+      }).catch(() => {});
     }
 
     res.status(200).json({

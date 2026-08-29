@@ -4,7 +4,9 @@
 // nhắc THEO THỜI GIAN mới, độc lập với mốc view thật), (3) đến giờ công việc content
 // (recording_schedule — tên bảng vẫn giữ "recording" trong code, nhưng hiển thị cho người dùng là
 // "lịch công việc content" nói chung, không riêng buổi quay, đổi 23/8 theo phản hồi chị Quỳnh),
-// (4) dùng thử sắp hết hạn (24h trước) hoặc vừa hết hạn (checkTrialEnding, thêm 23/8).
+// (4) dùng thử sắp hết hạn (24h trước) hoặc vừa hết hạn (checkTrialEnding, thêm 23/8), (5) đã xong
+// Định Vị 12h mà chưa thử "AI tự viết + xếp cả tuần" (checkAutoFillNudge, thêm 29/8 — tối ưu chuyển
+// đổi dùng thử → mua gói).
 // Theo yêu cầu chị Quỳnh 2026-08-21.
 //
 // Mỗi loại dùng 1 CỬA SỔ THỜI GIAN ~25 phút (rộng hơn khoảng cách 15 phút giữa 2 lần cron 1 chút,
@@ -199,7 +201,7 @@ async function checkTrialEnding() {
   for (const row of soonRows) {
     const result = await notifyOnce(row.id, 'trial-ending-24h', {
       title: 'Dùng thử sắp hết hạn',
-      body: 'Còn khoảng 24 giờ nữa là hết 7 ngày dùng thử — nâng cấp ngay để không bị gián đoạn.',
+      body: 'Còn khoảng 24 giờ nữa là hết hạn dùng thử — nâng cấp ngay để không bị gián đoạn.',
       url: './#nang-cap',
     });
     if (result.sent) count++;
@@ -223,6 +225,40 @@ async function checkTrialEnding() {
   return count;
 }
 
+// Nhắc dùng thử ĐÃ làm xong Định Vị nhưng CHƯA thử "AI tự viết + xếp cả tuần" (api/auto-fill-week.js)
+// — đây là khoảnh khắc "aha" rõ nhất của app (thấy AI viết + xếp thẳng cả tuần content, không chỉ
+// gợi ý chủ đề), nhưng không có gì tự đưa khách tới đó nếu họ thoát ra giữa chừng sau Định Vị. Nhắc
+// sau 12h kể từ lúc xong Định Vị (đủ thời gian để họ tự quay lại, nhưng vẫn còn kịp trong hạn dùng
+// thử hiện chỉ 3 ngày) — CHỈ 1 LẦN/user (dedupe key không kèm id biến thiên theo thời gian như các
+// loại nhắc khác). Theo yêu cầu chị Quỳnh 2026-08-29: tối ưu để dùng thử dễ chuyển đổi thành mua gói.
+async function checkAutoFillNudge() {
+  const NUDGE_AFTER_H = 12;
+  const startIso = new Date(Date.now() - (NUDGE_AFTER_H * 60 + WINDOW_MINUTES) * 60000).toISOString();
+  const endIso = new Date(Date.now() - NUDGE_AFTER_H * 3600000).toISOString();
+  const posResp = await supabaseAdmin(
+    `positioning_results?luot1=not.is.null&updated_at=gte.${encodeURIComponent(startIso)}&updated_at=lt.${encodeURIComponent(endIso)}&select=user_id`
+  );
+  const posRows = posResp.ok ? await posResp.json() : [];
+  if (!posRows.length) return 0;
+  const userIds = [...new Set(posRows.map((r) => r.user_id))];
+
+  const nowIso = new Date().toISOString();
+  const profResp = await supabaseAdmin(
+    `profiles?id=in.(${userIds.join(',')})&has_paid=eq.false&role=eq.student&used_auto_fill_week_at=is.null&access_until=gt.${encodeURIComponent(nowIso)}&select=id`
+  );
+  const rows = profResp.ok ? await profResp.json() : [];
+  let count = 0;
+  for (const row of rows) {
+    const result = await notifyOnce(row.id, 'auto-fill-nudge', {
+      title: 'Thử để AI viết luôn cả tuần content cho bạn',
+      body: 'Bạn đã làm xong Định Vị — vào Lịch Đăng Bài bấm "AI tự viết + xếp cả tuần" để AI viết bài hoàn chỉnh, xếp thẳng vào lịch.',
+      url: './#lich-dang',
+    });
+    if (result.sent) count++;
+  }
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -234,15 +270,16 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
       checkNewSignups(),
       checkNewAnnouncements(),
       checkTrialEnding(),
+      checkAutoFillNudge(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

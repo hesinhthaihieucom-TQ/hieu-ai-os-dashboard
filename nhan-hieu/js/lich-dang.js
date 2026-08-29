@@ -31,7 +31,7 @@ function render(container, ctx){
     regenWeekLoading:false, regenWeekError:null,
     autoFillMode:'kho', autoFillBusy:false, autoFillError:null, autoFillResult:null,
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
-    tab:'lich', weekLoadError:null,
+    tab:'lich', weekLoadError:null, highlightAutoFill:false,
     // 2 lane độc lập trong cùng calendar_entries (cột channel) — 'ca_nhan' mặc định cho MỌI user
     // (kế hoạch FB cá nhân, tự đăng tay, cách dùng gốc); 'fanpage' chỉ admin chuyển sang được, dùng
     // cho lane auto-đăng Fanpage (xem toggle ở calendarTabHtml). Không lưu draft — luôn mở lại về
@@ -57,6 +57,12 @@ function render(container, ctx){
   async function boot(){
     state.screen = 'loading'; draw();
     if(window.PendingPost){ state.pending = window.PendingPost; window.PendingPost = null; }
+    // Tới đây từ nút "Xếp lịch cả tuần ngay" ở màn hình kết quả Định Vị (nhan-hieu/js/dinh-vi.js) —
+    // đưa thẳng về tab Lịch (đã là mặc định) rồi cuộn + nháy sáng đúng khối "AI tự viết + xếp cả
+    // tuần" thay vì tự bấm hộ (vẫn để khách tự chọn Cách 1/Cách 2 và tự bấm, vì thao tác này TỐN LƯỢT
+    // THẬT — không nên tự ý bấm thay).
+    const pendingAutoFill = !!window.PendingAutoFillWeek;
+    if(pendingAutoFill) window.PendingAutoFillWeek = null;
     try{
       const { data: pos, error } = await withTimeout(
         ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle(),
@@ -70,7 +76,13 @@ function render(container, ctx){
       state.screen='error';
       state.bootError = e.message;
     }
+    if(pendingAutoFill && state.screen==='main'){ state.tab='lich'; state.highlightAutoFill = true; }
     draw();
+    if(pendingAutoFill && state.screen==='main'){
+      const card = document.getElementById('autofill-card');
+      if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+      setTimeout(()=>{ state.highlightAutoFill = false; draw(); }, 4000);
+    }
   }
 
   // Tải lại đúng dữ liệu của tuần đang xem khi bấm "Tuần trước/Tuần sau" — tách khỏi onclick trực
@@ -290,7 +302,7 @@ function render(container, ctx){
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
       </div>
 
-      <div class="card" style="margin-bottom:20px;background:var(--accent-soft);">
+      <div id="autofill-card" class="card${state.highlightAutoFill?' autofill-pulse':''}" style="margin-bottom:20px;background:var(--accent-soft);">
         <h3 style="margin-bottom:6px;">🪄 AI tự viết + xếp cả tuần</h3>
         <div class="hint-box" style="margin-bottom:12px;">Khác với "AI gợi ý lịch tuần" ở trên (chỉ ra chủ đề, bạn vẫn phải tự viết) — cái này AI viết bài HOÀN CHỈNH và xếp thẳng vào ô trống luôn. Bấm "Xem chi tiết" trong lịch để đọc lại/sửa trước khi đăng.</div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chọn cách AI lấy nguồn để viết</label>

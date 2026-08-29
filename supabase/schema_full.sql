@@ -81,6 +81,13 @@ alter table profiles add column if not exists is_vip_partner boolean not null de
 alter table profiles add column if not exists trial_ai_limit integer;
 update profiles set trial_ai_limit = 100 where trial_ai_limit is null;
 
+-- Đánh dấu THỜI ĐIỂM đầu tiên user bấm thành công "AI tự viết + xếp cả tuần" (api/auto-fill-week.js)
+-- — đây là "khoảnh khắc aha" rõ nhất của app (AI viết + xếp thẳng cả tuần content, không chỉ gợi ý
+-- chủ đề), nên cần biết ai ĐÃ chạm tới để: (1) Quản trị hiện được hành trình dùng thử của từng khách
+-- (Định Vị → tính năng này → đã đăng bài thật), (2) cron nhắc ai làm xong Định Vị nhưng chưa thử
+-- tính năng này thì đẩy push nhắc (xem api/cron/send-reminders.js). NULL nghĩa là chưa từng dùng.
+alter table profiles add column if not exists used_auto_fill_week_at timestamptz;
+
 update profiles p set email = u.email from auth.users u where p.id = u.id and p.email is null;
 
 create or replace function public.generate_ref_code()
