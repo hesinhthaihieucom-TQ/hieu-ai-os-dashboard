@@ -3,6 +3,10 @@
 (function(){
 const DRAFT_KEY = 'tu-van';
 const CONTEXT_DRAFT_KEY = 'tu-van-san-pham'; // riêng, KHÔNG bị xoá sau mỗi lần tư vấn (bối cảnh lâu dài)
+// Tăng từ 5 lên 10 (chị Quỳnh yêu cầu 2026-08-29) — gộp nhiều tin nhắn/ảnh rồi gửi 1 lần thay vì
+// mỗi tin 1 lần bấm giúp giảm chi phí thật (phần đắt nhất mỗi lượt là AI soạn kết quả, không phải
+// đọc ảnh — gộp 10 ảnh vào 1 lượt chỉ soạn kết quả 1 lần thay vì 10 lần).
+const MAX_IMAGES = 10;
 
 function render(container, ctx){
   const state = {
@@ -54,7 +58,7 @@ function render(container, ctx){
   }
 
   function handleFiles(files){
-    Array.from(files).slice(0, 5 - state.images.length).forEach((file)=>{
+    Array.from(files).slice(0, MAX_IMAGES - state.images.length).forEach((file)=>{
       const reader = new FileReader();
       reader.onload = ()=>{
         const img = new Image();
@@ -65,7 +69,7 @@ function render(container, ctx){
           const c = document.createElement('canvas');
           c.width = w; c.height = h;
           c.getContext('2d').drawImage(img, 0, 0, w, h);
-          state.images = [...state.images, c.toDataURL('image/jpeg', 0.82)].slice(0, 5);
+          state.images = [...state.images, c.toDataURL('image/jpeg', 0.82)].slice(0, MAX_IMAGES);
           draw();
           persistDraft();
         };
@@ -149,7 +153,7 @@ function render(container, ctx){
       ` : ''}
 
       <div class="card" style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa 5 ảnh)</label>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa ${MAX_IMAGES} ảnh) — gộp nhiều tin lại rồi gửi 1 lần cho đỡ tốn lượt</label>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           ${state.images.map((src,i)=>`
             <div style="position:relative;width:90px;height:90px;">
@@ -157,7 +161,7 @@ function render(container, ctx){
               <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
             </div>
           `).join('')}
-          ${state.images.length<5 ? `<label style="width:90px;height:90px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">+<input type="file" accept="image/*" multiple id="tv-file" style="display:none;"></label>` : ''}
+          ${state.images.length<MAX_IMAGES ? `<label style="width:90px;height:90px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">+<input type="file" accept="image/*" multiple id="tv-file" style="display:none;"></label>` : ''}
         </div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mô tả/ghi chú thêm ${state.images.length?'(không bắt buộc nếu đã có ảnh)':''}</label>
         <textarea id="tv-note" placeholder="VD: khách hỏi giá gói 1 tháng, có vẻ đang phân vân...">${esc(state.note)}</textarea>
