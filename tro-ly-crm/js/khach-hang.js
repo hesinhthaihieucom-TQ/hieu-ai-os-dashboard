@@ -178,58 +178,56 @@ function render(container, ctx){
     </div>`;
   }
 
-  // Cột theo ĐÚNG thứ tự bảng Lark cũ (chị Quỳnh yêu cầu 2026-08-29: cần chi tiết như Lark để còn thu
-  // thập thông tin khách, không phải kiểu thẻ tóm tắt) — bảng cuộn ngang trên màn hẹp, giống hệt cách
-  // Lark Base tự cuộn ngang khi có nhiều cột.
-  const TABLE_COLUMNS = [
-    { key:'ten_khach_hang', label:'Tên khách hàng', minWidth:140 },
-    { key:'giai_doan', label:'Giai đoạn', minWidth:110, nowrap:true },
-    { key:'do_nong', label:'Độ nóng', minWidth:80, nowrap:true },
-    { key:'rao_can', label:'Rào cản', minWidth:150, isArray:true },
-    { key:'giai_phap_phu_hop', label:'Giải pháp phù hợp', minWidth:180 },
-    { key:'lan_tuong_tac_cuoi', label:'Lần tương tác cuối', minWidth:110, nowrap:true },
-    { key:'ngay_follow_tiep', label:'Ngày follow tiếp', minWidth:110, nowrap:true, isFollowDate:true },
-    { key:'hanh_dong_tiep_theo', label:'Hành động tiếp theo', minWidth:170 },
-    { key:'leader_phu_trach', label:'Leader phụ trách', minWidth:120, nowrap:true },
-    { key:'kenh', label:'Kênh', minWidth:90, nowrap:true },
-    { key:'link_lien_he', label:'Link liên hệ', minWidth:150 },
-    { key:'nhom_nhu_cau', label:'Nhóm nhu cầu', minWidth:150, isArray:true },
-    { key:'nhu_cau_cu_the', label:'Nhu cầu cụ thể', minWidth:170 },
-    { key:'van_de_noi_dau', label:'Vấn đề / nỗi đau', minWidth:170 },
-    { key:'gia_tri_du_kien', label:'Giá trị dự kiến', minWidth:120 },
-    { key:'ket_qua', label:'Kết quả', minWidth:150 },
-  ];
-
-  function cellValue(c, col){
-    if(col.isArray) return (c[col.key]||[]).join(', ');
-    if(col.isFollowDate){
-      if(!c.ngay_follow_tiep) return '';
-      const overdue = isOverdue(c), dueToday = isDueToday(c);
-      const badge = overdue ? ' 🔴 Quá hạn' : (dueToday ? ' 🟡 Hôm nay' : '');
-      return c.ngay_follow_tiep + badge;
-    }
-    return c[col.key] || '';
+  // Danh sách dạng THẺ, không kẻ bảng (chị Quỳnh yêu cầu 2026-08-29: dễ nhìn hơn bảng Lark cũ cuộn
+  // ngang nhiều cột) — mỗi thẻ chỉ tóm tắt đúng vài ý quan trọng nhất để lướt nhanh, bấm vào thẻ mở
+  // ra đúng form chi tiết đầy đủ (detailHtml() bên dưới, đã có sẵn từ trước) để xem/sửa hết mọi field.
+  function badgePill(text, bg, color){
+    return `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 10px;border-radius:999px;white-space:nowrap;background:${bg};color:${color};">${esc(text)}</span>`;
+  }
+  function doNongBadge(v){
+    if(!v) return '';
+    const map = { 'Nóng':['#FBEAE5','var(--danger)'], 'Ấm':['#FBF6E9','var(--gold)'], 'Lạnh':['var(--accent-soft)','var(--accent)'] };
+    const [bg,color] = map[v] || ['var(--line)','var(--ink-soft)'];
+    return badgePill(v, bg, color);
+  }
+  function giaiDoanBadge(v){
+    if(!v) return '';
+    if(v==='Chốt' || v==='Đã mua/onboarding') return badgePill(v, 'var(--accent-soft)', 'var(--accent)');
+    if(v==='Mất') return badgePill(v, '#EDEAE0', 'var(--ink-soft)');
+    return badgePill(v, '#FBF6E9', '#8A5A00');
+  }
+  function truncate(s, n){
+    s = String(s||'').trim();
+    return s.length > n ? s.slice(0, n).trim() + '…' : s;
   }
 
-  function tableRowHtml(c){
-    const overdue = isOverdue(c);
-    const dueToday = isDueToday(c);
+  function customerCardHtml(c){
+    const overdue = isOverdue(c), dueToday = isDueToday(c);
+    const painOrNeed = c.van_de_noi_dau || c.nhu_cau_cu_the || '';
+    const followText = c.ngay_follow_tiep
+      ? `${overdue ? '🔴 Quá hạn' : (dueToday ? '🟡 Follow hôm nay' : 'Follow tiếp')} — ${esc(c.ngay_follow_tiep)}`
+      : '';
     return `
-      <tr data-open="${c.id}" style="cursor:pointer;${overdue ? 'background:#FBEAE5;' : (dueToday ? 'background:#FBF3E0;' : '')}">
-        ${TABLE_COLUMNS.map(col=>`<td style="min-width:${col.minWidth}px;${col.nowrap?'white-space:nowrap;':'max-width:240px;white-space:normal;'}">${esc(cellValue(c,col))}</td>`).join('')}
-      </tr>
-    `;
-  }
-
-  function tableHtml(list){
-    return `
-      <div style="overflow-x:auto;">
-        <table class="plan">
-          <thead><tr>${TABLE_COLUMNS.map(col=>`<th>${esc(col.label)}</th>`).join('')}</tr></thead>
-          <tbody>${list.map(tableRowHtml).join('')}</tbody>
-        </table>
+      <div class="list-item" data-open="${c.id}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0;${overdue?'border-color:var(--danger);':(dueToday?'border-color:var(--gold);':'')}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div style="font-size:15.5px;font-weight:700;">${esc(c.ten_khach_hang)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;">
+            ${giaiDoanBadge(c.giai_doan)}
+            ${doNongBadge(c.do_nong)}
+          </div>
+        </div>
+        <div class="meta" style="margin-top:6px;margin-bottom:0;">${[c.kenh, c.leader_phu_trach].filter(Boolean).map(esc).join(' · ')}</div>
+        ${painOrNeed ? `<div style="font-size:13.5px;color:var(--ink);margin-top:8px;line-height:1.5;">${esc(truncate(painOrNeed,140))}</div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:12px;font-family:'IBM Plex Mono',monospace;color:${overdue?'var(--danger)':(dueToday?'var(--gold)':'var(--ink-soft)')};">${followText}</div>
+          ${c.hanh_dong_tiep_theo ? `<div style="font-size:12px;color:var(--ink-soft);text-align:right;">→ ${esc(truncate(c.hanh_dong_tiep_theo,60))}</div>` : ''}
+        </div>
       </div>
     `;
+  }
+
+  function cardListHtml(list){
+    return list.map(customerCardHtml).join('');
   }
 
   function detailHtml(){
@@ -365,7 +363,7 @@ function render(container, ctx){
         ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
           list.length === 0
             ? `<div style="color:var(--ink-soft);font-size:14px;">${state.customers.length === 0 ? 'Chưa có khách hàng nào — bấm "+ Thêm khách" để tạo hồ sơ đầu tiên.' : 'Không tìm thấy khách phù hợp bộ lọc.'}</div>`
-            : tableHtml(list)
+            : cardListHtml(list)
         )}
       </div>
 
