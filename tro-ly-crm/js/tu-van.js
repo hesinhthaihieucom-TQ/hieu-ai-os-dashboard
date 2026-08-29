@@ -20,10 +20,14 @@ function render(container, ctx){
   }
 
   async function boot(){
-    const [draft, sanPhamDraft, { data: cc }] = await Promise.all([
+    // Ưu tiên hồ sơ "Câu Chuyện Của Bạn" riêng của app này (đúng bộ câu hỏi trên landing page) —
+    // chỉ dùng lùi về Định Vị AI (positioning_results, dùng chung Xây Nhân Hiệu) nếu chưa điền hồ sơ
+    // riêng (xem cau-chuyen.js — 2 nguồn không bắt buộc cùng lúc).
+    const [draft, sanPhamDraft, { data: story }, { data: positioning }] = await Promise.all([
       loadModuleDraft(ctx, DRAFT_KEY),
       loadModuleDraft(ctx, CONTEXT_DRAFT_KEY),
-      ctx.supabase.from('positioning_results').select('luot1,luot2').eq('user_id', ctx.user.id).maybeSingle(),
+      ctx.supabase.from('crm_story_profiles').select('*').eq('user_id', ctx.user.id).maybeSingle(),
+      ctx.supabase.from('positioning_results').select('luot1').eq('user_id', ctx.user.id).maybeSingle(),
     ]);
     if(draft){
       state.images = draft.images || [];
@@ -32,7 +36,10 @@ function render(container, ctx){
       state.matchedCustomer = draft.matchedCustomer || null;
     }
     if(sanPhamDraft && sanPhamDraft.text) state.sanPhamText = sanPhamDraft.text;
-    state.cauChuyen = cc || null;
+    const hasStory = story && story.answers && Object.values(story.answers).some(v=>String(v||'').trim());
+    if(hasStory) state.cauChuyen = { nguon:'cau-chuyen', ten: story.ten, zalo: story.zalo, links: story.links, answers: story.answers };
+    else if(positioning && positioning.luot1) state.cauChuyen = { nguon:'dinh-vi', luot1: positioning.luot1 };
+    else state.cauChuyen = null;
     draw();
   }
 
@@ -64,7 +71,7 @@ function render(container, ctx){
   }
 
   function handleFiles(files){
-    Array.from(files).slice(0, 3 - state.images.length).forEach((file)=>{
+    Array.from(files).slice(0, 5 - state.images.length).forEach((file)=>{
       const reader = new FileReader();
       reader.onload = ()=>{
         const img = new Image();
@@ -75,7 +82,7 @@ function render(container, ctx){
           const c = document.createElement('canvas');
           c.width = w; c.height = h;
           c.getContext('2d').drawImage(img, 0, 0, w, h);
-          state.images = [...state.images, c.toDataURL('image/jpeg', 0.82)].slice(0, 3);
+          state.images = [...state.images, c.toDataURL('image/jpeg', 0.82)].slice(0, 5);
           draw();
           persistDraft();
         };
@@ -165,7 +172,7 @@ function render(container, ctx){
       </div>
 
       <div class="card" style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa 3 ảnh)</label>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa 5 ảnh)</label>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           ${state.images.map((src,i)=>`
             <div style="position:relative;width:90px;height:90px;">
@@ -173,7 +180,7 @@ function render(container, ctx){
               <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
             </div>
           `).join('')}
-          ${state.images.length<3 ? `<label style="width:90px;height:90px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">+<input type="file" accept="image/*" multiple id="tv-file" style="display:none;"></label>` : ''}
+          ${state.images.length<5 ? `<label style="width:90px;height:90px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">+<input type="file" accept="image/*" multiple id="tv-file" style="display:none;"></label>` : ''}
         </div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mô tả/ghi chú thêm ${state.images.length?'(không bắt buộc nếu đã có ảnh)':''}</label>
         <textarea id="tv-note" placeholder="VD: khách hỏi giá gói 1 tháng, có vẻ đang phân vân...">${esc(state.note)}</textarea>

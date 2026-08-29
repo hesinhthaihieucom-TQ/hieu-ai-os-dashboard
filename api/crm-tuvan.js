@@ -10,6 +10,21 @@ const { TOOL_TU_VAN_CRM } = require('./_lib/crm-tuvan-schema');
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';
 
+// Nhãn hiển thị cho answers.q1..q20 — PHẢI khớp đúng id trong tro-ly-crm/js/cau-chuyen.js's QUESTIONS
+// (bộ câu hỏi lấy nguyên từ trang-ban-dich-vu.html, không phải bộ câu hỏi Định Vị AI).
+const STORY_QUESTION_LABELS = {
+  q1: 'Công việc hiện tại', q2: 'Bắt đầu từ năm nào', q3: 'Thế mạnh',
+  q4: 'Công việc trước đây', q5: 'Giai đoạn khó khăn đáng nhớ',
+  q6: 'Mô tả giai đoạn khó khăn nhất', q7: 'Từng tự hỏi những câu gì',
+  q8: 'Biết đến công việc/người dẫn dắt qua đâu', q9: 'Điều ấn tượng/quyết định bắt đầu',
+  q10: 'Tình hình lúc quyết định bắt đầu', q11: 'Đã làm gì để nghiêm túc bắt đầu',
+  q12: 'Kết quả đầu tiên', q13: 'Mốc quan trọng tiếp theo',
+  q14: 'Thay đổi lớn nhất ở bản thân', q15: 'Số liệu hiện tại',
+  q16: 'Vấn đề sức khỏe quan tâm', q17: 'Trải nghiệm đồng hành cùng khách hàng',
+  q18: 'Muốn giúp mọi người đạt được điều gì', q19: 'Muốn giúp đối tượng khách hàng nào',
+  q20: 'Vì sao khách nên nghe bạn',
+};
+
 const SYSTEM_PROMPT = `Bạn là TRỢ LÝ AI TƯ VẤN & CRM — làm việc trực tiếp cho người vận hành (không đóng vai người bán, hỗ trợ người vận hành ở vị thế người dẫn dắt). Nhiệm vụ: đọc/hiểu chat tư vấn (ảnh/text), phân tích nỗi đau/mức sẵn sàng, gợi ý câu hỏi/câu chốt đúng quy trình từng nhánh, và xuất dữ liệu để hệ thống tự ghi vào CRM.
 
 NGUYÊN TẮC TƯ VẤN CHUNG (áp dụng mọi nhánh A/B/C/D):
@@ -130,8 +145,19 @@ module.exports = async (req, res) => {
     if (san_pham_dich_vu && String(san_pham_dich_vu).trim()) {
       contextText += `\nTHÔNG TIN SẢN PHẨM/DỊCH VỤ (chỉ dùng đúng giá/gói trong này, không bịa thêm):\n${san_pham_dich_vu.trim()}\n`;
     }
-    if (cau_chuyen && (cau_chuyen.luot1 || cau_chuyen.luot2)) {
-      contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${JSON.stringify(cau_chuyen.luot1 || {}, null, 2)}\n`;
+    if (cau_chuyen && cau_chuyen.nguon === 'cau-chuyen' && cau_chuyen.answers) {
+      const lines = Object.keys(STORY_QUESTION_LABELS).map((id) => {
+        const val = cau_chuyen.answers[id] ? String(cau_chuyen.answers[id]).trim() : '';
+        return val ? `- ${STORY_QUESTION_LABELS[id]}: ${val}` : null;
+      }).filter(Boolean);
+      if (lines.length) {
+        contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${lines.join('\n')}\n`;
+      }
+    } else if (cau_chuyen && cau_chuyen.nguon === 'dinh-vi' && cau_chuyen.luot1) {
+      const cc = cau_chuyen.luot1.cau_chuyen_ca_nhan;
+      if (cc && cc.cau_chuyen) {
+        contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (từ hồ sơ Định Vị AI — dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${cc.cau_chuyen}\n`;
+      }
     }
     if (note && note.trim()) contextText += `\nMÔ TẢ/GHI CHÚ THÊM TỪ NGƯỜI VẬN HÀNH: ${note.trim()}\n`;
     contentBlocks.push({ type: 'text', text: contextText });
