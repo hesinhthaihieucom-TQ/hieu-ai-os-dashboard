@@ -1,10 +1,10 @@
 // Cloudflare Worker đứng trước hesinhthaihieu.com — proxy ngược mỗi path prefix trong ROUTES sang
-// đúng thư mục con tương ứng trên Vercel (ORIGIN_HOST). KHÔNG tự deploy theo git push như phần còn
-// lại của repo này — sửa file này xong phải copy nội dung lên Cloudflare Dashboard > Workers & Pages
-// > Worker này > Edit Code, dán đè rồi bấm Deploy (hoặc dùng `wrangler deploy` nếu đã cấu hình, xem
-// README.md trong thư mục này).
+// đúng thư mục con tương ứng trên Vercel (ORIGIN_HOST). Đã nối Git (2026-08-29, worker
+// "xaynhanhieu-proxy") — sửa file này xong chỉ cần git push lên main, Cloudflare tự deploy, không
+// cần copy/dán tay nữa (xem README.md trong thư mục này).
 //
-// Thêm 1 app mới = thêm đúng 1 dòng vào ROUTES, không đụng gì tới các route đang chạy sẵn.
+// Thêm 1 app mới = thêm đúng 1 dòng vào ROUTES + thêm 1 Cloudflare Route riêng trong Dashboard
+// (Domains tab của worker này) — bước Route vẫn phải bấm tay, không đụng gì tới các route đang chạy sẵn.
 export default {
   async fetch(request) {
     const ORIGIN_HOST = 'hieu-ai-os-dashboard.vercel.app';
