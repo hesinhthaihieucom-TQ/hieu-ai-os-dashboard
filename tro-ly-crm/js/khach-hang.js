@@ -125,7 +125,7 @@ function render(container, ctx){
     };
     const payload = {
       ten_khach_hang: f.ten_khach_hang.trim(), leader_phu_trach: f.leader_phu_trach.trim() || null, kenh: f.kenh.trim() || null,
-      link_lien_he: f.link_lien_he.trim() || null, nhanh: f.nhanh || null,
+      link_lien_he: f.link_lien_he.trim() || null,
       nhom_nhu_cau: f.nhom_nhu_cau.split(',').map(s => s.trim()).filter(Boolean),
       nhu_cau_cu_the: f.nhu_cau_cu_the.trim() || null, van_de_noi_dau: f.van_de_noi_dau.trim() || null,
       giai_doan: f.giai_doan.trim() || null, do_nong: f.do_nong.trim() || null,
@@ -280,16 +280,6 @@ function render(container, ctx){
             ${field('leader_phu_trach', 'Leader phụ trách', f.leader_phu_trach, 'text')}
             ${field('kenh', 'Kênh', f.kenh, 'text')}
             ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text')}
-            <div>
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhánh</label>
-              <select id="kh-detail-nhanh" style="margin-top:6px;">
-                <option value="" ${!f.nhanh?'selected':''}>(chưa rõ)</option>
-                <option value="A" ${f.nhanh==='A'?'selected':''}>A — HIỂU MẠNH (Sức khỏe)</option>
-                <option value="B" ${f.nhanh==='B'?'selected':''}>B — HIỂU HẠNH (Tâm linh/Tài chính/PT bản thân)</option>
-                <option value="C" ${f.nhanh==='C'?'selected':''}>C — HIỂU KÊNH (Nhân hiệu/Content/KD online)</option>
-                <option value="D" ${f.nhanh==='D'?'selected':''}>D — Kinh doanh/Đối tác</option>
-              </select>
-            </div>
             <div>
               <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
               <input type="text" data-field="do_nong" value="${esc(f.do_nong)}" list="kh-do-nong-options" style="margin-top:6px;">
@@ -457,10 +447,6 @@ function render(container, ctx){
       container.querySelectorAll('#kh-detail-overlay [data-field]').forEach(el => {
         el.oninput = (e) => { state.detail.editForm[el.getAttribute('data-field')] = e.target.value; };
       });
-      const nhanhSelect = container.querySelector('#kh-detail-nhanh');
-      // Đổi nhánh cần vẽ lại (khác các input text khác) vì khối FORM-HD chỉ hiện khi nhanh='D' —
-      // select không có vấn đề mất con trỏ gõ dở như input/textarea nên vẽ lại ngay không sao.
-      if(nhanhSelect) nhanhSelect.onchange = (e) => { state.detail.editForm.nhanh = e.target.value; draw(); };
       const saveBtn = container.querySelector('#kh-detail-save');
       if(saveBtn) saveBtn.onclick = saveDetail;
       const delBtn = container.querySelector('#kh-detail-delete');
