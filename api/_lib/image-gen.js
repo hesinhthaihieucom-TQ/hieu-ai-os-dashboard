@@ -29,13 +29,24 @@ const { Resvg } = require('@resvg/resvg-js');
 const IMAGE_SIZE = 1024;
 
 const FONT_DIR = path.join(__dirname, 'fonts');
-// Nạp font TRỰC TIẾP từ file gốc (TTF thật lấy từ kho google/fonts, không phải bản .woff2 cắt nhỏ
-// theo subset của Google Fonts CDN — file gốc có ĐỦ mọi glyph, kể cả tiếng Việt, trong 1 file duy
-// nhất). resvg đọc font-family theo đúng tên THẬT lưu trong file (vd "Playfair Display"), không phải
-// tên tự đặt như CSS @font-face — khai báo font-family trong SVG bên dưới phải khớp đúng tên gốc.
+// Nạp font TRỰC TIẾP từ file TTF TĨNH, MỖI FONT ĐÚNG 1 FILE DUY NHẤT (không tách latin/vietnamese
+// làm 2 file như Google Fonts CDN hay .woff2 của @fontsource) — 2 bài học rút ra khi debug bug chị
+// Quỳnh phát hiện "chữ không đúng 1 trong 4 mẫu":
+// (1) resvg KHÔNG áp dụng font-weight/font-variation-settings cho VARIABLE font — luôn vẽ ở weight
+//     mặc định của file bất kể khai báo gì trong SVG, khiến Oswald/Playfair Display (chỉ có bản
+//     variable trên kho gốc google/fonts) bị đo/vẽ MỎNG hơn thật ~15-20% → xuống dòng/bố cục lệch
+//     hẳn so với bản gốc tao-anh.js (Canvas 2D đo đúng weight thật).
+// (2) resvg chỉ nạp được ttf/otf, không đọc được woff/woff2 — và khi thử 2 file TĨNH tách riêng
+//     latin/vietnamese (từ gói npm @fontsource, convert .woff2 sang .ttf bằng fonttools) để lách bug
+//     (1), lại ra bug KHÁC: 1 vài dấu tiếng Việt (đ, ằ, ờ...) bị mất hẳn (ô vuông) — nghi resvg không
+//     gộp glyph qua nhiều file cùng family/weight như trình duyệt, chỉ ưu tiên 1 file.
+// Cách xử lý đúng: lấy bản VARIABLE gốc (đủ glyph, 1 file duy nhất) rồi TỰ instance về đúng 1 weight
+// tĩnh bằng `fonttools varLib.instancer` (Python) — vừa giữ ĐỦ GLYPH gốc, vừa ra đúng weight tĩnh
+// resvg vẽ đúng. Riêng Be Vietnam Pro vốn đã có sẵn file tĩnh gốc (không phải variable) ở kho
+// google/fonts nên giữ nguyên, không cần qua bước này.
 const FONT_FILES = [
-  path.join(FONT_DIR, 'PlayfairDisplay-Variable.ttf'),
-  path.join(FONT_DIR, 'Oswald-Variable.ttf'),
+  path.join(FONT_DIR, 'PlayfairDisplay-800.ttf'),
+  path.join(FONT_DIR, 'Oswald-700.ttf'),
   path.join(FONT_DIR, 'BeVietnamPro-Bold.ttf'),
   path.join(FONT_DIR, 'BeVietnamPro-MediumItalic.ttf'),
 ];
@@ -244,19 +255,21 @@ async function compositeCaseStudyImage({ personalImageBuffer, caseStudyImageBuff
 // renderPersonalTemplateImage — bản server-side của 4 "Bố cục chữ" ở Tạo Ảnh Thương Hiệu
 // ============================================================
 
-// Giữ đúng key/label/decor như LAYOUTS ở nhan-hieu/js/tao-anh.js (đồng bộ tay — file đó chạy trong
-// trình duyệt, không import chung được). zoneTop/zoneBottom là % chiều cao ảnh dành cho khối chữ.
+// Giữ ĐÚNG y hệt các hằng số zoneTop/zoneBottom/baseFontSize/minFontSize/gradStart/gradEnd/padding
+// từ LAYOUTS + paintDesign() ở nhan-hieu/js/tao-anh.js (copy tay từng số — file đó chạy trong trình
+// duyệt bằng Canvas 2D, không import chung được). CANVAS_W ở tao-anh.js = 1080 = TEMPLATE_W ở đây
+// nên scale=1, không cần nhân thêm hệ số nào — copy nguyên số là khớp.
 const TEMPLATE_LAYOUTS = [
-  { key: 'bottom-center', align: 'center', decor: 'gradient-bottom', textPos: 'bottom', zoneTop: 0.42, zoneBottom: 0.86, fontSize: 52 },
-  { key: 'top-center', align: 'center', decor: 'gradient-top', textPos: 'top', zoneTop: 0.08, zoneBottom: 0.46, fontSize: 48 },
-  { key: 'quote-left', align: 'left', decor: 'accent-bar', textPos: 'middle', zoneTop: 0.28, zoneBottom: 0.74, fontSize: 42 },
-  { key: 'caption-bar', align: 'center', decor: 'solid-bar', textPos: 'bottom', zoneTop: 0.66, zoneBottom: 0.95, fontSize: 38 },
+  { key: 'bottom-center', align: 'center', decor: 'gradient-bottom', textPos: 'bottom', zoneTop: 0.40, zoneBottom: 0.86, baseFontSize: 58, minFontSize: 24 },
+  { key: 'top-center', align: 'center', decor: 'gradient-top', textPos: 'top', zoneTop: 0.07, zoneBottom: 0.46, baseFontSize: 54, minFontSize: 22 },
+  { key: 'quote-left', align: 'left', decor: 'accent-bar', textPos: 'middle', zoneTop: 0.26, zoneBottom: 0.74, baseFontSize: 46, minFontSize: 20 },
+  { key: 'caption-bar', align: 'center', decor: 'solid-bar', textPos: 'bottom', zoneTop: 0.60, zoneBottom: 0.97, baseFontSize: 44, minFontSize: 18 },
 ];
 // family: PHẢI đúng tên thật lưu trong file font (resvg đọc theo tên gốc, không phải tên tự đặt).
 const TEMPLATE_FONTS = [
-  { key: 'oswald', family: 'Oswald', weight: 700, widthFactor: 0.56 },
-  { key: 'playfair', family: 'Playfair Display', weight: 800, widthFactor: 0.62 },
-  { key: 'bevietnam', family: 'Be Vietnam Pro', weight: 700, widthFactor: 0.56 },
+  { key: 'oswald', family: 'Oswald', weight: 700 },
+  { key: 'playfair', family: 'Playfair Display', weight: 800 },
+  { key: 'bevietnam', family: 'Be Vietnam Pro', weight: 700 },
 ];
 // Cố định luôn 1 màu vàng cho chữ nhấn (theo yêu cầu chị Quỳnh 2026-08-29: "chữ nổi luôn là màu
 // vàng, không phải màu cam") — khớp đúng màu "Vàng cam" mặc định ở tao-anh.js, KHÔNG random qua các
@@ -269,6 +282,26 @@ const TEMPLATE_ACCENT_COLOR = '#FFC93C';
 const TEMPLATE_W = 1080;
 const TEMPLATE_H = 1350;
 
+// Đo độ rộng chữ THẬT bằng chính font đã nạp (không còn ước lượng theo số ký tự nữa — bản trước ước
+// lượng sai với Oswald/Playfair làm bố cục lệch hẳn so với bản gốc tao-anh.js, chị Quỳnh phát hiện ra
+// "chữ nhấn/xuống dòng không đúng 4 mẫu"). Vẽ 1 SVG chỉ có đúng chữ đó rồi đọc bounding box thật qua
+// resvg getBBox() — đo 1 lần ở size 100 rồi tự suy ra size khác bằng tỉ lệ thẳng (độ rộng font tỉ lệ
+// thuận tuyệt đối với cỡ chữ, đã tự kiểm chứng bằng số đo thực tế trước khi viết hàm này). Cache theo
+// text+family+weight vì cùng 1 tiêu đề sẽ đo lại nhiều từ giống nhau qua các bước wrap/fit.
+const _measureCache = new Map();
+function measureWidthAt100(text, family, weight) {
+  const key = `${family}|${weight}|${text}`;
+  if (_measureCache.has(key)) return _measureCache.get(key);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="100" font-family="${family}" font-weight="${weight}" font-size="100">${escapeXml(text)}</text></svg>`;
+  const bbox = new Resvg(svg, { font: { loadSystemFonts: false, fontFiles: FONT_FILES } }).getBBox();
+  const w = bbox ? bbox.width : 0;
+  _measureCache.set(key, w);
+  return w;
+}
+function textWidth(text, family, weight, fontSize) {
+  return measureWidthAt100(text, family, weight) * (fontSize / 100);
+}
+
 // Tách theo **...** để biết từ nào tô màu nhấn — y hệt parseWords() ở tao-anh.js.
 function parseTemplateWords(text) {
   const segments = String(text || '').split('**');
@@ -280,45 +313,60 @@ function parseTemplateWords(text) {
   return words;
 }
 
-// Wrap thô theo số ký tự (không đo chữ thật như ctx.measureText bên Canvas — chấp nhận sai số nhỏ,
-// đủ dùng cho tiêu đề ngắn kiểu hook/content).
-function wrapTemplateWords(words, maxCharsPerLine, maxLines) {
+// Y hệt wrapWords() ở tao-anh.js — greedy wrap dùng độ rộng chữ THẬT, không giới hạn số dòng cứng
+// (khác bản cũ hay bị CẮT MẤT chữ khi quá 4 dòng — tao-anh.js không bao giờ làm mất nội dung, chỉ
+// dựa vào fitTitle() thu nhỏ cỡ chữ dần để hạn chế tràn).
+function wrapTemplateWords(words, maxWidthPx, family, weight, fontSize) {
+  const spaceWidth = textWidth(' ', family, weight, fontSize);
   const lines = [];
   let current = [];
-  let currentLen = 0;
-  for (const w of words) {
-    const addLen = current.length ? w.text.length + 1 : w.text.length;
-    if (currentLen + addLen > maxCharsPerLine && current.length) {
+  let currentWidth = 0;
+  words.forEach((w) => {
+    const wWidth = textWidth(w.text, family, weight, fontSize);
+    const addWidth = current.length ? spaceWidth + wWidth : wWidth;
+    if (currentWidth + addWidth > maxWidthPx && current.length) {
       lines.push(current);
-      if (lines.length >= maxLines) return lines;
-      current = [w]; currentLen = w.text.length;
-    } else { current.push(w); currentLen += addLen; }
-  }
-  if (current.length && lines.length < maxLines) lines.push(current);
+      current = [w];
+      currentWidth = wWidth;
+    } else { current.push(w); currentWidth += addWidth; }
+  });
+  if (current.length) lines.push(current);
   return lines;
+}
+
+// Y hệt fitTitle() ở tao-anh.js — thu nhỏ dần fontSize (bước 2px) tới khi khối chữ vừa maxHeight,
+// hoặc chạm minFontSize thì dừng (chấp nhận tràn nhẹ còn hơn chữ nhỏ tới mức không đọc được).
+function fitTemplateTitle(title, { maxWidthPx, maxHeight, baseFontSize, minFontSize, family, weight }) {
+  const words = parseTemplateWords(title);
+  let fontSize = baseFontSize;
+  let lines, lineHeight;
+  while (true) {
+    lines = wrapTemplateWords(words, maxWidthPx, family, weight, fontSize);
+    lineHeight = Math.round(fontSize * 1.2);
+    const blockHeight = Math.max(lines.length, 1) * lineHeight;
+    if (blockHeight <= maxHeight || fontSize <= minFontSize) break;
+    fontSize -= 2;
+  }
+  return { fontSize, lineHeight, lines };
 }
 
 function templateOverlaySvg({ title, handle, layout, font }) {
   const colorHex = TEMPLATE_ACCENT_COLOR;
-  const marginX = 56;
+  const marginX = 64;
   const isAccent = layout.decor === 'accent-bar';
   const maxWidthPx = TEMPLATE_W - marginX * 2 - (isAccent ? 24 : 0);
-
-  const titleLen = String(title || '').replace(/\*\*/g, '').length;
-  let fontSize = layout.fontSize;
-  if (titleLen > 50) fontSize -= 8;
-  if (titleLen > 90) fontSize -= 8;
-
-  const avgCharWidth = fontSize * font.widthFactor;
-  const maxCharsPerLine = Math.max(8, Math.floor(maxWidthPx / avgCharWidth));
-  const lines = wrapTemplateWords(parseTemplateWords(title), maxCharsPerLine, 4);
-  const lineHeight = Math.round(fontSize * 1.25);
-  const blockHeight = Math.max(lines.length, 1) * lineHeight;
-
-  const handleFontSize = 26;
+  // handleFontSize: y hệt tao-anh.js — "Math.round((layout.decor==='solid-bar' ? 24 : 30) * scale)".
+  const handleFontSize = layout.decor === 'solid-bar' ? 24 : 30;
   const handleGap = 14;
   const zoneTopPx = layout.zoneTop * TEMPLATE_H;
   const zoneBottomPx = layout.zoneBottom * TEMPLATE_H;
+  const availableHeight = Math.max((zoneBottomPx - zoneTopPx) - handleFontSize - handleGap, layout.minFontSize * 1.2);
+
+  const { fontSize, lineHeight, lines } = fitTemplateTitle(title, {
+    maxWidthPx, maxHeight: availableHeight, baseFontSize: layout.baseFontSize, minFontSize: layout.minFontSize,
+    family: font.family, weight: font.weight,
+  });
+  const blockHeight = Math.max(lines.length, 1) * lineHeight;
 
   let startY;
   if (layout.textPos === 'bottom') startY = (zoneBottomPx - handleFontSize - handleGap) - (lines.length - 1) * lineHeight;
@@ -327,12 +375,14 @@ function templateOverlaySvg({ title, handle, layout, font }) {
 
   let decorSvg = '';
   if (layout.decor === 'gradient-bottom') {
-    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0"/><stop offset="1" stop-color="black" stop-opacity="0.8"/></linearGradient></defs><rect x="0" y="${0.42 * TEMPLATE_H}" width="${TEMPLATE_W}" height="${TEMPLATE_H - 0.42 * TEMPLATE_H}" fill="url(#g)"/>`;
+    const gradStart = 0.42 * TEMPLATE_H;
+    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0"/><stop offset="1" stop-color="black" stop-opacity="0.8"/></linearGradient></defs><rect x="0" y="${gradStart}" width="${TEMPLATE_W}" height="${TEMPLATE_H - gradStart}" fill="url(#g)"/>`;
   } else if (layout.decor === 'gradient-top') {
-    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0.65"/><stop offset="1" stop-color="black" stop-opacity="0"/></linearGradient></defs><rect x="0" y="0" width="${TEMPLATE_W}" height="${0.48 * TEMPLATE_H}" fill="url(#g)"/>`;
+    const gradEnd = 0.48 * TEMPLATE_H;
+    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0.65"/><stop offset="1" stop-color="black" stop-opacity="0"/></linearGradient></defs><rect x="0" y="0" width="${TEMPLATE_W}" height="${gradEnd}" fill="url(#g)"/>`;
   } else if (layout.decor === 'solid-bar') {
-    const padding = 26;
-    const barHeight = Math.min(Math.max(blockHeight + handleFontSize + handleGap + padding * 2, 0.18 * TEMPLATE_H), 0.42 * TEMPLATE_H);
+    const padding = 28;
+    const barHeight = Math.min(Math.max(blockHeight + handleFontSize + handleGap + padding * 2, 0.16 * TEMPLATE_H), 0.40 * TEMPLATE_H);
     decorSvg = `<rect x="0" y="${TEMPLATE_H - barHeight}" width="${TEMPLATE_W}" height="${barHeight}" fill="rgba(10,12,10,0.9)"/>`;
     startY = (TEMPLATE_H - padding - handleFontSize - handleGap) - (lines.length - 1) * lineHeight;
   } else if (layout.decor === 'accent-bar') {
@@ -341,15 +391,14 @@ function templateOverlaySvg({ title, handle, layout, font }) {
     decorSvg = `<rect x="${marginX - 22}" y="${boxTop}" width="${maxWidthPx + 40}" height="${boxHeight}" fill="rgba(8,10,8,0.5)"/><rect x="${marginX - 22}" y="${boxTop}" width="6" height="${boxHeight}" fill="${colorHex}"/>`;
   }
 
-  // Chỉ đặt x/y (vị trí tuyệt đối) cho tspan ĐẦU dòng — các tspan sau trong CÙNG dòng để trống x,
-  // cho renderer tự nối tiếp bằng độ rộng chữ THẬT (đo chính xác hơn avgCharWidth ước lượng nhiều) —
-  // đặt x cho từng tspan theo avgCharWidth làm khoảng cách giữa các từ bị lệch/dính liền nhau (chữ
-  // hoa/đậm thường rộng hơn ước lượng, cộng dồn sai số qua từng từ — đã tự kiểm chứng lúc code).
-  // avgCharWidth chỉ còn dùng để ước lượng độ rộng CẢ DÒNG (canh giữa), sai số nhỏ ở đây không đáng kể.
+  // Chỉ đặt x/y (vị trí tuyệt đối) cho tspan ĐẦU dòng — các tspan sau trong CÙNG dòng để trống x, cho
+  // renderer tự nối tiếp bằng độ rộng chữ THẬT của chính nó (không cộng dồn sai số qua từng từ như
+  // cách đặt x riêng từng tspan trước đây). startX (để canh giữa) vẫn cần biết độ rộng CẢ DÒNG — giờ
+  // đo thật bằng textWidth() thay vì ước lượng.
   const linesSvg = lines.map((line, i) => {
     const y = startY + i * lineHeight;
-    const totalChars = line.reduce((sum, w, idx) => sum + w.text.length + (idx > 0 ? 1 : 0), 0);
-    const lineWidthPx = totalChars * avgCharWidth;
+    const lineText = line.map((w) => w.text).join(' ');
+    const lineWidthPx = textWidth(lineText, font.family, font.weight, fontSize);
     const startX = layout.align === 'center' ? (TEMPLATE_W - lineWidthPx) / 2 : marginX;
     return line.map((w, idx) => {
       const txt = escapeXml(w.text) + (idx < line.length - 1 ? ' ' : '');
@@ -361,7 +410,7 @@ function templateOverlaySvg({ title, handle, layout, font }) {
   }).join('');
 
   const handleY = startY + (lines.length - 1) * lineHeight + lineHeight * 0.62;
-  const handleWidthPx = String(handle || '').length * handleFontSize * 0.5;
+  const handleWidthPx = handle ? textWidth(handle, 'Be Vietnam Pro', 500, handleFontSize) : 0;
   const handleX = layout.align === 'center' ? (TEMPLATE_W - handleWidthPx) / 2 : marginX;
 
   return `<svg width="${TEMPLATE_W}" height="${TEMPLATE_H}" xmlns="http://www.w3.org/2000/svg">
