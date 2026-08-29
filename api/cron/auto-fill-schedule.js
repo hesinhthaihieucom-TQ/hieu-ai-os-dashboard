@@ -117,6 +117,18 @@ function vnDateStr(offsetDays) {
   return vn.toISOString().slice(0, 10);
 }
 
+// Chị Quỳnh chốt 2026-08-29: sáng Chủ Nhật muốn thấy lấp sẵn HẾT lịch tuần tới, không phải trickle
+// 3 ngày/lượt như ngày thường — mở rộng tầm nhìn lên nguyên 1 tuần đúng ngày Chủ Nhật (giờ VN), các
+// ngày khác giữ nguyên cửa sổ 3 ngày cũ. Cron giờ chạy mỗi 3 tiếng thay vì 1 lần/ngày (xem
+// vercel.json) để phần lấp mở rộng này thật sự lấp XONG hết trong ngày Chủ Nhật thay vì phải đợi cả
+// tuần cửa sổ 3 ngày cũ mới trôi dần tới — không tốn thêm chi phí AI vì tổng số ô cần lấp/tuần không
+// đổi, chỉ đổi tốc độ lấp.
+function isVnSunday() {
+  const vn = new Date(Date.now() + 7 * 3600 * 1000);
+  return vn.getUTCDay() === 0;
+}
+const SUNDAY_LOOKAHEAD_DAYS = 8; // hôm nay (Chủ Nhật, phòng hờ) + trọn 7 ngày tuần tới
+
 async function loadCandidatePool(userId) {
   const [hp, hs, cp, cs] = await Promise.all([
     supabaseAdmin(`hooks_bank_personal?user_id=eq.${userId}&select=id,hook_text,category,tags&order=created_at.desc`),
@@ -412,7 +424,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
 }
 
 async function autoFillForAdmin(admin, apiKey) {
-  const dateStrs = Array.from({ length: LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
+  const dateStrs = Array.from({ length: isVnSunday() ? SUNDAY_LOOKAHEAD_DAYS : LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
   const emptySlots = await findEmptySlots(admin.id, dateStrs, 'fanpage', [FANPAGE_DAILY_SLOT]);
   const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN);
   const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN);
@@ -451,7 +463,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
     .filter((p) => p.source_table && p.source_id)
     .map((p) => ({ table: p.source_table, id: p.source_id }));
 
-  const dateStrs = Array.from({ length: LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
+  const dateStrs = Array.from({ length: isVnSunday() ? SUNDAY_LOOKAHEAD_DAYS : LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
   const emptySlots = await findEmptySlots(admin.id, dateStrs, 'ca_nhan', PERSONAL_SLOTS);
   const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN_PERSONAL);
   const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN_PERSONAL);
