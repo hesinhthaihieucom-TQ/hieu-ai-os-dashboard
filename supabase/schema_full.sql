@@ -1686,3 +1686,142 @@ create policy "personal_photos_owner_all" on personal_photos for all using (auth
 -- AI/bài. Mặc định 'top-right' (khớp hành vi cũ trước khi có cột này).
 alter table personal_photos add column if not exists card_corner text not null default 'top-right'
   check (card_corner in ('top-right','top-left','bottom-right','bottom-left'));
+
+-- Phase 8 (2026-08-28) — chị Quỳnh chốt kiến trúc 3 lớp CTA: bài chính (không link) → cmt ghim ngay
+-- (không link) → cmt kèm link thật SAU 2 TIẾNG (không phải ngay lập tức nữa) → tự trả lời + nhắn tin
+-- riêng cho ai bình luận đúng từ khoá. cta_link_comment_at đánh dấu đã đăng cmt kèm link (null = chưa).
+alter table calendar_entries add column if not exists cta_link_comment_at timestamptz;
+
+-- Chống trả lời/nhắn tin trùng lặp cho cùng 1 comment nếu cron (chạy mỗi 15 phút) bắt lại đúng comment
+-- đó nhiều lần trước khi Facebook xoá nó khỏi danh sách /comments.
+create table if not exists fb_comment_replies (
+  id uuid primary key default gen_random_uuid(),
+  calendar_entry_id uuid not null references calendar_entries(id) on delete cascade,
+  fb_comment_id text not null unique,
+  replied_at timestamptz not null default now()
+);
+-- Bật RLS, KHÔNG thêm policy nào — chỉ cron (service_role, luôn bypass RLS) đụng bảng này, khoá hẳn
+-- client (anon/authenticated) không đọc/ghi được gì, vì bảng này thuần phụ trợ cho cron, không hiển
+-- thị ở app phía nào.
+alter table fb_comment_replies enable row level security;
+
+-- ============================================================
+-- TRỢ LÝ AI TƯ VẤN & CRM (tro-ly-crm/, 2026-08-29) — app RIÊNG, sản phẩm bán theo tháng/6
+-- tháng/năm, thay thế luồng ChatGPT Custom GPT + Lark Base thủ công trước đây. Đăng ký/đăng nhập
+-- Supabase ĐỘC LẬP (giống suc-khoe/) — dùng CHUNG project với nhan-hieu/tai-chinh/suc-khoe nên nếu
+-- khách đăng nhập đúng email đã dùng ở Xây Nhân Hiệu, user_id trùng tự nhiên, đọc lại được
+-- positioning_results (hồ sơ "câu chuyện") mà không cần code gì thêm để "share" tài khoản.
+create table if not exists crm_customers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  ten_khach_hang text not null,
+  leader_phu_trach text,
+  kenh text,
+  link_lien_he text,
+  nhom_nhu_cau text[] not null default '{}',
+  nhu_cau_cu_the text,
+  van_de_noi_dau text,
+  giai_doan text,
+  do_nong text,
+  rao_can text[] not null default '{}',
+  giai_phap_phu_hop text,
+  lan_tuong_tac_cuoi date,
+  ngay_follow_tiep date,
+  hanh_dong_tiep_theo text,
+  gia_tri_du_kien text,
+  ket_qua text,
+  ghi_chu_ai text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists crm_customers_user_idx on crm_customers(user_id);
+-- Không có unique constraint theo tên/link — trùng tên là bình thường (nhiều khách tên giống nhau),
+-- việc phân biệt "có phải cùng 1 khách không" do AI hỏi lại người vận hành khi chưa chắc (đúng
+-- nguyên tắc "không tự gộp/tạo trùng" trong prompt gốc), không suy luận cứng bằng constraint DB.
+
+create table if not exists crm_interactions (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references crm_customers(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  ten_tuong_tac text,
+  thoi_gian date not null default current_date,
+  kenh text,
+  noi_dung text,
+  thong_tin_moi text,
+  nhu_cau_noi_dau text,
+  phan_doi_rao_can text,
+  hanh_dong_da_thuc_hien text,
+  ket_qua text,
+  buoc_tiep_theo text,
+  ngay_follow_tiep date,
+  created_at timestamptz not null default now()
+);
+create index if not exists crm_interactions_customer_idx on crm_interactions(customer_id, created_at desc);
+
+alter table crm_customers enable row level security;
+alter table crm_interactions enable row level security;
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['crm_customers','crm_interactions']
+  loop
+    execute format('drop policy if exists "%1$s_owner_all" on %1$s', t);
+    execute format('create policy "%1$s_owner_all" on %1$s for all using (auth.uid() = user_id) with check (auth.uid() = user_id)', t);
+  end loop;
+end $$;
+
+-- Thanh toán RIÊNG sản phẩm này — KHÔNG dùng chung has_paid/access_until (Xây Nhân Hiệu) hay
+-- tc_has_paid (Sổ Dòng Tiền) vì đây là 1 gói/hạn dùng khác hoàn toàn. Không giới hạn lượt AI/tháng
+-- (chị Quỳnh chốt 2026-08-29) — chỉ khoá theo crm_access_until, không cần cột đếm lượt riêng.
+alter table profiles add column if not exists crm_has_paid boolean not null default false;
+alter table profiles add column if not exists crm_access_until timestamptz;
+alter table profiles add column if not exists crm_plan_days integer;
+-- Đánh dấu lần đầu vào app này (lọc đúng người ở Quản Trị > Thành viên, giống sk_first_visited_at).
+alter table profiles add column if not exists crm_first_visited_at timestamptz;
+
+create or replace function public.mark_crm_first_visit()
+returns void as $$
+begin
+  update public.profiles set crm_first_visited_at = now() where id = auth.uid() and crm_first_visited_at is null;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_crm_first_visit() to authenticated;
+
+-- Mã tham chiếu chuyển khoản RIÊNG (tiền tố "CRM") — KHÔNG dùng chung ref_code (đã gắn cứng tiền tố
+-- "XNH" từ handle_new_user) vì chị Quỳnh chốt 2026-08-29: sản phẩm này cần tiền tố riêng để tránh
+-- tình trạng phải luôn rà số tiền cho khỏi trùng giữa các sản phẩm (xem AMOUNT_TO_DAYS ở
+-- api/sepay-webhook.js) — về sau thêm gói giá nào cũng an toàn vì webhook phân biệt sản phẩm qua
+-- ĐÚNG tiền tố trước, chỉ dùng số tiền để tính số ngày SAU KHI đã biết chắc là sản phẩm nào.
+-- Sinh LƯỜI (chỉ khi khách vào trang Nâng Cấp lần đầu) thay vì cấp sẵn cho mọi profile như ref_code,
+-- vì không phải ai trong hệ thống cũng dùng sản phẩm này.
+alter table profiles add column if not exists crm_ref_code text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_crm_ref_code_unique') then
+    alter table profiles add constraint profiles_crm_ref_code_unique unique (crm_ref_code);
+  end if;
+end $$;
+
+create or replace function public.get_or_create_crm_ref_code()
+returns text as $$
+declare
+  v_code text;
+begin
+  select crm_ref_code into v_code from public.profiles where id = auth.uid();
+  if v_code is not null then
+    return v_code;
+  end if;
+  loop
+    v_code := 'CRM' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
+    begin
+      update public.profiles set crm_ref_code = v_code where id = auth.uid();
+      exit;
+    exception when unique_violation then
+      -- trùng cực hiếm (gen_random_uuid va chạm) — thử lại với mã khác
+    end;
+  end loop;
+  return v_code;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.get_or_create_crm_ref_code() to authenticated;

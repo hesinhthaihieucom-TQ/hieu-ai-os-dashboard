@@ -1,10 +1,11 @@
 // Serverless function — nhận webhook từ SePay mỗi khi có giao dịch vào tài khoản Vietinbank
-// dùng chung cho CẢ Xây Nhân Hiệu lẫn Sổ Dòng Tiền Tâm Thức (2026-08-23, chị Quỳnh chỉ có 1 tài
-// khoản ngân hàng thật), tự đối chiếu mã tham chiếu (ref_code) trong nội dung chuyển khoản và số
-// tiền, rồi tự gia hạn access_until (nhan-hieu) hoặc bật tc_has_paid (tai-chinh) cho đúng tài khoản
-// — không cần admin bấm tay. Phân biệt ĐÚNG sản phẩm nào đang được thanh toán CHỈ qua số tiền
-// chuyển khoản (xem AMOUNT_TO_DAYS/TC_LIFETIME_AMOUNTS bên dưới — 2 tập số tiền không được trùng
-// nhau), vì ref_code dùng chung 1 định dạng cho cả 2 sản phẩm.
+// dùng chung cho Xây Nhân Hiệu, Sổ Dòng Tiền Tâm Thức, Sản Phẩm Số VÀ Trợ Lý AI Tư Vấn & CRM
+// (2026-08-29, chị Quỳnh chỉ có 1 tài khoản ngân hàng thật), tự đối chiếu mã tham chiếu (ref_code)
+// trong nội dung chuyển khoản và số tiền, rồi tự gia hạn access_until (nhan-hieu)/bật tc_has_paid
+// (tai-chinh)/gia hạn crm_access_until (tro-ly-crm) cho đúng tài khoản — không cần admin bấm tay.
+// Nhan-hieu/tai-chinh phân biệt sản phẩm CHỈ qua số tiền (ref_code dùng chung định dạng "XNH...")
+// — 2 tập số tiền đó không được trùng nhau. tro-ly-crm dùng CỘT + TIỀN TỐ ref_code riêng ("CRM...",
+// xem extractCrmRefCode) nên số tiền của nó ĐƯỢC PHÉP trùng nhan-hieu, không cần rà số tiền nữa.
 //
 // Bảo mật: xác thực bằng header "Authorization: Apikey <SEPAY_WEBHOOK_APIKEY>" (khớp đúng
 // method "API Key" cấu hình trong SePay dashboard khi tạo webhook). Dùng SUPABASE_SERVICE_ROLE_KEY
@@ -139,6 +140,21 @@ function extractProductOrderRefCode(content) {
   const m = /SPS[A-Z0-9]{6,}/i.exec(content || '');
   return m ? m[0].toUpperCase() : null;
 }
+
+// Trợ Lý AI Tư Vấn & CRM (tro-ly-crm/, 2026-08-29) — gắn với 1 profile (khác SPS ở trên) nhưng
+// dùng CỘT RIÊNG profiles.crm_ref_code (tiền tố "CRM"), không đụng ref_code "XNH" của nhan-hieu —
+// chị Quỳnh chốt dùng tiền tố riêng để không phải rà số tiền cho khỏi trùng giữa các sản phẩm nữa
+// (xem CRM_AMOUNT_TO_DAYS bên dưới — được PHÉP trùng số với AMOUNT_TO_DAYS vì tiền tố đã phân biệt
+// sản phẩm trước khi so số tiền).
+function extractCrmRefCode(content) {
+  const m = /CRM[A-Z0-9]{6}/i.exec(content || '');
+  return m ? m[0].toUpperCase() : null;
+}
+const CRM_AMOUNT_TO_DAYS = {
+  499000: 30,    // 1 tháng
+  2490000: 180,  // 6 tháng
+  3990000: 365,  // 1 năm
+};
 
 // Thưởng người ĐÃ giới thiệu (referrer) khi người ĐƯỢC giới thiệu (referee) vừa thanh toán thành
 // công giá giới thiệu lần ĐẦU TIÊN — best-effort, KHÔNG throw ra ngoài: nếu bước này lỗi, referee
@@ -298,6 +314,7 @@ module.exports = async (req, res) => {
     // Chỉ thử nhận diện mã đơn Sản Phẩm Số nếu KHÔNG khớp mã XNH — 2 định dạng không thể cùng khớp
     // 1 nội dung chuyển khoản thật (tiền tố khác nhau), nhưng giữ if/else rõ ràng cho dễ đọc.
     const productOrderRefCode = !refCode ? extractProductOrderRefCode(content) : null;
+    const crmRefCode = (!refCode && !productOrderRefCode) ? extractCrmRefCode(content) : null;
     let status = 'unmatched_code';
     let matchedProfileId = null;
     let matchedProductOrderId = null;
@@ -423,6 +440,37 @@ module.exports = async (req, res) => {
       } else {
         status = 'unmatched_code';
       }
+    } else if (crmRefCode) {
+      // Trợ Lý AI Tư Vấn & CRM — hạn dùng RIÊNG (crm_access_until), cộng dồn giống access_until của
+      // nhan-hieu (base = hạn cũ nếu còn hiệu lực, else từ hôm nay). Không có ưu đãi mua sớm/giới
+      // thiệu/học viên cho sản phẩm này (bản đầu, thêm sau nếu chị Quỳnh cần).
+      const profResp = await supabaseAdmin(`profiles?crm_ref_code=eq.${crmRefCode}&select=id,crm_access_until`);
+      const profRows = profResp.ok ? await profResp.json() : [];
+      const profile = profRows[0];
+
+      if (profile) {
+        const days = CRM_AMOUNT_TO_DAYS[transferAmount];
+        if (days) {
+          const base = (profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now())
+            ? new Date(profile.crm_access_until) : new Date();
+          const next = new Date(base.getTime() + days * 86400000);
+          const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ crm_access_until: next.toISOString(), crm_has_paid: true, crm_plan_days: days }),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProfileId = profile.id;
+            daysGranted = days;
+          } else {
+            status = 'unmatched_amount';
+          }
+        } else {
+          status = 'unmatched_amount';
+        }
+      } else {
+        status = 'unmatched_code';
+      }
     }
 
     await supabaseAdmin('sepay_transactions', {
@@ -435,7 +483,7 @@ module.exports = async (req, res) => {
         account_number: accountNumber || null,
         transfer_amount: transferAmount || null,
         content: content || null,
-        ref_code_found: refCode || productOrderRefCode,
+        ref_code_found: refCode || productOrderRefCode || crmRefCode,
         matched_profile_id: matchedProfileId,
         matched_product_order_id: matchedProductOrderId,
         days_granted: daysGranted,
