@@ -96,35 +96,47 @@ async function publishOne(entry, pageId, pageToken) {
     // Quỳnh 2026-08-28: "không được đăng mỗi bài chữ". Không có ảnh nào khả dụng → bỏ qua lượt đăng
     // này, đánh dấu failed kèm lý do rõ, có thông báo — còn hơn đăng chữ không kèm ảnh.
     let result = null;
-    // imageError: giữ lại lý do THẬT của bước ảnh cuối cùng thất bại — trước đây nuốt hết lỗi, chỉ
-    // hiện đúng 1 câu chung chung "Không tạo được ảnh" nên không ai (kể cả debug từ xa) biết chính
-    // xác là thiếu OPENAI_API_KEY, key sai, OpenAI lỗi, hay sharp lỗi. Hiện thẳng lý do cuối cùng
-    // trong fb_publish_error để chị Quỳnh tự đọc được nguyên nhân ngay trên UI (2026-08-29).
-    let imageError = null;
+    // lastError/failedStep: trước đây gộp chung lỗi tạo ảnh (generatePostImage) VÀ lỗi đăng ảnh lên
+    // Facebook (fbPostPhoto) vào 1 câu "Không tạo được ảnh" — sai lệch khi lỗi thật KHÔNG phải do ảnh
+    // mà do token Facebook hết hạn (fbPostPhoto ném lỗi "Error validating access token"), khiến chị
+    // Quỳnh tưởng nhầm phải sửa OpenAI trong khi cần tạo lại FB_PAGE_ACCESS_TOKEN. Tách rõ 2 bước để
+    // fb_publish_error luôn chỉ đúng nguyên nhân + gọi thẳng tên bước lỗi (2026-08-29).
+    let lastError = null;
+    let failedStep = null;
     if (post.image_data) {
       try {
         const base64 = post.image_data.replace(/^data:image\/\w+;base64,/, '');
         result = await fbPostPhoto(pageId, pageToken, Buffer.from(base64, 'base64'), post.content);
-      } catch (e) { result = null; imageError = e.message; }
+      } catch (e) { result = null; lastError = e.message; failedStep = 'đăng ảnh lên Facebook'; }
     }
     if (!result) {
       if (process.env.OPENAI_API_KEY) {
+        let aiImage = null;
         try {
-          const image = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: post.title || post.content.slice(0, 80) });
-          result = await fbPostPhoto(pageId, pageToken, image, post.content);
-        } catch (e) { result = null; imageError = e.message; }
+          aiImage = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: post.title || post.content.slice(0, 80) });
+        } catch (e) { lastError = e.message; failedStep = 'tạo ảnh bằng OpenAI'; }
+        if (aiImage) {
+          try {
+            result = await fbPostPhoto(pageId, pageToken, aiImage, post.content);
+          } catch (e) { result = null; lastError = e.message; failedStep = 'đăng ảnh lên Facebook'; }
+        }
       } else {
-        imageError = 'Chưa cấu hình OPENAI_API_KEY trên server.';
+        lastError = 'Chưa cấu hình OPENAI_API_KEY trên server.';
+        failedStep = 'tạo ảnh dự phòng';
       }
     }
     if (!result) {
-      await markEntry(entry.id, {
-        fb_publish_status: 'failed',
-        fb_publish_error: `Không tạo được ảnh (${imageError || 'không rõ lý do'}) — bỏ qua đăng bài chữ trần theo yêu cầu chị Quỳnh.`,
-      });
+      // Token Facebook hết hạn làm hỏng MỌI bước gọi Facebook (không riêng gì ảnh) — nhận diện thẳng
+      // qua câu lỗi đặc trưng của Graph API để báo đúng hướng khắc phục (tạo lại token) thay vì để
+      // chị tưởng lỗi do ảnh rồi cứ bấm "Thử lại" mãi không có tác dụng.
+      const isTokenError = /access token|OAuthException/i.test(lastError || '');
+      const reason = isTokenError
+        ? `Token Facebook đã hết hạn (${lastError}) — cần tạo lại FB_PAGE_ACCESS_TOKEN, "Thử lại" sẽ không có tác dụng cho tới khi có token mới.`
+        : `Lỗi ở bước ${failedStep || 'chuẩn bị ảnh'}: ${lastError || 'không rõ lý do'} — bỏ qua đăng bài chữ trần theo yêu cầu chị Quỳnh.`;
+      await markEntry(entry.id, { fb_publish_status: 'failed', fb_publish_error: reason });
       await notifyOnce(entry.user_id, `fb-publish-fail:${entry.id}`, {
-        title: '⚠️ Bỏ qua đăng bài Fanpage — thiếu ảnh',
-        body: `Không tạo được ảnh cho bài này: ${imageError || 'không rõ lý do'}. Bỏ qua, không đăng bài chữ trần.`,
+        title: isTokenError ? '⚠️ Token Facebook đã hết hạn' : '⚠️ Bỏ qua đăng bài Fanpage — thiếu ảnh',
+        body: reason,
         url: './#lich-dang',
       });
       return { ok: false };
