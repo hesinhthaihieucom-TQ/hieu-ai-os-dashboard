@@ -1,8 +1,8 @@
 -- Nhập dữ liệu khách hàng + lịch sử tương tác cũ từ Lark Base "CRM KHÁCH HÀNG – HỆ SINH THÁI
 -- HIỂU" (chị Quỳnh xuất file Excel gửi 2026-08-29) vào Trợ Lý AI Tư Vấn & CRM
 -- (crm_customers/crm_interactions). Chạy 1 LẦN trong Supabase SQL Editor (bỏ qua RLS nên
--- không cần đăng nhập). Gắn dữ liệu vào đúng user có email dưới đây — đổi lại email nếu
--- chị Quỳnh dùng tài khoản khác để đăng nhập tro-ly-crm.
+-- không cần đăng nhập). Gắn dữ liệu vào đúng user có email dưới đây (ruby.tuquynh911@gmail.com —
+-- email đăng nhập THẬT của chị Quỳnh ở app, KHÁC với email nhận diện trong hệ thống Claude).
 --
 -- form_hd: 4/8 khách đã có sẵn khung F-O-R-M-H-D trong ghi chú AI cũ của Lark (Quế Chi, Dương
 -- Ngọc Hà, Hạnh Phạm, Thanh Hưởng) — tách ra đúng cột form_hd mới thay vì để chung trong
@@ -25,9 +25,9 @@ declare
   v_dinh_ca uuid;
   v_shino uuid;
 begin
-  select id into v_user_id from auth.users where email = 'quynh@hesinhthaihieu.com';
+  select id into v_user_id from auth.users where email = 'ruby.tuquynh911@gmail.com';
   if v_user_id is null then
-    raise exception 'Khong tim thay user voi email quynh@hesinhthaihieu.com - kiem tra lai truoc khi chay.';
+    raise exception 'Khong tim thay user voi email ruby.tuquynh911@gmail.com - kiem tra lai truoc khi chay.';
   end if;
 
   insert into crm_customers (user_id, ten_khach_hang, leader_phu_trach, kenh, link_lien_he, nhanh, nhom_nhu_cau, nhu_cau_cu_the, van_de_noi_dau, giai_doan, do_nong, rao_can, giai_phap_phu_hop, lan_tuong_tac_cuoi, ngay_follow_tiep, hanh_dong_tiep_theo, gia_tri_du_kien, ket_qua, ghi_chu_ai, form_hd)
