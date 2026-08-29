@@ -45,7 +45,16 @@ A. HIỂU MẠNH — Sức khỏe (giảm mỡ/tăng cơ/chuyển hóa/năng lư
 B. HIỂU HẠNH — Tâm linh/Tài chính/Phát triển bản thân.
 C. HIỂU KÊNH — Nhân hiệu/Content/Kinh doanh online.
 D. KINH DOANH/ĐỐI TÁC — cơ hội kinh doanh, đối tác.
-Xác định đúng nhánh dựa trên nội dung khách hỏi; nếu không rõ, chọn nhánh gần nhất và nêu rõ sự không chắc chắn trong ghi_chu_ai.`;
+Xác định đúng nhánh dựa trên nội dung khách hỏi; nếu không rõ, chọn nhánh gần nhất và nêu rõ sự không chắc chắn trong ghi_chu_ai.
+
+KHUNG FORM-HD (chỉ áp dụng khi nhanh="D"): mỗi khách nhánh D cần khai thác dần 6 mục sau qua nhiều lần trò chuyện — không hỏi dồn hết 1 lúc, hỏi tự nhiên đúng chỗ câu chuyện đang dẫn tới, và chỉ ghi vào field khi khách THỰC SỰ có nói tới (không suy đoán):
+F — Gia đình: tình trạng hôn nhân, con cái, người phụ thuộc.
+O — Occupation/Công việc: đang làm gì, thu nhập hiện tại, thời gian rảnh.
+R — Sở thích/Quan hệ: sở thích cá nhân, mối quan hệ xã hội, mạng lưới.
+M — Money: khả năng tài chính, mức đầu tư sẵn sàng bỏ ra.
+H — Sức khỏe: tình trạng hiện tại, có ảnh hưởng gì tới khả năng làm việc.
+D — Desire/Mong muốn: mục tiêu, ước mơ, điều họ đang tìm kiếm.
+Field nào chưa khai thác được thì xuất đúng nguyên văn "Chưa có" — TUYỆT ĐỐI không bịa. Field nào hồ sơ cũ đã khai thác được (khác "Chưa có") thì GIỮ NGUYÊN trong output, không ghi đè lại thành "Chưa có" chỉ vì chat lần này không nhắc lại.`;
 
 async function callClaude({ apiKey, contentBlocks }) {
   const controller = new AbortController();
@@ -178,6 +187,11 @@ module.exports = async (req, res) => {
       // AI chỉ điền leader_phu_trach nếu hồ sơ cũ đã có/chat nêu rõ — hồ sơ MỚI thì mặc định là chính
       // người đang dùng app (đúng thực tế: người thao tác app cũng là người phụ trách khách này).
       leader_phu_trach: result.khach_hang.leader_phu_trach || (customer && customer.leader_phu_trach) || (profile && profile.full_name) || null,
+      // nhanh xác định lại mỗi lần tư vấn (dùng đúng phân loại của lượt này); form_hd chỉ AI xuất khi
+      // nhanh="D" — giữ lại form_hd cũ nếu lượt này không phải nhánh D/AI không xuất gì mới, tránh mất
+      // dữ liệu FORM-HD đã khai thác được từ trước.
+      nhanh: result.nhanh || (customer && customer.nhanh) || null,
+      form_hd: result.khach_hang.form_hd || (customer && customer.form_hd) || null,
       lan_tuong_tac_cuoi: todayIso,
       ngay_follow_tiep: result.ngay_follow_tiep || null,
       user_id: user.id,

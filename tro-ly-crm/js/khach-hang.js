@@ -79,14 +79,19 @@ function render(container, ctx){
 
   // ===== Panel chi tiết / sửa =====
   function toEditForm(c){
+    const fh = c.form_hd || {};
     return {
       ten_khach_hang: c.ten_khach_hang || '', leader_phu_trach: c.leader_phu_trach || '', kenh: c.kenh || '',
-      link_lien_he: c.link_lien_he || '', nhom_nhu_cau: (c.nhom_nhu_cau || []).join(', '), nhu_cau_cu_the: c.nhu_cau_cu_the || '',
+      link_lien_he: c.link_lien_he || '', nhanh: c.nhanh || '', nhom_nhu_cau: (c.nhom_nhu_cau || []).join(', '), nhu_cau_cu_the: c.nhu_cau_cu_the || '',
       van_de_noi_dau: c.van_de_noi_dau || '', giai_doan: c.giai_doan || '', do_nong: c.do_nong || '',
       rao_can: (c.rao_can || []).join(', '), giai_phap_phu_hop: c.giai_phap_phu_hop || '',
       lan_tuong_tac_cuoi: c.lan_tuong_tac_cuoi || '', ngay_follow_tiep: c.ngay_follow_tiep || '',
       hanh_dong_tiep_theo: c.hanh_dong_tiep_theo || '', gia_tri_du_kien: c.gia_tri_du_kien || '',
       ket_qua: c.ket_qua || '', ghi_chu_ai: c.ghi_chu_ai || '',
+      // FORM-HD (chỉ có ý nghĩa khi nhanh='D') — tách phẳng 6 field để sửa tay dễ, gộp lại thành
+      // object form_hd đúng lúc lưu (xem saveDetail()).
+      form_hd_gia_dinh: fh.gia_dinh || '', form_hd_cong_viec: fh.cong_viec || '', form_hd_so_thich_quan_he: fh.so_thich_quan_he || '',
+      form_hd_money: fh.money || '', form_hd_suc_khoe: fh.suc_khoe || '', form_hd_mong_muon: fh.mong_muon || '',
     };
   }
 
@@ -113,9 +118,14 @@ function render(container, ctx){
     const f = d.editForm;
     if(!f.ten_khach_hang.trim()){ d.error = 'Tên khách hàng không được để trống.'; draw(); return; }
     d.saving = true; d.error = ''; draw();
+    const formHd = {
+      gia_dinh: f.form_hd_gia_dinh.trim() || null, cong_viec: f.form_hd_cong_viec.trim() || null,
+      so_thich_quan_he: f.form_hd_so_thich_quan_he.trim() || null, money: f.form_hd_money.trim() || null,
+      suc_khoe: f.form_hd_suc_khoe.trim() || null, mong_muon: f.form_hd_mong_muon.trim() || null,
+    };
     const payload = {
       ten_khach_hang: f.ten_khach_hang.trim(), leader_phu_trach: f.leader_phu_trach.trim() || null, kenh: f.kenh.trim() || null,
-      link_lien_he: f.link_lien_he.trim() || null,
+      link_lien_he: f.link_lien_he.trim() || null, nhanh: f.nhanh || null,
       nhom_nhu_cau: f.nhom_nhu_cau.split(',').map(s => s.trim()).filter(Boolean),
       nhu_cau_cu_the: f.nhu_cau_cu_the.trim() || null, van_de_noi_dau: f.van_de_noi_dau.trim() || null,
       giai_doan: f.giai_doan.trim() || null, do_nong: f.do_nong.trim() || null,
@@ -124,6 +134,9 @@ function render(container, ctx){
       lan_tuong_tac_cuoi: f.lan_tuong_tac_cuoi || null, ngay_follow_tiep: f.ngay_follow_tiep || null,
       hanh_dong_tiep_theo: f.hanh_dong_tiep_theo.trim() || null, gia_tri_du_kien: f.gia_tri_du_kien.trim() || null,
       ket_qua: f.ket_qua.trim() || null, ghi_chu_ai: f.ghi_chu_ai.trim() || null,
+      // Giữ form_hd nếu ít nhất 1 mục có dữ liệu, kể cả khi đang không để nhanh='D' — tránh mất dữ
+      // liệu FORM-HD đã khai thác nếu lỡ đổi nhánh tay.
+      form_hd: Object.values(formHd).some(Boolean) ? formHd : null,
     };
     const { error } = await ctx.supabase.from('crm_customers').update(payload).eq('id', d.customer.id);
     d.saving = false;
@@ -212,6 +225,7 @@ function render(container, ctx){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
           <div style="font-size:15.5px;font-weight:700;">${esc(c.ten_khach_hang)}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;">
+            ${c.nhanh==='D' ? badgePill('FORM-HD', '#EDE6F5', '#6B4FA0') : ''}
             ${giaiDoanBadge(c.giai_doan)}
             ${doNongBadge(c.do_nong)}
           </div>
@@ -246,11 +260,36 @@ function render(container, ctx){
 
           ${d.error ? `<div class="error-box">${esc(d.error)}</div>` : ''}
 
+          ${f.nhanh === 'D' ? `
+            <div class="section highlight" style="margin-top:14px;margin-bottom:0;padding:18px 20px;">
+              <h3>FORM-HD — khung khai thác nhánh Kinh doanh/Đối tác</h3>
+              <div style="display:grid;grid-template-columns:1fr;gap:0;">
+                ${field('form_hd_gia_dinh', 'F — Gia đình (hôn nhân, con cái, người phụ thuộc)', f.form_hd_gia_dinh, 'textarea', true)}
+                ${field('form_hd_cong_viec', 'O — Công việc (đang làm gì, thu nhập, thời gian rảnh)', f.form_hd_cong_viec, 'textarea', true)}
+                ${field('form_hd_so_thich_quan_he', 'R — Sở thích / Quan hệ (sở thích, mạng lưới xã hội)', f.form_hd_so_thich_quan_he, 'textarea', true)}
+                ${field('form_hd_money', 'M — Money (khả năng tài chính, mức sẵn sàng đầu tư)', f.form_hd_money, 'textarea', true)}
+                ${field('form_hd_suc_khoe', 'H — Sức khỏe (hiện trạng, ảnh hưởng tới khả năng làm việc)', f.form_hd_suc_khoe, 'textarea', true)}
+                ${field('form_hd_mong_muon', 'D — Mong muốn (mục tiêu, ước mơ đang tìm kiếm)', f.form_hd_mong_muon, 'textarea', true)}
+              </div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Mục nào chưa khai thác được sẽ ghi "Chưa có" — AI tự điền dần qua các lần tư vấn, có thể sửa tay ở đây.</div>
+            </div>
+          ` : ''}
+
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 14px;">
             ${field('ten_khach_hang', 'Tên khách hàng', f.ten_khach_hang, 'text')}
             ${field('leader_phu_trach', 'Leader phụ trách', f.leader_phu_trach, 'text')}
             ${field('kenh', 'Kênh', f.kenh, 'text')}
             ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text')}
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhánh</label>
+              <select id="kh-detail-nhanh" style="margin-top:6px;">
+                <option value="" ${!f.nhanh?'selected':''}>(chưa rõ)</option>
+                <option value="A" ${f.nhanh==='A'?'selected':''}>A — HIỂU MẠNH (Sức khỏe)</option>
+                <option value="B" ${f.nhanh==='B'?'selected':''}>B — HIỂU HẠNH (Tâm linh/Tài chính/PT bản thân)</option>
+                <option value="C" ${f.nhanh==='C'?'selected':''}>C — HIỂU KÊNH (Nhân hiệu/Content/KD online)</option>
+                <option value="D" ${f.nhanh==='D'?'selected':''}>D — Kinh doanh/Đối tác</option>
+              </select>
+            </div>
             <div>
               <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
               <input type="text" data-field="do_nong" value="${esc(f.do_nong)}" list="kh-do-nong-options" style="margin-top:6px;">
@@ -418,6 +457,10 @@ function render(container, ctx){
       container.querySelectorAll('#kh-detail-overlay [data-field]').forEach(el => {
         el.oninput = (e) => { state.detail.editForm[el.getAttribute('data-field')] = e.target.value; };
       });
+      const nhanhSelect = container.querySelector('#kh-detail-nhanh');
+      // Đổi nhánh cần vẽ lại (khác các input text khác) vì khối FORM-HD chỉ hiện khi nhanh='D' —
+      // select không có vấn đề mất con trỏ gõ dở như input/textarea nên vẽ lại ngay không sao.
+      if(nhanhSelect) nhanhSelect.onchange = (e) => { state.detail.editForm.nhanh = e.target.value; draw(); };
       const saveBtn = container.querySelector('#kh-detail-save');
       if(saveBtn) saveBtn.onclick = saveDetail;
       const delBtn = container.querySelector('#kh-detail-delete');

@@ -112,12 +112,13 @@ function render(container, ctx){
         customer: state.matchedCustomer ? {
           id: state.matchedCustomer.id, ten_khach_hang: state.matchedCustomer.ten_khach_hang,
           leader_phu_trach: state.matchedCustomer.leader_phu_trach, kenh: state.matchedCustomer.kenh,
-          link_lien_he: state.matchedCustomer.link_lien_he,
+          link_lien_he: state.matchedCustomer.link_lien_he, nhanh: state.matchedCustomer.nhanh,
           nhom_nhu_cau: state.matchedCustomer.nhom_nhu_cau, nhu_cau_cu_the: state.matchedCustomer.nhu_cau_cu_the,
           van_de_noi_dau: state.matchedCustomer.van_de_noi_dau, giai_doan: state.matchedCustomer.giai_doan, do_nong: state.matchedCustomer.do_nong,
           rao_can: state.matchedCustomer.rao_can, giai_phap_phu_hop: state.matchedCustomer.giai_phap_phu_hop,
           hanh_dong_tiep_theo: state.matchedCustomer.hanh_dong_tiep_theo, gia_tri_du_kien: state.matchedCustomer.gia_tri_du_kien,
           ket_qua: state.matchedCustomer.ket_qua, ghi_chu_ai: state.matchedCustomer.ghi_chu_ai,
+          form_hd: state.matchedCustomer.form_hd, // khung F-O-R-M-H-D riêng nhánh D — gửi lại để AI cộng dồn, không ghi đè mất
           lich_su_gan_day: state.matchedCustomer.lich_su_gan_day,
         } : (state.customerQuery.trim() ? { ten_khach_hang: state.customerQuery.trim() } : null),
         san_pham_dich_vu: state.sanPhamText,

@@ -1752,6 +1752,13 @@ create index if not exists crm_customers_user_idx on crm_customers(user_id);
 -- việc phân biệt "có phải cùng 1 khách không" do AI hỏi lại người vận hành khi chưa chắc (đúng
 -- nguyên tắc "không tự gộp/tạo trùng" trong prompt gốc), không suy luận cứng bằng constraint DB.
 
+-- FORM-HD (2026-08-29, chị Quỳnh chốt khung khai thác) — riêng nhánh D (Kinh doanh/Đối tác):
+-- F=Gia đình, O=Occupation/Công việc, R=Sở thích/Quan hệ, M=Money, H=Sức khỏe, D=Desire/Mong muốn.
+-- nhanh lưu phân loại A/B/C/D gần nhất (AI tự set mỗi lần tư vấn, hoặc chọn tay ở Khách Hàng) —
+-- form_hd chỉ có ý nghĩa khi nhanh='D', field nào chưa khai thác AI ghi "Chưa có" chứ không bịa.
+alter table crm_customers add column if not exists nhanh text;
+alter table crm_customers add column if not exists form_hd jsonb;
+
 create table if not exists crm_interactions (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid not null references crm_customers(id) on delete cascade,

@@ -40,6 +40,18 @@ const TOOL_TU_VAN_CRM = {
           gia_tri_du_kien: { type: 'string' },
           ket_qua: { type: 'string' },
           ghi_chu_ai: { type: 'string', description: 'Tóm tắt nỗi đau + tiến trình tư vấn tới thời điểm này, phục vụ đọc lại lần sau.' },
+          form_hd: {
+            type: 'object',
+            description: 'CHỈ xuất field này khi "nhanh" ở trên = "D" (Kinh doanh/Đối tác) — khung khai thác riêng F-O-R-M-H-D cho nhánh này. Nếu nhanh khác D thì BỎ QUA hoàn toàn, không xuất object này. Field nào chưa khai thác được từ chat/ảnh thì ghi ĐÚNG NGUYÊN VĂN "Chưa có" — TUYỆT ĐỐI không bịa/suy đoán. Nếu HỒ SƠ KHÁCH ĐÃ CÓ đã có form_hd với field nào khác "Chưa có" thì giữ nguyên giá trị đó (không ghi đè lại thành "Chưa có"), chỉ cập nhật field nào có tin mới.',
+            properties: {
+              gia_dinh: { type: 'string', description: 'F — Gia đình: tình trạng hôn nhân, con cái, người phụ thuộc.' },
+              cong_viec: { type: 'string', description: 'O — Occupation: đang làm gì, thu nhập hiện tại, thời gian rảnh.' },
+              so_thich_quan_he: { type: 'string', description: 'R — Sở thích/Quan hệ: sở thích cá nhân, mối quan hệ xã hội, mạng lưới.' },
+              money: { type: 'string', description: 'M — Money: khả năng tài chính, mức đầu tư sẵn sàng bỏ ra.' },
+              suc_khoe: { type: 'string', description: 'H — Sức khỏe: tình trạng hiện tại, có ảnh hưởng gì tới khả năng làm việc.' },
+              mong_muon: { type: 'string', description: 'D — Desire: mục tiêu, ước mơ, điều họ đang tìm kiếm.' },
+            },
+          },
         },
         required: ['ten_khach_hang'],
       },
