@@ -124,11 +124,13 @@ const GATED_API_WEIGHTS = {
   'api/dinh-vi': 8,
   'api/dinh-vi-parse': 6,
 };
-window.onGatedApiSuccess = function(relativePath){
+// weightOverride: cho endpoint tốn lượt BIẾN THIÊN mỗi lần gọi (vd api/auto-fill-week — xem
+// opts.gatedWeight ở callApi trong util.js) — dùng số THẬT server vừa trừ thay vì tra bảng cố định.
+window.onGatedApiSuccess = function(relativePath, weightOverride){
   const p = AppState.profile;
   if(!p) return;
   const path = relativePath.split('?')[0];
-  const weight = GATED_API_WEIGHTS[path];
+  const weight = weightOverride != null ? weightOverride : GATED_API_WEIGHTS[path];
   if(!weight) return;
   if(!p.has_paid){
     p.trial_ai_uses = (p.trial_ai_uses||0) + weight;

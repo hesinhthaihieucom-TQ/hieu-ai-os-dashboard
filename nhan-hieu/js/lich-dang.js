@@ -29,6 +29,7 @@ function render(container, ctx){
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
     regenWeekLoading:false, regenWeekError:null,
+    autoFillMode:'kho', autoFillBusy:false, autoFillError:null, autoFillResult:null,
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
     tab:'lich', weekLoadError:null,
     // 2 lane độc lập trong cùng calendar_entries (cột channel) — 'ca_nhan' mặc định cho MỌI user
@@ -254,6 +255,12 @@ function render(container, ctx){
     const days = weekDays();
     const todayStr = isoDate(new Date());
     const weekLabel = `${fmtDate(days[0])} – ${fmtDate(days[6])}`;
+    // "Giảm nỗ lực khởi động mỗi lần vào app" (2026-08-29, theo yêu cầu chị Quỳnh) — số ô trống
+    // TUẦN ĐANG XEM của lane hiện tại, dùng để hiện trước chi phí lượt AI thật sự sẽ tốn nếu bấm nút
+    // "AI tự viết + xếp cả tuần" (api/auto-fill-week.js), KHÔNG phải cron nền miễn phí của admin.
+    const emptySlotCount = days.reduce((sum,d)=> sum + SLOTS.filter(s => !entryFor(isoDate(d), s.key)).length, 0);
+    const autoFillPerPostCost = state.autoFillMode==='new_hook' ? 4 : 3; // new_hook = 1 (sinh hook) + 3 (viết) lượt/bài
+    const autoFillToFillCount = Math.min(emptySlotCount, 9); // MAX_FILL_PER_CLICK ở api/auto-fill-week.js
     return `
       ${isAdmin ? `
         <div class="chips" style="margin-bottom:16px;">
@@ -281,6 +288,26 @@ function render(container, ctx){
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để xếp xong cả tuần — đừng thoát trang khi đang đợi.</div>
         ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
+      </div>
+
+      <div class="card" style="margin-bottom:20px;background:var(--accent-soft);">
+        <h3 style="margin-bottom:6px;">🪄 AI tự viết + xếp cả tuần</h3>
+        <div class="hint-box" style="margin-bottom:12px;">Khác với "AI gợi ý lịch tuần" ở trên (chỉ ra chủ đề, bạn vẫn phải tự viết) — cái này AI viết bài HOÀN CHỈNH và xếp thẳng vào ô trống luôn. Bấm "Xem chi tiết" trong lịch để đọc lại/sửa trước khi đăng.</div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chọn cách AI lấy nguồn để viết</label>
+        <div class="chips" style="margin-bottom:12px;">
+          <div class="chip ${state.autoFillMode==='kho'?'selected':''}" data-autofill-mode="kho">Cách 1: Dùng Kho Content/Hook viral đúng trục của bạn</div>
+          <div class="chip ${state.autoFillMode==='new_hook'?'selected':''}" data-autofill-mode="new_hook">Cách 2: Tự tạo hook mới theo ngành của bạn rồi viết</div>
+        </div>
+        ${emptySlotCount===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
+        <div class="btn-row">
+          <button class="btn" data-action="auto-fill-week" ${state.autoFillBusy?'disabled':''}>${state.autoFillBusy?'Đang viết…':'Bắt đầu viết'}</button>
+          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Điền ${autoFillToFillCount} ô lần này (tốn khoảng ${autoFillToFillCount*autoFillPerPostCost} lượt AI)${emptySlotCount>9?`, còn ${emptySlotCount-9} ô nữa — bấm thêm lần nữa sau khi xong`:''}</span>
+        </div>
+        <div class="hint-box" style="margin-top:10px;">Có thể mất vài phút (AI viết từng bài một, không phải cùng lúc) — đừng thoát trang khi đang đợi.</div>
+        `}
+        ${!state.positioning ? `<div class="hint-box" style="margin-top:10px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — cần làm Định Vị trước để dùng được tính năng này.</div>` : ''}
+        ${state.autoFillError?`<div class="error-box" style="margin-top:10px;">${esc(state.autoFillError)}</div>`:''}
+        ${state.autoFillResult?`<div class="hint-box" style="margin-top:10px;">${esc(state.autoFillResult)}</div>`:''}
       </div>
       ` : `
       <div class="hint-box" style="margin-bottom:20px;">
@@ -564,6 +591,11 @@ function render(container, ctx){
     });
     const aiBtn = container.querySelector('[data-action="ai-suggest"]');
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
+    container.querySelectorAll('[data-autofill-mode]').forEach(el=>{
+      el.onclick = ()=>{ state.autoFillMode = el.getAttribute('data-autofill-mode'); draw(); };
+    });
+    const autoFillBtn = container.querySelector('[data-action="auto-fill-week"]');
+    if(autoFillBtn) autoFillBtn.onclick = autoFillWeek;
     const regenBtn = container.querySelector('[data-action="regen-week"]');
     if(regenBtn) regenBtn.onclick = regenFanpageWeek;
 
@@ -854,6 +886,34 @@ function render(container, ctx){
     } catch(e){ state.aiError = e.message; }
     stopProgress(); releaseWakeLock();
     state.aiLoading = false;
+    draw();
+  }
+
+  // "AI tự viết + xếp cả tuần" (2026-08-29, theo yêu cầu chị Quỳnh: "giảm nỗ lực khởi động mỗi lần
+  // vào app") — KHÁC fetchAiSchedule() ở trên (chỉ gợi ý chủ đề) và KHÁC hẳn cron nền của admin
+  // (api/cron/auto-fill-schedule.js, miễn phí, chỉ chạy cho admin) — đây là nút TỰ BẤM cho MỌI
+  // khách, viết bài HOÀN CHỈNH và TRỪ LƯỢT THẬT theo từng bài (xem api/auto-fill-week.js).
+  async function autoFillWeek(){
+    if(state.autoFillBusy) return;
+    state.autoFillBusy = true; state.autoFillError = null; state.autoFillResult = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('[data-action="auto-fill-week"]'), 150, 'Đang viết');
+    acquireWakeLock();
+    try{
+      // gatedWeight: endpoint này tốn lượt biến thiên (1-9 bài x 3, hoặc x4 nếu Cách 2) — không có
+      // trọng số cố định trong GATED_API_WEIGHTS, phải đọc đúng số lượt THẬT server vừa trừ
+      // (data.luot_used) để sidebar cộng đúng ngay, không đợi tải lại trang.
+      const data = await callApi('/api/auto-fill-week', { week_start: isoDate(state.weekStart), mode: state.autoFillMode }, 280000, { gatedWeight: (d)=>d.luot_used });
+      const filledCount = (data.filled||[]).length;
+      const parts = [];
+      if(filledCount) parts.push(`✓ Đã viết và xếp ${filledCount} bài mới vào lịch`);
+      if(data.quota_blocked) parts.push(data.quota_blocked);
+      if(data.skipped_cap) parts.push(`còn ${data.skipped_cap} ô trống nữa — bấm "Bắt đầu viết" thêm lần nữa để tiếp tục`);
+      if(data.skipped_no_candidate && data.skipped_no_candidate.length) parts.push(`${data.skipped_no_candidate.length} ô không tìm được nguồn phù hợp nên bỏ qua`);
+      state.autoFillResult = parts.length ? parts.join(' — ') : (data.message || 'Không có gì để điền.');
+      await loadEntries();
+    } catch(e){ state.autoFillError = e.message; }
+    stopProgress(); releaseWakeLock();
+    state.autoFillBusy = false;
     draw();
   }
 

@@ -293,7 +293,14 @@ async function callApi(path, body, timeoutMs, opts){
   // opts.skipGatedCallback: dùng khi 1 endpoint được gọi nhiều lần cho CÙNG 1 hành động chỉ trừ
   // lượt 1 lần phía server (vd Lượt 2 của Định Vị, xem api/dinh-vi.js) — nếu không bỏ qua, sidebar
   // sẽ cộng dồn optimistic 2 lần dù server chỉ trừ 1 lần, hiện sai số lượt đã dùng.
-  if(window.onGatedApiSuccess && !(opts && opts.skipGatedCallback)) window.onGatedApiSuccess(relativePath);
+  // opts.gatedWeight: dùng cho endpoint tốn lượt BIẾN THIÊN theo từng lần gọi (vd api/auto-fill-week
+  // — số bài viết được + cách lấy nguồn quyết định số lượt, không cố định như GATED_API_WEIGHTS) —
+  // truyền 1 hàm (data)=>number để đọc đúng số lượt THẬT server vừa trừ từ response, thay vì tra
+  // bảng trọng số cố định theo đường dẫn.
+  if(window.onGatedApiSuccess && !(opts && opts.skipGatedCallback)){
+    const weight = opts && typeof opts.gatedWeight === 'function' ? opts.gatedWeight(data) : (opts && opts.gatedWeight);
+    window.onGatedApiSuccess(relativePath, weight);
+  }
   return data;
 }
 

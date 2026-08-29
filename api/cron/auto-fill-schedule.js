@@ -546,3 +546,13 @@ module.exports = async (req, res) => {
 module.exports.fillSlotsForAdmin = fillSlotsForAdmin;
 module.exports.vnDateStr = vnDateStr;
 module.exports.FANPAGE_DAILY_SLOT = FANPAGE_DAILY_SLOT;
+// Export thêm (2026-08-29) để api/auto-fill-week.js (nút "AI tự viết + xếp cả tuần" cho MỌI khách,
+// khác hẳn cron này chỉ chạy cho admin) tái dùng đúng logic viết 1 bài từ 1 candidate (hook/content
+// có sẵn) — fillOneSlot()/writeExtrasAndSave() vốn đã nhận userId tường minh (không hardcode admin),
+// chỉ cần export thêm, không cần sửa gì bên trong.
+module.exports.loadCandidatePool = loadCandidatePool;
+module.exports.pickUnusedCandidate = pickUnusedCandidate;
+module.exports.findEmptySlots = findEmptySlots;
+module.exports.fillOneSlot = fillOneSlot;
+module.exports.PERSONAL_SLOTS = PERSONAL_SLOTS;
+module.exports.DEFAULT_SLOT_TIME = DEFAULT_SLOT_TIME;

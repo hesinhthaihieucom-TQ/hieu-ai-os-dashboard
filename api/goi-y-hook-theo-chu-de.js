@@ -108,3 +108,11 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi sinh hook.' });
   }
 };
+
+// Export thêm (2026-08-29) để api/auto-fill-week.js tái dùng đúng prompt/tool sinh hook (Cách 2 —
+// "tự tạo hook mới rồi viết") — không đổi gì hành vi của endpoint HTTP này, chỉ gắn thêm thuộc
+// tính lên hàm export, giống pattern đã có ở api/cron/auto-fill-schedule.js.
+module.exports.SYSTEM_PROMPT = SYSTEM_PROMPT;
+module.exports.TOOL_HOOK = TOOL_HOOK;
+module.exports.CONTENT_GOALS = CONTENT_GOALS;
+module.exports.callClaude = callClaude;
