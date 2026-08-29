@@ -94,26 +94,35 @@ async function publishOne(entry, pageId, pageToken) {
     // Quỳnh 2026-08-28: "không được đăng mỗi bài chữ". Không có ảnh nào khả dụng → bỏ qua lượt đăng
     // này, đánh dấu failed kèm lý do rõ, có thông báo — còn hơn đăng chữ không kèm ảnh.
     let result = null;
+    // imageError: giữ lại lý do THẬT của bước ảnh cuối cùng thất bại — trước đây nuốt hết lỗi, chỉ
+    // hiện đúng 1 câu chung chung "Không tạo được ảnh" nên không ai (kể cả debug từ xa) biết chính
+    // xác là thiếu OPENAI_API_KEY, key sai, OpenAI lỗi, hay sharp lỗi. Hiện thẳng lý do cuối cùng
+    // trong fb_publish_error để chị Quỳnh tự đọc được nguyên nhân ngay trên UI (2026-08-29).
+    let imageError = null;
     if (post.image_data) {
       try {
         const base64 = post.image_data.replace(/^data:image\/\w+;base64,/, '');
         result = await fbPostPhoto(pageId, pageToken, Buffer.from(base64, 'base64'), post.content);
-      } catch (e) { result = null; }
+      } catch (e) { result = null; imageError = e.message; }
     }
-    if (!result && process.env.OPENAI_API_KEY) {
-      try {
-        const image = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: post.title || post.content.slice(0, 80) });
-        result = await fbPostPhoto(pageId, pageToken, image, post.content);
-      } catch (e) { result = null; }
+    if (!result) {
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const image = await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title: post.title || post.content.slice(0, 80) });
+          result = await fbPostPhoto(pageId, pageToken, image, post.content);
+        } catch (e) { result = null; imageError = e.message; }
+      } else {
+        imageError = 'Chưa cấu hình OPENAI_API_KEY trên server.';
+      }
     }
     if (!result) {
       await markEntry(entry.id, {
         fb_publish_status: 'failed',
-        fb_publish_error: 'Không tạo được ảnh — bỏ qua đăng bài chữ trần theo yêu cầu chị Quỳnh.',
+        fb_publish_error: `Không tạo được ảnh (${imageError || 'không rõ lý do'}) — bỏ qua đăng bài chữ trần theo yêu cầu chị Quỳnh.`,
       });
       await notifyOnce(entry.user_id, `fb-publish-fail:${entry.id}`, {
         title: '⚠️ Bỏ qua đăng bài Fanpage — thiếu ảnh',
-        body: 'Không tạo được ảnh cho bài này (chưa cấu hình OPENAI_API_KEY hoặc chưa có ảnh case study/ảnh cá nhân), nên hệ thống bỏ qua, không đăng bài chữ trần.',
+        body: `Không tạo được ảnh cho bài này: ${imageError || 'không rõ lý do'}. Bỏ qua, không đăng bài chữ trần.`,
         url: './#lich-dang',
       });
       return { ok: false };
