@@ -36,6 +36,8 @@ NGUYÊN TẮC TƯ VẤN CHUNG (áp dụng mọi nhánh A/B/C/D):
 - KHÔNG tự chẩn đoán bệnh, không tự gộp khách nếu chưa chắc là cùng 1 người (nếu chưa chắc, vẫn cứ tạo/ghi theo tên khách nhưng nêu rõ nghi vấn trong ghi_chu_ai để người vận hành tự xác nhận).
 - Phân biệt SỰ THẬT (từ ảnh/nội dung) và SUY LUẬN (đánh giá của bạn) — không lẫn lộn 2 loại này khi viết vào các field.
 
+NGUYÊN TẮC CẬP NHẬT HỒ SƠ ĐÃ CÓ (khi có "HỒ SƠ KHÁCH ĐÃ CÓ" trong ngữ cảnh): mọi field bạn xuất ra trong "khach_hang" sẽ THAY THẾ HOÀN TOÀN giá trị cũ trong CRM, không tự cộng dồn phía hệ thống — vì vậy bạn phải tự cộng dồn TRƯỚC khi xuất. Với nhom_nhu_cau/rao_can: xuất mảng ĐẦY ĐỦ gồm mục cũ còn đúng + mục mới, chỉ bỏ mục cũ khi chat lần này cho thấy rõ nó không còn đúng (VD rào cản đã được gỡ). Với nhu_cau_cu_the/giai_phap_phu_hop/hanh_dong_tiep_theo/gia_tri_du_kien/ket_qua: viết bản cập nhật đầy đủ (giữ thông tin cũ còn giá trị, bổ sung/sửa theo tin mới) thay vì chỉ mô tả mỗi đoạn chat đang đọc. Field nào hồ sơ cũ đã có và chat lần này không nhắc gì thêm/không có gì đổi thì GIỮ NGUYÊN giá trị cũ trong output, đừng để trống.
+
 NHỊP FOLLOW THEO ĐỘ NÓNG: Nóng 1-2 ngày, Ấm 3-5 ngày, Lạnh 7-14 ngày kể từ hôm nay. Giai đoạn Chốt/Đã mua-onboarding/Mất thì KHÔNG tính ngày follow tiếp (để trống).
 
 4 NHÁNH:
@@ -173,6 +175,9 @@ module.exports = async (req, res) => {
     // LUÔN set cùng lúc (đúng nguyên tắc gốc: 2 field này Lark Automation dùng để tự nhắc lịch).
     const customerPayload = {
       ...result.khach_hang,
+      // AI chỉ điền leader_phu_trach nếu hồ sơ cũ đã có/chat nêu rõ — hồ sơ MỚI thì mặc định là chính
+      // người đang dùng app (đúng thực tế: người thao tác app cũng là người phụ trách khách này).
+      leader_phu_trach: result.khach_hang.leader_phu_trach || (customer && customer.leader_phu_trach) || (profile && profile.full_name) || null,
       lan_tuong_tac_cuoi: todayIso,
       ngay_follow_tiep: result.ngay_follow_tiep || null,
       user_id: user.id,

@@ -106,10 +106,18 @@ function render(container, ctx){
       const data = await callApi('/api/crm-tuvan', {
         images: state.images,
         note: state.note,
+        // Gửi ĐỦ hồ sơ khách đã có (không chỉ vài field) — thiếu nhom_nhu_cau/rao_can/giai_phap_phu_hop/...
+        // ở đây thì AI không biết gì đã ghi trước đó, lần cập nhật sau dễ ghi đè mất dữ liệu cũ thay vì
+        // cộng dồn (xem SYSTEM_PROMPT phần "NGUYÊN TẮC CẬP NHẬT HỒ SƠ ĐÃ CÓ" ở api/crm-tuvan.js).
         customer: state.matchedCustomer ? {
           id: state.matchedCustomer.id, ten_khach_hang: state.matchedCustomer.ten_khach_hang,
-          kenh: state.matchedCustomer.kenh, giai_doan: state.matchedCustomer.giai_doan, do_nong: state.matchedCustomer.do_nong,
-          van_de_noi_dau: state.matchedCustomer.van_de_noi_dau, ghi_chu_ai: state.matchedCustomer.ghi_chu_ai,
+          leader_phu_trach: state.matchedCustomer.leader_phu_trach, kenh: state.matchedCustomer.kenh,
+          link_lien_he: state.matchedCustomer.link_lien_he,
+          nhom_nhu_cau: state.matchedCustomer.nhom_nhu_cau, nhu_cau_cu_the: state.matchedCustomer.nhu_cau_cu_the,
+          van_de_noi_dau: state.matchedCustomer.van_de_noi_dau, giai_doan: state.matchedCustomer.giai_doan, do_nong: state.matchedCustomer.do_nong,
+          rao_can: state.matchedCustomer.rao_can, giai_phap_phu_hop: state.matchedCustomer.giai_phap_phu_hop,
+          hanh_dong_tiep_theo: state.matchedCustomer.hanh_dong_tiep_theo, gia_tri_du_kien: state.matchedCustomer.gia_tri_du_kien,
+          ket_qua: state.matchedCustomer.ket_qua, ghi_chu_ai: state.matchedCustomer.ghi_chu_ai,
           lich_su_gan_day: state.matchedCustomer.lich_su_gan_day,
         } : (state.customerQuery.trim() ? { ten_khach_hang: state.customerQuery.trim() } : null),
         san_pham_dich_vu: state.sanPhamText,
