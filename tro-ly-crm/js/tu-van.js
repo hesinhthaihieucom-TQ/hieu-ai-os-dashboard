@@ -8,6 +8,17 @@ const CONTEXT_DRAFT_KEY = 'tu-van-san-pham'; // riêng, KHÔNG bị xoá sau m�
 // đọc ảnh — gộp 10 ảnh vào 1 lượt chỉ soạn kết quả 1 lần thay vì 10 lần).
 const MAX_IMAGES = 10;
 
+// Câu mở đầu theo từng nhánh (chị Quỳnh chốt 2026-08-29, đúng nguyên văn quy trình gốc) — hiện sẵn
+// để copy gửi khách MỚI, KHÔNG gọi AI cho bước này (câu mở đầu đã cố định/gần cố định theo kịch bản,
+// tốn AI để tự viết lại là lãng phí — nhánh D đặc biệt ghi rõ "bắt buộc nguyên văn" nên càng không
+// nên để AI tự soạn). AI chỉ bắt đầu tính lượt từ khi khách đã trả lời và có ảnh/nội dung để phân tích.
+const NHANH_OPENERS = {
+  A: { label:'A — Sức khỏe (Hiểu Mạnh)', text:'Bạn đang có nhu cầu như thế nào về sức khỏe ạ?' },
+  B: { label:'B — Tâm linh/Tài chính (Hiểu Hạnh)', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?' },
+  C: { label:'C — Nhân hiệu/Content (Hiểu Kênh)', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?' },
+  D: { label:'D — Kinh doanh/Đối tác', text:'Cảm ơn c đã chủ động nhắn cho e nhé. Để e hiểu rõ hơn rồi định hướng đúng cho c, c chia sẻ thêm vài thông tin nha:\n1. Hiện tại c đang làm công việc gì?\n2. Thu nhập trung bình 1 tháng của c đang ở mức khoảng bao nhiêu? Hiện c có tích luỹ được chứ?\n3. Mục tiêu tài chính của c trong 6–12 tháng tới là gì? Muốn tăng thêm bao nhiêu thu nhập mỗi tháng?\n4. C đang quan tâm phát triển nguồn thu theo hướng nào: online, chăm sóc sức khỏe, hay xây hệ thống lâu dài?\nE hỏi kỹ để xem c phù hợp với mô hình nào nhất — vì team của e đang làm trong ngành chăm sóc sức khỏe & đào tạo phát triển con người, có quy trình rõ ràng, hỗ trợ từng bước, ai mới vào cũng làm được nè' },
+};
+
 function render(container, ctx){
   const state = {
     images: [], note: '',
@@ -20,9 +31,16 @@ function render(container, ctx){
     // GỌI CLAUDE ĐÚNG 1 LẦN có sẵn ngữ cảnh, thay vì phải tự đoán lại từ đầu mỗi ảnh (đỡ tốn gấp đôi
     // lượt AI khi nhắn nhiều tin liên tiếp cho cùng 1 khách — chị Quỳnh phản hồi 2026-08-29).
     activeCustomer: null,
+    pickedOpenerNhanh: null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
+
+  function copyOpener(){
+    const opener = NHANH_OPENERS[state.pickedOpenerNhanh];
+    if(!opener) return;
+    navigator.clipboard.writeText(opener.text).catch(()=>{});
+  }
 
   function persistDraft(){
     saveModuleDraft(ctx, DRAFT_KEY, { images: state.images, note: state.note, activeCustomer: state.activeCustomer });
@@ -150,7 +168,20 @@ function render(container, ctx){
           Đang tiếp tục hồ sơ: <b>${esc(state.activeCustomer.ten_khach_hang)}</b>
           <span style="float:right;cursor:pointer;text-decoration:underline;" id="tv-new-customer">Khách mới</span>
         </div>
-      ` : ''}
+      ` : `
+        <div class="card" style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Khách mới nhắn tới — chọn nhánh để lấy câu mở đầu gửi ngay (không tốn lượt AI)</label>
+          <div class="chips" style="margin-top:0;">
+            ${Object.keys(NHANH_OPENERS).map(k=>`<div class="chip ${state.pickedOpenerNhanh===k?'selected':''}" data-pick-opener="${k}">${esc(NHANH_OPENERS[k].label)}</div>`).join('')}
+          </div>
+          ${state.pickedOpenerNhanh ? `
+            <div class="hint-box" style="white-space:pre-line;">${esc(NHANH_OPENERS[state.pickedOpenerNhanh].text)}</div>
+            <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+              <span class="btn-ghost btn btn-sm" id="tv-copy-opener">Sao chép</span>
+            </div>
+          ` : ''}
+        </div>
+      `}
 
       <div class="card" style="margin-bottom:20px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa ${MAX_IMAGES} ảnh) — gộp nhiều tin lại rồi gửi 1 lần cho đỡ tốn lượt</label>
@@ -222,6 +253,16 @@ function render(container, ctx){
 
     const newCustomerBtn = container.querySelector('#tv-new-customer');
     if(newCustomerBtn) newCustomerBtn.onclick = startNewCustomer;
+
+    container.querySelectorAll('[data-pick-opener]').forEach(el=>{
+      el.onclick = ()=>{
+        const k = el.getAttribute('data-pick-opener');
+        state.pickedOpenerNhanh = state.pickedOpenerNhanh===k ? null : k;
+        draw();
+      };
+    });
+    const copyOpenerBtn = container.querySelector('#tv-copy-opener');
+    if(copyOpenerBtn) copyOpenerBtn.onclick = copyOpener;
 
     const fileEl = container.querySelector('#tv-file');
     if(fileEl) fileEl.onchange = ()=>{ if(fileEl.files.length) handleFiles(fileEl.files); };
