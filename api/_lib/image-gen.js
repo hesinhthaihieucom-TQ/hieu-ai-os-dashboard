@@ -68,7 +68,7 @@ function wrapText(text, maxCharsPerLine, maxLines) {
   return lines;
 }
 
-async function callOpenAiImage(apiKey, prompt) {
+async function callOpenAiImage(apiKey, prompt, size) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 90000);
   let resp;
@@ -76,7 +76,7 @@ async function callOpenAiImage(apiKey, prompt) {
     resp = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt, size: `${IMAGE_SIZE}x${IMAGE_SIZE}`, n: 1 }),
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, size: size || `${IMAGE_SIZE}x${IMAGE_SIZE}`, n: 1 }),
       signal: controller.signal,
     });
   } catch (e) {
@@ -204,7 +204,10 @@ const SPIRITUAL_PROMPTS = [
 ];
 async function generateSpiritualBackground({ apiKey }) {
   const prompt = `${pickRandom(SPIRITUAL_PROMPTS)} TUYỆT ĐỐI KHÔNG có chữ, không watermark, không logo, không ký tự nào trong ảnh.`;
-  return callOpenAiImage(apiKey, prompt);
+  // "1024x1536": khổ dọc gần nhất OpenAI hỗ trợ (chỉ nhận đúng 1024x1024/1024x1536/1536x1024/auto) —
+  // ảnh này sẽ đi qua renderPersonalTemplateImage() rồi tự crop "cover" về đúng khổ 4:5 (1080x1350)
+  // nên không cần khớp tỉ lệ tuyệt đối, chỉ cần khổ dọc để đỡ mất chi tiết khi crop.
+  return callOpenAiImage(apiKey, prompt, '1024x1536');
 }
 
 // Ghép ảnh cá nhân (nền) + ảnh case study (khung nhỏ bo góc, có viền trắng + đổ bóng nhẹ) + tiêu đề
@@ -255,7 +258,16 @@ const TEMPLATE_FONTS = [
   { key: 'playfair', family: 'Playfair Display', weight: 800, widthFactor: 0.62 },
   { key: 'bevietnam', family: 'Be Vietnam Pro', weight: 700, widthFactor: 0.56 },
 ];
-const TEMPLATE_COLORS = ['#FFC93C', '#FF7FAE', '#4FC3F7', '#FF6B4A', '#8BD17C'];
+// Cố định luôn 1 màu vàng cho chữ nhấn (theo yêu cầu chị Quỳnh 2026-08-29: "chữ nổi luôn là màu
+// vàng, không phải màu cam") — khớp đúng màu "Vàng cam" mặc định ở tao-anh.js, KHÔNG random qua các
+// màu khác nữa (trước đây có 5 màu random, ra vài bài lỡ bị cam/hồng/xanh không đúng ý).
+const TEMPLATE_ACCENT_COLOR = '#FFC93C';
+// Khổ ảnh Dọc 4:5 (giống mặc định "size:'doc'" ở tao-anh.js) — KHÁC IMAGE_SIZE vuông 1:1 dùng cho
+// luồng case-study/ảnh AI chung cũ (2 luồng đó không đổi, chỉ riêng bản mẫu Tạo Ảnh Thương Hiệu này
+// cần đúng tỉ lệ 4:5 chị Quỳnh yêu cầu — cùng tỉ lệ 1080x1350 gốc của tao-anh.js, giữ chiều rộng 1080
+// chuẩn Facebook/Instagram).
+const TEMPLATE_W = 1080;
+const TEMPLATE_H = 1350;
 
 // Tách theo **...** để biết từ nào tô màu nhấn — y hệt parseWords() ở tao-anh.js.
 function parseTemplateWords(text) {
@@ -286,10 +298,11 @@ function wrapTemplateWords(words, maxCharsPerLine, maxLines) {
   return lines;
 }
 
-function templateOverlaySvg({ title, handle, layout, font, colorHex }) {
+function templateOverlaySvg({ title, handle, layout, font }) {
+  const colorHex = TEMPLATE_ACCENT_COLOR;
   const marginX = 56;
   const isAccent = layout.decor === 'accent-bar';
-  const maxWidthPx = IMAGE_SIZE - marginX * 2 - (isAccent ? 24 : 0);
+  const maxWidthPx = TEMPLATE_W - marginX * 2 - (isAccent ? 24 : 0);
 
   const titleLen = String(title || '').replace(/\*\*/g, '').length;
   let fontSize = layout.fontSize;
@@ -304,8 +317,8 @@ function templateOverlaySvg({ title, handle, layout, font, colorHex }) {
 
   const handleFontSize = 26;
   const handleGap = 14;
-  const zoneTopPx = layout.zoneTop * IMAGE_SIZE;
-  const zoneBottomPx = layout.zoneBottom * IMAGE_SIZE;
+  const zoneTopPx = layout.zoneTop * TEMPLATE_H;
+  const zoneBottomPx = layout.zoneBottom * TEMPLATE_H;
 
   let startY;
   if (layout.textPos === 'bottom') startY = (zoneBottomPx - handleFontSize - handleGap) - (lines.length - 1) * lineHeight;
@@ -314,14 +327,14 @@ function templateOverlaySvg({ title, handle, layout, font, colorHex }) {
 
   let decorSvg = '';
   if (layout.decor === 'gradient-bottom') {
-    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0"/><stop offset="1" stop-color="black" stop-opacity="0.8"/></linearGradient></defs><rect x="0" y="${0.42 * IMAGE_SIZE}" width="${IMAGE_SIZE}" height="${IMAGE_SIZE - 0.42 * IMAGE_SIZE}" fill="url(#g)"/>`;
+    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0"/><stop offset="1" stop-color="black" stop-opacity="0.8"/></linearGradient></defs><rect x="0" y="${0.42 * TEMPLATE_H}" width="${TEMPLATE_W}" height="${TEMPLATE_H - 0.42 * TEMPLATE_H}" fill="url(#g)"/>`;
   } else if (layout.decor === 'gradient-top') {
-    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0.65"/><stop offset="1" stop-color="black" stop-opacity="0"/></linearGradient></defs><rect x="0" y="0" width="${IMAGE_SIZE}" height="${0.48 * IMAGE_SIZE}" fill="url(#g)"/>`;
+    decorSvg = `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="black" stop-opacity="0.65"/><stop offset="1" stop-color="black" stop-opacity="0"/></linearGradient></defs><rect x="0" y="0" width="${TEMPLATE_W}" height="${0.48 * TEMPLATE_H}" fill="url(#g)"/>`;
   } else if (layout.decor === 'solid-bar') {
     const padding = 26;
-    const barHeight = Math.min(Math.max(blockHeight + handleFontSize + handleGap + padding * 2, 0.18 * IMAGE_SIZE), 0.42 * IMAGE_SIZE);
-    decorSvg = `<rect x="0" y="${IMAGE_SIZE - barHeight}" width="${IMAGE_SIZE}" height="${barHeight}" fill="rgba(10,12,10,0.9)"/>`;
-    startY = (IMAGE_SIZE - padding - handleFontSize - handleGap) - (lines.length - 1) * lineHeight;
+    const barHeight = Math.min(Math.max(blockHeight + handleFontSize + handleGap + padding * 2, 0.18 * TEMPLATE_H), 0.42 * TEMPLATE_H);
+    decorSvg = `<rect x="0" y="${TEMPLATE_H - barHeight}" width="${TEMPLATE_W}" height="${barHeight}" fill="rgba(10,12,10,0.9)"/>`;
+    startY = (TEMPLATE_H - padding - handleFontSize - handleGap) - (lines.length - 1) * lineHeight;
   } else if (layout.decor === 'accent-bar') {
     const boxTop = startY - lineHeight * 0.75;
     const boxHeight = blockHeight + lineHeight * 0.35;
@@ -337,7 +350,7 @@ function templateOverlaySvg({ title, handle, layout, font, colorHex }) {
     const y = startY + i * lineHeight;
     const totalChars = line.reduce((sum, w, idx) => sum + w.text.length + (idx > 0 ? 1 : 0), 0);
     const lineWidthPx = totalChars * avgCharWidth;
-    const startX = layout.align === 'center' ? (IMAGE_SIZE - lineWidthPx) / 2 : marginX;
+    const startX = layout.align === 'center' ? (TEMPLATE_W - lineWidthPx) / 2 : marginX;
     return line.map((w, idx) => {
       const txt = escapeXml(w.text) + (idx < line.length - 1 ? ' ' : '');
       const fill = w.highlight ? colorHex : '#fff';
@@ -349,9 +362,9 @@ function templateOverlaySvg({ title, handle, layout, font, colorHex }) {
 
   const handleY = startY + (lines.length - 1) * lineHeight + lineHeight * 0.62;
   const handleWidthPx = String(handle || '').length * handleFontSize * 0.5;
-  const handleX = layout.align === 'center' ? (IMAGE_SIZE - handleWidthPx) / 2 : marginX;
+  const handleX = layout.align === 'center' ? (TEMPLATE_W - handleWidthPx) / 2 : marginX;
 
-  return `<svg width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" xmlns="http://www.w3.org/2000/svg">
+  return `<svg width="${TEMPLATE_W}" height="${TEMPLATE_H}" xmlns="http://www.w3.org/2000/svg">
     ${decorSvg}
     <text xml:space="preserve" font-family="${font.family}" font-weight="${font.weight}" font-size="${fontSize}" style="paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:3px;">${linesSvg}</text>
     ${handle ? `<text x="${handleX.toFixed(1)}" y="${handleY.toFixed(1)}" font-family="Be Vietnam Pro" font-style="italic" font-weight="500" font-size="${handleFontSize}" fill="#E8E4D6">${escapeXml(handle)}</text>` : ''}
@@ -360,15 +373,15 @@ function templateOverlaySvg({ title, handle, layout, font, colorHex }) {
 
 // photoBuffer: 1 ảnh làm nền — hoặc ảnh cá nhân thật lấy ngẫu nhiên từ personal_photos (bài thường),
 // hoặc ảnh AI vẽ từ generateSpiritualBackground() (bài trục Tâm linh) — nơi gọi (auto-publish-fb.js)
-// tự quyết định nguồn nào rồi truyền buffer vào đây. layout/font/màu nhấn CHỌN NGẪU NHIÊN mỗi lần
-// đăng, cho đa dạng qua từng bài như dùng tay ở Tạo Ảnh Thương Hiệu, thay vì lặp lại đúng 1 kiểu mãi.
+// tự quyết định nguồn nào rồi truyền buffer vào đây. layout/font CHỌN NGẪU NHIÊN mỗi lần đăng, cho đa
+// dạng qua từng bài như dùng tay ở Tạo Ảnh Thương Hiệu, thay vì lặp lại đúng 1 kiểu mãi — riêng màu
+// nhấn CỐ ĐỊNH vàng (xem TEMPLATE_ACCENT_COLOR), khổ ảnh CỐ ĐỊNH dọc 4:5 (theo yêu cầu chị Quỳnh).
 async function renderPersonalTemplateImage({ photoBuffer, title, handle }) {
   const layout = pickRandom(TEMPLATE_LAYOUTS);
   const font = pickRandom(TEMPLATE_FONTS);
-  const colorHex = pickRandom(TEMPLATE_COLORS);
-  const overlayPng = rasterizeSvg(templateOverlaySvg({ title, handle, layout, font, colorHex }));
+  const overlayPng = rasterizeSvg(templateOverlaySvg({ title, handle, layout, font }));
   return sharp(photoBuffer)
-    .resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'cover' })
+    .resize(TEMPLATE_W, TEMPLATE_H, { fit: 'cover' })
     .composite([{ input: overlayPng, top: 0, left: 0 }])
     .jpeg({ quality: 88 })
     .toBuffer();

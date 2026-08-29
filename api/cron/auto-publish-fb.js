@@ -15,6 +15,7 @@
 const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { notifyOnce } = require('../_lib/push');
 const { generatePostImage, generateSpiritualBackground, renderPersonalTemplateImage } = require('../_lib/image-gen');
+const { stripDiacritics } = require('../_lib/post-schema');
 
 const GRAPH_API = 'https://graph.facebook.com/v19.0';
 // Phải khớp tay với default ở cột profiles.slot_time_* trong schema_full.sql — cùng tầng ưu tiên
@@ -115,7 +116,10 @@ async function publishOne(entry, pageId, pageToken, profile) {
         result = await fbPostPhoto(pageId, pageToken, Buffer.from(base64, 'base64'), post.content);
       } catch (e) { result = null; lastError = e.message; failedStep = 'đăng ảnh lên Facebook'; }
     }
-    const handle = (profile && (profile.brand_name || profile.channel_handle)) || '';
+    // Chữ ký hiện dưới tiêu đề luôn ở dạng "@tenkhongdau" (vd "@tuquynh") — theo yêu cầu chị Quỳnh
+    // 2026-08-29, không phải tên đầy đủ có dấu như profiles.brand_name/channel_handle đang lưu.
+    const rawHandle = (profile && (profile.brand_name || profile.channel_handle)) || '';
+    const handle = rawHandle ? `@${stripDiacritics(rawHandle).toLowerCase()}` : '';
     const postTitle = post.title || post.content.slice(0, 80);
     if (!result) {
       const isSpiritual = Array.isArray(post.tags) && post.tags.includes('tam_linh');
