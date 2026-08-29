@@ -262,6 +262,7 @@ function render(container, ctx){
         </div>
       ` : ''}
       ${state.channel==='ca_nhan' ? `
+      ${isAdmin ? `<div class="hint-box" style="margin-bottom:16px;">Hệ thống cũng tự động viết + xếp <b>3 bài/ngày</b> (Sáng/Trưa/Tối) vào ô trống mỗi sáng sớm — Tối luôn là "Video Ngồi Nói", Trưa luôn là bài case study, Sáng là bài thường. Chị chỉ cần tự đăng tay lên Facebook (không thể tự đăng hộ trang cá nhân).</div>` : ''}
       <div class="card" style="margin-bottom:20px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tuần này bạn muốn đẩy mục tiêu gì nhất?</label>
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>

@@ -1,14 +1,15 @@
-// Cron job (xem "crons" trong vercel.json, chạy 1 lần/ngày sáng sớm giờ VN) — Phase 2 của auto-đăng
-// Fanpage: tự động lấp các Ô LỊCH CÒN TRỐNG (chưa từng tạo trong Lịch Đăng Bài) của admin bằng 1 bài
-// viết mới — viết từ 1 hook/content viral CHƯA DÙNG trong kho (hoặc case study, xem fillCaseStudySlot),
-// kèm hashtag, rồi bật auto_publish_fb=true để api/cron/auto-publish-fb.js tự nhặt đúng giờ đăng lên
-// Fanpage — chốt lại 2026-08-28: lane Fanpage tự đăng thật, không cần chị tick tay từng bài.
+// Cron job (xem "crons" trong vercel.json, chạy 1 lần/ngày sáng sớm giờ VN) — tự động lấp các Ô
+// LỊCH CÒN TRỐNG (chưa từng tạo trong Lịch Đăng Bài) của admin bằng bài viết mới, cho CẢ 2 lane:
+// - Fanpage (autoFillForAdmin, Phase 2): 1 bài/ngày, viết từ hook/content viral hoặc case study, rồi
+//   bật auto_publish_fb=true để api/cron/auto-publish-fb.js tự nhặt đúng giờ đăng lên Fanpage.
+// - Cá nhân (autoFillPersonalForAdmin, Phase 9): 3 bài/ngày (Sáng/Trưa/Tối), KHÔNG tự đăng (Facebook
+//   không cho app đăng hộ trang cá nhân) — chị Quỳnh tự đăng tay. Mỗi buổi khoá 1 kiểu content: Tối
+//   luôn "Video Ngồi Nói", Trưa luôn case study, Sáng là bài thường (không phải "Video Ngồi Nói").
 //
-// CHỈ chạy cho tài khoản admin (đúng chị Quỳnh, giống phạm vi Phase 1 — không phải tính năng cho
-// khách hàng khác). Mỗi lần chạy tối đa lấp 3 ô (an toàn, tránh sinh hàng loạt nếu có lỗi) — ô nào
-// bị bỏ qua do chạm giới hạn được ghi lại trong response, không im lặng bỏ qua. Chỉ lấp ô HOÀN TOÀN
-// CHƯA CÓ GÌ (không có dòng calendar_entries nào) — ô chị Quỳnh đã tự xếp tay (dù chưa viết xong) thì
-// không đụng vào.
+// CHỈ chạy cho tài khoản admin (đúng chị Quỳnh — không phải tính năng cho khách hàng khác). Mỗi lần
+// chạy có giới hạn an toàn riêng cho từng lane (tránh sinh hàng loạt nếu có lỗi) — ô nào bị bỏ qua do
+// chạm giới hạn được ghi lại trong response, không im lặng bỏ qua. Chỉ lấp ô HOÀN TOÀN CHƯA CÓ GÌ
+// (không có dòng calendar_entries nào) — ô chị Quỳnh đã tự xếp tay (dù chưa viết xong) thì không đụng.
 const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { SYSTEM_PROMPT: KHO_GOC_SYSTEM_PROMPT, TOOL_POST_KHO_GOC } = require('../viet-tu-kho-goc');
 const {
@@ -31,6 +32,15 @@ const DEFAULT_SLOT_TIME = { sang: '08:00', trua: '12:00', toi: '19:00' };
 // dục) khi cả 2 nguồn đều sẵn sàng — chốt 2026-08-28 sau khi kho ảnh case study/cá nhân đầy khiến
 // MỌI bài đều rơi vào case study, mất đa dạng. Xem nhánh chọn ở autoFillForAdmin().
 const CASE_STUDY_RATIO = 0.3;
+
+// Phase 9 (2026-08-29) — lane Cá nhân cũng được tự động viết + xếp lịch như Fanpage, nhưng KHÔNG tự
+// đăng (Facebook không cho app đăng hộ trang cá nhân) — chị Quỳnh tự đăng tay. Chốt 3 bài/ngày, đúng
+// 3 buổi có sẵn, mỗi buổi khoá 1 kiểu dạng content cố định (xem autoFillPersonalForAdmin()).
+const PERSONAL_SLOTS = ['sang', 'trua', 'toi'];
+const MAX_FILL_PER_RUN_PERSONAL = LOOKAHEAD_DAYS * PERSONAL_SLOTS.length; // 3 ngày × 3 buổi = 9
+const NGOI_NOI_FORMAT = 'Video Ngồi Nói'; // phải khớp đúng tên trong FORMAT_NAMES (api/_lib/formats.js)
+const FORCE_NGOI_NOI = `BẮT BUỘC: chọn dinh_dang_de_xuat = "${NGOI_NOI_FORMAT}" cho bài này (khung giờ tối dành riêng cho dạng video ngồi nói chia sẻ trực diện) — viết ly_do_dinh_dang và goi_y_caption khớp đúng dạng này.`;
+const EXCLUDE_NGOI_NOI = `KHÔNG được chọn dinh_dang_de_xuat = "${NGOI_NOI_FORMAT}" cho bài này — dạng đó chỉ dành riêng cho khung giờ tối, chọn 1 trong các dạng còn lại phù hợp hơn.`;
 
 // Giống hệt SYSTEM_PROMPT ghép ở api/viet-content-extras.js — viết lại tại đây (4 dòng) thay vì sửa
 // file đó, vì nó vẫn đang phục vụ endpoint HTTP riêng, không muốn đổi hành vi chỗ đang chạy thật.
@@ -135,18 +145,20 @@ function pickUnusedCandidate(candidates, usedRefs) {
   return (unused.length ? unused : candidates)[0] || null;
 }
 
-async function findEmptySlots(userId, dateStrs) {
-  // channel=eq.fanpage: chỉ xét lane Fanpage — ô đã điền bên lane "ca_nhan" (kế hoạch FB cá nhân,
-  // đăng thủ công) KHÔNG được tính là "đã có lịch" ở đây, 2 lane độc lập hoàn toàn (xem cột channel
-  // ở schema_full.sql, thêm 2026-08-27 theo phản hồi chị Quỳnh).
+// Tổng quát hoá cho cả 2 lane (Phase 9) — nhận thẳng `channel` + danh sách `slots` cần xét thay vì
+// hardcode Fanpage/1 buổi. Lane Cá nhân độc lập hoàn toàn với Fanpage (2 lane khác `channel`, xem
+// schema_full.sql) — ô đã điền bên lane này KHÔNG tính là "đã có lịch" ở lane kia.
+async function findEmptySlots(userId, dateStrs, channel, slots) {
   const resp = await supabaseAdmin(
-    `calendar_entries?user_id=eq.${userId}&channel=eq.fanpage&scheduled_date=in.(${dateStrs.join(',')})&select=scheduled_date,slot`
+    `calendar_entries?user_id=eq.${userId}&channel=eq.${channel}&scheduled_date=in.(${dateStrs.join(',')})&select=scheduled_date,slot`
   );
   const existing = resp.ok ? await resp.json() : [];
   const taken = new Set(existing.map((e) => `${e.scheduled_date}:${e.slot}`));
   const empty = [];
   for (const dateStr of dateStrs) {
-    if (!taken.has(`${dateStr}:${FANPAGE_DAILY_SLOT}`)) empty.push({ dateStr, slot: FANPAGE_DAILY_SLOT });
+    for (const slot of slots) {
+      if (!taken.has(`${dateStr}:${slot}`)) empty.push({ dateStr, slot });
+    }
   }
   return empty;
 }
@@ -156,7 +168,7 @@ async function findEmptySlots(userId, dateStrs) {
 // `core` (từ đâu ra tieu_de/hook/van_de/...) và cách có được ảnh (imageDataBase64).
 async function writeExtrasAndSave({
   apiKey, positioning, core, channelHandle, brandName, product, group,
-  userId, tags, sourceTable, sourceId, imageDataBase64, slotInfo, slotTime,
+  userId, tags, sourceTable, sourceId, imageDataBase64, slotInfo, slotTime, channel, formatConstraint,
 }) {
   const bodyText = assemblePost(core);
 
@@ -185,7 +197,7 @@ ${extraFieldsBlock({
       product_name: product && product.label, product_url: product && product.url, product_cta_mau: product && product.cta_mau,
       group_name: group && group.label, group_url: group && group.url, group_cta_mau: group && group.cta_mau,
     })}
-
+${formatConstraint ? `\n${formatConstraint}\n` : ''}
 Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption gợi ý cho đúng bài này.`,
   });
   const hashtags = Array.isArray(extras.hashtag) ? extras.hashtag.map(stripDiacritics).filter(Boolean) : [];
@@ -212,22 +224,23 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
   if (!postResp.ok) throw new Error(`Lưu bài thất bại: ${await postResp.text()}`);
   const [post] = await postResp.json();
 
-  // auto_publish_fb: true — lane Fanpage tự đăng thật lên Facebook đúng giờ, không cần chị tick tay
-  // (chốt lại 2026-08-28). Checkbox "Tự động đăng lên Fanpage" ở Lịch Đăng Bài vẫn còn để chị tự tắt
-  // riêng 1 bài nào đó nếu không muốn nó tự đăng.
+  // auto_publish_fb: chỉ true cho lane Fanpage (tự đăng thật lên Facebook đúng giờ, không cần chị
+  // tick tay, chốt 2026-08-28) — lane Cá nhân không có khái niệm tự đăng (Facebook không cho app
+  // đăng hộ trang cá nhân), luôn false. Checkbox "Tự động đăng lên Fanpage" ở Lịch Đăng Bài vẫn còn
+  // để chị tự tắt riêng 1 bài Fanpage nào đó nếu không muốn nó tự đăng.
   await supabaseAdmin('calendar_entries', {
     method: 'POST',
     body: JSON.stringify({
       user_id: userId, post_id: post.id, scheduled_date: slotInfo.dateStr, slot: slotInfo.slot,
-      channel: 'fanpage',
-      scheduled_time: slotTime, title: core.tieu_de, cta: core.cta, posted: false, auto_publish_fb: true,
+      channel,
+      scheduled_time: slotTime, title: core.tieu_de, cta: core.cta, posted: false, auto_publish_fb: channel === 'fanpage',
     }),
   });
 
   return { date: slotInfo.dateStr, slot: slotInfo.slot, post_id: post.id, title: core.tieu_de };
 }
 
-async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName }) {
+async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint }) {
   const core = await callClaude({
     apiKey, system: KHO_GOC_SYSTEM_PROMPT, tool: TOOL_POST_KHO_GOC,
     userContent: `${contextBlockOf(positioning, null)}
@@ -251,13 +264,14 @@ Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyê
   return writeExtrasAndSave({
     apiKey, positioning, core, channelHandle, brandName, product, group,
     userId, tags: candidate.tags, sourceTable: candidate.table, sourceId: candidate.id,
-    imageDataBase64: null, slotInfo, slotTime,
+    imageDataBase64: null, slotInfo, slotTime, channel, formatConstraint,
   });
 }
 
-// Viết bài TỪ 1 ảnh case study (vision) + ghép ảnh cá nhân làm nền — luồng ưu tiên khi có sẵn cả 2
-// kho ảnh (xem autoFillForAdmin). Không có "nguồn hook/content" nên source_table/source_id để trống.
-async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group, channelHandle, brandName }) {
+// Viết bài TỪ 1 ảnh case study (vision), tuỳ chọn ghép thêm ảnh cá nhân làm nền (chỉ Fanpage —
+// personalPhoto truyền null thì bỏ qua hẳn bước ghép ảnh, dùng cho lane Cá nhân vốn không cần ảnh do
+// hệ thống tạo, chị tự đăng tay). Không có "nguồn hook/content" nên source_table/source_id để trống.
+async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint }) {
   const core = await callClaude({
     apiKey, system: SYSTEM_PROMPT_CASE_STUDY, tool: TOOL_POST_CORE,
     userContent: [
@@ -276,24 +290,27 @@ Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguy
   const result = await writeExtrasAndSave({
     apiKey, positioning, core, channelHandle, brandName, product, group,
     userId, tags: caseStudy.tags, sourceTable: null, sourceId: null,
-    imageDataBase64: null, slotInfo, slotTime,
+    imageDataBase64: null, slotInfo, slotTime, channel, formatConstraint,
   });
 
   // Ghép ảnh SAU khi đã lưu bài (composite tốn thời gian, không cần chặn việc lưu bài chính) — lỗi ở
   // bước ghép ảnh không làm fail cả lượt lấp lịch, chỉ để bài đó không có ảnh (auto-publish-fb.js sẽ
-  // tự rơi về ảnh AI hoặc bỏ qua đăng theo đúng quy tắc "không đăng bài chữ trần").
-  try {
-    const image = await compositeCaseStudyImage({
-      cardCorner: personalPhoto.card_corner,
-      personalImageBuffer: Buffer.from(stripDataUrlPrefix(personalPhoto.image), 'base64'),
-      caseStudyImageBuffer: Buffer.from(stripDataUrlPrefix(caseStudy.image), 'base64'),
-      title: core.tieu_de,
-    });
-    await supabaseAdmin(`posts?id=eq.${result.post_id}`, {
-      method: 'PATCH', prefer: 'return=minimal',
-      body: JSON.stringify({ image_data: image.toString('base64') }),
-    });
-  } catch (e) { /* không ghép được ảnh — bài vẫn đã lưu, chỉ thiếu ảnh, xử lý tiếp ở auto-publish-fb.js */ }
+  // tự rơi về ảnh AI hoặc bỏ qua đăng theo đúng quy tắc "không đăng bài chữ trần"). Bỏ qua hẳn nếu
+  // không có personalPhoto (lane Cá nhân, xem ghi chú ở chữ ký hàm).
+  if (personalPhoto) {
+    try {
+      const image = await compositeCaseStudyImage({
+        cardCorner: personalPhoto.card_corner,
+        personalImageBuffer: Buffer.from(stripDataUrlPrefix(personalPhoto.image), 'base64'),
+        caseStudyImageBuffer: Buffer.from(stripDataUrlPrefix(caseStudy.image), 'base64'),
+        title: core.tieu_de,
+      });
+      await supabaseAdmin(`posts?id=eq.${result.post_id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: JSON.stringify({ image_data: image.toString('base64') }),
+      });
+    } catch (e) { /* không ghép được ảnh — bài vẫn đã lưu, chỉ thiếu ảnh, xử lý tiếp ở auto-publish-fb.js */ }
+  }
 
   return result;
 }
@@ -360,6 +377,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
         filled.push(await fillCaseStudySlot({
           userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
+          channel: 'fanpage', formatConstraint: null,
         }));
         continue;
       }
@@ -373,6 +391,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
           filled.push(await fillCaseStudySlot({
             userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
             channelHandle: profile.channel_handle, brandName: profile.brand_name,
+            channel: 'fanpage', formatConstraint: null,
           }));
           continue;
         }
@@ -382,6 +401,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
       filled.push(await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
+        channel: 'fanpage', formatConstraint: null,
       }));
     } catch (e) {
       skippedNoCandidate.push({ ...slotInfo, error: e.message });
@@ -393,11 +413,91 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
 
 async function autoFillForAdmin(admin, apiKey) {
   const dateStrs = Array.from({ length: LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
-  const emptySlots = await findEmptySlots(admin.id, dateStrs);
+  const emptySlots = await findEmptySlots(admin.id, dateStrs, 'fanpage', [FANPAGE_DAILY_SLOT]);
   const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN);
   const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN);
   const result = await fillSlotsForAdmin(admin, apiKey, toFill);
   return { ...result, skipped_cap: skippedCap };
+}
+
+// Phase 9 (2026-08-29) — lane Cá nhân: tự viết + tự xếp 3 bài/ngày (Sáng/Trưa/Tối), KHÔNG tự đăng
+// (Facebook không cho app đăng hộ trang cá nhân — chị Quỳnh tự đăng tay). Mỗi buổi khoá 1 kiểu dạng
+// content cố định theo yêu cầu chị Quỳnh: Tối luôn "Video Ngồi Nói", Trưa luôn case study, Sáng là
+// bài thường (hook/content) miễn không phải "Video Ngồi Nói" (dạng đó dành riêng buổi tối).
+async function autoFillPersonalForAdmin(admin, apiKey) {
+  const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp] = await Promise.all([
+    supabaseAdmin(`positioning_results?user_id=eq.${admin.id}&select=luot1,luot2&limit=1`),
+    supabaseAdmin(`profiles?id=eq.${admin.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`),
+    loadCandidatePool(admin.id),
+    supabaseAdmin(`promo_assets?user_id=eq.${admin.id}&select=id,label,url,kind,cta_mau&order=created_at.asc`),
+    supabaseAdmin(`case_studies?user_id=eq.${admin.id}&select=id,image,tags`),
+  ]);
+  const posRows = posResp.ok ? await posResp.json() : [];
+  const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
+  if (!positioning) return { filled: [], skipped_no_positioning: true };
+
+  const profRows = profResp.ok ? await profResp.json() : [];
+  const profile = profRows[0] || {};
+
+  const assets = assetsResp.ok ? await assetsResp.json() : [];
+  const products = assets.filter((a) => a.kind !== 'cong_dong');
+  const groups = assets.filter((a) => a.kind === 'cong_dong');
+
+  const caseStudies = caseStudiesResp.ok ? await caseStudiesResp.json() : [];
+
+  const postsResp = await supabaseAdmin(`posts?user_id=eq.${admin.id}&select=source_table,source_id`);
+  const postsRows = postsResp.ok ? await postsResp.json() : [];
+  const usedRefs = postsRows
+    .filter((p) => p.source_table && p.source_id)
+    .map((p) => ({ table: p.source_table, id: p.source_id }));
+
+  const dateStrs = Array.from({ length: LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
+  const emptySlots = await findEmptySlots(admin.id, dateStrs, 'ca_nhan', PERSONAL_SLOTS);
+  const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN_PERSONAL);
+  const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN_PERSONAL);
+
+  const filled = [];
+  const skippedNoCandidate = [];
+  for (const slotInfo of toFill) {
+    const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
+    const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
+    const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
+    try {
+      if (slotInfo.slot === 'toi') {
+        const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
+        if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
+        usedRefs.push({ table: candidate.table, id: candidate.id });
+        filled.push(await fillOneSlot({
+          userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
+          channelHandle: profile.channel_handle, brandName: profile.brand_name,
+          channel: 'ca_nhan', formatConstraint: FORCE_NGOI_NOI,
+        }));
+        continue;
+      }
+      if (slotInfo.slot === 'trua' && caseStudies.length) {
+        const caseStudy = caseStudies[Math.floor(Math.random() * caseStudies.length)];
+        filled.push(await fillCaseStudySlot({
+          userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto: null, slotTime, apiKey, product, group,
+          channelHandle: profile.channel_handle, brandName: profile.brand_name,
+          channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI,
+        }));
+        continue;
+      }
+      // Buổi sáng, hoặc buổi trưa khi chưa có ảnh case study nào (fallback) — bài thường từ hook/content.
+      const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
+      if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
+      usedRefs.push({ table: candidate.table, id: candidate.id });
+      filled.push(await fillOneSlot({
+        userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
+        channelHandle: profile.channel_handle, brandName: profile.brand_name,
+        channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI,
+      }));
+    } catch (e) {
+      skippedNoCandidate.push({ ...slotInfo, error: e.message });
+    }
+  }
+
+  return { filled, skipped_cap: skippedCap, skipped_no_candidate: skippedNoCandidate };
 }
 
 module.exports = async (req, res) => {
@@ -417,7 +517,10 @@ module.exports = async (req, res) => {
     const admins = adminsResp.ok ? await adminsResp.json() : [];
     const results = {};
     for (const admin of admins) {
-      results[admin.id] = await autoFillForAdmin(admin, apiKey);
+      results[admin.id] = {
+        fanpage: await autoFillForAdmin(admin, apiKey),
+        ca_nhan: await autoFillPersonalForAdmin(admin, apiKey),
+      };
     }
     res.status(200).json({ ok: true, results });
   } catch (e) {
