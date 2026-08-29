@@ -452,6 +452,7 @@ function render(container, ctx){
                   ${matchedPost ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">Bài đã viết sẵn</div>` : (suggestion.dinh_dang ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${esc(suggestion.dinh_dang)}</div>` : '')}
                   <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;">
                     ${matchedPost ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>` : ''}
+                    ${!matchedPost && suggestion.chu_de ? `<span class="btn-ghost btn btn-sm" data-write-new-for-slot="${dateStr}|${s.key}">Viết bài mới cho gợi ý này →</span>` : ''}
                     ${state.choosingKhoFor===`${dateStr}|${s.key}`
                       ? `<span style="font-size:11px;color:var(--ink-soft);">Tìm ở kho nào?</span>
                          <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-content|${dateStr}|${s.key}">Kho Content</span>
@@ -627,6 +628,24 @@ function render(container, ctx){
         // rơi về Viết Content nữa.
         window.PendingPillar = matchPillarKey(s && s.truc_noi_dung) || 'all';
         location.hash = dest;
+      };
+    });
+    // "Viết bài mới cho gợi ý này" (2026-08-27, đòn bẩy lớn nhất để tăng tỉ lệ từ "có kế hoạch"
+    // thành "có bài thật" — trước đây chỉ có đường "chọn bài mẫu đúng trục" trong kho, không dùng
+    // được thẳng chủ đề/hook/CTA cụ thể mà AI đã nghĩ riêng cho đúng slot này) — nhảy sang Viết
+    // Content với chủ đề gợi ý điền sẵn, y hệt cơ chế window.PendingTopic đã dùng cho Kho Hook/Tái
+    // Chế Content Viral. ideaIsHook=false vì đây là Ý TƯỞNG để AI viết tự do, không phải hook đã
+    // chốt cần giữ nguyên câu chữ. Viết xong bấm "Đưa vào lịch" (nút có sẵn) quay lại đúng chỗ này,
+    // state.pending sẽ nhận đúng bài vừa viết khi bấm lại ô này.
+    container.querySelectorAll('[data-write-new-for-slot]').forEach(el=>{
+      el.onclick = ()=>{
+        const [dateStr, slotKey] = el.getAttribute('data-write-new-for-slot').split('|');
+        const thu = (new Date(dateStr).getDay()+6)%7;
+        const s = suggestionFor(thu, slotKey);
+        if(!s) return;
+        window.PendingTopic = [s.chu_de, s.hook_goi_y ? `Hook gợi ý: ${s.hook_goi_y}` : '', s.cta ? `CTA: ${s.cta}` : ''].filter(Boolean).join('\n');
+        window.PendingIsHook = false;
+        location.hash = 'viet-content';
       };
     });
 
