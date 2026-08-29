@@ -12,12 +12,22 @@ function render(container, ctx){
     // (chị Quỳnh yêu cầu 2026-08-29: 1 khách nhắn nhiều lượt, mỗi lượt lại chụp ảnh gửi, gõ tên mỗi
     // lần quá mất công). needsName chỉ bật khi AI THẬT SỰ không đọc được tên nào (xem api/crm-tuvan.js).
     needsName: false, manualName: '',
+    // "Ghim" khách đang tiếp tục trong phiên này — gửi known_customer_id ở lượt sau để server chỉ cần
+    // GỌI CLAUDE ĐÚNG 1 LẦN có sẵn ngữ cảnh, thay vì phải tự đoán lại từ đầu mỗi ảnh (đỡ tốn gấp đôi
+    // lượt AI khi nhắn nhiều tin liên tiếp cho cùng 1 khách — chị Quỳnh phản hồi 2026-08-29).
+    activeCustomer: null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   function persistDraft(){
-    saveModuleDraft(ctx, DRAFT_KEY, { images: state.images, note: state.note });
+    saveModuleDraft(ctx, DRAFT_KEY, { images: state.images, note: state.note, activeCustomer: state.activeCustomer });
+  }
+
+  function startNewCustomer(){
+    state.activeCustomer = null;
+    draw();
+    persistDraft();
   }
 
   async function boot(){
@@ -33,6 +43,7 @@ function render(container, ctx){
     if(draft){
       state.images = draft.images || [];
       state.note = draft.note || '';
+      state.activeCustomer = draft.activeCustomer || null;
     }
     if(sanPhamDraft && sanPhamDraft.text) state.sanPhamText = sanPhamDraft.text;
     const hasStory = story && story.answers && Object.values(story.answers).some(v=>String(v||'').trim());
@@ -83,6 +94,9 @@ function render(container, ctx){
         // cũ hoặc tạo mới (xem api/crm-tuvan.js). manual_ten_khach_hang chỉ gửi khi AI đã báo không
         // đọc được tên ở lượt trước và người dùng vừa gõ bổ sung.
         manual_ten_khach_hang: state.needsName ? state.manualName.trim() : undefined,
+        // Gửi lại đúng khách đang ghim (nếu có) để server chỉ cần 1 lượt gọi Claude, không tốn thêm
+        // lượt "đoán lại từ đầu" cho mỗi ảnh trong cùng 1 buổi nhắn với 1 khách.
+        known_customer_id: state.activeCustomer ? state.activeCustomer.id : undefined,
         san_pham_dich_vu: state.sanPhamText,
         cau_chuyen: state.cauChuyen,
       }, 110000);
@@ -94,7 +108,8 @@ function render(container, ctx){
       state.result = data;
       state.needsName = false; state.manualName = '';
       state.images = []; state.note = '';
-      await clearModuleDraft(ctx, DRAFT_KEY);
+      state.activeCustomer = data.customer ? { id: data.customer.id, ten_khach_hang: data.customer.ten_khach_hang } : null;
+      persistDraft();
     } catch(e){
       state.error = e.message;
     } finally {
@@ -123,6 +138,13 @@ function render(container, ctx){
       ${state.showSanPham ? `
         <div class="card" style="margin-top:-10px;margin-bottom:20px;">
           <textarea id="tv-sanpham" placeholder="VD: Gói Cân Bằng Chuyển Hóa 1 tháng — 20.000.000đ, link: ...&#10;Gói Xây Nhân Hiệu Zoom 6 buổi — 1.990.000đ, link: ...">${esc(state.sanPhamText)}</textarea>
+        </div>
+      ` : ''}
+
+      ${state.activeCustomer ? `
+        <div class="hint-box" style="margin-top:0;margin-bottom:20px;">
+          Đang tiếp tục hồ sơ: <b>${esc(state.activeCustomer.ten_khach_hang)}</b>
+          <span style="float:right;cursor:pointer;text-decoration:underline;" id="tv-new-customer">Khách mới</span>
         </div>
       ` : ''}
 
@@ -193,6 +215,9 @@ function render(container, ctx){
 
     const manualNameEl = container.querySelector('#tv-manual-name');
     if(manualNameEl) manualNameEl.oninput = (e)=>{ state.manualName = e.target.value; };
+
+    const newCustomerBtn = container.querySelector('#tv-new-customer');
+    if(newCustomerBtn) newCustomerBtn.onclick = startNewCustomer;
 
     const fileEl = container.querySelector('#tv-file');
     if(fileEl) fileEl.onchange = ()=>{ if(fileEl.files.length) handleFiles(fileEl.files); };

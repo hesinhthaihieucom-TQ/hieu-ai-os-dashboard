@@ -36,7 +36,7 @@ NGUYÊN TẮC TƯ VẤN CHUNG (áp dụng mọi nhánh A/B/C/D):
 - KHÔNG tự chẩn đoán bệnh, không tự gộp khách nếu chưa chắc là cùng 1 người (nếu chưa chắc, vẫn cứ tạo/ghi theo tên khách nhưng nêu rõ nghi vấn trong ghi_chu_ai để người vận hành tự xác nhận).
 - Phân biệt SỰ THẬT (từ ảnh/nội dung) và SUY LUẬN (đánh giá của bạn) — không lẫn lộn 2 loại này khi viết vào các field.
 
-NGUYÊN TẮC CẬP NHẬT HỒ SƠ ĐÃ CÓ (khi có "HỒ SƠ KHÁCH ĐÃ CÓ" trong ngữ cảnh): mọi field bạn xuất ra trong "khach_hang" sẽ THAY THẾ HOÀN TOÀN giá trị cũ trong CRM, không tự cộng dồn phía hệ thống — vì vậy bạn phải tự cộng dồn TRƯỚC khi xuất. Với nhom_nhu_cau/rao_can: xuất mảng ĐẦY ĐỦ gồm mục cũ còn đúng + mục mới, chỉ bỏ mục cũ khi chat lần này cho thấy rõ nó không còn đúng (VD rào cản đã được gỡ). Với nhu_cau_cu_the/giai_phap_phu_hop/hanh_dong_tiep_theo/gia_tri_du_kien/ket_qua: viết bản cập nhật đầy đủ (giữ thông tin cũ còn giá trị, bổ sung/sửa theo tin mới) thay vì chỉ mô tả mỗi đoạn chat đang đọc. Field nào hồ sơ cũ đã có và chat lần này không nhắc gì thêm/không có gì đổi thì GIỮ NGUYÊN giá trị cũ trong output, đừng để trống.
+NGUYÊN TẮC CẬP NHẬT HỒ SƠ ĐÃ CÓ (khi có "HỒ SƠ KHÁCH ĐÃ CÓ" trong ngữ cảnh): nhom_nhu_cau/rao_can hệ thống TỰ CỘNG DỒN với mảng cũ bằng code — bạn chỉ cần liệt kê mục MỚI phát hiện lần này, không cần chép lại mục cũ. Với nhu_cau_cu_the/giai_phap_phu_hop/hanh_dong_tiep_theo/gia_tri_du_kien/ket_qua (KHÔNG tự cộng dồn phía hệ thống): viết bản cập nhật đầy đủ (giữ thông tin cũ còn giá trị, bổ sung/sửa theo tin mới) thay vì chỉ mô tả mỗi đoạn chat đang đọc; field nào hồ sơ cũ đã có và chat lần này không nhắc gì thêm thì GIỮ NGUYÊN giá trị cũ, đừng để trống. Nếu tên khách đọc được từ ảnh/mô tả lần này KHÁC RÕ RÀNG với tên trong "HỒ SƠ KHÁCH ĐÃ CÓ" — đây là 1 người KHÁC, ghi đúng tên mới đọc được, KHÔNG dùng dữ liệu hồ sơ cũ đó để mô tả người này.
 
 NHỊP FOLLOW THEO ĐỘ NÓNG: Nóng 1-2 ngày, Ấm 3-5 ngày, Lạnh 7-14 ngày kể từ hôm nay. Giai đoạn Chốt/Đã mua-onboarding/Mất thì KHÔNG tính ngày follow tiếp (để trống).
 
@@ -189,7 +189,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { images, note, manual_ten_khach_hang, san_pham_dich_vu, cau_chuyen } = req.body || {};
+    const { images, note, manual_ten_khach_hang, known_customer_id, san_pham_dich_vu, cau_chuyen } = req.body || {};
     const imgList = Array.isArray(images) ? images : (images ? [images] : []);
     if (!imgList.length && !(note && note.trim())) {
       res.status(400).json({ error: 'Cần ít nhất 1 ảnh chụp chat hoặc mô tả tình huống.' });
@@ -198,52 +198,76 @@ module.exports = async (req, res) => {
 
     const todayIso = new Date().toISOString().slice(0, 10);
     let customer = null; // hồ sơ khách đã khớp (nếu có) — để trống nghĩa là sẽ tạo hồ sơ mới
-    let result;
     let ambiguousNameNote = null;
 
-    if (manual_ten_khach_hang && manual_ten_khach_hang.trim()) {
-      // Người vận hành vừa gõ bổ sung tên sau khi AI báo không đọc được — khớp trước rồi mới hỏi AI,
-      // để AI có đủ HỒ SƠ KHÁCH ĐÃ CÓ ngay từ lượt gọi đầu (không cần gọi 2 lần trong nhánh này).
-      const name = manual_ten_khach_hang.trim();
-      const matches = await findCustomersByName(token, user.id, name);
-      if (matches.length === 1) {
-        customer = { ...matches[0], lich_su_gan_day: await fetchRecentInteractions(token, matches[0].id) };
-      }
-      const contentBlocks = buildContentBlocks({ todayIso, profile, customer, sanPhamDichVu: san_pham_dich_vu, cauChuyen: cau_chuyen, note, imgList });
-      result = await callClaude({ apiKey, contentBlocks });
-      result.khach_hang.ten_khach_hang = name; // giữ đúng tên người dùng vừa xác nhận, không để AI viết lệch đi
-    } else {
-      // Lượt đầu — chưa biết là khách nào, để AI tự đọc tên từ ảnh/mô tả trước (không có HỒ SƠ KHÁCH ĐÃ CÓ).
-      const contentBlocks1 = buildContentBlocks({ todayIso, profile, customer: null, sanPhamDichVu: san_pham_dich_vu, cauChuyen: cau_chuyen, note, imgList });
-      const result1 = await callClaude({ apiKey, contentBlocks: contentBlocks1 });
-      const extractedName = (result1.khach_hang.ten_khach_hang || '').trim();
+    // Đang tiếp tục 1 khách đã mở trong phiên trước (client tự "ghim" sau lượt trước, xem tu-van.js)
+    // — dùng LUÔN hồ sơ này làm ngữ cảnh, chỉ 1 lượt gọi Claude duy nhất, không cần đoán lại từ đầu.
+    let pinnedCustomer = null;
+    if (known_customer_id) {
+      const resp = await supabaseAsUser(token, `crm_customers?id=eq.${known_customer_id}&user_id=eq.${user.id}&select=*`);
+      const rows = resp.ok ? await resp.json() : [];
+      if (rows[0]) pinnedCustomer = { ...rows[0], lich_su_gan_day: await fetchRecentInteractions(token, rows[0].id) };
+    }
 
-      if (!extractedName || extractedName === NO_NAME_SENTINEL) {
-        // Không đọc được tên nào — hỏi lại người vận hành, CHƯA ghi gì vào CRM (đợi tên rồi mới ghi 1 lần).
-        res.status(200).json({ needsName: true });
-        return;
-      }
+    const nameHint = manual_ten_khach_hang && manual_ten_khach_hang.trim() ? manual_ten_khach_hang.trim() : null;
+    let contextCustomer = pinnedCustomer;
+    if (!contextCustomer && nameHint) {
+      // Người vận hành vừa gõ bổ sung tên sau khi AI báo không đọc được — khớp trước để gọi Claude
+      // CÓ SẴN hồ sơ cũ ngay từ đầu (không cần gọi 2 lần).
+      const matches = await findCustomersByName(token, user.id, nameHint);
+      if (matches.length === 1) contextCustomer = { ...matches[0], lich_su_gan_day: await fetchRecentInteractions(token, matches[0].id) };
+    }
 
-      const matches = await findCustomersByName(token, user.id, extractedName);
-      if (matches.length === 1) {
-        // Khớp đúng 1 khách — gọi lại lượt 2 KÈM hồ sơ cũ để AI cộng dồn đúng (nhom_nhu_cau/rao_can/
-        // form_hd/...), tránh lặp lại lỗi "gọi không có ngữ cảnh thì ghi đè mất dữ liệu cũ" đã sửa hôm nay.
-        customer = { ...matches[0], lich_su_gan_day: await fetchRecentInteractions(token, matches[0].id) };
-        const contentBlocks2 = buildContentBlocks({ todayIso, profile, customer, sanPhamDichVu: san_pham_dich_vu, cauChuyen: cau_chuyen, note, imgList });
-        result = await callClaude({ apiKey, contentBlocks: contentBlocks2 });
+    // LUÔN chỉ 1 lượt gọi Claude — không có chuyện gọi lại lần 2 để "lấy đủ ngữ cảnh", vì mỗi lượt
+    // gọi đều tốn tiền thật; phần cộng dồn mảng (nhom_nhu_cau/rao_can) làm THẲNG bằng code bên dưới,
+    // không phụ thuộc AI có thấy hồ sơ cũ hay không (an toàn hơn, rẻ hơn — chị Quỳnh phản hồi 2026-08-29:
+    // 1 khách nhắn nhiều lượt trong 1 buổi, gọi Claude 2 lần/lượt sẽ tốn gấp đôi không cần thiết).
+    const contentBlocks = buildContentBlocks({ todayIso, profile, customer: contextCustomer, sanPhamDichVu: san_pham_dich_vu, cauChuyen: cau_chuyen, note, imgList });
+    const result = await callClaude({ apiKey, contentBlocks });
+    let extractedName = (result.khach_hang.ten_khach_hang || '').trim();
+
+    if (nameHint) {
+      result.khach_hang.ten_khach_hang = nameHint; // giữ đúng tên người dùng vừa xác nhận, không để AI viết lệch đi
+      customer = contextCustomer;
+    } else if (pinnedCustomer) {
+      const sameAsPinned = !extractedName || extractedName === NO_NAME_SENTINEL
+        || extractedName.toLowerCase() === pinnedCustomer.ten_khach_hang.trim().toLowerCase();
+      if (sameAsPinned) {
+        result.khach_hang.ten_khach_hang = pinnedCustomer.ten_khach_hang;
+        customer = pinnedCustomer;
       } else {
-        result = result1;
-        if (matches.length > 1) {
-          // Nhiều khách trùng tên — không tự đoán khách nào đúng (nguyên tắc "không tự gộp khách nếu
-          // chưa chắc"), tạo hồ sơ mới và nêu rõ để người vận hành tự kiểm tra/gộp tay nếu cần.
-          ambiguousNameNote = `[Lưu ý: có ${matches.length} khách trùng tên "${extractedName}" trong hồ sơ — kiểm tra lại thủ công để tránh tạo trùng.]`;
-        }
+        // Ảnh lần này rõ ràng là 1 người KHÁC với khách đang ghim (chị Quỳnh gửi nhầm/đổi khách giữa
+        // chừng) — không dùng ngữ cảnh vừa gọi để cộng dồn nhầm, tìm lại đúng khách theo tên mới đọc.
+        const matches = await findCustomersByName(token, user.id, extractedName);
+        if (matches.length === 1) customer = { ...matches[0], lich_su_gan_day: await fetchRecentInteractions(token, matches[0].id) };
+        else if (matches.length > 1) ambiguousNameNote = `[Lưu ý: có ${matches.length} khách trùng tên "${extractedName}" trong hồ sơ — kiểm tra lại thủ công để tránh tạo trùng.]`;
+      }
+    } else if (!extractedName || extractedName === NO_NAME_SENTINEL) {
+      // Không đọc được tên nào và cũng chưa ghim khách nào trước đó — hỏi lại người vận hành, CHƯA
+      // ghi gì vào CRM (đợi tên rồi mới ghi 1 lần, không tính thêm lượt gọi Claude nào nữa).
+      res.status(200).json({ needsName: true });
+      return;
+    } else {
+      const matches = await findCustomersByName(token, user.id, extractedName);
+      if (matches.length === 1) customer = { ...matches[0], lich_su_gan_day: await fetchRecentInteractions(token, matches[0].id) };
+      else if (matches.length > 1) {
+        // Nhiều khách trùng tên — không tự đoán khách nào đúng (nguyên tắc "không tự gộp khách nếu
+        // chưa chắc"), tạo hồ sơ mới và nêu rõ để người vận hành tự kiểm tra/gộp tay nếu cần.
+        ambiguousNameNote = `[Lưu ý: có ${matches.length} khách trùng tên "${extractedName}" trong hồ sơ — kiểm tra lại thủ công để tránh tạo trùng.]`;
       }
     }
 
     if (ambiguousNameNote) {
       result.khach_hang.ghi_chu_ai = result.khach_hang.ghi_chu_ai
         ? `${result.khach_hang.ghi_chu_ai} ${ambiguousNameNote}` : ambiguousNameNote;
+    }
+
+    // Cộng dồn mảng BẰNG CODE (không nhờ AI) — đúng dù lượt gọi vừa rồi có/không có hồ sơ cũ làm ngữ
+    // cảnh (VD nhánh "đổi khách" ở trên không kịp truyền hồ sơ cũ vào lượt gọi), luôn giữ đủ dữ liệu.
+    if (customer) {
+      const union = (a, b) => Array.from(new Set([...(a || []), ...(b || [])]));
+      result.khach_hang.nhom_nhu_cau = union(customer.nhom_nhu_cau, result.khach_hang.nhom_nhu_cau);
+      result.khach_hang.rao_can = union(customer.rao_can, result.khach_hang.rao_can);
     }
 
     // Ghi CRM — cập nhật nếu khớp hồ sơ cũ, ngược lại tạo mới. lan_tuong_tac_cuoi/ngay_follow_tiep
