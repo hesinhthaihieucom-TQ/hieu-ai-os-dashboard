@@ -801,19 +801,36 @@ function renderAuthScreen(err, successMsg){
   };
 }
 
+// 2026-08-29, theo yêu cầu chị Quỳnh "cho xem lại nội dung cũ mãi mãi sau khi hết hạn" — trước
+// đây renderApp() chặn CỨNG toàn bộ app (renderExpiredScreen) ngay khi access_until qua hạn, kể cả
+// chỉ để xem lại Kho Content/Lịch Đăng Bài cũ. Giờ chỉ ép về đúng trang Nâng cấp MỘT LẦN ngay khi
+// phát hiện hết hạn (để chắc chắn họ thấy ngay), sau đó cho tự do xem mọi mục khác như bình thường.
+// Chặn hành động AI MỚI vẫn là chặn THẬT ở consume_ai_quota() (schema_full.sql) — không phải chặn
+// điều hướng ở đây, nên không cần ẩn/khoá từng mục sidebar theo tay.
+let expiredRedirectDone = false;
+
 function renderApp(){
   // Tải hồ sơ thất bại (lỗi mạng/API, đã thử lại 1 lần trong loadProfile() rồi vẫn lỗi) khác hẳn
   // "thật sự hết hạn" — không được rơi vào renderExpiredScreen() (hasActiveAccess() thấy profile=null
   // sẽ hiểu nhầm là "chưa từng dùng thử", hiện oan "Dùng thử 7 ngày đã kết thúc" cho người còn hạn
   // dùng thật, xem loadProfile()).
   if(AppState.user && !AppState.profile && AppState.profileLoadError){ renderProfileLoadErrorScreen(); return; }
-  if(!hasActiveAccess()){ renderExpiredScreen(); return; }
+  // Hồ sơ hoàn toàn chưa có (không phải lỗi tải, cũng không phải hết hạn) — chưa đủ dữ liệu để vẽ
+  // sidebar (role, nav theo quyền...) nên vẫn giữ màn chặn cũ cho ĐÚNG trường hợp hiếm này.
+  if(AppState.user && !AppState.profile){ renderExpiredScreen(); return; }
+  const expired = !hasActiveAccess();
+  if(expired && !expiredRedirectDone && AppState.route !== 'nang-cap'){
+    expiredRedirectDone = true;
+    location.hash = 'nang-cap';
+    return; // hashchange sẽ tự gọi lại renderApp() với route đã cập nhật
+  }
   const root = document.getElementById('app');
   root.innerHTML = `
     <div class="topbar-mobile">
       <span class="menu-toggle" id="menu-toggle-btn">☰</span>
       <span class="topbar-title">XÂY NHÂN HIỆU</span>
     </div>
+    ${expired ? `<div style="background:var(--danger);color:#fff;padding:9px 16px;font-size:13px;text-align:center;">Gói dùng đã hết hạn — bạn vẫn xem được nội dung cũ, <a href="#nang-cap" style="color:#fff;text-decoration:underline;font-weight:600;">nâng cấp ngay</a> để tiếp tục dùng AI.</div>` : ''}
     <div class="app-layout">
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">

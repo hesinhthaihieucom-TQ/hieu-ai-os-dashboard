@@ -166,6 +166,19 @@ begin
 
   v_is_admin := (v_profile.role = 'admin');
 
+  -- 2026-08-29, theo yêu cầu chị Quỳnh "cho xem lại nội dung cũ mãi mãi sau khi hết hạn": frontend
+  -- (app-shell.js hasActiveAccess()) không còn khoá TOÀN BỘ app khi access_until đã qua — vẫn cho
+  -- vào xem Kho Content/Lịch Đăng Bài/lịch sử cũ, CHỈ chặn hành động AI mới. Vì vậy đây PHẢI là nơi
+  -- chặn thật (trước đây hàm này chỉ so lượt, hoàn toàn không biết access_until — an toàn chỉ nhờ
+  -- frontend chặn sớm hơn; giờ frontend đã mở, nếu không chặn ở đây thì người hết hạn nhưng còn dư
+  -- lượt (trial) hoặc gói trả phí đã hết hạn nhưng chưa hết 200 lượt/tháng (paid) vẫn gọi AI được
+  -- bình thường, xuyên thủng luôn bức tường thanh toán). Kiểm tra NGAY từ đầu, áp dụng cho CẢ 2
+  -- nhánh has_paid true/false bên dưới — không đặt trong nhánh trial vì gói trả phí cũng có
+  -- access_until riêng (hết hạn không gia hạn vẫn phải chặn).
+  if (not v_is_admin) and v_profile.access_until is not null and v_profile.access_until <= now() then
+    return jsonb_build_object('allowed', false, 'effective_limit', 0, 'mode', 'expired');
+  end if;
+
   -- Trần dùng thử ĐÚNG CỦA NGƯỜI NÀY (chốt lúc đăng ký, xem profiles.trial_ai_limit) — p_trial_limit
   -- chỉ còn là giá trị DỰ PHÒNG cho các dòng cũ hiếm hoi lỡ chưa được backfill (coalesce null).
   if not v_profile.has_paid then
@@ -1825,3 +1838,23 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.get_or_create_crm_ref_code() to authenticated;
+
+-- Hồ sơ "Câu Chuyện Của Bạn" RIÊNG của tro-ly-crm/ — chị Quỳnh chốt 2026-08-29: phải đúng bộ câu hỏi
+-- trong trang-ban-dich-vu.html (liên hệ + 20 câu hỏi câu chuyện cá nhân), KHÔNG phải bộ câu hỏi của
+-- Định Vị AI (khác mục đích — Định Vị AI phục vụ định hướng content/thương hiệu, còn hồ sơ này phục
+-- vụ AI kể chuyện thật khi tư vấn bán hàng). Lưu THÔ, không qua AI xử lý — đúng như luồng gốc trên
+-- landing page (chỉ thu thập rồi dùng thẳng, không có bước AI tổng hợp nào). Nếu người dùng đã có
+-- positioning_results (Định Vị AI, dùng chung Supabase project) thì cau-chuyen.js vẫn cho họ CHỌN
+-- dùng luôn phần cau_chuyen_ca_nhan bên đó thay vì bắt điền lại — 2 nguồn tồn tại song song, ưu tiên
+-- đọc bảng này trước (xem api/crm-tuvan.js).
+create table if not exists crm_story_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  ten text,
+  zalo text,
+  links text,
+  answers jsonb not null default '{}', -- q1..q20, đúng key với QUESTION_LABELS trong tro-ly-crm/js/cau-chuyen.js
+  updated_at timestamptz not null default now()
+);
+alter table crm_story_profiles enable row level security;
+drop policy if exists "crm_story_profiles_owner_all" on crm_story_profiles;
+create policy "crm_story_profiles_owner_all" on crm_story_profiles for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

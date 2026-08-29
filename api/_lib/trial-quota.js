@@ -133,6 +133,11 @@ async function checkAndConsumeTrialQuota(userId, actionKey) {
     if (!resp.ok) return null;
     const data = await resp.json();
     if (data.allowed) { await logUsage(userId, actionKey, weight); return null; }
+    // 2026-08-29: hết hạn dùng thử/gói trả phí — KHÁC hẳn "hết lượt" (vẫn còn lượt nhưng đã qua
+    // access_until). Frontend vẫn cho xem lại nội dung cũ, chỉ chặn đúng hành động AI này.
+    if (data.mode === 'expired') {
+      return `Thời gian dùng đã kết thúc — vào mục "Nâng cấp / Mua gói" để tiếp tục dùng AI. Bạn vẫn xem lại được toàn bộ nội dung cũ đã tạo trước đó.`;
+    }
     if (data.mode === 'trial') {
       return `Bạn đã dùng hết ${TRIAL_AI_LIMIT} lượt AI miễn phí trong thời gian dùng thử — vào mục "Nâng cấp / Mua gói" để dùng tiếp không giới hạn.`;
     }
