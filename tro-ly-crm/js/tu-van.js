@@ -6,17 +6,18 @@ const CONTEXT_DRAFT_KEY = 'tu-van-san-pham'; // riêng, KHÔNG bị xoá sau m�
 
 function render(container, ctx){
   const state = {
-    images: [], note: '', customerQuery: '', matches: [], matchedCustomer: null, searching:false,
+    images: [], note: '',
     sanPhamText: '', showSanPham: false, cauChuyen: null, submitting: false, result: null, error: '',
+    // AI tự đọc tên khách từ ảnh/mô tả rồi server tự khớp/tạo hồ sơ — không cần gõ/tìm tay nữa
+    // (chị Quỳnh yêu cầu 2026-08-29: 1 khách nhắn nhiều lượt, mỗi lượt lại chụp ảnh gửi, gõ tên mỗi
+    // lần quá mất công). needsName chỉ bật khi AI THẬT SỰ không đọc được tên nào (xem api/crm-tuvan.js).
+    needsName: false, manualName: '',
   };
-  let searchTimer = null;
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   function persistDraft(){
-    saveModuleDraft(ctx, DRAFT_KEY, {
-      images: state.images, note: state.note, customerQuery: state.customerQuery, matchedCustomer: state.matchedCustomer,
-    });
+    saveModuleDraft(ctx, DRAFT_KEY, { images: state.images, note: state.note });
   }
 
   async function boot(){
@@ -32,8 +33,6 @@ function render(container, ctx){
     if(draft){
       state.images = draft.images || [];
       state.note = draft.note || '';
-      state.customerQuery = draft.customerQuery || '';
-      state.matchedCustomer = draft.matchedCustomer || null;
     }
     if(sanPhamDraft && sanPhamDraft.text) state.sanPhamText = sanPhamDraft.text;
     const hasStory = story && story.answers && Object.values(story.answers).some(v=>String(v||'').trim());
@@ -41,33 +40,6 @@ function render(container, ctx){
     else if(positioning && positioning.luot1) state.cauChuyen = { nguon:'dinh-vi', luot1: positioning.luot1 };
     else state.cauChuyen = null;
     draw();
-  }
-
-  async function runSearch(q){
-    if(!q || !q.trim()){ state.matches = []; draw(); return; }
-    state.searching = true; draw();
-    const { data } = await ctx.supabase.from('crm_customers').select('id,ten_khach_hang,kenh,giai_doan,do_nong,ngay_follow_tiep')
-      .eq('user_id', ctx.user.id).ilike('ten_khach_hang', `%${q.trim()}%`).limit(6);
-    state.matches = data || [];
-    state.searching = false;
-    draw();
-  }
-
-  async function pickCustomer(id){
-    const { data: customer } = await ctx.supabase.from('crm_customers').select('*').eq('id', id).maybeSingle();
-    const { data: lastInteractions } = await ctx.supabase.from('crm_interactions').select('thoi_gian,noi_dung,ket_qua,buoc_tiep_theo')
-      .eq('customer_id', id).order('created_at', { ascending:false }).limit(3);
-    state.matchedCustomer = customer ? { ...customer, lich_su_gan_day: lastInteractions || [] } : null;
-    state.matches = [];
-    state.customerQuery = customer ? customer.ten_khach_hang : state.customerQuery;
-    draw();
-    persistDraft();
-  }
-
-  function clearMatchedCustomer(){
-    state.matchedCustomer = null;
-    draw();
-    persistDraft();
   }
 
   function handleFiles(files){
@@ -100,32 +72,28 @@ function render(container, ctx){
 
   async function submit(){
     if(!state.images.length && !state.note.trim()){ return; }
+    if(state.needsName && !state.manualName.trim()){ state.error = 'Nhập giúp tên khách hàng.'; draw(); return; }
     state.submitting = true; state.error = ''; state.result = null; draw();
     const stopProgress = animateProgressButton(container.querySelector('#tv-submit'), 14, 'Đang phân tích');
     try{
       const data = await callApi('/api/crm-tuvan', {
         images: state.images,
         note: state.note,
-        // Gửi ĐỦ hồ sơ khách đã có (không chỉ vài field) — thiếu nhom_nhu_cau/rao_can/giai_phap_phu_hop/...
-        // ở đây thì AI không biết gì đã ghi trước đó, lần cập nhật sau dễ ghi đè mất dữ liệu cũ thay vì
-        // cộng dồn (xem SYSTEM_PROMPT phần "NGUYÊN TẮC CẬP NHẬT HỒ SƠ ĐÃ CÓ" ở api/crm-tuvan.js).
-        customer: state.matchedCustomer ? {
-          id: state.matchedCustomer.id, ten_khach_hang: state.matchedCustomer.ten_khach_hang,
-          leader_phu_trach: state.matchedCustomer.leader_phu_trach, kenh: state.matchedCustomer.kenh,
-          link_lien_he: state.matchedCustomer.link_lien_he, nhanh: state.matchedCustomer.nhanh,
-          nhom_nhu_cau: state.matchedCustomer.nhom_nhu_cau, nhu_cau_cu_the: state.matchedCustomer.nhu_cau_cu_the,
-          van_de_noi_dau: state.matchedCustomer.van_de_noi_dau, giai_doan: state.matchedCustomer.giai_doan, do_nong: state.matchedCustomer.do_nong,
-          rao_can: state.matchedCustomer.rao_can, giai_phap_phu_hop: state.matchedCustomer.giai_phap_phu_hop,
-          hanh_dong_tiep_theo: state.matchedCustomer.hanh_dong_tiep_theo, gia_tri_du_kien: state.matchedCustomer.gia_tri_du_kien,
-          ket_qua: state.matchedCustomer.ket_qua, ghi_chu_ai: state.matchedCustomer.ghi_chu_ai,
-          form_hd: state.matchedCustomer.form_hd, // khung F-O-R-M-H-D riêng nhánh D — gửi lại để AI cộng dồn, không ghi đè mất
-          lich_su_gan_day: state.matchedCustomer.lich_su_gan_day,
-        } : (state.customerQuery.trim() ? { ten_khach_hang: state.customerQuery.trim() } : null),
+        // KHÔNG còn chọn/tìm khách tay — server tự đọc tên khách hàng từ ảnh/mô tả rồi tự khớp hồ sơ
+        // cũ hoặc tạo mới (xem api/crm-tuvan.js). manual_ten_khach_hang chỉ gửi khi AI đã báo không
+        // đọc được tên ở lượt trước và người dùng vừa gõ bổ sung.
+        manual_ten_khach_hang: state.needsName ? state.manualName.trim() : undefined,
         san_pham_dich_vu: state.sanPhamText,
         cau_chuyen: state.cauChuyen,
       }, 110000);
+      if(data.needsName){
+        state.needsName = true;
+        state.error = '';
+        return;
+      }
       state.result = data;
-      state.images = []; state.note = ''; state.customerQuery = ''; state.matchedCustomer = null;
+      state.needsName = false; state.manualName = '';
+      state.images = []; state.note = '';
       await clearModuleDraft(ctx, DRAFT_KEY);
     } catch(e){
       state.error = e.message;
@@ -159,28 +127,6 @@ function render(container, ctx){
       ` : ''}
 
       <div class="card" style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khách hàng</label>
-        <input type="text" id="tv-customer-query" placeholder="Gõ tên khách để tìm hồ sơ đã có..." value="${esc(state.customerQuery)}" ${state.matchedCustomer?'disabled':''}>
-        ${state.searching ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">Đang tìm…</div>` : ''}
-        ${!state.matchedCustomer && state.matches.length>0 ? `
-          <div style="margin-top:8px;">
-            ${state.matches.map(m=>`
-              <div class="list-item" data-pick-customer="${m.id}" style="cursor:pointer;margin-bottom:6px;">
-                <div class="txt"><div class="meta">${esc(m.kenh||'')} · ${esc(m.giai_doan||'')} · ${esc(m.do_nong||'')}</div>${esc(m.ten_khach_hang)}</div>
-              </div>
-            `).join('')}
-          </div>
-        ` : ''}
-        ${!state.matchedCustomer && state.customerQuery.trim() && state.matches.length===0 && !state.searching ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">Không tìm thấy — sẽ tạo hồ sơ mới cho tên này.</div>` : ''}
-        ${state.matchedCustomer ? `
-          <div class="hint-box" style="margin-top:10px;">
-            Đang cập nhật hồ sơ: <b>${esc(state.matchedCustomer.ten_khach_hang)}</b> (${esc(state.matchedCustomer.giai_doan||'chưa rõ giai đoạn')})
-            <span style="float:right;cursor:pointer;text-decoration:underline;" id="tv-clear-customer">Đổi</span>
-          </div>
-        ` : ''}
-      </div>
-
-      <div class="card" style="margin-bottom:20px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa 5 ảnh)</label>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           ${state.images.map((src,i)=>`
@@ -195,10 +141,18 @@ function render(container, ctx){
         <textarea id="tv-note" placeholder="VD: khách hỏi giá gói 1 tháng, có vẻ đang phân vân...">${esc(state.note)}</textarea>
       </div>
 
+      ${state.needsName ? `
+        <div class="card" style="margin-bottom:20px;">
+          <div class="hint-box" style="margin-top:0;">AI không đọc được tên khách trong ảnh/mô tả — nhập giúp tên khách hàng để lưu đúng hồ sơ.</div>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tên khách hàng</label>
+          <input type="text" id="tv-manual-name" placeholder="VD: Chị Lan" value="${esc(state.manualName)}">
+        </div>
+      ` : ''}
+
       ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
 
       <div class="btn-row" style="justify-content:flex-start;">
-        <button class="btn" id="tv-submit" ${state.submitting?'disabled':''}>${state.submitting?'Đang phân tích…':'Tư vấn ngay'}</button>
+        <button class="btn" id="tv-submit" ${state.submitting?'disabled':''}>${state.submitting?'Đang phân tích…':(state.needsName?'Xác nhận tên & tư vấn':'Tư vấn ngay')}</button>
       </div>
 
       ${state.result ? resultHtml() : ''}
@@ -237,18 +191,8 @@ function render(container, ctx){
     const sanPhamEl = container.querySelector('#tv-sanpham');
     if(sanPhamEl) sanPhamEl.oninput = (e)=>{ state.sanPhamText = e.target.value; saveModuleDraft(ctx, CONTEXT_DRAFT_KEY, { text: state.sanPhamText }); };
 
-    const queryEl = container.querySelector('#tv-customer-query');
-    if(queryEl) queryEl.oninput = (e)=>{
-      state.customerQuery = e.target.value;
-      persistDraft();
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(()=>runSearch(state.customerQuery), 350);
-    };
-    container.querySelectorAll('[data-pick-customer]').forEach(el=>{
-      el.onclick = ()=>pickCustomer(el.getAttribute('data-pick-customer'));
-    });
-    const clearBtn = container.querySelector('#tv-clear-customer');
-    if(clearBtn) clearBtn.onclick = clearMatchedCustomer;
+    const manualNameEl = container.querySelector('#tv-manual-name');
+    if(manualNameEl) manualNameEl.oninput = (e)=>{ state.manualName = e.target.value; };
 
     const fileEl = container.querySelector('#tv-file');
     if(fileEl) fileEl.onchange = ()=>{ if(fileEl.files.length) handleFiles(fileEl.files); };

@@ -118,6 +118,54 @@ async function supabaseAsUser(token, path, opts = {}) {
   }
 }
 
+const NO_NAME_SENTINEL = 'CHƯA_RÕ_TEN';
+
+function buildContentBlocks({ todayIso, profile, customer, sanPhamDichVu, cauChuyen, note, imgList }) {
+  const contentBlocks = [];
+  let contextText = `HÔM NAY: ${todayIso}\nLEADER PHỤ TRÁCH: ${(profile && profile.full_name) || '(chưa đặt tên)'}\n`;
+  if (customer && (customer.id || customer.ten_khach_hang)) {
+    contextText += `\nHỒ SƠ KHÁCH ĐÃ CÓ (nếu đúng người, ghi lại field khach_hang.ten_khach_hang khớp đúng tên này để hệ thống cập nhật thay vì tạo mới):\n${JSON.stringify(customer, null, 2)}\n`;
+  } else {
+    contextText += `\nCHƯA CÓ HỒ SƠ KHÁCH KHỚP — nếu xác định được tên khách, hệ thống sẽ tạo hồ sơ mới.\n`;
+  }
+  if (sanPhamDichVu && String(sanPhamDichVu).trim()) {
+    contextText += `\nTHÔNG TIN SẢN PHẨM/DỊCH VỤ (chỉ dùng đúng giá/gói trong này, không bịa thêm):\n${sanPhamDichVu.trim()}\n`;
+  }
+  if (cauChuyen && cauChuyen.nguon === 'cau-chuyen' && cauChuyen.answers) {
+    const lines = Object.keys(STORY_QUESTION_LABELS).map((id) => {
+      const val = cauChuyen.answers[id] ? String(cauChuyen.answers[id]).trim() : '';
+      return val ? `- ${STORY_QUESTION_LABELS[id]}: ${val}` : null;
+    }).filter(Boolean);
+    if (lines.length) {
+      contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${lines.join('\n')}\n`;
+    }
+  } else if (cauChuyen && cauChuyen.nguon === 'dinh-vi' && cauChuyen.luot1) {
+    const cc = cauChuyen.luot1.cau_chuyen_ca_nhan;
+    if (cc && cc.cau_chuyen) {
+      contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (từ hồ sơ Định Vị AI — dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${cc.cau_chuyen}\n`;
+    }
+  }
+  if (note && note.trim()) contextText += `\nMÔ TẢ/GHI CHÚ THÊM TỪ NGƯỜI VẬN HÀNH: ${note.trim()}\n`;
+  contentBlocks.push({ type: 'text', text: contextText });
+  imgList.forEach((dataUrl) => {
+    const block = imageBlockFromDataUrl(dataUrl);
+    if (block) contentBlocks.push(block);
+  });
+  return contentBlocks;
+}
+
+// Khớp hồ sơ khách theo ĐÚNG tên (không phân biệt hoa/thường), scoped theo user — trả về mảng để gọi
+// nơi dùng tự quyết định theo số lượng khớp (0 = tạo mới, 1 = cập nhật, >1 = không tự đoán, xem dưới).
+async function findCustomersByName(token, userId, name) {
+  const resp = await supabaseAsUser(token, `crm_customers?user_id=eq.${userId}&ten_khach_hang=ilike.${encodeURIComponent(name)}&select=*`);
+  return resp.ok ? await resp.json() : [];
+}
+
+async function fetchRecentInteractions(token, customerId) {
+  const resp = await supabaseAsUser(token, `crm_interactions?customer_id=eq.${customerId}&select=thoi_gian,noi_dung,ket_qua,buoc_tiep_theo&order=created_at.desc&limit=3`);
+  return resp.ok ? await resp.json() : [];
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
@@ -141,7 +189,7 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { images, note, customer, san_pham_dich_vu, cau_chuyen } = req.body || {};
+    const { images, note, manual_ten_khach_hang, san_pham_dich_vu, cau_chuyen } = req.body || {};
     const imgList = Array.isArray(images) ? images : (images ? [images] : []);
     if (!imgList.length && !(note && note.trim())) {
       res.status(400).json({ error: 'Cần ít nhất 1 ảnh chụp chat hoặc mô tả tình huống.' });
@@ -149,41 +197,56 @@ module.exports = async (req, res) => {
     }
 
     const todayIso = new Date().toISOString().slice(0, 10);
-    const contentBlocks = [];
-    let contextText = `HÔM NAY: ${todayIso}\nLEADER PHỤ TRÁCH: ${(profile && profile.full_name) || '(chưa đặt tên)'}\n`;
-    if (customer && (customer.id || customer.ten_khach_hang)) {
-      contextText += `\nHỒ SƠ KHÁCH ĐÃ CÓ (nếu đúng người, ghi lại field khach_hang.ten_khach_hang khớp đúng tên này để hệ thống cập nhật thay vì tạo mới):\n${JSON.stringify(customer, null, 2)}\n`;
+    let customer = null; // hồ sơ khách đã khớp (nếu có) — để trống nghĩa là sẽ tạo hồ sơ mới
+    let result;
+    let ambiguousNameNote = null;
+
+    if (manual_ten_khach_hang && manual_ten_khach_hang.trim()) {
+      // Người vận hành vừa gõ bổ sung tên sau khi AI báo không đọc được — khớp trước rồi mới hỏi AI,
+      // để AI có đủ HỒ SƠ KHÁCH ĐÃ CÓ ngay từ lượt gọi đầu (không cần gọi 2 lần trong nhánh này).
+      const name = manual_ten_khach_hang.trim();
+      const matches = await findCustomersByName(token, user.id, name);
+      if (matches.length === 1) {
+        customer = { ...matches[0], lich_su_gan_day: await fetchRecentInteractions(token, matches[0].id) };
+      }
+      const contentBlocks = buildContentBlocks({ todayIso, profile, customer, sanPhamDichVu: san_pham_dich_vu, cauChuyen: cau_chuyen, note, imgList });
+      result = await callClaude({ apiKey, contentBlocks });
+      result.khach_hang.ten_khach_hang = name; // giữ đúng tên người dùng vừa xác nhận, không để AI viết lệch đi
     } else {
-      contextText += `\nCHƯA CÓ HỒ SƠ KHÁCH KHỚP — nếu xác định được tên khách, hệ thống sẽ tạo hồ sơ mới.\n`;
-    }
-    if (san_pham_dich_vu && String(san_pham_dich_vu).trim()) {
-      contextText += `\nTHÔNG TIN SẢN PHẨM/DỊCH VỤ (chỉ dùng đúng giá/gói trong này, không bịa thêm):\n${san_pham_dich_vu.trim()}\n`;
-    }
-    if (cau_chuyen && cau_chuyen.nguon === 'cau-chuyen' && cau_chuyen.answers) {
-      const lines = Object.keys(STORY_QUESTION_LABELS).map((id) => {
-        const val = cau_chuyen.answers[id] ? String(cau_chuyen.answers[id]).trim() : '';
-        return val ? `- ${STORY_QUESTION_LABELS[id]}: ${val}` : null;
-      }).filter(Boolean);
-      if (lines.length) {
-        contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${lines.join('\n')}\n`;
+      // Lượt đầu — chưa biết là khách nào, để AI tự đọc tên từ ảnh/mô tả trước (không có HỒ SƠ KHÁCH ĐÃ CÓ).
+      const contentBlocks1 = buildContentBlocks({ todayIso, profile, customer: null, sanPhamDichVu: san_pham_dich_vu, cauChuyen: cau_chuyen, note, imgList });
+      const result1 = await callClaude({ apiKey, contentBlocks: contentBlocks1 });
+      const extractedName = (result1.khach_hang.ten_khach_hang || '').trim();
+
+      if (!extractedName || extractedName === NO_NAME_SENTINEL) {
+        // Không đọc được tên nào — hỏi lại người vận hành, CHƯA ghi gì vào CRM (đợi tên rồi mới ghi 1 lần).
+        res.status(200).json({ needsName: true });
+        return;
       }
-    } else if (cau_chuyen && cau_chuyen.nguon === 'dinh-vi' && cau_chuyen.luot1) {
-      const cc = cau_chuyen.luot1.cau_chuyen_ca_nhan;
-      if (cc && cc.cau_chuyen) {
-        contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (từ hồ sơ Định Vị AI — dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${cc.cau_chuyen}\n`;
+
+      const matches = await findCustomersByName(token, user.id, extractedName);
+      if (matches.length === 1) {
+        // Khớp đúng 1 khách — gọi lại lượt 2 KÈM hồ sơ cũ để AI cộng dồn đúng (nhom_nhu_cau/rao_can/
+        // form_hd/...), tránh lặp lại lỗi "gọi không có ngữ cảnh thì ghi đè mất dữ liệu cũ" đã sửa hôm nay.
+        customer = { ...matches[0], lich_su_gan_day: await fetchRecentInteractions(token, matches[0].id) };
+        const contentBlocks2 = buildContentBlocks({ todayIso, profile, customer, sanPhamDichVu: san_pham_dich_vu, cauChuyen: cau_chuyen, note, imgList });
+        result = await callClaude({ apiKey, contentBlocks: contentBlocks2 });
+      } else {
+        result = result1;
+        if (matches.length > 1) {
+          // Nhiều khách trùng tên — không tự đoán khách nào đúng (nguyên tắc "không tự gộp khách nếu
+          // chưa chắc"), tạo hồ sơ mới và nêu rõ để người vận hành tự kiểm tra/gộp tay nếu cần.
+          ambiguousNameNote = `[Lưu ý: có ${matches.length} khách trùng tên "${extractedName}" trong hồ sơ — kiểm tra lại thủ công để tránh tạo trùng.]`;
+        }
       }
     }
-    if (note && note.trim()) contextText += `\nMÔ TẢ/GHI CHÚ THÊM TỪ NGƯỜI VẬN HÀNH: ${note.trim()}\n`;
-    contentBlocks.push({ type: 'text', text: contextText });
 
-    imgList.forEach((dataUrl) => {
-      const block = imageBlockFromDataUrl(dataUrl);
-      if (block) contentBlocks.push(block);
-    });
+    if (ambiguousNameNote) {
+      result.khach_hang.ghi_chu_ai = result.khach_hang.ghi_chu_ai
+        ? `${result.khach_hang.ghi_chu_ai} ${ambiguousNameNote}` : ambiguousNameNote;
+    }
 
-    const result = await callClaude({ apiKey, contentBlocks });
-
-    // Ghi CRM — cập nhật nếu có customer.id khớp, ngược lại tạo mới. lan_tuong_tac_cuoi/ngay_follow_tiep
+    // Ghi CRM — cập nhật nếu khớp hồ sơ cũ, ngược lại tạo mới. lan_tuong_tac_cuoi/ngay_follow_tiep
     // LUÔN set cùng lúc (đúng nguyên tắc gốc: 2 field này Lark Automation dùng để tự nhắc lịch).
     const customerPayload = {
       ...result.khach_hang,

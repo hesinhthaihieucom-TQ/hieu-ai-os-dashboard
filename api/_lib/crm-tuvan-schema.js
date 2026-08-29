@@ -25,7 +25,7 @@ const TOOL_TU_VAN_CRM = {
         type: 'object',
         description: 'Toàn bộ field cần ghi/cập nhật vào hồ sơ khách — chỉ điền field có dữ liệu thật, để trống field chưa rõ (đừng bịa).',
         properties: {
-          ten_khach_hang: { type: 'string' },
+          ten_khach_hang: { type: 'string', description: 'Đọc tên khách từ đầu đoạn chat (tên hiển thị trên Messenger/Zalo) hoặc từ nội dung/ghi chú. Nếu KHÔNG xác định được tên thật nào (ảnh không có tên, ghi chú không nhắc tên), ghi ĐÚNG NGUYÊN VĂN "CHƯA_RÕ_TEN" — hệ thống sẽ tự hỏi lại người vận hành, không tự bịa tên.' },
           leader_phu_trach: { type: 'string', description: 'Chỉ điền nếu HỒ SƠ KHÁCH ĐÃ CÓ đã có sẵn giá trị này hoặc chat nêu rõ — không tự bịa tên người khác.' },
           kenh: { type: 'string', description: 'VD: Facebook, Zalo, Instagram, TikTok.' },
           link_lien_he: { type: 'string' },
