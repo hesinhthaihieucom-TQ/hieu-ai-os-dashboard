@@ -14,7 +14,7 @@ export default {
       { prefix: '/he-sinh-thai-hieu', originPath: '/he-sinh-thai-hieu' },
       { prefix: '/dashboard', originPath: '' }, // Bảng Điều Khiển tổng quan, nằm ở gốc "/" của Vercel nên originPath để rỗng
       { prefix: '/hieudekhoemanh', originPath: '/suc-khoe' }, // MỚI (2026-08-26) — app "Hiểu Để Khoẻ Mạnh"
-      { prefix: '/trolytuvan&crm', originPath: '/tro-ly-crm' }, // MỚI (2026-08-29) — "Trợ Lý AI Tư Vấn & CRM"
+      { prefix: '/trolytuvancrm', originPath: '/tro-ly-crm' }, // MỚI (2026-08-29) — "Trợ Lý AI Tư Vấn & CRM"
     ];
 
     const url = new URL(request.url);
