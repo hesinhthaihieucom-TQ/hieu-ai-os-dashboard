@@ -302,7 +302,21 @@ function textWidth(text, family, weight, fontSize) {
   return measureWidthAt100(text, family, weight) * (fontSize / 100);
 }
 
-// Tách theo **...** để biết từ nào tô màu nhấn — y hệt parseWords() ở tao-anh.js.
+// Các cụm 2 âm tiết hay bị xuống dòng tách đôi làm sai nghĩa/khó đọc (vd "bình an" tách thành "bình"
+// cuối dòng trên + "an" đầu dòng dưới — chị Quỳnh phát hiện 2026-08-29) — GHÉP LẠI thành 1 khối duy
+// nhất trước khi wrap, để thuật toán không bao giờ tách rời 2 âm tiết này. Tiếng Việt viết cách âm
+// tiết (khác tiếng Anh dấu cách = ranh giới từ), nên wrap thô theo khoảng trắng rất dễ cắt ngang 1 từ
+// ghép — đây là danh sách các cụm THƯỜNG GẶP nhất trong nội dung (tâm linh/gia đình/kinh doanh...),
+// không phải từ điển đầy đủ mọi từ ghép tiếng Việt.
+const INSEPARABLE_PAIRS = new Set([
+  'bình an', 'an toàn', 'an nhiên', 'an lành', 'an tâm', 'yên tâm', 'bình yên', 'bình tĩnh',
+  'hạnh phúc', 'thành công', 'may mắn', 'sức khỏe', 'sức khoẻ', 'khỏe mạnh', 'khoẻ mạnh',
+  'yêu thương', 'gia đình', 'tài lộc', 'phúc đức', 'phúc lành', 'tự tin', 'tự do', 'tự nhiên',
+  'chân thành', 'trân trọng', 'biết ơn', 'vui vẻ', 'thịnh vượng', 'giàu có', 'ấm no', 'an vui',
+].map((s) => s.toLowerCase()));
+
+// Tách theo **...** để biết từ nào tô màu nhấn — y hệt parseWords() ở tao-anh.js, rồi ghép các cặp
+// trong INSEPARABLE_PAIRS thành 1 "từ" duy nhất (đo/wrap như 1 khối, không tách được nữa).
 function parseTemplateWords(text) {
   const segments = String(text || '').split('**');
   const words = [];
@@ -310,7 +324,18 @@ function parseTemplateWords(text) {
     const highlight = i % 2 === 1;
     seg.split(/\s+/).filter(Boolean).forEach((w) => words.push({ text: w, highlight }));
   });
-  return words;
+  const merged = [];
+  for (let i = 0; i < words.length; i++) {
+    const cur = words[i];
+    const next = words[i + 1];
+    if (next && INSEPARABLE_PAIRS.has(`${cur.text.toLowerCase()} ${next.text.toLowerCase()}`)) {
+      merged.push({ text: `${cur.text} ${next.text}`, highlight: cur.highlight });
+      i++;
+    } else {
+      merged.push(cur);
+    }
+  }
+  return merged;
 }
 
 // Y hệt wrapWords() ở tao-anh.js — greedy wrap dùng độ rộng chữ THẬT, không giới hạn số dòng cứng
