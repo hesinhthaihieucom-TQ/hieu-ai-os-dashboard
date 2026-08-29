@@ -188,14 +188,19 @@ async function generatePostImage({ apiKey, title }) {
 
 // generateSpiritualBackground: bài trục "Tâm linh" (xem PILLARS ở api/_lib/pillars.js) dùng ảnh cá
 // nhân thật thì lệch tông hẳn — theo yêu cầu chị Quỳnh 2026-08-29 ("bài nào về tâm linh thì AI làm
-// ảnh tâm linh... phù hợp nội dung bài post"), tạo riêng 1 prompt cố định đúng tinh thần ảnh mẫu chị
-// gửi (hoa sen vàng, ánh sáng ấm, thiền định/tâm linh, phong cách biên tập cao cấp) — xoay vòng vài
-// biến thể cho đỡ lặp lại y hệt qua từng bài. Trả về ẢNH NỀN THÔ (chưa đè chữ) — nơi gọi tự đưa qua
-// renderPersonalTemplateImage() để đè đúng 1 trong 4 mẫu, y hệt cách xử lý ảnh cá nhân thường.
+// ảnh tâm linh... phù hợp nội dung bài post"), tạo riêng 1 bộ prompt đúng tinh thần 9 ảnh mẫu chị gửi
+// cùng ngày (tượng Phật vàng, hoa sen, ánh sáng vàng rực/tia sáng, đền chùa/tháp cổ, sương mờ, hạt
+// sáng lấp lánh, đôi khi thêm đồng tiền vàng cho ý tài lộc) — xoay vòng nhiều biến thể theo đúng từng
+// mô-típ trong ảnh mẫu cho đỡ lặp lại y hệt qua từng bài. Trả về ẢNH NỀN THÔ (chưa đè chữ) — nơi gọi
+// tự đưa qua renderPersonalTemplateImage() để đè đúng 1 trong 4 mẫu, y hệt cách xử lý ảnh cá nhân thường.
 const SPIRITUAL_PROMPTS = [
-  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: 1 người ngồi thiền an nhiên, ánh sáng vàng ấm áp bao quanh, hoa sen vàng phát sáng, vòng tròn mandala ánh kim phía sau, không gian đền chùa/vũ trụ huyền ảo, bố cục điện ảnh, tông màu nâu vàng ấm.',
-  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: đôi bàn tay chắp lại cầu nguyện, ánh sáng vàng rực rỡ bao quanh, hoa sen vàng nở rộ, các biểu tượng tâm linh mờ ảo phía sau, không khí thiêng liêng ấm áp, tông màu nâu vàng.',
-  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: 1 người đứng an nhiên giữa ánh sáng vàng toả ra từ vòng tròn năng lượng phía sau, hoa sen vàng, cảnh chùa/tháp cổ mờ ảo phía xa, cảm giác bình an sâu lắng, tông màu nâu vàng ấm.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: tượng Phật ngồi thiền toả ánh sáng vàng ấm rực rỡ như hào quang phía sau, tia nắng xuyên qua, xung quanh là hoa sen nở trên mặt hồ phẳng lặng phản chiếu ánh sáng, sương mờ nhẹ, cảm giác thiêng liêng bình an, tông màu vàng nâu ấm.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: con đường đá dẫn tới cổng đền/chùa cổ giữa rừng tre xanh mướt, ánh nắng vàng xuyên qua tán lá tạo tia sáng lung linh, sương sớm mờ ảo, không khí an nhiên tĩnh lặng.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: 1 đoá hoa sen vàng/trắng phát sáng lấp lánh nổi trên mặt nước, phía xa là ngôi chùa/tháp cổ mờ ảo trong sương, các hạt sáng vàng bay lơ lửng như bụi tiên, tông màu vàng ấm hoàng hôn.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: đôi bàn tay/lòng bàn tay tượng Phật vàng toả dòng ánh sáng lấp lánh chảy xuống như thác vàng, hoa sen nở xung quanh, vài chiếc lông vũ trắng bay nhẹ, không khí huyền ảo thiêng liêng.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: hoa sen vàng phát sáng nổi trên mặt nước cùng vài đồng tiền vàng lấp lánh xung quanh (biểu tượng tài lộc/phúc khí), ánh sáng vàng ấm, cánh hoa hồng rơi trên mặt nước, tông màu vàng nâu sang trọng.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: 1 người ngồi thiền an nhiên giữa bầu trời đầy sao và mây, cột ánh sáng vàng chiếu từ trên xuống qua đỉnh đầu, hoa sen phát sáng phía trước, xa xa có đền chùa mái cong mờ ảo, cảm giác vũ trụ huyền bí.',
+  'Ảnh minh hoạ tâm linh phong cách biên tập cao cấp: khung cảnh sân chùa cổ vào lúc hoàng hôn, tượng Phật lớn phía sau phủ ánh nắng vàng ấm, khói hương nhẹ bay lên, không khí trầm mặc thiêng liêng, phong cách ảnh tài liệu chân thực.',
 ];
 async function generateSpiritualBackground({ apiKey }) {
   const prompt = `${pickRandom(SPIRITUAL_PROMPTS)} TUYỆT ĐỐI KHÔNG có chữ, không watermark, không logo, không ký tự nào trong ảnh.`;
