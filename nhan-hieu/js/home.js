@@ -34,10 +34,33 @@ const EXPLORE = [
   { key:'tro-giup', label:'Hỏi & Trợ Giúp' },
 ];
 
+// "Momentum" thấy được (2026-08-29, theo yêu cầu chị Quỳnh: giữ chân bằng tâm lý sợ mất chuỗi +
+// thấy công sức ra kết quả thật) — tính theo TUẦN (không phải ngày), vì nhịp lên lịch của app vốn
+// đã theo tuần (postsPerDay 1-3/ngày, không phải ai cũng đăng đúng 7/7 ngày) — chuỗi theo ngày sẽ
+// bị "gãy oan" quá dễ, nản hơn là tạo động lực.
+function startOfWeekMon(d){
+  const x = new Date(d); const day = (x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0);
+  return x;
+}
+function isoDateStr(d){ return d.toISOString().slice(0,10); }
+// dateStrs: mảng 'YYYY-MM-DD' của MỌI bài đã đăng (posted=true) — trả về số tuần liên tục tính lùi
+// từ tuần hiện tại. Nếu tuần này CHƯA có bài, không tính tuần này vào chuỗi (nhưng vẫn giữ nguyên
+// chuỗi các tuần trước, kèm cờ thisWeekHasPost để nhắc "đăng ngay để giữ chuỗi").
+function computeStreak(dateStrs){
+  const weekSet = new Set(dateStrs.map(d => isoDateStr(startOfWeekMon(new Date(d)))));
+  const cursor = startOfWeekMon(new Date());
+  const thisWeekHasPost = weekSet.has(isoDateStr(cursor));
+  if(!thisWeekHasPost) cursor.setDate(cursor.getDate()-7);
+  let streak = 0;
+  while(weekSet.has(isoDateStr(cursor))){ streak++; cursor.setDate(cursor.getDate()-7); }
+  return { streak, thisWeekHasPost };
+}
+
 function render(container, ctx){
   const state = {
     loading:true, done:{},
     reviews:[], reviewsLoading:true, reviewComment:'', reviewSubmitting:false, reviewError:null, reviewJustSubmitted:false,
+    statsLoading:true, streak:0, thisWeekHasPost:false, monthlyViews:0, viewsByDay:{}, daysInMonth:30,
   };
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -60,6 +83,35 @@ function render(container, ctx){
     state.loading = false;
     draw();
     loadReviews();
+    loadStats();
+  }
+
+  // Tách riêng khỏi boot() (không chặn hiện checklist ngay) — chỉ cần 180 ngày gần nhất là đủ cho
+  // CẢ streak (26 tuần) lẫn view tháng này, khỏi phải quét toàn bộ lịch sử calendar_entries.
+  async function loadStats(){
+    const sinceStr = isoDateStr(new Date(Date.now() - 180*86400000));
+    const { data } = await ctx.supabase.from('calendar_entries')
+      .select('scheduled_date,views').eq('user_id', ctx.user.id).eq('posted', true).gte('scheduled_date', sinceStr);
+    const rows = data || [];
+    const { streak, thisWeekHasPost } = computeStreak(rows.map(r=>r.scheduled_date));
+    state.streak = streak;
+    state.thisWeekHasPost = thisWeekHasPost;
+
+    const now = new Date();
+    const monthPrefix = now.toISOString().slice(0,7); // 'YYYY-MM'
+    state.daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    const viewsByDay = {};
+    let monthlyViews = 0;
+    for(const r of rows){
+      if(!r.scheduled_date || !r.scheduled_date.startsWith(monthPrefix)) continue;
+      const v = r.views || 0;
+      monthlyViews += v;
+      viewsByDay[r.scheduled_date] = (viewsByDay[r.scheduled_date]||0) + v;
+    }
+    state.monthlyViews = monthlyViews;
+    state.viewsByDay = viewsByDay;
+    state.statsLoading = false;
+    draw();
   }
 
   async function loadReviews(){
@@ -120,6 +172,8 @@ function render(container, ctx){
         `;}).join('')}
       </div>
 
+      ${momentumSectionHtml()}
+
       ${isProminent ? reviewSectionHtml() + upgradeBannerHtml() : ''}
 
       <div class="card" style="margin-top:20px;background:var(--accent-soft);">
@@ -140,6 +194,46 @@ function render(container, ctx){
       </div>
 
       ${!isProminent ? reviewSectionHtml() : ''}
+    `;
+  }
+
+  function momentumSectionHtml(){
+    if(state.statsLoading){
+      return `<div class="card" style="margin-top:20px;"><div style="color:var(--ink-soft);font-size:14px;">Đang tải momentum…</div></div>`;
+    }
+    const now = new Date();
+    const todayDate = now.getDate();
+    let maxViews = 1;
+    for(let d=1; d<=state.daysInMonth; d++){
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      maxViews = Math.max(maxViews, state.viewsByDay[dateStr] || 0);
+    }
+    const bars = Array.from({length: todayDate}, (_,i)=>{
+      const d = i+1;
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const v = state.viewsByDay[dateStr] || 0;
+      const h = Math.max(3, Math.round((v/maxViews)*44));
+      return `<div style="flex:1;min-width:2px;height:${h}px;background:${v>0?'var(--accent)':'var(--line)'};border-radius:2px;" title="${d}/${now.getMonth()+1}: ${v} view"></div>`;
+    }).join('');
+    return `
+      <div class="card" style="margin-top:20px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">🔥 Đà đăng bài của bạn</h3>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;margin-bottom:16px;">
+          <div>
+            <div style="font-size:32px;font-weight:800;color:var(--accent);line-height:1;">${state.streak}</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">tuần liên tục có đăng bài</div>
+          </div>
+          <div>
+            <div style="font-size:32px;font-weight:800;line-height:1;">${state.monthlyViews.toLocaleString('vi-VN')}</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">tổng view tháng này</div>
+          </div>
+        </div>
+        ${!state.thisWeekHasPost && state.streak>0 ? `<div class="hint-box" style="margin-bottom:14px;">Tuần này chưa có bài nào được đánh dấu đã đăng — đăng ngay để giữ chuỗi <b>${state.streak} tuần liên tục</b>!</div>` : ''}
+        ${state.monthlyViews>0 ? `
+          <div style="display:flex;gap:3px;align-items:flex-end;height:48px;">${bars}</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">Số view theo ngày trong tháng này (bài đã đăng, tính theo view bạn tự điền ở Lịch Đăng Bài)</div>
+        ` : `<div style="font-size:12.5px;color:var(--ink-soft);">Chưa có view nào ghi nhận tháng này — điền view thật ở Lịch Đăng Bài sau khi đăng bài để theo dõi hiệu quả theo thời gian.</div>`}
+      </div>
     `;
   }
 
