@@ -282,7 +282,7 @@ function render(container, ctx){
         </div>
       `).join('')}
       <div class="section"><h3>Bản sửa đề xuất (tối ưu hơn)</h3><div class="body">${esc(breakSentences(s.ban_sua_de_xuat))}</div></div>
-      <div class="btn-row no-print"><a class="btn-ghost btn" href="#cham-diem-content">Xem chi tiết đầy đủ ở Chấm Điểm Content →</a></div>
+      <div class="btn-row no-print"><a class="btn-ghost btn" href="#cham-diem-hub">Xem chi tiết đầy đủ ở Chấm Điểm →</a></div>
     `;
   }
 
@@ -506,7 +506,8 @@ function render(container, ctx){
     const fullHookScoreBtn = container.querySelector('[data-action="full-hook-score"]');
     if(fullHookScoreBtn) fullHookScoreBtn.onclick = ()=>{
       window.PendingHookText = state.result.hook;
-      location.hash = 'cham-diem-hook';
+      window.PendingChamDiemTab = 'hook';
+      location.hash = 'cham-diem-hub';
     };
 
     const retryExtrasBtn = container.querySelector('[data-action="retry-extras"]');
