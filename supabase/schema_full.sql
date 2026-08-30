@@ -1618,6 +1618,32 @@ create table if not exists sk_products (
 -- đã áp dụng cho sk_health_checkins/sk_weekly_logs ở trên.
 alter table sk_products add column if not exists category text
   check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da'));
+-- Nội dung chi tiết dạng nhiều mục (2026-08-30, chị Quỳnh phản hồi "benefits" 1 đoạn text là hời hợt,
+-- cần bố cục rõ theo mục như 1 chuyên gia bán hàng trình bày, xem thêm mới hiện ra) — mảng jsonb
+-- [{title, body}], mỗi phần tử là 1 mục có tiêu đề riêng (vd "Công dụng theo nhãn đăng ký", "Thành
+-- phần & vai trò từng hoạt chất", "Cơ chế tác động", "Đối tượng sử dụng & Cách dùng", "Nghiên cứu
+-- khoa học", "Lưu ý"). "benefits" (cột cũ) vẫn giữ làm bản tóm tắt ngắn hiện ngay khi chưa bấm "Xem
+-- thêm"; detail_sections là nội dung đầy đủ.
+alter table sk_products add column if not exists detail_sections jsonb not null default '[]'::jsonb;
+
+-- Gói Combo sản phẩm (2026-08-30, chị Quỳnh yêu cầu tạo combo phù hợp dựa trên dữ liệu sản phẩm đã
+-- có) — product_ids KHÔNG dùng FK cứng (giống related_product_ids ở sk_library_entries) vì phần tử
+-- mảng không ràng buộc được kiểu này trong Postgres. combo_price do admin tự đặt (không tự tính giảm
+-- giá) — xem Quản Trị khi có UI CRUD cho combo, hiện tại chỉnh bằng SQL.
+create table if not exists sk_product_combos (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text,
+  category text check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da')),
+  product_ids uuid[] not null default '{}',
+  combo_price numeric,
+  created_at timestamptz not null default now()
+);
+alter table sk_product_combos enable row level security;
+drop policy if exists "sk_product_combos_read" on sk_product_combos;
+create policy "sk_product_combos_read" on sk_product_combos for select using (auth.role() = 'authenticated');
+drop policy if exists "sk_product_combos_admin_write" on sk_product_combos;
+create policy "sk_product_combos_admin_write" on sk_product_combos for all using (is_admin()) with check (is_admin());
 
 -- Tích Điểm & Hoa Hồng theo tháng — admin nhập TAY từng dòng khi khách mua hàng (chưa có luồng tự
 -- động đối soát ở bản khung này, khác cơ chế SePay webhook của nhan-hieu/tai-chinh).
