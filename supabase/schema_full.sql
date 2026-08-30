@@ -1612,6 +1612,12 @@ create table if not exists sk_products (
   image_url text,
   created_at timestamptz not null default now()
 );
+-- Phân nhánh sản phẩm (2026-08-30, theo Sổ tay Chăm sóc sức khoẻ chủ động chị Quỳnh gửi) — 4 nhánh cố
+-- định dùng để lọc/nhóm ở trang Sản Phẩm Unicity. NULL = sản phẩm chưa xếp nhánh (vd nhóm mỹ phẩm
+-- Neigene) — ALTER thay vì nhét vào CREATE TABLE vì bảng này có thể đã được tạo từ trước, cùng lý do
+-- đã áp dụng cho sk_health_checkins/sk_weekly_logs ở trên.
+alter table sk_products add column if not exists category text
+  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da'));
 
 -- Tích Điểm & Hoa Hồng theo tháng — admin nhập TAY từng dòng khi khách mua hàng (chưa có luồng tự
 -- động đối soát ở bản khung này, khác cơ chế SePay webhook của nhan-hieu/tai-chinh).
