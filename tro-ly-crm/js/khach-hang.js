@@ -4,52 +4,6 @@
 const FILTER_DRAFT_KEY = 'khach-hang-filters'; // chỉ nhớ bộ lọc đang dùng, KHÔNG phải dữ liệu — bảng chính là nguồn sự thật
 const DO_NONG_BASE = ['Nóng', 'Ấm', 'Lạnh'];
 const GIAI_DOAN_BASE = ['Đang tư vấn', 'Chăm sóc', 'Follow', 'Chốt', 'Đã mua/onboarding', 'Mất'];
-const TRANG_THAI_DOI_TAC_BASE = ['Đúng nhịp', 'Chậm nhịp', 'Rớt nhịp'];
-
-// Lộ trình 8 tuần huấn luyện đối tác mới (2026-08-30, chị Quỳnh chốt: follow đối tác kinh doanh
-// phải khác follow khách hàng — đối tác cần huấn luyện/nhân bản, không phải chốt sale). Rút gọn từ
-// đúng bộ giáo trình thật chị đang dùng cho team (link Sheet chị gửi) — CHỈ giữ chủ đề + đầu việc
-// trọng tâm mỗi tuần làm tài liệu tham khảo cho leader, KHÔNG làm checklist tick từng dòng: 1 leader
-// bảo trợ hàng trăm đối tác không thể tự tay tick ~80 dòng/người/tuần — thứ leader cần là biết NHANH
-// ai đang tuần mấy, ai chậm nhịp cần gọi ngay (xem "Đối tác cần huấn luyện" ở Trang chủ), chứ không
-// phải chấm điểm chi tiết từng đầu việc. Nếu sau này cần chấm điểm chi tiết, làm module riêng.
-const DOI_TAC_TUAN = [
-  { tuan: 1, chu_de: 'Tư duy & Nền tảng hệ thống',
-    hoc: 'Trả lời câu hỏi "tại sao" của bạn · Ước mơ — mục tiêu — sứ mệnh · Tư duy đúng · Xây dựng thương hiệu cá nhân trên Facebook',
-    thuc_hanh: 'Vào các nhóm zalo/fb của team giới thiệu bản thân · Đăng mỗi ngày 1 bài về sức khỏe (ăn/tập/dùng sản phẩm) · Đọc sách "Dám Nghĩ Lớn" 30 phút/ngày · Tham gia zoom thực chiến cùng team',
-    ket_qua: 'Profile Facebook chuyên nghiệp hoàn chỉnh (ảnh đại diện, ảnh bìa, giới thiệu) · Mục tiêu 60 ngày rõ ràng, có con số, có deadline · Bài thông báo đầu tiên có 10+ lượt tương tác' },
-  { tuan: 2, chu_de: 'Sức khỏe & Năng lượng',
-    hoc: '11 câu hỏi nóng · Làm quen với "cỗ máy in tiền" (cách vận hành thu nhập) · Kiến thức sản phẩm — thải độc',
-    thuc_hanh: 'Đăng mỗi ngày 2 bài về sức khỏe · Tham gia zoom thực chiến · Đọc sách 30 phút/ngày · Cuối tuần cập nhật lại số đo/chỉ số sức khỏe',
-    ket_qua: 'Báo cáo cập nhật số đo có so sánh với tuần trước · Bài tập "3 cấp độ cuộc sống" hoàn chỉnh · Bài đăng đầy đủ Ăn/Tập/Dùng sản phẩm' },
-  { tuan: 3, chu_de: 'Sản phẩm & Xây dựng Nhân hiệu',
-    hoc: '6 Whys · Kỹ năng #1 — Tìm đối tác · Kiến thức sản phẩm (vitamin, protein)',
-    thuc_hanh: 'Đăng mỗi ngày 3 bài về sức khỏe · Chép kỹ năng #1 ra sổ để nhớ · Làm bài tập kỹ năng 1 (lập danh sách tên, sở thích/sở trường/sở đoản)',
-    ket_qua: 'Sổ ghi chép Kỹ Năng #1 — Tìm Đối Tác (6 bước) · Danh Sách Sống 20+ khách hàng tiềm năng, đã liên hệ 5+ người mức độ quan tâm cao · Bài đăng câu chuyện bản thân có 15+ lượt tương tác' },
-  { tuan: 4, chu_de: 'Kỹ năng Bán hàng & Thực chiến',
-    hoc: 'Kim Tứ Đồ · Kỹ năng #3 — Trình bày · Kiến thức sản phẩm (miễn dịch, mỡ máu)',
-    thuc_hanh: 'Viết 1 bài về câu chuyện bản thân (4 bước: Nền tảng — Vấn đề — Giải pháp — Kết quả — Lời mời) · Thực hành mời & trình bày 3-5 lần, ghi chép lại (Ai, khi nào, kết quả, bài học)',
-    ket_qua: 'Sổ ghi chép Kỹ Năng #2 & #3 · Bài viết câu chuyện bản thân đủ 5 phần, có 20+ lượt tương tác · Ít nhất 1-2 lần mời thành công · Bài kiểm tra giữa kỳ đạt 80%+' },
-  { tuan: 5, chu_de: 'Kỹ năng Tuyển dụng & Mở rộng hệ thống',
-    hoc: 'Kỹ năng #4 — Theo sát, vượt phản kháng',
-    thuc_hanh: 'Làm "3/2" với leader (leader tư vấn mẫu 3 lần, tự làm lại 2 lần cho leader xem) · Dùng AI để luyện vượt phản kháng mẫu 3 lần',
-    ket_qua: 'Sổ ghi chép Kỹ Năng #4 — Theo sát & vượt phản kháng · Viết được 2 bản "đề cao bảo trợ" (1 cho khách hàng, 1 cho đối tác)' },
-  { tuan: 6, chu_de: 'Tối ưu & Tăng tốc (Phần 1)',
-    hoc: '7 Bars — 7 nấc thang thành công · Động lực từ bên trong, bài tập khát vọng cháy bỏng · Vì sao phải "Be10"',
-    thuc_hanh: 'Viết ước mơ theo Bánh Xe Cuộc Đời',
-    ket_qua: 'Sổ ghi chép Kỹ Năng #5 — Chốt (4 câu hỏi chốt: Tiền/Giờ/Tháng/Nếu tôi + bậc thang quan tâm 1-10) · Bản viết Ước mơ & Khát vọng cháy bỏng đủ 5 phần' },
-  { tuan: 7, chu_de: 'Tối ưu & Tăng tốc (Phần 2)',
-    hoc: 'Cân X cân Y · Ước mơ — mục tiêu · 3 cấp độ Mindset',
-    thuc_hanh: 'Làm ảnh Bảng Ước Mơ, dán lên tường/để màn hình điện thoại',
-    ket_qua: 'Sổ ghi chép Kỹ Năng #6 — Giúp Đối Tác Bắt Đầu (phỏng vấn kế hoạch, Fast Start, giao việc cụ thể) · Bộ sưu tập 5+ video sức khỏe cá nhân · Bảng ước mơ bằng hình ảnh đủ 6 phần' },
-  { tuan: 8, chu_de: 'Tối ưu & Tăng tốc (Phần 3)',
-    hoc: 'Học — Làm — Đo lường — Hiệu chỉnh — Đổi mới · Thu nhập các cấp độ và cách chuyển giao',
-    thuc_hanh: 'Quay 1 video sức khỏe mỗi ngày',
-    ket_qua: 'Sổ ghi chép Kỹ Năng #7 hoàn thành (10+ lần thực hành gặp gỡ/mời/lăng xê sự kiện) · Bộ sưu tập 10+ video sức khỏe · Bài kiểm tra cuối kỳ 80%+ · Tự tin dạy lại được 7 kỹ năng cho người mới' },
-];
-function tuanDoiTacInfo(soTuan){
-  return DOI_TAC_TUAN.find(t => t.tuan === Number(soTuan)) || DOI_TAC_TUAN[0];
-}
 
 function render(container, ctx){
   const state = {
@@ -89,8 +43,11 @@ function render(container, ctx){
 
   async function load(){
     state.loading = true; draw();
+    // Đối tác kinh doanh (la_doi_tac=true) có màn hình riêng "Đối Tác" trên sidebar (chị Quỳnh chốt
+    // 2026-08-30: follow đối tác khác hẳn follow khách hàng, cần tách hẳn thành mục riêng chứ không
+    // chỉ là 1 tab con ở đây) — loại thẳng từ query, không hiện lẫn trong Khách Hàng nữa.
     const { data } = await ctx.supabase.from('crm_customers').select('*')
-      .eq('user_id', ctx.user.id)
+      .eq('user_id', ctx.user.id).eq('la_doi_tac', false)
       .order('ngay_follow_tiep', { ascending: true, nullsFirst: false });
     state.customers = data || [];
     state.loading = false;
@@ -125,17 +82,14 @@ function render(container, ctx){
 
   function isOverdue(c){ return !!c.ngay_follow_tiep && c.ngay_follow_tiep < todayIso(); }
   function isDueToday(c){ return c.ngay_follow_tiep === todayIso(); }
-  // Đối tác (la_doi_tac=true) không tính vào nhịp "cần follow" kiểu chốt sale — họ có nhịp huấn
-  // luyện riêng (xem tab "Đối tác" + DOI_TAC_TUAN), tránh trộn 2 loại việc rất khác nhau vào 1 tab.
-  function needsFollow(c){ return !c.la_doi_tac && !!c.ngay_follow_tiep && c.ngay_follow_tiep <= todayIso() && bucketOf(c) !== 'mat'; }
+  function needsFollow(c){ return !!c.ngay_follow_tiep && c.ngay_follow_tiep <= todayIso() && bucketOf(c) !== 'mat'; }
 
   function tabCounts(){
     return {
       follow: state.customers.filter(needsFollow).length,
-      'cham-soc': state.customers.filter(c => !c.la_doi_tac && bucketOf(c) === 'cham-soc').length,
-      chot: state.customers.filter(c => !c.la_doi_tac && bucketOf(c) === 'chot').length,
-      'doi-tac': state.customers.filter(c => c.la_doi_tac).length,
-      mat: state.customers.filter(c => !c.la_doi_tac && bucketOf(c) === 'mat').length,
+      'cham-soc': state.customers.filter(c => bucketOf(c) === 'cham-soc').length,
+      chot: state.customers.filter(c => bucketOf(c) === 'chot').length,
+      mat: state.customers.filter(c => bucketOf(c) === 'mat').length,
       all: state.customers.length,
     };
   }
@@ -144,8 +98,7 @@ function render(container, ctx){
     const q = state.search.trim().toLowerCase();
     return state.customers.filter(c => {
       if(state.activeTab === 'follow' && !needsFollow(c)) return false;
-      else if(state.activeTab === 'doi-tac' && !c.la_doi_tac) return false;
-      else if(['cham-soc','chot','mat'].includes(state.activeTab) && (c.la_doi_tac || bucketOf(c) !== state.activeTab)) return false;
+      else if(state.activeTab !== 'follow' && state.activeTab !== 'all' && bucketOf(c) !== state.activeTab) return false;
       if(q && !(c.ten_khach_hang || '').toLowerCase().includes(q) && !(c.tinh_thanh || '').toLowerCase().includes(q)) return false;
       return true;
     });
@@ -167,22 +120,22 @@ function render(container, ctx){
       // object form_hd đúng lúc lưu (xem saveDetail()).
       form_hd_gia_dinh: fh.gia_dinh || '', form_hd_cong_viec: fh.cong_viec || '', form_hd_so_thich_quan_he: fh.so_thich_quan_he || '',
       form_hd_money: fh.money || '', form_hd_suc_khoe: fh.suc_khoe || '', form_hd_mong_muon: fh.mong_muon || '',
-      // Theo dõi đối tác kinh doanh (khác follow khách hàng — xem DOI_TAC_TUAN ở trên).
-      la_doi_tac: !!c.la_doi_tac, ngay_thanh_doi_tac: c.ngay_thanh_doi_tac || '',
-      doi_tac_tuan_hien_tai: c.doi_tac_tuan_hien_tai || 1, doi_tac_diem_tuan: c.doi_tac_diem_tuan != null ? String(c.doi_tac_diem_tuan) : '',
-      doi_tac_trang_thai: c.doi_tac_trang_thai || 'Đúng nhịp', doi_tac_ly_do_lam: c.doi_tac_ly_do_lam || '',
-      doi_tac_rao_can: c.doi_tac_rao_can || '', doi_tac_hanh_dong_ho_tro: c.doi_tac_hanh_dong_ho_tro || '', doi_tac_ghi_chu: c.doi_tac_ghi_chu || '',
     };
   }
 
-  function convertToPartner(){
+  // Chuyển hẳn khách sang màn "Đối Tác" riêng (xem js/doi-tac.js) — ghi thẳng vào DB rồi đóng modal +
+  // tải lại danh sách, vì khách sẽ biến mất khỏi Khách Hàng ngay khi la_doi_tac=true (xem load()).
+  async function convertToPartner(){
     const d = state.detail; if(!d) return;
-    const f = d.editForm;
-    f.la_doi_tac = true;
-    if(!f.ngay_thanh_doi_tac) f.ngay_thanh_doi_tac = todayIso();
-    if(!f.doi_tac_tuan_hien_tai) f.doi_tac_tuan_hien_tai = 1;
-    if(!f.doi_tac_trang_thai) f.doi_tac_trang_thai = 'Đúng nhịp';
-    draw();
+    d.saving = true; draw();
+    const { error } = await ctx.supabase.from('crm_customers').update({
+      la_doi_tac: true, ngay_thanh_doi_tac: todayIso(),
+      doi_tac_tuan_hien_tai: 1, doi_tac_trang_thai: 'Đúng nhịp',
+    }).eq('id', d.customer.id);
+    d.saving = false;
+    if(error){ d.error = error.message; draw(); return; }
+    state.detail = null;
+    await load();
   }
 
   // Số lần TIẾP XÚC tính theo NGÀY KHÁC NHAU (không phải số dòng tương tác) — chị Quỳnh chốt
@@ -240,12 +193,6 @@ function render(container, ctx){
       // Giữ form_hd nếu ít nhất 1 mục có dữ liệu, kể cả khi đang không để nhanh='D' — tránh mất dữ
       // liệu FORM-HD đã khai thác nếu lỡ đổi nhánh tay.
       form_hd: Object.values(formHd).some(Boolean) ? formHd : null,
-      la_doi_tac: !!f.la_doi_tac, ngay_thanh_doi_tac: f.ngay_thanh_doi_tac || null,
-      doi_tac_tuan_hien_tai: f.la_doi_tac ? (Number(f.doi_tac_tuan_hien_tai) || 1) : null,
-      doi_tac_diem_tuan: f.la_doi_tac && f.doi_tac_diem_tuan !== '' ? Number(f.doi_tac_diem_tuan) : null,
-      doi_tac_trang_thai: f.la_doi_tac ? (f.doi_tac_trang_thai.trim() || null) : null,
-      doi_tac_ly_do_lam: f.doi_tac_ly_do_lam.trim() || null, doi_tac_rao_can: f.doi_tac_rao_can.trim() || null,
-      doi_tac_hanh_dong_ho_tro: f.doi_tac_hanh_dong_ho_tro.trim() || null, doi_tac_ghi_chu: f.doi_tac_ghi_chu.trim() || null,
     };
     const { error } = await ctx.supabase.from('crm_customers').update(payload).eq('id', d.customer.id);
     d.saving = false;
@@ -323,31 +270,7 @@ function render(container, ctx){
     return s.length > n ? s.slice(0, n).trim() + '…' : s;
   }
 
-  function trangThaiDoiTacBadge(v){
-    const t = (v || '').toLowerCase();
-    if(t.includes('chậm') || t.includes('rớt') || t.includes('trễ')) return badgePill(v, '#FBEAE5', 'var(--danger)');
-    if(t.includes('đúng')) return badgePill(v, 'var(--accent-soft)', 'var(--accent)');
-    return v ? badgePill(v, 'var(--line)', 'var(--ink-soft)') : '';
-  }
-
   function customerCardHtml(c){
-    if(c.la_doi_tac){
-      const tuan = tuanDoiTacInfo(c.doi_tac_tuan_hien_tai);
-      return `
-        <div class="list-item" data-open="${c.id}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-            <div style="font-size:15.5px;font-weight:700;">${esc(c.ten_khach_hang)}</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;">
-              ${badgePill('ĐỐI TÁC', '#EDE6F5', '#6B4FA0')}
-              ${trangThaiDoiTacBadge(c.doi_tac_trang_thai)}
-            </div>
-          </div>
-          <div class="meta" style="margin-top:6px;margin-bottom:0;">${[c.kenh, c.leader_phu_trach, c.tinh_thanh].filter(Boolean).map(esc).join(' · ')}</div>
-          <div style="font-size:13.5px;color:var(--ink);margin-top:8px;line-height:1.5;">Tuần ${c.doi_tac_tuan_hien_tai || 1}/8 — ${esc(tuan.chu_de)}</div>
-          ${c.doi_tac_hanh_dong_ho_tro ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">→ ${esc(truncate(c.doi_tac_hanh_dong_ho_tro,80))}</div>` : ''}
-        </div>
-      `;
-    }
     const overdue = isOverdue(c), dueToday = isDueToday(c);
     const painOrNeed = c.van_de_noi_dau || c.nhu_cau_cu_the || '';
     const followText = c.ngay_follow_tiep
@@ -390,43 +313,6 @@ function render(container, ctx){
     </div>`;
   }
 
-  function doiTacTrainingBlockHtml(f){
-    const soTuan = Number(f.doi_tac_tuan_hien_tai) || 1;
-    const tuan = tuanDoiTacInfo(soTuan);
-    return groupBlock(`Huấn luyện đối tác — Tuần ${soTuan}/8`, `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 14px;">
-        <div>
-          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tuần hiện tại (1-8)</label>
-          <input type="number" min="1" max="8" data-field="doi_tac_tuan_hien_tai" value="${esc(String(soTuan))}" style="margin-top:6px;">
-        </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Điểm tuần (0-100, không bắt buộc)</label>
-          <input type="number" min="0" max="100" data-field="doi_tac_diem_tuan" value="${esc(f.doi_tac_diem_tuan)}" style="margin-top:6px;">
-        </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Trạng thái nhịp</label>
-          <input type="text" data-field="doi_tac_trang_thai" value="${esc(f.doi_tac_trang_thai)}" list="kh-trang-thai-doi-tac-options" style="margin-top:6px;">
-          <datalist id="kh-trang-thai-doi-tac-options">${TRANG_THAI_DOI_TAC_BASE.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
-        </div>
-        ${field('ngay_thanh_doi_tac', 'Ngày bắt đầu làm đối tác', f.ngay_thanh_doi_tac, 'date')}
-      </div>
-      <details style="margin-top:14px;">
-        <summary style="cursor:pointer;font-weight:600;font-size:13.5px;color:var(--accent);">📖 Nội dung tuần ${soTuan}: ${esc(tuan.chu_de)}</summary>
-        <div style="font-size:13px;color:var(--ink);line-height:1.7;margin-top:10px;">
-          <div><b>Học:</b> ${esc(tuan.hoc)}</div>
-          <div style="margin-top:8px;"><b>Thực hành:</b> ${esc(tuan.thuc_hanh)}</div>
-          <div style="margin-top:8px;"><b>Kết quả kỳ vọng:</b> ${esc(tuan.ket_qua)}</div>
-        </div>
-      </details>
-      <div style="display:grid;grid-template-columns:1fr;margin-top:4px;">
-        ${field('doi_tac_ly_do_lam', 'Lý do họ làm (WHY) — nhắc lại khi họ nản', f.doi_tac_ly_do_lam, 'textarea', true)}
-        ${field('doi_tac_rao_can', 'Đang vướng gì (rào cản hiện tại)', f.doi_tac_rao_can, 'textarea', true)}
-        ${field('doi_tac_hanh_dong_ho_tro', 'Việc leader cần hỗ trợ tiếp theo', f.doi_tac_hanh_dong_ho_tro, 'textarea', true)}
-        ${field('doi_tac_ghi_chu', 'Ghi chú', f.doi_tac_ghi_chu, 'textarea', true)}
-      </div>
-    `, { footnote: 'Theo dõi gọn theo tuần — không tick từng đầu việc nhỏ, để không tốn thời gian khi bảo trợ nhiều đối tác cùng lúc.' });
-  }
-
   function detailHtml(){
     const d = state.detail;
     const c = d.customer || {};
@@ -446,16 +332,11 @@ function render(container, ctx){
           ${d.error ? `<div class="error-box">${esc(d.error)}</div>` : ''}
 
           <!-- Số lần tiếp xúc (theo NGÀY khác nhau, không phải số tin nhắn) — nguyên tắc CSKH: cần
-               4-6 lần chạm khác ngày mới đủ để 1 khách chốt. Không áp dụng cho đối tác (nhịp huấn
-               luyện khác nhịp chốt sale). -->
-          ${!f.la_doi_tac ? `
-            <div class="hint-box" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;${touchOk ? '' : 'background:#FBF6E9;color:#8A5A00;border-color:#E9DEB8;'}">
-              <span>🎯 Số lần tiếp xúc (ngày khác nhau): <b>${touchDays}/${TOUCHPOINT_TARGET}</b></span>
-              <span style="font-size:12px;">${touchOk ? 'Đủ ngưỡng thường chốt — ưu tiên chốt/đề nghị.' : 'Cần thêm follow — nguyên tắc: 4-6 lần chạm mới đủ để chốt.'}</span>
-            </div>
-          ` : `
-            <div class="hint-box" style="margin-top:14px;">🚀 Đã chuyển thành <b>đối tác kinh doanh</b> — theo dõi bằng nhịp huấn luyện 8 tuần bên dưới, không theo nhịp follow chốt sale nữa.</div>
-          `}
+               4-6 lần chạm khác ngày mới đủ để 1 khách chốt. -->
+          <div class="hint-box" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;${touchOk ? '' : 'background:#FBF6E9;color:#8A5A00;border-color:#E9DEB8;'}">
+            <span>🎯 Số lần tiếp xúc (ngày khác nhau): <b>${touchDays}/${TOUCHPOINT_TARGET}</b></span>
+            <span style="font-size:12px;">${touchOk ? 'Đủ ngưỡng thường chốt — ưu tiên chốt/đề nghị.' : 'Cần thêm follow — nguyên tắc: 4-6 lần chạm mới đủ để chốt.'}</span>
+          </div>
 
           ${groupBlock('Thông tin cơ bản', `
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 14px;">
@@ -480,25 +361,23 @@ function render(container, ctx){
             </div>
           `)}
 
-          ${!f.la_doi_tac ? `
-            ${groupBlock('Nhu cầu & rào cản', `
-              <div style="display:grid;grid-template-columns:1fr;">
-                ${field('nhom_nhu_cau', 'Nhóm nhu cầu (cách nhau bởi dấu phẩy)', f.nhom_nhu_cau, 'text', true)}
-                ${field('nhu_cau_cu_the', 'Nhu cầu cụ thể', f.nhu_cau_cu_the, 'textarea', true)}
-                ${field('van_de_noi_dau', 'Vấn đề / nỗi đau', f.van_de_noi_dau, 'textarea', true)}
-                ${field('rao_can', 'Rào cản (cách nhau bởi dấu phẩy)', f.rao_can, 'text', true)}
-              </div>
-            `)}
+          ${groupBlock('Nhu cầu & rào cản', `
+            <div style="display:grid;grid-template-columns:1fr;">
+              ${field('nhom_nhu_cau', 'Nhóm nhu cầu (cách nhau bởi dấu phẩy)', f.nhom_nhu_cau, 'text', true)}
+              ${field('nhu_cau_cu_the', 'Nhu cầu cụ thể', f.nhu_cau_cu_the, 'textarea', true)}
+              ${field('van_de_noi_dau', 'Vấn đề / nỗi đau', f.van_de_noi_dau, 'textarea', true)}
+              ${field('rao_can', 'Rào cản (cách nhau bởi dấu phẩy)', f.rao_can, 'text', true)}
+            </div>
+          `)}
 
-            ${groupBlock('Giải pháp & tiến triển', `
-              <div style="display:grid;grid-template-columns:1fr;">
-                ${field('giai_phap_phu_hop', 'Giải pháp phù hợp', f.giai_phap_phu_hop, 'textarea', true)}
-                ${field('hanh_dong_tiep_theo', 'Hành động tiếp theo', f.hanh_dong_tiep_theo, 'textarea', true)}
-                ${field('ket_qua', 'Kết quả', f.ket_qua, 'textarea', true)}
-                ${field('ghi_chu_ai', 'Ghi chú AI', f.ghi_chu_ai, 'textarea', true)}
-              </div>
-            `)}
-          ` : doiTacTrainingBlockHtml(f)}
+          ${groupBlock('Giải pháp & tiến triển', `
+            <div style="display:grid;grid-template-columns:1fr;">
+              ${field('giai_phap_phu_hop', 'Giải pháp phù hợp', f.giai_phap_phu_hop, 'textarea', true)}
+              ${field('hanh_dong_tiep_theo', 'Hành động tiếp theo', f.hanh_dong_tiep_theo, 'textarea', true)}
+              ${field('ket_qua', 'Kết quả', f.ket_qua, 'textarea', true)}
+              ${field('ghi_chu_ai', 'Ghi chú AI', f.ghi_chu_ai, 'textarea', true)}
+            </div>
+          `)}
 
           ${f.nhanh === 'D' ? groupBlock('FORM-HD — khung khai thác nhánh Kinh doanh/Đối tác', `
             <div style="display:grid;grid-template-columns:1fr;gap:0;">
@@ -513,7 +392,7 @@ function render(container, ctx){
 
           <div class="btn-row" style="justify-content:flex-start;margin-top:16px;">
             <button class="btn btn-sm" id="kh-detail-save" ${d.saving ? 'disabled' : ''}>${d.saving ? 'Đang lưu…' : 'Lưu'}</button>
-            ${!f.la_doi_tac ? `<span class="btn-ghost btn btn-sm" id="kh-detail-to-partner">🚀 Chuyển thành đối tác</span>` : ''}
+            <span class="btn-ghost btn btn-sm" id="kh-detail-to-partner">🚀 Chuyển thành đối tác</span>
             <span class="btn-ghost btn btn-sm" style="color:var(--danger);${state.deleting ? 'opacity:.6;pointer-events:none;' : ''}" id="kh-detail-delete">${state.deleting ? 'Đang xoá…' : 'Xoá khách này'}</span>
           </div>
 
@@ -580,7 +459,6 @@ function render(container, ctx){
       { key:'follow', label:'Cần follow' },
       { key:'cham-soc', label:'Đang chăm sóc' },
       { key:'chot', label:'Đã chốt' },
-      { key:'doi-tac', label:'Đối tác' },
       { key:'mat', label:'Mất' },
       { key:'all', label:'Tất cả' },
     ];

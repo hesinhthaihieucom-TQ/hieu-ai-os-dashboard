@@ -103,6 +103,7 @@ function render(container, ctx){
   const QUICK_LINKS = [
     { key:'tu-van', icon:'💬', label:'Tư Vấn AI', desc:'Dán ảnh chụp chat, nhận câu tư vấn dùng ngay' },
     { key:'khach-hang', icon:'📇', label:'Khách Hàng', desc:'Xem/lọc toàn bộ hồ sơ khách đang chăm sóc' },
+    { key:'doi-tac', icon:'🚀', label:'Đối Tác', desc:'Theo dõi nhịp huấn luyện đối tác kinh doanh' },
     { key:'cau-chuyen', icon:'📖', label:'Câu Chuyện Của Bạn', desc:'Hồ sơ giúp AI tư vấn đúng giọng, đúng câu chuyện thật' },
     { key:'nang-cap', icon:'💳', label:'Nâng Cấp', desc:'Xem gói và gia hạn' },
   ];
@@ -141,7 +142,7 @@ function render(container, ctx){
           <div class="section highlight">
             <h3>Đối tác cần huấn luyện (${state.coachingRows.length})</h3>
             ${state.coachingRows.map(r=>`
-              <div class="list-item" data-goto-customer="${r.id}" style="cursor:pointer;">
+              <div class="list-item" data-goto-partner="${r.id}" style="cursor:pointer;">
                 <div class="txt">
                   <div class="meta">Tuần ${r.doi_tac_tuan_hien_tai||1}/8 · ${esc(r.doi_tac_trang_thai||'Chưa cập nhật trạng thái')}</div>
                   ${esc(r.ten_khach_hang)}
@@ -191,6 +192,9 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-goto-customer]').forEach(el=>{
       el.onclick = ()=>{ window.__crmOpenCustomerId = el.getAttribute('data-goto-customer'); location.hash = 'khach-hang'; };
+    });
+    container.querySelectorAll('[data-goto-partner]').forEach(el=>{
+      el.onclick = ()=>{ window.__crmOpenCustomerId = el.getAttribute('data-goto-partner'); location.hash = 'doi-tac'; };
     });
 
     const enablePushBtn = container.querySelector('[data-action="enable-push"]');

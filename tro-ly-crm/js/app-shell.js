@@ -8,6 +8,7 @@ const NAV = [
   { key:'trang-chu', title:'Trang chủ', hidden:true }, // không hiện trong sidebar — vào lại qua bấm logo đầu sidebar
   { key:'tu-van', title:'Tư Vấn AI' },
   { key:'khach-hang', title:'Khách Hàng' },
+  { key:'doi-tac', title:'Đối Tác' },
   { key:'cau-chuyen', title:'Câu Chuyện Của Bạn' },
   { key:'nang-cap', title:'Nâng Cấp' },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm tên ở cuối sidebar
