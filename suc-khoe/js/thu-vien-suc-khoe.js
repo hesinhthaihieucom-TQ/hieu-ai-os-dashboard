@@ -42,10 +42,10 @@ function render(container, ctx){
         return `
         <details class="kt-section">
           <summary class="kt-summary">${esc(e.issue_name)}</summary>
-          <div style="margin-top:12px;font-size:14px;line-height:1.7;">
-            ${e.causes ? `<div style="margin-bottom:10px;"><b>Nguyên nhân:</b> ${esc(e.causes)}</div>` : ''}
-            ${e.symptoms ? `<div style="margin-bottom:10px;"><b>Biểu hiện:</b> ${esc(e.symptoms)}</div>` : ''}
-            ${e.remedies ? `<div style="margin-bottom:10px;"><b>Cách xử lý:</b> ${esc(e.remedies)}</div>` : ''}
+          <div style="margin-top:12px;font-size:13.5px;line-height:1.75;">
+            ${e.causes ? `<div style="margin-bottom:14px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;">Nguyên nhân</div><div style="white-space:pre-line;">${esc(e.causes)}</div></div>` : ''}
+            ${e.symptoms ? `<div style="margin-bottom:14px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;">Biểu hiện</div><div style="white-space:pre-line;">${esc(e.symptoms)}</div></div>` : ''}
+            ${e.remedies ? `<div style="margin-bottom:14px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;">Cách xử lý</div><div style="white-space:pre-line;">${esc(e.remedies)}</div></div>` : ''}
             ${products.length>0 ? `
               <div style="margin-top:12px;">
                 <b>Sản phẩm Unicity bổ trợ:</b>
