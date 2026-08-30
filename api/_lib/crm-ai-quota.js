@@ -16,6 +16,7 @@ const CRM_MONTHLY_AI_LIMIT = 200;
 // ảnh + phân tích đầy đủ, tốn hơn hẳn case-study-classify chỉ đọc text ngắn để phân loại).
 const CRM_AI_WEIGHTS = {
   'crm-tuvan': 6,
+  'crm-cap-nhat-ho-so': 3, // đọc ảnh/ghi chú cũ để cập nhật hồ sơ — không sinh câu tư vấn, rẻ hơn crm-tuvan
   'case-study-classify': 1,
 };
 

@@ -387,6 +387,7 @@ function render(container, ctx){
           <div class="hint-box" style="margin-top:0;">AI không đọc được tên khách trong ảnh/mô tả — nhập giúp tên khách hàng để lưu đúng hồ sơ.</div>
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tên khách hàng</label>
           <input type="text" id="tv-manual-name" placeholder="VD: Chị Lan" value="${esc(state.manualName)}">
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Mẹo: đặt trùng đúng tên tài khoản Facebook/Zalo khách đang dùng — lần sau gửi ảnh chat, AI sẽ tự khớp thẳng vào hồ sơ này.</div>
         </div>
       ` : ''}
 

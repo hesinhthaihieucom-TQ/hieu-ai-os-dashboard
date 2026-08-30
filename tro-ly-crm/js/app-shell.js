@@ -26,7 +26,7 @@ const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY
 // đúng CRM_MONTHLY_AI_LIMIT/CRM_AI_WEIGHTS ở api/_lib/crm-ai-quota.js (nơi THỰC SỰ trừ lượt); bảng
 // này chỉ dùng để cập nhật ngay số lượt hiển thị ở sidebar cho mượt, không cần đợi tải lại trang.
 const CRM_MONTHLY_AI_LIMIT = 200;
-const GATED_API_WEIGHTS = { 'api/crm-tuvan': 6, 'api/case-study-classify': 1 };
+const GATED_API_WEIGHTS = { 'api/crm-tuvan': 6, 'api/crm-cap-nhat-ho-so': 3, 'api/case-study-classify': 1 };
 
 function crmMonthlyUsage(p){
   const month = new Date().toISOString().slice(0,7);

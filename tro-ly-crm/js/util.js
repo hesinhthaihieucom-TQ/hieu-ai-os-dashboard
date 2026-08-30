@@ -105,8 +105,24 @@ async function callApi(path, body, timeoutMs){
   // hay dưới 1 thư mục con qua reverse proxy (vd Cloudflare Worker tại hesinhthaihieu.com).
   const relativePath = path.replace(/^\//, '');
   let resp = await callApiOnce(relativePath, body, timeoutMs);
+  let hadSessionBeforeRetry = false;
   if(resp.status === 401){
-    await supabaseClient.auth.refreshSession();
+    // 2026-08-30: đã gặp trường hợp người dùng RÕ RÀNG đang đăng nhập (đã dùng app bình thường)
+    // vẫn bị 401 — nghi do access token vừa hết hạn giữa lúc thao tác (VD chụp/gõ lâu trước khi
+    // bấm gửi) trong khi supabase-js đang TỰ auto-refresh nền của riêng nó; gọi thêm
+    // refreshSession() thủ công đúng lúc đó có thể đụng race với refresh tự động (Supabase chỉ
+    // cho dùng 1 refresh token đúng 1 lần, dùng trùng lúc sẽ báo lỗi và làm hỏng phiên đang có).
+    // Né race: kiểm tra đã có session chưa TRƯỚC khi tự refresh, đợi 1 nhịp ngắn cho refresh nền
+    // (nếu có) kịp xong, rồi mới thử lại — không gọi refreshSession() nếu chưa chắc cần.
+    const { data: existing } = await supabaseClient.auth.getSession();
+    hadSessionBeforeRetry = !!(existing && existing.session);
+    if(hadSessionBeforeRetry){
+      await new Promise(r => setTimeout(r, 400));
+      const { data: stillCurrent } = await supabaseClient.auth.getSession();
+      const stillExpired = !stillCurrent || !stillCurrent.session
+        || (stillCurrent.session.expires_at && stillCurrent.session.expires_at * 1000 < Date.now());
+      if(stillExpired) await supabaseClient.auth.refreshSession().catch(()=>{});
+    }
     resp = await callApiOnce(relativePath, body, timeoutMs);
   }
   let data;
@@ -117,7 +133,15 @@ async function callApi(path, body, timeoutMs){
       ? 'Server xử lý quá lâu và bị ngắt giữa chừng — thử lại giúp mình, nếu vẫn vậy báo lại nhé.'
       : 'Không đọc được phản hồi từ server — thử lại giúp mình.');
   }
-  if(!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
+  if(!resp.ok){
+    // Đã xác nhận có phiên đăng nhập nhưng vẫn bị 401 sau khi thử lại — không phải "chưa đăng
+    // nhập" thật, khả năng cao là phiên bị lệch tạm thời. Tải lại trang là cách chắc ăn nhất để
+    // nạp lại phiên từ đầu, đỡ gây hiểu lầm "phải đăng nhập lại bằng tài khoản" (mất công gõ lại).
+    if(resp.status === 401 && hadSessionBeforeRetry){
+      throw new Error('Phiên đăng nhập tạm thời bị gián đoạn (thường do mạng chập chờn) — tải lại trang rồi thử gửi lại giúp mình, ảnh/nội dung đang nhập vẫn được giữ nguyên.');
+    }
+    throw new Error(data.error || 'Có lỗi xảy ra.');
+  }
   // Báo cho app-shell.js biết vừa gọi thành công 1 endpoint tính lượt để tự cập nhật số lượt còn
   // lại ở sidebar ngay lập tức, không cần đợi tải lại trang (xem GATED_API_WEIGHTS/onGatedApiSuccess).
   if(window.onGatedApiSuccess) window.onGatedApiSuccess(relativePath);

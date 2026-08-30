@@ -4,6 +4,7 @@
 const FILTER_DRAFT_KEY = 'khach-hang-filters'; // chỉ nhớ bộ lọc đang dùng, KHÔNG phải dữ liệu — bảng chính là nguồn sự thật
 const DO_NONG_BASE = ['Nóng', 'Ấm', 'Lạnh'];
 const GIAI_DOAN_BASE = ['Đang tư vấn', 'Chăm sóc', 'Follow', 'Chốt', 'Đã mua/onboarding', 'Mất'];
+const MAX_IMAGES = 6; // "Cập nhật từ ảnh/ghi chú" — số hoá ghi chú cũ, ít ảnh hơn Tư Vấn AI (10) là đủ
 
 function render(container, ctx){
   const state = {
@@ -217,7 +218,13 @@ function render(container, ctx){
 
   async function openDetail(id){
     const existing = state.customers.find(c => c.id === id) || { id };
-    state.detail = { customer: existing, editForm: toEditForm(existing), interactions: [], loadingInteractions: true, saving: false, error: '' };
+    state.detail = {
+      customer: existing, editForm: toEditForm(existing), interactions: [], loadingInteractions: true, saving: false, error: '',
+      // "Cập nhật từ ảnh/ghi chú" (2026-08-30, chị Quỳnh đề xuất) — khác Tư Vấn AI: đọc DỮ LIỆU ĐÃ
+      // TỪNG GHI về khách này (ghi chú tay, form cũ...) để cập nhật hồ sơ, không phải đoạn chat đang
+      // diễn ra nên không sinh câu tư vấn, và không cần khớp tên vì customer_id đã biết sẵn.
+      updateFromNotes: { expanded: false, images: [], note: '', submitting: false, error: '' },
+    };
     draw();
     const [{ data: customer }, { data: interactions }] = await Promise.all([
       ctx.supabase.from('crm_customers').select('*').eq('id', id).maybeSingle(),
@@ -232,6 +239,64 @@ function render(container, ctx){
   }
 
   function closeDetail(){ state.detail = null; draw(); }
+
+  function toggleUpdateFromNotes(){
+    const d = state.detail; if(!d) return;
+    d.updateFromNotes.expanded = !d.updateFromNotes.expanded;
+    draw();
+  }
+
+  function handleUpdateFromNotesFiles(files){
+    const d = state.detail; if(!d) return;
+    const u = d.updateFromNotes;
+    Array.from(files).slice(0, MAX_IMAGES - u.images.length).forEach((file)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          u.images = [...u.images, c.toDataURL('image/jpeg', 0.82)].slice(0, MAX_IMAGES);
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removeUpdateFromNotesImage(idx){
+    const d = state.detail; if(!d) return;
+    d.updateFromNotes.images = d.updateFromNotes.images.filter((_,i)=>i!==idx);
+    draw();
+  }
+
+  async function submitUpdateFromNotes(){
+    const d = state.detail; if(!d) return;
+    const u = d.updateFromNotes;
+    if(!u.images.length && !u.note.trim()){ u.error = 'Cần ít nhất 1 ảnh hoặc mô tả.'; draw(); return; }
+    u.submitting = true; u.error = ''; draw();
+    try{
+      const data = await callApi('/api/crm-cap-nhat-ho-so', {
+        customer_id: d.customer.id, images: u.images, note: u.note,
+      }, 90000);
+      if(data.customer){
+        d.customer = data.customer;
+        d.editForm = toEditForm(data.customer);
+      }
+      u.images = []; u.note = ''; u.expanded = false;
+      await load();
+    } catch(e){
+      u.error = e.message;
+    } finally {
+      u.submitting = false;
+      draw();
+    }
+  }
 
   async function saveDetail(){
     const d = state.detail; if(!d) return;
@@ -377,6 +442,39 @@ function render(container, ctx){
     </div>`;
   }
 
+  // "Cập nhật từ ảnh/ghi chú" (2026-08-30) — chụp ghi chú tay/form phân tích cũ về khách này để AI
+  // đọc và tự điền vào hồ sơ, KHÔNG cần đúng đoạn chat đang diễn ra (khác Tư Vấn AI) và không cần lo
+  // khớp tên (đã mở sẵn đúng khách này). Thu gọn mặc định — bấm mới xoè ra, tránh modal dài hơn.
+  function updateFromNotesHtml(d){
+    const u = d.updateFromNotes;
+    return `
+      <div class="section" style="margin-top:14px;margin-bottom:0;padding:14px 18px;">
+        <div data-toggle-update-notes="1" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="margin-bottom:0;">📷 Cập nhật từ ảnh/ghi chú</h3>
+          <span style="color:var(--ink-soft);">${u.expanded?'▾':'▸'}</span>
+        </div>
+        ${!u.expanded ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Có ghi chú tay/form phân tích cũ về khách này? Chụp ảnh gửi để AI tự điền vào hồ sơ bên dưới — không tính là 1 lần tiếp xúc.</div>` : `
+          <div style="margin-top:12px;">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+              ${u.images.map((src,i)=>`
+                <div style="position:relative;width:80px;height:80px;">
+                  <img src="${src}" data-un-zoom-img="${i}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;cursor:zoom-in;border:1px solid var(--line);">
+                  <span data-un-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
+                </div>
+              `).join('')}
+              ${u.images.length<MAX_IMAGES ? `<label style="width:80px;height:80px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:22px;">+<input type="file" accept="image/*" multiple id="un-file" style="display:none;"></label>` : ''}
+            </div>
+            <textarea id="un-note" placeholder="Hoặc gõ tay thông tin đã biết về khách...">${esc(u.note)}</textarea>
+            ${u.error ? `<div class="error-box" style="margin-top:8px;">${esc(u.error)}</div>` : ''}
+            <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+              <button class="btn btn-sm" id="un-submit" ${u.submitting?'disabled':''}>${u.submitting?'Đang cập nhật…':'Cập nhật hồ sơ'}</button>
+            </div>
+          </div>
+        `}
+      </div>
+    `;
+  }
+
   function detailHtml(){
     const d = state.detail;
     const c = d.customer || {};
@@ -394,6 +492,8 @@ function render(container, ctx){
           </div>
 
           ${d.error ? `<div class="error-box">${esc(d.error)}</div>` : ''}
+
+          ${updateFromNotesHtml(d)}
 
           <!-- Số lần tiếp xúc (theo NGÀY khác nhau, không phải số tin nhắn) — nguyên tắc CSKH: cần
                4-6 lần chạm khác ngày mới đủ để 1 khách chốt. -->
@@ -491,6 +591,7 @@ function render(container, ctx){
           ${state.newError ? `<div class="error-box">${esc(state.newError)}</div>` : ''}
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tên khách hàng *</label>
           <input type="text" data-new-field="ten_khach_hang" value="${esc(f.ten_khach_hang)}" placeholder="VD: Chị Lan">
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Nên đặt trùng đúng tên tài khoản mạng xã hội khách đang dùng (Facebook/Zalo) — sau này gửi ảnh chat, AI sẽ khớp thẳng vào đúng hồ sơ này thay vì đọc ra tên khác không nhận ra.</div>
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Leader phụ trách</label>
           <input type="text" data-new-field="leader_phu_trach" value="${esc(f.leader_phu_trach)}">
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Kênh</label>
@@ -628,6 +729,21 @@ function render(container, ctx){
       if(toPartnerBtn) toPartnerBtn.onclick = convertToPartner;
       const delBtn = container.querySelector('#kh-detail-delete');
       if(delBtn) delBtn.onclick = deleteCustomer;
+
+      const toggleUnBtn = container.querySelector('[data-toggle-update-notes]');
+      if(toggleUnBtn) toggleUnBtn.onclick = toggleUpdateFromNotes;
+      const unFileEl = container.querySelector('#un-file');
+      if(unFileEl) unFileEl.onchange = () => { if(unFileEl.files.length) handleUpdateFromNotesFiles(unFileEl.files); };
+      container.querySelectorAll('[data-un-remove-img]').forEach(el => {
+        el.onclick = (e) => { e.stopPropagation(); removeUpdateFromNotesImage(Number(el.getAttribute('data-un-remove-img'))); };
+      });
+      container.querySelectorAll('[data-un-zoom-img]').forEach(el => {
+        el.onclick = (e) => { e.stopPropagation(); openImageLightbox(state.detail.updateFromNotes.images[Number(el.getAttribute('data-un-zoom-img'))]); };
+      });
+      const unNoteEl = container.querySelector('#un-note');
+      if(unNoteEl) unNoteEl.oninput = (e) => { state.detail.updateFromNotes.note = e.target.value; };
+      const unSubmitBtn = container.querySelector('#un-submit');
+      if(unSubmitBtn) unSubmitBtn.onclick = submitUpdateFromNotes;
     }
 
     // Modal thêm mới
