@@ -8,36 +8,48 @@ const CONTEXT_DRAFT_KEY = 'tu-van-san-pham'; // riêng, KHÔNG bị xoá sau m�
 // đọc ảnh — gộp 10 ảnh vào 1 lượt chỉ soạn kết quả 1 lần thay vì 10 lần).
 const MAX_IMAGES = 10;
 
-// Câu mở đầu theo từng nhánh (chị Quỳnh chốt 2026-08-29, đúng nguyên văn quy trình gốc) — hiện sẵn
-// để copy gửi khách MỚI, KHÔNG gọi AI cho bước này (câu mở đầu đã cố định/gần cố định theo kịch bản,
-// tốn AI để tự viết lại là lãng phí — nhánh D đặc biệt ghi rõ "bắt buộc nguyên văn" nên càng không
-// nên để AI tự soạn). AI chỉ bắt đầu tính lượt từ khi khách đã trả lời và có ảnh/nội dung để phân tích.
-const NHANH_OPENERS = {
-  A: { label:'A — Sức khỏe', text:'Bạn đang có nhu cầu như thế nào về sức khỏe ạ?',
-    steps:[
-      'Khách đã tự nói rõ vấn đề → 1 câu đồng cảm rồi hỏi thẳng câu #1 dưới. Chưa rõ → hỏi câu mở đầu trên trước.',
-      'Giảm cân/mỡ: (1) cao/nặng bao nhiêu (2) gửi bảng %mỡ, hỏi hiện tại/mục tiêu % (3) đã dùng cách gì, hiệu quả sao (4) đang ảnh hưởng gì tới sức khỏe/tự tin/công việc',
-      'Vấn đề sức khỏe khác: (1) vấn đề gì (2) bao lâu rồi (3) ảnh hưởng cuộc sống thế nào (4) đã dùng cách gì (5) hiệu quả sao — mỗi câu hỏi riêng, đợi trả lời mới hỏi tiếp',
-      'Đủ thông tin → 1 câu đồng cảm + set kỳ vọng nhẹ nhàng → kể chuyện bản thân liên quan → gửi case tương tự → chốt giá 3 mức (thấp/vừa/cao) → hỏi thẳng chốt CÓ/KHÔNG',
-    ] },
-  B: { label:'B — Tâm linh/Tài chính', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?',
-    steps:[
-      'Hỏi đang quan tâm/cần gì → điều gì đang cản trở → mong muốn đạt được gì',
-      'Phân tích ngắn hệ quả nếu giữ nguyên rào cản → gửi đúng link khóa (nếu đã có trong Thông tin sản phẩm) kèm lý do khớp → xin hẹn mốc thời gian xem',
-      'Đến hẹn: đã xem chưa → thấy gì phù hợp nhất → chốt thẳng CÓ/KHÔNG',
-    ] },
-  C: { label:'C — Nhân hiệu/Content', text:'Hiện tại em đang quan tâm/cần hỗ trợ điều gì ạ?',
-    steps:[
-      'Hỏi đang quan tâm/cần gì → điều gì đang cản trở → mong muốn đạt được gì',
-      'Phân tích ngắn hệ quả nếu giữ nguyên rào cản → gửi đúng link gói phù hợp (entry hay chính, theo mức cam kết khách) kèm lý do khớp → xin hẹn mốc thời gian xem',
-      'Đến hẹn: đã xem chưa → thấy gì phù hợp nhất → chốt thẳng CÓ/KHÔNG',
-    ] },
-  D: { label:'D — Kinh doanh/Đối tác', text:'Cảm ơn c đã chủ động nhắn cho e nhé. Để e hiểu rõ hơn rồi định hướng đúng cho c, c chia sẻ thêm vài thông tin nha:\n1. Hiện tại c đang làm công việc gì?\n2. Thu nhập trung bình 1 tháng của c đang ở mức khoảng bao nhiêu? Hiện c có tích luỹ được chứ?\n3. Mục tiêu tài chính của c trong 6–12 tháng tới là gì? Muốn tăng thêm bao nhiêu thu nhập mỗi tháng?\n4. C đang quan tâm phát triển nguồn thu theo hướng nào: online, chăm sóc sức khỏe, hay xây hệ thống lâu dài?\nE hỏi kỹ để xem c phù hợp với mô hình nào nhất — vì team của e đang làm trong ngành chăm sóc sức khỏe & đào tạo phát triển con người, có quy trình rõ ràng, hỗ trợ từng bước, ai mới vào cũng làm được nè',
-    steps:[
-      'Sàng lọc xong 4 câu trên → nghe cảm xúc, đào lý do đằng sau con số, khen sự chủ động, kể chuyện bản thân liên quan, vẽ nỗi đau + viễn cảnh nếu thay đổi',
-      'Xin hẹn thời gian TRƯỚC → gửi Guide "Tìm Hiểu Kinh Doanh" SAU → follow đúng hẹn (đã xem chưa)',
-      'Khách nhắn xác nhận muốn đồng hành → hẹn buổi nói chuyện sâu → chốt mở mã (gói entry) → hỏi 4 câu (thu nhập mong muốn/giờ rảnh/thời gian/sẵn sàng) → chốt gói',
-    ] },
+// Sổ tay tư vấn theo từng nhánh (chị Quỳnh chốt 2026-08-30: mỗi bước cần có sẵn CÂU VÍ DỤ CỤ THỂ để
+// copy gửi thẳng, không chỉ tóm tắt ý — bấm vào từng bước mới xoè ra câu ví dụ, gọn khi chưa cần).
+// KHÔNG gọi AI cho các câu này — nội dung tĩnh, tự soạn 1 lần dùng lại nhiều lần, AI chỉ bắt đầu tính
+// lượt từ khi khách đã trả lời và có ảnh/nội dung thật để phân tích. Đây là bản đầu — chị Quỳnh sẽ
+// tự yêu cầu chỉnh từng câu sau khi thấy cơ chế chạy đúng, không cần tự nhiên trọn vẹn ngay từ đầu.
+const NHANH_GUIDES = {
+  A: { label:'A — Sức khỏe', steps:[
+    { title:'Khách đã tự nói rõ vấn đề (VD "em mất ngủ", "em muốn giảm mỡ bụng")', example:'Dạ em hiểu cảm giác đó ạ, để em hỏi thêm vài thông tin để tư vấn đúng cho mình nhé.' },
+    { title:'Khách chỉ chào hỏi chung chung, chưa rõ vấn đề gì', example:'Bạn đang có nhu cầu như thế nào về sức khỏe ạ?' },
+    { title:'Khách hỏi giá ngay từ đầu', example:'Anh/chị đã tìm hiểu được gì về giải pháp này rồi ạ?' },
+    { title:'[Giảm cân/mỡ] Bước 1 — chiều cao/cân nặng', example:'Chị hiện đang cao mét bao nhiêu và nặng bao nhiêu ký ạ?' },
+    { title:'[Giảm cân/mỡ] Bước 2 — % mỡ hiện tại/mục tiêu (gửi kèm bảng % mỡ)', example:'Chị xem giúp em mình đang giống hình nào trong bảng này, khoảng bao nhiêu % mỡ ạ? Và chị muốn giảm về còn khoảng bao nhiêu % ạ?' },
+    { title:'[Giảm cân/mỡ] Bước 3 — đã dùng phương pháp gì', example:'Chị đã từng dùng phương pháp nào để giảm chưa ạ? Hiệu quả như nào ạ?' },
+    { title:'[Giảm cân/mỡ] Bước 4 — ảnh hưởng thế nào', example:'Việc này đang ảnh hưởng thế nào đến sức khỏe/sự tự tin/công việc của chị ạ?' },
+    { title:'[Vấn đề sức khỏe khác] Bước 1 — vấn đề gì', example:'Chị đang gặp vấn đề gì về sức khỏe cần em hỗ trợ ạ?' },
+    { title:'[Vấn đề sức khỏe khác] Bước 2 — bao lâu rồi', example:'Tình trạng đó diễn ra bao lâu rồi ạ?' },
+    { title:'[Vấn đề sức khỏe khác] Bước 3 — ảnh hưởng cuộc sống', example:'Ảnh hưởng như nào đến cuộc sống của chị ạ (công việc/giấc ngủ/tâm trạng...)?' },
+    { title:'[Vấn đề sức khỏe khác] Bước 4 — đã dùng phương pháp gì', example:'Chị đã dùng phương pháp nào để cải thiện tình trạng này chưa ạ?' },
+    { title:'[Vấn đề sức khỏe khác] Bước 5 — hiệu quả sao', example:'Nếu có thì chị thấy hiệu quả như nào ạ?' },
+    { title:'[Kể chuyện & chốt] Bước 1 — xác nhận lại vấn đề + mong muốn', example:'Vậy là chị đang muốn [đúng mục tiêu chị vừa nói] để [đúng mong muốn chị vừa nói], đúng không ạ?' },
+    { title:'[Kể chuyện & chốt] Bước 2 — phân tích hệ quả nếu giữ cách cũ', example:'(1-2 câu: nếu chị tiếp tục theo cách cũ chưa hiệu quả này thì về sau sẽ ảnh hưởng thêm thế nào — dựa đúng điều chị vừa kể, không phóng đại)' },
+    { title:'[Kể chuyện & chốt] Bước 3 — kể chuyện bản thân', example:'(Kể chuyện thật của mình: trước đây thế nào → từng khó chịu/mệt mỏi gì giống chị → giải pháp đã giúp mình ra sao → kết quả hiện tại — rồi bắc cầu "Nếu [giải pháp]... thì mình có muốn tìm hiểu cùng em không?")' },
+    { title:'[Kể chuyện & chốt] Bước 4 — gửi case tương tự', example:'(Gửi ảnh/case kết quả của người có hoàn cảnh giống chị nhất — tuổi, vấn đề, mục tiêu)' },
+    { title:'[Kể chuyện & chốt] Bước 5 — chốt giá 3 mức', example:'(Đưa 3 mức Thấp/Trung bình/Cao, mô tả nội dung/mức hỗ trợ tương xứng — tự điền giá khi trao đổi trực tiếp)' },
+    { title:'[Kể chuyện & chốt] Bước 6 — hỏi thẳng chốt', example:'Nếu em có giải pháp giúp chị [đúng điều chị mong muốn ở bước 1] thì chị có muốn đồng hành cùng em không ạ?' },
+  ] },
+  D: { label:'D — Kinh doanh/Đối tác', steps:[
+    { title:'Bước 1 — Sàng lọc khách MỚI (bắt buộc nguyên văn, chỉ đổi xưng hô)', example:'Cảm ơn c đã chủ động nhắn cho e nhé. Để e hiểu rõ hơn rồi định hướng đúng cho c, c chia sẻ thêm vài thông tin nha:\n1. Hiện tại c đang làm công việc gì?\n2. Thu nhập trung bình 1 tháng của c đang ở mức khoảng bao nhiêu? Hiện c có tích luỹ được chứ?\n3. Mục tiêu tài chính của c trong 6–12 tháng tới là gì? Muốn tăng thêm bao nhiêu thu nhập mỗi tháng?\n4. C đang quan tâm phát triển nguồn thu theo hướng nào: online, chăm sóc sức khỏe, hay xây hệ thống lâu dài?\nE hỏi kỹ để xem c phù hợp với mô hình nào nhất — vì team của e đang làm trong ngành chăm sóc sức khỏe & đào tạo phát triển con người, có quy trình rõ ràng, hỗ trợ từng bước, ai mới vào cũng làm được nè' },
+    { title:'Bước 2 — Nghe cảm xúc (Lớp 1)', example:'Nghe c nói vậy em hiểu c đang khá [đúng cảm xúc chị vừa thể hiện, VD "lo lắng"/"mệt mỏi"] về chuyện này ạ.' },
+    { title:'Bước 2 — Đào lý do đằng sau con số (Lớp 2)', example:'C muốn có thêm khoản đó để làm gì ạ, cho gia đình hay cho riêng c vậy ạ?' },
+    { title:'Bước 2 — Khen sự chủ động (Lớp 3)', example:'Em thấy c chịu ngồi lại nhìn thẳng vào vấn đề như này là rất chủ động rồi đó ạ.' },
+    { title:'Bước 2 — Kể chuyện bản thân (Lớp 4, viết dài đủ cảm xúc)', example:'(Kể đủ dài: nền tảng trước đây → điều từng bất lực/khó chịu giống c → giải pháp đã "cứu" mình ra sao → kết quả/cảm nhận hiện tại — giữ tinh thần "mình cũng từng như vậy")' },
+    { title:'Bước 2 — Vẽ nỗi đau (Lớp 5)', example:'(Dựa công việc/thu nhập c vừa kể, phân tích cụ thể việc hiện tại đang khiến c đánh đổi gì — thời gian/sức khỏe/tự do — để đổi lấy mức thu nhập đó)' },
+    { title:'Bước 2 — Vẽ viễn cảnh (Lớp 6)', example:'(Nối ngay sau Lớp 5: nếu có thêm nguồn thu ổn định thì cuộc sống c sẽ khác thế nào)' },
+    { title:'Bước 2 — Mời Guide (CTA)', example:'Em có 1 Guide "Tìm Hiểu Kinh Doanh" có bài test tài chính 10 phút với cả video tầm nhìn của bên em nữa, c xem thử không ạ?' },
+    { title:'Bước 3 — Xin hẹn giờ TRƯỚC khi gửi Guide', example:'Nếu em gửi Guide, c dành thời gian nghiêm túc vào [tối nay/mai] xem được không ạ?' },
+    { title:'Bước 3 — Follow sau khi gửi Guide', example:'C xem/làm xong Guide em gửi chưa ạ?' },
+    { title:'Bước 6 — Chốt gói, câu hỏi 1/4', example:'Nếu bắt đầu, c mong có thêm thu nhập khoảng bao nhiêu/tháng thì xứng đáng với thời gian mình bỏ ra ạ?' },
+    { title:'Bước 6 — Chốt gói, câu hỏi 2/4', example:'C có thể dành ra bao nhiêu giờ mỗi tuần cho việc này ạ?' },
+    { title:'Bước 6 — Chốt gói, câu hỏi 3/4', example:'C dự tính làm trong khoảng bao lâu để đạt được mức đó ạ?' },
+    { title:'Bước 6 — Chốt gói, câu hỏi 4/4', example:'Nếu em chỉ cho c cách đạt đúng con số đó, trong đúng khoảng thời gian đó, với đúng số giờ đó mỗi tuần — c có sẵn sàng bắt đầu ngay không ạ?' },
+  ] },
 };
 
 function render(container, ctx){
@@ -52,15 +64,19 @@ function render(container, ctx){
     // GỌI CLAUDE ĐÚNG 1 LẦN có sẵn ngữ cảnh, thay vì phải tự đoán lại từ đầu mỗi ảnh (đỡ tốn gấp đôi
     // lượt AI khi nhắn nhiều tin liên tiếp cho cùng 1 khách — chị Quỳnh phản hồi 2026-08-29).
     activeCustomer: null,
-    pickedOpenerNhanh: null,
+    // Sổ tay tư vấn (2026-08-30): chọn nhánh → xem danh sách bước → bấm 1 bước mới xoè ra câu ví dụ
+    // để copy, không hiện tràn hết cùng lúc. expandedSteps là Set các INDEX bước đang mở (đổi nhánh
+    // thì reset về rỗng, tránh giữ index của nhánh cũ không khớp).
+    guideNhanh: null, expandedSteps: new Set(),
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
-  function copyOpener(){
-    const opener = NHANH_OPENERS[state.pickedOpenerNhanh];
-    if(!opener) return;
-    navigator.clipboard.writeText(opener.text).catch(()=>{});
+  function copyGuideStep(idx){
+    const guide = NHANH_GUIDES[state.guideNhanh];
+    const step = guide && guide.steps[idx];
+    if(!step) return;
+    navigator.clipboard.writeText(step.example).catch(()=>{});
   }
 
   function persistDraft(){
@@ -191,20 +207,28 @@ function render(container, ctx){
         </div>
       ` : `
         <div class="card" style="margin-bottom:20px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Khách mới nhắn tới — chọn nhánh để lấy câu mở đầu gửi ngay (không tốn lượt AI)</label>
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Khách mới nhắn tới — chọn nhánh để xem sổ tay từng bước (không tốn lượt AI)</label>
           <div class="chips" style="margin-top:0;">
-            ${Object.keys(NHANH_OPENERS).map(k=>`<div class="chip ${state.pickedOpenerNhanh===k?'selected':''}" data-pick-opener="${k}">${esc(NHANH_OPENERS[k].label)}</div>`).join('')}
+            ${Object.keys(NHANH_GUIDES).map(k=>`<div class="chip ${state.guideNhanh===k?'selected':''}" data-pick-guide-nhanh="${k}">${esc(NHANH_GUIDES[k].label)}</div>`).join('')}
           </div>
-          ${state.pickedOpenerNhanh ? `
-            <div class="hint-box" style="white-space:pre-line;">${esc(NHANH_OPENERS[state.pickedOpenerNhanh].text)}</div>
-            <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
-              <span class="btn-ghost btn btn-sm" id="tv-copy-opener">Sao chép</span>
-            </div>
-            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
-              <div style="font-size:11.5px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:8px;">Các bước tiếp theo (tự hỏi tay, không cần AI)</div>
-              <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--ink);">
-                ${NHANH_OPENERS[state.pickedOpenerNhanh].steps.map(s=>`<li>${esc(s)}</li>`).join('')}
-              </ol>
+          ${state.guideNhanh ? `
+            <div style="margin-top:16px;">
+              ${NHANH_GUIDES[state.guideNhanh].steps.map((s,i)=>`
+                <div style="border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;">
+                  <div data-toggle-guide-step="${i}" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--ink);">
+                    <span>${esc(s.title)}</span>
+                    <span style="color:var(--ink-soft);flex-shrink:0;">${state.expandedSteps.has(i)?'▾':'▸'}</span>
+                  </div>
+                  ${state.expandedSteps.has(i) ? `
+                    <div style="padding:0 14px 14px;">
+                      <div class="hint-box" style="white-space:pre-line;margin-top:0;">${esc(s.example)}</div>
+                      <div class="btn-row" style="justify-content:flex-start;margin-top:8px;">
+                        <span class="btn-ghost btn btn-sm" data-copy-guide-step="${i}">Sao chép</span>
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
               <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">Nhắn qua lại trực tiếp với khách theo đúng các bước trên trước — xong rồi mới chụp gộp cả đoạn (tối đa ${MAX_IMAGES} ảnh) gửi 1 lần cho AI phân tích, không cần gọi AI sau mỗi câu hỏi.</div>
             </div>
           ` : ''}
@@ -282,15 +306,24 @@ function render(container, ctx){
     const newCustomerBtn = container.querySelector('#tv-new-customer');
     if(newCustomerBtn) newCustomerBtn.onclick = startNewCustomer;
 
-    container.querySelectorAll('[data-pick-opener]').forEach(el=>{
+    container.querySelectorAll('[data-pick-guide-nhanh]').forEach(el=>{
       el.onclick = ()=>{
-        const k = el.getAttribute('data-pick-opener');
-        state.pickedOpenerNhanh = state.pickedOpenerNhanh===k ? null : k;
+        const k = el.getAttribute('data-pick-guide-nhanh');
+        state.guideNhanh = state.guideNhanh===k ? null : k;
+        state.expandedSteps = new Set(); // đổi nhánh reset luôn bước đang mở, tránh lệch index
         draw();
       };
     });
-    const copyOpenerBtn = container.querySelector('#tv-copy-opener');
-    if(copyOpenerBtn) copyOpenerBtn.onclick = copyOpener;
+    container.querySelectorAll('[data-toggle-guide-step]').forEach(el=>{
+      el.onclick = ()=>{
+        const i = Number(el.getAttribute('data-toggle-guide-step'));
+        if(state.expandedSteps.has(i)) state.expandedSteps.delete(i); else state.expandedSteps.add(i);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-copy-guide-step]').forEach(el=>{
+      el.onclick = (e)=>{ e.stopPropagation(); copyGuideStep(Number(el.getAttribute('data-copy-guide-step'))); };
+    });
 
     const fileEl = container.querySelector('#tv-file');
     if(fileEl) fileEl.onchange = ()=>{ if(fileEl.files.length) handleFiles(fileEl.files); };
