@@ -52,6 +52,13 @@ create table if not exists sk_packages (
   description text,
   created_at timestamptz not null default now()
 );
+-- Hướng dẫn sử dụng theo khung giờ trong ngày (2026-08-30, chị Quỳnh gửi file HD_ ... .pdf cho 3 bộ
+-- sản phẩm: Chuyển Hoá 60N / Giảm Mỡ 30N / Thải Độc Full) — KHÁC hẳn sk_package_schedule_items (đó là
+-- việc làm 1 LẦN vào 1 ngày cụ thể, còn đây là quy trình LẶP LẠI mỗi ngày, chỉ liều lượng tăng dần
+-- theo mốc ngày — không hợp để tách thành nhiều dòng "day_offset" (sẽ phải tạo hàng chục dòng trùng
+-- lặp mỗi ngày). Lưu nguyên khối tham khảo dạng jsonb, hiển thị tĩnh ở đầu Lịch Trình Của Bạn:
+-- [{ time_label: "Buổi sáng ngay sau khi ngủ dậy", steps: [{ product, image_url, instruction }] }, ...]
+alter table sk_packages add column if not exists regimen_sections jsonb not null default '[]'::jsonb;
 
 -- Lịch trình MẪU theo từng gói — day_offset tính từ profiles.sk_package_started_at của user (vd
 -- day_offset=0 là ngày bắt đầu, day_offset=7 là đúng 1 tuần sau). 1 gói có nhiều dòng lịch trình,
