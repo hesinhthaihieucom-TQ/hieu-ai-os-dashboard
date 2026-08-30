@@ -152,13 +152,20 @@ async function loadCandidatePool(userId) {
 }
 
 // Y hệt usageCountFor()/sortUnusedFirst() ở nhan-hieu/js/kho-hook.js và kho-content.js — ưu tiên ứng
-// viên CHƯA TỪNG được viết thành bài (posts.source_table/source_id), rơi về ứng viên đã dùng nếu hết
-// ứng viên chưa dùng. usedRefs được cập nhật NGAY trong vòng lặp (không chỉ đọc 1 lần từ DB) để
-// không chọn trùng 1 nguồn cho 2 ô trống khác nhau trong cùng 1 lượt chạy.
-function pickUnusedCandidate(candidates, usedRefs) {
+// viên CHƯA TỪNG được viết thành bài (posts.source_table/source_id). usedRefs được cập nhật NGAY
+// trong vòng lặp (không chỉ đọc 1 lần từ DB) để không chọn trùng 1 nguồn cho 2 ô trống khác nhau
+// trong cùng 1 lượt chạy.
+// allowReuse (mặc định true, GIỮ NGUYÊN hành vi cũ cho api/auto-fill-week.js — nút "AI tự viết + xếp
+// cả tuần" của MỌI khách hàng, kho hook/content của khách mới có thể rất ít, ép "hết thì để trống"
+// dễ khiến bấm nút mà nửa lịch trống trơn, phá hỏng đúng cái "khoảnh khắc aha" của tính năng đó) —
+// truyền false CHỈ ở cron tự động riêng cho tài khoản admin (theo yêu cầu chị Quỳnh 2026-08-30: "cái
+// nào đã làm rồi cũng ko đc lấy trùng lặp nữa"), nơi kho hook/content viral của chị đủ lớn để chấp
+// nhận để trống còn hơn lặp lại.
+function pickUnusedCandidate(candidates, usedRefs, allowReuse = true) {
   const isUsed = (c) => usedRefs.some((r) => r.table === c.table && r.id === c.id);
   const unused = candidates.filter((c) => !isUsed(c));
-  return (unused.length ? unused : candidates)[0] || null;
+  if (unused.length) return unused[0];
+  return allowReuse ? (candidates[0] || null) : null;
 }
 
 // KHÁC pickUnusedCandidate() ở trên: case study KHÔNG được lặp lại 1 khi đã dùng — hết ảnh chưa dùng
@@ -267,11 +274,21 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
 }
 
 async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint }) {
+  // "Lấy từ kho viral nhưng tự bịa tiêu đề còn gì??" (chị Quỳnh 2026-08-30) — trước đây LUÔN cho phép
+  // AI tự đặt tiêu đề mới "tham khảo tinh thần" tiêu đề gốc, kể cả khi nguồn là 1 bài Kho Content đã
+  // có sẵn tiêu đề THẬT (đã viral/kiểm chứng) — giờ BẮT BUỘC giữ nguyên tiêu đề đó, không tự sáng tác
+  // tiêu đề khác. Riêng nguồn từ Kho Hook (hooks_bank_*) thì candidate.title thực chất là category
+  // ('viral'/'uy_tin', xem loadCandidatePool()) chứ KHÔNG PHẢI tiêu đề thật — vẫn để AI tự đặt tiêu đề
+  // như cũ, ép giữ category làm tiêu đề sẽ ra bài lỗi (tiêu đề bài viết thành chữ "viral").
+  const hasRealTitle = (candidate.table === 'content_bank_personal' || candidate.table === 'content_bank_shared') && candidate.title && candidate.title.trim();
+  const titleLine = hasRealTitle
+    ? `TIÊU ĐỀ (BẮT BUỘC GIỮ NGUYÊN Y HỆT — đây là tiêu đề đã viral/kiểm chứng hiệu quả, KHÔNG được tự đặt tiêu đề khác dù nghĩ ra hay hơn): ${candidate.title.trim()}`
+    : `TIÊU ĐỀ: (không có tiêu đề gốc — tự đặt 1 tiêu đề mới khớp đúng hook/nội dung bên dưới)`;
   const core = await callClaude({
     apiKey, system: KHO_GOC_SYSTEM_PROMPT, tool: TOOL_POST_KHO_GOC,
     userContent: `${contextBlockOf(positioning, null)}
 
-TIÊU ĐỀ GỐC (tham khảo tinh thần, không bắt buộc giữ y hệt): ${candidate.title && candidate.title.trim() ? candidate.title.trim() : '(không có, tự đặt tiêu đề mới khớp hook)'}
+${titleLine}
 
 BÀI GỐC TỪ KHO CONTENT (giữ nguyên cấu trúc/trình tự từng đoạn, chỉ giữ y hệt câu hook — các đoạn còn lại paraphrase lại câu chữ, không copy nguyên văn):
 ${candidate.text.trim()}
@@ -412,7 +429,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
         }));
         continue;
       }
-      const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
+      const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
       if (!candidate) {
         // Kho hook/content không còn ứng viên nào — dùng case study CHƯA DÙNG thay thế nếu có, còn
         // hơn bỏ qua cả lượt chỉ vì kho hook/content tạm cạn. Hết cả 2 mới thật sự bỏ trống ô.
@@ -504,7 +521,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
       if (slotInfo.slot === 'toi') {
         // 100% từ kho hook/content viral (KHÔNG bao giờ AI tự bịa mới) — pickUnusedCandidate() chỉ
         // chọn trong poolCandidates (hooks_bank_*/content_bank_*), không có nguồn nào khác ở đây.
-        const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
+        const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
         if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
         usedRefs.push({ table: candidate.table, id: candidate.id });
         filled.push(await fillOneSlot({
@@ -530,7 +547,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         continue;
       }
       // Buổi sáng — bài thường từ hook/content.
-      const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
+      const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
       if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
       usedRefs.push({ table: candidate.table, id: candidate.id });
       filled.push(await fillOneSlot({
