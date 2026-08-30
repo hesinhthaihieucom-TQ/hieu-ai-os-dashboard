@@ -41,6 +41,117 @@ function confirmModal(message, confirmLabel){
   });
 }
 
+// Đặt hàng nhanh (2026-08-30, chị Quỳnh yêu cầu cho khách chọn sản phẩm rồi đặt hàng thẳng, có quà
+// tặng theo tổng đơn) — modal dùng CHUNG cho mọi trang có gợi ý sản phẩm (Kiểm Tra Sức Khỏe, Theo
+// Dõi Tuần, Sản Phẩm Unicity). CHỈ thu thông tin đơn hàng + địa chỉ giao — không thanh toán tự động,
+// admin tự liên hệ khách chốt thanh toán (chị Quỳnh chốt 2026-08-30), ghi vào bảng sk_orders.
+// Quà tặng tính CỨNG lúc đặt hàng: ≥2 sản phẩm và tổng ≥2 triệu → tặng bình lắc; tổng ≥5 triệu →
+// tặng thêm 1 thỏi son Hàn.
+function skOrderGift(total, itemCount){
+  if(total >= 5000000) return { key:'binh_lac_son', label:'🎁 Tặng 1 bình lắc + 1 thỏi son Hàn' };
+  if(total >= 2000000 && itemCount >= 2) return { key:'binh_lac', label:'🎁 Tặng 1 bình lắc' };
+  return null;
+}
+
+function openOrderModal(ctx, products){
+  const selected = new Set(products.map(p=>p.id));
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+
+  function totals(){
+    const chosen = products.filter(p=>selected.has(p.id));
+    const total = chosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
+    const pv = chosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    return { chosen, total, pv, gift: skOrderGift(total, chosen.length) };
+  }
+
+  function bodyHtml(step, err){
+    if(step==='done'){
+      return `
+        <div style="text-align:center;padding:10px 0;">
+          <div style="font-size:38px;margin-bottom:10px;">✅</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Đã gửi yêu cầu đặt hàng</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:18px;">Chị Quỳnh sẽ liên hệ bạn qua số điện thoại đã để lại để xác nhận và giao hàng.</div>
+          <button class="btn btn-sm" data-order-close="1">Đóng</button>
+        </div>`;
+    }
+    const { chosen, total, pv, gift } = totals();
+    return `
+      <div style="font-weight:700;font-size:16px;margin-bottom:14px;">Đặt hàng</div>
+      <div style="max-height:38vh;overflow-y:auto;margin-bottom:14px;">
+        ${products.map(p=>`
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;">
+            <input type="checkbox" data-order-item="${esc(p.id)}" ${selected.has(p.id)?'checked':''}>
+            <span style="flex:1;font-size:13.5px;">${esc(p.name)}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;">${Number(p.retail_price||0).toLocaleString('vi-VN')}đ</span>
+          </label>
+        `).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:6px;">
+        <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ</span>
+      </div>
+      ${gift ? `<div class="hint-box" style="margin-bottom:14px;">${esc(gift.label)}</div>` : `<div style="height:14px;"></div>`}
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);">Họ tên người nhận</label>
+      <input type="text" id="order-name" placeholder="Tên người nhận hàng" value="${esc(ctx.profile && ctx.profile.full_name || '')}">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Số điện thoại</label>
+      <input type="tel" id="order-phone" placeholder="09xxxxxxxx">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Địa chỉ giao hàng</label>
+      <textarea id="order-address" placeholder="Số nhà, đường, phường/xã, tỉnh/thành..." style="min-height:60px;"></textarea>
+      ${err ? `<div style="color:var(--danger);font-size:13px;margin-top:8px;">${esc(err)}</div>` : ''}
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <span class="btn-ghost btn btn-sm" data-order-cancel="1">Huỷ</span>
+        <button class="btn btn-sm" data-order-submit="1" ${chosen.length===0?'disabled':''}>Gửi đặt hàng</button>
+      </div>`;
+  }
+
+  function renderCard(step, err){
+    overlay.innerHTML = `<div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.4);" onclick="event.stopPropagation();">${bodyHtml(step, err)}</div>`;
+    bind(step);
+  }
+
+  function bind(step){
+    if(step==='done'){
+      const closeBtn = overlay.querySelector('[data-order-close]');
+      if(closeBtn) closeBtn.onclick = close;
+      return;
+    }
+    overlay.querySelectorAll('[data-order-item]').forEach(el=>{
+      el.onchange = (e)=>{
+        const id = el.getAttribute('data-order-item');
+        if(e.target.checked) selected.add(id); else selected.delete(id);
+        renderCard();
+      };
+    });
+    const cancelBtn = overlay.querySelector('[data-order-cancel]');
+    if(cancelBtn) cancelBtn.onclick = close;
+    const submitBtn = overlay.querySelector('[data-order-submit]');
+    if(submitBtn) submitBtn.onclick = submit;
+  }
+
+  async function submit(){
+    const name = overlay.querySelector('#order-name').value.trim();
+    const phone = overlay.querySelector('#order-phone').value.trim();
+    const address = overlay.querySelector('#order-address').value.trim();
+    if(!name || !phone || !address){ renderCard(null, 'Vui lòng điền đủ tên, số điện thoại và địa chỉ.'); return; }
+    const { chosen, total, pv, gift } = totals();
+    const { error } = await ctx.supabase.from('sk_orders').insert({
+      user_id: ctx.user.id,
+      items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0) })),
+      total_amount: total, total_pv: pv, gift: gift ? gift.key : null,
+      shipping_name: name, shipping_phone: phone, shipping_address: address,
+    });
+    if(error){ renderCard(null, 'Lỗi khi gửi đơn: ' + error.message); return; }
+    renderCard('done');
+  }
+
+  function close(){ overlay.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e){ if(e.key==='Escape') close(); }
+  overlay.onclick = close;
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(overlay);
+  renderCard();
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });

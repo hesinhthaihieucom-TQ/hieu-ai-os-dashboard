@@ -42,7 +42,7 @@ function render(container, ctx){
     const [{ data: row }, { data: entries }, { data: products }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_library_entries').select('id,issue_name,related_product_ids').order('issue_name', { ascending:true }),
-      ctx.supabase.from('sk_products').select('id,name,category,retail_price,short_description,image_url'),
+      ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url'),
     ]);
     state.products = products || [];
     if(row){
@@ -198,6 +198,7 @@ function render(container, ctx){
             </div>
           </div>
         `).join('')}
+        <button class="btn btn-sm" id="sk-order-matched" style="margin-top:6px;">Đặt hàng</button>
       ` : ''}
     `;
   }
@@ -212,6 +213,8 @@ function render(container, ctx){
     container.querySelectorAll('[data-open-product]').forEach(el=>{
       el.onclick = ()=>{ location.hash = 'san-pham'; };
     });
+    const orderBtn = container.querySelector('#sk-order-matched');
+    if(orderBtn) orderBtn.onclick = (e)=>{ e.stopPropagation(); openOrderModal(ctx, matchedProducts()); };
   }
 
   draw();

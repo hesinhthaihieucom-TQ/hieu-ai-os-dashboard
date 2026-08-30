@@ -236,3 +236,35 @@ drop policy if exists "sk_products_read" on sk_products;
 create policy "sk_products_read" on sk_products for select using (auth.role() = 'authenticated');
 drop policy if exists "sk_products_admin_write" on sk_products;
 create policy "sk_products_admin_write" on sk_products for all using (is_admin()) with check (is_admin());
+
+-- Điểm PV chính thức theo bảng giá Unicity (2026-08-30, chị Quỳnh gửi bảng PV riêng cho bán lẻ) —
+-- dùng để tích PV/tháng cho khách (200pv → lì xì, 500pv → quyền lợi VIP kinh doanh, xem sk_orders).
+alter table sk_products add column if not exists pv numeric;
+
+-- Đặt hàng từ app (2026-08-30, chị Quỳnh yêu cầu "cho khách bấm chọn sản phẩm... đến mục thanh toán
+-- luôn") — CHỈ thu thông tin đơn hàng + địa chỉ giao, KHÔNG có thanh toán tự động (chị Quỳnh chốt:
+-- admin tự liên hệ khách chốt thanh toán, giống cách sk_points_ledger đang làm tay). items chụp lại
+-- tên/giá/PV tại thời điểm đặt (đổi giá sau không ảnh hưởng đơn cũ, giống digital_product_orders).
+-- gift tính CỨNG lúc đặt hàng theo tổng tiền + số sản phẩm (2 sản phẩm trở lên và ≥2 triệu: tặng bình
+-- lắc; ≥5 triệu: tặng thêm son Hàn) — admin xem cột này để biết cần gói kèm quà gì khi giao.
+create table if not exists sk_orders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  items jsonb not null default '[]'::jsonb,
+  total_amount numeric not null default 0,
+  total_pv numeric not null default 0,
+  gift text check (gift in ('binh_lac','binh_lac_son')),
+  shipping_name text not null,
+  shipping_phone text not null,
+  shipping_address text not null,
+  note text,
+  status text not null default 'cho_xac_nhan' check (status in ('cho_xac_nhan','da_xac_nhan','da_giao','huy')),
+  created_at timestamptz not null default now()
+);
+alter table sk_orders enable row level security;
+drop policy if exists "sk_orders_owner_read_insert" on sk_orders;
+create policy "sk_orders_owner_read_insert" on sk_orders for select using (auth.uid() = user_id);
+drop policy if exists "sk_orders_owner_insert" on sk_orders;
+create policy "sk_orders_owner_insert" on sk_orders for insert with check (auth.uid() = user_id);
+drop policy if exists "sk_orders_admin_all" on sk_orders;
+create policy "sk_orders_admin_all" on sk_orders for all using (is_admin()) with check (is_admin());

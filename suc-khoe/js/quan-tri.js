@@ -12,6 +12,7 @@ function render(container, ctx){
         <div class="chip ${hubState.tab==='sanpham'?'selected':''}" data-hub-tab="sanpham">Sản Phẩm</div>
         <div class="chip ${hubState.tab==='goi'?'selected':''}" data-hub-tab="goi">Gói & Lịch Trình</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành Viên</div>
+        <div class="chip ${hubState.tab==='donhang'?'selected':''}" data-hub-tab="donhang">Đơn Hàng</div>
       </div>
       <div id="qt-hub-sub"></div>
     `;
@@ -22,6 +23,7 @@ function render(container, ctx){
     if(hubState.tab === 'thuvien') renderThuVien(sub, ctx);
     else if(hubState.tab === 'sanpham') renderSanPham(sub, ctx);
     else if(hubState.tab === 'goi') renderGoiLichTrinh(sub, ctx);
+    else if(hubState.tab === 'donhang') renderDonHang(sub, ctx);
     else renderThanhVien(sub, ctx);
   }
   drawHub();
@@ -484,6 +486,79 @@ function renderThanhVien(container, ctx){
     const noteEl = container.querySelector('#pf-note'); if(noteEl) noteEl.oninput = (e)=>{ state.pointsForm.note = e.target.value; };
     container.querySelectorAll('[data-submit-points]').forEach(el=>{
       el.onclick = ()=>submitPoints(el.getAttribute('data-submit-points'));
+    });
+  }
+
+  load();
+}
+
+// ===== Tab "Đơn Hàng" — xem đơn khách đặt qua app (2026-08-30) + đổi trạng thái. status="da_xac_nhan"
+// là mốc để PV cộng vào tháng đó (xem tich-diem-hoa-hong.js) — chỉ đổi khi ĐÃ thật sự liên hệ và chốt
+// được đơn với khách, vì đây là nguồn duy nhất tính PV/tháng cho khách.
+const SK_ORDER_STATUS_LABELS = { cho_xac_nhan:'Chờ xác nhận', da_xac_nhan:'Đã xác nhận', da_giao:'Đã giao', huy:'Đã huỷ' };
+const SK_ORDER_GIFT_LABELS = { binh_lac:'🎁 Bình lắc', binh_lac_son:'🎁 Bình lắc + Son Hàn' };
+
+function renderDonHang(container, ctx){
+  const state = { loading:true, orders:[], profileById:{}, busyId:null };
+
+  function draw(){ container.innerHTML = html(); bind(); }
+
+  async function load(){
+    state.loading = true; draw();
+    const { data: orders } = await ctx.supabase.from('sk_orders').select('*').order('created_at', { ascending:false }).limit(200);
+    state.orders = orders || [];
+    const userIds = [...new Set(state.orders.map(o=>o.user_id))];
+    if(userIds.length>0){
+      const { data: profiles } = await ctx.supabase.from('profiles').select('id,email,full_name').in('id', userIds);
+      (profiles||[]).forEach(p=>{ state.profileById[p.id] = p; });
+    }
+    state.loading = false;
+    draw();
+  }
+
+  async function updateStatus(orderId, status){
+    state.busyId = orderId; draw();
+    await ctx.supabase.from('sk_orders').update({ status }).eq('id', orderId);
+    state.busyId = null;
+    await load();
+  }
+
+  function html(){
+    if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
+    if(state.orders.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào.</div>`;
+    return state.orders.map(o=>{
+      const profile = state.profileById[o.user_id] || {};
+      const items = Array.isArray(o.items) ? o.items : [];
+      return `
+        <div class="section">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">${esc(profile.full_name||'(chưa đặt tên)')}</div>
+              <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(profile.email||'')} · ${esc(new Date(o.created_at).toLocaleString('vi-VN'))}</div>
+            </div>
+            <select data-order-status="${esc(o.id)}" ${state.busyId===o.id?'disabled':''}>
+              ${Object.keys(SK_ORDER_STATUS_LABELS).map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${esc(SK_ORDER_STATUS_LABELS[k])}</option>`).join('')}
+            </select>
+          </div>
+          <div style="font-size:13.5px;margin-top:10px;line-height:1.7;">
+            ${items.map(it=>`${esc(it.name)} — ${Number(it.price||0).toLocaleString('vi-VN')}đ`).join('<br>')}
+          </div>
+          <div style="font-size:13.5px;margin-top:8px;">
+            <b>Tổng: ${Number(o.total_amount||0).toLocaleString('vi-VN')}đ</b> · ${o.total_pv||0} PV
+            ${o.gift ? ` · ${esc(SK_ORDER_GIFT_LABELS[o.gift]||o.gift)}` : ''}
+          </div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">
+            Giao tới: ${esc(o.shipping_name)} · ${esc(o.shipping_phone)}<br>${esc(o.shipping_address)}
+            ${o.note ? `<br>Ghi chú: ${esc(o.note)}` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function bind(){
+    container.querySelectorAll('[data-order-status]').forEach(el=>{
+      el.onchange = (e)=>updateStatus(el.getAttribute('data-order-status'), e.target.value);
     });
   }
 
