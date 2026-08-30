@@ -27,15 +27,45 @@ const SK_METRIC_GROUPS = [
 const SK_BETTER_LOW = { eo1:1, eo2:1, nguc:1, bung_ron:1, bung_duoi:1, mong:1, dui:1, bapchan:1, cannang:1, mo:1, monoitang:1, glucose:1, tg:1, hba1c:1, ldl:1, uric:1, chol:1 };
 const SK_BETTER_HIGH = { kgco:1, hdl:1, nangluong:1, cl_ngu:1, macdo:1, vandong:1, damongtoc:1, anuong:1, sucben:1, giaotiep:1, chatluongcs:1 };
 
+// Liên kết sang Sản Phẩm (2026-08-30, chị Quỳnh yêu cầu "cần có sự liên hệ giữa các mục để bán được
+// thêm sản phẩm", giống cơ chế vừa thêm ở Kiểm Tra Sức Khỏe) — mỗi chỉ số gán 1 nhánh sản phẩm liên
+// quan nhất (null = không có nhánh nào phù hợp, bỏ qua). Ngưỡng tuyệt đối dùng đúng mốc y khoa đã
+// dùng ở Kiểm Tra Sức Khỏe (glucose/tg/hba1c) để có gợi ý ngay từ mốc "Bắt đầu", không cần đợi có dữ
+// liệu 2 mốc để so sánh xu hướng.
+const SK_METRIC_CATEGORY = {
+  eo1:'giam_mo', eo2:'giam_mo', bung_ron:'giam_mo', bung_duoi:'giam_mo', cannang:'giam_mo', mo:'giam_mo', monoitang:'giam_mo', kgco:'tang_de_khang',
+  glucose:'giam_mo', tg:'giam_mo', hba1c:'giam_mo', ldl:'giam_mo', chol:'giam_mo', uric:'thai_doc',
+  nangluong:'tang_de_khang', cl_ngu:'thai_doc', vandong:'lam_dep_da', damongtoc:'lam_dep_da', anuong:'thai_doc', sucben:'tang_de_khang',
+};
+const SK_ABSOLUTE_CONCERN = {
+  glucose: v => v >= 5.6,
+  tg: v => v >= 150,
+  hba1c: v => v >= 5.7,
+};
+
 (function(){
 function render(container, ctx){
-  const state = { loading:true, week:0, metrics:{}, saving:false };
+  const state = { loading:true, week:0, weekAuto:true, metrics:{}, saving:false, products:[], justSaved:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
+  // Mốc hiện tại theo ngày bắt đầu gói (profiles.sk_package_started_at, đã dùng cho Lịch Trình Của
+  // Bạn) — chưa gán gói/chưa có ngày bắt đầu thì mặc định "Bắt đầu" như trước.
+  function currentWeekFromPackage(){
+    const started = ctx.profile && ctx.profile.sk_package_started_at;
+    if(!started) return 0;
+    const days = Math.floor((Date.now() - new Date(started).getTime()) / 86400000);
+    return Math.max(0, Math.min(8, Math.floor(days/7)));
+  }
+
   async function load(){
-    const { data: row } = await ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle();
+    const [{ data: row }, { data: products }] = await Promise.all([
+      ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
+      ctx.supabase.from('sk_products').select('id,name,category,retail_price,short_description,image_url').not('category', 'is', null),
+    ]);
     state.metrics = (row && row.metrics) || {};
+    state.products = products || [];
+    state.week = currentWeekFromPackage();
     state.loading = false;
     draw();
   }
@@ -52,6 +82,7 @@ function render(container, ctx){
       user_id: ctx.user.id, metrics: state.metrics, updated_at: new Date().toISOString(),
     }, { onConflict:'user_id' });
     state.saving = false;
+    state.justSaved = !error;
     if(error) alert('Lỗi khi lưu: ' + error.message);
     draw();
   }
@@ -73,18 +104,57 @@ function render(container, ctx){
     return out;
   }
 
+  // Chỉ số nào ở mốc ĐANG XEM đáng chú ý — theo ngưỡng tuyệt đối (glucose/tg/hba1c) hoặc tự đánh giá
+  // thấp (yếu tố cuộc sống ≤4/10), hoặc xấu đi so với mốc "Bắt đầu" (khi đang xem 1 mốc sau đó và đã
+  // có số liệu để so sánh). Dùng để gợi ý đúng nhánh sản phẩm liên quan — không tự ý gán công dụng.
+  function flaggedMetrics(){
+    const flags = [];
+    SK_METRIC_GROUPS.forEach(g=>g.items.forEach(([key,label,unit])=>{
+      const cat = SK_METRIC_CATEGORY[key];
+      if(!cat) return;
+      const raw = getVal(key, state.week);
+      if(raw==='') return;
+      const v = parseFloat(raw);
+      if(!isFinite(v)) return;
+      let concern = false;
+      if(SK_ABSOLUTE_CONCERN[key]) concern = SK_ABSOLUTE_CONCERN[key](v);
+      else if(g.title.startsWith('Yếu tố')) concern = v <= 4;
+      else if(state.week>0){
+        const base = parseFloat(getVal(key,0));
+        if(isFinite(base) && base!==v){
+          if(SK_BETTER_LOW[key]) concern = v>base; else if(SK_BETTER_HIGH[key]) concern = v<base;
+        }
+      }
+      if(concern) flags.push({ key, label, category:cat });
+    }));
+    return flags;
+  }
+
+  function recommendedProducts(){
+    const flags = flaggedMetrics();
+    if(flags.length===0) return { flags, products:[] };
+    const counts = {};
+    flags.forEach(f=>{ counts[f.category] = (counts[f.category]||0)+1; });
+    const topCount = Math.max(...Object.values(counts));
+    const topCategories = Object.keys(counts).filter(c=>counts[c]===topCount);
+    return { flags, products: state.products.filter(p=>topCategories.includes(p.category)) };
+  }
+
   function html(){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
     const summary = summaryRows();
+    const autoWeek = currentWeekFromPackage();
+    const { flags, products } = state.justSaved ? recommendedProducts() : { flags:[], products:[] };
     return `
       <div class="page-head">
         <h1>Theo Dõi Sức Khỏe Theo Tuần</h1>
         <p>Đo & ghi lại theo từng mốc — so sánh "Bắt đầu" với "Tuần 8" để thấy rõ thay đổi sau 2 tháng.</p>
       </div>
 
-      <div class="chips" style="margin-bottom:20px;">
-        ${SK_WEEK_NAMES.map((w,i)=>`<div class="chip ${state.week===i?'selected':''}" data-week="${i}">${esc(w)}</div>`).join('')}
+      <div class="chips" style="margin-bottom:8px;">
+        ${SK_WEEK_NAMES.map((w,i)=>`<div class="chip ${state.week===i?'selected':''}" data-week="${i}" style="position:relative;">${esc(w)}${i===autoWeek?' <span style="opacity:.7;">●</span>':''}</div>`).join('')}
       </div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:20px;">● Mốc hiện tại theo ngày bắt đầu gói của bạn</div>
 
       ${SK_METRIC_GROUPS.map(g=>`
         <div class="card" style="margin-bottom:18px;">
@@ -102,6 +172,24 @@ function render(container, ctx){
 
       <button class="btn" id="sk-save-week" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu ' + esc(SK_WEEK_NAMES[state.week])}</button>
 
+      ${products.length>0 ? `
+        <div class="hint-box" style="margin-top:16px;">
+          Chỉ số ${flags.map(f=>esc(f.label)).join(', ')} đang ở mức cần chú ý — dưới đây là sản phẩm Unicity liên quan tới nhóm này.
+        </div>
+        ${products.map(p=>`
+          <div class="section" data-open-product="1" style="cursor:pointer;margin-top:10px;display:flex;gap:14px;align-items:flex-start;">
+            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
+                ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
+              </div>
+              ${p.short_description ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(p.short_description)}</div>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      ` : ''}
+
       ${summary.length>0 ? `
         <div class="page-head" style="margin:28px 0 12px;"><h2 style="font-size:17px;">So sánh Bắt đầu → Tuần 8</h2></div>
         <div class="card">
@@ -118,13 +206,16 @@ function render(container, ctx){
 
   function bind(){
     container.querySelectorAll('[data-week]').forEach(el=>{
-      el.onclick = ()=>{ state.week = Number(el.getAttribute('data-week')); draw(); };
+      el.onclick = ()=>{ state.week = Number(el.getAttribute('data-week')); state.justSaved = false; draw(); };
     });
     container.querySelectorAll('[data-metric]').forEach(el=>{
       el.onchange = (e)=>{ setVal(el.getAttribute('data-metric'), state.week, e.target.value); };
     });
     const saveBtn = container.querySelector('#sk-save-week');
     if(saveBtn) saveBtn.onclick = save;
+    container.querySelectorAll('[data-open-product]').forEach(el=>{
+      el.onclick = ()=>{ location.hash = 'san-pham'; };
+    });
   }
 
   draw();
