@@ -4,7 +4,9 @@
 //   bật auto_publish_fb=true để api/cron/auto-publish-fb.js tự nhặt đúng giờ đăng lên Fanpage.
 // - Cá nhân (autoFillPersonalForAdmin, Phase 9): 3 bài/ngày (Sáng/Trưa/Tối), KHÔNG tự đăng (Facebook
 //   không cho app đăng hộ trang cá nhân) — chị Quỳnh tự đăng tay. Mỗi buổi khoá 1 kiểu content: Tối
-//   luôn "Video Ngồi Nói", Trưa luôn case study, Sáng là bài thường (không phải "Video Ngồi Nói").
+//   luôn "Video Ngồi Nói" (100% lấy từ kho hook/content viral, không tự bịa), Trưa luôn case study
+//   (ảnh KHÔNG lặp lại — hết ảnh case study chưa dùng thì để TRỐNG ô đó, không tự rơi về bài thường,
+//   xem pickUnusedCaseStudy() — chốt 2026-08-30), Sáng là bài thường (không phải "Video Ngồi Nói").
 //
 // CHỈ chạy cho tài khoản admin (đúng chị Quỳnh — không phải tính năng cho khách hàng khác). Mỗi lần
 // chạy có giới hạn an toàn riêng cho từng lane (tránh sinh hàng loạt nếu có lỗi) — ô nào bị bỏ qua do
@@ -68,6 +70,8 @@ BẮT BUỘC — LỒNG CÂU CHUYỆN CỦA CHÍNH TÁC GIẢ, KHÔNG CHỈ KỂ
 BẮT BUỘC — ĐOẠN GIÁ TRỊ (gia_tri) PHẢI LÀ 1 DANH SÁCH BÀI HỌC/BÍ QUYẾT RÚT RA TỪ CASE NÀY: viết dạng liệt kê ngắn gọn quen thuộc trên Facebook, kiểu "3 điều mình rút ra từ case này", "2 lý do vì sao bạn ấy làm được", "4 bước bạn ấy đã áp dụng"... (tự chọn số lượng 2-5 mục và cách gọi phù hợp nhất với case cụ thể, không cố định 1 con số) — mỗi mục 1 câu ngắn, để người đọc thấy được giá trị/bài học áp dụng được cho chính mình, không chỉ đọc xong 1 câu chuyện suông không rút ra được gì.
 
 QUAN TRỌNG — TRÁNH BỊA SỐ LIỆU: bạn không biết chi tiết chính xác đằng sau ảnh (tên khách hàng thật, ngày tháng chính xác...). CHỈ nhắc tới những gì THỰC SỰ NHÌN THẤY RÕ trong ảnh, diễn đạt khéo léo. Nếu ảnh có số liệu cụ thể nhìn rõ được, có thể nhắc lại đúng số đó; nếu không chắc/không nhìn rõ, nói chung chung theo CẢM XÚC/Ý NGHĨA của kết quả (ví dụ "nhìn con số này mà...") thay vì bịa ra số liệu không có trong ảnh.
+
+BẮT BUỘC — CTA PHẢI RẤT MẠNH, TẬP TRUNG ĐẨY SẢN PHẨM (2026-08-30, theo yêu cầu chị Quỳnh): case study là bài BẰNG CHỨNG/KẾT QUẢ THẬT — đúng lúc người đọc tin nhất, không được lãng phí bằng CTA mờ nhạt/chỉ xin bình luận cho vui như bài giá trị thông thường. cta/tu_khoa_cta phải hướng THẲNG người đọc tới hành động để có được đúng kết quả như trong case này (tìm hiểu/mua/đăng ký sản phẩm-dịch vụ) — nếu có SẢN PHẨM/DỊCH VỤ được cung cấp, PHẢI nhắc rõ, không né tránh bán hàng bằng câu chung chung kiểu "để lại bình luận mình gửi tài liệu" khi thực chất nên là mời dùng thử/mua sản phẩm đó. Vẫn theo đúng khuôn "từ khoá 2 chữ" ở QUY TẮC CTA bên dưới, nhưng thứ hứa hẹn nhận được phải gắn thẳng với sản phẩm/dịch vụ thật, không phải 1 tài liệu miễn phí lấp lửng.
 
 ${ANTI_AI_CLICHE_RULES}
 
@@ -155,6 +159,16 @@ function pickUnusedCandidate(candidates, usedRefs) {
   const isUsed = (c) => usedRefs.some((r) => r.table === c.table && r.id === c.id);
   const unused = candidates.filter((c) => !isUsed(c));
   return (unused.length ? unused : candidates)[0] || null;
+}
+
+// KHÁC pickUnusedCandidate() ở trên: case study KHÔNG được lặp lại 1 khi đã dùng — hết ảnh chưa dùng
+// thì trả về null (để trống ô, KHÔNG rơi về dùng lại ảnh cũ), theo yêu cầu chị Quỳnh 2026-08-30: "mục
+// case study ko đc trùng lặp, nếu hết rồi thì để trống, ko tự điền".
+function pickUnusedCaseStudy(caseStudies, usedRefs) {
+  const isUsed = (c) => usedRefs.some((r) => r.table === 'case_studies' && r.id === c.id);
+  const unused = caseStudies.filter((c) => !isUsed(c));
+  if (!unused.length) return null;
+  return unused[Math.floor(Math.random() * unused.length)];
 }
 
 // Tổng quát hoá cho cả 2 lane (Phase 9) — nhận thẳng `channel` + danh sách `slots` cần xét thay vì
@@ -299,9 +313,12 @@ Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguy
     ],
   });
 
+  // sourceTable/sourceId = 'case_studies'/caseStudy.id (2026-08-30, trước đây để null) — BẮT BUỘC để
+  // usedRefs (đọc từ posts.source_table/source_id) nhận diện đúng ảnh case study nào đã dùng rồi,
+  // phục vụ pickUnusedCaseStudy() không lặp lại ảnh cũ.
   const result = await writeExtrasAndSave({
     apiKey, positioning, core, channelHandle, brandName, product, group,
-    userId, tags: caseStudy.tags, sourceTable: null, sourceId: null,
+    userId, tags: caseStudy.tags, sourceTable: 'case_studies', sourceId: caseStudy.id,
     imageDataBase64: null, slotInfo, slotTime, channel, formatConstraint,
   });
 
@@ -378,16 +395,18 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
     // 2026-08-28: có nhiều ảnh trong kho khiến MỌI bài đều rơi vào case study, mất đa dạng nội dung).
     // CASE_STUDY_RATIO=0.3: ~30% số bài là case study (bán hàng/bằng chứng), 70% còn lại là hook/
     // content thường (giá trị/giáo dục) — tránh cảm giác ngày nào cũng chốt sale. Vẫn có fallback 2
-    // chiều: hết hook/content chưa dùng thì dùng case study thay, hết ảnh case study/cá nhân thì
-    // dùng hook/content thay — chỉ thật sự bỏ qua khi CẢ 2 nguồn đều cạn.
+    // chiều: hết hook/content chưa dùng thì dùng case study thay, hết ảnh case study CHƯA DÙNG thì
+    // dùng hook/content thay — chỉ thật sự bỏ qua khi CẢ 2 nguồn đều cạn. Case study không bao giờ
+    // lặp lại ảnh cũ (pickUnusedCaseStudy) — theo yêu cầu chị Quỳnh 2026-08-30.
     const hasCaseStudyAssets = caseStudies.length > 0 && personalPhotos.length > 0;
     const preferCaseStudy = hasCaseStudyAssets && Math.random() < CASE_STUDY_RATIO;
     try {
-      if (preferCaseStudy) {
-        const caseStudy = caseStudies[Math.floor(Math.random() * caseStudies.length)];
+      const preferredCaseStudy = preferCaseStudy ? pickUnusedCaseStudy(caseStudies, usedRefs) : null;
+      if (preferredCaseStudy) {
         const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
+        usedRefs.push({ table: 'case_studies', id: preferredCaseStudy.id });
         filled.push(await fillCaseStudySlot({
-          userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
+          userId: admin.id, positioning, slotInfo, caseStudy: preferredCaseStudy, personalPhoto, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
           channel: 'fanpage', formatConstraint: null,
         }));
@@ -395,13 +414,14 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
       }
       const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
       if (!candidate) {
-        // Kho hook/content không còn ứng viên nào — dùng case study thay thế nếu có ảnh, còn hơn bỏ
-        // qua cả lượt chỉ vì kho hook/content tạm cạn.
-        if (hasCaseStudyAssets) {
-          const caseStudy = caseStudies[Math.floor(Math.random() * caseStudies.length)];
+        // Kho hook/content không còn ứng viên nào — dùng case study CHƯA DÙNG thay thế nếu có, còn
+        // hơn bỏ qua cả lượt chỉ vì kho hook/content tạm cạn. Hết cả 2 mới thật sự bỏ trống ô.
+        const fallbackCaseStudy = pickUnusedCaseStudy(caseStudies, usedRefs);
+        if (fallbackCaseStudy && personalPhotos.length) {
           const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
+          usedRefs.push({ table: 'case_studies', id: fallbackCaseStudy.id });
           filled.push(await fillCaseStudySlot({
-            userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
+            userId: admin.id, positioning, slotInfo, caseStudy: fallbackCaseStudy, personalPhoto, slotTime, apiKey, product, group,
             channelHandle: profile.channel_handle, brandName: profile.brand_name,
             channel: 'fanpage', formatConstraint: null,
           }));
@@ -437,12 +457,17 @@ async function autoFillForAdmin(admin, apiKey) {
 // content cố định theo yêu cầu chị Quỳnh: Tối luôn "Video Ngồi Nói", Trưa luôn case study, Sáng là
 // bài thường (hook/content) miễn không phải "Video Ngồi Nói" (dạng đó dành riêng buổi tối).
 async function autoFillPersonalForAdmin(admin, apiKey) {
-  const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp] = await Promise.all([
+  const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp, personalPhotosResp] = await Promise.all([
     supabaseAdmin(`positioning_results?user_id=eq.${admin.id}&select=luot1,luot2&limit=1`),
     supabaseAdmin(`profiles?id=eq.${admin.id}&select=slot_time_sang,slot_time_trua,slot_time_toi,channel_handle,brand_name`),
     loadCandidatePool(admin.id),
     supabaseAdmin(`promo_assets?user_id=eq.${admin.id}&select=id,label,url,kind,cta_mau&order=created_at.asc`),
     supabaseAdmin(`case_studies?user_id=eq.${admin.id}&select=id,image,tags`),
+    // personal_photos (2026-08-30, trước đây không tải ở đây) — trước đó lane Cá nhân luôn truyền
+    // personalPhoto:null vào fillCaseStudySlot() nên KHÔNG BAO GIỜ có ảnh ghép, theo đúng thiết kế cũ
+    // "chị tự đăng tay nên tự gắn ảnh" — nhưng chị Quỳnh phản hồi 2026-08-30 "ko thấy hình ở case
+    // study" nghĩa là chị MUỐN thấy ảnh ngay trong app trước khi tự đăng tay, nên giờ ghép luôn.
+    supabaseAdmin(`personal_photos?user_id=eq.${admin.id}&select=id,image,card_corner`),
   ]);
   const posRows = posResp.ok ? await posResp.json() : [];
   const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
@@ -456,6 +481,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
   const groups = assets.filter((a) => a.kind === 'cong_dong');
 
   const caseStudies = caseStudiesResp.ok ? await caseStudiesResp.json() : [];
+  const personalPhotos = personalPhotosResp.ok ? await personalPhotosResp.json() : [];
 
   const postsResp = await supabaseAdmin(`posts?user_id=eq.${admin.id}&select=source_table,source_id`);
   const postsRows = postsResp.ok ? await postsResp.json() : [];
@@ -476,6 +502,8 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
     const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
     try {
       if (slotInfo.slot === 'toi') {
+        // 100% từ kho hook/content viral (KHÔNG bao giờ AI tự bịa mới) — pickUnusedCandidate() chỉ
+        // chọn trong poolCandidates (hooks_bank_*/content_bank_*), không có nguồn nào khác ở đây.
         const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
         if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
         usedRefs.push({ table: candidate.table, id: candidate.id });
@@ -486,16 +514,22 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         }));
         continue;
       }
-      if (slotInfo.slot === 'trua' && caseStudies.length) {
-        const caseStudy = caseStudies[Math.floor(Math.random() * caseStudies.length)];
+      if (slotInfo.slot === 'trua') {
+        // Case study KHÔNG được lặp lại ảnh cũ — hết ảnh case study CHƯA DÙNG thì để TRỐNG ô này,
+        // KHÔNG rơi về bài thường (theo yêu cầu chị Quỳnh 2026-08-30: "nếu hết rồi thì để trống, ko
+        // tự điền") — khác hẳn cách cũ vốn âm thầm chuyển sang bài hook/content khi hết case study.
+        const caseStudy = pickUnusedCaseStudy(caseStudies, usedRefs);
+        if (!caseStudy) { skippedNoCandidate.push(slotInfo); continue; }
+        const personalPhoto = personalPhotos.length ? personalPhotos[Math.floor(Math.random() * personalPhotos.length)] : null;
+        usedRefs.push({ table: 'case_studies', id: caseStudy.id });
         filled.push(await fillCaseStudySlot({
-          userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto: null, slotTime, apiKey, product, group,
+          userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
           channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI,
         }));
         continue;
       }
-      // Buổi sáng, hoặc buổi trưa khi chưa có ảnh case study nào (fallback) — bài thường từ hook/content.
+      // Buổi sáng — bài thường từ hook/content.
       const candidate = pickUnusedCandidate(poolCandidates, usedRefs);
       if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
       usedRefs.push({ table: candidate.table, id: candidate.id });
