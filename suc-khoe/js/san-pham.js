@@ -60,13 +60,15 @@ function render(container, ctx){
           <div style="margin-top:14px;">
             ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" data-zoom="${esc(p.image_url)}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;float:right;margin:0 0 10px 14px;cursor:zoom-in;">` : ''}
             ${p.short_description ? `<div style="font-size:14px;font-weight:600;line-height:1.6;">${esc(p.short_description)}</div>` : ''}
-            ${sections.map(sec=>`
-              <div style="margin-top:16px;">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;">${esc(sec.title||'')}</div>
-                <div style="font-size:13.5px;line-height:1.75;white-space:pre-line;">${esc(sec.body||'')}</div>
+            ${sections.map(sec=>{
+              const meta = skSectionMeta(sec.title);
+              return `
+              <div style="margin-top:18px;border-left:3px solid ${meta.color};padding-left:14px;">
+                ${skSectionHeaderHtml(sec.title, meta.color, meta.icon)}
+                <div style="font-size:13.5px;line-height:1.8;">${skRichBodyHtml(sec.body)}</div>
               </div>
-            `).join('')}
-            ${sections.length===0 && p.benefits ? `<div style="font-size:13.5px;line-height:1.75;white-space:pre-line;margin-top:10px;">${esc(p.benefits)}</div>` : ''}
+            `;}).join('')}
+            ${sections.length===0 && p.benefits ? `<div style="font-size:13.5px;line-height:1.8;margin-top:10px;">${skRichBodyHtml(p.benefits)}</div>` : ''}
           </div>
         </details>
       `;}).join('')}

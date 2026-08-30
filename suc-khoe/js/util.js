@@ -152,6 +152,55 @@ function openOrderModal(ctx, products){
   renderCard();
 }
 
+// Trình bày lại các khối nội dung dài (thành phần/công dụng/nguyên nhân...) cho dễ đọc — chị Quỳnh
+// phản hồi 2026-08-30: "chữ đang rít vào nhau", không điểm nhấn, 1 màu từ đầu tới cuối, đọc chán,
+// muốn giống các file hướng dẫn có icon/màu/bảng biểu chị hay gửi. KHÔNG viết lại nội dung — chỉ đổi
+// cách hiển thị: mỗi mục có icon + màu riêng theo loại, mỗi dòng "• " tách thành gạch đầu dòng thật,
+// phần trước dấu "—"/":" đầu dòng được in đậm làm từ khoá.
+const SK_SECTION_STYLES = [
+  { test:/công dụng/i, icon:'💊', color:'#e8643c' },
+  { test:/thành phần/i, icon:'🧪', color:'#1f9bb0' },
+  { test:/cơ chế/i, icon:'⚙️', color:'#7c6bd4' },
+  { test:/đối tượng|cách dùng/i, icon:'📋', color:'#1f9d63' },
+  { test:/nghiên cứu/i, icon:'🔬', color:'#2f7fc4' },
+  { test:/lưu ý|cảnh báo/i, icon:'⚠️', color:'#c0392b' },
+];
+function skSectionMeta(title){
+  const hit = SK_SECTION_STYLES.find(s=>s.test.test(title||''));
+  return hit || { icon:'📌', color:'var(--gold)' };
+}
+
+// Header dạng dải màu (giống các ô tiêu đề vàng trong file hướng dẫn chị gửi) — dùng cho tiêu đề 1
+// mục nội dung dài (detail_sections, Thư Viện...).
+function skSectionHeaderHtml(title, color, icon){
+  return `<div style="display:inline-flex;align-items:center;gap:7px;background:${color}18;color:${color};border-radius:7px;padding:5px 12px;font-weight:700;font-size:12.5px;margin-bottom:10px;">${icon?`<span>${icon}</span>`:''}${esc(title||'')}</div>`;
+}
+
+// body dạng text nhiều dòng — mỗi dòng "• "/"- " thành 1 gạch đầu dòng thật (<li>, các dòng liền
+// nhau gộp thành 1 <ul>, GIỮ NGUYÊN thứ tự gốc, không dồn hết bullet xuống cuối); phần trước dấu
+// "—"/":" xuất hiện SỚM (dưới ~60 ký tự) được in đậm làm từ khoá dẫn. Dòng không có "• " ở đầu render
+// như đoạn văn thường (vd câu mở đầu/kết trước khi vào bullet).
+function skRichBodyHtml(body){
+  const lines = String(body||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  function formatLine(l){
+    const m = l.match(/^(.{3,60}?)\s*(—|:)\s+(.*)$/);
+    if(m) return `<b style="color:var(--ink);">${esc(m[1])}</b>${m[2]==='—' ? ' — ' : ': '}${esc(m[3])}`;
+    return esc(l);
+  }
+  let html = '', bulletBuf = [];
+  function flushBullets(){
+    if(bulletBuf.length===0) return;
+    html += `<ul style="margin:0 0 8px;padding-left:20px;">${bulletBuf.map(l=>`<li style="margin-bottom:9px;">${formatLine(l)}</li>`).join('')}</ul>`;
+    bulletBuf = [];
+  }
+  lines.forEach(l=>{
+    if(l.startsWith('•') || l.startsWith('-')){ bulletBuf.push(l.replace(/^[•-]\s*/,'')); }
+    else { flushBullets(); html += `<p style="margin:0 0 8px;">${formatLine(l)}</p>`; }
+  });
+  flushBullets();
+  return html;
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });

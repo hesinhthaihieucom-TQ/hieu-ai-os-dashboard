@@ -42,10 +42,10 @@ function render(container, ctx){
         return `
         <details class="kt-section">
           <summary class="kt-summary">${esc(e.issue_name)}</summary>
-          <div style="margin-top:12px;font-size:13.5px;line-height:1.75;">
-            ${e.causes ? `<div style="margin-bottom:14px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;">Nguyên nhân</div><div style="white-space:pre-line;">${esc(e.causes)}</div></div>` : ''}
-            ${e.symptoms ? `<div style="margin-bottom:14px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;">Biểu hiện</div><div style="white-space:pre-line;">${esc(e.symptoms)}</div></div>` : ''}
-            ${e.remedies ? `<div style="margin-bottom:14px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;">Cách xử lý</div><div style="white-space:pre-line;">${esc(e.remedies)}</div></div>` : ''}
+          <div style="margin-top:12px;font-size:13.5px;line-height:1.8;">
+            ${e.causes ? `<div style="margin-bottom:16px;border-left:3px solid #c0392b;padding-left:14px;">${skSectionHeaderHtml('Nguyên nhân', '#c0392b', '🔍')}${skRichBodyHtml(e.causes)}</div>` : ''}
+            ${e.symptoms ? `<div style="margin-bottom:16px;border-left:3px solid #e8643c;padding-left:14px;">${skSectionHeaderHtml('Biểu hiện', '#e8643c', '👁️')}${skRichBodyHtml(e.symptoms)}</div>` : ''}
+            ${e.remedies ? `<div style="margin-bottom:16px;border-left:3px solid #1f9d63;padding-left:14px;">${skSectionHeaderHtml('Cách xử lý', '#1f9d63', '✅')}${skRichBodyHtml(e.remedies)}</div>` : ''}
             ${products.length>0 ? `
               <div style="margin-top:12px;">
                 <b>Sản phẩm Unicity bổ trợ:</b>

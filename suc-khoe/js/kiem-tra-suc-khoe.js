@@ -171,11 +171,11 @@ function render(container, ctx){
         <div class="card" style="margin-top:20px;border:1px solid ${r.bd};background:${r.bg};">
           <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:${r.color};margin-bottom:6px;">Mức độ nguy cơ</div>
           <div style="font-size:22px;font-weight:700;color:${r.color};margin-bottom:14px;">${esc(r.level)} <span style="font-size:14px;font-weight:400;color:var(--ink-soft);">(điểm ${r.score})</span></div>
-          <ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.7;">
-            ${r.problems.map(p=>`<li>${esc(p)}</li>`).join('')}
+          <ul style="margin:0 0 16px;padding-left:20px;font-size:14px;line-height:1.8;">
+            ${r.problems.map(p=>`<li style="margin-bottom:8px;">${esc(p)}</li>`).join('')}
           </ul>
-          <div style="font-size:14px;line-height:1.7;margin-bottom:10px;"><b>Ảnh hưởng hiện tại:</b> ${esc(r.impact)}</div>
-          <div style="font-size:14px;line-height:1.7;"><b>Nếu không thay đổi:</b> ${esc(r.future)}</div>
+          <div style="margin-bottom:12px;">${skSectionHeaderHtml('Ảnh hưởng hiện tại', '#e8643c', '⚡')}<div style="font-size:14px;line-height:1.8;">${esc(r.impact)}</div></div>
+          <div>${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:14px;line-height:1.8;">${esc(r.future)}</div></div>
         </div>
       ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
 
