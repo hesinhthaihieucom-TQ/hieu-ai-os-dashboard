@@ -22,6 +22,39 @@ const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' 
 // bộ hệ sinh thái HIỂU, xem api/_lib/push.js) — dùng khi bật thông báo nhắc follow khách.
 const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY4xz2SisvwpU3IWo_ciiGTMxoLJq42QzkE';
 
+// Lượt AI (2026-08-30, chị Quỳnh chốt "làm như Xây Nhân Hiệu — hiện bộ đếm lượt") — PHẢI khớp
+// đúng CRM_MONTHLY_AI_LIMIT/CRM_AI_WEIGHTS ở api/_lib/crm-ai-quota.js (nơi THỰC SỰ trừ lượt); bảng
+// này chỉ dùng để cập nhật ngay số lượt hiển thị ở sidebar cho mượt, không cần đợi tải lại trang.
+const CRM_MONTHLY_AI_LIMIT = 200;
+const GATED_API_WEIGHTS = { 'api/crm-tuvan': 6, 'api/case-study-classify': 1 };
+
+function crmMonthlyUsage(p){
+  const month = new Date().toISOString().slice(0,7);
+  const sameMonth = p.crm_ai_month === month;
+  return { used: sameMonth ? (p.crm_ai_uses||0) : 0, limit: CRM_MONTHLY_AI_LIMIT };
+}
+function crmQuotaHint(){
+  const p = AppState.profile;
+  if(!p) return '';
+  const { used, limit } = crmMonthlyUsage(p);
+  if(p.role==='admin') return `<span style="color:#8A8F82;">🔥 Đã dùng ${used} lượt (tháng này) — không giới hạn</span>`;
+  const remaining = Math.max(0, limit - used);
+  const color = remaining<=10 ? 'var(--danger)' : '#9CA396';
+  return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt tháng này</span>`;
+}
+window.onGatedApiSuccess = function(relativePath, weightOverride){
+  const p = AppState.profile;
+  if(!p) return;
+  const path = relativePath.split('?')[0];
+  const weight = weightOverride != null ? weightOverride : GATED_API_WEIGHTS[path];
+  if(!weight) return;
+  const month = new Date().toISOString().slice(0,7);
+  if(p.crm_ai_month !== month){ p.crm_ai_month = month; p.crm_ai_uses = 0; }
+  p.crm_ai_uses = (p.crm_ai_uses||0) + weight;
+  const el = document.getElementById('sidebar-foot-info');
+  if(el) el.innerHTML = sidebarFootHtml();
+};
+
 function sidebarFootHtml(){
   const p = AppState.profile;
   const name = (p && p.full_name && p.full_name.trim()) || 'Chưa đặt tên';
@@ -30,10 +63,11 @@ function sidebarFootHtml(){
     ? `<img src="${p.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
     : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${esc(initial)}</div>`;
   return `
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       ${avatarHtml}
       <div style="min-width:0;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
     </div>
+    ${crmQuotaHint()}
   `;
 }
 

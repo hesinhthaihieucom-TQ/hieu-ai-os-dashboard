@@ -4,6 +4,7 @@
 // Cùng gate crm_has_paid/crm_access_until như api/crm-tuvan.js — không đụng hệ trial-quota của Xây
 // Nhân Hiệu, sản phẩm này không giới hạn lượt/tháng.
 const { requireUser } = require('./_lib/auth');
+const { checkAndConsumeCrmAiQuota, refundCrmAiQuota } = require('./_lib/crm-ai-quota');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';
@@ -97,12 +98,19 @@ module.exports = async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
+  let quotaConsumed = false;
   try {
     const { noi_dung } = req.body || {};
     if (!noi_dung || !noi_dung.trim()) { res.status(400).json({ error: 'Thiếu nội dung case study để phân loại.' }); return; }
+
+    const quotaBlockMsg = await checkAndConsumeCrmAiQuota(user.id, 'case-study-classify');
+    if (quotaBlockMsg) { res.status(402).json({ error: quotaBlockMsg }); return; }
+    quotaConsumed = true;
+
     const result = await callClaude({ apiKey, noiDung: noi_dung.trim() });
     res.status(200).json(result);
   } catch (err) {
+    if (quotaConsumed) await refundCrmAiQuota(user.id, 'case-study-classify');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi phân loại case study.' });
   }
 };

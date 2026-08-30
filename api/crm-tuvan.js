@@ -7,6 +7,7 @@
 
 const { requireUser } = require('./_lib/auth');
 const { TOOL_TU_VAN_CRM } = require('./_lib/crm-tuvan-schema');
+const { checkAndConsumeCrmAiQuota, refundCrmAiQuota } = require('./_lib/crm-ai-quota');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';
@@ -236,6 +237,7 @@ module.exports = async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
+  let quotaConsumed = false;
   try {
     const { images, note, manual_ten_khach_hang, known_customer_id, san_pham_dich_vu, cau_chuyen } = req.body || {};
     const imgList = Array.isArray(images) ? images : (images ? [images] : []);
@@ -243,6 +245,10 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: 'Cần ít nhất 1 ảnh chụp chat hoặc mô tả tình huống.' });
       return;
     }
+
+    const quotaBlockMsg = await checkAndConsumeCrmAiQuota(user.id, 'crm-tuvan');
+    if (quotaBlockMsg) { res.status(402).json({ error: quotaBlockMsg }); return; }
+    quotaConsumed = true;
 
     const todayIso = new Date().toISOString().slice(0, 10);
     let customer = null; // hồ sơ khách đã khớp (nếu có) — để trống nghĩa là sẽ tạo hồ sơ mới
@@ -372,6 +378,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ advice: result, customer: savedCustomer || null, interaction: savedInteraction });
   } catch (err) {
+    if (quotaConsumed) await refundCrmAiQuota(user.id, 'crm-tuvan');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi tư vấn.' });
   }
 };

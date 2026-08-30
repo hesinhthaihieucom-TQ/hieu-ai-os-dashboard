@@ -253,6 +253,63 @@ $$ language plpgsql security definer set search_path = public, pg_temp;
 revoke all on function public.refund_ai_quota(uuid, int) from public, authenticated, anon;
 grant execute on function public.refund_ai_quota(uuid, int) to service_role;
 
+-- Lượt AI RIÊNG cho tro-ly-crm (2026-08-30, chị Quỳnh chốt "làm như Xây Nhân Hiệu — hiện bộ đếm
+-- lượt") — ĐỘC LẬP hoàn toàn với consume_ai_quota/refund_ai_quota ở trên (sản phẩm khác, giá khác).
+-- Không có khái niệm "dùng thử" ở đây — tro-ly-crm chỉ có gói trả phí (crm_has_paid/crm_access_until,
+-- xem api/crm-tuvan.js), nên chỉ cần đúng 1 trần theo tháng, không có nhánh trial/paid như hàm trên.
+alter table profiles add column if not exists crm_ai_uses int not null default 0;
+alter table profiles add column if not exists crm_ai_month text;
+
+drop function if exists public.consume_crm_ai_quota(uuid, int, int);
+create or replace function public.consume_crm_ai_quota(p_user_id uuid, p_monthly_limit int, p_weight int default 1)
+returns jsonb as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text := to_char(now(), 'YYYY-MM');
+  v_current_uses int;
+  v_is_admin boolean;
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then
+    return jsonb_build_object('allowed', true); -- không tìm thấy profile: fail open, không chặn oan
+  end if;
+  v_is_admin := (v_profile.role = 'admin');
+  if v_profile.crm_ai_month = v_month then
+    v_current_uses := v_profile.crm_ai_uses;
+  else
+    v_current_uses := 0;
+  end if;
+  if (not v_is_admin) and v_current_uses + p_weight > p_monthly_limit then
+    return jsonb_build_object('allowed', false, 'effective_limit', p_monthly_limit, 'current_uses', v_current_uses);
+  end if;
+  if v_profile.crm_ai_month = v_month then
+    update profiles set crm_ai_uses = crm_ai_uses + p_weight where id = p_user_id;
+  else
+    update profiles set crm_ai_uses = p_weight, crm_ai_month = v_month where id = p_user_id;
+  end if;
+  return jsonb_build_object('allowed', true, 'current_uses', v_current_uses + p_weight);
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.consume_crm_ai_quota(uuid, int, int) from public, authenticated, anon;
+grant execute on function public.consume_crm_ai_quota(uuid, int, int) to service_role;
+
+drop function if exists public.refund_crm_ai_quota(uuid, int);
+create or replace function public.refund_crm_ai_quota(p_user_id uuid, p_weight int default 1)
+returns void as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text := to_char(now(), 'YYYY-MM');
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then return; end if;
+  if v_profile.crm_ai_month = v_month then
+    update profiles set crm_ai_uses = greatest(0, crm_ai_uses - p_weight) where id = p_user_id;
+  end if;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.refund_crm_ai_quota(uuid, int) from public, authenticated, anon;
+grant execute on function public.refund_crm_ai_quota(uuid, int) to service_role;
+
 create or replace function public.is_admin()
 returns boolean as $$
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');

@@ -118,6 +118,9 @@ async function callApi(path, body, timeoutMs){
       : 'Không đọc được phản hồi từ server — thử lại giúp mình.');
   }
   if(!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
+  // Báo cho app-shell.js biết vừa gọi thành công 1 endpoint tính lượt để tự cập nhật số lượt còn
+  // lại ở sidebar ngay lập tức, không cần đợi tải lại trang (xem GATED_API_WEIGHTS/onGatedApiSuccess).
+  if(window.onGatedApiSuccess) window.onGatedApiSuccess(relativePath);
   return data;
 }
 
