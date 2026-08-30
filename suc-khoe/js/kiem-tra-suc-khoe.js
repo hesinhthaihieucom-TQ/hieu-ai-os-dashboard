@@ -13,7 +13,6 @@ const SK_GROUP_LIBRARY_MAP = {
   toxin: ['Tích tụ độc tố trong cơ thể'],
   metabolic: ['Rối loạn chuyển hóa đường huyết (kháng Insulin, tiền tiểu đường, Đái tháo đường)', 'Rối loạn chuyển hóa Lipid (mỡ máu)'],
 };
-const SK_GROUP_PRODUCT_CATEGORY = { insulin:'giam_mo', toxin:'thai_doc', metabolic:'giam_mo' };
 const SK_INSULIN_SYMPTOMS = [
   'Mụn', 'Mụn thịt trên da', 'Mỡ bụng', 'Bệnh gout', 'Đường huyết cao', 'Mệt mỏi sau bữa ăn',
   'Tăng cân', 'Đường trong máu thấp', 'Rụng tóc', 'Thèm đồ ngọt', 'Gan nhiễm mỡ',
@@ -42,8 +41,8 @@ function render(container, ctx){
   async function load(){
     const [{ data: row }, { data: entries }, { data: products }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
-      ctx.supabase.from('sk_library_entries').select('id,issue_name').order('issue_name', { ascending:true }),
-      ctx.supabase.from('sk_products').select('id,name,category,retail_price,short_description,image_url').not('category', 'is', null),
+      ctx.supabase.from('sk_library_entries').select('id,issue_name,related_product_ids').order('issue_name', { ascending:true }),
+      ctx.supabase.from('sk_products').select('id,name,category,retail_price,short_description,image_url'),
     ]);
     state.products = products || [];
     if(row){
@@ -121,10 +120,14 @@ function render(container, ctx){
     return state.libraryEntries.filter(e=>names.has(e.issue_name));
   }
 
+  // Chỉ hiện ĐÚNG sản phẩm đã gắn sẵn theo từng mục Thư Viện khớp (sk_library_entries.related_product_ids)
+  // — KHÔNG hiện cả nhánh sản phẩm nữa (chị Quỳnh phản hồi 2026-08-30: hiện cả nhánh là quá nhiều,
+  // không đúng "chỉ hiện sản phẩm liên quan đến vấn đề đó của khách hàng thôi").
   function matchedProducts(){
-    const groups = activeGroups();
-    const categories = new Set(groups.map(g=>SK_GROUP_PRODUCT_CATEGORY[g]));
-    return state.products.filter(p=>categories.has(p.category));
+    const entries = matchedLibraryEntries();
+    const ids = new Set(entries.flatMap(e=>e.related_product_ids||[]));
+    if(ids.size===0) return [];
+    return state.products.filter(p=>ids.has(p.id));
   }
 
   function chipGroup(group, items){
