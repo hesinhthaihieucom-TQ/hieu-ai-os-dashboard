@@ -9,6 +9,10 @@ function render(container, ctx){
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushSubscribed:false, pushBusy:false, pushError:null,
     testPushBusy:false, testPushResult:null,
+    // Đối tác cần huấn luyện (2026-08-30) — triage kiểu "Cần follow hôm nay" nhưng cho nhịp huấn
+    // luyện đối tác: 1 leader bảo trợ nhiều người không rà tay từng hồ sơ được, cần 1 danh sách
+    // "ai đang chậm/rớt nhịp" bật lên ngay ở Trang chủ để gọi hỗ trợ kịp thời.
+    coachingRows: [],
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -74,13 +78,19 @@ function render(container, ctx){
 
   async function load(){
     const todayIso = isoDate(new Date());
-    const [{ data: due }, { count }] = await Promise.all([
+    const [{ data: due }, { count }, { data: partners }] = await Promise.all([
       ctx.supabase.from('crm_customers').select('id,ten_khach_hang,do_nong,ngay_follow_tiep').eq('user_id', ctx.user.id).lte('ngay_follow_tiep', todayIso).order('ngay_follow_tiep', { ascending:true }).limit(20),
       ctx.supabase.from('crm_customers').select('id', { count:'exact', head:true }).eq('user_id', ctx.user.id),
+      ctx.supabase.from('crm_customers').select('id,ten_khach_hang,doi_tac_tuan_hien_tai,doi_tac_trang_thai').eq('user_id', ctx.user.id).eq('la_doi_tac', true),
     ]);
     state.dueRows = due || [];
     state.dueCount = state.dueRows.length;
     state.totalCustomers = count || 0;
+    // Chỉ nổi lên đối tác CHƯA đúng nhịp — "đúng nhịp" rồi thì không cần leader chú ý ngay.
+    state.coachingRows = (partners || []).filter(p => {
+      const t = (p.doi_tac_trang_thai || '').toLowerCase();
+      return !t || t.includes('chậm') || t.includes('rớt') || t.includes('trễ');
+    });
     state.loading = false;
     draw();
   }
@@ -126,6 +136,20 @@ function render(container, ctx){
             <div class="label">${state.totalCustomers} khách đang quản lý</div>
           </div>
         </div>
+
+        ${state.coachingRows.length > 0 ? `
+          <div class="section highlight">
+            <h3>Đối tác cần huấn luyện (${state.coachingRows.length})</h3>
+            ${state.coachingRows.map(r=>`
+              <div class="list-item" data-goto-customer="${r.id}" style="cursor:pointer;">
+                <div class="txt">
+                  <div class="meta">Tuần ${r.doi_tac_tuan_hien_tai||1}/8 · ${esc(r.doi_tac_trang_thai||'Chưa cập nhật trạng thái')}</div>
+                  ${esc(r.ten_khach_hang)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
       `}
 
       <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Bắt đầu từ đâu</h2></div>

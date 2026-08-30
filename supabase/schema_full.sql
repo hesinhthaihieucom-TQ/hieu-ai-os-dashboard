@@ -1771,6 +1771,22 @@ alter table crm_customers add column if not exists form_hd jsonb;
 -- text tự do (không enum), gõ tay hoặc AI điền nếu đọc được từ chat/link.
 alter table crm_customers add column if not exists tinh_thanh text;
 
+-- Theo dõi đối tác kinh doanh (2026-08-30, chị Quỳnh chốt: "follow đối tác kinh doanh sẽ khác
+-- khách hàng") — khi 1 khách nhánh D đã chốt trở thành đối tác, la_doi_tac=true tách họ khỏi nhịp
+-- follow-để-chốt sang nhịp huấn luyện-để-nhân bản riêng. Rút gọn từ giáo trình 8 tuần thật của chị
+-- Quỳnh (Google Sheet chị gửi) thành theo dõi TUẦN + ĐIỂM + TRẠNG THÁI, không tick từng đầu việc —
+-- 1 leader bảo trợ nhiều đối tác không thể tick tay ~80 dòng/người/tuần, cần biết NHANH ai chậm
+-- nhịp để gọi ngay hơn là chấm điểm chi tiết (xem NHANH_GUIDES-style DOI_TAC_TUAN trong khach-hang.js).
+alter table crm_customers add column if not exists la_doi_tac boolean not null default false;
+alter table crm_customers add column if not exists ngay_thanh_doi_tac date;
+alter table crm_customers add column if not exists doi_tac_tuan_hien_tai int;
+alter table crm_customers add column if not exists doi_tac_diem_tuan numeric;
+alter table crm_customers add column if not exists doi_tac_trang_thai text;
+alter table crm_customers add column if not exists doi_tac_ly_do_lam text;
+alter table crm_customers add column if not exists doi_tac_rao_can text;
+alter table crm_customers add column if not exists doi_tac_hanh_dong_ho_tro text;
+alter table crm_customers add column if not exists doi_tac_ghi_chu text;
+
 create table if not exists crm_interactions (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid not null references crm_customers(id) on delete cascade,
