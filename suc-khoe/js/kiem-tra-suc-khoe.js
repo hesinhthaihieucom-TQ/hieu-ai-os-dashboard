@@ -1,8 +1,19 @@
 // Kiểm Tra Sức Khỏe — "Khảo sát sơ bộ" mô phỏng theo hieu-de-khoe-manh.vercel.app (chị Quỳnh yêu cầu
 // làm kỹ giống bản gốc, 2026-08-30): 3 nhóm triệu chứng tick-chọn, tính điểm & mức độ ngay khi tick,
-// lưu 1 dòng/user (khác bản cũ: chip chọn "vấn đề" rồi bấm nút "Kiểm tra ngay" riêng). Bản gốc không
-// có bước đối chiếu Thư Viện — giữ lại phần này vì Thư Viện Sức Khỏe (sk_library_entries) đã có sẵn
-// trong app, hữu ích để dẫn khách sang xem nguyên nhân/cách xử lý/sản phẩm liên quan.
+// lưu 1 dòng/user (khác bản cũ: chip chọn "vấn đề" rồi bấm nút "Kiểm tra ngay" riêng).
+//
+// Liên kết sang Thư Viện + Sản Phẩm (2026-08-30, chị Quỳnh yêu cầu "phải có sự liên hệ giữa các mục
+// để bán được thêm sản phẩm") — CỐ Ý map CỨNG từng nhóm triệu chứng sang đúng 1-2 mục Thư Viện +
+// đúng 1 nhánh Sản Phẩm (thay vì so khớp từ khoá mờ như bản trước, gần như không ra kết quả vì tên
+// mục Thư Viện là tên chủ đề chung — "Tích tụ độc tố trong cơ thể" — không chứa các từ triệu chứng cụ
+// thể như "mụn"/"rụng tóc"). Vì cả 3 bộ dữ liệu (triệu chứng, mục Thư Viện, nhánh sản phẩm) đều do
+// cùng 1 người biên soạn nên map cứng theo Ý NGHĨA đúng hơn nhiều so với so khớp chuỗi.
+const SK_GROUP_LIBRARY_MAP = {
+  insulin: ['Rối loạn chuyển hóa đường huyết (kháng Insulin, tiền tiểu đường, Đái tháo đường)'],
+  toxin: ['Tích tụ độc tố trong cơ thể'],
+  metabolic: ['Rối loạn chuyển hóa đường huyết (kháng Insulin, tiền tiểu đường, Đái tháo đường)', 'Rối loạn chuyển hóa Lipid (mỡ máu)'],
+};
+const SK_GROUP_PRODUCT_CATEGORY = { insulin:'giam_mo', toxin:'thai_doc', metabolic:'giam_mo' };
 const SK_INSULIN_SYMPTOMS = [
   'Mụn', 'Mụn thịt trên da', 'Mỡ bụng', 'Bệnh gout', 'Đường huyết cao', 'Mệt mỏi sau bữa ăn',
   'Tăng cân', 'Đường trong máu thấp', 'Rụng tóc', 'Thèm đồ ngọt', 'Gan nhiễm mỡ',
@@ -24,15 +35,17 @@ const SK_METABOLIC_CRITERIA = [
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[] };
+  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[] };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function load(){
-    const [{ data: row }, { data: entries }] = await Promise.all([
+    const [{ data: row }, { data: entries }, { data: products }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_library_entries').select('id,issue_name').order('issue_name', { ascending:true }),
+      ctx.supabase.from('sk_products').select('id,name,category,retail_price,short_description,image_url').not('category', 'is', null),
     ]);
+    state.products = products || [];
     if(row){
       state.insulin = row.survey_insulin || [];
       state.toxin = row.survey_toxin || [];
@@ -92,14 +105,26 @@ function render(container, ctx){
     return { level, color, bg, bd, score, problems, impact, future };
   }
 
-  function findMatches(){
-    const labels = [...state.insulin, ...state.toxin, ...state.metabolic];
-    if(labels.length===0) return [];
-    const words = labels.join(' ').toLowerCase().split(/[\s,\/]+/).filter(w=>w.length>2);
-    return state.libraryEntries.filter(e=>{
-      const name = (e.issue_name||'').toLowerCase();
-      return words.some(w=>name.includes(w));
-    });
+  // Nhóm nào có ít nhất 1 lượt tick mới tính "đang active" — dùng để quyết định gợi ý Thư Viện +
+  // Sản Phẩm nào hiện ra (xem SK_GROUP_LIBRARY_MAP / SK_GROUP_PRODUCT_CATEGORY ở đầu file).
+  function activeGroups(){
+    const groups = [];
+    if(state.insulin.length>0) groups.push('insulin');
+    if(state.toxin.length>0) groups.push('toxin');
+    if(state.metabolic.length>0) groups.push('metabolic');
+    return groups;
+  }
+
+  function matchedLibraryEntries(){
+    const groups = activeGroups();
+    const names = new Set(groups.flatMap(g=>SK_GROUP_LIBRARY_MAP[g]||[]));
+    return state.libraryEntries.filter(e=>names.has(e.issue_name));
+  }
+
+  function matchedProducts(){
+    const groups = activeGroups();
+    const categories = new Set(groups.map(g=>SK_GROUP_PRODUCT_CATEGORY[g]));
+    return state.products.filter(p=>categories.has(p.category));
   }
 
   function chipGroup(group, items){
@@ -112,7 +137,8 @@ function render(container, ctx){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
     const hasAny = state.insulin.length + state.toxin.length + state.metabolic.length > 0;
     const r = hasAny ? computeResult() : null;
-    const matches = hasAny ? findMatches() : [];
+    const libMatches = hasAny ? matchedLibraryEntries() : [];
+    const productMatches = hasAny ? matchedProducts() : [];
     return `
       <div class="page-head">
         <h1>Kiểm Tra Sức Khỏe</h1>
@@ -150,9 +176,25 @@ function render(container, ctx){
         </div>
       ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
 
-      ${matches.length>0 ? `
-        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Gợi ý từ Thư Viện Sức Khỏe</h2></div>
-        ${matches.map(m=>`<div class="list-item" data-open-library="1" style="cursor:pointer;"><div class="txt">${esc(m.issue_name)}</div><span style="color:var(--accent);font-size:13px;">Xem chi tiết →</span></div>`).join('')}
+      ${libMatches.length>0 ? `
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Đọc thêm ở Thư Viện Sức Khỏe</h2></div>
+        ${libMatches.map(m=>`<div class="list-item" data-open-library="1" style="cursor:pointer;"><div class="txt">${esc(m.issue_name)}</div><span style="color:var(--accent);font-size:13px;">Xem chi tiết →</span></div>`).join('')}
+      ` : ''}
+
+      ${productMatches.length>0 ? `
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Sản phẩm Unicity liên quan</h2></div>
+        ${productMatches.map(p=>`
+          <div class="section" data-open-product="1" style="cursor:pointer;display:flex;gap:14px;align-items:flex-start;">
+            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
+                ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
+              </div>
+              ${p.short_description ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(p.short_description)}</div>` : ''}
+            </div>
+          </div>
+        `).join('')}
       ` : ''}
     `;
   }
@@ -163,6 +205,9 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-open-library]').forEach(el=>{
       el.onclick = ()=>{ location.hash = 'thu-vien-suc-khoe'; };
+    });
+    container.querySelectorAll('[data-open-product]').forEach(el=>{
+      el.onclick = ()=>{ location.hash = 'san-pham'; };
     });
   }
 
