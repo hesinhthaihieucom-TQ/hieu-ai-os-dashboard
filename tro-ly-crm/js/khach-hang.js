@@ -355,9 +355,62 @@ function render(container, ctx){
   function openNewForm(){
     state.showNewForm = true; state.newError = '';
     state.newForm = { ten_khach_hang: '', leader_phu_trach: '', kenh: '', link_lien_he: '', tinh_thanh: '', do_nong: '', giai_doan: '', ngay_follow_tiep: '' };
+    // "Thêm khách mới bằng ảnh/ghi chú" (2026-08-30, chị Quỳnh hỏi "phần thêm khách mới bằng file ở
+    // đâu") — cùng cơ chế với "Cập nhật từ ảnh/ghi chú" trong chi tiết khách, nhưng KHÔNG có
+    // customer_id sẵn nên phải bắt AI đọc tên (needsName nếu không đọc được, giống Tư Vấn AI).
+    state.newFromPhoto = { images: [], note: '', submitting: false, error: '', needsName: false, manualName: '' };
     draw();
   }
-  function closeNewForm(){ state.showNewForm = false; state.newForm = null; draw(); }
+  function closeNewForm(){ state.showNewForm = false; state.newForm = null; state.newFromPhoto = null; draw(); }
+
+  function handleNewPhotoFiles(files){
+    const p = state.newFromPhoto; if(!p) return;
+    Array.from(files).slice(0, MAX_IMAGES - p.images.length).forEach((file)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          p.images = [...p.images, c.toDataURL('image/jpeg', 0.82)].slice(0, MAX_IMAGES);
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removeNewPhotoImage(idx){
+    const p = state.newFromPhoto; if(!p) return;
+    p.images = p.images.filter((_,i)=>i!==idx);
+    draw();
+  }
+
+  async function createCustomerFromPhoto(){
+    const p = state.newFromPhoto; if(!p) return;
+    if(p.needsName && !p.manualName.trim()){ p.error = 'Nhập giúp tên khách hàng.'; draw(); return; }
+    if(!p.needsName && !p.images.length && !p.note.trim()){ p.error = 'Cần ít nhất 1 ảnh hoặc mô tả.'; draw(); return; }
+    p.submitting = true; p.error = ''; draw();
+    try{
+      const data = await callApi('/api/crm-cap-nhat-ho-so', {
+        images: p.images, note: p.note,
+        manual_ten_khach_hang: p.needsName ? p.manualName.trim() : undefined,
+      }, 90000);
+      if(data.needsName){ p.needsName = true; p.submitting = false; draw(); return; }
+      state.showNewForm = false; state.newForm = null; state.newFromPhoto = null;
+      await load();
+      if(data.customer) openDetail(data.customer.id);
+    } catch(e){
+      p.error = e.message;
+      p.submitting = false;
+      draw();
+    }
+  }
 
   async function createCustomer(){
     const f = state.newForm;
@@ -377,13 +430,23 @@ function render(container, ctx){
   }
 
   // ===== Render =====
-  function field(key, label, value, type, full){
+  // linkable=true (2026-08-30, chị Quỳnh yêu cầu: "bấm vào là ra luôn đường dẫn, ko phải copy
+  // paste") — hiện thêm 1 link "🔗 Mở" bấm mở thẳng, KHÔNG thay input tự do (vẫn cần sửa tay link).
+  // Tự thêm "https://" nếu người dùng gõ thiếu (VD "fb.com/lan") để link mở đúng thay vì lỗi/tương đối.
+  function normalizeUrl(u){
+    const t = (u||'').trim();
+    if(!t) return '';
+    return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+  }
+  function field(key, label, value, type, full, linkable){
     const inputHtml = type === 'textarea'
       ? `<textarea data-field="${key}" style="min-height:64px;margin-top:6px;">${esc(value)}</textarea>`
       : `<input type="${type}" data-field="${key}" value="${esc(value)}" style="margin-top:6px;">`;
+    const url = linkable ? normalizeUrl(value) : '';
     return `<div style="${full ? 'grid-column:1/-1;' : ''}">
       <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">${esc(label)}</label>
       ${inputHtml}
+      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Mở link</a>` : ''}
     </div>`;
   }
 
@@ -518,7 +581,7 @@ function render(container, ctx){
               ${field('ten_khach_hang', 'Tên khách hàng', f.ten_khach_hang, 'text')}
               ${field('leader_phu_trach', 'Leader phụ trách', f.leader_phu_trach, 'text')}
               ${field('kenh', 'Kênh', f.kenh, 'text')}
-              ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text')}
+              ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text', false, true)}
               ${field('tinh_thanh', 'Tỉnh/thành', f.tinh_thanh, 'text')}
               <div>
                 <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
@@ -590,6 +653,34 @@ function render(container, ctx){
     `;
   }
 
+  function newFromPhotoHtml(){
+    const p = state.newFromPhoto;
+    return `
+      <div class="section" style="margin-bottom:18px;padding:16px 18px;">
+        <h3>📷 Tạo từ ảnh/ghi chú</h3>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;margin-bottom:10px;">Chụp ảnh ghi chú/form đã có về khách này (hoặc gõ mô tả) — AI tự đọc tên + thông tin, tạo hồ sơ luôn, tính là 1 lần tiếp xúc.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          ${p.images.map((src,i)=>`
+            <div style="position:relative;width:70px;height:70px;">
+              <img src="${src}" data-np-zoom-img="${i}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;cursor:zoom-in;border:1px solid var(--line);">
+              <span data-np-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;">✕</span>
+            </div>
+          `).join('')}
+          ${p.images.length<MAX_IMAGES ? `<label style="width:70px;height:70px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:20px;">+<input type="file" accept="image/*" multiple id="np-file" style="display:none;"></label>` : ''}
+        </div>
+        ${!p.needsName ? `<textarea id="np-note" placeholder="Hoặc gõ tay thông tin đã biết về khách...">${esc(p.note)}</textarea>` : `
+          <div class="hint-box" style="margin-top:0;">AI không đọc được tên khách — nhập giúp tên để tạo đúng hồ sơ.</div>
+          <input type="text" id="np-manual-name" placeholder="VD: Chị Lan" value="${esc(p.manualName)}" style="margin-top:10px;">
+        `}
+        ${p.error ? `<div class="error-box" style="margin-top:8px;">${esc(p.error)}</div>` : ''}
+        <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+          <button class="btn btn-sm" id="np-submit" ${p.submitting?'disabled':''}>${p.submitting?'Đang xử lý…':(p.needsName?'Xác nhận tên & tạo':'Tạo từ ảnh')}</button>
+        </div>
+      </div>
+      <div style="text-align:center;color:var(--ink-soft);font-size:12px;margin:16px 0;">— hoặc điền tay bên dưới —</div>
+    `;
+  }
+
   function newFormHtml(){
     const f = state.newForm;
     return `
@@ -599,6 +690,7 @@ function render(container, ctx){
             <h2 style="font-family:'Playfair Display',serif;font-size:20px;">Thêm khách mới</h2>
             <span id="kh-new-close" style="cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;">✕</span>
           </div>
+          ${newFromPhotoHtml()}
           ${state.newError ? `<div class="error-box">${esc(state.newError)}</div>` : ''}
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tên khách hàng *</label>
           <input type="text" data-new-field="ten_khach_hang" value="${esc(f.ten_khach_hang)}" placeholder="VD: Chị Lan">
@@ -778,6 +870,21 @@ function render(container, ctx){
       });
       const createBtn = container.querySelector('#kh-new-create');
       if(createBtn) createBtn.onclick = createCustomer;
+
+      const npFileEl = container.querySelector('#np-file');
+      if(npFileEl) npFileEl.onchange = () => { if(npFileEl.files.length) handleNewPhotoFiles(npFileEl.files); };
+      container.querySelectorAll('[data-np-remove-img]').forEach(el => {
+        el.onclick = () => removeNewPhotoImage(Number(el.getAttribute('data-np-remove-img')));
+      });
+      container.querySelectorAll('[data-np-zoom-img]').forEach(el => {
+        el.onclick = () => openImageLightbox(state.newFromPhoto.images[Number(el.getAttribute('data-np-zoom-img'))]);
+      });
+      const npNoteEl = container.querySelector('#np-note');
+      if(npNoteEl) npNoteEl.oninput = (e) => { state.newFromPhoto.note = e.target.value; };
+      const npManualNameEl = container.querySelector('#np-manual-name');
+      if(npManualNameEl) npManualNameEl.oninput = (e) => { state.newFromPhoto.manualName = e.target.value; };
+      const npSubmitBtn = container.querySelector('#np-submit');
+      if(npSubmitBtn) npSubmitBtn.onclick = createCustomerFromPhoto;
     }
   }
 

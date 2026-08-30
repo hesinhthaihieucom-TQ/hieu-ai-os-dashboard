@@ -178,13 +178,22 @@ function render(container, ctx){
   }
 
   // ===== Render =====
-  function field(key, label, value, type, full){
+  // linkable=true (2026-08-30, chị Quỳnh yêu cầu: "bấm vào là ra luôn đường dẫn, ko phải copy
+  // paste") — hiện thêm 1 link "🔗 Mở" bấm mở thẳng, tự thêm "https://" nếu gõ thiếu.
+  function normalizeUrl(u){
+    const t = (u||'').trim();
+    if(!t) return '';
+    return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+  }
+  function field(key, label, value, type, full, linkable){
     const inputHtml = type === 'textarea'
       ? `<textarea data-field="${key}" style="min-height:64px;margin-top:6px;">${esc(value)}</textarea>`
       : `<input type="${type}" data-field="${key}" value="${esc(value)}" style="margin-top:6px;">`;
+    const url = linkable ? normalizeUrl(value) : '';
     return `<div style="${full ? 'grid-column:1/-1;' : ''}">
       <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">${esc(label)}</label>
       ${inputHtml}
+      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Mở link</a>` : ''}
     </div>`;
   }
 
@@ -249,7 +258,7 @@ function render(container, ctx){
               ${field('ten_khach_hang', 'Tên', f.ten_khach_hang, 'text')}
               ${field('leader_phu_trach', 'Leader phụ trách', f.leader_phu_trach, 'text')}
               ${field('kenh', 'Kênh', f.kenh, 'text')}
-              ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text')}
+              ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text', false, true)}
               ${field('tinh_thanh', 'Tỉnh/thành', f.tinh_thanh, 'text')}
               ${field('ngay_thanh_doi_tac', 'Ngày bắt đầu làm đối tác', f.ngay_thanh_doi_tac, 'date')}
             </div>
