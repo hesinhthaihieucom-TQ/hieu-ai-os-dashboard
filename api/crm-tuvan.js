@@ -175,7 +175,11 @@ function buildContentBlocks({ todayIso, profile, customer, sanPhamDichVu, cauChu
   if (sanPhamDichVu && String(sanPhamDichVu).trim()) {
     contextText += `\nTHÔNG TIN SẢN PHẨM/DỊCH VỤ (chỉ dùng đúng giá/gói trong này, không bịa thêm):\n${sanPhamDichVu.trim()}\n`;
   }
-  if (cauChuyen && cauChuyen.nguon === 'cau-chuyen' && cauChuyen.answers) {
+  if (cauChuyen && cauChuyen.nguon === 'cau-chuyen' && cauChuyen.free_story && String(cauChuyen.free_story).trim()) {
+    // Chế độ "tự viết tự do" (2026-08-30) — ưu tiên dùng thẳng, không xen với bộ câu hỏi q1-q20 vì
+    // 2 chế độ không bắt buộc dùng cùng lúc (xem cau-chuyen.js).
+    contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (tự viết tự do — dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${String(cauChuyen.free_story).trim()}\n`;
+  } else if (cauChuyen && cauChuyen.nguon === 'cau-chuyen' && cauChuyen.answers) {
     const lines = Object.keys(STORY_QUESTION_LABELS).map((id) => {
       const val = cauChuyen.answers[id] ? String(cauChuyen.answers[id]).trim() : '';
       return val ? `- ${STORY_QUESTION_LABELS[id]}: ${val}` : null;
