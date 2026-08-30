@@ -1765,6 +1765,9 @@ create index if not exists crm_customers_user_idx on crm_customers(user_id);
 -- form_hd chỉ có ý nghĩa khi nhanh='D', field nào chưa khai thác AI ghi "Chưa có" chứ không bịa.
 alter table crm_customers add column if not exists nhanh text;
 alter table crm_customers add column if not exists form_hd jsonb;
+-- Tỉnh/thành khách (2026-08-30, chị Quỳnh chốt: để gom khách theo khu vực khi đi làm thị trường) —
+-- text tự do (không enum), gõ tay hoặc AI điền nếu đọc được từ chat/link.
+alter table crm_customers add column if not exists tinh_thanh text;
 
 create table if not exists crm_interactions (
   id uuid primary key default gen_random_uuid(),
@@ -1872,3 +1875,8 @@ create table if not exists crm_story_profiles (
 alter table crm_story_profiles enable row level security;
 drop policy if exists "crm_story_profiles_owner_all" on crm_story_profiles;
 create policy "crm_story_profiles_owner_all" on crm_story_profiles for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Cho chọn "tự viết tự do" thay vì bắt buộc trả lời đủ 20 câu (chị Quỳnh chốt 2026-08-30) — free_story
+-- có dữ liệu thì ưu tiên dùng thẳng làm câu chuyện cá nhân (xem api/crm-tuvan.js), answers vẫn giữ
+-- nguyên cho chế độ trả lời từng câu — 2 chế độ không bắt buộc dùng cùng lúc.
+alter table crm_story_profiles add column if not exists free_story text;

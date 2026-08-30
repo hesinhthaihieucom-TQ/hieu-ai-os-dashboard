@@ -63,6 +63,10 @@ function render(container, ctx){
   const state = {
     screen:'loading', qIndex:0, answers:{}, storyProfile:null, positioning:null,
     saving:false, error:null,
+    // Tự viết tự do (2026-08-30, chị Quỳnh chốt: "cho người dùng tự viết hoặc trả lời câu hỏi") —
+    // free_story có dữ liệu thì ưu tiên dùng thẳng làm câu chuyện cá nhân, tách biệt với answers
+    // (chế độ trả lời từng câu) — không bắt buộc dùng cùng lúc, xem schema_full.sql.
+    freeStory:'', freeTen:'', freeZalo:'', freeLinks:'',
   };
 
   function draw(){ container.innerHTML = screenHtml(); bind(); }
@@ -83,10 +87,13 @@ function render(container, ctx){
     ]);
     state.positioning = (positioning && positioning.luot1) ? positioning : null;
 
-    const hasStory = story && story.answers && Object.keys(story.answers).some(k=>String(story.answers[k]||'').trim());
-    if(hasStory){
+    const hasWizardStory = story && story.answers && Object.keys(story.answers).some(k=>String(story.answers[k]||'').trim());
+    const hasFreeStory = story && story.free_story && story.free_story.trim();
+    if(hasWizardStory || hasFreeStory){
       state.storyProfile = story;
       state.answers = { ten: story.ten||'', zalo: story.zalo||'', links: story.links||'', ...story.answers };
+      state.freeStory = story.free_story || '';
+      state.freeTen = story.ten || ''; state.freeZalo = story.zalo || ''; state.freeLinks = story.links || '';
       state.screen = 'existing';
       draw();
       return;
@@ -123,6 +130,7 @@ function render(container, ctx){
     if(state.screen==='existing') return existingHtml();
     if(state.screen==='intro') return introHtml();
     if(state.screen==='wizard') return wizardHtml();
+    if(state.screen==='free-write') return freeWriteHtml();
     if(state.screen==='done') return doneHtml();
     return '';
   }
@@ -146,6 +154,7 @@ function render(container, ctx){
 
   function existingHtml(){
     const a = state.answers;
+    const isFree = !!(state.storyProfile && state.storyProfile.free_story && state.storyProfile.free_story.trim());
     return `
       <div class="page-head" style="text-align:center;">
         <div class="tag">Câu Chuyện Của Bạn</div>
@@ -153,9 +162,13 @@ function render(container, ctx){
         <p>Tư Vấn AI sẽ tự dùng đúng câu chuyện thật này khi tư vấn khách — không cần làm gì thêm.</p>
       </div>
       ${state.confirmMsg?`<div class="hint-box">${esc(state.confirmMsg)}</div>`:''}
-      ${a.q1 ? `<div class="section"><h3>1. Bạn là ai</h3><div class="body">${esc(a.q1)}</div></div>` : ''}
-      ${a.q6 ? `<div class="section"><h3>3. Giai đoạn khó khăn / điểm gãy</h3><div class="body">${esc(a.q6)}</div></div>` : ''}
-      ${a.q20 ? `<div class="section highlight"><h3>15. Cách AI nên kể câu chuyện của bạn</h3><div class="body">${esc(a.q20)}</div></div>` : ''}
+      ${isFree
+        ? `<div class="section highlight"><h3>Câu chuyện bạn đã viết</h3><div class="body">${esc(state.storyProfile.free_story)}</div></div>`
+        : `
+          ${a.q1 ? `<div class="section"><h3>1. Bạn là ai</h3><div class="body">${esc(a.q1)}</div></div>` : ''}
+          ${a.q6 ? `<div class="section"><h3>3. Giai đoạn khó khăn / điểm gãy</h3><div class="body">${esc(a.q6)}</div></div>` : ''}
+          ${a.q20 ? `<div class="section highlight"><h3>15. Cách AI nên kể câu chuyện của bạn</h3><div class="body">${esc(a.q20)}</div></div>` : ''}
+        `}
       <div class="btn-row">
         <button class="btn-ghost btn" data-action="edit">Sửa lại</button>
         <button class="btn" data-action="home">Về Trang chủ</button>
@@ -168,11 +181,39 @@ function render(container, ctx){
       <div class="page-head" style="text-align:center;">
         <div class="tag">Câu Chuyện Của Bạn</div>
         <h1>Kể câu chuyện thật của bạn</h1>
-        <p>Trả lời thật ${QUESTIONS.length} câu hỏi — mục nào chưa có thì để trống, không cần viết hay, chỉ cần đúng sự thật. Điền càng chi tiết, Tư Vấn AI càng kể chuyện thuyết phục hơn khi tư vấn khách.</p>
+        <p>Chọn 1 trong 2 cách — đều phục vụ cùng mục đích: cho Tư Vấn AI (và sổ tay tư vấn) dữ liệu thật để kể chuyện khi chốt khách.</p>
       </div>
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
-      <div class="btn-row">
-        <button class="btn" data-action="start">Bắt đầu</button>
+      <div class="section" style="cursor:pointer;" data-action="start">
+        <h3>Trả lời từng câu hỏi (${QUESTIONS.length} câu)</h3>
+        <div class="body" style="color:var(--ink-soft);font-size:13.5px;">AI hỏi từng câu 1, bạn chỉ cần trả lời thật — mục nào chưa có thì để trống. Phù hợp nếu chưa biết bắt đầu kể từ đâu.</div>
+      </div>
+      <div class="section" style="cursor:pointer;" data-action="start-free">
+        <h3>Tự viết câu chuyện của mình</h3>
+        <div class="body" style="color:var(--ink-soft);font-size:13.5px;">Viết tự do 1 đoạn kể lại hành trình của bạn theo đúng cách bạn muốn kể — phù hợp nếu bạn đã quen kể câu chuyện này rồi.</div>
+      </div>
+    `;
+  }
+
+  function freeWriteHtml(){
+    return `
+      <div class="page-head" style="text-align:center;">
+        <div class="tag">Câu Chuyện Của Bạn</div>
+        <h1>Tự viết câu chuyện của bạn</h1>
+        <p>Viết tự do — nền tảng trước đây, giai đoạn khó khăn, điều gì khiến bạn bắt đầu, kết quả/sự thay đổi tới giờ... Không cần viết hay, chỉ cần đúng sự thật, càng chi tiết Tư Vấn AI càng kể thuyết phục hơn.</p>
+      </div>
+      ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
+      <div class="card">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên bạn</label>
+        <input type="text" id="fw-ten" value="${esc(state.freeTen)}" placeholder="Để AI xưng hô đúng khi tư vấn thay bạn">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Số Zalo (không bắt buộc)</label>
+        <input type="text" id="fw-zalo" value="${esc(state.freeZalo)}">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện của bạn</label>
+        <textarea id="fw-story" style="min-height:260px;" placeholder="Viết tự do câu chuyện của bạn ở đây...">${esc(state.freeStory)}</textarea>
+      </div>
+      <div class="btn-row" style="justify-content:flex-start;">
+        <button class="btn" data-action="save-free" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu'}</button>
+        <span class="btn-ghost btn btn-sm" data-action="switch-to-wizard">Đổi sang trả lời từng câu hỏi</span>
       </div>
     `;
   }
@@ -231,9 +272,17 @@ function render(container, ctx){
 
     const startBtn = container.querySelector('[data-action="start"]');
     if(startBtn) startBtn.onclick = startWizard;
+    const startFreeBtn = container.querySelector('[data-action="start-free"]');
+    if(startFreeBtn) startFreeBtn.onclick = ()=>{ state.screen='free-write'; draw(); };
+    const switchToWizardBtn = container.querySelector('[data-action="switch-to-wizard"]');
+    if(switchToWizardBtn) switchToWizardBtn.onclick = startWizard;
 
     const editBtn = container.querySelector('[data-action="edit"]');
-    if(editBtn) editBtn.onclick = ()=>{ state.qIndex = 0; state.screen='wizard'; draw(); };
+    if(editBtn) editBtn.onclick = ()=>{
+      const isFree = !!(state.storyProfile && state.storyProfile.free_story && state.storyProfile.free_story.trim());
+      if(isFree){ state.screen='free-write'; } else { state.qIndex = 0; state.screen='wizard'; }
+      draw();
+    };
 
     const homeBtn = container.querySelector('[data-action="home"]');
     if(homeBtn) homeBtn.onclick = ()=>{ location.hash = 'trang-chu'; };
@@ -246,6 +295,15 @@ function render(container, ctx){
 
     const qinput = container.querySelector('#qinput');
     if(qinput) qinput.oninput = ()=>{ state.answers[QUESTIONS[state.qIndex].id] = qinput.value; };
+
+    const fwTen = container.querySelector('#fw-ten');
+    if(fwTen) fwTen.oninput = ()=>{ state.freeTen = fwTen.value; };
+    const fwZalo = container.querySelector('#fw-zalo');
+    if(fwZalo) fwZalo.oninput = ()=>{ state.freeZalo = fwZalo.value; };
+    const fwStory = container.querySelector('#fw-story');
+    if(fwStory) fwStory.oninput = ()=>{ state.freeStory = fwStory.value; };
+    const saveFreeBtn = container.querySelector('[data-action="save-free"]');
+    if(saveFreeBtn) saveFreeBtn.onclick = finishFree;
   }
 
   function onNext(){
@@ -264,6 +322,19 @@ function render(container, ctx){
     state.saving = false;
     if(error){ state.error = error.message; state.screen = 'wizard'; draw(); return; }
     await clearModuleDraft(ctx, WIZARD_DRAFT_KEY);
+    state.screen = 'done';
+    draw();
+  }
+
+  async function finishFree(){
+    if(!state.freeStory.trim()){ state.error = 'Viết ít nhất vài dòng trước khi lưu.'; draw(); return; }
+    state.saving = true; state.error = null; draw();
+    const { error } = await ctx.supabase.from('crm_story_profiles').upsert({
+      user_id: ctx.user.id, ten: state.freeTen.trim()||null, zalo: state.freeZalo.trim()||null,
+      free_story: state.freeStory.trim(), updated_at: new Date().toISOString(),
+    }, { onConflict:'user_id' });
+    state.saving = false;
+    if(error){ state.error = error.message; draw(); return; }
     state.screen = 'done';
     draw();
   }

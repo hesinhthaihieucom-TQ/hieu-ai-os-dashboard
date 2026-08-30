@@ -96,7 +96,7 @@ function render(container, ctx){
     return state.customers.filter(c => {
       if(state.activeTab === 'follow' && !needsFollow(c)) return false;
       else if(state.activeTab !== 'follow' && state.activeTab !== 'all' && bucketOf(c) !== state.activeTab) return false;
-      if(q && !(c.ten_khach_hang || '').toLowerCase().includes(q)) return false;
+      if(q && !(c.ten_khach_hang || '').toLowerCase().includes(q) && !(c.tinh_thanh || '').toLowerCase().includes(q)) return false;
       return true;
     });
   }
@@ -106,7 +106,8 @@ function render(container, ctx){
     const fh = c.form_hd || {};
     return {
       ten_khach_hang: c.ten_khach_hang || '', leader_phu_trach: c.leader_phu_trach || '', kenh: c.kenh || '',
-      link_lien_he: c.link_lien_he || '', nhanh: c.nhanh || '', nhom_nhu_cau: (c.nhom_nhu_cau || []).join(', '), nhu_cau_cu_the: c.nhu_cau_cu_the || '',
+      link_lien_he: c.link_lien_he || '', tinh_thanh: c.tinh_thanh || '',
+      nhanh: c.nhanh || '', nhom_nhu_cau: (c.nhom_nhu_cau || []).join(', '), nhu_cau_cu_the: c.nhu_cau_cu_the || '',
       van_de_noi_dau: c.van_de_noi_dau || '', giai_doan: c.giai_doan || '', do_nong: c.do_nong || '',
       rao_can: (c.rao_can || []).join(', '), giai_phap_phu_hop: c.giai_phap_phu_hop || '',
       lan_tuong_tac_cuoi: c.lan_tuong_tac_cuoi || '', ngay_follow_tiep: c.ngay_follow_tiep || '',
@@ -117,6 +118,19 @@ function render(container, ctx){
       form_hd_gia_dinh: fh.gia_dinh || '', form_hd_cong_viec: fh.cong_viec || '', form_hd_so_thich_quan_he: fh.so_thich_quan_he || '',
       form_hd_money: fh.money || '', form_hd_suc_khoe: fh.suc_khoe || '', form_hd_mong_muon: fh.mong_muon || '',
     };
+  }
+
+  // Số lần TIẾP XÚC tính theo NGÀY KHÁC NHAU (không phải số dòng tương tác) — chị Quỳnh chốt
+  // 2026-08-30: nguyên tắc bán hàng cần 4-6 lần chạm khác ngày mới đủ để 1 khách chốt, nên đếm
+  // trùng ngày (vd nhắn 5 tin trong cùng 1 buổi) không có ý nghĩa, dễ gây ảo tưởng "đã follow đủ".
+  const TOUCHPOINT_TARGET = 6;
+  function distinctInteractionDays(interactions){
+    const days = new Set();
+    (interactions || []).forEach(it => {
+      const raw = it.thoi_gian || it.created_at;
+      if(raw) days.add(String(raw).slice(0, 10));
+    });
+    return days.size;
   }
 
   async function openDetail(id){
@@ -149,7 +163,7 @@ function render(container, ctx){
     };
     const payload = {
       ten_khach_hang: f.ten_khach_hang.trim(), leader_phu_trach: f.leader_phu_trach.trim() || null, kenh: f.kenh.trim() || null,
-      link_lien_he: f.link_lien_he.trim() || null,
+      link_lien_he: f.link_lien_he.trim() || null, tinh_thanh: f.tinh_thanh.trim() || null,
       nhom_nhu_cau: f.nhom_nhu_cau.split(',').map(s => s.trim()).filter(Boolean),
       nhu_cau_cu_the: f.nhu_cau_cu_the.trim() || null, van_de_noi_dau: f.van_de_noi_dau.trim() || null,
       giai_doan: f.giai_doan.trim() || null, do_nong: f.do_nong.trim() || null,
@@ -182,7 +196,7 @@ function render(container, ctx){
   // ===== Form thêm khách mới =====
   function openNewForm(){
     state.showNewForm = true; state.newError = '';
-    state.newForm = { ten_khach_hang: '', leader_phu_trach: '', kenh: '', link_lien_he: '', do_nong: '', giai_doan: '', ngay_follow_tiep: '' };
+    state.newForm = { ten_khach_hang: '', leader_phu_trach: '', kenh: '', link_lien_he: '', tinh_thanh: '', do_nong: '', giai_doan: '', ngay_follow_tiep: '' };
     draw();
   }
   function closeNewForm(){ state.showNewForm = false; state.newForm = null; draw(); }
@@ -194,7 +208,7 @@ function render(container, ctx){
     const { data, error } = await ctx.supabase.from('crm_customers').insert({
       user_id: ctx.user.id, ten_khach_hang: f.ten_khach_hang.trim(),
       leader_phu_trach: f.leader_phu_trach.trim() || null, kenh: f.kenh.trim() || null,
-      link_lien_he: f.link_lien_he.trim() || null, do_nong: f.do_nong.trim() || null,
+      link_lien_he: f.link_lien_he.trim() || null, tinh_thanh: f.tinh_thanh.trim() || null, do_nong: f.do_nong.trim() || null,
       giai_doan: f.giai_doan.trim() || null, ngay_follow_tiep: f.ngay_follow_tiep || null,
     }).select().maybeSingle();
     state.creating = false;
@@ -254,7 +268,7 @@ function render(container, ctx){
             ${doNongBadge(c.do_nong)}
           </div>
         </div>
-        <div class="meta" style="margin-top:6px;margin-bottom:0;">${[c.kenh, c.leader_phu_trach].filter(Boolean).map(esc).join(' · ')}</div>
+        <div class="meta" style="margin-top:6px;margin-bottom:0;">${[c.kenh, c.leader_phu_trach, c.tinh_thanh].filter(Boolean).map(esc).join(' · ')}</div>
         ${painOrNeed ? `<div style="font-size:13.5px;color:var(--ink);margin-top:8px;line-height:1.5;">${esc(truncate(painOrNeed,140))}</div>` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px;">
           <div style="font-size:12px;font-family:'IBM Plex Mono',monospace;color:${overdue?'var(--danger)':(dueToday?'var(--gold)':'var(--ink-soft)')};">${followText}</div>
@@ -268,12 +282,27 @@ function render(container, ctx){
     return list.map(customerCardHtml).join('');
   }
 
+  // Mỗi nhóm field đóng trong 1 khối ".section" riêng (viền + tiêu đề vàng, đã có sẵn trong
+  // style.css) — chị Quỳnh phản hồi 2026-08-30: "các chữ đang cùng 1 màu bị chồng lên nhau khó
+  // nhìn" — tách khối rõ ràng theo nhóm ý nghĩa (thay vì 1 lưới field liền mạch) là cách sửa
+  // đúng gốc, không xoá field thật đang có dữ liệu.
+  function groupBlock(title, innerHtml, opts){
+    opts = opts || {};
+    return `<div class="section${opts.highlight ? ' highlight' : ''}" style="margin-top:14px;margin-bottom:0;padding:18px 20px;">
+      <h3>${esc(title)}</h3>
+      ${innerHtml}
+      ${opts.footnote ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${opts.footnote}</div>` : ''}
+    </div>`;
+  }
+
   function detailHtml(){
     const d = state.detail;
     const c = d.customer || {};
     const f = d.editForm;
     const doNongOptions = availableDoNong();
     const giaiDoanOptions = availableGiaiDoan();
+    const touchDays = distinctInteractionDays(d.interactions);
+    const touchOk = touchDays >= 4;
     return `
       <div id="kh-detail-overlay" style="position:fixed;inset:0;z-index:9998;background:rgba(20,24,20,.6);display:flex;justify-content:center;padding:24px 16px;overflow-y:auto;">
         <div data-modal-box style="background:var(--panel);border-radius:14px;max-width:640px;width:100%;padding:26px 24px;box-shadow:0 12px 40px rgba(0,0,0,.4);height:fit-content;margin:0 auto;">
@@ -284,51 +313,64 @@ function render(container, ctx){
 
           ${d.error ? `<div class="error-box">${esc(d.error)}</div>` : ''}
 
-          ${f.nhanh === 'D' ? `
-            <div class="section highlight" style="margin-top:14px;margin-bottom:0;padding:18px 20px;">
-              <h3>FORM-HD — khung khai thác nhánh Kinh doanh/Đối tác</h3>
-              <div style="display:grid;grid-template-columns:1fr;gap:0;">
-                ${field('form_hd_gia_dinh', 'F — Gia đình (hôn nhân, con cái, người phụ thuộc)', f.form_hd_gia_dinh, 'textarea', true)}
-                ${field('form_hd_cong_viec', 'O — Công việc (đang làm gì, thu nhập, thời gian rảnh)', f.form_hd_cong_viec, 'textarea', true)}
-                ${field('form_hd_so_thich_quan_he', 'R — Sở thích / Quan hệ (sở thích, mạng lưới xã hội)', f.form_hd_so_thich_quan_he, 'textarea', true)}
-                ${field('form_hd_money', 'M — Money (khả năng tài chính, mức sẵn sàng đầu tư)', f.form_hd_money, 'textarea', true)}
-                ${field('form_hd_suc_khoe', 'H — Sức khỏe (hiện trạng, ảnh hưởng tới khả năng làm việc)', f.form_hd_suc_khoe, 'textarea', true)}
-                ${field('form_hd_mong_muon', 'D — Mong muốn (mục tiêu, ước mơ đang tìm kiếm)', f.form_hd_mong_muon, 'textarea', true)}
+          <!-- Số lần tiếp xúc (theo NGÀY khác nhau, không phải số tin nhắn) — nguyên tắc CSKH: cần
+               4-6 lần chạm khác ngày mới đủ để 1 khách chốt. -->
+          <div class="hint-box" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;${touchOk ? '' : 'background:#FBF6E9;color:#8A5A00;border-color:#E9DEB8;'}">
+            <span>🎯 Số lần tiếp xúc (ngày khác nhau): <b>${touchDays}/${TOUCHPOINT_TARGET}</b></span>
+            <span style="font-size:12px;">${touchOk ? 'Đủ ngưỡng thường chốt — ưu tiên chốt/đề nghị.' : 'Cần thêm follow — nguyên tắc: 4-6 lần chạm mới đủ để chốt.'}</span>
+          </div>
+
+          ${groupBlock('Thông tin cơ bản', `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 14px;">
+              ${field('ten_khach_hang', 'Tên khách hàng', f.ten_khach_hang, 'text')}
+              ${field('leader_phu_trach', 'Leader phụ trách', f.leader_phu_trach, 'text')}
+              ${field('kenh', 'Kênh', f.kenh, 'text')}
+              ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text')}
+              ${field('tinh_thanh', 'Tỉnh/thành', f.tinh_thanh, 'text')}
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
+                <input type="text" data-field="do_nong" value="${esc(f.do_nong)}" list="kh-do-nong-options" style="margin-top:6px;">
+                <datalist id="kh-do-nong-options">${doNongOptions.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
               </div>
-              <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Mục nào chưa khai thác được sẽ ghi "Chưa có" — AI tự điền dần qua các lần tư vấn, có thể sửa tay ở đây.</div>
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Giai đoạn</label>
+                <input type="text" data-field="giai_doan" value="${esc(f.giai_doan)}" list="kh-giai-doan-options" style="margin-top:6px;">
+                <datalist id="kh-giai-doan-options">${giaiDoanOptions.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+              </div>
+              ${field('lan_tuong_tac_cuoi', 'Lần tương tác cuối', f.lan_tuong_tac_cuoi, 'date')}
+              ${field('ngay_follow_tiep', 'Ngày follow tiếp', f.ngay_follow_tiep, 'date')}
+              ${field('gia_tri_du_kien', 'Giá trị dự kiến', f.gia_tri_du_kien, 'text')}
             </div>
-          ` : ''}
+          `)}
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 14px;">
-            ${field('ten_khach_hang', 'Tên khách hàng', f.ten_khach_hang, 'text')}
-            ${field('leader_phu_trach', 'Leader phụ trách', f.leader_phu_trach, 'text')}
-            ${field('kenh', 'Kênh', f.kenh, 'text')}
-            ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text')}
-            <div>
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
-              <input type="text" data-field="do_nong" value="${esc(f.do_nong)}" list="kh-do-nong-options" style="margin-top:6px;">
-              <datalist id="kh-do-nong-options">${doNongOptions.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+          ${groupBlock('Nhu cầu & rào cản', `
+            <div style="display:grid;grid-template-columns:1fr;">
+              ${field('nhom_nhu_cau', 'Nhóm nhu cầu (cách nhau bởi dấu phẩy)', f.nhom_nhu_cau, 'text', true)}
+              ${field('nhu_cau_cu_the', 'Nhu cầu cụ thể', f.nhu_cau_cu_the, 'textarea', true)}
+              ${field('van_de_noi_dau', 'Vấn đề / nỗi đau', f.van_de_noi_dau, 'textarea', true)}
+              ${field('rao_can', 'Rào cản (cách nhau bởi dấu phẩy)', f.rao_can, 'text', true)}
             </div>
-            <div>
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Giai đoạn</label>
-              <input type="text" data-field="giai_doan" value="${esc(f.giai_doan)}" list="kh-giai-doan-options" style="margin-top:6px;">
-              <datalist id="kh-giai-doan-options">${giaiDoanOptions.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
-            </div>
-            ${field('lan_tuong_tac_cuoi', 'Lần tương tác cuối', f.lan_tuong_tac_cuoi, 'date')}
-            ${field('ngay_follow_tiep', 'Ngày follow tiếp', f.ngay_follow_tiep, 'date')}
-            ${field('gia_tri_du_kien', 'Giá trị dự kiến', f.gia_tri_du_kien, 'text')}
-          </div>
+          `)}
 
-          <div style="display:grid;grid-template-columns:1fr;">
-            ${field('nhom_nhu_cau', 'Nhóm nhu cầu (cách nhau bởi dấu phẩy)', f.nhom_nhu_cau, 'text', true)}
-            ${field('nhu_cau_cu_the', 'Nhu cầu cụ thể', f.nhu_cau_cu_the, 'textarea', true)}
-            ${field('van_de_noi_dau', 'Vấn đề / nỗi đau', f.van_de_noi_dau, 'textarea', true)}
-            ${field('rao_can', 'Rào cản (cách nhau bởi dấu phẩy)', f.rao_can, 'text', true)}
-            ${field('giai_phap_phu_hop', 'Giải pháp phù hợp', f.giai_phap_phu_hop, 'textarea', true)}
-            ${field('hanh_dong_tiep_theo', 'Hành động tiếp theo', f.hanh_dong_tiep_theo, 'textarea', true)}
-            ${field('ket_qua', 'Kết quả', f.ket_qua, 'textarea', true)}
-            ${field('ghi_chu_ai', 'Ghi chú AI', f.ghi_chu_ai, 'textarea', true)}
-          </div>
+          ${groupBlock('Giải pháp & tiến triển', `
+            <div style="display:grid;grid-template-columns:1fr;">
+              ${field('giai_phap_phu_hop', 'Giải pháp phù hợp', f.giai_phap_phu_hop, 'textarea', true)}
+              ${field('hanh_dong_tiep_theo', 'Hành động tiếp theo', f.hanh_dong_tiep_theo, 'textarea', true)}
+              ${field('ket_qua', 'Kết quả', f.ket_qua, 'textarea', true)}
+              ${field('ghi_chu_ai', 'Ghi chú AI', f.ghi_chu_ai, 'textarea', true)}
+            </div>
+          `)}
+
+          ${f.nhanh === 'D' ? groupBlock('FORM-HD — khung khai thác nhánh Kinh doanh/Đối tác', `
+            <div style="display:grid;grid-template-columns:1fr;gap:0;">
+              ${field('form_hd_gia_dinh', 'F — Gia đình (hôn nhân, con cái, người phụ thuộc)', f.form_hd_gia_dinh, 'textarea', true)}
+              ${field('form_hd_cong_viec', 'O — Công việc (đang làm gì, thu nhập, thời gian rảnh)', f.form_hd_cong_viec, 'textarea', true)}
+              ${field('form_hd_so_thich_quan_he', 'R — Sở thích / Quan hệ (sở thích, mạng lưới xã hội)', f.form_hd_so_thich_quan_he, 'textarea', true)}
+              ${field('form_hd_money', 'M — Money (khả năng tài chính, mức sẵn sàng đầu tư)', f.form_hd_money, 'textarea', true)}
+              ${field('form_hd_suc_khoe', 'H — Sức khỏe (hiện trạng, ảnh hưởng tới khả năng làm việc)', f.form_hd_suc_khoe, 'textarea', true)}
+              ${field('form_hd_mong_muon', 'D — Mong muốn (mục tiêu, ước mơ đang tìm kiếm)', f.form_hd_mong_muon, 'textarea', true)}
+            </div>
+          `, { highlight: true, footnote: 'Mục nào chưa khai thác được sẽ ghi "Chưa có" — AI tự điền dần qua các lần tư vấn, có thể sửa tay ở đây.' }) : ''}
 
           <div class="btn-row" style="justify-content:flex-start;margin-top:16px;">
             <button class="btn btn-sm" id="kh-detail-save" ${d.saving ? 'disabled' : ''}>${d.saving ? 'Đang lưu…' : 'Lưu'}</button>
@@ -372,6 +414,8 @@ function render(container, ctx){
           <input type="text" data-new-field="kenh" value="${esc(f.kenh)}" placeholder="VD: Facebook, Zalo...">
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Link liên hệ</label>
           <input type="text" data-new-field="link_lien_he" value="${esc(f.link_lien_he)}">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tỉnh/thành</label>
+          <input type="text" data-new-field="tinh_thanh" value="${esc(f.tinh_thanh)}" placeholder="VD: Hà Nội, TP.HCM...">
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
           <input type="text" data-new-field="do_nong" value="${esc(f.do_nong)}" list="kh-do-nong-options-new">
           <datalist id="kh-do-nong-options-new">${availableDoNong().map(v => `<option value="${esc(v)}">`).join('')}</datalist>
