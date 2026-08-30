@@ -1,8 +1,16 @@
+-- ⚠️ FILE CŨ, KHÔNG CÒN LÀ NGUỒN CHÍNH — đã tách thành schema_core.sql + 1 file riêng cho mỗi app
+-- (schema_nhan_hieu.sql, schema_tai_chinh.sql, schema_san_pham_so.sql, schema_suc_khoe.sql,
+-- schema_tro_ly_crm.sql), theo yêu cầu chị Quỳnh 2026-08-30: sửa app nào chỉ đụng file app đó, không
+-- phải đưa/chạy nguyên 1900+ dòng mỗi lần, và nhiều phiên Claude chạy song song không giẫm chân nhau
+-- trên cùng 1 file nữa. TỪ NAY: mọi thay đổi schema mới chỉ viết vào schema_core.sql hoặc đúng
+-- schema_<app>.sql tương ứng — KHÔNG thêm gì mới vào file này nữa (file này giữ nguyên làm bản gộp
+-- lịch sử/tham khảo, nội dung y hệt tổng của các file mới cộng lại). Nếu cần chạy schema cho 1 dự án
+-- hoàn toàn mới (chưa có gì), chạy schema_core.sql trước, sau đó chạy từng schema_<app>.sql cần dùng.
+--
 -- XÂY NHÂN HIỆU — SCHEMA ĐẦY ĐỦ, GỘP TỪ TOÀN BỘ schema.sql + schema_v2..v15 (trừ v14, đã lỗi thời).
--- Đây là bản DUY NHẤT cần chạy — thay cho việc phải chạy lần lượt từng file migration cũ.
 -- An toàn để chạy TOÀN BỘ file này bất kỳ lúc nào, kể cả khi DB đã có sẵn 1 phần dữ liệu:
 -- mọi lệnh đều dùng "if not exists"/"or replace" nên KHÔNG xoá bảng, KHÔNG xoá dữ liệu đã có,
--- chỉ tạo thêm những gì còn thiếu. Cách dùng: Supabase → SQL Editor → New query → dán toàn bộ → Run.
+-- chỉ tạo thêm những gì còn thiếu.
 
 -- ============================================================
 -- 1. PROFILES
