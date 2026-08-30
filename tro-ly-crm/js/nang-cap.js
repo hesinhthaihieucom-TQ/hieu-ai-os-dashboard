@@ -14,8 +14,21 @@ const PLANS = [
   { key:'12m', label:'Theo năm', amount:3990000 },
 ];
 
+// "Mua thêm lượt" (2026-08-30, chị Quỳnh chốt "tính tiền như web xây nhân hiệu") — CỐ Ý dùng lại
+// đúng giá của nhan-hieu (AMOUNT_TO_TOPUP_LUOT) vì webhook phân biệt qua tiền tố "CRM" trong nội
+// dung chuyển khoản, không phải qua số tiền — an toàn dùng chung giá dù trùng số tiền (xem
+// api/sepay-webhook.js). Mua càng nhiều giá/lượt càng rẻ, khớp CRM_AMOUNT_TO_TOPUP_LUOT ở đó.
+const TOPUP_PACKS = [
+  { key:'100', amount:150000, luot:100 },
+  { key:'300', amount:420000, luot:300 },
+  { key:'600', amount:780000, luot:600 },
+];
+
 function render(container, ctx){
-  const state = { loading:true, refCode:null, selectedPlanKey: PLANS.find(p=>p.recommended).key, checking:false, checkedOnce:false, error:'' };
+  const state = {
+    loading:true, refCode:null, selectedPlanKey: PLANS.find(p=>p.recommended).key, checking:false, checkedOnce:false, error:'',
+    selectedTopupKey: TOPUP_PACKS[1].key, topupChecking:false, topupCheckedOnce:false,
+  };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -44,6 +57,25 @@ function render(container, ctx){
     } catch(e){}
     state.checking = false;
     state.checkedOnce = true;
+    draw();
+  }
+
+  async function recheckTopup(){
+    state.topupChecking = true; draw();
+    try{
+      const { data } = await ctx.supabase.from('profiles').select('crm_ai_uses,crm_ai_month,crm_ai_bonus').eq('id', ctx.user.id).maybeSingle();
+      if(data){
+        ctx.profile.crm_ai_uses = data.crm_ai_uses;
+        ctx.profile.crm_ai_month = data.crm_ai_month;
+        ctx.profile.crm_ai_bonus = data.crm_ai_bonus;
+        // Cập nhật ngay số lượt hiển thị ở sidebar, không cần tải lại trang (giống onGatedApiSuccess
+        // ở app-shell.js — sidebarFootHtml là hàm global, không module-scoped, xem CLAUDE.md).
+        const el = document.getElementById('sidebar-foot-info');
+        if(el) el.innerHTML = sidebarFootHtml();
+      }
+    } catch(e){}
+    state.topupChecking = false;
+    state.topupCheckedOnce = true;
     draw();
   }
 
@@ -107,6 +139,57 @@ function render(container, ctx){
         </div>
         ${state.checkedOnce && !state.checking ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">Nếu chưa thấy cập nhật, đợi thêm 1-2 phút rồi bấm lại — nếu vẫn chưa thấy sau vài phút, báo lại để kích hoạt tay.</div>` : ''}
       </div>
+
+      ${topupHtml()}
+    `;
+  }
+
+  // "Mua thêm lượt" — dành cho tháng dùng vượt trần 300 lượt/tháng (xem CRM_MONTHLY_AI_LIMIT ở
+  // app-shell.js), không cần chờ đầu tháng sau. Cộng thẳng vào crm_ai_bonus của tháng hiện tại,
+  // không ảnh hưởng hạn dùng gói (crm_access_until).
+  function topupHtml(){
+    const p = ctx.profile || {};
+    const { used, limit } = crmMonthlyUsage(p);
+    const pack = TOPUP_PACKS.find(pk => pk.key === state.selectedTopupKey) || TOPUP_PACKS[0];
+    const transferContent = state.refCode ? `SEVQR ${state.refCode}` : null;
+    const topupQrUrl = state.refCode
+      ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${pack.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
+      : null;
+    return `
+      <div class="card" style="max-width:460px;margin-top:20px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Mua thêm lượt AI</label>
+        <div class="hint-box" style="margin-bottom:12px;">Tháng này bạn đã dùng <b>${used}/${limit} lượt</b>. Nếu cần dùng nhiều hơn mức bình thường, mua thêm lượt dùng ngay trong tháng, không cần chờ đầu tháng sau. Mua càng nhiều, giá/lượt càng rẻ.</div>
+        <div class="chips" id="topup-chips">
+          ${TOPUP_PACKS.map(pk => {
+            const pricePerLuot = pk.amount / pk.luot;
+            const basePricePerLuot = TOPUP_PACKS[0].amount / TOPUP_PACKS[0].luot;
+            const pct = Math.round((1 - pricePerLuot/basePricePerLuot) * 100);
+            return `<div class="chip ${pk.key===state.selectedTopupKey?'selected':''}" data-topup="${pk.key}">+${pk.luot} lượt — ${pk.amount.toLocaleString('vi-VN')}đ${pct>0?` <span style="opacity:.72;font-size:11.5px;">(giảm ${pct}%)</span>`:''}</div>`;
+          }).join('')}
+        </div>
+
+        ${topupQrUrl ? `
+          <div style="text-align:center;margin-top:18px;">
+            <img src="${topupQrUrl}" alt="Mã VietQR mua thêm lượt" style="max-width:220px;width:100%;border-radius:12px;border:1px solid var(--line);">
+            <div style="margin-top:8px;"><a href="${topupQrUrl}" download="vietqr-mua-them-luot.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a></div>
+          </div>
+          <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+            <div><b>Ngân hàng:</b> Vietinbank</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+            <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${pack.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${pack.amount}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+          </div>
+          <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> — lượt được cộng thẳng trong vài phút, dùng được ngay, không ảnh hưởng tới hạn gói đang có.</div>
+        ` : `
+          <div class="error-box" style="margin-top:14px;">Chưa có mã tài khoản để đối chiếu tự động — thử tải lại trang.</div>
+        `}
+
+        <div class="btn-row" style="justify-content:flex-start;margin-top:18px;">
+          <button class="btn btn-sm" id="crm-topup-recheck" ${state.topupChecking?'disabled':''}>${state.topupChecking?'Đang kiểm tra…':'Tôi đã chuyển khoản — kiểm tra lại'}</button>
+        </div>
+        ${state.topupCheckedOnce && !state.topupChecking ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">Nếu chưa thấy cập nhật, đợi thêm 1-2 phút rồi bấm lại — nếu vẫn chưa thấy sau vài phút, báo lại để cộng tay.</div>` : ''}
+      </div>
     `;
   }
 
@@ -126,6 +209,12 @@ function render(container, ctx){
     });
     const recheckBtn = container.querySelector('#crm-recheck');
     if(recheckBtn) recheckBtn.onclick = recheckStatus;
+
+    container.querySelectorAll('[data-topup]').forEach(el=>{
+      el.onclick = ()=>{ state.selectedTopupKey = el.getAttribute('data-topup'); draw(); };
+    });
+    const topupRecheckBtn = container.querySelector('#crm-topup-recheck');
+    if(topupRecheckBtn) topupRecheckBtn.onclick = recheckTopup;
   }
 
   draw();

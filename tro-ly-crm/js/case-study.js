@@ -197,12 +197,10 @@ function render(container, ctx){
   function html(){
     const list = filteredItems();
     return `
-      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div>
-          <h1>Kho Case Study</h1>
-          <p>Lưu case khách cũ (hình + câu chuyện) — sổ tay Tư Vấn AI tự lấy đúng case theo nhóm khi cần gửi cho khách mới, thay vì phải nhớ/tìm lại thủ công.</p>
-        </div>
-        <span class="btn-ghost btn btn-sm" id="cs-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
+      <span class="tour-trigger" id="cs-start-tour">❓ Hướng dẫn</span>
+      <div class="page-head">
+        <h1>Kho Case Study</h1>
+        <p>Lưu case khách cũ (hình + câu chuyện) — sổ tay Tư Vấn AI tự lấy đúng case theo nhóm khi cần gửi cho khách mới, thay vì phải nhớ/tìm lại thủ công.</p>
       </div>
 
       <div class="btn-row" style="justify-content:flex-start;margin-top:0;margin-bottom:18px;">

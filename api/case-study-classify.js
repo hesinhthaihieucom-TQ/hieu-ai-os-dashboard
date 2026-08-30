@@ -1,10 +1,11 @@
 // Serverless function — tự phân loại 1 case study (Kho Case Study, tro-ly-crm/js/case-study.js) vào
 // đúng 1 nhóm khi người dùng KHÔNG tự chọn nhóm lúc lưu (chị Quỳnh chốt 2026-08-30: "case study cho
 // người dùng tự thêm, AI sẽ phân loại đó là case về lĩnh vực gì nếu người dùng không tự thêm").
-// Cùng gate crm_has_paid/crm_access_until như api/crm-tuvan.js — không đụng hệ trial-quota của Xây
-// Nhân Hiệu, sản phẩm này không giới hạn lượt/tháng.
+// Cùng gate crm_has_paid/crm_access_until như api/crm-tuvan.js. KHÔNG tính vào lượt AI có trần
+// (2026-08-30, chị Quỳnh yêu cầu tính lại chi phí thật) — chi phí thật ~40đ/lượt (chỉ đọc text
+// ngắn), giống các hành động "phân loại" bên Xây Nhân Hiệu (VD phan-loai-hook.js) cũng không tính
+// lượt — xem api/_lib/crm-ai-quota.js.
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeCrmAiQuota, refundCrmAiQuota } = require('./_lib/crm-ai-quota');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';

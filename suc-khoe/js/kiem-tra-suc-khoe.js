@@ -8,6 +8,15 @@
 // mục Thư Viện là tên chủ đề chung — "Tích tụ độc tố trong cơ thể" — không chứa các từ triệu chứng cụ
 // thể như "mụn"/"rụng tóc"). Vì cả 3 bộ dữ liệu (triệu chứng, mục Thư Viện, nhánh sản phẩm) đều do
 // cùng 1 người biên soạn nên map cứng theo Ý NGHĨA đúng hơn nhiều so với so khớp chuỗi.
+//
+// Sản phẩm gợi ý (2026-08-30, phản hồi thêm của chị Quỳnh):
+// - Mỗi sản phẩm hiện lý do NGẮN vì sao liên quan đúng vấn đề này (sk_library_entries.product_notes,
+//   không phải short_description chung chung) — bấm vào xổ ra ĐẦY ĐỦ thông tin tại chỗ (skProductDetailHtml),
+//   không điều hướng sang trang Sản Phẩm nữa.
+// - Sản phẩm priority=true (2-3 sản phẩm) xếp trước, có nhãn "Nên dùng trước" — phòng khi khách
+//   không đủ ngân sách mua hết cả nhóm.
+// - Khách TỰ chọn sản phẩm muốn đặt (checkbox, KHÔNG tự động chọn hết) — tổng tiền hiện ngay trên
+//   thanh cố định cuối trang, giống hệt cách chọn ở trang Sản Phẩm.
 const SK_GROUP_LIBRARY_MAP = {
   insulin: ['Rối loạn chuyển hóa đường huyết (kháng Insulin, tiền tiểu đường, Đái tháo đường)'],
   toxin: ['Tích tụ độc tố trong cơ thể'],
@@ -34,15 +43,15 @@ const SK_METABOLIC_CRITERIA = [
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[] };
+  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], cart:new Set() };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function load(){
     const [{ data: row }, { data: entries }, { data: products }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
-      ctx.supabase.from('sk_library_entries').select('id,issue_name,related_product_ids').order('issue_name', { ascending:true }),
-      ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url'),
+      ctx.supabase.from('sk_library_entries').select('id,issue_name,related_product_ids,product_notes').order('issue_name', { ascending:true }),
+      ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
     ]);
     state.products = products || [];
     if(row){
@@ -105,7 +114,7 @@ function render(container, ctx){
   }
 
   // Nhóm nào có ít nhất 1 lượt tick mới tính "đang active" — dùng để quyết định gợi ý Thư Viện +
-  // Sản Phẩm nào hiện ra (xem SK_GROUP_LIBRARY_MAP / SK_GROUP_PRODUCT_CATEGORY ở đầu file).
+  // Sản Phẩm nào hiện ra (xem SK_GROUP_LIBRARY_MAP ở đầu file).
   function activeGroups(){
     const groups = [];
     if(state.insulin.length>0) groups.push('insulin');
@@ -120,14 +129,22 @@ function render(container, ctx){
     return state.libraryEntries.filter(e=>names.has(e.issue_name));
   }
 
-  // Chỉ hiện ĐÚNG sản phẩm đã gắn sẵn theo từng mục Thư Viện khớp (sk_library_entries.related_product_ids)
-  // — KHÔNG hiện cả nhánh sản phẩm nữa (chị Quỳnh phản hồi 2026-08-30: hiện cả nhánh là quá nhiều,
-  // không đúng "chỉ hiện sản phẩm liên quan đến vấn đề đó của khách hàng thôi").
+  // Chỉ hiện ĐÚNG sản phẩm đã gắn sẵn theo từng mục Thư Viện khớp — kèm lý do riêng (product_notes)
+  // và cờ ưu tiên, gộp từ TẤT CẢ mục Thư Viện đang khớp (1 sản phẩm có thể được nhắc tới ở nhiều mục
+  // với lý do khác nhau — lấy lý do của mục đầu tiên có ghi). Sắp priority lên trước.
   function matchedProducts(){
     const entries = matchedLibraryEntries();
+    const noteByProductId = {};
+    entries.forEach(e=>{
+      const notes = e.product_notes || {};
+      Object.keys(notes).forEach(pid=>{ if(!noteByProductId[pid]) noteByProductId[pid] = notes[pid]; });
+    });
     const ids = new Set(entries.flatMap(e=>e.related_product_ids||[]));
     if(ids.size===0) return [];
-    return state.products.filter(p=>ids.has(p.id));
+    return state.products
+      .filter(p=>ids.has(p.id))
+      .map(p=>({ ...p, _note: (noteByProductId[p.id]||{}).note || null, _priority: !!(noteByProductId[p.id]||{}).priority }))
+      .sort((a,b)=> (b._priority - a._priority));
   }
 
   function chipGroup(group, items){
@@ -142,6 +159,8 @@ function render(container, ctx){
     const r = hasAny ? computeResult() : null;
     const libMatches = hasAny ? matchedLibraryEntries() : [];
     const productMatches = hasAny ? matchedProducts() : [];
+    const cartChosen = productMatches.filter(p=>state.cart.has(p.id));
+    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
     return `
       <div class="page-head">
         <h1>Kiểm Tra Sức Khỏe</h1>
@@ -186,19 +205,32 @@ function render(container, ctx){
 
       ${productMatches.length>0 ? `
         <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Sản phẩm Unicity liên quan</h2></div>
+        <p style="font-size:13.5px;color:var(--ink-soft);margin:-8px 0 14px;">Dựa trên các dấu hiệu bạn chọn, đây là sản phẩm có thể hỗ trợ — chọn sản phẩm bạn muốn đặt:</p>
         ${productMatches.map(p=>`
-          <div class="section" data-open-product="1" style="cursor:pointer;display:flex;gap:14px;align-items:flex-start;">
-            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
-                ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
-              </div>
-              ${p.short_description ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(p.short_description)}</div>` : ''}
+          <details class="kt-section">
+            <summary class="kt-summary" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <span data-cart-toggle="${esc(p.id)}" title="${state.cart.has(p.id)?'Bỏ khỏi đơn hàng':'Thêm vào đơn hàng'}" style="width:24px;height:24px;border-radius:7px;border:1px solid ${state.cart.has(p.id)?'var(--accent)':'var(--line)'};background:${state.cart.has(p.id)?'var(--accent)':'#fff'};color:${state.cart.has(p.id)?'#fff':'var(--ink-soft)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;cursor:pointer;">${state.cart.has(p.id)?'✓':'+'}</span>
+                ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+                <span style="min-width:0;">
+                  <span style="font-weight:700;">${esc(p.name)}</span>${p._priority ? ` <span style="font-size:10.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}
+                </span>
+              </span>
+              ${p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}
+            </summary>
+            <div style="margin-top:12px;">
+              ${p._note ? `<div class="hint-box" style="margin-bottom:12px;">${esc(p._note)}</div>` : ''}
+              ${skProductDetailHtml(p)}
             </div>
-          </div>
+          </details>
         `).join('')}
-        <button class="btn btn-sm" id="sk-order-matched" style="margin-top:6px;">Đặt hàng</button>
+
+        ${cartChosen.length>0 ? `
+          <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+            <div style="font-size:13.5px;">Đã chọn <b>${cartChosen.length}</b> sản phẩm · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <button class="btn btn-sm" id="sk-order-matched">Đặt hàng</button>
+          </div>
+        ` : ''}
       ` : ''}
     `;
   }
@@ -210,11 +242,16 @@ function render(container, ctx){
     container.querySelectorAll('[data-open-library]').forEach(el=>{
       el.onclick = ()=>{ location.hash = 'thu-vien-suc-khoe'; };
     });
-    container.querySelectorAll('[data-open-product]').forEach(el=>{
-      el.onclick = ()=>{ location.hash = 'san-pham'; };
+    container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
+      el.onclick = (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const id = el.getAttribute('data-cart-toggle');
+        if(state.cart.has(id)) state.cart.delete(id); else state.cart.add(id);
+        draw();
+      };
     });
     const orderBtn = container.querySelector('#sk-order-matched');
-    if(orderBtn) orderBtn.onclick = (e)=>{ e.stopPropagation(); openOrderModal(ctx, matchedProducts()); };
+    if(orderBtn) orderBtn.onclick = (e)=>{ e.stopPropagation(); openOrderModal(ctx, matchedProducts().filter(p=>state.cart.has(p.id))); };
   }
 
   draw();

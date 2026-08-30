@@ -6,18 +6,23 @@
 // khi nhiều request AI cùng 1 user chạy dồn dập.
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
-// 200/tháng — khớp đúng con số quen thuộc của Xây Nhân Hiệu (PAID_MONTHLY_AI_LIMIT). Ở trọng số
-// crm-tuvan=6 (xem CRM_AI_WEIGHTS), 200 lượt = ~33 cuộc tư vấn ảnh nặng nhất mỗi tháng nếu dồn hết
-// vào 1 hành động — ước ~150.000đ chi phí AI thật, an toàn so với giá gói rẻ nhất 332.500đ/tháng
-// (gói năm). Re-xác nhận với chị Quỳnh nếu usage thật tế cho thấy cần điều chỉnh.
-const CRM_MONTHLY_AI_LIMIT = 200;
+// 2026-08-30, chị Quỳnh yêu cầu tính lại đúng chi phí thật (Sonnet 5, giá $3/$15 mỗi triệu token)
+// thay vì áng chừng theo Xây Nhân Hiệu:
+// - crm-tuvan (Tư Vấn AI, tối đa 10 ảnh + system prompt ~15.9k ký tự có cache): ~1.200–2.500đ/lượt.
+// - crm-cap-nhat-ho-so (tối đa 6 ảnh, prompt ngắn hơn nhiều, không sinh câu tư vấn): ~600–1.100đ/lượt.
+// - case-study-classify (chỉ đọc text ngắn để phân loại): ~40đ/lượt — gần như miễn phí, giống các
+//   hành động "phân loại" bên Xây Nhân Hiệu (VD phan-loai-hook.js) KHÔNG tính lượt luôn — xem
+//   api/case-study-classify.js, cố tình KHÔNG gọi checkAndConsumeCrmAiQuota.
+// Tỉ lệ chi phí thật crm-tuvan:crm-cap-nhat-ho-so ~ 3:1 — trọng số bên dưới khớp đúng tỉ lệ này.
+// 300/tháng: nếu 1 người dồn hết vào crm-tuvan (weight 3) = 100 lượt gọi/tháng (~3,3/ngày) ~
+// 180.000đ chi phí AI thật — ~54% doanh thu gói rẻ nhất (332.500đ/tháng, gói năm), đủ rộng cho
+// dùng thật hàng ngày (đây là công cụ CRM dùng liên tục, không phải tiện ích phụ) nhưng vẫn có
+// trần. Re-xác nhận với chị Quỳnh nếu usage thật tế cho thấy cần điều chỉnh.
+const CRM_MONTHLY_AI_LIMIT = 300;
 
-// Trọng số theo TỪNG endpoint — phản ánh đúng chi phí Anthropic thực tế (crm-tuvan đọc tối đa 10
-// ảnh + phân tích đầy đủ, tốn hơn hẳn case-study-classify chỉ đọc text ngắn để phân loại).
 const CRM_AI_WEIGHTS = {
-  'crm-tuvan': 6,
-  'crm-cap-nhat-ho-so': 3, // đọc ảnh/ghi chú cũ để cập nhật hồ sơ — không sinh câu tư vấn, rẻ hơn crm-tuvan
-  'case-study-classify': 1,
+  'crm-tuvan': 3,
+  'crm-cap-nhat-ho-so': 1,
 };
 
 async function supabaseRpc(fn, args) {

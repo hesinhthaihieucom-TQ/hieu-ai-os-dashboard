@@ -304,12 +304,10 @@ function render(container, ctx){
 
   function html(){
     return `
-      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div>
-          <h1>Tư Vấn AI</h1>
-          <p>Dán ảnh chụp đoạn chat với khách (hoặc mô tả nhanh) — AI đọc, tư vấn câu nên nhắn tiếp theo, và tự lưu vào hồ sơ khách.</p>
-        </div>
-        <span class="btn-ghost btn btn-sm" id="tv-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
+      <span class="tour-trigger" id="tv-start-tour">❓ Hướng dẫn</span>
+      <div class="page-head">
+        <h1>Tư Vấn AI</h1>
+        <p>Dán ảnh chụp đoạn chat với khách (hoặc mô tả nhanh) — AI đọc, tư vấn câu nên nhắn tiếp theo, và tự lưu vào hồ sơ khách.</p>
       </div>
 
       <div class="section" style="cursor:pointer;" data-toggle-sanpham="1">

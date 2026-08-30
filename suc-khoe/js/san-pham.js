@@ -46,7 +46,6 @@ function render(container, ctx){
       ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">${state.products.length===0 ? 'Chưa có sản phẩm nào — chị Quỳnh sẽ thêm sớm.' : 'Chưa có sản phẩm nào ở nhánh này.'}</div>` : ''}
       ${list.map(p=>{
         const catLabel = (SK_PRODUCT_CATEGORIES.find(c=>c.key===p.category)||{}).label;
-        const sections = Array.isArray(p.detail_sections) ? p.detail_sections : [];
         return `
         <details class="kt-section">
           <summary class="kt-summary" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -59,16 +58,7 @@ function render(container, ctx){
           </summary>
           <div style="margin-top:14px;">
             ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" data-zoom="${esc(p.image_url)}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;float:right;margin:0 0 10px 14px;cursor:zoom-in;">` : ''}
-            ${p.short_description ? `<div style="font-size:14px;font-weight:600;line-height:1.6;">${esc(p.short_description)}</div>` : ''}
-            ${sections.map(sec=>{
-              const meta = skSectionMeta(sec.title);
-              return `
-              <div style="margin-top:18px;border-left:3px solid ${meta.color};padding-left:14px;">
-                ${skSectionHeaderHtml(sec.title, meta.color, meta.icon)}
-                <div style="font-size:13.5px;line-height:1.8;">${skRichBodyHtml(sec.body)}</div>
-              </div>
-            `;}).join('')}
-            ${sections.length===0 && p.benefits ? `<div style="font-size:13.5px;line-height:1.8;margin-top:10px;">${skRichBodyHtml(p.benefits)}</div>` : ''}
+            ${skProductDetailHtml(p)}
           </div>
         </details>
       `;}).join('')}

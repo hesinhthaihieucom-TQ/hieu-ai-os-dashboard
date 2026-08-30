@@ -18,6 +18,7 @@ function statusOf(p){
 function render(container, ctx){
   const state = { screen:'loading', profiles:[], q:'', error:null, busyId:null, extendDays:{} };
 
+  let searchDebounceTimer = null;
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function boot(){
@@ -105,10 +106,15 @@ function render(container, ctx){
     const search = container.querySelector('#q-search');
     if(search) search.oninput = ()=>{
       state.q = search.value;
-      const pos = search.selectionStart;
-      draw();
-      const newEl = container.querySelector('#q-search');
-      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      // Debounce redraw (gõ tiếng Việt có dấu bị lỗi nếu vẽ lại ngay mỗi phím — xem giải thích ở
+      // khach-hang.js's #kh-search, cùng nguyên nhân).
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        const pos = search.selectionStart;
+        draw();
+        const newEl = container.querySelector('#q-search');
+        if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      }, 300);
     };
 
     container.querySelectorAll('[data-toggle-paid]').forEach(el=>{

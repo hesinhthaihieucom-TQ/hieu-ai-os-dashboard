@@ -143,6 +143,13 @@ create table if not exists sk_library_entries (
   related_product_ids uuid[] not null default '{}',
   created_at timestamptz not null default now()
 );
+-- Ghi chú RIÊNG cho từng sản phẩm trong related_product_ids, theo ĐÚNG mục này (2026-08-30, chị
+-- Quỳnh phản hồi: "phải nói sao cho người ta hiểu sản phẩm đấy giúp cải thiện vấn đề của khách như
+-- nào") — 1 sản phẩm (vd Red Clover Plus) có thể xuất hiện ở NHIỀU mục Thư Viện với LÝ DO khác nhau
+-- mỗi nơi, nên lưu ở đây (theo từng dòng entry) thay vì lưu chung trên sk_products. Shape jsonb:
+-- { "<product_id>": { "note": "câu giải thích ngắn theo đúng vấn đề này", "priority": true/false } }
+-- priority=true đánh dấu 2-3 sản phẩm NÊN DÙNG TRƯỚC nếu khách không đủ ngân sách mua hết cả nhóm.
+alter table sk_library_entries add column if not exists product_notes jsonb not null default '{}'::jsonb;
 
 -- Sản phẩm Unicity — giới thiệu công dụng + giá bán lẻ dễ hiểu. Admin tạo/sửa qua Quản Trị, mọi
 -- user đã đăng nhập đọc được.

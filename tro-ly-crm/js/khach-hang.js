@@ -32,6 +32,7 @@ function render(container, ctx){
     testPushBusy: false, testPushResult: null,
   };
 
+  let searchDebounceTimer = null;
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function checkPushSubscription(){
@@ -671,6 +672,7 @@ function render(container, ctx){
         ${!p.needsName ? `<textarea id="np-note" placeholder="Hoặc gõ tay thông tin đã biết về khách...">${esc(p.note)}</textarea>` : `
           <div class="hint-box" style="margin-top:0;">AI không đọc được tên khách — nhập giúp tên để tạo đúng hồ sơ.</div>
           <input type="text" id="np-manual-name" placeholder="VD: Chị Lan" value="${esc(p.manualName)}" style="margin-top:10px;">
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Mẹo: đặt trùng đúng tên tài khoản Facebook/Zalo khách đang dùng — lần sau gửi ảnh chat, AI sẽ tự khớp thẳng vào hồ sơ này.</div>
         `}
         ${p.error ? `<div class="error-box" style="margin-top:8px;">${esc(p.error)}</div>` : ''}
         <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
@@ -731,12 +733,10 @@ function render(container, ctx){
       { key:'all', label:'Tất cả' },
     ];
     return `
-      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div>
-          <h1>Khách Hàng</h1>
-          <p>Toàn bộ hồ sơ khách đang chăm sóc — sắp xếp theo ngày cần follow gần nhất, thay cho bảng Lark cũ.</p>
-        </div>
-        <span class="btn-ghost btn btn-sm" id="kh-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
+      <span class="tour-trigger" id="kh-start-tour">❓ Hướng dẫn</span>
+      <div class="page-head">
+        <h1>Khách Hàng</h1>
+        <p>Toàn bộ hồ sơ khách đang chăm sóc — sắp xếp theo ngày cần follow gần nhất, thay cho bảng Lark cũ.</p>
       </div>
 
       <div id="kh-push-card" class="card" style="margin-bottom:18px;padding:16px 18px;">
@@ -802,11 +802,18 @@ function render(container, ctx){
     const searchEl = container.querySelector('#kh-search');
     if(searchEl) searchEl.oninput = (e) => {
       state.search = e.target.value;
-      const pos = searchEl.selectionStart;
-      persistFilters();
-      draw();
-      const newEl = container.querySelector('#kh-search');
-      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      // Debounce redraw thay vì vẽ lại NGAY mỗi phím (2026-08-30, chị Quỳnh báo lỗi: "gõ tiếng Việt
+      // có dấu không được") — draw() thay hẳn node <input> bằng innerHTML, làm mất buffer dấu đang
+      // gõ dở của bàn phím tiếng Việt (đặc biệt bộ gõ Telex/Laban trên di động, cần focus liên tục
+      // trên ĐÚNG 1 DOM node). Chỉ vẽ lại sau khi ngừng gõ 1 chút, không phá input khi đang gõ.
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        const pos = searchEl.selectionStart;
+        persistFilters();
+        draw();
+        const newEl = container.querySelector('#kh-search');
+        if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      }, 300);
     };
 
     container.querySelectorAll('[data-tab]').forEach(el => {

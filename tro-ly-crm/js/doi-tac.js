@@ -60,6 +60,7 @@ function render(container, ctx){
     detail: null, // { partner, editForm, interactions, loadingInteractions, saving, error }
   };
 
+  let searchDebounceTimer = null;
   function draw(){ container.innerHTML = html(); bind(); }
 
   function todayIso(){
@@ -323,12 +324,10 @@ function render(container, ctx){
     const list = filteredPartners();
     const canhBaoCount = state.partners.filter(needsCoaching).length;
     return `
-      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div>
-          <h1>Đối Tác</h1>
-          <p>Đối tác kinh doanh đã chốt — theo dõi nhịp huấn luyện 8 tuần, tách riêng khỏi follow Khách Hàng. Chuyển 1 khách sang đây bằng nút "Chuyển thành đối tác" ở Khách Hàng.</p>
-        </div>
-        <span class="btn-ghost btn btn-sm" id="dt-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
+      <span class="tour-trigger" id="dt-start-tour">❓ Hướng dẫn</span>
+      <div class="page-head">
+        <h1>Đối Tác</h1>
+        <p>Đối tác kinh doanh đã chốt — theo dõi nhịp huấn luyện 8 tuần, tách riêng khỏi follow Khách Hàng. Chuyển 1 khách sang đây bằng nút "Chuyển thành đối tác" ở Khách Hàng.</p>
       </div>
 
       <input type="text" id="dt-search" placeholder="Tìm theo tên đối tác..." value="${esc(state.search)}">
@@ -357,10 +356,15 @@ function render(container, ctx){
     const searchEl = container.querySelector('#dt-search');
     if(searchEl) searchEl.oninput = (e) => {
       state.search = e.target.value;
-      const pos = searchEl.selectionStart;
-      draw();
-      const newEl = container.querySelector('#dt-search');
-      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      // Debounce redraw (2026-08-30, chị Quỳnh báo lỗi gõ tiếng Việt có dấu) — xem giải thích đầy
+      // đủ ở khach-hang.js's #kh-search, cùng nguyên nhân.
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        const pos = searchEl.selectionStart;
+        draw();
+        const newEl = container.querySelector('#dt-search');
+        if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      }, 300);
     };
 
     container.querySelectorAll('[data-tab]').forEach(el => {

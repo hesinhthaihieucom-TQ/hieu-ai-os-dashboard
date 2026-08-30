@@ -259,6 +259,11 @@ grant execute on function public.refund_ai_quota(uuid, int) to service_role;
 -- xem api/crm-tuvan.js), nên chỉ cần đúng 1 trần theo tháng, không có nhánh trial/paid như hàm trên.
 alter table profiles add column if not exists crm_ai_uses int not null default 0;
 alter table profiles add column if not exists crm_ai_month text;
+-- "Mua thêm lượt" cho tro-ly-crm (2026-08-30, chị Quỳnh chốt "tính tiền mua thêm lượt như web xây
+-- nhân hiệu") — cộng thẳng vào crm_ai_bonus của THÁNG HIỆN TẠI, giống hệt paid_ai_bonus bên Xây
+-- Nhân Hiệu (xem AMOUNT_TO_TOPUP_LUOT/api/sepay-webhook.js) — dùng hết trong tháng, không cộng dồn
+-- vĩnh viễn, tự về 0 khi sang tháng mới (nhánh "khác tháng" trong consume_crm_ai_quota bên dưới).
+alter table profiles add column if not exists crm_ai_bonus int not null default 0;
 
 drop function if exists public.consume_crm_ai_quota(uuid, int, int);
 create or replace function public.consume_crm_ai_quota(p_user_id uuid, p_monthly_limit int, p_weight int default 1)
@@ -267,6 +272,8 @@ declare
   v_profile profiles%rowtype;
   v_month text := to_char(now(), 'YYYY-MM');
   v_current_uses int;
+  v_bonus int;
+  v_effective_limit int;
   v_is_admin boolean;
 begin
   select * into v_profile from profiles where id = p_user_id for update;
@@ -276,16 +283,19 @@ begin
   v_is_admin := (v_profile.role = 'admin');
   if v_profile.crm_ai_month = v_month then
     v_current_uses := v_profile.crm_ai_uses;
+    v_bonus := coalesce(v_profile.crm_ai_bonus, 0);
   else
     v_current_uses := 0;
+    v_bonus := 0;
   end if;
-  if (not v_is_admin) and v_current_uses + p_weight > p_monthly_limit then
-    return jsonb_build_object('allowed', false, 'effective_limit', p_monthly_limit, 'current_uses', v_current_uses);
+  v_effective_limit := p_monthly_limit + v_bonus;
+  if (not v_is_admin) and v_current_uses + p_weight > v_effective_limit then
+    return jsonb_build_object('allowed', false, 'effective_limit', v_effective_limit, 'current_uses', v_current_uses);
   end if;
   if v_profile.crm_ai_month = v_month then
     update profiles set crm_ai_uses = crm_ai_uses + p_weight where id = p_user_id;
   else
-    update profiles set crm_ai_uses = p_weight, crm_ai_month = v_month where id = p_user_id;
+    update profiles set crm_ai_uses = p_weight, crm_ai_month = v_month, crm_ai_bonus = 0 where id = p_user_id;
   end if;
   return jsonb_build_object('allowed', true, 'current_uses', v_current_uses + p_weight);
 end;

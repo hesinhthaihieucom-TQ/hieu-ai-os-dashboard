@@ -22,16 +22,20 @@ const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' 
 // bộ hệ sinh thái HIỂU, xem api/_lib/push.js) — dùng khi bật thông báo nhắc follow khách.
 const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY4xz2SisvwpU3IWo_ciiGTMxoLJq42QzkE';
 
-// Lượt AI (2026-08-30, chị Quỳnh chốt "làm như Xây Nhân Hiệu — hiện bộ đếm lượt") — PHẢI khớp
-// đúng CRM_MONTHLY_AI_LIMIT/CRM_AI_WEIGHTS ở api/_lib/crm-ai-quota.js (nơi THỰC SỰ trừ lượt); bảng
-// này chỉ dùng để cập nhật ngay số lượt hiển thị ở sidebar cho mượt, không cần đợi tải lại trang.
-const CRM_MONTHLY_AI_LIMIT = 200;
-const GATED_API_WEIGHTS = { 'api/crm-tuvan': 6, 'api/crm-cap-nhat-ho-so': 3, 'api/case-study-classify': 1 };
+// Lượt AI (2026-08-30, chị Quỳnh chốt "làm như Xây Nhân Hiệu — hiện bộ đếm lượt", sau đó yêu cầu
+// tính lại đúng chi phí thật) — PHẢI khớp đúng CRM_MONTHLY_AI_LIMIT/CRM_AI_WEIGHTS ở
+// api/_lib/crm-ai-quota.js (nơi THỰC SỰ trừ lượt); bảng này chỉ dùng để cập nhật ngay số lượt hiển
+// thị ở sidebar cho mượt, không cần đợi tải lại trang. case-study-classify KHÔNG có trong bảng này
+// vì không tính lượt (xem api/case-study-classify.js).
+const CRM_MONTHLY_AI_LIMIT = 300;
+const GATED_API_WEIGHTS = { 'api/crm-tuvan': 3, 'api/crm-cap-nhat-ho-so': 1 };
 
 function crmMonthlyUsage(p){
   const month = new Date().toISOString().slice(0,7);
   const sameMonth = p.crm_ai_month === month;
-  return { used: sameMonth ? (p.crm_ai_uses||0) : 0, limit: CRM_MONTHLY_AI_LIMIT };
+  const used = sameMonth ? (p.crm_ai_uses||0) : 0;
+  const bonus = sameMonth ? (p.crm_ai_bonus||0) : 0;
+  return { used, limit: CRM_MONTHLY_AI_LIMIT + bonus };
 }
 function crmQuotaHint(){
   const p = AppState.profile;
@@ -49,7 +53,7 @@ window.onGatedApiSuccess = function(relativePath, weightOverride){
   const weight = weightOverride != null ? weightOverride : GATED_API_WEIGHTS[path];
   if(!weight) return;
   const month = new Date().toISOString().slice(0,7);
-  if(p.crm_ai_month !== month){ p.crm_ai_month = month; p.crm_ai_uses = 0; }
+  if(p.crm_ai_month !== month){ p.crm_ai_month = month; p.crm_ai_uses = 0; p.crm_ai_bonus = 0; }
   p.crm_ai_uses = (p.crm_ai_uses||0) + weight;
   const el = document.getElementById('sidebar-foot-info');
   if(el) el.innerHTML = sidebarFootHtml();

@@ -201,6 +201,25 @@ function skRichBodyHtml(body){
   return html;
 }
 
+// Nội dung đầy đủ 1 sản phẩm (short_description + detail_sections, dùng chung ở Sản Phẩm và Kiểm
+// Tra Sức Khỏe — 2026-08-30, chị Quỳnh yêu cầu bấm vào sản phẩm gợi ý phải hiện luôn đủ thông tin
+// tại chỗ, không điều hướng sang trang Sản Phẩm nữa).
+function skProductDetailHtml(p){
+  const sections = Array.isArray(p.detail_sections) ? p.detail_sections : [];
+  return `
+    ${p.short_description ? `<div style="font-size:14px;font-weight:600;line-height:1.6;">${esc(p.short_description)}</div>` : ''}
+    ${sections.map(sec=>{
+      const meta = skSectionMeta(sec.title);
+      return `
+      <div style="margin-top:18px;border-left:3px solid ${meta.color};padding-left:14px;">
+        ${skSectionHeaderHtml(sec.title, meta.color, meta.icon)}
+        <div style="font-size:13.5px;line-height:1.8;">${skRichBodyHtml(sec.body)}</div>
+      </div>
+    `;}).join('')}
+    ${sections.length===0 && p.benefits ? `<div style="font-size:13.5px;line-height:1.8;margin-top:10px;">${skRichBodyHtml(p.benefits)}</div>` : ''}
+  `;
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });

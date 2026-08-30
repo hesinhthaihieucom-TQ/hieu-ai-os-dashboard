@@ -155,6 +155,15 @@ const CRM_AMOUNT_TO_DAYS = {
   2490000: 180,  // 6 tháng
   3990000: 365,  // 1 năm
 };
+// "Mua thêm lượt" tro-ly-crm (2026-08-30, chị Quỳnh chốt "tính tiền như web xây nhân hiệu") — CỐ Ý
+// dùng lại ĐÚNG số tiền/giá của AMOUNT_TO_TOPUP_LUOT (nhan-hieu) — an toàn vì nhánh crmRefCode ở
+// dưới tách biệt hoàn toàn (chỉ vào nhánh này khi content khớp "CRM......", không rơi qua nhánh XNH
+// nữa), không có rủi ro đụng độ dù trùng số tiền. Cộng vào crm_ai_bonus (xem consume_crm_ai_quota).
+const CRM_AMOUNT_TO_TOPUP_LUOT = {
+  150000: 100,
+  420000: 300,
+  780000: 600,
+};
 
 // Thưởng người ĐÃ giới thiệu (referrer) khi người ĐƯỢC giới thiệu (referee) vừa thanh toán thành
 // công giá giới thiệu lần ĐẦU TIÊN — best-effort, KHÔNG throw ra ngoài: nếu bước này lỗi, referee
@@ -444,12 +453,13 @@ module.exports = async (req, res) => {
       // Trợ Lý AI Tư Vấn & CRM — hạn dùng RIÊNG (crm_access_until), cộng dồn giống access_until của
       // nhan-hieu (base = hạn cũ nếu còn hiệu lực, else từ hôm nay). Không có ưu đãi mua sớm/giới
       // thiệu/học viên cho sản phẩm này (bản đầu, thêm sau nếu chị Quỳnh cần).
-      const profResp = await supabaseAdmin(`profiles?crm_ref_code=eq.${crmRefCode}&select=id,crm_access_until`);
+      const profResp = await supabaseAdmin(`profiles?crm_ref_code=eq.${crmRefCode}&select=id,crm_access_until,crm_ai_uses,crm_ai_month,crm_ai_bonus`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
       if (profile) {
         const days = CRM_AMOUNT_TO_DAYS[transferAmount];
+        const topupLuot = CRM_AMOUNT_TO_TOPUP_LUOT[transferAmount];
         if (days) {
           const base = (profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now())
             ? new Date(profile.crm_access_until) : new Date();
@@ -462,6 +472,26 @@ module.exports = async (req, res) => {
             status = 'matched';
             matchedProfileId = profile.id;
             daysGranted = days;
+          } else {
+            status = 'unmatched_amount';
+          }
+        } else if (topupLuot) {
+          // Cộng thẳng vào crm_ai_bonus của THÁNG HIỆN TẠI — nếu profile đang ở tháng cũ thì coi
+          // bonus/uses hiện có là đã hết hạn, cộng lượt mới vào tháng mới (giống hệt nhánh topupLuot
+          // của nhan-hieu ở trên, chỉ khác cột: crm_ai_* thay vì paid_ai_*).
+          const month = new Date().toISOString().slice(0, 7);
+          const sameMonth = profile.crm_ai_month === month;
+          const patchBody = sameMonth
+            ? { crm_ai_bonus: (profile.crm_ai_bonus || 0) + topupLuot }
+            : { crm_ai_month: month, crm_ai_uses: 0, crm_ai_bonus: topupLuot };
+          const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patchBody),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProfileId = profile.id;
+            topupLuotGranted = topupLuot;
           } else {
             status = 'unmatched_amount';
           }
