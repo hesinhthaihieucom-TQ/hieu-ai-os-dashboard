@@ -104,6 +104,7 @@ function render(container, ctx){
     { key:'tu-van', icon:'💬', label:'Tư Vấn AI', desc:'Dán ảnh chụp chat, nhận câu tư vấn dùng ngay' },
     { key:'khach-hang', icon:'📇', label:'Khách Hàng', desc:'Xem/lọc toàn bộ hồ sơ khách đang chăm sóc' },
     { key:'doi-tac', icon:'🚀', label:'Đối Tác', desc:'Theo dõi nhịp huấn luyện đối tác kinh doanh' },
+    { key:'case-study', icon:'🗂️', label:'Kho Case Study', desc:'Lưu case khách cũ (hình + câu chuyện) để dùng lại khi tư vấn' },
     { key:'cau-chuyen', icon:'📖', label:'Câu Chuyện Của Bạn', desc:'Hồ sơ giúp AI tư vấn đúng giọng, đúng câu chuyện thật' },
     { key:'nang-cap', icon:'💳', label:'Nâng Cấp', desc:'Xem gói và gia hạn' },
   ];

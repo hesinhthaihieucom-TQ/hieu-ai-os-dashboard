@@ -12,55 +12,65 @@ const MAX_IMAGES = 10;
 // copy gửi thẳng, không chỉ tóm tắt ý — bấm vào từng bước mới xoè ra câu ví dụ, gọn khi chưa cần).
 // KHÔNG gọi AI cho các câu này — nội dung tĩnh, tự soạn 1 lần dùng lại nhiều lần, AI chỉ bắt đầu tính
 // lượt từ khi khách đã trả lời và có ảnh/nội dung thật để phân tích.
-// Bản 2 (2026-08-30, chị Quỳnh phản hồi "chưa thông minh, khó nhìn"): tách nhánh A thành các NHÓM
-// con (giảm mỡ / vấn đề sức khỏe khác / kể chuyện & chốt) thay vì 1 danh sách 18 bước phẳng; bước
-// "khách hỏi giá" thêm hướng dẫn dẫn dắt quay lại quy trình; bước kể chuyện đánh dấu dynamic:'story'
-// để hiển thị ĐÚNG câu chuyện thật của người dùng (đọc từ Câu Chuyện Của Bạn) thay vì placeholder —
-// xem storyStepContent(). Mỗi bước có thêm `tip` (mẹo/lý do, không copy) để câu từ đỡ sơ sài.
+// Bản 3 (2026-08-30, chị Quỳnh chốt: "mở đầu và kể chuyện & chốt nằm TRONG mục giảm mỡ/sức khỏe
+// khác luôn, chỉ chia 2 trường hợp thôi, mỗi trường hợp cần cụ thể ra") — nhánh A chỉ còn ĐÚNG 2
+// nhóm, mỗi nhóm là 1 QUY TRÌNH ĐẦY ĐỦ từ mở đầu → chẩn đoán → kể chuyện → chốt, viết riêng theo
+// đúng ngữ cảnh case đó (không dùng chung 1 bước mở đầu/chốt trừu tượng cho cả 2 case nữa).
+// dynamic:'story' → câu chuyện thật của người vận hành (storyStepContent); dynamic:'case' → case
+// study đã lưu ở Kho Case Study lọc đúng nhóm (caseStepContent); dynamic:'gia' → đọc thẳng mục
+// "Thông tin sản phẩm/dịch vụ" đã dán ở trên thay vì mẫu giá chung chung (giaStepContent).
 const NHANH_GUIDES = {
   A: { label:'A — Sức khỏe', groups: [
-    { key:'mo-dau', label:'Mở đầu & xác định vấn đề', steps:[
-      { title:'Khách đã tự nói rõ vấn đề (VD "em mất ngủ", "em muốn giảm mỡ bụng")',
-        example:'Dạ em hiểu cảm giác đó ạ, để em hỏi thêm vài thông tin để tư vấn đúng cho mình nhé.',
+    { key:'giam-mo', label:'Giảm cân / giảm mỡ', caseNhom:'giam-mo', steps:[
+      { title:'1. Mở đầu — khách nói muốn giảm cân/giảm mỡ', example:'Dạ em hiểu cảm giác đó ạ, để em hỏi thêm vài thông tin để tư vấn đúng cho mình nhé.',
         tip:'Luôn xác nhận đã nghe trước khi hỏi tiếp — khách cảm thấy được lắng nghe sẽ trả lời chi tiết hơn ở các bước sau.' },
-      { title:'Khách chỉ chào hỏi chung chung, chưa rõ vấn đề gì',
-        example:'Dạ chào chị/anh, không biết mình đang quan tâm về giảm cân, cải thiện sức khỏe hay vấn đề gì cụ thể để em tư vấn đúng ạ?',
-        tip:'Hỏi mở nhưng có gợi ý sẵn 2 hướng (giảm mỡ / sức khỏe khác) để khách dễ trả lời hơn là hỏi trống "có nhu cầu gì".' },
-      { title:'Khách hỏi giá ngay từ đầu',
-        example:'Dạ để tư vấn đúng giá phù hợp với tình trạng của mình, chị cho em hỏi thêm chút được không ạ — chị đang gặp vấn đề gì về sức khỏe/cân nặng cần cải thiện ạ?',
-        tip:'QUAN TRỌNG: không báo giá ngay khi chưa biết tình trạng khách — luôn dẫn khách quay lại đúng quy trình (nhóm "Giảm mỡ" hoặc "Vấn đề sức khỏe khác" bên dưới) trước khi nói đến tiền, giá chỉ chốt ở bước cuối nhóm "Kể chuyện & chốt".' },
-    ] },
-    { key:'giam-mo', label:'Giảm cân / giảm mỡ', steps:[
-      { title:'Bước 1 — chiều cao/cân nặng', example:'Chị hiện đang cao mét bao nhiêu và nặng bao nhiêu ký ạ?',
+      { title:'2. Nếu khách hỏi giá ngay (chưa nói số đo/mục tiêu)', example:'Dạ để tư vấn đúng gói phù hợp, chị cho em hỏi thêm chút được không ạ — chị hiện đang cao mét bao nhiêu, nặng bao nhiêu ký, và muốn giảm về khoảng bao nhiêu ạ?',
+        tip:'QUAN TRỌNG: không báo giá khi chưa biết số đo/mục tiêu — luôn quay lại hỏi đủ các câu chẩn đoán bên dưới trước, giá chỉ chốt ở bước cuối cùng của quy trình này.' },
+      { title:'3. Chiều cao/cân nặng', example:'Chị hiện đang cao mét bao nhiêu và nặng bao nhiêu ký ạ?',
         tip:'Chờ khách trả lời xong mới hỏi tiếp — không dồn nhiều câu 1 lúc.' },
-      { title:'Bước 2 — % mỡ hiện tại/mục tiêu (gửi kèm bảng % mỡ)', example:'Chị xem giúp em mình đang giống hình nào trong bảng này, khoảng bao nhiêu % mỡ ạ? Và chị muốn giảm về còn khoảng bao nhiêu % ạ?',
+      { title:'4. % mỡ hiện tại/mục tiêu (gửi kèm bảng % mỡ)', example:'Chị xem giúp em mình đang giống hình nào trong bảng này, khoảng bao nhiêu % mỡ ạ? Và chị muốn giảm về còn khoảng bao nhiêu % ạ?',
         tip:'Nhớ gửi kèm ảnh bảng % mỡ tham chiếu trước khi hỏi — khách nhìn hình dễ trả lời chính xác hơn là tự ước lượng bằng lời.' },
-      { title:'Bước 3 — đã dùng phương pháp gì', example:'Chị đã từng dùng phương pháp nào để giảm chưa ạ? Hiệu quả như nào ạ?',
-        tip:'Câu trả lời ở đây chính là "rào cản"/"giải pháp cũ thất bại" — dùng lại đúng nguyên văn khi kể case tương tự ở nhóm Kể chuyện & chốt.' },
-      { title:'Bước 4 — ảnh hưởng thế nào', example:'Việc này đang ảnh hưởng thế nào đến sức khỏe/sự tự tin/công việc của chị ạ?',
+      { title:'5. Đã dùng phương pháp gì', example:'Chị đã từng dùng phương pháp nào để giảm chưa ạ? Hiệu quả như nào ạ?',
+        tip:'Câu trả lời ở đây chính là "rào cản"/"giải pháp cũ thất bại" — dùng lại đúng nguyên văn khi phân tích hệ quả ở bước sau.' },
+      { title:'6. Ảnh hưởng thế nào', example:'Việc này đang ảnh hưởng thế nào đến sức khỏe/sự tự tin/công việc của chị ạ?',
         tip:'Đây là câu quan trọng nhất để tìm "nỗi đau" thật — nếu khách trả lời hời hợt, hỏi thêm 1 câu cụ thể hơn dựa đúng ý khách vừa nói, đừng chuyển bước vội.' },
-    ] },
-    { key:'suc-khoe-khac', label:'Vấn đề sức khỏe khác', steps:[
-      { title:'Bước 1 — vấn đề gì', example:'Chị đang gặp vấn đề gì về sức khỏe cần em hỗ trợ ạ?' },
-      { title:'Bước 2 — bao lâu rồi', example:'Tình trạng đó diễn ra bao lâu rồi ạ?',
-        tip:'Càng lâu càng cho thấy khách đã "chịu đựng" nhiều — dùng chi tiết này khi phân tích hệ quả ở nhóm Kể chuyện & chốt.' },
-      { title:'Bước 3 — ảnh hưởng cuộc sống', example:'Ảnh hưởng như nào đến cuộc sống của chị ạ (công việc/giấc ngủ/tâm trạng...)?' },
-      { title:'Bước 4 — đã dùng phương pháp gì', example:'Chị đã dùng phương pháp nào để cải thiện tình trạng này chưa ạ?' },
-      { title:'Bước 5 — hiệu quả sao', example:'Nếu có thì chị thấy hiệu quả như nào ạ?',
-        tip:'Nếu khách nói "chưa hiệu quả" hoặc "chưa thử gì" — đây chính là chỗ mở đường tự nhiên để giới thiệu giải pháp ở nhóm Kể chuyện & chốt.' },
-    ] },
-    { key:'ke-chuyen-chot', label:'Kể chuyện & chốt', steps:[
-      { title:'Bước 1 — xác nhận lại vấn đề + mong muốn', example:'Vậy là chị đang muốn [đúng mục tiêu chị vừa nói] để [đúng mong muốn chị vừa nói], đúng không ạ?',
-        tip:'Dùng đúng từ ngữ khách đã dùng (không diễn giải lại theo ý mình) — khách sẽ thấy được hiểu đúng, dễ đồng ý tiếp.' },
-      { title:'Bước 2 — phân tích hệ quả nếu giữ cách cũ', example:'Nếu chị vẫn tiếp tục theo cách cũ mà mình vừa chia sẻ là chưa hiệu quả, thì tình trạng này khó tự cải thiện, để lâu có khi còn ảnh hưởng thêm đến [đúng điều chị đã nói ở bước ảnh hưởng cuộc sống] đó ạ.',
+      { title:'7. Xác nhận lại vấn đề + mong muốn', example:'Vậy là chị đang muốn giảm về khoảng [% mỡ/cân nặng mục tiêu chị vừa nói] để [đúng mong muốn chị vừa nói ở bước ảnh hưởng], đúng không ạ?',
+        tip:'Dùng đúng từ ngữ/con số khách đã cho (không diễn giải lại theo ý mình) — khách sẽ thấy được hiểu đúng, dễ đồng ý tiếp.' },
+      { title:'8. Phân tích hệ quả nếu giữ cách cũ', example:'Nếu chị vẫn tiếp tục theo cách cũ mà mình vừa chia sẻ là chưa hiệu quả, thì mỡ/cân nặng khó tự giảm, để lâu có khi còn ảnh hưởng thêm đến [đúng điều chị đã nói ở bước ảnh hưởng] đó ạ.',
         tip:'Chỉ dựa đúng điều khách vừa kể — không phóng đại/doạ dẫm, giữ giọng quan tâm thật lòng.' },
-      { title:'Bước 3 — kể chuyện bản thân', dynamic:'story',
+      { title:'9. Kể chuyện bản thân', dynamic:'story',
         fallback:'(Kể chuyện thật của mình: trước đây thế nào → từng khó chịu/mệt mỏi gì giống chị → giải pháp đã giúp mình ra sao → kết quả hiện tại — rồi bắc cầu "Nếu [giải pháp]... thì mình có muốn tìm hiểu cùng em không?")' },
-      { title:'Bước 4 — gửi case tương tự', example:'Chị xem giúp em case của [tên khách cũ] này — cũng từng [đúng vấn đề giống chị] và đã cải thiện được sau [thời gian] ạ.',
-        tip:'Chọn case có tuổi/vấn đề/mục tiêu GẦN GIỐNG khách nhất — càng giống càng thuyết phục, kèm ảnh/video thật nếu có.' },
-      { title:'Bước 5 — chốt giá 3 mức', example:'Bên em hiện có 3 mức hỗ trợ chị có thể chọn: gói Cơ bản [mô tả ngắn], gói Tiêu chuẩn [mô tả ngắn, khuyên dùng], gói Chuyên sâu [mô tả ngắn] — chị xem mức nào phù hợp với mình ạ?',
-        tip:'Lấy đúng tên gói/giá từ mục "Thông tin sản phẩm/dịch vụ" ở trên, không tự bịa số — luôn đưa mức Tiêu chuẩn ở giữa làm mức được gợi ý.' },
-      { title:'Bước 6 — hỏi thẳng chốt', example:'Nếu em có giải pháp giúp chị [đúng điều chị mong muốn ở bước 1] thì chị có muốn đồng hành cùng em không ạ?' },
+      { title:'10. Gửi case tương tự', dynamic:'case',
+        fallback:'Chị xem giúp em case của [tên khách cũ] này — cũng từng [đúng vấn đề giống chị] và đã cải thiện được sau [thời gian] ạ.',
+        tip:'Chọn case có số đo/mục tiêu GẦN GIỐNG khách nhất — càng giống càng thuyết phục.' },
+      { title:'11. Chốt giá', dynamic:'gia' },
+      { title:'12. Hỏi thẳng chốt', example:'Nếu em có giải pháp giúp chị giảm về đúng mức chị mong muốn thì chị có muốn đồng hành cùng em không ạ?' },
+    ] },
+    { key:'suc-khoe-khac', label:'Vấn đề sức khỏe khác', caseNhom:'suc-khoe-khac', steps:[
+      { title:'1. Mở đầu — khách đã nói rõ vấn đề (VD "em mất ngủ")', example:'Dạ em hiểu cảm giác đó ạ, để em hỏi thêm vài thông tin để tư vấn đúng cho mình nhé.',
+        tip:'Luôn xác nhận đã nghe trước khi hỏi tiếp — khách cảm thấy được lắng nghe sẽ trả lời chi tiết hơn ở các bước sau.' },
+      { title:'1b. Hoặc khách chỉ chào hỏi chung chung, chưa rõ vấn đề gì', example:'Dạ chào chị/anh, không biết mình đang quan tâm về giảm cân, cải thiện sức khỏe hay vấn đề gì cụ thể để em tư vấn đúng ạ?',
+        tip:'Hỏi mở nhưng có gợi ý sẵn 2 hướng để khách dễ trả lời hơn là hỏi trống "có nhu cầu gì" — nếu khách chọn hướng giảm cân/mỡ thì chuyển sang nhóm "Giảm cân / giảm mỡ".' },
+      { title:'2. Nếu khách hỏi giá ngay (chưa nói vấn đề gì)', example:'Dạ để tư vấn đúng giải pháp phù hợp, chị cho em hỏi thêm chút được không ạ — chị đang gặp vấn đề gì về sức khỏe cần cải thiện ạ?',
+        tip:'QUAN TRỌNG: không báo giá khi chưa biết vấn đề gì — luôn quay lại hỏi đủ các câu chẩn đoán bên dưới trước, giá chỉ chốt ở bước cuối cùng của quy trình này.' },
+      { title:'3. Vấn đề gì', example:'Chị đang gặp vấn đề gì về sức khỏe cần em hỗ trợ ạ?' },
+      { title:'4. Bao lâu rồi', example:'Tình trạng đó diễn ra bao lâu rồi ạ?',
+        tip:'Càng lâu càng cho thấy khách đã "chịu đựng" nhiều — dùng chi tiết này khi phân tích hệ quả ở bước sau.' },
+      { title:'5. Ảnh hưởng cuộc sống', example:'Ảnh hưởng như nào đến cuộc sống của chị ạ (công việc/giấc ngủ/tâm trạng...)?' },
+      { title:'6. Đã dùng phương pháp gì', example:'Chị đã dùng phương pháp nào để cải thiện tình trạng này chưa ạ?' },
+      { title:'7. Hiệu quả sao', example:'Nếu có thì chị thấy hiệu quả như nào ạ?',
+        tip:'Nếu khách nói "chưa hiệu quả" hoặc "chưa thử gì" — đây chính là chỗ mở đường tự nhiên để giới thiệu giải pháp ở bước sau.' },
+      { title:'8. Xác nhận lại vấn đề + mong muốn', example:'Vậy là chị đang muốn [đúng mục tiêu chị vừa nói] để [đúng mong muốn chị vừa nói], đúng không ạ?',
+        tip:'Dùng đúng từ ngữ khách đã dùng (không diễn giải lại theo ý mình) — khách sẽ thấy được hiểu đúng, dễ đồng ý tiếp.' },
+      { title:'9. Phân tích hệ quả nếu giữ cách cũ', example:'Nếu chị vẫn tiếp tục theo cách cũ mà mình vừa chia sẻ là chưa hiệu quả, thì tình trạng này khó tự cải thiện, để lâu có khi còn ảnh hưởng thêm đến [đúng điều chị đã nói ở bước ảnh hưởng cuộc sống] đó ạ.',
+        tip:'Chỉ dựa đúng điều khách vừa kể — không phóng đại/doạ dẫm, giữ giọng quan tâm thật lòng.' },
+      { title:'10. Kể chuyện bản thân', dynamic:'story',
+        fallback:'(Kể chuyện thật của mình: trước đây thế nào → từng khó chịu/mệt mỏi gì giống chị → giải pháp đã giúp mình ra sao → kết quả hiện tại — rồi bắc cầu "Nếu [giải pháp]... thì mình có muốn tìm hiểu cùng em không?")' },
+      { title:'11. Gửi case tương tự', dynamic:'case',
+        fallback:'Chị xem giúp em case của [tên khách cũ] này — cũng từng [đúng vấn đề giống chị] và đã cải thiện được sau [thời gian] ạ.',
+        tip:'Chọn case có vấn đề/hoàn cảnh GẦN GIỐNG khách nhất — càng giống càng thuyết phục.' },
+      { title:'12. Chốt giá', dynamic:'gia' },
+      { title:'13. Hỏi thẳng chốt', example:'Nếu em có giải pháp giúp chị [đúng điều chị mong muốn ở bước xác nhận] thì chị có muốn đồng hành cùng em không ạ?' },
     ] },
   ] },
   D: { label:'D — Kinh doanh/Đối tác', groups: [
@@ -114,10 +124,27 @@ function storyStepContent(cauChuyen){
   return parts.length ? parts.join('\n\n') : null;
 }
 
+// Bước "gửi case tương tự" lấy ĐÚNG case đã lưu ở Kho Case Study (js/case-study.js), lọc theo đúng
+// nhóm của group đang xem (giam-mo/suc-khoe-khac) — lấy case MỚI lưu nhất nếu có nhiều case cùng
+// nhóm. Trả về null nếu chưa có case nào thuộc nhóm này để UI mời đi thêm case.
+function caseStepContent(caseStudies, nhom){
+  const matches = (caseStudies || []).filter(c => c.nhom === nhom);
+  if(!matches.length) return null;
+  const c = matches[0];
+  return { text: `Chị xem giúp em case của ${c.tieu_de || 'một khách cũ'} này ạ:\n${c.noi_dung}`, images: c.hinh_anh || [] };
+}
+
+// Bước "chốt giá" đọc thẳng mục "Thông tin sản phẩm/dịch vụ" đã dán ở trên (chị Quỳnh chốt
+// 2026-08-30: "phần chốt giá dựa vào mục thông tin sản phẩm dịch vụ") thay vì mẫu 3 mức chung chung.
+function giaStepContent(sanPhamText){
+  if(!sanPhamText || !sanPhamText.trim()) return null;
+  return `Dựa theo nhu cầu của chị, bên em có các lựa chọn sau ạ:\n${sanPhamText.trim()}\nChị xem mức nào phù hợp với mình ạ?`;
+}
+
 function render(container, ctx){
   const state = {
     images: [], note: '',
-    sanPhamText: '', showSanPham: false, cauChuyen: null, submitting: false, result: null, error: '',
+    sanPhamText: '', showSanPham: false, cauChuyen: null, caseStudies: [], submitting: false, result: null, error: '',
     // AI tự đọc tên khách từ ảnh/mô tả rồi server tự khớp/tạo hồ sơ — không cần gõ/tìm tay nữa
     // (chị Quỳnh yêu cầu 2026-08-29: 1 khách nhắn nhiều lượt, mỗi lượt lại chụp ảnh gửi, gõ tên mỗi
     // lần quá mất công). needsName chỉ bật khi AI THẬT SỰ không đọc được tên nào (xem api/crm-tuvan.js).
@@ -139,8 +166,13 @@ function render(container, ctx){
     return guide && guide.groups.find(g => g.key === state.guideGroup);
   }
 
-  function stepExampleText(step){
+  function stepExampleText(step, group){
     if(step.dynamic === 'story') return storyStepContent(state.cauChuyen) || step.fallback;
+    if(step.dynamic === 'case'){
+      const found = caseStepContent(state.caseStudies, group && group.caseNhom);
+      return found ? found.text : step.fallback;
+    }
+    if(step.dynamic === 'gia') return giaStepContent(state.sanPhamText);
     return step.example;
   }
 
@@ -148,7 +180,7 @@ function render(container, ctx){
     const group = currentGuideGroup();
     const step = group && group.steps[idx];
     if(!step) return;
-    navigator.clipboard.writeText(stepExampleText(step)).catch(()=>{});
+    navigator.clipboard.writeText(stepExampleText(step, group)).catch(()=>{});
   }
 
   function persistDraft(){
@@ -165,11 +197,12 @@ function render(container, ctx){
     // Ưu tiên hồ sơ "Câu Chuyện Của Bạn" riêng của app này (đúng bộ câu hỏi trên landing page) —
     // chỉ dùng lùi về Định Vị AI (positioning_results, dùng chung Xây Nhân Hiệu) nếu chưa điền hồ sơ
     // riêng (xem cau-chuyen.js — 2 nguồn không bắt buộc cùng lúc).
-    const [draft, sanPhamDraft, { data: story }, { data: positioning }] = await Promise.all([
+    const [draft, sanPhamDraft, { data: story }, { data: positioning }, { data: caseStudies }] = await Promise.all([
       loadModuleDraft(ctx, DRAFT_KEY),
       loadModuleDraft(ctx, CONTEXT_DRAFT_KEY),
       ctx.supabase.from('crm_story_profiles').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('positioning_results').select('luot1').eq('user_id', ctx.user.id).maybeSingle(),
+      ctx.supabase.from('crm_case_studies').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending: false }),
     ]);
     if(draft){
       state.images = draft.images || [];
@@ -177,6 +210,7 @@ function render(container, ctx){
       state.activeCustomer = draft.activeCustomer || null;
     }
     if(sanPhamDraft && sanPhamDraft.text) state.sanPhamText = sanPhamDraft.text;
+    state.caseStudies = caseStudies || [];
     const hasFreeStory = story && story.free_story && String(story.free_story).trim();
     const hasWizardStory = story && story.answers && Object.values(story.answers).some(v=>String(v||'').trim());
     if(hasFreeStory || hasWizardStory) state.cauChuyen = { nguon:'cau-chuyen', ten: story.ten, zalo: story.zalo, links: story.links, answers: story.answers, free_story: story.free_story || '' };
@@ -295,8 +329,12 @@ function render(container, ctx){
           ${state.guideNhanh && currentGuideGroup() ? `
             <div style="margin-top:16px;">
               ${currentGuideGroup().steps.map((s,i)=>{
-                const exampleText = stepExampleText(s);
+                const group = currentGuideGroup();
+                const exampleText = stepExampleText(s, group);
                 const isStoryEmpty = s.dynamic === 'story' && !storyStepContent(state.cauChuyen);
+                const isCaseEmpty = s.dynamic === 'case' && !caseStepContent(state.caseStudies, group.caseNhom);
+                const isGiaEmpty = s.dynamic === 'gia' && !exampleText;
+                const caseImages = (s.dynamic === 'case' && !isCaseEmpty) ? caseStepContent(state.caseStudies, group.caseNhom).images : [];
                 return `
                 <div style="border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;">
                   <div data-toggle-guide-step="${i}" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--ink);">
@@ -307,8 +345,13 @@ function render(container, ctx){
                     <div style="padding:0 14px 14px;">
                       ${isStoryEmpty ? `
                         <div class="hint-box" style="margin-top:0;">Chưa có dữ liệu câu chuyện của bạn — <a href="#cau-chuyen">vào "Câu Chuyện Của Bạn" điền trước</a> để bước này tự lấy đúng câu chuyện thật khi kể cho khách, đỡ phải nhớ/gõ lại mỗi lần.</div>
+                      ` : isCaseEmpty ? `
+                        <div class="hint-box" style="margin-top:0;">Chưa có case nào ở nhóm này trong Kho Case Study — <a href="#case-study">vào "Kho Case Study" thêm case</a> (hình + câu chuyện) để bước này tự lấy đúng case thật khi gửi khách.</div>
+                      ` : isGiaEmpty ? `
+                        <div class="hint-box" style="margin-top:0;">Chưa có "Thông tin sản phẩm/dịch vụ" — cuộn lên đầu trang bấm vào mục đó dán tên gói/giá, bước này sẽ tự lấy đúng giá đó khi chốt, không tự bịa số.</div>
                       ` : `
                         <div class="hint-box" style="white-space:pre-line;margin-top:0;">${esc(exampleText)}</div>
+                        ${caseImages.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">${caseImages.map(src=>`<img src="${src}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--line);">`).join('')}</div>` : ''}
                         <div class="btn-row" style="justify-content:flex-start;margin-top:8px;">
                           <span class="btn-ghost btn btn-sm" data-copy-guide-step="${i}">Sao chép</span>
                         </div>
