@@ -288,6 +288,9 @@ function render(container, ctx){
         d.customer = data.customer;
         d.editForm = toEditForm(data.customer);
       }
+      // Tính vào "số lần tiếp xúc" (chị Quỳnh chốt 2026-08-30) — thêm luôn vào danh sách đang hiện
+      // trong modal để chỉ số cập nhật ngay, không cần đóng/mở lại mới thấy.
+      if(data.interaction) d.interactions = [data.interaction, ...d.interactions];
       u.images = []; u.note = ''; u.expanded = false;
       await load();
     } catch(e){
@@ -453,7 +456,7 @@ function render(container, ctx){
           <h3 style="margin-bottom:0;">📷 Cập nhật từ ảnh/ghi chú</h3>
           <span style="color:var(--ink-soft);">${u.expanded?'▾':'▸'}</span>
         </div>
-        ${!u.expanded ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Có ghi chú tay/form phân tích cũ về khách này? Chụp ảnh gửi để AI tự điền vào hồ sơ bên dưới — không tính là 1 lần tiếp xúc.</div>` : `
+        ${!u.expanded ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Có ghi chú tay/form phân tích cũ về khách này? Chụp ảnh gửi để AI tự điền vào hồ sơ bên dưới — tính là 1 lần tiếp xúc với khách.</div>` : `
           <div style="margin-top:12px;">
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
               ${u.images.map((src,i)=>`

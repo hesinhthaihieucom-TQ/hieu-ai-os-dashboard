@@ -6,8 +6,9 @@
 //   hồ sơ như crm-tuvan.js, tránh đúng vấn đề "tên phải trùng tài khoản MXH mới khớp được".
 // - CHỈ cập nhật field hồ sơ, KHÔNG sinh "câu nên nhắn tiếp theo" (không có ý nghĩa ở đây vì không
 //   phải đang tư vấn 1 đoạn chat thật) — output gọn hơn, rẻ hơn hẳn (xem CRM_AI_WEIGHTS).
-// - KHÔNG ghi crm_interactions/lan_tuong_tac_cuoi — đây không phải 1 lần tiếp xúc thật với khách,
-//   chỉ là số hoá lại ghi chú cũ, ghi vào đó sẽ làm sai chỉ số "số lần tiếp xúc" ở Khách Hàng.
+// - CÓ ghi crm_interactions/lan_tuong_tac_cuoi (chị Quỳnh chốt 2026-08-30: "cập nhật từ file tính
+//   là 1 lần tiếp xúc") — dữ liệu/ghi chú đang cập nhật phản ánh 1 lần tiếp xúc THẬT đã xảy ra với
+//   khách (chỉ là ghi lại sau, không live ngay lúc tư vấn), nên vẫn tính vào "số lần tiếp xúc".
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeCrmAiQuota, refundCrmAiQuota } = require('./_lib/crm-ai-quota');
 
@@ -158,6 +159,7 @@ module.exports = async (req, res) => {
 
     const result = await callClaude({ apiKey, contentBlocks });
 
+    const todayIso = new Date().toISOString().slice(0, 10);
     const union = (a, b) => Array.from(new Set([...(a || []), ...(b || [])]));
     const payload = {
       ...result,
@@ -165,6 +167,7 @@ module.exports = async (req, res) => {
       rao_can: union(customer.rao_can, result.rao_can),
       nhanh: result.nhanh || customer.nhanh || null,
       form_hd: result.form_hd || customer.form_hd || null,
+      lan_tuong_tac_cuoi: todayIso,
     };
     // Bỏ field undefined/rỗng để không ghi đè field cũ bằng giá trị trống khi AI không nhắc tới.
     Object.keys(payload).forEach((k) => { if (payload[k] === undefined || payload[k] === '') delete payload[k]; });
@@ -174,7 +177,18 @@ module.exports = async (req, res) => {
       body: JSON.stringify(payload),
     });
     const updRows = upd.ok ? await upd.json() : [];
-    res.status(200).json({ customer: updRows[0] || null });
+
+    const insInt = await supabaseAsUser(token, 'crm_interactions', {
+      method: 'POST',
+      body: JSON.stringify({
+        customer_id, user_id: user.id, thoi_gian: todayIso,
+        ten_tuong_tac: 'Cập nhật hồ sơ từ ảnh/ghi chú',
+        noi_dung: (note && note.trim()) || 'Số hoá lại ghi chú/dữ liệu đã có về khách.',
+      }),
+    });
+    const intRows = insInt.ok ? await insInt.json() : [];
+
+    res.status(200).json({ customer: updRows[0] || null, interaction: intRows[0] || null });
   } catch (err) {
     if (quotaConsumed) await refundCrmAiQuota(user.id, 'crm-cap-nhat-ho-so');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi cập nhật hồ sơ.' });
