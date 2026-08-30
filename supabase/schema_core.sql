@@ -283,3 +283,22 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_onboarding_seen() to authenticated;
 
+-- ============================================================
+-- ROW LEVEL SECURITY — PROFILES
+-- ============================================================
+-- Chuyển từ schema_nhan_hieu.sql về đây (2026-08-30, sửa lỗi phát hiện khi chị Quỳnh chạy thử lần
+-- đầu: Supabase cảnh báo "creates a table without enabling Row Level Security" vì bảng profiles
+-- được TẠO ở core nhưng RLS lại chỉ được BẬT ở file nhan-hieu — nếu ai chỉ chạy core mà chưa chạy
+-- nhan-hieu, bảng profiles sẽ tồn tại mà KHÔNG có RLS, để lộ toàn bộ dữ liệu người dùng). RLS của
+-- profiles phải nằm cùng file với nơi tạo bảng.
+alter table profiles enable row level security;
+-- user tự xem được chính mình; KHÔNG có quyền tự update (phải qua các RPC ở trên) — nếu không, ai
+-- đăng nhập cũng tự set access_until/role của chính họ qua console trình duyệt.
+drop policy if exists "profiles_self" on profiles;
+create policy "profiles_self" on profiles for select using (auth.uid() = id);
+drop policy if exists "profiles_self_update" on profiles; -- cố ý KHÔNG tạo lại — đã khoá từ v3
+drop policy if exists "profiles_admin_update" on profiles;
+create policy "profiles_admin_update" on profiles for update using (is_admin()) with check (is_admin());
+drop policy if exists "profiles_admin_read_all" on profiles;
+create policy "profiles_admin_read_all" on profiles for select using (is_admin());
+

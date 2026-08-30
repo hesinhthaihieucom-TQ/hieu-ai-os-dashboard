@@ -295,7 +295,8 @@ create index if not exists ai_usage_log_user_created_idx on ai_usage_log(user_id
 -- ============================================================
 -- 9. ROW LEVEL SECURITY
 -- ============================================================
-alter table profiles enable row level security;
+-- profiles tự bật RLS + policy ở schema_core.sql (bảng đó được tạo ở core, không phải ở đây) —
+-- không lặp lại "alter table profiles enable row level security" ở file này.
 alter table positioning_results enable row level security;
 alter table channel_audits enable row level security;
 alter table content_bank_shared enable row level security;
@@ -319,16 +320,6 @@ drop policy if exists "ai_usage_log_own_read" on ai_usage_log;
 create policy "ai_usage_log_own_read" on ai_usage_log for select using (auth.uid() = user_id);
 alter table weekly_ai_drafts enable row level security;
 alter table module_drafts enable row level security;
-
--- profiles: user tự xem được chính mình; KHÔNG có quyền tự update (phải qua RPC ở trên) —
--- nếu không, ai đăng nhập cũng tự set access_until/role của chính họ qua console trình duyệt.
-drop policy if exists "profiles_self" on profiles;
-create policy "profiles_self" on profiles for select using (auth.uid() = id);
-drop policy if exists "profiles_self_update" on profiles; -- cố ý KHÔNG tạo lại — đã khoá từ v3
-drop policy if exists "profiles_admin_update" on profiles;
-create policy "profiles_admin_update" on profiles for update using (is_admin()) with check (is_admin());
-drop policy if exists "profiles_admin_read_all" on profiles;
-create policy "profiles_admin_read_all" on profiles for select using (is_admin());
 
 -- các bảng dữ liệu cá nhân: chỉ chủ sở hữu được đọc/ghi
 do $$
