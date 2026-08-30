@@ -16,9 +16,73 @@ function render(container, ctx){
     detail: null, // { customer, editForm, interactions, loadingInteractions, saving, error }
     showNewForm: false, newForm: null, creating: false, newError: '',
     deleting: false,
+    // Thông báo nhắc follow — chuyển từ Trang chủ sang đây (chị Quỳnh phản hồi 2026-08-30: "nên ở
+    // mục khách hàng luôn, cho dễ nhìn" — đúng chỗ dùng nhất vì đây là màn hình theo dõi follow).
+    pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
+    pushSubscribed: false, pushBusy: false, pushError: null,
+    testPushBusy: false, testPushResult: null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
+
+  async function checkPushSubscription(){
+    if(!state.pushSupported) return;
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      state.pushSubscribed = !!sub;
+    } catch(e){ state.pushSubscribed = false; }
+    draw();
+  }
+
+  async function enablePush(){
+    if(state.pushBusy) return;
+    state.pushBusy = true; state.pushError = null; draw();
+    try{
+      if(!state.pushSupported) throw new Error('Trình duyệt này không hỗ trợ thông báo đẩy.');
+      const permission = await Notification.requestPermission();
+      if(permission !== 'granted') throw new Error('Bạn chưa cấp quyền thông báo — vào cài đặt trình duyệt/điện thoại để bật lại nếu muốn thử lại.');
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      await callApi('/api/push-subscribe', sub.toJSON());
+      state.pushSubscribed = true;
+    } catch(e){
+      state.pushError = e.message || 'Không bật được thông báo — thử lại giúp mình.';
+    }
+    state.pushBusy = false; draw();
+  }
+
+  async function disablePush(){
+    if(state.pushBusy) return;
+    state.pushBusy = true; state.pushError = null; draw();
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if(sub){
+        await callApi('/api/push-unsubscribe', { endpoint: sub.endpoint });
+        await sub.unsubscribe();
+      }
+      state.pushSubscribed = false;
+    } catch(e){
+      state.pushError = e.message || 'Không tắt được thông báo — thử lại giúp mình.';
+    }
+    state.pushBusy = false; draw();
+  }
+
+  async function testPush(){
+    if(state.testPushBusy) return;
+    state.testPushBusy = true; state.testPushResult = null; draw();
+    try{
+      const data = await callApi('/api/test-push', {});
+      state.testPushResult = { ok: data.ok, message: data.message };
+    } catch(e){
+      state.testPushResult = { ok:false, message: e.message || 'Không gửi được — thử lại giúp mình.' };
+    }
+    state.testPushBusy = false; draw();
+  }
 
   function todayIso(){
     const d = new Date();
@@ -468,6 +532,29 @@ function render(container, ctx){
         <p>Toàn bộ hồ sơ khách đang chăm sóc — sắp xếp theo ngày cần follow gần nhất, thay cho bảng Lark cũ.</p>
       </div>
 
+      <div class="card" style="margin-bottom:18px;padding:16px 18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">🔔 Thông báo nhắc follow</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Mỗi sáng ~8h15 tự báo nếu có khách/đối tác đến hạn — không cần mở app kiểm tra tay. Trên iPhone cần "Thêm vào Màn hình chính" trước.</div>
+          </div>
+          ${!state.pushSupported ? `
+            <span style="font-size:12px;color:var(--ink-soft);">Không hỗ trợ trên thiết bị này</span>
+          ` : state.pushSubscribed ? `
+            <span class="btn-ghost btn btn-sm" data-action="disable-push" style="flex-shrink:0;${state.pushBusy?'opacity:.6;pointer-events:none;':''}">${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</span>
+          ` : `
+            <span class="btn btn-sm" data-action="enable-push" style="flex-shrink:0;${state.pushBusy?'opacity:.6;pointer-events:none;':''}">${state.pushBusy?'Đang bật…':'Bật thông báo'}</span>
+          `}
+        </div>
+        ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
+        ${state.pushSupported ? `
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+            <span class="btn-ghost btn btn-sm" data-action="test-push" style="${state.testPushBusy?'opacity:.6;pointer-events:none;':''}">${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
+            ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
+          </div>
+        ` : ''}
+      </div>
+
       <div class="btn-row" style="justify-content:flex-start;margin-top:0;margin-bottom:18px;">
         <button class="btn btn-sm" id="kh-new">+ Thêm khách</button>
       </div>
@@ -492,6 +579,13 @@ function render(container, ctx){
   }
 
   function bind(){
+    const enablePushBtn = container.querySelector('[data-action="enable-push"]');
+    if(enablePushBtn) enablePushBtn.onclick = enablePush;
+    const disablePushBtn = container.querySelector('[data-action="disable-push"]');
+    if(disablePushBtn) disablePushBtn.onclick = disablePush;
+    const testPushBtn = container.querySelector('[data-action="test-push"]');
+    if(testPushBtn) testPushBtn.onclick = testPush;
+
     const newBtn = container.querySelector('#kh-new');
     if(newBtn) newBtn.onclick = openNewForm;
 
@@ -556,6 +650,7 @@ function render(container, ctx){
 
   draw();
   boot();
+  checkPushSubscription();
 }
 
 window.Modules = window.Modules || {};

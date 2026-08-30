@@ -2,13 +2,6 @@
 function render(container, ctx){
   const state = {
     loading:true, dueCount:0, dueRows:[], totalCustomers:0,
-    // Thông báo nhắc follow (2026-08-29, theo yêu cầu chị Quỳnh: "AI có tự đặt lịch thông báo đến
-    // ngày follow khách được không") — copy đúng pattern nhan-hieu/js/lich-dang.js, dùng chung
-    // push_subscriptions/notification_log/api/push-subscribe.js sẵn có (không app nào riêng cả),
-    // chỉ khác nội dung thông báo (xem api/cron/send-reminders.js checkCrmFollowReminders).
-    pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
-    pushSubscribed:false, pushBusy:false, pushError:null,
-    testPushBusy:false, testPushResult:null,
     // Đối tác cần huấn luyện (2026-08-30) — triage kiểu "Cần follow hôm nay" nhưng cho nhịp huấn
     // luyện đối tác: 1 leader bảo trợ nhiều người không rà tay từng hồ sơ được, cần 1 danh sách
     // "ai đang chậm/rớt nhịp" bật lên ngay ở Trang chủ để gọi hỗ trợ kịp thời.
@@ -20,65 +13,6 @@ function render(container, ctx){
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
-
-  async function checkPushSubscription(){
-    if(!state.pushSupported) { draw(); return; }
-    try{
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      state.pushSubscribed = !!sub;
-    } catch(e){ state.pushSubscribed = false; }
-    draw();
-  }
-
-  async function enablePush(){
-    if(state.pushBusy) return;
-    state.pushBusy = true; state.pushError = null; draw();
-    try{
-      if(!state.pushSupported) throw new Error('Trình duyệt này không hỗ trợ thông báo đẩy.');
-      const permission = await Notification.requestPermission();
-      if(permission !== 'granted') throw new Error('Bạn chưa cấp quyền thông báo — vào cài đặt trình duyệt/điện thoại để bật lại nếu muốn thử lại.');
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-      await callApi('/api/push-subscribe', sub.toJSON());
-      state.pushSubscribed = true;
-    } catch(e){
-      state.pushError = e.message || 'Không bật được thông báo — thử lại giúp mình.';
-    }
-    state.pushBusy = false; draw();
-  }
-
-  async function disablePush(){
-    if(state.pushBusy) return;
-    state.pushBusy = true; state.pushError = null; draw();
-    try{
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if(sub){
-        await callApi('/api/push-unsubscribe', { endpoint: sub.endpoint });
-        await sub.unsubscribe();
-      }
-      state.pushSubscribed = false;
-    } catch(e){
-      state.pushError = e.message || 'Không tắt được thông báo — thử lại giúp mình.';
-    }
-    state.pushBusy = false; draw();
-  }
-
-  async function testPush(){
-    if(state.testPushBusy) return;
-    state.testPushBusy = true; state.testPushResult = null; draw();
-    try{
-      const data = await callApi('/api/test-push', {});
-      state.testPushResult = { ok: data.ok, message: data.message };
-    } catch(e){
-      state.testPushResult = { ok:false, message: e.message || 'Không gửi được — thử lại giúp mình.' };
-    }
-    state.testPushBusy = false; draw();
-  }
 
   async function load(){
     const todayIso = isoDate(new Date());
@@ -177,26 +111,6 @@ function render(container, ctx){
         `).join('')}
       </div>
 
-      <div class="card">
-        <h3 style="margin-bottom:6px;">Thông báo nhắc follow</h3>
-        <div class="hint-box" style="margin-bottom:14px;">Bật để mỗi sáng nhận thông báo ngay trên máy nếu có khách đến hạn/quá hạn follow — không cần mở app kiểm tra tay. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> trước (bấm nút Chia sẻ trên Safari) — Safari không hỗ trợ thông báo cho tab trình duyệt thường.</div>
-        ${!state.pushSupported ? `
-          <div class="error-box">Trình duyệt/thiết bị này không hỗ trợ thông báo đẩy.</div>
-        ` : state.pushSubscribed ? `
-          <button class="btn-ghost btn btn-sm" data-action="disable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</button>
-        ` : `
-          <button class="btn btn-sm" data-action="enable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang bật…':'Bật thông báo'}</button>
-        `}
-        ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
-        ${state.pushSupported ? `
-          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
-            <span class="btn-ghost btn btn-sm" data-action="test-push" ${state.testPushBusy?'disabled':''}>${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Bấm để kiểm tra ngay thông báo có hoạt động không, không cần chờ đúng 8h15 sáng.</div>
-            ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
-          </div>
-        ` : ''}
-      </div>
-
       ${state.showGuide ? guideHtml() : ''}
     `;
   }
@@ -258,7 +172,7 @@ function render(container, ctx){
           `)}
 
           ${guideSection('🔔', 'Thông báo nhắc follow', `
-            <p>Ở cuối Trang chủ, mục <b>"Thông báo nhắc follow"</b> — bấm <b>"Bật thông báo"</b> và cho phép quyền trình duyệt/thiết bị hỏi. Mỗi sáng khoảng 8h15, nếu có khách hoặc đối tác đến hạn/quá hạn, máy sẽ tự báo — không cần mở app kiểm tra tay.</p>
+            <p>Ở đầu trang <b>Khách Hàng</b>, mục <b>"Thông báo nhắc follow"</b> — bấm <b>"Bật thông báo"</b> và cho phép quyền trình duyệt/thiết bị hỏi. Mỗi sáng khoảng 8h15, nếu có khách hoặc đối tác đến hạn/quá hạn, máy sẽ tự báo — không cần mở app kiểm tra tay.</p>
             <p><b>Trên iPhone:</b> Safari không cho phép thông báo với tab trình duyệt thường — cần bấm nút <b>Chia sẻ</b> trong Safari rồi chọn <b>"Thêm vào Màn hình chính"</b> để cài app trước, sau đó mở app từ màn hình chính rồi mới bật thông báo được.</p>
             <p>Bấm <b>"Gửi thử thông báo"</b> để kiểm tra ngay có hoạt động không, không cần chờ đúng giờ.</p>
           `)}
@@ -292,18 +206,10 @@ function render(container, ctx){
     container.querySelectorAll('[data-goto-partner]').forEach(el=>{
       el.onclick = ()=>{ window.__crmOpenCustomerId = el.getAttribute('data-goto-partner'); location.hash = 'doi-tac'; };
     });
-
-    const enablePushBtn = container.querySelector('[data-action="enable-push"]');
-    if(enablePushBtn) enablePushBtn.onclick = enablePush;
-    const disablePushBtn = container.querySelector('[data-action="disable-push"]');
-    if(disablePushBtn) disablePushBtn.onclick = disablePush;
-    const testPushBtn = container.querySelector('[data-action="test-push"]');
-    if(testPushBtn) testPushBtn.onclick = testPush;
   }
 
   draw();
   load();
-  checkPushSubscription();
 }
 
 window.Modules = window.Modules || {};
