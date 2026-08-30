@@ -6,6 +6,14 @@ const DO_NONG_BASE = ['Nóng', 'Ấm', 'Lạnh'];
 const GIAI_DOAN_BASE = ['Đang tư vấn', 'Chăm sóc', 'Follow', 'Chốt', 'Đã mua/onboarding', 'Mất'];
 const MAX_IMAGES = 6; // "Cập nhật từ ảnh/ghi chú" — số hoá ghi chú cũ, ít ảnh hơn Tư Vấn AI (10) là đủ
 
+// Hướng dẫn spotlight (2026-08-30) — chỉ trỏ tới phần tử LUÔN CÓ SẴN lúc mới vào trang.
+const TOUR_STEPS = [
+  { selector: '#kh-push-card', title: 'Thông báo nhắc follow', text: 'Bật để mỗi sáng ~8h15 tự báo nếu có khách/đối tác đến hạn follow — không cần mở app kiểm tra tay.' },
+  { selector: '#kh-new', title: 'Thêm khách thủ công', text: 'Tự tạo hồ sơ khách mà không cần qua Tư Vấn AI — dùng khi muốn tạo trước rồi tư vấn sau, hoặc khách không có ảnh chat.' },
+  { selector: '.tab-row', title: '5 tab lọc theo việc cần làm', text: '"Cần follow" là khách tới hạn/quá hạn hôm nay — nên xem tab này đầu tiên mỗi ngày.' },
+  { selector: '#kh-search', title: 'Tìm khách', text: 'Tìm theo tên hoặc tỉnh/thành — hữu ích khi cần gom khách theo khu vực đi làm thị trường.' },
+];
+
 function render(container, ctx){
   const state = {
     loading: true, customers: [], search: '',
@@ -631,12 +639,15 @@ function render(container, ctx){
       { key:'all', label:'Tất cả' },
     ];
     return `
-      <div class="page-head">
-        <h1>Khách Hàng</h1>
-        <p>Toàn bộ hồ sơ khách đang chăm sóc — sắp xếp theo ngày cần follow gần nhất, thay cho bảng Lark cũ.</p>
+      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h1>Khách Hàng</h1>
+          <p>Toàn bộ hồ sơ khách đang chăm sóc — sắp xếp theo ngày cần follow gần nhất, thay cho bảng Lark cũ.</p>
+        </div>
+        <span class="btn-ghost btn btn-sm" id="kh-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
       </div>
 
-      <div class="card" style="margin-bottom:18px;padding:16px 18px;">
+      <div id="kh-push-card" class="card" style="margin-bottom:18px;padding:16px 18px;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
           <div>
             <div style="font-weight:600;font-size:14px;">🔔 Thông báo nhắc follow</div>
@@ -683,6 +694,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#kh-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const enablePushBtn = container.querySelector('[data-action="enable-push"]');
     if(enablePushBtn) enablePushBtn.onclick = enablePush;
     const disablePushBtn = container.querySelector('[data-action="disable-push"]');

@@ -5,6 +5,11 @@
 (function(){
 const TRANG_THAI_DOI_TAC_BASE = ['Đúng nhịp', 'Chậm nhịp', 'Rớt nhịp'];
 
+const TOUR_STEPS = [
+  { selector: '#dt-search', title: 'Tìm đối tác', text: 'Tìm theo tên hoặc tỉnh/thành.' },
+  { selector: '.tab-row', title: 'Cần huấn luyện', text: 'Lọc sẵn ai đang chậm/rớt nhịp hoặc chưa cập nhật trạng thái — ưu tiên gọi/nhắn những người này trước.' },
+];
+
 // Lộ trình 8 tuần huấn luyện đối tác mới. Rút gọn từ đúng bộ giáo trình thật chị Quỳnh đang dùng cho
 // team (link Sheet chị gửi 2026-08-30) — CHỈ giữ chủ đề + đầu việc trọng tâm mỗi tuần làm tài liệu
 // tham khảo cho leader, KHÔNG làm checklist tick từng dòng: 1 leader bảo trợ hàng trăm đối tác không
@@ -309,9 +314,12 @@ function render(container, ctx){
     const list = filteredPartners();
     const canhBaoCount = state.partners.filter(needsCoaching).length;
     return `
-      <div class="page-head">
-        <h1>Đối Tác</h1>
-        <p>Đối tác kinh doanh đã chốt — theo dõi nhịp huấn luyện 8 tuần, tách riêng khỏi follow Khách Hàng. Chuyển 1 khách sang đây bằng nút "Chuyển thành đối tác" ở Khách Hàng.</p>
+      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h1>Đối Tác</h1>
+          <p>Đối tác kinh doanh đã chốt — theo dõi nhịp huấn luyện 8 tuần, tách riêng khỏi follow Khách Hàng. Chuyển 1 khách sang đây bằng nút "Chuyển thành đối tác" ở Khách Hàng.</p>
+        </div>
+        <span class="btn-ghost btn btn-sm" id="dt-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
       </div>
 
       <input type="text" id="dt-search" placeholder="Tìm theo tên đối tác..." value="${esc(state.search)}">
@@ -334,6 +342,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#dt-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const searchEl = container.querySelector('#dt-search');
     if(searchEl) searchEl.oninput = (e) => {
       state.search = e.target.value;

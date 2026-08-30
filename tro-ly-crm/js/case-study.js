@@ -14,6 +14,11 @@ function nhomLabel(key){
   return found ? found.label : (key || 'Khác');
 }
 
+const TOUR_STEPS = [
+  { selector: '#cs-new', title: 'Thêm case study', text: 'Viết câu chuyện của 1 case khách cũ + đính kèm hình — dùng để gửi cho khách mới có hoàn cảnh giống khi tư vấn.' },
+  { selector: '.chips', title: 'Lọc theo nhóm', text: 'Xem nhanh case nào thuộc nhóm nào — nhóm cũng có thể để AI tự phân loại khi thêm case mới, không cần tự chọn.' },
+];
+
 // Nếu người dùng lưu case mà KHÔNG tự chọn nhóm (chị Quỳnh chốt 2026-08-30: "case study cho người
 // dùng tự thêm, AI sẽ phân loại nếu người dùng không tự thêm") — gọi api/case-study-classify.js đọc
 // nội dung tự đoán đúng 1 trong 3 nhóm ở trên, thay vì bắt buộc chọn tay như trước.
@@ -192,9 +197,12 @@ function render(container, ctx){
   function html(){
     const list = filteredItems();
     return `
-      <div class="page-head">
-        <h1>Kho Case Study</h1>
-        <p>Lưu case khách cũ (hình + câu chuyện) — sổ tay Tư Vấn AI tự lấy đúng case theo nhóm khi cần gửi cho khách mới, thay vì phải nhớ/tìm lại thủ công.</p>
+      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h1>Kho Case Study</h1>
+          <p>Lưu case khách cũ (hình + câu chuyện) — sổ tay Tư Vấn AI tự lấy đúng case theo nhóm khi cần gửi cho khách mới, thay vì phải nhớ/tìm lại thủ công.</p>
+        </div>
+        <span class="btn-ghost btn btn-sm" id="cs-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
       </div>
 
       <div class="btn-row" style="justify-content:flex-start;margin-top:0;margin-bottom:18px;">
@@ -218,6 +226,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#cs-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const newBtn = container.querySelector('#cs-new');
     if(newBtn) newBtn.onclick = () => openForm(null);
 

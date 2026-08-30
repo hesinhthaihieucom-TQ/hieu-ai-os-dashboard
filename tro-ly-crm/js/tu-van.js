@@ -141,6 +141,18 @@ function giaStepContent(sanPhamText){
   return `Dựa theo nhu cầu của chị, bên em có các lựa chọn sau ạ:\n${sanPhamText.trim()}\nChị xem mức nào phù hợp với mình ạ?`;
 }
 
+// Hướng dẫn spotlight (2026-08-30, chị Quỳnh chốt "kiểu hướng dẫn như web xây nhân hiệu á") — bấm
+// "❓ Hướng dẫn" ở đầu trang trỏ lần lượt từng phần tử thật trên trang này (xem js/page-tour.js).
+// Chỉ trỏ tới phần tử LUÔN CÓ SẴN lúc mới vào trang (chưa chọn nhánh/chưa có khách ghim) để tour
+// không bị "gãy" giữa chừng vì phần tử điều kiện chưa render.
+const TOUR_STEPS = [
+  { selector: '[data-toggle-sanpham]', title: 'Thông tin sản phẩm/dịch vụ', text: 'Bấm vào đây dán tên gói/giá/link trước khi tư vấn — AI chỉ dùng đúng thông tin ở đây khi chốt giá, không tự bịa số.' },
+  { selector: '[data-pick-guide-nhanh]', title: 'Sổ tay tư vấn', text: 'Khách mới nhắn tới — chọn nhánh A (Sức khỏe) hoặc D (Kinh doanh) rồi chọn đúng tình huống để xem từng bước tư vấn kèm câu ví dụ, copy gửi thẳng cho khách. Việc này KHÔNG tốn lượt AI.' },
+  { selector: '#tv-file-label', title: 'Ảnh chụp đoạn chat', text: 'Sau khi nhắn qua lại đủ theo sổ tay, chụp gộp cả đoạn chat (tối đa 10 ảnh) rồi gửi 1 lần — đỡ tốn lượt hơn hẳn gửi từng ảnh.' },
+  { selector: '#tv-note', title: 'Mô tả/ghi chú thêm', text: 'Không có ảnh cũng được — gõ mô tả nhanh tình huống, AI vẫn đọc và tư vấn được.' },
+  { selector: '#tv-submit', title: 'Tư vấn ngay', text: 'AI đọc ảnh/mô tả, tự lưu vào hồ sơ khách trong Khách Hàng (tạo mới hoặc cập nhật) và gợi ý câu nên nhắn tiếp theo.' },
+];
+
 function render(container, ctx){
   const state = {
     images: [], note: '',
@@ -292,9 +304,12 @@ function render(container, ctx){
 
   function html(){
     return `
-      <div class="page-head">
-        <h1>Tư Vấn AI</h1>
-        <p>Dán ảnh chụp đoạn chat với khách (hoặc mô tả nhanh) — AI đọc, tư vấn câu nên nhắn tiếp theo, và tự lưu vào hồ sơ khách.</p>
+      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h1>Tư Vấn AI</h1>
+          <p>Dán ảnh chụp đoạn chat với khách (hoặc mô tả nhanh) — AI đọc, tư vấn câu nên nhắn tiếp theo, và tự lưu vào hồ sơ khách.</p>
+        </div>
+        <span class="btn-ghost btn btn-sm" id="tv-start-tour" style="flex-shrink:0;">❓ Hướng dẫn</span>
       </div>
 
       <div class="section" style="cursor:pointer;" data-toggle-sanpham="1">
@@ -376,7 +391,7 @@ function render(container, ctx){
               <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
             </div>
           `).join('')}
-          ${state.images.length<MAX_IMAGES ? `<label style="width:90px;height:90px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">+<input type="file" accept="image/*" multiple id="tv-file" style="display:none;"></label>` : ''}
+          ${state.images.length<MAX_IMAGES ? `<label id="tv-file-label" style="width:90px;height:90px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">+<input type="file" accept="image/*" multiple id="tv-file" style="display:none;"></label>` : ''}
         </div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mô tả/ghi chú thêm ${state.images.length?'(không bắt buộc nếu đã có ảnh)':''}</label>
         <textarea id="tv-note" placeholder="VD: khách hỏi giá gói 1 tháng, có vẻ đang phân vân...">${esc(state.note)}</textarea>
@@ -428,6 +443,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#tv-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const toggleSanPham = container.querySelector('[data-toggle-sanpham]');
     if(toggleSanPham) toggleSanPham.onclick = ()=>{ state.showSanPham = !state.showSanPham; draw(); };
     const sanPhamEl = container.querySelector('#tv-sanpham');
