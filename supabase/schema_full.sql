@@ -1542,27 +1542,51 @@ create table if not exists sk_schedule_progress (
 -- làm kỹ giống bản gốc, 2026-08-30): 3 nhóm triệu chứng tick-chọn (kháng insulin / tích tụ độc tố /
 -- tiêu chí hội chứng rối loạn chuyển hóa). 1 dòng hiện tại/user — tick tới đâu lưu tới đó, không có
 -- bước "nộp bài" riêng, kết quả (mức độ + điểm) tính lại ở client mỗi lần tick (xem kiem-tra-suc-khoe.js).
+-- Dùng CREATE TABLE tối thiểu + ALTER ADD COLUMN IF NOT EXISTS cho phần còn lại (thay vì nhét hết vào
+-- CREATE TABLE) — vì bảng này đã từng được tạo với cấu trúc CŨ (flagged_issues/note) trước khi đổi
+-- sang khảo sát 3 nhóm hôm nay; nếu chỉ sửa CREATE TABLE, "if not exists" sẽ bỏ qua toàn bộ khi bảng
+-- đã tồn tại và cột mới KHÔNG được thêm (đúng lỗi PostgREST "Could not find the 'survey_insulin'
+-- column" chị Quỳnh gặp phải lúc test 2026-08-30).
 create table if not exists sk_health_checkins (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  survey_insulin text[] not null default '{}',
-  survey_toxin text[] not null default '{}',
-  survey_metabolic text[] not null default '{}',
-  updated_at timestamptz not null default now(),
-  unique (user_id)
+  created_at timestamptz not null default now()
 );
+alter table sk_health_checkins add column if not exists survey_insulin text[] not null default '{}';
+alter table sk_health_checkins add column if not exists survey_toxin text[] not null default '{}';
+alter table sk_health_checkins add column if not exists survey_metabolic text[] not null default '{}';
+alter table sk_health_checkins add column if not exists updated_at timestamptz not null default now();
+-- Cột cũ (flagged_issues, note) không còn dùng nữa — để nguyên cho an toàn, không xoá.
+do $$
+begin
+  delete from sk_health_checkins a using sk_health_checkins b
+    where a.user_id = b.user_id and a.id < b.id; -- gom về 1 dòng/user trước khi thêm unique bên dưới
+  if not exists (select 1 from pg_constraint where conname = 'sk_health_checkins_user_id_key') then
+    alter table sk_health_checkins add constraint sk_health_checkins_user_id_key unique (user_id);
+  end if;
+end $$;
 
 -- Theo Dõi Sức Khỏe Theo Tuần — mô phỏng "Chỉ số cơ thể" của bản gốc: 9 mốc cố định (Bắt đầu + Tuần
 -- 1..8, không phải tuần lịch) x 3 nhóm chỉ số (thông số cơ thể / xét nghiệm máu / yếu tố cuộc sống
 -- tự đánh giá — xem METRIC_GROUPS trong theo-doi-tuan.js). Lưu 1 dòng/user dạng
 -- jsonb {metric_key: {checkpoint_index: "value"}} — ghi tới đâu lưu tới đó, không cần nút Lưu riêng.
+-- Cùng lý do ALTER thay vì nhét vào CREATE TABLE như sk_health_checkins ở trên.
 create table if not exists sk_weekly_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  metrics jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now(),
-  unique (user_id)
+  created_at timestamptz not null default now()
 );
+alter table sk_weekly_logs add column if not exists metrics jsonb not null default '{}'::jsonb;
+alter table sk_weekly_logs add column if not exists updated_at timestamptz not null default now();
+-- Cột cũ (week_start, weight, sleep_hours, energy_level, mood_level, note) không còn dùng nữa.
+do $$
+begin
+  delete from sk_weekly_logs a using sk_weekly_logs b
+    where a.user_id = b.user_id and a.id < b.id;
+  if not exists (select 1 from pg_constraint where conname = 'sk_weekly_logs_user_id_key') then
+    alter table sk_weekly_logs add constraint sk_weekly_logs_user_id_key unique (user_id);
+  end if;
+end $$;
 
 -- Thư Viện Sức Khỏe — tra cứu vấn đề: nguyên nhân/biểu hiện/cách xử lý + sản phẩm Unicity liên quan
 -- (mảng id trỏ sang sk_products, không FK cứng vì phần tử mảng không ràng buộc được kiểu này trong
@@ -1806,13 +1830,30 @@ create table if not exists crm_interactions (
 );
 create index if not exists crm_interactions_customer_idx on crm_interactions(customer_id, created_at desc);
 
+-- Kho case study (2026-08-30, chị Quỳnh chốt: "thêm mục case study cho người dùng tự cập nhật lên
+-- bao gồm hình và câu chuyện, kiểu kho lưu trữ") — dùng để bước "gửi case tương tự" trong sổ tay tư
+-- vấn (tu-van.js) tự lấy ĐÚNG case thật đã lưu theo nhóm (giảm mỡ/sức khỏe khác) thay vì placeholder
+-- chung chung. hinh_anh là mảng data URL (nén JPEG trước khi lưu, giống cách nén ảnh chat sẵn có)
+-- vì app này chưa dùng Supabase Storage ở đâu khác — lưu thẳng base64 nhất quán với quy ước hiện tại.
+create table if not exists crm_case_studies (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  nhom text, -- 'giam-mo' | 'suc-khoe-khac' | tự do, khớp với key nhóm trong NHANH_GUIDES (tu-van.js)
+  tieu_de text,
+  noi_dung text,
+  hinh_anh jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists crm_case_studies_user_idx on crm_case_studies(user_id, nhom);
+
 alter table crm_customers enable row level security;
 alter table crm_interactions enable row level security;
+alter table crm_case_studies enable row level security;
 do $$
 declare
   t text;
 begin
-  foreach t in array array['crm_customers','crm_interactions']
+  foreach t in array array['crm_customers','crm_interactions','crm_case_studies']
   loop
     execute format('drop policy if exists "%1$s_owner_all" on %1$s', t);
     execute format('create policy "%1$s_owner_all" on %1$s for all using (auth.uid() = user_id) with check (auth.uid() = user_id)', t);
