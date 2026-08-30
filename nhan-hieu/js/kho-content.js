@@ -106,7 +106,11 @@ function render(container, ctx){
     draw();
   }
   async function loadPosts(){
-    const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
+    // KHÔNG select('*') — posts.image_data (ảnh case study AI ghép, vài trăm KB/ảnh) không dùng ở
+    // trang này, và truy vấn này KHÔNG giới hạn số dòng (toàn bộ lịch sử bài viết) nên cộng dồn ảnh
+    // theo thời gian sẽ ngày càng nặng, dễ làm trang tải chậm/timeout không cần thiết (cùng nguyên
+    // nhân đã sửa ở lich-dang.js 2026-08-30, xem comment ở loadPosts() bên đó).
+    const { data } = await ctx.supabase.from('posts').select('id,title,content,structure,posted,tags,source_table,source_id,day_bai_plan').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
     state.posts = data || [];
   }
 

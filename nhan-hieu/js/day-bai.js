@@ -60,7 +60,10 @@ function render(container, ctx){
   }
 
   async function loadPosts(){
-    const { data } = await ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(50);
+    // KHÔNG select('*') — posts.image_data (ảnh case study AI ghép, vài trăm KB/ảnh) không dùng ở
+    // trang này, cộng dồn theo 50 bài gần nhất dễ làm trang tải chậm/timeout không cần thiết (cùng
+    // nguyên nhân đã sửa ở lich-dang.js 2026-08-30, xem comment ở loadPosts() bên đó).
+    const { data } = await ctx.supabase.from('posts').select('id,title,content,day_bai_plan').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(50);
     state.posts = data || [];
   }
 

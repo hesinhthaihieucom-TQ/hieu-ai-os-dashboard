@@ -145,8 +145,13 @@ function render(container, ctx){
     state.entries = data || [];
   }
   async function loadPosts(){
+    // KHÔNG select('*') — posts.image_data (ảnh case study AI ghép, mỗi ảnh vài trăm KB) sẽ cộng dồn
+    // theo cả 30 bài gần nhất mỗi lần vào trang, dễ vượt 12s timeout dù mạng vẫn ổn (phát hiện
+    // 2026-08-30: chị Quỳnh báo "đang quay kêu lỗi mạng nhưng không phải" — đúng lúc cron case study
+    // đã tạo đủ nhiều ảnh để payload nặng lên rõ rệt). Chỉ lấy đúng cột thật sự dùng ở trang này — ảnh
+    // được tải riêng, đúng 1 bài, ngay lúc bấm "Xem bài" (xem data-view-post ở bind()).
     const { data, error } = await withTimeout(
-      ctx.supabase.from('posts').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(30),
+      ctx.supabase.from('posts').select('id,title,content,structure,posted').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(30),
       12000, 'Kết nối mạng chậm/không ổn định — không tải được danh sách bài. Kiểm tra mạng rồi thử lại.'
     );
     if(error) throw new Error(error.message);
@@ -868,15 +873,17 @@ function render(container, ctx){
       };
     });
     container.querySelectorAll('[data-view-post]').forEach(el=>{
-      el.onclick = ()=>{
+      el.onclick = async ()=>{
         const entry = state.entries.find(x=>x.id===el.getAttribute('data-view-post'));
         const post = entry && entry.post_id ? state.posts.find(p=>p.id===entry.post_id) : null;
         if(!post) return;
         // Bài case study (slot Trưa, tự viết + ghép ảnh qua api/cron/auto-fill-schedule.js) có sẵn
-        // ảnh THẬT trong posts.image_data (base64 JPEG) — trước đây lưu xong không hiện ở đâu cả, chỉ
-        // dùng lúc auto-đăng Fanpage. Theo yêu cầu chị Quỳnh 2026-08-29: "cho hiện luôn cái hình mà
-        // AI làm" — hiện ngay trong modal Xem bài, khỏi phải đợi tới lúc đăng mới thấy.
-        const imageDataUrl = post.image_data ? `data:image/jpeg;base64,${post.image_data.replace(/^data:image\/\w+;base64,/, '')}` : null;
+        // ảnh THẬT trong posts.image_data (base64 JPEG) — theo yêu cầu chị Quỳnh 2026-08-29: "cho
+        // hiện luôn cái hình mà AI làm". Tải ảnh RIÊNG đúng lúc bấm xem (không nằm trong loadPosts()
+        // nữa — xem lý do ở loadPosts()), nên chỉ tốn payload của đúng 1 ảnh, không phải cả 30 bài.
+        const { data } = await ctx.supabase.from('posts').select('image_data').eq('id', post.id).maybeSingle();
+        const imgRaw = data && data.image_data;
+        const imageDataUrl = imgRaw ? `data:image/jpeg;base64,${imgRaw.replace(/^data:image\/\w+;base64,/, '')}` : null;
         openTextModal(post.title, post.content, imageDataUrl);
       };
     });
