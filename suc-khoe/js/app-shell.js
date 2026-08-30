@@ -101,6 +101,7 @@ function renderAuthScreen(err, successMsg){
   const isLogin = AppState.authMode === 'login';
   root.innerHTML = `
     <div class="auth-shell">
+      <img src="assets/logo-hieu-manh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
       <h1>HIỂU ĐỂ KHOẺ MẠNH</h1>
       <div class="sub">Kiểm tra & theo dõi sức khỏe mỗi tuần<br>Lịch trình đồng hành cùng bạn<br>Thư viện tra cứu sức khỏe<br><span class="sub-brand">Hệ sinh thái Hiểu</span></div>
       <div class="auth-tabs">
@@ -172,6 +173,7 @@ function renderApp(){
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">
         <div class="sidebar-brand" id="sidebar-brand-home" style="cursor:pointer;">
+          <img src="assets/logo-hieu-manh.png" class="brand-logo" alt="" onerror="this.style.display='none'">
           <div class="brand-text">HIỂU ĐỂ<br>KHOẺ MẠNH<small>Hệ sinh thái HIỂU</small></div>
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
