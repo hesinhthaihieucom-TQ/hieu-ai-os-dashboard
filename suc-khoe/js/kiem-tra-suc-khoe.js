@@ -1,101 +1,166 @@
-// Kiểm Tra Sức Khỏe — bước "chẩn đoán mồi" nhẹ nhàng: khách chọn nhanh (các) vấn đề đang gặp, app
-// đối chiếu ngay sang Thư Viện Sức Khỏe (sk_library_entries) để gợi ý nguyên nhân/cách xử lý/sản
-// phẩm liên quan — không chấm điểm bằng AI ở bản khung này (khác Chấm Điểm Nghiệp Tiền bên tai-chinh),
-// đối chiếu bằng cách so khớp từ khoá đơn giản (client-side), đủ dùng khi thư viện còn ít mục.
-const SK_COMMON_ISSUES = [
-  'Mất ngủ', 'Đau khớp / đau lưng', 'Tiêu hóa kém', 'Căng thẳng, stress',
-  'Thừa cân', 'Thiếu năng lượng, mệt mỏi', 'Da / tóc kém', 'Huyết áp, tim mạch',
-  'Đường huyết', 'Miễn dịch kém, hay ốm vặt', 'Khác',
+// Kiểm Tra Sức Khỏe — "Khảo sát sơ bộ" mô phỏng theo hieu-de-khoe-manh.vercel.app (chị Quỳnh yêu cầu
+// làm kỹ giống bản gốc, 2026-08-30): 3 nhóm triệu chứng tick-chọn, tính điểm & mức độ ngay khi tick,
+// lưu 1 dòng/user (khác bản cũ: chip chọn "vấn đề" rồi bấm nút "Kiểm tra ngay" riêng). Bản gốc không
+// có bước đối chiếu Thư Viện — giữ lại phần này vì Thư Viện Sức Khỏe (sk_library_entries) đã có sẵn
+// trong app, hữu ích để dẫn khách sang xem nguyên nhân/cách xử lý/sản phẩm liên quan.
+const SK_INSULIN_SYMPTOMS = [
+  'Mụn', 'Mụn thịt trên da', 'Mỡ bụng', 'Bệnh gout', 'Đường huyết cao', 'Mệt mỏi sau bữa ăn',
+  'Tăng cân', 'Đường trong máu thấp', 'Rụng tóc', 'Thèm đồ ngọt', 'Gan nhiễm mỡ',
+  'Buồng trứng đa nang', 'Giảm testosterone / cơ thấp', 'Triglyceride hoặc Cholesterol cao',
+];
+const SK_TOXIN_SYMPTOMS = [
+  'Nhức đầu', 'Chóng mặt', 'Đau nhức', 'Mệt mỏi', 'Dị ứng', 'Mau quên', 'Ngứa mũi', 'Tức ngực',
+  'Khó thở', 'Hen suyễn', 'Suy yếu', 'Nhạy cảm', 'Nóng nảy', 'U sầu', 'Xanh xao', 'Ngứa mắt',
+  'Mắt đỏ', 'Ngứa da', 'Da xấu', 'Đốm trên da', 'Tiêu chảy', 'Bệnh vặt', 'Bệnh kinh niên',
+  'Táo bón', 'Hôi miệng', 'Trầm cảm', 'Mất ngủ', 'Béo phì', 'Rối loạn tiêu hóa',
+];
+const SK_METABOLIC_CRITERIA = [
+  { label:'Béo bụng', desc:'Nam ≥ 102cm · Nữ ≥ 88cm' },
+  { label:'Triglyceride cao', desc:'≥ 150 mg/dL' },
+  { label:'HDL-C thấp', desc:'Nam < 40 · Nữ < 50 mg/dL' },
+  { label:'Huyết áp cao', desc:'≥ 130/85 mmHg' },
+  { label:'Đường huyết đói cao', desc:'≥ 5,6 mmol/l' },
 ];
 
 (function(){
 function render(container, ctx){
-  const state = { selected:[], note:'', saving:false, history:[], libraryEntries:[], matches:null };
+  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[] };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function load(){
-    const [{ data: history }, { data: entries }] = await Promise.all([
-      ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(10),
+    const [{ data: row }, { data: entries }] = await Promise.all([
+      ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_library_entries').select('id,issue_name').order('issue_name', { ascending:true }),
     ]);
-    state.history = history || [];
+    if(row){
+      state.insulin = row.survey_insulin || [];
+      state.toxin = row.survey_toxin || [];
+      state.metabolic = row.survey_metabolic || [];
+    }
     state.libraryEntries = entries || [];
+    state.loading = false;
     draw();
   }
 
-  function toggle(issue){
-    const i = state.selected.indexOf(issue);
-    if(i>=0) state.selected.splice(i,1); else state.selected.push(issue);
+  async function save(){
+    const { error } = await ctx.supabase.from('sk_health_checkins').upsert({
+      user_id: ctx.user.id,
+      survey_insulin: state.insulin, survey_toxin: state.toxin, survey_metabolic: state.metabolic,
+      updated_at: new Date().toISOString(),
+    }, { onConflict:'user_id' });
+    if(error) alert('Lỗi khi lưu: ' + error.message);
   }
 
-  function findMatches(issues){
-    const words = issues.join(' ').toLowerCase().split(/[\s,\/]+/).filter(w=>w.length>2);
+  function toggle(group, label){
+    const arr = state[group];
+    const i = arr.indexOf(label);
+    if(i>=0) arr.splice(i,1); else arr.push(label);
+    draw();
+    save();
+  }
+
+  // Điểm & mức độ tính giống hệt surveyResult() của bản gốc — giữ nguyên ngưỡng và câu chữ vì đây là
+  // nội dung tự đánh giá sức khỏe (không phải quảng cáo sản phẩm), chị Quỳnh đã dùng ổn định ở app kia.
+  function computeResult(){
+    const ci = state.insulin.length, ct = state.toxin.length, cm = state.metabolic.length;
+    const meta = cm >= 3;
+    const score = ci + ct + cm*2;
+    let level, color, bg, bd;
+    if(meta || score>=18){ level='Cao'; color='#c0392b'; bg='#fdeee8'; bd='#f3b9a4'; }
+    else if(score>=7){ level='Trung bình'; color='#e8643c'; bg='#fff7f0'; bd='#f3d9bf'; }
+    else { level='Thấp'; color='#1f9d63'; bg='#eef6f0'; bd='#cfe6d8'; }
+    const problems = [];
+    if(ci>=5) problems.push('Dấu hiệu kháng insulin rõ rệt — cơ thể khó chuyển hóa đường, dễ tích mỡ và tăng cân.');
+    else if(ci>=2) problems.push('Một vài dấu hiệu kháng insulin sớm — cần chú ý chế độ ăn và vận động.');
+    if(meta) problems.push('Nguy cơ hội chứng rối loạn chuyển hóa (' + cm + '/5 tiêu chí) — nên làm xét nghiệm máu để đánh giá.');
+    else if(cm>0) problems.push('Có ' + cm + '/5 tiêu chí rối loạn chuyển hóa — theo dõi vòng eo, mỡ máu, huyết áp, đường huyết.');
+    if(ct>=10) problems.push('Nhiều dấu hiệu tích tụ độc tố và viêm — gan và đường ruột đang quá tải.');
+    else if(ct>=4) problems.push('Một số dấu hiệu cơ thể đang quá tải, cần nghỉ ngơi và thải độc.');
+    if(problems.length===0) problems.push('Hiện chưa có dấu hiệu đáng lo — cơ thể bạn đang ở trạng thái khá ổn định.');
+    let impact, future;
+    if(level==='Cao'){
+      impact = 'Bạn dễ mệt mỏi, uể oải cả ngày, giấc ngủ và tâm trạng bị ảnh hưởng, giảm tập trung trong công việc và sinh hoạt. Cân nặng, vóc dáng và sự tự tin cũng bị tác động rõ.';
+      future = 'Nếu không thay đổi, trong 3–5 năm tới nguy cơ tiến triển thành tiểu đường type 2, gan nhiễm mỡ, rối loạn mỡ máu, cao huyết áp và bệnh tim mạch tăng đáng kể.';
+    } else if(level==='Trung bình'){
+      impact = 'Bạn có thể thấy thiếu năng lượng buổi chiều, ngủ chưa sâu, đôi lúc khó tập trung. Tích tụ lâu sẽ ảnh hưởng tới vóc dáng và tinh thần.';
+      future = 'Nếu giữ nguyên lối sống, sau 3–5 năm các chỉ số có xu hướng xấu dần: tăng cân, mỡ nội tạng, tiền tiểu đường và mệt mỏi mạn tính.';
+    } else {
+      impact = 'Chất lượng cuộc sống của bạn hiện ở mức tốt. Duy trì thói quen lành mạnh sẽ giúp giữ năng lượng, giấc ngủ và tinh thần ổn định.';
+      future = 'Nếu tiếp tục duy trì, sau 3–5 năm bạn nhiều khả năng vẫn giữ được sức khỏe tốt, vóc dáng cân đối và tinh thần tích cực.';
+    }
+    return { level, color, bg, bd, score, problems, impact, future };
+  }
+
+  function findMatches(){
+    const labels = [...state.insulin, ...state.toxin, ...state.metabolic];
+    if(labels.length===0) return [];
+    const words = labels.join(' ').toLowerCase().split(/[\s,\/]+/).filter(w=>w.length>2);
     return state.libraryEntries.filter(e=>{
       const name = (e.issue_name||'').toLowerCase();
       return words.some(w=>name.includes(w));
     });
   }
 
-  async function submit(){
-    if(state.selected.length===0) return;
-    state.saving = true; draw();
-    const { error } = await ctx.supabase.from('sk_health_checkins').insert({
-      user_id: ctx.user.id, flagged_issues: state.selected, note: state.note.trim() || null,
-    });
-    state.saving = false;
-    if(error){ alert('Lỗi khi lưu: ' + error.message); draw(); return; }
-    state.matches = findMatches(state.selected);
-    await load();
+  function chipGroup(group, items){
+    return `<div class="chips">${items.map(label=>`
+      <div class="chip ${state[group].includes(label)?'selected':''}" data-group="${group}" data-label="${esc(label)}">${esc(label)}</div>
+    `).join('')}</div>`;
   }
 
   function html(){
+    if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
+    const hasAny = state.insulin.length + state.toxin.length + state.metabolic.length > 0;
+    const r = hasAny ? computeResult() : null;
+    const matches = hasAny ? findMatches() : [];
     return `
       <div class="page-head">
         <h1>Kiểm Tra Sức Khỏe</h1>
-        <p>Chọn (các) vấn đề bạn đang gặp — app sẽ đối chiếu ngay sang Thư Viện Sức Khỏe để bạn biết nguyên nhân và cách xử lý.</p>
+        <p>Tick chọn các dấu hiệu bạn đang gặp ở mỗi nhóm — kết quả cập nhật ngay theo từng lượt tick, không cần bấm nộp bài.</p>
       </div>
 
-      <div class="card" style="margin-bottom:24px;">
-        <div class="chips">
-          ${SK_COMMON_ISSUES.map(issue=>`
-            <div class="chip ${state.selected.includes(issue)?'selected':''}" data-issue="${esc(issue)}">${esc(issue)}</div>
-          `).join('')}
+      <details class="kt-section" open>
+        <summary class="kt-summary">Dấu hiệu kháng insulin (${state.insulin.length}/${SK_INSULIN_SYMPTOMS.length})</summary>
+        <div style="margin-top:12px;">${chipGroup('insulin', SK_INSULIN_SYMPTOMS)}</div>
+      </details>
+
+      <details class="kt-section" open>
+        <summary class="kt-summary">Dấu hiệu tích tụ độc tố, viêm (${state.toxin.length}/${SK_TOXIN_SYMPTOMS.length})</summary>
+        <div style="margin-top:12px;">${chipGroup('toxin', SK_TOXIN_SYMPTOMS)}</div>
+      </details>
+
+      <details class="kt-section" open>
+        <summary class="kt-summary">Tiêu chí hội chứng rối loạn chuyển hóa (${state.metabolic.length}/${SK_METABOLIC_CRITERIA.length})</summary>
+        <div style="margin-top:12px;">
+          <div class="chips">${SK_METABOLIC_CRITERIA.map(c=>`
+            <div class="chip ${state.metabolic.includes(c.label)?'selected':''}" data-group="metabolic" data-label="${esc(c.label)}">${esc(c.label)} <span style="opacity:.65;">(${esc(c.desc)})</span></div>
+          `).join('')}</div>
         </div>
-        <textarea id="kt-note" placeholder="Mô tả thêm (không bắt buộc)...">${esc(state.note)}</textarea>
-        <button class="btn" style="margin-top:16px;" id="kt-submit" ${state.selected.length===0 || state.saving ? 'disabled' : ''}>
-          ${state.saving ? 'Đang lưu…' : 'Kiểm tra ngay'}
-        </button>
-      </div>
+      </details>
 
-      ${state.matches ? `
-        <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Gợi ý từ Thư Viện Sức Khỏe</h2></div>
-        ${state.matches.length===0
-          ? `<div class="hint-box">Thư viện chưa có mục nào khớp — chị Quỳnh sẽ bổ sung thêm dần. Bạn vẫn có thể xem toàn bộ ở mục "Thư Viện Sức Khỏe".</div>`
-          : state.matches.map(m=>`<div class="list-item" data-open-library="${esc(m.id)}" style="cursor:pointer;"><div class="txt">${esc(m.issue_name)}</div><span style="color:var(--accent);font-size:13px;">Xem chi tiết →</span></div>`).join('')}
-      ` : ''}
+      ${r ? `
+        <div class="card" style="margin-top:20px;border:1px solid ${r.bd};background:${r.bg};">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:${r.color};margin-bottom:6px;">Mức độ nguy cơ</div>
+          <div style="font-size:22px;font-weight:700;color:${r.color};margin-bottom:14px;">${esc(r.level)} <span style="font-size:14px;font-weight:400;color:var(--ink-soft);">(điểm ${r.score})</span></div>
+          <ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.7;">
+            ${r.problems.map(p=>`<li>${esc(p)}</li>`).join('')}
+          </ul>
+          <div style="font-size:14px;line-height:1.7;margin-bottom:10px;"><b>Ảnh hưởng hiện tại:</b> ${esc(r.impact)}</div>
+          <div style="font-size:14px;line-height:1.7;"><b>Nếu không thay đổi:</b> ${esc(r.future)}</div>
+        </div>
+      ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
 
-      ${state.history.length>0 ? `
-        <div class="page-head" style="margin:28px 0 12px;"><h2 style="font-size:17px;">Lịch sử kiểm tra</h2></div>
-        ${state.history.map(h=>`
-          <div class="section">
-            <div class="meta">${esc(new Date(h.created_at).toLocaleDateString('vi-VN'))}</div>
-            <div class="body">${esc((h.flagged_issues||[]).join(', '))}</div>
-            ${h.note ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:6px;">${esc(h.note)}</div>` : ''}
-          </div>
-        `).join('')}
+      ${matches.length>0 ? `
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Gợi ý từ Thư Viện Sức Khỏe</h2></div>
+        ${matches.map(m=>`<div class="list-item" data-open-library="1" style="cursor:pointer;"><div class="txt">${esc(m.issue_name)}</div><span style="color:var(--accent);font-size:13px;">Xem chi tiết →</span></div>`).join('')}
       ` : ''}
     `;
   }
 
   function bind(){
-    container.querySelectorAll('[data-issue]').forEach(el=>{
-      el.onclick = ()=>{ toggle(el.getAttribute('data-issue')); draw(); };
+    container.querySelectorAll('[data-group]').forEach(el=>{
+      el.onclick = ()=> toggle(el.getAttribute('data-group'), el.getAttribute('data-label'));
     });
-    const noteEl = container.querySelector('#kt-note');
-    if(noteEl) noteEl.oninput = (e)=>{ state.note = e.target.value; };
-    const submitBtn = container.querySelector('#kt-submit');
-    if(submitBtn) submitBtn.onclick = submit;
     container.querySelectorAll('[data-open-library]').forEach(el=>{
       el.onclick = ()=>{ location.hash = 'thu-vien-suc-khoe'; };
     });

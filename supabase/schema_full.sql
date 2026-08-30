@@ -1538,28 +1538,30 @@ create table if not exists sk_schedule_progress (
   primary key (user_id, schedule_item_id)
 );
 
--- Kiểm Tra Sức Khỏe — 1 lần đánh giá nhanh (không cố định theo tuần, khác Theo Dõi Tuần bên dưới),
--- lưu lại toàn bộ lựa chọn để xem lại lịch sử các lần kiểm tra trước + đối chiếu ngược sang Thư Viện.
+-- Kiểm Tra Sức Khỏe — mô phỏng "Khảo sát sơ bộ" của hieu-de-khoe-manh.vercel.app (chị Quỳnh yêu cầu
+-- làm kỹ giống bản gốc, 2026-08-30): 3 nhóm triệu chứng tick-chọn (kháng insulin / tích tụ độc tố /
+-- tiêu chí hội chứng rối loạn chuyển hóa). 1 dòng hiện tại/user — tick tới đâu lưu tới đó, không có
+-- bước "nộp bài" riêng, kết quả (mức độ + điểm) tính lại ở client mỗi lần tick (xem kiem-tra-suc-khoe.js).
 create table if not exists sk_health_checkins (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  flagged_issues text[] not null default '{}',
-  note text,
-  created_at timestamptz not null default now()
+  survey_insulin text[] not null default '{}',
+  survey_toxin text[] not null default '{}',
+  survey_metabolic text[] not null default '{}',
+  updated_at timestamptz not null default now(),
+  unique (user_id)
 );
 
--- Theo Dõi Sức Khỏe Theo Tuần — 1 dòng/tuần/user, các chỉ số cơ bản + ghi chú tự do.
+-- Theo Dõi Sức Khỏe Theo Tuần — mô phỏng "Chỉ số cơ thể" của bản gốc: 9 mốc cố định (Bắt đầu + Tuần
+-- 1..8, không phải tuần lịch) x 3 nhóm chỉ số (thông số cơ thể / xét nghiệm máu / yếu tố cuộc sống
+-- tự đánh giá — xem METRIC_GROUPS trong theo-doi-tuan.js). Lưu 1 dòng/user dạng
+-- jsonb {metric_key: {checkpoint_index: "value"}} — ghi tới đâu lưu tới đó, không cần nút Lưu riêng.
 create table if not exists sk_weekly_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  week_start date not null,
-  weight numeric,
-  sleep_hours numeric,
-  energy_level integer check (energy_level between 1 and 5),
-  mood_level integer check (mood_level between 1 and 5),
-  note text,
-  created_at timestamptz not null default now(),
-  unique (user_id, week_start)
+  metrics jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  unique (user_id)
 );
 
 -- Thư Viện Sức Khỏe — tra cứu vấn đề: nguyên nhân/biểu hiện/cách xử lý + sản phẩm Unicity liên quan

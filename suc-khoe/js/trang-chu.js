@@ -1,6 +1,15 @@
 (function(){
 function render(container, ctx){
-  const state = { loading:true, packageName:null, latestLog:null, pointsThisMonth:null };
+  const state = { loading:true, packageName:null, metrics:{}, pointsThisMonth:null };
+
+  // "Gần nhất" = mốc (0=Bắt đầu..8=Tuần 8) có giá trị lớn nhất đã điền cho chỉ số đó — khớp mô hình
+  // 9 mốc cố định của Theo Dõi Sức Khỏe Theo Tuần (xem theo-doi-tuan.js), không phải tuần lịch.
+  function latestMetric(key){
+    const row = state.metrics[key];
+    if(!row) return null;
+    const weeks = Object.keys(row).map(Number).sort((a,b)=>b-a);
+    return weeks.length ? row[weeks[0]] : null;
+  }
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -10,8 +19,8 @@ function render(container, ctx){
       tasks.push(ctx.supabase.from('sk_packages').select('name').eq('id', ctx.profile.sk_package_id).maybeSingle()
         .then(({data})=>{ state.packageName = data ? data.name : null; }));
     }
-    tasks.push(ctx.supabase.from('sk_weekly_logs').select('*').eq('user_id', ctx.user.id).order('week_start', { ascending:false }).limit(1).maybeSingle()
-      .then(({data})=>{ state.latestLog = data || null; }));
+    tasks.push(ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle()
+      .then(({data})=>{ state.metrics = (data && data.metrics) || {}; }));
     const thisMonth = new Date().toISOString().slice(0,7);
     tasks.push(ctx.supabase.from('sk_points_ledger').select('points,commission').eq('user_id', ctx.user.id).eq('month', thisMonth)
       .then(({data})=>{
@@ -24,8 +33,8 @@ function render(container, ctx){
   }
 
   const QUICK_LINKS = [
-    { key:'kiem-tra-suc-khoe', icon:'🩺', label:'Kiểm Tra Sức Khỏe', desc:'Chọn nhanh vấn đề bạn đang gặp' },
-    { key:'theo-doi-tuan', icon:'📈', label:'Theo Dõi Tuần', desc:'Ghi lại cân nặng, giấc ngủ, năng lượng' },
+    { key:'kiem-tra-suc-khoe', icon:'🩺', label:'Kiểm Tra Sức Khỏe', desc:'Khảo sát nhanh dấu hiệu kháng insulin, độc tố, chuyển hóa' },
+    { key:'theo-doi-tuan', icon:'📈', label:'Theo Dõi Tuần', desc:'Đo chỉ số cơ thể, xét nghiệm máu qua 8 tuần' },
     { key:'lich-trinh', icon:'🗓️', label:'Lịch Trình Của Bạn', desc:'Theo đúng gói bạn đang dùng' },
     { key:'thu-vien-suc-khoe', icon:'📚', label:'Thư Viện Sức Khỏe', desc:'Tra cứu nguyên nhân, cách xử lý' },
     { key:'san-pham', icon:'🛍️', label:'Sản Phẩm Unicity', desc:'Công dụng và giá bán lẻ' },
@@ -51,15 +60,15 @@ function render(container, ctx){
         <div class="source-grid" style="margin-bottom:24px;">
           <div class="source-card" style="cursor:default;">
             <div class="ic">⚖️</div>
-            <div class="label">${state.latestLog && state.latestLog.weight!=null ? `${state.latestLog.weight} kg` : '—'}</div>
+            <div class="label">${latestMetric('cannang')!=null ? `${latestMetric('cannang')} kg` : '—'}</div>
           </div>
           <div class="source-card" style="cursor:default;">
             <div class="ic">😴</div>
-            <div class="label">${state.latestLog && state.latestLog.sleep_hours!=null ? `${state.latestLog.sleep_hours} giờ ngủ` : '—'}</div>
+            <div class="label">${latestMetric('cl_ngu')!=null ? `Giấc ngủ ${latestMetric('cl_ngu')}/10` : '—'}</div>
           </div>
           <div class="source-card" style="cursor:default;">
             <div class="ic">⚡</div>
-            <div class="label">${state.latestLog && state.latestLog.energy_level!=null ? `Năng lượng ${state.latestLog.energy_level}/5` : '—'}</div>
+            <div class="label">${latestMetric('nangluong')!=null ? `Năng lượng ${latestMetric('nangluong')}/10` : '—'}</div>
           </div>
           <div class="source-card" style="cursor:default;">
             <div class="ic">🎁</div>
