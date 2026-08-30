@@ -14,6 +14,14 @@ function nhomLabel(key){
   return found ? found.label : (key || 'Khác');
 }
 
+// Nếu người dùng lưu case mà KHÔNG tự chọn nhóm (chị Quỳnh chốt 2026-08-30: "case study cho người
+// dùng tự thêm, AI sẽ phân loại nếu người dùng không tự thêm") — gọi api/case-study-classify.js đọc
+// nội dung tự đoán đúng 1 trong 3 nhóm ở trên, thay vì bắt buộc chọn tay như trước.
+async function classifyNhom(noiDung){
+  const data = await callApi('/api/case-study-classify', { noi_dung: noiDung });
+  return data.nhom;
+}
+
 function render(container, ctx){
   const state = {
     loading: true, items: [], filterNhom: 'all',
@@ -41,8 +49,8 @@ function render(container, ctx){
   function openForm(item){
     state.showForm = true; state.error = '';
     state.form = item
-      ? { id: item.id, nhom: item.nhom || 'giam-mo', tieu_de: item.tieu_de || '', noi_dung: item.noi_dung || '', hinh_anh: item.hinh_anh || [] }
-      : { id: null, nhom: 'giam-mo', tieu_de: '', noi_dung: '', hinh_anh: [] };
+      ? { id: item.id, nhom: item.nhom || '', tieu_de: item.tieu_de || '', noi_dung: item.noi_dung || '', hinh_anh: item.hinh_anh || [] }
+      : { id: null, nhom: '', tieu_de: '', noi_dung: '', hinh_anh: [] };
     draw();
   }
   function closeForm(){ state.showForm = false; state.form = null; draw(); }
@@ -77,7 +85,12 @@ function render(container, ctx){
     const f = state.form;
     if(!f.noi_dung.trim()){ state.error = 'Nhập câu chuyện của case này.'; draw(); return; }
     state.saving = true; state.error = ''; draw();
-    const payload = { user_id: ctx.user.id, nhom: f.nhom, tieu_de: f.tieu_de.trim() || null, noi_dung: f.noi_dung.trim(), hinh_anh: f.hinh_anh };
+    let nhom = f.nhom;
+    if(!nhom){
+      try{ nhom = await classifyNhom(f.noi_dung.trim()); }
+      catch(e){ state.saving = false; state.error = `Không tự phân loại được (${e.message}) — chọn tay giúp mình mục Nhóm ở trên.`; draw(); return; }
+    }
+    const payload = { user_id: ctx.user.id, nhom, tieu_de: f.tieu_de.trim() || null, noi_dung: f.noi_dung.trim(), hinh_anh: f.hinh_anh };
     const { error } = f.id
       ? await ctx.supabase.from('crm_case_studies').update(payload).eq('id', f.id)
       : await ctx.supabase.from('crm_case_studies').insert(payload);
@@ -149,8 +162,10 @@ function render(container, ctx){
           ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhóm</label>
           <select id="cs-nhom" style="margin-top:6px;">
+            <option value="" ${!f.nhom?'selected':''}>✨ Để AI tự phân loại</option>
             ${NHOM_OPTIONS.map(n=>`<option value="${n.key}" ${f.nhom===n.key?'selected':''}>${esc(n.label)}</option>`).join('')}
           </select>
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Không chắc nên xếp vào nhóm nào cũng được — để trống, AI sẽ đọc câu chuyện và tự xếp nhóm khi lưu.</div>
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tiêu đề ngắn</label>
           <input type="text" id="cs-tieu-de" value="${esc(f.tieu_de)}" placeholder="VD: Chị Lan — giảm 5kg sau 30 ngày">
           <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Câu chuyện của case này</label>
@@ -166,7 +181,7 @@ function render(container, ctx){
             ${f.hinh_anh.length<MAX_IMAGES ? `<label style="width:80px;height:80px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:22px;">+<input type="file" accept="image/*" multiple id="cs-file" style="display:none;"></label>` : ''}
           </div>
           <div class="btn-row" style="justify-content:flex-start;margin-top:18px;">
-            <button class="btn btn-sm" id="cs-form-save" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu'}</button>
+            <button class="btn btn-sm" id="cs-form-save" ${state.saving?'disabled':''}>${state.saving?(f.nhom?'Đang lưu…':'Đang phân loại…'):'Lưu'}</button>
             <span class="btn-ghost btn btn-sm" id="cs-form-cancel">Huỷ</span>
           </div>
         </div>
