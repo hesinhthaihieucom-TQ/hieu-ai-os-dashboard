@@ -81,13 +81,19 @@ function render(container, ctx){
       state.screen='error';
       state.bootError = e.message;
     }
-    if(pendingAutoFill && state.screen==='main'){ state.tab='lich'; state.highlightAutoFill = true; state.toolsExpanded.autofill = true; }
+    if(pendingAutoFill && state.screen==='main'){ revealAutoFillCard(); } else { draw(); }
+  }
+
+  // Bung + cuộn + nháy sáng khối "AI tự viết + xếp cả tuần" — dùng chung cho 2 lối vào: (1) nút "Xếp
+  // lịch cả tuần ngay" từ Định Vị (window.PendingAutoFillWeek, xem boot()), (2) gợi ý ngay trong khối
+  // "AI gợi ý lịch tuần" khi khách chọn 2-3 bài/ngày (2026-08-30, theo phản hồi khách Thu Oanh: chọn
+  // 2-3 bài/ngày ở nút KIA chỉ ra chủ đề, vẫn phải tự chọn bài — nhiều khách không biết có nút này).
+  function revealAutoFillCard(){
+    state.tab='lich'; state.highlightAutoFill = true; state.toolsExpanded.autofill = true;
     draw();
-    if(pendingAutoFill && state.screen==='main'){
-      const card = document.getElementById('autofill-card');
-      if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
-      setTimeout(()=>{ state.highlightAutoFill = false; draw(); }, 4000);
-    }
+    const card = document.getElementById('autofill-card');
+    if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+    setTimeout(()=>{ state.highlightAutoFill = false; draw(); }, 4000);
   }
 
   // Tải lại đúng dữ liệu của tuần đang xem khi bấm "Tuần trước/Tuần sau" — tách khỏi onclick trực
@@ -308,6 +314,7 @@ function render(container, ctx){
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mỗi ngày muốn đăng mấy bài?</label>
         <div class="chips">${[1,2,3].map(n=>`<div class="chip ${state.postsPerDay===n?'selected':''}" data-posts-per-day="${n}">${n} bài/ngày</div>`).join('')}</div>
+        ${state.postsPerDay > 1 ? `<div class="hint-box" style="margin-top:8px;background:var(--accent-soft);">Chọn ${state.postsPerDay} bài/ngày thì nút bên dưới chỉ gợi ý CHỦ ĐỀ cho từng ô, bạn vẫn phải tự vào Kho Content chọn bài cho từng ô. Muốn AI viết SẴN toàn bộ bài cho mọi ô trống, dùng <span style="text-decoration:underline;cursor:pointer;font-weight:600;" data-action="jump-autofill">"AI tự viết + xếp cả tuần"</span> bên dưới thay vì nút này.</div>` : ''}
         ${!state.positioning ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
@@ -648,6 +655,8 @@ function render(container, ctx){
     });
     const aiBtn = container.querySelector('[data-action="ai-suggest"]');
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
+    const jumpAutoFillEl = container.querySelector('[data-action="jump-autofill"]');
+    if(jumpAutoFillEl) jumpAutoFillEl.onclick = revealAutoFillCard;
     container.querySelectorAll('[data-autofill-mode]').forEach(el=>{
       el.onclick = ()=>{ state.autoFillMode = el.getAttribute('data-autofill-mode'); draw(); };
     });

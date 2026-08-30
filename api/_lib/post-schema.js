@@ -95,7 +95,8 @@ function stripDiacritics(str) {
 // (không áp cho viet-tu-kho-goc.js phần giữ nguyên hook gốc — hook gốc giữ y hệt theo đúng thiết kế).
 const ANTI_AI_CLICHE_RULES = `QUY TẮC TRÁNH GIỌNG "NGHE NHƯ AI" (BẮT BUỘC):
 - TUYỆT ĐỐI KHÔNG mở đầu hoặc chuyển đoạn bằng các cụm kể chuyện sáo rỗng sau (đặc trưng giọng AI, đọc vào lộ ngay): "Có một giai đoạn...", "Ngày trước mình...", "Mình từng...", "Có một thời điểm...", "Hồi đó...", "Có một lần...", "Mình nhận ra một điều...", "Có một sự thật...", "Điều lạ là...", "Nhìn bên ngoài...", "Có lúc...", "Có thời điểm...", "Có giai đoạn...", "Có một khoảng thời gian...", "Đã từng...".
-- Nếu cần lồng trải nghiệm cá nhân, viết theo kiểu ĐANG NÓI VỀ 1 NHẬN THỨC đã đúc kết, không phải kể chuyện theo trình tự thời gian. Ví dụ: thay vì "Mình từng nghĩ cuộc đời sẽ tự thay đổi...", viết "Mình đã mất khá lâu mới hiểu rằng, biết nhiều không đồng nghĩa với việc cuộc đời sẽ thay đổi."`;
+- Nếu cần lồng trải nghiệm cá nhân, viết theo kiểu ĐANG NÓI VỀ 1 NHẬN THỨC đã đúc kết, không phải kể chuyện theo trình tự thời gian. Ví dụ: thay vì "Mình từng nghĩ cuộc đời sẽ tự thay đổi...", viết "Mình đã mất khá lâu mới hiểu rằng, biết nhiều không đồng nghĩa với việc cuộc đời sẽ thay đổi."
+- TUYỆT ĐỐI KHÔNG viết tắt "mình" thành "M", "bạn"/"chị"/"anh" thành 1 chữ cái viết tắt (vd "C", "A"), hay bất kỳ từ xưng hô/từ nào khác thành chữ cái đơn lẻ ở BẤT KỲ đâu trong bài (thân bài, CTA, bình luận ghim) — luôn viết đầy đủ cả từ, kể cả khi lặp lại nhiều lần trong cùng đoạn.`;
 
 // Viết theo tư duy chuyên gia tăng trưởng Facebook (2026-08-20, theo yêu cầu chị Quỳnh): thuật toán
 // Facebook đẩy bài rộng hơn chủ yếu dựa trên TỐC ĐỘ + SỐ LƯỢNG tương tác thật trong khoảng 30-60
