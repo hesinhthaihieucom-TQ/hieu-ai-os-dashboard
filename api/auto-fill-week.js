@@ -89,6 +89,10 @@ module.exports = async (req, res) => {
     const usedRefs = postsRows.filter((p) => p.source_table && p.source_id).map((p) => ({ table: p.source_table, id: p.source_id }));
 
     const filled = [];
+    // "Lịch tự động làm đang bị 1 màu quá... y hệt chủ đề và nội dung luôn" (chị Quỳnh 2026-08-31) —
+    // cộng dồn tiêu đề đã viết trong đợt bấm nút này, feed vào lượt viết TIẾP THEO để né lặp mô-típ mở
+    // bài (xem recentTitlesBlock() ở api/cron/auto-fill-schedule.js, dùng chung logic).
+    const recentTitles = [];
     const skippedNoCandidate = [];
     let quotaBlockedMessage = null;
     // Tổng lượt THẬT ĐÃ TRỪ (không tính phần đã refund) — trả về cho client để cập nhật đúng số ở
@@ -143,9 +147,10 @@ module.exports = async (req, res) => {
         const result = await fillOneSlot({
           userId: user.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
-          channel: 'ca_nhan', formatConstraint: null,
+          channel: 'ca_nhan', formatConstraint: null, recentTitles,
         });
         filled.push(result);
+        recentTitles.push(result.title);
         luotUsed += 3;
       } catch (e) {
         await refundTrialQuota(user.id, 'viet-tu-kho-goc');

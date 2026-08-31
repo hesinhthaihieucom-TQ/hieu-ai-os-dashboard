@@ -116,6 +116,18 @@ async function callClaude({ apiKey, system, userContent, tool }) {
   return toolUse.input;
 }
 
+// "Lịch tự động làm đang bị 1 màu quá... y hệt chủ đề và nội dung luôn" (chị Quỳnh 2026-08-31) — khi
+// nhiều candidate trong kho hook/content của cùng 1 trục hẹp (vd tài chính-tâm linh) đều dùng chung 1
+// mô-típ mở bài phổ biến ("tín hiệu/dấu hiệu vũ trụ đang gửi đến bạn"...), fillOneSlot() GIỮ NGUYÊN
+// hook gốc + chỉ paraphrase thân bài — nên nhiều bài trong cùng 1 đợt xếp lịch đọc rất giống nhau dù
+// nguồn khác nhau, vì bản thân các nguồn đã na ná nhau. Cách sửa: mỗi lần viết xong 1 bài, tiêu đề
+// được cộng dồn vào `recentTitles`, feed vào lượt viết TIẾP THEO trong CÙNG 1 đợt xếp lịch, bắt AI né
+// hẳn mô-típ mở bài đã dùng — không đổi cách chọn nguồn/paraphrase, chỉ thêm 1 lớp "đừng lặp mô-típ".
+function recentTitlesBlock(recentTitles) {
+  if (!recentTitles || !recentTitles.length) return '';
+  return `\nCÁC BÀI ĐÃ VIẾT TRONG ĐỢT XẾP LỊCH NÀY (cùng 1 lượt, có thể cùng nguồn/chủ đề gần giống) — TUYỆT ĐỐI KHÔNG lặp lại cùng 1 kiểu mở đầu/mô-típ/góc nhìn với các bài dưới đây, dù nội dung gốc có giống nhau (ví dụ nhiều bài đã mở theo kiểu "tín hiệu/dấu hiệu vũ trụ đang gửi đến bạn" thì bài này BẮT BUỘC chọn hẳn 1 cách vào bài khác hoàn toàn — không dùng lại từ "tín hiệu", "dấu hiệu", "vũ trụ", "không phải ngẫu nhiên" nếu các bài dưới đã dùng):\n${recentTitles.map((t) => `- ${t}`).join('\n')}\n`;
+}
+
 function vnDateStr(offsetDays) {
   const vn = new Date(Date.now() + 7 * 3600 * 1000 + offsetDays * 86400000);
   return vn.toISOString().slice(0, 10);
@@ -273,7 +285,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
   return { date: slotInfo.dateStr, slot: slotInfo.slot, post_id: post.id, title: core.tieu_de };
 }
 
-async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint }) {
+async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles }) {
   // "Lấy từ kho viral nhưng tự bịa tiêu đề còn gì??" (chị Quỳnh 2026-08-30) — trước đây LUÔN cho phép
   // AI tự đặt tiêu đề mới "tham khảo tinh thần" tiêu đề gốc, kể cả khi nguồn là 1 bài Kho Content đã
   // có sẵn tiêu đề THẬT (đã viral/kiểm chứng) — giờ BẮT BUỘC giữ nguyên tiêu đề đó, không tự sáng tác
@@ -296,7 +308,7 @@ ${candidate.text.trim()}
 CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): (không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-
+${recentTitlesBlock(recentTitles)}
 Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`,
   });
 
@@ -314,7 +326,7 @@ Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyê
 // Viết bài TỪ 1 ảnh case study (vision), tuỳ chọn ghép thêm ảnh cá nhân làm nền (chỉ Fanpage —
 // personalPhoto truyền null thì bỏ qua hẳn bước ghép ảnh, dùng cho lane Cá nhân vốn không cần ảnh do
 // hệ thống tạo, chị tự đăng tay). Không có "nguồn hook/content" nên source_table/source_id để trống.
-async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint }) {
+async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles }) {
   const core = await callClaude({
     apiKey, system: SYSTEM_PROMPT_CASE_STUDY, tool: TOOL_POST_CORE,
     userContent: [
@@ -324,7 +336,7 @@ async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, per
         text: `${contextBlockOf(positioning, null)}
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-
+${recentTitlesBlock(recentTitles)}
 Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguyên tắc đã nêu.`,
       },
     ],
@@ -402,6 +414,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
 
   const filled = [];
   const skippedNoCandidate = [];
+  const recentTitles = []; // cộng dồn tiêu đề đã viết trong đợt này, feed vào lượt sau để né lặp mô-típ
   for (const slotInfo of slotInfos) {
     const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
     // Chọn ngẫu nhiên 1 sản phẩm + 1 group mỗi lần lấp — không có logic xoay vòng riêng, nhưng qua
@@ -422,11 +435,12 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
       if (preferredCaseStudy) {
         const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
         usedRefs.push({ table: 'case_studies', id: preferredCaseStudy.id });
-        filled.push(await fillCaseStudySlot({
+        const result = await fillCaseStudySlot({
           userId: admin.id, positioning, slotInfo, caseStudy: preferredCaseStudy, personalPhoto, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
-          channel: 'fanpage', formatConstraint: null,
-        }));
+          channel: 'fanpage', formatConstraint: null, recentTitles,
+        });
+        filled.push(result); recentTitles.push(result.title);
         continue;
       }
       const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
@@ -437,21 +451,23 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
         if (fallbackCaseStudy && personalPhotos.length) {
           const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
           usedRefs.push({ table: 'case_studies', id: fallbackCaseStudy.id });
-          filled.push(await fillCaseStudySlot({
+          const result = await fillCaseStudySlot({
             userId: admin.id, positioning, slotInfo, caseStudy: fallbackCaseStudy, personalPhoto, slotTime, apiKey, product, group,
             channelHandle: profile.channel_handle, brandName: profile.brand_name,
-            channel: 'fanpage', formatConstraint: null,
-          }));
+            channel: 'fanpage', formatConstraint: null, recentTitles,
+          });
+          filled.push(result); recentTitles.push(result.title);
           continue;
         }
         skippedNoCandidate.push(slotInfo); continue;
       }
       usedRefs.push({ table: candidate.table, id: candidate.id }); // không chọn trùng trong cùng lượt chạy
-      filled.push(await fillOneSlot({
+      const result = await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
-        channel: 'fanpage', formatConstraint: null,
-      }));
+        channel: 'fanpage', formatConstraint: null, recentTitles,
+      });
+      filled.push(result); recentTitles.push(result.title);
     } catch (e) {
       skippedNoCandidate.push({ ...slotInfo, error: e.message });
     }
@@ -513,6 +529,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
 
   const filled = [];
   const skippedNoCandidate = [];
+  const recentTitles = []; // cộng dồn tiêu đề đã viết trong đợt này, feed vào lượt sau để né lặp mô-típ
   for (const slotInfo of toFill) {
     const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
     const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
@@ -524,11 +541,12 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
         if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
         usedRefs.push({ table: candidate.table, id: candidate.id });
-        filled.push(await fillOneSlot({
+        const result = await fillOneSlot({
           userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
-          channel: 'ca_nhan', formatConstraint: FORCE_NGOI_NOI,
-        }));
+          channel: 'ca_nhan', formatConstraint: FORCE_NGOI_NOI, recentTitles,
+        });
+        filled.push(result); recentTitles.push(result.title);
         continue;
       }
       if (slotInfo.slot === 'trua') {
@@ -539,22 +557,24 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         if (!caseStudy) { skippedNoCandidate.push(slotInfo); continue; }
         const personalPhoto = personalPhotos.length ? personalPhotos[Math.floor(Math.random() * personalPhotos.length)] : null;
         usedRefs.push({ table: 'case_studies', id: caseStudy.id });
-        filled.push(await fillCaseStudySlot({
+        const result = await fillCaseStudySlot({
           userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
-          channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI,
-        }));
+          channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
+        });
+        filled.push(result); recentTitles.push(result.title);
         continue;
       }
       // Buổi sáng — bài thường từ hook/content.
       const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
       if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
       usedRefs.push({ table: candidate.table, id: candidate.id });
-      filled.push(await fillOneSlot({
+      const result = await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
-        channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI,
-      }));
+        channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
+      });
+      filled.push(result); recentTitles.push(result.title);
     } catch (e) {
       skippedNoCandidate.push({ ...slotInfo, error: e.message });
     }
