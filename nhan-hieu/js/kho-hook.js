@@ -8,6 +8,12 @@ const TOUR_STEPS = [
 const CATEGORIES = {
   noi_dau: 'Nỗi đau', su_that_nguoc: 'Sự thật ngược', canh_bao: 'Cảnh báo',
   ket_qua_mong_muon: 'Kết quả mong muốn', tu_khoa_kich_hoat: 'Từ khoá kích hoạt chú ý',
+  // Quote/châm ngôn hoàn chỉnh (đọc là hiểu hết ý, không mở ra gì thêm) — KHÁC hook thật (tạo tò mò/
+  // khoảng trống khiến người đọc muốn đọc tiếp). Thêm 2026-08-31 sau khi rà lại kho hook sức khoẻ
+  // nạp từ Google Keep: ~36/58 câu thực chất là caption/quote (đúng nhãn Keep "CAP SỨC KHOẺ" — CAP =
+  // caption đè ảnh, không phải hook mở bài) bị gộp nhầm vào Kho Hook — theo yêu cầu chị Quỳnh: giữ
+  // nguyên trong Kho Hook, chỉ đổi nhãn category cho đúng bản chất thay vì gán ép vào 1 kiểu hook.
+  quote: 'Quote / Câu trích dẫn',
 };
 
 const HOOK_GEN_CATEGORIES = [
