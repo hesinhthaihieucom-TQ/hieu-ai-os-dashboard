@@ -21,6 +21,7 @@ const { contextBlockOf } = require('./_lib/post-schema');
 const { TEXT_CLASSIFY_SYSTEM_PROMPT, TOOL_PHAN_LOAI_TRUC } = require('./_lib/pillars');
 const {
   loadCandidatePool, pickUnusedCandidate, findEmptySlots, fillOneSlot, PERSONAL_SLOTS, DEFAULT_SLOT_TIME,
+  pickMatchingProduct,
 } = require('./cron/auto-fill-schedule');
 const hookSuggest = require('./goi-y-hook-theo-chu-de');
 
@@ -113,7 +114,9 @@ module.exports = async (req, res) => {
 
     for (const slotInfo of toFill) {
       const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
-      const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
+      // Sản phẩm chọn SAU khi biết candidate (so khớp nội dung, xem pickMatchingProduct bên dưới) —
+      // "sản phẩm là tùy bài đó nói về cái j thì chọn sản phẩm đó chứ sao lung tung đc" (chị Quỳnh
+      // 2026-08-31, trước đây random tuyệt đối trước khi biết bài viết về gì).
       const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
 
       let candidate = null;
@@ -154,6 +157,7 @@ module.exports = async (req, res) => {
       if (writeQuotaError) { quotaBlockedMessage = writeQuotaError; break; }
       try {
         if (finalMode === 'kho') usedRefs.push({ table: candidate.table, id: candidate.id });
+        const product = pickMatchingProduct(products, candidate.text);
         const result = await fillOneSlot({
           userId: user.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,

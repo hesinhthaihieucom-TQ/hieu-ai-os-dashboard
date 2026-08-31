@@ -211,6 +211,26 @@ function filterPoolByPillar(poolCandidates, truc) {
     : poolCandidates; // không có ứng viên nào khớp đúng trục — thà dùng tạm còn hơn bỏ qua cả lượt điền
 }
 
+// "sản phẩm là tùy bài đó nói về cái j thì chọn sản phẩm đó chứ sao lung tung đc" (chị Quỳnh
+// 2026-08-31) — trước đây chọn NGẪU NHIÊN 1 sản phẩm trước khi biết bài sẽ viết về gì, hoàn toàn
+// không liên quan chủ đề. Giờ so khớp từ khoá trong TÊN sản phẩm với văn bản nguồn (hook/content/quote
+// sắp viết) — không có AI riêng để tránh tốn thêm lượt, chỉ so khớp từ đơn giản. Khớp được thì ưu
+// tiên sản phẩm khớp (random giữa các sản phẩm đồng điểm cao nhất nếu có nhiều); KHÔNG khớp được từ
+// nào thì rơi về random như cũ (còn hơn không gắn sản phẩm nào). Case study không có văn bản nguồn
+// trước (chỉ có ảnh, AI mới biết nội dung SAU khi viết) nên vẫn giữ random ở đó.
+function pickMatchingProduct(products, sourceText) {
+  if (!products.length) return null;
+  const text = String(sourceText || '').toLowerCase();
+  const scored = products.map((p) => {
+    const words = String(p.label || '').toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+    const score = words.filter((w) => text.includes(w)).length;
+    return { p, score };
+  });
+  const topScore = Math.max(...scored.map((s) => s.score));
+  const top = topScore > 0 ? scored.filter((s) => s.score === topScore) : scored;
+  return top[Math.floor(Math.random() * top.length)].p;
+}
+
 // Y hệt usageCountFor()/sortUnusedFirst() ở nhan-hieu/js/kho-hook.js và kho-content.js — ưu tiên ứng
 // viên CHƯA TỪNG được viết thành bài (posts.source_table/source_id). usedRefs được cập nhật NGAY
 // trong vòng lặp (không chỉ đọc 1 lần từ DB) để không chọn trùng 1 nguồn cho 2 ô trống khác nhau
@@ -513,9 +533,11 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
   const recentTitles = []; // cộng dồn tiêu đề đã viết trong đợt này, feed vào lượt sau để né lặp mô-típ
   for (const slotInfo of slotInfos) {
     const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
-    // Chọn ngẫu nhiên 1 sản phẩm + 1 group mỗi lần lấp — không có logic xoay vòng riêng, nhưng qua
-    // nhiều lượt chạy sẽ tự dàn đều các sản phẩm/group đã lưu, không lặp mãi 1 sản phẩm.
-    const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
+    // Chọn ngẫu nhiên 1 group mỗi lần lấp (không có văn bản nguồn để so khớp trước như sản phẩm bên
+    // dưới — cứ tạm random, qua nhiều lượt chạy sẽ tự dàn đều). Sản phẩm giờ chọn theo TỪNG NHÁNH bên
+    // dưới, so khớp với đúng nội dung sắp viết (pickMatchingProduct) — "sản phẩm là tùy bài đó nói về
+    // cái j thì chọn sản phẩm đó chứ sao lung tung đc" (chị Quỳnh 2026-08-31, trước đây random tuyệt
+    // đối, không liên quan chủ đề bài).
     const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
     // Trộn nội dung thay vì luôn ưu tiên tuyệt đối case study khi có đủ ảnh (phản hồi chị Quỳnh
     // 2026-08-28: có nhiều ảnh trong kho khiến MỌI bài đều rơi vào case study, mất đa dạng nội dung).
@@ -529,6 +551,9 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
     try {
       const preferredCaseStudy = preferCaseStudy ? pickUnusedCaseStudy(caseStudies, usedRefs) : null;
       if (preferredCaseStudy) {
+        // Case study không có văn bản nguồn trước (chỉ ảnh, AI mới biết nội dung SAU khi viết) — vẫn
+        // random sản phẩm ở đây, không có gì để so khớp trước.
+        const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
         const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
         usedRefs.push({ table: 'case_studies', id: preferredCaseStudy.id });
         const result = await fillCaseStudySlot({
@@ -545,6 +570,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
         // hơn bỏ qua cả lượt chỉ vì kho hook/content tạm cạn. Hết cả 2 mới thật sự bỏ trống ô.
         const fallbackCaseStudy = pickUnusedCaseStudy(caseStudies, usedRefs);
         if (fallbackCaseStudy && personalPhotos.length) {
+          const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
           const personalPhoto = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
           usedRefs.push({ table: 'case_studies', id: fallbackCaseStudy.id });
           const result = await fillCaseStudySlot({
@@ -558,6 +584,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
         skippedNoCandidate.push(slotInfo); continue;
       }
       usedRefs.push({ table: candidate.table, id: candidate.id }); // không chọn trùng trong cùng lượt chạy
+      const product = pickMatchingProduct(products, candidate.text);
       const result = await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
@@ -631,7 +658,9 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
   const recentTitles = []; // cộng dồn tiêu đề đã viết trong đợt này, feed vào lượt sau để né lặp mô-típ
   for (const slotInfo of toFill) {
     const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
-    const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
+    // Sản phẩm chọn theo TỪNG NHÁNH bên dưới, so khớp đúng văn bản nguồn sắp viết (pickMatchingProduct)
+    // — "sản phẩm là tùy bài đó nói về cái j thì chọn sản phẩm đó chứ sao lung tung đc" (chị Quỳnh
+    // 2026-08-31, trước đây random tuyệt đối trước khi biết bài viết về gì).
     const group = groups.length ? groups[Math.floor(Math.random() * groups.length)] : null;
     try {
       if (slotInfo.slot === 'toi') {
@@ -640,6 +669,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         const candidate = pickUnusedCandidate(poolFiltered, usedRefs, false);
         if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
         usedRefs.push({ table: candidate.table, id: candidate.id });
+        const product = pickMatchingProduct(products, candidate.text);
         const result = await fillOneSlot({
           userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
@@ -661,12 +691,16 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         let result;
         if (picked.type === 'quote') {
           usedRefs.push({ table: picked.quote.table, id: picked.quote.id });
+          const product = pickMatchingProduct(products, picked.quote.text);
           result = await fillQuoteSlot({
             userId: admin.id, positioning, slotInfo, quote: picked.quote, slotTime, apiKey, product, group,
             channelHandle: profile.channel_handle, brandName: profile.brand_name,
             channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
           });
         } else {
+          // Case study không có văn bản nguồn trước (chỉ ảnh) — vẫn random sản phẩm, không có gì để
+          // so khớp trước khi AI viết xong.
+          const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
           const personalPhoto = personalPhotos.length ? personalPhotos[Math.floor(Math.random() * personalPhotos.length)] : null;
           usedRefs.push({ table: 'case_studies', id: picked.caseStudy.id });
           result = await fillCaseStudySlot({
@@ -682,6 +716,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
       const candidate = pickUnusedCandidate(poolFiltered, usedRefs, false);
       if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
       usedRefs.push({ table: candidate.table, id: candidate.id });
+      const product = pickMatchingProduct(products, candidate.text);
       const result = await fillOneSlot({
         userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
@@ -740,3 +775,6 @@ module.exports.findEmptySlots = findEmptySlots;
 module.exports.fillOneSlot = fillOneSlot;
 module.exports.PERSONAL_SLOTS = PERSONAL_SLOTS;
 module.exports.DEFAULT_SLOT_TIME = DEFAULT_SLOT_TIME;
+// Export thêm (2026-08-31) để auto-fill-week.js chọn sản phẩm so khớp đúng nội dung sắp viết thay vì
+// random tuyệt đối — xem pickMatchingProduct().
+module.exports.pickMatchingProduct = pickMatchingProduct;
