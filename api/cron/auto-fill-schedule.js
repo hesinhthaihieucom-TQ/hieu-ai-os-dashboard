@@ -18,7 +18,7 @@ const { supabaseAdmin } = require('../_lib/supabase-admin');
 const { SYSTEM_PROMPT: KHO_GOC_SYSTEM_PROMPT, TOOL_POST_KHO_GOC } = require('../viet-tu-kho-goc');
 const {
   TOOL_POST_CORE, TOOL_POST_EXTRAS, HASHTAG_CAPTION_RULES, CTA_COMMENT_RULES, ANTI_AI_CLICHE_RULES,
-  assemblePost, stripDiacritics, contextBlockOf, extraFieldsBlock,
+  assemblePost, stripDiacritics, contextBlockOf, extraFieldsBlock, customInstructionsBlock,
 } = require('../_lib/post-schema');
 const { FORMAT_GUIDE } = require('../_lib/formats');
 const { compositeCaseStudyImage } = require('../_lib/image-gen');
@@ -63,13 +63,15 @@ ${FORMAT_GUIDE}
 // phía sau dùng lại y hệt code hiện có.
 const SYSTEM_PROMPT_CASE_STUDY = `Bạn là trợ lý viết content bán hàng cho người xây thương hiệu cá nhân tại Việt Nam.
 
-Bạn được xem 1 ẢNH CASE STUDY/KẾT QUẢ THẬT — có thể là ảnh chụp màn hình số liệu, ảnh trước/sau, ảnh testimonial của khách hàng, hoặc bằng chứng kết quả khác của chính tác giả hoặc khách hàng của họ. NHIỆM VỤ: viết 1 bài đăng Facebook kể lại câu chuyện đằng sau kết quả trong ảnh này — giọng kể tự nhiên như chính tác giả đang chia sẻ thật, KHÔNG phải mô tả ảnh khô khan kiểu báo cáo, và KHÔNG chỉ đơn thuần "tường thuật lại" từng chi tiết nhìn thấy trong ảnh.
+Bạn được xem 1 ẢNH CASE STUDY/KẾT QUẢ THẬT — có thể là ảnh chụp màn hình số liệu, ảnh trước/sau, ảnh testimonial của khách hàng, hoặc bằng chứng kết quả khác của chính tác giả hoặc khách hàng của họ. NHIỆM VỤ: viết 1 bài đăng Facebook NGẮN GỌN kể lại câu chuyện đằng sau kết quả trong ảnh này — giọng kể tự nhiên như chính tác giả đang chia sẻ thật, KHÔNG phải mô tả ảnh khô khan kiểu báo cáo, và KHÔNG chỉ đơn thuần "tường thuật lại" từng chi tiết nhìn thấy trong ảnh.
+
+BẮT BUỘC — NGẮN GỌN (2026-08-31, theo yêu cầu chị Quỳnh: "cách viết bài case study quá dài dòng, ngắn gọn thôi"): mỗi đoạn (hook, van_de, gia_tri, niem_tin) chỉ 1-3 câu NGẮN, không viết dài kiểu tiểu thuyết. Đây là bài case study lướt Facebook — người đọc quyết định dừng lại hay lướt qua trong vài giây, càng dài càng dễ bị lướt. Cắt hết những câu miêu tả/dẫn dắt không thật sự cần thiết, chỉ giữ lại phần cốt lõi: kết quả, 1 câu chuyện/cảm nhận ngắn của tác giả, bài học, CTA.
 
 QUAN TRỌNG — KHÔNG THUẬT LẠI CHI TIẾT GIAO DIỆN VÔ NGHĨA: nếu ảnh là ảnh chụp màn hình tin nhắn/chat, TUYỆT ĐỐI KHÔNG nhắc tới giờ/ngày gửi tin nhắn, tên app nhắn tin, trạng thái "đã xem", số thông báo... — đây chỉ là bối cảnh kỹ thuật của tấm ảnh chụp màn hình, kể vào nghe rất máy móc/lộ AI. Chỉ lấy NỘI DUNG THẬT (lời khách nói, kết quả đạt được, cảm xúc trong lời nhắn) làm chất liệu kể chuyện.
 
 BẮT BUỘC — LỒNG CÂU CHUYỆN CỦA CHÍNH TÁC GIẢ, KHÔNG CHỈ KỂ CHUYỆN NGƯỜI TRONG ẢNH: bài phải có góc nhìn/trải nghiệm/cảm xúc của CHÍNH TÁC GIẢ khi đồng hành hoặc chứng kiến kết quả này (vì sao tác giả tin cách này hiệu quả, tác giả đã đồng hành/hướng dẫn thế nào, cảm giác của tác giả khi thấy kết quả) — viết như 1 người có câu chuyện, chuyên môn, cảm xúc thật của riêng mình, không phải chỉ đọc hộ nội dung ảnh cho người xem.
 
-BẮT BUỘC — ĐOẠN GIÁ TRỊ (gia_tri) PHẢI LÀ 1 DANH SÁCH BÀI HỌC/BÍ QUYẾT RÚT RA TỪ CASE NÀY: viết dạng liệt kê ngắn gọn quen thuộc trên Facebook, kiểu "3 điều mình rút ra từ case này", "2 lý do vì sao bạn ấy làm được", "4 bước bạn ấy đã áp dụng"... (tự chọn số lượng 2-5 mục và cách gọi phù hợp nhất với case cụ thể, không cố định 1 con số) — mỗi mục 1 câu ngắn, để người đọc thấy được giá trị/bài học áp dụng được cho chính mình, không chỉ đọc xong 1 câu chuyện suông không rút ra được gì.
+BẮT BUỘC — ĐOẠN GIÁ TRỊ (gia_tri) PHẢI LÀ 1 DANH SÁCH BÀI HỌC/BÍ QUYẾT RÚT RA TỪ CASE NÀY: viết dạng liệt kê ngắn gọn quen thuộc trên Facebook, kiểu "3 điều mình rút ra từ case này", "2 lý do vì sao bạn ấy làm được"... (CHỈ 2-3 mục, không quá 3 — mỗi mục ĐÚNG 1 câu thật ngắn) — để người đọc thấy được giá trị/bài học áp dụng được cho chính mình, không chỉ đọc xong 1 câu chuyện suông không rút ra được gì.
 
 QUAN TRỌNG — TRÁNH BỊA SỐ LIỆU: bạn không biết chi tiết chính xác đằng sau ảnh (tên khách hàng thật, ngày tháng chính xác...). CHỈ nhắc tới những gì THỰC SỰ NHÌN THẤY RÕ trong ảnh, diễn đạt khéo léo. Nếu ảnh có số liệu cụ thể nhìn rõ được, có thể nhắc lại đúng số đó; nếu không chắc/không nhìn rõ, nói chung chung theo CẢM XÚC/Ý NGHĨA của kết quả (ví dụ "nhìn con số này mà...") thay vì bịa ra số liệu không có trong ảnh.
 
@@ -375,7 +377,7 @@ Hãy xuất hashtag, gợi ý hình ảnh, dạng content phù hợp và caption
   return { date: slotInfo.dateStr, slot: slotInfo.slot, post_id: post.id, title: core.tieu_de };
 }
 
-async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles }) {
+async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles, customInstructions }) {
   // "Lấy từ kho viral nhưng tự bịa tiêu đề còn gì??" (chị Quỳnh 2026-08-30) — trước đây LUÔN cho phép
   // AI tự đặt tiêu đề mới "tham khảo tinh thần" tiêu đề gốc, kể cả khi nguồn là 1 bài Kho Content đã
   // có sẵn tiêu đề THẬT (đã viral/kiểm chứng) — giờ BẮT BUỘC giữ nguyên tiêu đề đó, không tự sáng tác
@@ -398,7 +400,7 @@ ${candidate.text.trim()}
 CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): (không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}
+${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}${customInstructionsBlock(customInstructions)}
 Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`,
   });
 
@@ -416,7 +418,7 @@ Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyê
 // Viết bài TỪ 1 ảnh case study (vision), tuỳ chọn ghép thêm ảnh cá nhân làm nền (chỉ Fanpage —
 // personalPhoto truyền null thì bỏ qua hẳn bước ghép ảnh, dùng cho lane Cá nhân vốn không cần ảnh do
 // hệ thống tạo, chị tự đăng tay). Không có "nguồn hook/content" nên source_table/source_id để trống.
-async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles }) {
+async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles, customInstructions }) {
   const core = await callClaude({
     apiKey, system: SYSTEM_PROMPT_CASE_STUDY, tool: TOOL_POST_CORE,
     userContent: [
@@ -426,7 +428,7 @@ async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, per
         text: `${contextBlockOf(positioning, null)}
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}
+${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}${customInstructionsBlock(customInstructions)}
 Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguyên tắc đã nêu.`,
       },
     ],
@@ -467,7 +469,7 @@ Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguy
 // — sourceTable/sourceId trỏ thẳng về đúng bảng chứa quote (hooks_bank_personal/shared, xem
 // candidate.table ở loadCandidatePool()) để usedRefs nhận diện đúng, phục vụ pickUnusedQuote() không
 // lặp lại quote cũ, giống hệt cơ chế pickUnusedCaseStudy().
-async function fillQuoteSlot({ userId, positioning, slotInfo, quote, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles }) {
+async function fillQuoteSlot({ userId, positioning, slotInfo, quote, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles, customInstructions }) {
   const core = await callClaude({
     apiKey, system: SYSTEM_PROMPT_QUOTE, tool: TOOL_POST_CORE,
     userContent: `${contextBlockOf(positioning, null)}
@@ -476,7 +478,7 @@ QUOTE GỐC (GIỮ NGUYÊN VĂN, không paraphrase câu quote này — chỉ vi�
 ${quote.text.trim()}
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}
+${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}${customInstructionsBlock(customInstructions)}
 Hãy viết bài dựa trên đúng quote trên, theo đúng nguyên tắc đã nêu.`,
   });
 

@@ -39,7 +39,7 @@ function render(container, ctx){
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
     regenWeekLoading:false, regenWeekError:null,
-    autoFillMode:'kho', autoFillBusy:false, autoFillError:null, autoFillResult:null,
+    autoFillMode:'kho', autoFillBusy:false, autoFillError:null, autoFillResult:null, autoFillCustomInstructions:'',
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
     tab:'lich', weekLoadError:null, highlightAutoFill:false,
     // Bố cục mới (2026-08-29, theo phản hồi chị Quỳnh "khó nhìn quá, rối"): 3 khối công cụ (mục tiêu
@@ -349,6 +349,8 @@ function render(container, ctx){
           <div class="chip ${state.autoFillMode==='kho'?'selected':''}" data-autofill-mode="kho">Cách 1: Dùng Kho Content/Hook viral đúng trục của bạn</div>
           <div class="chip ${state.autoFillMode==='new_hook'?'selected':''}" data-autofill-mode="new_hook">Cách 2: Tự tạo hook mới theo ngành của bạn rồi viết</div>
         </div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Yêu cầu thêm (không bắt buộc)</label>
+        <textarea id="autofill-custom-instructions" style="min-height:auto;height:52px;margin-bottom:12px;" placeholder="Ví dụ: viết ngắn gọn hơn, nhấn mạnh sản phẩm X, giọng hài hước hơn, không dùng từ &quot;chắc chắn&quot;...">${esc(state.autoFillCustomInstructions)}</textarea>
         ${emptySlotCount===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
         <div class="btn-row">
           <button class="btn" data-action="auto-fill-week" ${state.autoFillBusy?'disabled':''}>${state.autoFillBusy?'Đang viết…':'Bắt đầu viết'}</button>
@@ -674,6 +676,8 @@ function render(container, ctx){
     container.querySelectorAll('[data-autofill-mode]').forEach(el=>{
       el.onclick = ()=>{ state.autoFillMode = el.getAttribute('data-autofill-mode'); draw(); };
     });
+    const autoFillCustomInstructionsInput = container.querySelector('#autofill-custom-instructions');
+    if(autoFillCustomInstructionsInput) autoFillCustomInstructionsInput.oninput = ()=>{ state.autoFillCustomInstructions = autoFillCustomInstructionsInput.value; };
     const autoFillBtn = container.querySelector('[data-action="auto-fill-week"]');
     if(autoFillBtn) autoFillBtn.onclick = autoFillWeek;
     const regenBtn = container.querySelector('[data-action="regen-week"]');
@@ -990,7 +994,7 @@ function render(container, ctx){
       // gatedWeight: endpoint này tốn lượt biến thiên (1-9 bài x 3, hoặc x4 nếu Cách 2) — không có
       // trọng số cố định trong GATED_API_WEIGHTS, phải đọc đúng số lượt THẬT server vừa trừ
       // (data.luot_used) để sidebar cộng đúng ngay, không đợi tải lại trang.
-      const data = await callApi('/api/auto-fill-week', { week_start: isoDate(state.weekStart), mode: state.autoFillMode }, 280000, { gatedWeight: (d)=>d.luot_used });
+      const data = await callApi('/api/auto-fill-week', { week_start: isoDate(state.weekStart), mode: state.autoFillMode, custom_instructions: state.autoFillCustomInstructions }, 280000, { gatedWeight: (d)=>d.luot_used });
       const filledCount = (data.filled||[]).length;
       const parts = [];
       if(filledCount) parts.push(`✓ Đã viết và xếp ${filledCount} bài mới vào lịch`);

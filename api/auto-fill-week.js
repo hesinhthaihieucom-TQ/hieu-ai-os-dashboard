@@ -54,7 +54,11 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { week_start, mode } = req.body || {};
+    // custom_instructions (2026-08-31, "với phần AI tự viết bài cả tuần vẫn cho phần yêu cầu vào" —
+    // chị Quỳnh) — y hệt "Yêu cầu riêng" đã có ở Viết Content/Viết từ Kho Gốc (customInstructionsBlock,
+    // xem api/_lib/post-schema.js), trước đây "AI tự viết + xếp cả tuần" KHÔNG có chỗ nào cho người
+    // dùng gõ yêu cầu tuỳ chỉnh — bấm là AI viết theo mặc định, không có cách can thiệp.
+    const { week_start, mode, custom_instructions } = req.body || {};
     if (!/^\d{4}-\d{2}-\d{2}$/.test(week_start || '')) { res.status(400).json({ error: 'Thiếu hoặc sai định dạng tuần cần điền.' }); return; }
     const finalMode = mode === 'new_hook' ? 'new_hook' : 'kho';
 
@@ -161,7 +165,7 @@ module.exports = async (req, res) => {
         const result = await fillOneSlot({
           userId: user.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
-          channel: 'ca_nhan', formatConstraint: null, recentTitles,
+          channel: 'ca_nhan', formatConstraint: null, recentTitles, customInstructions: custom_instructions,
         });
         filled.push(result);
         recentTitles.push(result.title);
