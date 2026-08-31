@@ -35,7 +35,7 @@ const SK_BETTER_HIGH = { kgco:1, hdl:1, nangluong:1, cl_ngu:1, macdo:1, vandong:
 const SK_METRIC_CATEGORY = {
   eo1:'giam_mo', eo2:'giam_mo', bung_ron:'giam_mo', bung_duoi:'giam_mo', cannang:'giam_mo', mo:'giam_mo', monoitang:'giam_mo', kgco:'tang_de_khang',
   glucose:'giam_mo', tg:'giam_mo', hba1c:'giam_mo', ldl:'giam_mo', chol:'giam_mo', uric:'thai_doc',
-  nangluong:'tang_de_khang', cl_ngu:'thai_doc', vandong:'lam_dep_da', damongtoc:'lam_dep_da', anuong:'thai_doc', sucben:'tang_de_khang',
+  nangluong:'tang_de_khang', cl_ngu:'thai_doc', vandong:'xuong_khop', damongtoc:'lam_dep_da', anuong:'thai_doc', sucben:'tang_de_khang',
 };
 const SK_ABSOLUTE_CONCERN = {
   glucose: v => v >= 5.6,

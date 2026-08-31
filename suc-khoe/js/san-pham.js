@@ -1,11 +1,13 @@
-// Phân nhánh theo đúng 4 nhóm trong "Sổ Tay Chăm Sóc Sức Khoẻ Chủ Động" chị Quỳnh gửi (2026-08-30) —
-// khớp cột sk_products.category ở schema_full.sql. Sản phẩm chưa xếp nhánh (vd nhóm mỹ phẩm Neigene)
-// có category = null, vẫn hiện ở tab "Tất cả".
+// Phân nhánh theo "Sổ Tay Chăm Sóc Sức Khoẻ Chủ Động" chị Quỳnh gửi (2026-08-30) + thêm nhánh riêng
+// "Xương khớp" (2026-08-30, chị chốt: Canxi-Magiê/Joint Mobility đang bị gộp nhầm vào Làm đẹp da,
+// tách khỏi Làm đẹp da cho đúng bản chất). Sản phẩm chưa xếp nhánh (vd nhóm mỹ phẩm Neigene) có
+// category = null, vẫn hiện ở tab "Tất cả".
 const SK_PRODUCT_CATEGORIES = [
   { key:'thai_doc', label:'Thải độc' },
   { key:'giam_mo', label:'Giảm mỡ' },
   { key:'tang_de_khang', label:'Tăng đề kháng' },
   { key:'lam_dep_da', label:'Làm đẹp da' },
+  { key:'xuong_khop', label:'Xương khớp' },
 ];
 
 (function(){

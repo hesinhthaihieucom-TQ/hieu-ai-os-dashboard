@@ -166,8 +166,13 @@ create table if not exists sk_products (
 -- định dùng để lọc/nhóm ở trang Sản Phẩm Unicity. NULL = sản phẩm chưa xếp nhánh (vd nhóm mỹ phẩm
 -- Neigene) — ALTER thay vì nhét vào CREATE TABLE vì bảng này có thể đã được tạo từ trước, cùng lý do
 -- đã áp dụng cho sk_health_checkins/sk_weekly_logs ở trên.
-alter table sk_products add column if not exists category text
-  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da'));
+alter table sk_products add column if not exists category text;
+-- Thêm nhánh "Xương khớp" (2026-08-30, chị Quỳnh chốt: Canxi-Magiê và Joint Mobility đang bị xếp
+-- nhầm vào Làm đẹp da) — ALTER CONSTRAINT thay vì sửa trong ALTER ADD COLUMN ở trên, vì "add column
+-- if not exists" bỏ qua toàn bộ khi cột đã có sẵn, ràng buộc cũ sẽ không được cập nhật nếu chỉ sửa ở đó.
+alter table sk_products drop constraint if exists sk_products_category_check;
+alter table sk_products add constraint sk_products_category_check
+  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da','xuong_khop'));
 -- Nội dung chi tiết dạng nhiều mục (2026-08-30, chị Quỳnh phản hồi "benefits" 1 đoạn text là hời hợt,
 -- cần bố cục rõ theo mục như 1 chuyên gia bán hàng trình bày, xem thêm mới hiện ra) — mảng jsonb
 -- [{title, body}], mỗi phần tử là 1 mục có tiêu đề riêng (vd "Công dụng theo nhãn đăng ký", "Thành
@@ -184,11 +189,14 @@ create table if not exists sk_product_combos (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   description text,
-  category text check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da')),
+  category text,
   product_ids uuid[] not null default '{}',
   combo_price numeric,
   created_at timestamptz not null default now()
 );
+alter table sk_product_combos drop constraint if exists sk_product_combos_category_check;
+alter table sk_product_combos add constraint sk_product_combos_category_check
+  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da','xuong_khop'));
 alter table sk_product_combos enable row level security;
 drop policy if exists "sk_product_combos_read" on sk_product_combos;
 create policy "sk_product_combos_read" on sk_product_combos for select using (auth.role() = 'authenticated');
