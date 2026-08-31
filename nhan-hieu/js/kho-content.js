@@ -32,13 +32,19 @@ const COMPACT_SELECT_STYLE = 'width:auto;min-width:150px;margin-top:0;padding:8p
 
 // Trục nội dung (content pillar) — nhóm các tag chi tiết trong data lại thành nhóm lớn dễ chọn,
 // tránh người dùng bị ngộp vì phải lướt qua cả kho chung chưa lọc. Khớp key với api/_lib/pillars.js.
+// LƯU Ý: mỗi pillar PHẢI có chính key của nó trong mảng tags — nhiều nơi khác (seed SQL, backfill
+// tay, hooks_bank_shared...) gắn tag bằng ĐÚNG bare key (vd tags=['suc_khoe_lam_dep']), không phải
+// sub-tag chi tiết. Thiếu key trong tags khiến pillarsForItem() không khớp được, item rơi vào "Chưa
+// phân loại" dù đã có tag (bug thật phát hiện 2026-08-31: seed_kho_chung_v8_suc_khoe_keep.sql gắn
+// đúng ARRAY['suc_khoe_lam_dep'] nhưng suc_khoe_lam_dep/hon_nhan_gia_dinh trước đây THIẾU chính key
+// của mình trong tags, nên 137 dòng content sức khoẻ vừa nạp toàn hiện "Chưa phân loại").
 const PILLARS = [
   { key:'tai_chinh', label:'Tài chính', tags:['tai_chinh','tich_san','tiet_kiem','tin_dung','dong_tien','no'] },
   { key:'tam_linh', label:'Tâm linh', tags:['tam_linh','phong_thuy','than_so_hoc','phuoc_khi'] },
-  { key:'hon_nhan_gia_dinh', label:'Hôn nhân & Gia đình', tags:['hon_nhan','gia_dinh','tinh_yeu','nuoi_day_con'] },
+  { key:'hon_nhan_gia_dinh', label:'Hôn nhân & Gia đình', tags:['hon_nhan_gia_dinh','hon_nhan','gia_dinh','tinh_yeu','nuoi_day_con'] },
   { key:'phat_trien_ban_than', label:'Phát triển bản thân', tags:['phat_trien_ban_than','dong_luc','tu_duy','tam_ly','loi_song'] },
   { key:'kinh_doanh', label:'Kinh doanh', tags:['kinh_doanh','ban_hang','chien_luoc'] },
-  { key:'suc_khoe_lam_dep', label:'Sức khoẻ & Làm đẹp', tags:['suc_khoe','cham_soc_da','lam_dep'] },
+  { key:'suc_khoe_lam_dep', label:'Sức khoẻ & Làm đẹp', tags:['suc_khoe_lam_dep','suc_khoe','cham_soc_da','lam_dep'] },
   { key:'xay_kenh', label:'Xây kênh & Content', tags:['xay_kenh','content','hook','giao_tiep','quan_diem','video','pov','listicle','series','tiktok'] },
 ];
 function pillarsForItem(item){
