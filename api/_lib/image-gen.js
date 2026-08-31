@@ -337,6 +337,19 @@ const INSEPARABLE_PAIRS = new Set([
   'chân thành', 'trân trọng', 'biết ơn', 'vui vẻ', 'thịnh vượng', 'giàu có', 'ấm no', 'an vui',
 ].map((s) => s.toLowerCase()));
 
+// "chữ nổi bật có màu vàng đâu?" (chị Quỳnh 2026-08-31) — ĐÚNG, thiếu thật: parseTemplateWords() chỉ
+// tô vàng phần đánh dấu **...** thủ công — đúng cách Tạo Ảnh Thương Hiệu hoạt động khi CÓ NGƯỜI tự bôi
+// đen chọn từ, nhưng luồng tự động (case study/auto-publish) không có ai chọn, nên tiêu đề luôn ra
+// trắng trơn, không có gì nổi bật. Tự động tô vàng SỐ LIỆU/PHẦN TRĂM trong tiêu đề khi CHƯA có sẵn
+// markup thủ công — y hệt logic splitHighlight() ở applyTitleBar() cũ (đã đúng, chỉ chuyển sang dùng
+// ở đây), không bịa cách khác. Nếu title đã có sẵn ** (hiếm, phòng khi sau này có luồng khác tự đánh
+// dấu) thì giữ nguyên, không tự động thêm chồng lên.
+function autoHighlightNumbers(title) {
+  const s = String(title || '');
+  if (s.includes('**')) return s;
+  return s.replace(/\d[\d.,]*\s?%?/g, (m) => `**${m}**`);
+}
+
 // Tách theo **...** để biết từ nào tô màu nhấn — y hệt parseWords() ở tao-anh.js, rồi ghép các cặp
 // trong INSEPARABLE_PAIRS thành 1 "từ" duy nhất (đo/wrap như 1 khối, không tách được nữa).
 function parseTemplateWords(text) {
@@ -478,7 +491,7 @@ function templateOverlaySvg({ title, handle, layout, font }) {
 async function renderPersonalTemplateImage({ photoBuffer, title, handle, allowedLayouts }) {
   const layout = pickRandom(allowedLayouts || TEMPLATE_LAYOUTS);
   const font = pickRandom(TEMPLATE_FONTS);
-  const overlayPng = rasterizeSvg(templateOverlaySvg({ title, handle, layout, font }));
+  const overlayPng = rasterizeSvg(templateOverlaySvg({ title: autoHighlightNumbers(title), handle, layout, font }));
   return sharp(photoBuffer)
     .resize(TEMPLATE_W, TEMPLATE_H, { fit: 'cover' })
     .composite([{ input: overlayPng, top: 0, left: 0 }])
