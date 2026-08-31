@@ -61,10 +61,6 @@ function render(container, ctx){
     writeFor:null, writeLoading:false, writeIdeas:null, writeError:null, writeQuickContext:'',
     positioningId:null, applyingVoice:null, applyVoiceError:null, applyVoiceErrorFor:null, voiceAppliedFor:null,
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(), expandedDayBaiIds:new Set(),
-    // Tách "Kiến thức ngành" khỏi "Bài mẫu" trong Kho Content Viral (2026-08-31, theo phản hồi chị
-    // Quỳnh: "có nhiều cái là kiến thức ngành sức khỏe chứ k phải content thì nên để riêng") — trước
-    // đây gộp chung 1 danh sách, chỉ phân biệt bằng 1 dòng nhãn nhỏ, dễ lẫn.
-    khoChungGroup:'bai_mau',
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'', scheduledPostIds:new Set(),
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
     caseStudies:[], caseStudyUploading:false, caseStudyError:null, caseStudyUploadProgress:null,
@@ -621,27 +617,21 @@ function render(container, ctx){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Kho bài mẫu <b>đã được kiểm chứng viral</b>, do đội ngũ tuyển chọn và cập nhật liên tục — dùng làm <b>khung sườn (hook + cấu trúc)</b> để viết lại theo giọng văn và câu chuyện thật của bạn, không phải để sao chép nguyên văn.<br><br>Đây là <b>cách nhanh nhất</b> để bài mới của bạn có nền tảng đã được thị trường kiểm chứng thay vì viết từ số 0.</div>`;
     if(state.sharedBank.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Content Viral chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`;
 
-    // "Kiến thức ngành" (source_type='kien_thuc_nganh') là bài KIẾN THỨC để đọc/tham khảo, khác hẳn
-    // "Bài mẫu" (dùng làm khung sườn viết lại) — tách riêng 2 nhóm thay vì gộp 1 danh sách chỉ phân
-    // biệt bằng dòng nhãn nhỏ (2026-08-31, theo phản hồi chị Quỳnh).
-    const isKnowledge = b => b.source_type === 'kien_thuc_nganh';
-    const knowledgeCount = state.sharedBank.filter(isKnowledge).length;
-    const samplesCount = state.sharedBank.length - knowledgeCount;
-    const groupTabsHtml = `<div style="display:flex;gap:8px;margin-bottom:14px;">
-      <div class="tab-btn ${state.khoChungGroup!=='kien_thuc'?'active':''}" data-kho-chung-group="bai_mau">Bài mẫu (${samplesCount})</div>
-      <div class="tab-btn ${state.khoChungGroup==='kien_thuc'?'active':''}" data-kho-chung-group="kien_thuc">Kiến thức ngành (${knowledgeCount})</div>
-    </div>`;
-    const groupBank = state.khoChungGroup==='kien_thuc' ? state.sharedBank.filter(isKnowledge) : state.sharedBank.filter(b=>!isKnowledge(b));
-
-    let items = filterByPillar(groupBank, state.chungPillar);
+    // Gộp lại 1 danh sách (2026-08-31, chị Quỳnh: "gộp hết kiến thức ngành vào kho content" — bỏ lại
+    // việc tách riêng "Bài mẫu"/"Kiến thức ngành" mới thêm trước đó) — source_type vẫn hiện ở dòng
+    // nhãn nhỏ trên mỗi mục như trước đây, chỉ không tách thành 2 tab riêng nữa.
+    let items = filterByPillar(state.sharedBank, state.chungPillar);
     const q = state.chungSearch.trim().toLowerCase();
     if(q) items = items.filter(b=>(b.title||'').toLowerCase().includes(q));
     items = sortUnusedFirst(items, 'shared');
     const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
-    if(items.length===0) return hint + groupTabsHtml + pillarChipsHtml(groupBank, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
-    return hint + groupTabsHtml + pillarChipsHtml(groupBank, state.chungPillar, 'chung-pillar') + searchHtml + items.map(b=>`
+    if(items.length===0) return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
+    return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + items.map(b=>`
       <div class="section">
-        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+          ${isAdmin ? `<span style="color:var(--danger);cursor:pointer;font-size:12px;white-space:nowrap;" data-del-shared="${b.id}">Xoá</span>` : ''}
+        </div>
         <h3>${esc(b.title)}</h3>
         ${contentBodyHtml('shared:'+b.id, b.content, { protected:true })}
         ${writeActionHtml('shared:'+b.id)}
@@ -807,8 +797,17 @@ function render(container, ctx){
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
     });
-    container.querySelectorAll('[data-kho-chung-group]').forEach(el=>{
-      el.onclick = ()=>{ state.khoChungGroup = el.getAttribute('data-kho-chung-group'); state.chungPillar = 'all'; draw(); };
+    // Admin xoá thẳng 1 mục trong Kho Content Viral (2026-08-31, theo yêu cầu chị Quỳnh: "cho mình
+    // admin quyền đc xóa bài") — trước đây chỉ xoá được bằng cách nhờ viết SQL riêng, giờ tự dọn được
+    // ngay trong app. Chỉ admin thấy nút này (isAdmin, khai báo đầu render()).
+    container.querySelectorAll('[data-del-shared]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-del-shared');
+        if(!(await confirmModal('Xoá vĩnh viễn mục này khỏi Kho Content Viral? Mọi khách đang dùng chung kho này sẽ không còn thấy nữa. Không khôi phục được.'))) return;
+        await ctx.supabase.from('content_bank_shared').delete().eq('id', id);
+        await loadShared();
+        draw();
+      };
     });
     const daVietPillarSelect = container.querySelector('[data-daviet-pillar]');
     if(daVietPillarSelect) daVietPillarSelect.onchange = ()=>{ state.daVietPillar = daVietPillarSelect.value; draw(); };
