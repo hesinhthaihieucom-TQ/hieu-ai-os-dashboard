@@ -8,6 +8,14 @@ const STEPS = [
   { key:'bai_ghim', title:'Bài ghim', type:'image', helper:'Chụp màn hình bài ghim hiện tại trên kênh (nếu có).' },
 ];
 
+// Wizard đổi nội dung theo từng câu hỏi, nhưng khung DOM (progress-groups, card, nav-row) giữ
+// nguyên ở mọi bước — nên tour trỏ vào khung đó, giải thích chung cho cả quy trình 6 bước.
+const TOUR_STEPS = [
+  { selector: '.progress-groups', title: 'Audit kênh — 6 bước', text: 'Trả lời/tải ảnh lần lượt 6 phần trên kênh của bạn: nền tảng, ảnh đại diện, ảnh bìa, profile, bio, bài ghim. Bước nào chưa có thì bấm "Bỏ qua".' },
+  { selector: '.card', title: 'Từng bước 1 phần', text: 'Mỗi bước hỏi đúng 1 phần — đọc kỹ hướng dẫn nhỏ bên dưới câu hỏi trước khi trả lời/tải ảnh lên, để AI audit sát nhất.' },
+  { selector: '[data-action="next"]', title: 'Hoàn tất & audit', text: 'Đi hết 6 bước, bấm nút này ở bước cuối để AI chấm điểm và audit kênh — tốn 4 lượt AI mỗi lần audit/audit lại.' },
+];
+
 function render(container, ctx){
   const state = {
     screen:'loading', qIndex:0, answers:{ platform:'Facebook' }, positioning:null, quickContext:'',
@@ -93,6 +101,7 @@ function render(container, ctx){
     }
 
     return `
+      <span class="tour-trigger" id="sk-start-tour">❓ Hướng dẫn</span>
       <div class="progress-groups" style="display:flex;gap:6px;margin-bottom:10px;">
         ${STEPS.map((s,i)=>`<span style="flex:1;height:5px;border-radius:3px;background:${i<state.qIndex?'var(--accent)':i===state.qIndex?'var(--gold)':'var(--line)'};"></span>`).join('')}
       </div>
@@ -168,6 +177,9 @@ function render(container, ctx){
 
   function bind(){
     const step = STEPS[state.qIndex];
+
+    const tourBtn = container.querySelector('#sk-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
 
     container.querySelectorAll('[data-choice]').forEach(el=>{
       el.onclick = ()=>{ state.answers[step.key] = el.getAttribute('data-choice'); draw(); persistDraft(); };

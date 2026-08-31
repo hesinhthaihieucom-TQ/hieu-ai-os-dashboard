@@ -31,6 +31,14 @@ const GROUPS = [
   {key:'E', title:'Dấu Ấn Hình Ảnh'},
 ];
 
+// Chỉ trỏ vào màn hình intro (trước khi vào wizard) — đây là màn hình duy nhất có các phần tử cố
+// định để trỏ tới; wizard/results thay đổi liên tục theo câu hỏi/kết quả nên không phù hợp để tour.
+const TOUR_STEPS = [
+  {selector:'.source-grid', title:'5 nhóm câu hỏi', text:'Định Vị gồm 16 câu hỏi chia làm 5 nhóm: Công Việc & Mục Tiêu, Chất Liệu Con Người, Style & Năng Lượng, Góc Nhìn & Khác Biệt, Dấu Ấn Hình Ảnh. Trả lời càng thật, càng chi tiết thì kết quả AI trả về càng đúng với bạn.'},
+  {selector:'[data-action="start"]', title:'Bắt đầu trả lời', text:'Bấm vào đây để bắt đầu wizard trả lời từng câu một. Nếu sau này bấm "Sửa lại câu trả lời" để làm lại từ đầu, mỗi lần làm lại sẽ tính thêm 8 lượt AI trong số lượt dùng thử — nên trả lời kỹ ngay từ lần đầu.'},
+  {selector:'[data-action="go-paste"]', title:'Đã có sẵn bản Định Vị?', text:'Nếu bạn đã từng làm Định Vị ở nơi khác (hoặc có bản cũ), bấm vào đây để dán thẳng kết quả vào thay vì trả lời lại từ đầu.'},
+];
+
 function isAnswered(q, val){
   if(q.type==='textarea') return !!(val && val.trim().length>0);
   if(q.type==='radio') return !!val;
@@ -212,6 +220,7 @@ function render(container, ctx){
   function introHtml(){
     const hasSaved = !!state.luot1;
     return `
+      <span class="tour-trigger" id="dv-start-tour">❓ Hướng dẫn</span>
       <div class="page-head" style="text-align:center;">
         <div class="tag">Bước 1 · Định Vị</div>
         <h1>Tìm ra định vị thương hiệu chuẩn nhất</h1>
@@ -545,6 +554,9 @@ function render(container, ctx){
 
   function bind(){
     const q = QUESTIONS[state.qIndex];
+
+    const tourBtn = container.querySelector('#dv-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
 
     const startBtn = container.querySelector('[data-action="start"]');
     // Giữ nguyên state.answers khi bấm lại — người dùng đang SỬA câu trả lời cũ, không phải xoá
