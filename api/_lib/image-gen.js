@@ -144,15 +144,15 @@ function titleOverlaySvg(title) {
   </svg>`;
 }
 
-// Vùng dành cho khối tiêu đề (tính theo mức tối đa 4 dòng của wrapText) — dùng để khung case study ở
-// góc DƯỚI không bị chữ tiêu đề đè lên khi applyTitleBar() chạy sau compositeCaseStudyImage().
-const TITLE_RESERVE = 4 * 58 + 56 + 20;
-
 // Toạ độ góc trên-trái của khung case study theo lựa chọn `corner` của chị Quỳnh (chọn tay khi tải
-// ảnh cá nhân lên, xem personal_photos.card_corner) — ảnh nào mặt ở đâu thì chị tự né góc đó.
+// ảnh cá nhân lên, xem personal_photos.card_corner) — ảnh nào mặt ở đâu thì chị tự né góc đó. Không
+// còn cần TITLE_RESERVE (2026-08-31) — tiêu đề không còn vẽ ở ĐÂY nữa, xem ghi chú ở
+// compositeCaseStudyImage() — chỗ tránh chữ/card đè nhau giờ chuyển sang safeLayoutsForCorner().
+// Dùng TEMPLATE_W/TEMPLATE_H (khai báo bên dưới) thay vì IMAGE_SIZE cũ — canvas giờ khổ dọc 4:5 khớp
+// đúng hệ 4 mẫu, không còn vuông 1:1.
 function cardPosition(corner, cardSize, margin) {
-  const right = IMAGE_SIZE - cardSize - margin;
-  const bottom = IMAGE_SIZE - cardSize - margin - TITLE_RESERVE;
+  const right = TEMPLATE_W - cardSize - margin;
+  const bottom = TEMPLATE_H - cardSize - margin;
   switch (corner) {
     case 'top-left': return { x: margin, y: margin };
     case 'bottom-right': return { x: right, y: bottom };
@@ -224,31 +224,53 @@ async function generateSpiritualBackground({ apiKey }) {
 // Ghép ảnh cá nhân (nền) + ảnh case study (khung nhỏ bo góc, có viền trắng + đổ bóng nhẹ) + tiêu đề
 // đè lên — kiểu "quote card" theo yêu cầu chị Quỳnh 2026-08-28. `cardCorner` do chị tự chọn theo từng
 // ảnh cá nhân (personal_photos.card_corner) — vị trí an toàn không che mặt tuỳ ảnh, không đoán được.
-async function compositeCaseStudyImage({ personalImageBuffer, caseStudyImageBuffer, title, cardCorner }) {
-  const CARD = 360;
+// KHÔNG còn tự vẽ tiêu đề ở đây (2026-08-31, theo yêu cầu chị Quỳnh: "sau khi ghép ảnh thì cho vào
+// mục tạo ảnh có sẵn trong app để chọn lấy 1 loại trong 4 loại phù hợp xong cho xuất từ đó chứ đừng
+// để ai viết chữ" — dùng LẠI đúng hệ 4 mẫu của Tạo Ảnh Thương Hiệu (renderPersonalTemplateImage) thay
+// vì 1 kiểu chữ riêng applyTitleBar() cũ, để nhất quán phong cách với ảnh cá nhân thường VÀ tận dụng
+// đúng engine đo/wrap chữ đã ổn định). Hàm này giờ CHỈ ghép ảnh (cá nhân + card case study), trả về
+// ẢNH NỀN THÔ khổ TEMPLATE_W×TEMPLATE_H (chưa đè chữ) — nơi gọi (fillCaseStudySlot) tự đưa tiếp qua
+// renderPersonalTemplateImage() để đè đúng 1 trong 4 mẫu.
+async function compositeCaseStudyImage({ personalImageBuffer, caseStudyImageBuffer, cardCorner }) {
+  const CARD = 380;
   const MARGIN = 40;
   const { x: cardX, y: cardY } = cardPosition(cardCorner, CARD, MARGIN);
 
-  const base = await sharp(personalImageBuffer).resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'cover' }).toBuffer();
+  const base = await sharp(personalImageBuffer).resize(TEMPLATE_W, TEMPLATE_H, { fit: 'cover' }).toBuffer();
   const card = await roundedCard(caseStudyImageBuffer, CARD, 20);
 
   // Viền trắng + bóng mờ: 1 rect trắng hơi lớn hơn card (viền dày ~8px) + 1 rect mờ lệch xuống dưới
   // 1 chút (bóng đổ, feGaussianBlur — filter="blur()" kiểu CSS không chắc được librsvg hỗ trợ nên
   // dùng đúng cú pháp SVG filter chuẩn) — vẽ trước, card đè lên trên.
-  const frameSvg = Buffer.from(`<svg width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" xmlns="http://www.w3.org/2000/svg">
+  const frameSvg = Buffer.from(`<svg width="${TEMPLATE_W}" height="${TEMPLATE_H}" xmlns="http://www.w3.org/2000/svg">
     <defs><filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter></defs>
     <rect x="${cardX - 6}" y="${cardY + 10}" width="${CARD + 12}" height="${CARD + 12}" rx="24" fill="black" fill-opacity="0.35" filter="url(#shadow)" />
     <rect x="${cardX - 8}" y="${cardY - 8}" width="${CARD + 16}" height="${CARD + 16}" rx="26" fill="white" />
   </svg>`);
 
-  const composited = await sharp(base)
+  return sharp(base)
     .composite([
       { input: frameSvg, top: 0, left: 0 },
       { input: card, top: cardY, left: cardX },
     ])
+    .png()
     .toBuffer();
+}
 
-  return applyTitleBar(composited, title);
+// Loại bỏ các mẫu (trong 4 TEMPLATE_LAYOUTS) có vùng chữ (zoneTop-zoneBottom) khả năng đè lên card
+// case study đặt ở góc `corner` — card nằm ở góc TRÊN thì né mẫu vẽ chữ quá gần đỉnh (top-center),
+// card ở góc DƯỚI thì né mẫu vẽ chữ quá gần đáy (bottom-center/caption-bar). Không đảm bảo tuyệt đối
+// 0% chồng lấn (card khá nhỏ so với vùng chữ mỗi mẫu, và quote-left trải giữa ảnh nên vẫn có thể chạm
+// nhẹ) nhưng loại được các trường hợp đè nặng nhất. Luôn trả về ít nhất 1 mẫu (không bao giờ rỗng).
+function safeLayoutsForCorner(corner) {
+  const isTop = corner === 'top-left' || corner === 'top-right';
+  const isBottom = corner === 'bottom-left' || corner === 'bottom-right';
+  const safe = TEMPLATE_LAYOUTS.filter((l) => {
+    if (isTop && l.zoneTop < 0.30) return false;
+    if (isBottom && l.zoneBottom > 0.70) return false;
+    return true;
+  });
+  return safe.length ? safe : TEMPLATE_LAYOUTS;
 }
 
 // ============================================================
@@ -450,8 +472,11 @@ function templateOverlaySvg({ title, handle, layout, font }) {
 // tự quyết định nguồn nào rồi truyền buffer vào đây. layout/font CHỌN NGẪU NHIÊN mỗi lần đăng, cho đa
 // dạng qua từng bài như dùng tay ở Tạo Ảnh Thương Hiệu, thay vì lặp lại đúng 1 kiểu mãi — riêng màu
 // nhấn CỐ ĐỊNH vàng (xem TEMPLATE_ACCENT_COLOR), khổ ảnh CỐ ĐỊNH dọc 4:5 (theo yêu cầu chị Quỳnh).
-async function renderPersonalTemplateImage({ photoBuffer, title, handle }) {
-  const layout = pickRandom(TEMPLATE_LAYOUTS);
+// allowedLayouts (2026-08-31, thêm cho luồng case study — xem safeLayoutsForCorner()) — mặc định
+// TEMPLATE_LAYOUTS đầy đủ (hành vi cũ, ảnh cá nhân thường không có card gì để né), truyền tập con hẹp
+// hơn khi ảnh nền đã có sẵn 1 phần tử khác (card case study) cần né chồng lấn.
+async function renderPersonalTemplateImage({ photoBuffer, title, handle, allowedLayouts }) {
+  const layout = pickRandom(allowedLayouts || TEMPLATE_LAYOUTS);
   const font = pickRandom(TEMPLATE_FONTS);
   const overlayPng = rasterizeSvg(templateOverlaySvg({ title, handle, layout, font }));
   return sharp(photoBuffer)
@@ -463,4 +488,5 @@ async function renderPersonalTemplateImage({ photoBuffer, title, handle }) {
 
 module.exports = {
   generatePostImage, compositeCaseStudyImage, applyTitleBar, renderPersonalTemplateImage, generateSpiritualBackground,
+  safeLayoutsForCorner,
 };

@@ -21,7 +21,7 @@ const {
   assemblePost, stripDiacritics, contextBlockOf, extraFieldsBlock, customInstructionsBlock,
 } = require('../_lib/post-schema');
 const { FORMAT_GUIDE } = require('../_lib/formats');
-const { compositeCaseStudyImage } = require('../_lib/image-gen');
+const { compositeCaseStudyImage, renderPersonalTemplateImage, safeLayoutsForCorner } = require('../_lib/image-gen');
 const { TEXT_CLASSIFY_SYSTEM_PROMPT, TOOL_PHAN_LOAI_TRUC } = require('../_lib/pillars');
 
 const MAX_FILL_PER_RUN = 3;
@@ -463,13 +463,22 @@ Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguy
   // bước ghép ảnh không làm fail cả lượt lấp lịch, chỉ để bài đó không có ảnh (auto-publish-fb.js sẽ
   // tự rơi về ảnh AI hoặc bỏ qua đăng theo đúng quy tắc "không đăng bài chữ trần"). Bỏ qua hẳn nếu
   // không có personalPhoto (lane Cá nhân, xem ghi chú ở chữ ký hàm).
+  // 2 BƯỚC (2026-08-31, theo yêu cầu chị Quỳnh: "sau khi ghép ảnh thì cho vào mục tạo ảnh có sẵn...
+  // chọn lấy 1 loại trong 4 loại phù hợp xong cho xuất từ đó chứ đừng để ai viết chữ") — (1) ghép ảnh
+  // nền (cá nhân + card case study, KHÔNG chữ), (2) đưa qua renderPersonalTemplateImage() — đúng hệ 4
+  // mẫu của Tạo Ảnh Thương Hiệu — để đè tiêu đề, chỉ chọn trong các mẫu KHÔNG đè lên góc đã đặt card
+  // (safeLayoutsForCorner). Trước đây dùng riêng 1 kiểu applyTitleBar(), giờ nhất quán với ảnh cá nhân
+  // thường.
   if (personalPhoto) {
     try {
-      const image = await compositeCaseStudyImage({
+      const baseImage = await compositeCaseStudyImage({
         cardCorner: personalPhoto.card_corner,
         personalImageBuffer: Buffer.from(stripDataUrlPrefix(personalPhoto.image), 'base64'),
         caseStudyImageBuffer: Buffer.from(stripDataUrlPrefix(caseStudy.image), 'base64'),
-        title: core.tieu_de,
+      });
+      const image = await renderPersonalTemplateImage({
+        photoBuffer: baseImage, title: core.tieu_de, handle: channelHandle,
+        allowedLayouts: safeLayoutsForCorner(personalPhoto.card_corner),
       });
       await supabaseAdmin(`posts?id=eq.${result.post_id}`, {
         method: 'PATCH', prefer: 'return=minimal',
