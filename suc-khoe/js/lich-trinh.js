@@ -68,15 +68,17 @@ function render(container, ctx){
             ${sec.note ? `<div class="hint-box" style="margin-bottom:12px;">${esc(sec.note)}</div>` : ''}
             ${(sec.steps||[]).map(step=>{
               const p = step.product_name ? state.productByName[step.product_name] : null;
+              const isPriority = !!step.priority;
               return `
-              <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);">
+              <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;margin:0 -14px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;border-radius:8px;':''}">
                 ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
                 <div style="flex:1;min-width:0;">
-                  ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>${esc(step.product_name)}</span>${p && p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}</div>` : ''}
+                  ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</span>${p && p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}</div>` : ''}
                   <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(step.instruction||'')}</div>
                 </div>
               </div>
             `;}).join('')}
+            ${(sec.steps||[]).some(s=>s.priority) ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">⭐ = sản phẩm nên ưu tiên mua trước nếu chưa mua trọn bộ.</div>` : ''}
           </div>
         </details>
       `).join('')}

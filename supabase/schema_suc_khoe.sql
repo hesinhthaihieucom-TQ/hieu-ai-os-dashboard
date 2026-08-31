@@ -290,3 +290,8 @@ drop policy if exists "sk_orders_owner_insert" on sk_orders;
 create policy "sk_orders_owner_insert" on sk_orders for insert with check (auth.uid() = user_id);
 drop policy if exists "sk_orders_admin_all" on sk_orders;
 create policy "sk_orders_admin_all" on sk_orders for all using (is_admin()) with check (is_admin());
+
+-- Khách chọn màu son Hàn khi quà tặng có kèm son (2026-08-31, chị Quỳnh gửi ảnh 2 màu #503 Hồng
+-- Seoul / #505 Cam Cà Rốt và yêu cầu cho khách chọn màu lúc đặt hàng) — chỉ có giá trị khi
+-- gift = 'binh_lac_son', null với đơn không có quà son.
+alter table sk_orders add column if not exists gift_color text check (gift_color in ('503','505'));

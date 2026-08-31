@@ -497,6 +497,7 @@ function renderThanhVien(container, ctx){
 // được đơn với khách, vì đây là nguồn duy nhất tính PV/tháng cho khách.
 const SK_ORDER_STATUS_LABELS = { cho_xac_nhan:'Chờ xác nhận', da_xac_nhan:'Đã xác nhận', da_giao:'Đã giao', huy:'Đã huỷ' };
 const SK_ORDER_GIFT_LABELS = { binh_lac:'🎁 Bình lắc', binh_lac_son:'🎁 Bình lắc + Son Hàn' };
+const SK_GIFT_COLOR_LABELS = { '503':'#503 Hồng Seoul', '505':'#505 Cam Cà Rốt' };
 
 function renderDonHang(container, ctx){
   const state = { loading:true, orders:[], profileById:{}, busyId:null };
@@ -546,6 +547,7 @@ function renderDonHang(container, ctx){
           <div style="font-size:13.5px;margin-top:8px;">
             <b>Tổng: ${Number(o.total_amount||0).toLocaleString('vi-VN')}đ</b> · ${o.total_pv||0} PV
             ${o.gift ? ` · ${esc(SK_ORDER_GIFT_LABELS[o.gift]||o.gift)}` : ''}
+            ${o.gift_color ? ` (màu son: ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||o.gift_color)})` : ''}
           </div>
           <div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">
             Giao tới: ${esc(o.shipping_name)} · ${esc(o.shipping_phone)}<br>${esc(o.shipping_address)}

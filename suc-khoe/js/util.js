@@ -46,15 +46,22 @@ function confirmModal(message, confirmLabel){
 // Dõi Tuần, Sản Phẩm Unicity). CHỈ thu thông tin đơn hàng + địa chỉ giao — không thanh toán tự động,
 // admin tự liên hệ khách chốt thanh toán (chị Quỳnh chốt 2026-08-30), ghi vào bảng sk_orders.
 // Quà tặng tính CỨNG lúc đặt hàng: ≥2 sản phẩm và tổng ≥2 triệu → tặng bình lắc; tổng ≥5 triệu →
-// tặng thêm 1 thỏi son Hàn.
+// tặng thêm 1 thỏi son Hàn (khách chọn màu, 2026-08-31 chị Quỳnh gửi ảnh thật + yêu cầu cho chọn màu).
+const SK_GIFT_SHAKER_IMAGE = 'assets/gift-shaker-bottle.jpg';
+const SK_LIPSTICK_COLORS = [
+  { key:'503', label:'#503 Hồng Seoul', image:'assets/gift-lipstick-503-hong-seoul.jpg' },
+  { key:'505', label:'#505 Cam Cà Rốt', image:'assets/gift-lipstick-505-cam-ca-rot.jpg' },
+];
 function skOrderGift(total, itemCount){
-  if(total >= 5000000) return { key:'binh_lac_son', label:'🎁 Tặng 1 bình lắc + 1 thỏi son Hàn' };
-  if(total >= 2000000 && itemCount >= 2) return { key:'binh_lac', label:'🎁 Tặng 1 bình lắc' };
+  if(total >= 5000000) return { key:'binh_lac_son', label:'🎁 Tặng 1 bình lắc + 1 thỏi son Hàn — chọn màu bên dưới', images:[SK_GIFT_SHAKER_IMAGE], needsColor:true };
+  if(total >= 2000000 && itemCount >= 2) return { key:'binh_lac', label:'🎁 Tặng 1 bình lắc', images:[SK_GIFT_SHAKER_IMAGE], needsColor:false };
   return null;
 }
 
 function openOrderModal(ctx, products){
   const selected = new Set(products.map(p=>p.id));
+  const formValues = { name: (ctx.profile && ctx.profile.full_name) || '', phone:'', address:'' };
+  let giftColor = SK_LIPSTICK_COLORS[0].key;
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
 
@@ -90,13 +97,31 @@ function openOrderModal(ctx, products){
       <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:6px;">
         <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ</span>
       </div>
-      ${gift ? `<div class="hint-box" style="margin-bottom:14px;">${esc(gift.label)}</div>` : `<div style="height:14px;"></div>`}
+      ${gift ? `
+        <div class="hint-box" style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            ${(gift.images||[]).map(src=>`<img src="${esc(src)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">`).join('')}
+            <span>${esc(gift.label)}</span>
+          </div>
+          ${gift.needsColor ? `
+            <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
+              ${SK_LIPSTICK_COLORS.map(c=>`
+                <label style="display:flex;align-items:center;gap:7px;border:2px solid ${giftColor===c.key?'var(--accent)':'var(--line)'};border-radius:10px;padding:6px 10px 6px 6px;cursor:pointer;background:#fff;">
+                  <input type="radio" name="order-gift-color" value="${esc(c.key)}" data-gift-color="1" ${giftColor===c.key?'checked':''} style="accent-color:var(--accent);">
+                  <img src="${esc(c.image)}" alt="" style="width:30px;height:30px;object-fit:cover;border-radius:7px;flex-shrink:0;">
+                  <span style="font-size:12.5px;font-weight:600;">${esc(c.label)}</span>
+                </label>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      ` : `<div style="height:14px;"></div>`}
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);">Họ tên người nhận</label>
-      <input type="text" id="order-name" placeholder="Tên người nhận hàng" value="${esc(ctx.profile && ctx.profile.full_name || '')}">
+      <input type="text" id="order-name" placeholder="Tên người nhận hàng" value="${esc(formValues.name)}">
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Số điện thoại</label>
-      <input type="tel" id="order-phone" placeholder="09xxxxxxxx">
+      <input type="tel" id="order-phone" placeholder="09xxxxxxxx" value="${esc(formValues.phone)}">
       <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Địa chỉ giao hàng</label>
-      <textarea id="order-address" placeholder="Số nhà, đường, phường/xã, tỉnh/thành..." style="min-height:60px;"></textarea>
+      <textarea id="order-address" placeholder="Số nhà, đường, phường/xã, tỉnh/thành..." style="min-height:60px;">${esc(formValues.address)}</textarea>
       ${err ? `<div style="color:var(--danger);font-size:13px;margin-top:8px;">${esc(err)}</div>` : ''}
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
         <span class="btn-ghost btn btn-sm" data-order-cancel="1">Huỷ</span>
@@ -122,6 +147,15 @@ function openOrderModal(ctx, products){
         renderCard();
       };
     });
+    overlay.querySelectorAll('[data-gift-color]').forEach(el=>{
+      el.onchange = ()=>{ giftColor = el.value; renderCard(); };
+    });
+    const nameEl = overlay.querySelector('#order-name');
+    if(nameEl) nameEl.oninput = ()=>{ formValues.name = nameEl.value; };
+    const phoneEl = overlay.querySelector('#order-phone');
+    if(phoneEl) phoneEl.oninput = ()=>{ formValues.phone = phoneEl.value; };
+    const addressEl = overlay.querySelector('#order-address');
+    if(addressEl) addressEl.oninput = ()=>{ formValues.address = addressEl.value; };
     const cancelBtn = overlay.querySelector('[data-order-cancel]');
     if(cancelBtn) cancelBtn.onclick = close;
     const submitBtn = overlay.querySelector('[data-order-submit]');
@@ -129,15 +163,16 @@ function openOrderModal(ctx, products){
   }
 
   async function submit(){
-    const name = overlay.querySelector('#order-name').value.trim();
-    const phone = overlay.querySelector('#order-phone').value.trim();
-    const address = overlay.querySelector('#order-address').value.trim();
+    const name = formValues.name.trim();
+    const phone = formValues.phone.trim();
+    const address = formValues.address.trim();
     if(!name || !phone || !address){ renderCard(null, 'Vui lòng điền đủ tên, số điện thoại và địa chỉ.'); return; }
     const { chosen, total, pv, gift } = totals();
     const { error } = await ctx.supabase.from('sk_orders').insert({
       user_id: ctx.user.id,
       items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0) })),
       total_amount: total, total_pv: pv, gift: gift ? gift.key : null,
+      gift_color: (gift && gift.needsColor) ? giftColor : null,
       shipping_name: name, shipping_phone: phone, shipping_address: address,
     });
     if(error){ renderCard(null, 'Lỗi khi gửi đơn: ' + error.message); return; }
@@ -176,16 +211,34 @@ function skSectionHeaderHtml(title, color, icon){
   return `<div style="display:inline-flex;align-items:center;gap:7px;background:${color}18;color:${color};border-radius:7px;padding:5px 12px;font-weight:700;font-size:12.5px;margin-bottom:10px;">${icon?`<span>${icon}</span>`:''}${esc(title||'')}</div>`;
 }
 
+// Cụm từ nói công dụng cụ thể (vd "giảm táo bón", "tăng cường hệ miễn dịch") được tô nổi bật — chị
+// Quỳnh phản hồi 2026-08-31: chữ nói công dụng phải "làm nổi lên" giữa đoạn văn dài, không chỉ có
+// từ khoá dẫn đầu dòng mới được in đậm.
+const SK_BENEFIT_VERB_RE = /(giảm|tăng cường|hỗ trợ|cải thiện|ngăn ngừa|thúc đẩy|kích thích|điều hòa|điều hoà|thanh lọc|đào thải|phục hồi|làm sạch|làm đẹp|làm dịu|làm chậm|làm lành|nuôi dưỡng|bảo vệ|cân bằng|duy trì|bổ sung|tăng)\s+[^,.;•()\n—]{2,45}/gi;
+function skHighlightBenefits(text){
+  const s = String(text||'');
+  let out = '', last = 0, m;
+  SK_BENEFIT_VERB_RE.lastIndex = 0;
+  while((m = SK_BENEFIT_VERB_RE.exec(s))){
+    out += esc(s.slice(last, m.index));
+    out += `<mark style="background:#fff3b0;color:var(--ink);padding:0 3px;border-radius:3px;font-weight:700;">${esc(m[0].trim())}</mark>`;
+    last = m.index + m[0].length;
+  }
+  out += esc(s.slice(last));
+  return out;
+}
+
 // body dạng text nhiều dòng — mỗi dòng "• "/"- " thành 1 gạch đầu dòng thật (<li>, các dòng liền
 // nhau gộp thành 1 <ul>, GIỮ NGUYÊN thứ tự gốc, không dồn hết bullet xuống cuối); phần trước dấu
-// "—"/":" xuất hiện SỚM (dưới ~60 ký tự) được in đậm làm từ khoá dẫn. Dòng không có "• " ở đầu render
-// như đoạn văn thường (vd câu mở đầu/kết trước khi vào bullet).
+// "—"/":" xuất hiện SỚM (dưới ~60 ký tự) được in đậm làm từ khoá dẫn, phần còn lại của dòng được tô
+// nổi bật ở các cụm nói công dụng cụ thể (skHighlightBenefits). Dòng không có "• " ở đầu render như
+// đoạn văn thường (vd câu mở đầu/kết trước khi vào bullet).
 function skRichBodyHtml(body){
   const lines = String(body||'').split('\n').map(l=>l.trim()).filter(Boolean);
   function formatLine(l){
     const m = l.match(/^(.{3,60}?)\s*(—|:)\s+(.*)$/);
-    if(m) return `<b style="color:var(--ink);">${esc(m[1])}</b>${m[2]==='—' ? ' — ' : ': '}${esc(m[3])}`;
-    return esc(l);
+    if(m) return `<b style="color:var(--ink);">${esc(m[1])}</b>${m[2]==='—' ? ' — ' : ': '}${skHighlightBenefits(m[3])}`;
+    return skHighlightBenefits(l);
   }
   let html = '', bulletBuf = [];
   function flushBullets(){
