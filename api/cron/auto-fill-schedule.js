@@ -4,9 +4,11 @@
 //   bật auto_publish_fb=true để api/cron/auto-publish-fb.js tự nhặt đúng giờ đăng lên Fanpage.
 // - Cá nhân (autoFillPersonalForAdmin, Phase 9): 3 bài/ngày (Sáng/Trưa/Tối), KHÔNG tự đăng (Facebook
 //   không cho app đăng hộ trang cá nhân) — chị Quỳnh tự đăng tay. Mỗi buổi khoá 1 kiểu content: Tối
-//   luôn "Video Ngồi Nói" (100% lấy từ kho hook/content viral, không tự bịa), Trưa luôn case study
-//   (ảnh KHÔNG lặp lại — hết ảnh case study chưa dùng thì để TRỐNG ô đó, không tự rơi về bài thường,
-//   xem pickUnusedCaseStudy() — chốt 2026-08-30), Sáng là bài thường (không phải "Video Ngồi Nói").
+//   luôn "Video Ngồi Nói" (100% lấy từ kho hook/content viral, không tự bịa), Trưa XEN KẼ case study
+//   và quote (random 50/50, rơi sang loại còn lại nếu 1 loại hết — chốt 2026-08-31, xem fillQuoteSlot()/
+//   pickUnusedQuote()), Sáng là bài thường (không phải "Video Ngồi Nói"). Cả 3 buổi đều lọc đúng trục
+//   nội dung đã định vị (classifyUserPillar()/filterPoolByPillar(), chốt 2026-08-31) và CTA phải dẫn
+//   thẳng sản phẩm khi có sản phẩm được chọn (productCtaBlock(), chốt 2026-08-31).
 //
 // CHỈ chạy cho tài khoản admin (đúng chị Quỳnh — không phải tính năng cho khách hàng khác). Mỗi lần
 // chạy có giới hạn an toàn riêng cho từng lane (tránh sinh hàng loạt nếu có lỗi) — ô nào bị bỏ qua do
@@ -77,6 +79,21 @@ ${ANTI_AI_CLICHE_RULES}
 
 ${CTA_COMMENT_RULES}`;
 
+// Viết bài TỪ 1 CÂU QUOTE/CHÂM NGÔN hoàn chỉnh (2026-08-31, theo yêu cầu chị Quỳnh: "phần case study
+// buổi trưa thì xen kẽ câu quote với case study") — nguồn là hook category='quote' trong Kho Hook
+// (xem CATEGORIES ở nhan-hieu/js/kho-hook.js — quote KHÁC hook thật, là câu hoàn chỉnh không tạo
+// khoảng trống tò mò). KHÁC fillOneSlot(): không "paraphrase lại 70% câu chữ" vì quote vốn đã hoàn
+// chỉnh, giữ NGUYÊN VĂN — chỉ viết thêm phần cảm nhận/góc nhìn ngắn của chính tác giả xung quanh.
+const SYSTEM_PROMPT_QUOTE = `Bạn là trợ lý viết content cho người xây thương hiệu cá nhân tại Việt Nam, chuyên biến 1 câu quote/châm ngôn có sẵn thành 1 bài đăng Facebook ngắn gọn.
+
+Đây KHÔNG PHẢI 1 bài dài kiểu kể chuyện. Quote đã hoàn chỉnh — GIỮ NGUYÊN VĂN câu quote này (dùng làm hook mở đầu, hoặc câu chốt cuối bài, tuỳ hợp), rồi viết thêm phần NGẮN GỌN (chỉ 2-4 câu, không dài dòng lan man) là góc nhìn/cảm nhận/cách chính tác giả áp dụng câu này vào công việc hoặc cuộc sống thật — KHÔNG giải thích/diễn giải quote 1 cách khô khan như đang phân tích văn học, KHÔNG thêm 1 câu chuyện dài không liên quan.
+
+BẮT BUỘC — đoạn giá trị (gia_tri) vẫn phải có, nhưng NGẮN (1-2 mục thôi, không kéo dài như bài thường) — nêu đúng 1-2 điều áp dụng được ngay từ quote này, không lan man.
+
+${ANTI_AI_CLICHE_RULES}
+
+${CTA_COMMENT_RULES}`;
+
 // Bỏ prefix "data:image/...;base64," nếu có (ảnh lưu trong DB là data URL từ canvas.toDataURL phía
 // client) — Anthropic Messages API cần đúng phần base64 thuần.
 function stripDataUrlPrefix(dataUrl) {
@@ -126,6 +143,16 @@ async function callClaude({ apiKey, system, userContent, tool }) {
 function recentTitlesBlock(recentTitles) {
   if (!recentTitles || !recentTitles.length) return '';
   return `\nCÁC BÀI ĐÃ VIẾT TRONG ĐỢT XẾP LỊCH NÀY (cùng 1 lượt, có thể cùng nguồn/chủ đề gần giống) — TUYỆT ĐỐI KHÔNG lặp lại cùng 1 kiểu mở đầu/mô-típ/góc nhìn với các bài dưới đây, dù nội dung gốc có giống nhau (ví dụ nhiều bài đã mở theo kiểu "tín hiệu/dấu hiệu vũ trụ đang gửi đến bạn" thì bài này BẮT BUỘC chọn hẳn 1 cách vào bài khác hoàn toàn — không dùng lại từ "tín hiệu", "dấu hiệu", "vũ trụ", "không phải ngẫu nhiên" nếu các bài dưới đã dùng):\n${recentTitles.map((t) => `- ${t}`).join('\n')}\n`;
+}
+
+// "lưu ý tất cả các bài đều có CTA dẫn sản phẩm" (chị Quỳnh 2026-08-31) — trước đây product chỉ được
+// đưa vào lượt EXTRAS riêng (writeExtrasAndSave, cho cmt_cta_san_pham) chứ KHÔNG hề xuất hiện trong
+// lượt viết CORE này (nơi thật sự sinh ra cta/tu_khoa_cta chính của bài) — nên CTA chính nhiều bài
+// không hề nhắc gì tới sản phẩm dù chị đã lưu sẵn. Giờ feed product ngay từ đây, bắt buộc CTA chính
+// dẫn thẳng sản phẩm khi có, cùng tinh thần với BẮT BUỘC CTA của SYSTEM_PROMPT_CASE_STUDY.
+function productCtaBlock(product) {
+  if (!product || !product.label) return '';
+  return `\nBẮT BUỘC — CTA PHẢI DẪN VỀ ĐÚNG SẢN PHẨM/DỊCH VỤ ĐÃ CHỌN CHO BÀI NÀY: "${product.label}"${product.url ? ` (link: ${product.url})` : ''}${product.cta_mau ? `\nCâu CTA mẫu đã lưu cho sản phẩm này (bám theo tinh thần/giọng điệu, biến tấu lại câu chữ, KHÔNG copy y nguyên vì có thể đã dùng cho bài khác): "${product.cta_mau}"` : ''}\ncta/tu_khoa_cta không được chỉ dừng ở mức xin bình luận chung chung kiểu "để lại bình luận mình gửi tài liệu" — phải hướng thẳng người đọc tới việc tìm hiểu/dùng thử/mua sản phẩm-dịch vụ này. Vẫn giữ đúng khuôn "từ khoá 2 chữ" ở QUY TẮC CTA bên dưới.\n`;
 }
 
 function vnDateStr(offsetDays) {
@@ -218,6 +245,17 @@ function pickUnusedCandidate(candidates, usedRefs, allowReuse = true) {
 function pickUnusedCaseStudy(caseStudies, usedRefs) {
   const isUsed = (c) => usedRefs.some((r) => r.table === 'case_studies' && r.id === c.id);
   const unused = caseStudies.filter((c) => !isUsed(c));
+  if (!unused.length) return null;
+  return unused[Math.floor(Math.random() * unused.length)];
+}
+
+// Hook category='quote' (xem CATEGORIES ở nhan-hieu/js/kho-hook.js) trong đúng poolFiltered đã lọc
+// trục — candidate.title thực chất chứa category (xem loadCandidatePool()), nên lọc bằng title==='quote'.
+// Cùng quy tắc "không lặp lại" như pickUnusedCaseStudy() — hết quote chưa dùng thì trả về null (rơi
+// về case study bên gọi hàm), không dùng lại quote cũ.
+function pickUnusedQuote(poolFiltered, usedRefs) {
+  const isUsed = (c) => usedRefs.some((r) => r.table === c.table && r.id === c.id);
+  const unused = poolFiltered.filter((c) => c.title === 'quote' && !isUsed(c));
   if (!unused.length) return null;
   return unused[Math.floor(Math.random() * unused.length)];
 }
@@ -340,7 +378,7 @@ ${candidate.text.trim()}
 CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): (không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-${recentTitlesBlock(recentTitles)}
+${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}
 Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`,
   });
 
@@ -368,7 +406,7 @@ async function fillCaseStudySlot({ userId, positioning, slotInfo, caseStudy, per
         text: `${contextBlockOf(positioning, null)}
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
-${recentTitlesBlock(recentTitles)}
+${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}
 Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguyên tắc đã nêu.`,
       },
     ],
@@ -403,6 +441,30 @@ Hãy viết bài dựa trên đúng ảnh case study vừa xem, theo đúng nguy
   }
 
   return result;
+}
+
+// Viết bài từ 1 quote/châm ngòn hoàn chỉnh (2026-08-31, "buổi trưa xen kẽ câu quote với case study")
+// — sourceTable/sourceId trỏ thẳng về đúng bảng chứa quote (hooks_bank_personal/shared, xem
+// candidate.table ở loadCandidatePool()) để usedRefs nhận diện đúng, phục vụ pickUnusedQuote() không
+// lặp lại quote cũ, giống hệt cơ chế pickUnusedCaseStudy().
+async function fillQuoteSlot({ userId, positioning, slotInfo, quote, slotTime, apiKey, product, group, channelHandle, brandName, channel, formatConstraint, recentTitles }) {
+  const core = await callClaude({
+    apiKey, system: SYSTEM_PROMPT_QUOTE, tool: TOOL_POST_CORE,
+    userContent: `${contextBlockOf(positioning, null)}
+
+QUOTE GỐC (GIỮ NGUYÊN VĂN, không paraphrase câu quote này — chỉ viết thêm phần cảm nhận/góc nhìn ngắn xung quanh, xem đúng nguyên tắc đã nêu):
+${quote.text.trim()}
+
+${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
+${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}
+Hãy viết bài dựa trên đúng quote trên, theo đúng nguyên tắc đã nêu.`,
+  });
+
+  return writeExtrasAndSave({
+    apiKey, positioning, core, channelHandle, brandName, product, group,
+    userId, tags: quote.tags, sourceTable: quote.table, sourceId: quote.id,
+    imageDataBase64: null, slotInfo, slotTime, channel, formatConstraint,
+  });
 }
 
 // Nhận thẳng danh sách slotInfos CẦN LẤP (đã biết trước, không tự tính "ô nào đang trống") — tách
@@ -521,8 +583,9 @@ async function autoFillForAdmin(admin, apiKey) {
 
 // Phase 9 (2026-08-29) — lane Cá nhân: tự viết + tự xếp 3 bài/ngày (Sáng/Trưa/Tối), KHÔNG tự đăng
 // (Facebook không cho app đăng hộ trang cá nhân — chị Quỳnh tự đăng tay). Mỗi buổi khoá 1 kiểu dạng
-// content cố định theo yêu cầu chị Quỳnh: Tối luôn "Video Ngồi Nói", Trưa luôn case study, Sáng là
-// bài thường (hook/content) miễn không phải "Video Ngồi Nói" (dạng đó dành riêng buổi tối).
+// content cố định theo yêu cầu chị Quỳnh: Tối luôn "Video Ngồi Nói", Trưa XEN KẼ case study/quote
+// (2026-08-31), Sáng là bài thường (hook/content) miễn không phải "Video Ngồi Nói" (dạng đó dành
+// riêng buổi tối).
 async function autoFillPersonalForAdmin(admin, apiKey) {
   const [posResp, profResp, poolCandidates, assetsResp, caseStudiesResp, personalPhotosResp] = await Promise.all([
     supabaseAdmin(`positioning_results?user_id=eq.${admin.id}&select=luot1,luot2&limit=1`),
@@ -586,18 +649,32 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         continue;
       }
       if (slotInfo.slot === 'trua') {
-        // Case study KHÔNG được lặp lại ảnh cũ — hết ảnh case study CHƯA DÙNG thì để TRỐNG ô này,
-        // KHÔNG rơi về bài thường (theo yêu cầu chị Quỳnh 2026-08-30: "nếu hết rồi thì để trống, ko
-        // tự điền") — khác hẳn cách cũ vốn âm thầm chuyển sang bài hook/content khi hết case study.
-        const caseStudy = pickUnusedCaseStudy(caseStudies, usedRefs);
-        if (!caseStudy) { skippedNoCandidate.push(slotInfo); continue; }
-        const personalPhoto = personalPhotos.length ? personalPhotos[Math.floor(Math.random() * personalPhotos.length)] : null;
-        usedRefs.push({ table: 'case_studies', id: caseStudy.id });
-        const result = await fillCaseStudySlot({
-          userId: admin.id, positioning, slotInfo, caseStudy, personalPhoto, slotTime, apiKey, product, group,
-          channelHandle: profile.channel_handle, brandName: profile.brand_name,
-          channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
-        });
+        // "phần case study buổi trưa thì xen kẽ câu quote với case study" (chị Quỳnh 2026-08-31) —
+        // random 50/50 ưu tiên quote hay case study trước, rơi sang loại còn lại nếu loại ưu tiên đã
+        // hết CHƯA DÙNG — chỉ thật sự để TRỐNG ô khi CẢ 2 đều cạn (giữ đúng nguyên tắc "hết thì để
+        // trống, ko tự điền" đã chốt 2026-08-30, không âm thầm rơi về bài thường).
+        const preferQuote = Math.random() < 0.5;
+        const tryQuote = () => { const quote = pickUnusedQuote(poolFiltered, usedRefs); return quote ? { type: 'quote', quote } : null; };
+        const tryCaseStudy = () => { const caseStudy = pickUnusedCaseStudy(caseStudies, usedRefs); return caseStudy ? { type: 'case_study', caseStudy } : null; };
+        const picked = preferQuote ? (tryQuote() || tryCaseStudy()) : (tryCaseStudy() || tryQuote());
+        if (!picked) { skippedNoCandidate.push(slotInfo); continue; }
+        let result;
+        if (picked.type === 'quote') {
+          usedRefs.push({ table: picked.quote.table, id: picked.quote.id });
+          result = await fillQuoteSlot({
+            userId: admin.id, positioning, slotInfo, quote: picked.quote, slotTime, apiKey, product, group,
+            channelHandle: profile.channel_handle, brandName: profile.brand_name,
+            channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
+          });
+        } else {
+          const personalPhoto = personalPhotos.length ? personalPhotos[Math.floor(Math.random() * personalPhotos.length)] : null;
+          usedRefs.push({ table: 'case_studies', id: picked.caseStudy.id });
+          result = await fillCaseStudySlot({
+            userId: admin.id, positioning, slotInfo, caseStudy: picked.caseStudy, personalPhoto, slotTime, apiKey, product, group,
+            channelHandle: profile.channel_handle, brandName: profile.brand_name,
+            channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
+          });
+        }
         filled.push(result); recentTitles.push(result.title);
         continue;
       }
