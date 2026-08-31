@@ -4,6 +4,12 @@
 // glossaryWrap 'tang_thuc' ở util.js) — mỗi niềm tin cũ là 1 "hạt giống" Phước hoặc Nghiệp đã gieo
 // từ ký ức/tuổi thơ. KHÔNG dùng AI để đoán/gợi ý niềm tin thay thế — người dùng tự viết cả niềm tin
 // cũ lẫn niềm tin mới, đúng tinh thần "tự nhận diện" xuyên suốt app (giống Tiếng Lòng, Nhật Ký Rắc Rối).
+const TOUR_STEPS = [
+  { selector: '#tt2-belief', title: 'Ghi lại niềm tin cũ', text: 'Viết ra niềm tin cũ về tiền bạn đang mang, kể cả khi chưa nhớ rõ vì sao — không dùng AI đoán thay, tự nhận diện mới thật sự chạm được gốc rễ.' },
+  { selector: '#tt2-origin-pattern-chips', title: 'Gợi ý sự kiện gốc', text: 'Chưa nhớ ra sự kiện cụ thể? Bấm thử 1 mẫu quen thuộc ở đây để bắt đầu nhớ lại.' },
+  { selector: '#tt2-submit', title: 'Lưu niềm tin', text: 'Sau khi lưu, niềm tin này sẽ hiện trong Sổ niềm tin đã ghi bên dưới — đánh dấu "Đã chuyển hoá" khi bạn thật sự không còn thấy nó chi phối mình nữa.' },
+];
+
 const REFRAME_PROMPTS = [
   'Niềm tin này đã từng bảo vệ bạn thế nào trong quá khứ — dù giờ có thể không còn cần thiết nữa?',
   'Nếu niềm tin này KHÔNG đúng, hôm nay bạn sẽ hành xử với tiền khác đi thế nào?',
@@ -142,6 +148,7 @@ function render(container, ctx){
 
   function html(){
     return `
+      <span class="tour-trigger" id="tt2-start-tour">❓ Hướng dẫn</span>
       <div class="page-head">
         <h1>Hạt Giống Phước - Nghiệp</h1>
         <p>${glossaryWrap('Sổ Niềm Tin Cũ Về Tiền', 'tang_thuc')} — nơi ghi lại gốc rễ đang nuôi các Nút Chặn Dòng Tiền bạn hay gặp ở <a href="#kien-thuc" style="color:var(--accent);font-weight:600;">Kiến Thức Nền Tảng →</a>.</p>
@@ -194,6 +201,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#tt2-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const beliefEl = container.querySelector('#tt2-belief');
     if(beliefEl) beliefEl.oninput = (e)=>{ state.form.belief_text = e.target.value; persistDraft(); };
     const originEl = container.querySelector('#tt2-origin');
