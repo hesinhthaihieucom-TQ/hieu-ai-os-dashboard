@@ -113,6 +113,15 @@ const VIBE_QUESTIONS = {
     ],
   },
 };
+
+// Chỉ trỏ vào 2 phần tử LUÔN CÓ SẴN dù khách hay đã đăng nhập (data-vibe-group="income" là câu Vibe
+// Check ĐẦU TIÊN, luôn render dù isGuest hay không) — không trỏ vào tabsHtml()/dashboardHtml() vì 2
+// khối đó chỉ hiện với người đã đăng nhập.
+const TOUR_STEPS = [
+  { selector: '[data-vibe-group="income"]', title: 'Vibe Check sau mỗi câu số liệu', text: 'Sau mỗi nhóm câu hỏi số liệu (thu nhập, chi tiêu, nợ...) đều có 1 câu Vibe Check — chọn đúng cảm nhận thật để ra Điểm Nghiệp Tiền và soi khâu nào đang bị tâm thức sợ hãi chi phối.' },
+  { selector: '#setup-submit', title: 'Xem kết quả', text: 'Điền đủ 7 câu số liệu + 10 câu Vibe Check rồi bấm đây — làm lại bất cứ lúc nào để cập nhật, không giới hạn số lần.' },
+];
+
 // Ánh xạ mỗi câu Vibe Check sang đúng cột tc_weekly_reflections mà trang-chu.js dùng để tính Điểm
 // Nghiệp — sau khi làm bài, seed thẳng vào tuần hiện tại (CHỈ điền cột nào còn trống, không đè lên
 // tự đánh giá thật đã có, xem submit()) để lần đầu vào Trang chủ radar có dữ liệu thật ở cả 5 trụ,
@@ -1000,6 +1009,7 @@ function render(container, ctx){
 
   function html(){
     return `
+      <span class="tour-trigger" id="tln-start-tour">❓ Hướng dẫn</span>
       <div class="page-head">
         <h1>Chấm Điểm Nghiệp Tiền</h1>
         ${isGuest ? `
@@ -1079,6 +1089,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#tln-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>{ if(state.activeTab!=='lam-bai'){ state.activeTab='lam-bai'; draw(); } window.startPageTour(TOUR_STEPS); };
+
     container.querySelectorAll('[data-tc-tab]').forEach(el=>{
       el.onclick = ()=>{
         state.activeTab = el.getAttribute('data-tc-tab');
