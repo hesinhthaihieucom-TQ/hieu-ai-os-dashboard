@@ -295,3 +295,22 @@ create policy "sk_orders_admin_all" on sk_orders for all using (is_admin()) with
 -- Seoul / #505 Cam Cà Rốt và yêu cầu cho khách chọn màu lúc đặt hàng) — chỉ có giá trị khi
 -- gift = 'binh_lac_son', null với đơn không có quà son.
 alter table sk_orders add column if not exists gift_color text check (gift_color in ('503','505'));
+
+-- Câu Chuyện Thành Công — mục RIÊNG (2026-08-31, chị Quỳnh: "để 1 mục riêng", không gộp vào Thư Viện
+-- Sức Khỏe) hiển thị case khách chuyển hoá thật (ảnh trước/sau + câu chuyện) cho MỌI khách xem, khác
+-- crm_case_studies bên tro-ly-crm/ (đó là kho RIÊNG TƯ của từng user để AI lấy gửi khi tư vấn, cái
+-- này là nội dung CÔNG KHAI trong app). Admin thêm qua Quản Trị (ảnh nén thành data URL lưu thẳng
+-- trong images, giống avatar_url — xem nhan-hieu/js/tai-khoan.js — không cần Supabase Storage riêng).
+create table if not exists sk_success_stories (
+  id uuid primary key default gen_random_uuid(),
+  display_name text not null,
+  story text not null,
+  images jsonb not null default '[]'::jsonb,
+  category text check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da','xuong_khop')),
+  created_at timestamptz not null default now()
+);
+alter table sk_success_stories enable row level security;
+drop policy if exists "sk_success_stories_read" on sk_success_stories;
+create policy "sk_success_stories_read" on sk_success_stories for select using (auth.role() = 'authenticated');
+drop policy if exists "sk_success_stories_admin_write" on sk_success_stories;
+create policy "sk_success_stories_admin_write" on sk_success_stories for all using (is_admin()) with check (is_admin());

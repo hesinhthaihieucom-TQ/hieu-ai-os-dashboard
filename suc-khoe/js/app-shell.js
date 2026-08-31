@@ -16,6 +16,7 @@ const NAV = [
   { key:'theo-doi-tuan', title:'Theo Dõi Sức Khỏe Theo Tuần' },
   { key:'lich-trinh', title:'Lịch Trình Của Bạn' },
   { key:'thu-vien-suc-khoe', title:'Thư Viện Sức Khỏe' },
+  { key:'cau-chuyen-thanh-cong', title:'Câu Chuyện Thành Công' },
   { key:'san-pham', title:'Sản Phẩm Unicity' },
   { key:'tich-diem-hoa-hong', title:'Tích Điểm & Hoa Hồng' },
   { key:'tuyen-doi-tac', title:'Cơ Hội Kinh Doanh' },

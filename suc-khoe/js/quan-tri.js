@@ -13,6 +13,7 @@ function render(container, ctx){
         <div class="chip ${hubState.tab==='goi'?'selected':''}" data-hub-tab="goi">Gói & Lịch Trình</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành Viên</div>
         <div class="chip ${hubState.tab==='donhang'?'selected':''}" data-hub-tab="donhang">Đơn Hàng</div>
+        <div class="chip ${hubState.tab==='cauchuyen'?'selected':''}" data-hub-tab="cauchuyen">Câu Chuyện Thành Công</div>
       </div>
       <div id="qt-hub-sub"></div>
     `;
@@ -24,6 +25,7 @@ function render(container, ctx){
     else if(hubState.tab === 'sanpham') renderSanPham(sub, ctx);
     else if(hubState.tab === 'goi') renderGoiLichTrinh(sub, ctx);
     else if(hubState.tab === 'donhang') renderDonHang(sub, ctx);
+    else if(hubState.tab === 'cauchuyen') renderCauChuyen(sub, ctx);
     else renderThanhVien(sub, ctx);
   }
   drawHub();
@@ -562,6 +564,188 @@ function renderDonHang(container, ctx){
     container.querySelectorAll('[data-order-status]').forEach(el=>{
       el.onchange = (e)=>updateStatus(el.getAttribute('data-order-status'), e.target.value);
     });
+  }
+
+  load();
+}
+
+// ===== Tab "Câu Chuyện Thành Công" — CRUD sk_success_stories (2026-08-31, chị Quỳnh: "để 1 mục
+// riêng") — ảnh upload nén thành data URL lưu thẳng vào cột images, copy đúng pattern
+// tro-ly-crm/js/case-study.js (đã có sẵn upload+nén ảnh) thay vì cần Supabase Storage riêng.
+const CAU_CHUYEN_MAX_IMAGES = 3;
+function renderCauChuyen(container, ctx){
+  const state = { loading:true, items:[], showForm:false, form:null, saving:false, error:'', deletingId:null };
+
+  function draw(){ container.innerHTML = html(); bind(); }
+
+  async function load(){
+    state.loading = true; draw();
+    const { data } = await ctx.supabase.from('sk_success_stories').select('*').order('created_at', { ascending:false });
+    state.items = data || [];
+    state.loading = false;
+    draw();
+  }
+
+  function openForm(item){
+    state.showForm = true; state.error = '';
+    state.form = item
+      ? { id:item.id, display_name:item.display_name||'', story:item.story||'', images:item.images||[], category:item.category||'' }
+      : { id:null, display_name:'', story:'', images:[], category:'' };
+    draw();
+  }
+  function closeForm(){ state.showForm = false; state.form = null; draw(); }
+
+  function handleFiles(files){
+    const f = state.form;
+    Array.from(files).slice(0, CAU_CHUYEN_MAX_IMAGES - f.images.length).forEach((file)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          f.images = [...f.images, c.toDataURL('image/jpeg', 0.82)].slice(0, CAU_CHUYEN_MAX_IMAGES);
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function removeImage(idx){
+    state.form.images = state.form.images.filter((_,i)=>i!==idx);
+    draw();
+  }
+
+  async function saveForm(){
+    const f = state.form;
+    if(!f.display_name.trim()){ state.error = 'Nhập tên hiển thị (thật hoặc viết tắt).'; draw(); return; }
+    if(!f.story.trim()){ state.error = 'Nhập câu chuyện của case này.'; draw(); return; }
+    state.saving = true; state.error = ''; draw();
+    const payload = { display_name:f.display_name.trim(), story:f.story.trim(), images:f.images, category:f.category||null };
+    const { error } = f.id
+      ? await ctx.supabase.from('sk_success_stories').update(payload).eq('id', f.id)
+      : await ctx.supabase.from('sk_success_stories').insert(payload);
+    state.saving = false;
+    if(error){ state.error = error.message; draw(); return; }
+    state.showForm = false; state.form = null;
+    await load();
+  }
+
+  async function deleteItem(id){
+    if(!(await confirmModal('Xoá câu chuyện này?'))) return;
+    state.deletingId = id; draw();
+    await ctx.supabase.from('sk_success_stories').delete().eq('id', id);
+    state.deletingId = null;
+    await load();
+  }
+
+  function itemRowHtml(item){
+    const catLabel = (SK_PRODUCT_CATEGORIES.find(c=>c.key===item.category)||{}).label;
+    return `
+      <div class="section" style="display:flex;gap:12px;align-items:flex-start;">
+        ${item.images && item.images[0] ? `<img src="${item.images[0]}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;">${esc(item.display_name)}${catLabel ? ` <span style="font-size:11.5px;font-weight:400;color:var(--ink-soft);">· ${esc(catLabel)}</span>` : ''}</div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc((item.story||'').slice(0,140))}${(item.story||'').length>140?'…':''}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <span class="btn-ghost btn btn-sm" data-edit="${item.id}">Sửa</span>
+          <span class="btn-ghost btn btn-sm" style="color:var(--danger);${state.deletingId===item.id?'opacity:.6;pointer-events:none;':''}" data-delete="${item.id}">${state.deletingId===item.id?'Đang xoá…':'Xoá'}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function formHtml(){
+    const f = state.form;
+    return `
+      <div id="cc-form-overlay" style="position:fixed;inset:0;z-index:9998;background:rgba(20,24,20,.6);display:flex;justify-content:center;padding:24px 16px;overflow-y:auto;">
+        <div data-modal-box style="background:#fff;border-radius:14px;max-width:520px;width:100%;padding:26px 24px;box-shadow:0 12px 40px rgba(0,0,0,.4);height:fit-content;margin:0 auto;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;">
+            <h2 style="font-size:18px;">${f.id ? 'Sửa câu chuyện' : 'Thêm câu chuyện'}</h2>
+            <span id="cc-form-close" style="cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;">✕</span>
+          </div>
+          ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tên hiển thị</label>
+          <input type="text" id="cc-name" value="${esc(f.display_name)}" placeholder="Tên thật hoặc viết tắt, tuỳ khách đồng ý">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhánh liên quan (không bắt buộc)</label>
+          <select id="cc-category">
+            <option value="" ${!f.category?'selected':''}>— Chung, không gắn nhánh —</option>
+            ${SK_PRODUCT_CATEGORIES.map(c=>`<option value="${c.key}" ${f.category===c.key?'selected':''}>${esc(c.label)}</option>`).join('')}
+          </select>
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Câu chuyện</label>
+          <textarea id="cc-story" style="min-height:140px;" placeholder="Trước đây thế nào, đã dùng sản phẩm/gói gì, kết quả ra sao...">${esc(f.story)}</textarea>
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Hình ảnh (tối đa ${CAU_CHUYEN_MAX_IMAGES})</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+            ${f.images.map((src,i)=>`
+              <div style="position:relative;width:80px;height:80px;">
+                <img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
+                <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
+              </div>
+            `).join('')}
+            ${f.images.length<CAU_CHUYEN_MAX_IMAGES ? `<label style="width:80px;height:80px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:22px;">+<input type="file" accept="image/*" multiple id="cc-file" style="display:none;"></label>` : ''}
+          </div>
+          <div class="btn-row" style="justify-content:flex-start;margin-top:18px;">
+            <button class="btn btn-sm" id="cc-form-save" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu'}</button>
+            <span class="btn-ghost btn btn-sm" id="cc-form-cancel">Huỷ</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function html(){
+    return `
+      <div class="btn-row" style="justify-content:flex-start;margin-top:0;margin-bottom:18px;">
+        <button class="btn btn-sm" id="cc-new">+ Thêm câu chuyện</button>
+      </div>
+      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
+        state.items.length === 0
+          ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có câu chuyện nào — bấm "+ Thêm câu chuyện" để thêm case đầu tiên.</div>`
+          : state.items.map(itemRowHtml).join('')
+      )}
+      ${state.showForm ? formHtml() : ''}
+    `;
+  }
+
+  function bind(){
+    const newBtn = container.querySelector('#cc-new');
+    if(newBtn) newBtn.onclick = ()=>openForm(null);
+    container.querySelectorAll('[data-edit]').forEach(el=>{
+      el.onclick = ()=>openForm(state.items.find(i=>i.id===el.getAttribute('data-edit')));
+    });
+    container.querySelectorAll('[data-delete]').forEach(el=>{
+      el.onclick = ()=>deleteItem(el.getAttribute('data-delete'));
+    });
+
+    const formOverlay = container.querySelector('#cc-form-overlay');
+    if(formOverlay){
+      formOverlay.onclick = closeForm;
+      const box = formOverlay.querySelector('[data-modal-box]');
+      if(box) box.onclick = (e)=>e.stopPropagation();
+      const closeBtn = container.querySelector('#cc-form-close');
+      if(closeBtn) closeBtn.onclick = closeForm;
+      const cancelBtn = container.querySelector('#cc-form-cancel');
+      if(cancelBtn) cancelBtn.onclick = closeForm;
+      const nameEl = container.querySelector('#cc-name');
+      if(nameEl) nameEl.oninput = (e)=>{ state.form.display_name = e.target.value; };
+      const catEl = container.querySelector('#cc-category');
+      if(catEl) catEl.onchange = (e)=>{ state.form.category = e.target.value; };
+      const storyEl = container.querySelector('#cc-story');
+      if(storyEl) storyEl.oninput = (e)=>{ state.form.story = e.target.value; };
+      const fileEl = container.querySelector('#cc-file');
+      if(fileEl) fileEl.onchange = ()=>{ if(fileEl.files.length) handleFiles(fileEl.files); };
+      container.querySelectorAll('[data-remove-img]').forEach(el=>{
+        el.onclick = ()=>removeImage(Number(el.getAttribute('data-remove-img')));
+      });
+      const saveBtn = container.querySelector('#cc-form-save');
+      if(saveBtn) saveBtn.onclick = saveForm;
+    }
   }
 
   load();
