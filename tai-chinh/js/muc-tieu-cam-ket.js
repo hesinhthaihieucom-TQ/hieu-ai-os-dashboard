@@ -12,6 +12,15 @@ const REFRAME_MESSAGES = [
   'Mọi thứ đều có lúc lên lúc xuống — đây chỉ là một điểm trũng tạm thời, không phải bản án. Bạn không cần chống lại nó, chỉ cần bình tĩnh đi tiếp.',
 ];
 
+// Chỉ trỏ vào bước 'goal' (state.step mặc định) — 'reaction'/'summary' chỉ hiện SAU khi đã lưu mục
+// tiêu lần đầu, không phải màn hình mọi người luôn thấy khi mới vào trang.
+const TOUR_STEPS = [
+  { selector: '[data-goal="goal_income"]', title: 'Đặt mục tiêu tháng này', text: 'Điền mục tiêu thu nhập/tiết kiệm/giảm nợ/tài sản mới — đặt TRƯỚC khi ghi chép, không phải chuyện cuối tháng mới nghĩ tới.' },
+  { selector: '#mt-house-chips', title: 'Gắn vào Trụ Cột', text: 'Chọn mục tiêu này phục vụ Trụ Cột nào — giúp mục tiêu có ý nghĩa cảm xúc thật, không chỉ là con số khô khan.' },
+  { selector: '#mt-save-goal', title: 'Lưu Lời Cam Kết', text: 'Sau khi lưu, bạn sẽ được hỏi Tiếng Lòng — cảm xúc thật ngay lúc vừa đặt mục tiêu, dù đó là hoài nghi hay sợ hãi.' },
+  { selector: '#mt-obstacle-input', title: 'Nhật Ký Rắc Rối', text: 'Có chuyện gì vừa cản trở bạn trên đường tới mục tiêu? Ghi lại ngay lúc vừa xảy ra, app sẽ phản chiếu lại 1 góc nhìn khác ngay bên dưới.' },
+];
+
 function hasAnyGoal(g){ return !!(Number(g.goal_income) || Number(g.goal_savings) || Number(g.goal_debt_reduction) || Number(g.goal_new_asset) || (g.goal_new_asset_type||'').trim()); }
 
 function render(container, ctx){
@@ -238,6 +247,7 @@ function render(container, ctx){
 
   function html(){
     return `
+      <span class="tour-trigger" id="mt-start-tour">❓ Hướng dẫn</span>
       <div class="page-head">
         <h1>Mục Tiêu & Cam Kết</h1>
         <p>Đặt mục tiêu TRƯỚC khi ghi chép — đây là nghi thức mở đầu, không phải 1 ô nhập số cuối tháng. Chưa rõ các khái niệm dưới đây? Xem <a href="#kien-thuc" style="color:var(--accent);font-weight:600;">Kiến Thức Nền Tảng →</a> trước.</p>
@@ -329,6 +339,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#mt-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>{ if(state.step!=='goal'){ state.step='goal'; draw(); } window.startPageTour(TOUR_STEPS); };
+
     const houseChips = container.querySelector('#mt-house-chips');
     if(houseChips) houseChips.querySelectorAll('[data-house]').forEach(el=>{
       el.onclick = ()=>{
