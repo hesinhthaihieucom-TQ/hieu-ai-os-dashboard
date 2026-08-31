@@ -176,8 +176,19 @@ async function loadCandidatePool(userId) {
 function pickUnusedCandidate(candidates, usedRefs, allowReuse = true) {
   const isUsed = (c) => usedRefs.some((r) => r.table === c.table && r.id === c.id);
   const unused = candidates.filter((c) => !isUsed(c));
-  if (unused.length) return unused[0];
-  return allowReuse ? (candidates[0] || null) : null;
+  // BUG THẬT (phát hiện 2026-08-31, chị Quỳnh: "chủ đề đang nguyên 1 lịch là chung 1 chủ đề... lấy
+  // đúng 1 cái content xong ra nhiều bài trên lịch thôi") — trước đây luôn trả về unused[0]/candidates[0]
+  // (PHẦN TỬ ĐẦU TIÊN cố định, không random) — khi trục của khách hẹp (vd chỉ khớp vài hook/content),
+  // pool "chưa dùng" cạn rất nhanh trong 1 lượt bấm "AI tự viết + xếp cả tuần" (nhiều ô/lần, xem
+  // MAX_FILL_PER_CLICK ở auto-fill-week.js), rồi rơi vào nhánh allowReuse=true → LUÔN trả về ĐÚNG 1
+  // candidates[0] giống hệt nhau cho MỌI ô còn lại — cả tuần bài viết ra từ đúng 1 nguồn, dù đã
+  // paraphrase 70% câu chữ vẫn cùng 1 chủ đề. Giờ chọn NGẪU NHIÊN trong cả 2 nhánh — vẫn không lặp
+  // trong cùng 1 lượt chạy khi còn ứng viên chưa dùng (usedRefs cập nhật ngay trong vòng lặp gọi hàm
+  // này), và khi PHẢI dùng lại (hết ứng viên mới) thì ít nhất mỗi ô có cơ hội rơi vào 1 nguồn khác
+  // nhau thay vì luôn đúng 1 nguồn cố định.
+  if (unused.length) return unused[Math.floor(Math.random() * unused.length)];
+  if (!allowReuse) return null;
+  return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
 }
 
 // KHÁC pickUnusedCandidate() ở trên: case study KHÔNG được lặp lại 1 khi đã dùng — hết ảnh chưa dùng
