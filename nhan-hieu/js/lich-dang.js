@@ -23,6 +23,16 @@ function matchPillarKey(text){
   return null;
 }
 
+// Chỉ trỏ vào tab "Lịch" (mặc định khi vào trang) — tab "Thông báo & giờ đăng" đơn giản hơn nhiều,
+// không cần tour riêng.
+const TOUR_STEPS = [
+  { selector: '.tab-row', title: '2 tab của trang này', text: 'Tab "Lịch" xem/xếp lịch đăng bài theo tuần. Tab "Thông báo & giờ đăng" chỉnh giờ đăng mặc định mỗi buổi và bật nhắc nhở.' },
+  { selector: '.week-grid', title: 'Lịch tuần', text: 'Mỗi cột là 1 ngày, mỗi ô là 1 buổi (Sáng/Trưa/Tối). Bấm vào ô trống để chọn bài đã viết xếp vào, hoặc bấm "Gợi ý AI" (nếu có) để xếp nhanh theo gợi ý.' },
+  { selector: '#goal-card', title: 'AI gợi ý lịch tuần', text: 'Nói mục tiêu tuần này, AI gợi ý CHỦ ĐỀ cho từng ô trống — bạn vẫn tự vào Kho Content chọn/viết bài cho từng ô.' },
+  { selector: '#autofill-card', title: 'AI tự viết + xếp cả tuần', text: 'Khác với gợi ý chủ đề ở trên — cái này AI viết bài HOÀN CHỈNH và xếp thẳng vào ô trống luôn, đỡ công nhất.' },
+  { selector: '#recording-card', title: 'Lịch công việc content', text: 'Đặt lịch nhắc việc content sắp tới (quay video, họp nhóm, deadline...) — không chỉ riêng buổi quay, không giới hạn buổi trong ngày như lịch đăng bài ở trên.' },
+];
+
 function render(container, ctx){
   const state = {
     screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
@@ -266,6 +276,7 @@ function render(container, ctx){
       <button class="btn" data-action="retry-boot">Thử lại</button>
     </div>`;
     return `
+      <span class="tour-trigger" id="ld-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><div class="tag">Bước 5 · Lịch Đăng Bài</div><h1>Lịch đăng bài theo tuần</h1></div>
       <div class="tab-row">
         <div class="tab-btn ${state.tab==='lich'?'active':''}" data-tab="lich">Lịch</div>
@@ -541,7 +552,7 @@ function render(container, ctx){
 
       <div style="margin:26px 0 10px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">🛠️ Công cụ lên lịch</div>
       ${state.channel==='ca_nhan' ? `
-        ${toolCardHtml('goal', '🎯', 'AI gợi ý lịch tuần', goalCardBody, goalCardHint)}
+        ${toolCardHtml('goal', '🎯', 'AI gợi ý lịch tuần', goalCardBody, goalCardHint, { id:'goal-card' })}
         ${toolCardHtml('autofill', '🪄', 'AI tự viết + xếp cả tuần', autoFillCardBody, autoFillCardHint, { id:'autofill-card', bg:'var(--accent-soft)', pulse: state.highlightAutoFill })}
       ` : `
         <div class="hint-box" style="margin-bottom:14px;">
@@ -554,7 +565,7 @@ function render(container, ctx){
           ${state.regenWeekError?`<div class="error-box" style="margin-top:10px;">${esc(state.regenWeekError)}</div>`:''}
         </div>
       `}
-      ${toolCardHtml('recording', '🎬', 'Lịch công việc content', recordingCardBody, recordingCardHint)}
+      ${toolCardHtml('recording', '🎬', 'Lịch công việc content', recordingCardBody, recordingCardHint, { id:'recording-card' })}
     `;
   }
 
@@ -606,6 +617,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#ld-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>{ if(state.tab!=='lich'){ state.tab='lich'; draw(); } window.startPageTour(TOUR_STEPS); };
+
     const retryBtn = container.querySelector('[data-action="retry-boot"]');
     if(retryBtn) retryBtn.onclick = boot;
 
