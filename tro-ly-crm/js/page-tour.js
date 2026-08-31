@@ -55,8 +55,9 @@
       card.style.cssText = `position:fixed;top:${top}px;left:${left}px;width:${cardWidth}px;background:#fff;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.25);padding:18px;z-index:1;`;
       card.innerHTML = `
         <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;color:var(--accent,#2F6F62);text-transform:uppercase;margin-bottom:8px;">Bước ${idx+1}/${steps.length}</div>
-        <div style="font-weight:700;font-size:14.5px;margin-bottom:6px;color:#1E2420;">${step.title}</div>
-        <div style="font-size:13px;line-height:1.6;color:#5B5F55;">${step.text}</div>
+        <div style="font-weight:700;font-size:14.5px;margin-bottom:6px;color:#1E2420;">${esc(step.title)}</div>
+        <div style="font-size:13px;line-height:1.6;color:#5B5F55;">${esc(step.text)}</div>
+        ${step.img ? `<img src="${step.img}" style="max-width:100%;border-radius:8px;margin-top:10px;border:1px solid #E4DFCF;">` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
           <span id="pt-skip" style="cursor:pointer;font-size:12.5px;color:#9CA396;">Bỏ qua</span>
           <div style="display:flex;gap:8px;">
@@ -92,12 +93,14 @@
     function go(newIdx){ renderStep(steps, newIdx, onDone); }
   }
 
-  // steps: [{ selector, title, text }] — selector là CSS selector trỏ tới phần tử cần trỏ vào (để
-  // trống nếu muốn hiện popup ở giữa màn hình, VD bước mở đầu/kết thúc không gắn với 1 phần tử cụ thể).
-  window.startPageTour = function(steps){
+  // steps: [{ selector, title, text, img? }] — selector là CSS selector trỏ tới phần tử cần trỏ vào
+  // (để trống nếu muốn hiện popup ở giữa màn hình). onDone (tuỳ chọn): gọi khi tour đóng, bất kể
+  // đóng bằng cách nào (Bỏ qua/Xong/đi hết bước) — dùng cho announcement-popup.js để đánh dấu đã xem
+  // + hiện tiếp thông báo kế trong hàng đợi sau khi tour của thông báo trước đó đóng lại.
+  window.startPageTour = function(steps, onDone){
     if(!steps || !steps.length) return;
     const existing = document.getElementById('page-tour-overlay');
     if(existing) existing.remove(); // chỉ 1 tour chạy tại 1 thời điểm
-    renderStep(steps, 0);
+    renderStep(steps, 0, onDone);
   };
 })();

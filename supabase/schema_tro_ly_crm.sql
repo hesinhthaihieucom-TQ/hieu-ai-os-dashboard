@@ -112,8 +112,9 @@ begin
 end $$;
 
 -- Thanh toán RIÊNG sản phẩm này — KHÔNG dùng chung has_paid/access_until (Xây Nhân Hiệu) hay
--- tc_has_paid (Sổ Dòng Tiền) vì đây là 1 gói/hạn dùng khác hoàn toàn. Không giới hạn lượt AI/tháng
--- (chị Quỳnh chốt 2026-08-29) — chỉ khoá theo crm_access_until, không cần cột đếm lượt riêng.
+-- tc_has_paid (Sổ Dòng Tiền) vì đây là 1 gói/hạn dùng khác hoàn toàn — chỉ khoá theo crm_access_until.
+-- (2026-08-30: BAN ĐẦU không giới hạn lượt/tháng, sau đó chị Quỳnh chốt "làm như Xây Nhân Hiệu —
+-- hiện bộ đếm lượt" rồi yêu cầu tính lại đúng chi phí thật — xem khối lượt AI phía dưới.)
 alter table profiles add column if not exists crm_has_paid boolean not null default false;
 alter table profiles add column if not exists crm_access_until timestamptz;
 alter table profiles add column if not exists crm_plan_days integer;
@@ -190,3 +191,106 @@ create policy "crm_story_profiles_owner_all" on crm_story_profiles for all using
 -- có dữ liệu thì ưu tiên dùng thẳng làm câu chuyện cá nhân (xem api/crm-tuvan.js), answers vẫn giữ
 -- nguyên cho chế độ trả lời từng câu — 2 chế độ không bắt buộc dùng cùng lúc.
 alter table crm_story_profiles add column if not exists free_story text;
+
+-- Lượt AI RIÊNG cho tro-ly-crm (2026-08-30, chị Quỳnh chốt "làm như Xây Nhân Hiệu — hiện bộ đếm
+-- lượt" rồi yêu cầu tính lại đúng chi phí thật) — ĐỘC LẬP hoàn toàn với hệ ai_usage/consume_ai_quota
+-- của Xây Nhân Hiệu. Không có khái niệm "dùng thử" — chỉ 1 trần theo tháng (300, xem
+-- api/_lib/crm-ai-quota.js), không có nhánh trial/paid như hàm consume_ai_quota gốc.
+alter table profiles add column if not exists crm_ai_uses int not null default 0;
+alter table profiles add column if not exists crm_ai_month text;
+-- "Mua thêm lượt" (Nâng Cấp) — cộng thẳng vào crm_ai_bonus của THÁNG HIỆN TẠI, giống hệt
+-- paid_ai_bonus bên Xây Nhân Hiệu (xem CRM_AMOUNT_TO_TOPUP_LUOT/api/sepay-webhook.js) — dùng hết
+-- trong tháng, không cộng dồn vĩnh viễn, tự về 0 khi sang tháng mới.
+alter table profiles add column if not exists crm_ai_bonus int not null default 0;
+
+drop function if exists public.consume_crm_ai_quota(uuid, int, int);
+create or replace function public.consume_crm_ai_quota(p_user_id uuid, p_monthly_limit int, p_weight int default 1)
+returns jsonb as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text := to_char(now(), 'YYYY-MM');
+  v_current_uses int;
+  v_bonus int;
+  v_effective_limit int;
+  v_is_admin boolean;
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then
+    return jsonb_build_object('allowed', true); -- không tìm thấy profile: fail open, không chặn oan
+  end if;
+  v_is_admin := (v_profile.role = 'admin');
+  if v_profile.crm_ai_month = v_month then
+    v_current_uses := v_profile.crm_ai_uses;
+    v_bonus := coalesce(v_profile.crm_ai_bonus, 0);
+  else
+    v_current_uses := 0;
+    v_bonus := 0;
+  end if;
+  v_effective_limit := p_monthly_limit + v_bonus;
+  if (not v_is_admin) and v_current_uses + p_weight > v_effective_limit then
+    return jsonb_build_object('allowed', false, 'effective_limit', v_effective_limit, 'current_uses', v_current_uses);
+  end if;
+  if v_profile.crm_ai_month = v_month then
+    update profiles set crm_ai_uses = crm_ai_uses + p_weight where id = p_user_id;
+  else
+    update profiles set crm_ai_uses = p_weight, crm_ai_month = v_month, crm_ai_bonus = 0 where id = p_user_id;
+  end if;
+  return jsonb_build_object('allowed', true, 'current_uses', v_current_uses + p_weight);
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.consume_crm_ai_quota(uuid, int, int) from public, authenticated, anon;
+grant execute on function public.consume_crm_ai_quota(uuid, int, int) to service_role;
+
+drop function if exists public.refund_crm_ai_quota(uuid, int);
+create or replace function public.refund_crm_ai_quota(p_user_id uuid, p_weight int default 1)
+returns void as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text := to_char(now(), 'YYYY-MM');
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then return; end if;
+  if v_profile.crm_ai_month = v_month then
+    update profiles set crm_ai_uses = greatest(0, crm_ai_uses - p_weight) where id = p_user_id;
+  end if;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.refund_crm_ai_quota(uuid, int) from public, authenticated, anon;
+grant execute on function public.refund_crm_ai_quota(uuid, int) to service_role;
+
+-- Thông báo tính năng mới (2026-08-31, chị Quỳnh: "cho e mục thông báo ở quản trị để e thông báo cho
+-- khách về cái hướng dẫn") — RIÊNG cho tro-ly-crm, cùng khuôn với feature_announcements của Xây Nhân
+-- Hiệu (title/body/emoji/steps, admin đăng qua Quản Trị → Thông báo, mọi user đăng nhập đọc được).
+-- steps: mảng {key, text, img?} — key khớp NAV.key ở app-shell.js, trỏ sáng đúng .sidebar-item khi
+-- chạy qua page-tour.js (engine dùng chung mọi trang, xem announcement-popup.js).
+create table if not exists crm_feature_announcements (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null,
+  emoji text not null default '🎉',
+  steps jsonb not null default '[]',
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+alter table crm_feature_announcements enable row level security;
+drop policy if exists "crm_feature_announcements_read_all" on crm_feature_announcements;
+create policy "crm_feature_announcements_read_all" on crm_feature_announcements for select using (auth.role() = 'authenticated');
+drop policy if exists "crm_feature_announcements_admin_write" on crm_feature_announcements;
+create policy "crm_feature_announcements_admin_write" on crm_feature_announcements for all using (is_admin()) with check (is_admin());
+
+-- Mốc "đã xem thông báo tới thời điểm nào" — dùng mốc THỜI GIAN (không phải 1 ID) để lọc được TOÀN
+-- BỘ thông báo mới hơn mốc này, xếp hàng đợi hiện lần lượt, không bỏ sót cái nào đăng xen giữa 2 lần
+-- vào app (đúng bài học từ last_seen_announcement_at của Xây Nhân Hiệu — bản ID-đơn ban đầu của họ
+-- từng bị chính vấn đề này, xem lịch sử feature_announcements ở schema_full.sql cũ).
+alter table profiles add column if not exists crm_last_seen_announcement_at timestamptz;
+
+-- profiles KHÔNG cho user thường .update() thẳng (RLS khoá "profiles_self_update" từ lâu, chỉ admin
+-- có "profiles_admin_update") — PHẢI qua RPC hẹp này, không được gọi .update() thẳng từ client (sẽ
+-- bị RLS chặn ÂM THẦM — không báo lỗi nhưng cũng không ghi được gì — khiến popup hiện lại mãi mãi).
+create or replace function public.mark_crm_announcement_seen(seen_at timestamptz)
+returns void as $$
+begin
+  update public.profiles set crm_last_seen_announcement_at = seen_at where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_crm_announcement_seen(timestamptz) to authenticated;

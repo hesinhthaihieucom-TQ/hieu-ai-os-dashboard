@@ -14,6 +14,7 @@ const NAV = [
   { key:'nang-cap', title:'Nâng Cấp' },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm tên ở cuối sidebar
   { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin'
+  { key:'quan-tri-thongbao', title:'Thông báo', adminOnly:true },
 ];
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
@@ -91,6 +92,17 @@ function maybeTriggerInstallPromptOnce(){
   setTimeout(()=>{ if(window.maybeShowInstallPrompt) window.maybeShowInstallPrompt(); }, 1500);
 }
 
+// Thông báo tính năng mới (2026-08-31) — kiểm tra NGAY (không delay) mỗi khi vào app/đăng nhập mới,
+// trước cả install-prompt (quan trọng hơn) — xem announcement-popup.js. Best-effort, không throw.
+let announcementsCheckedOnce = false;
+function maybeCheckCrmAnnouncementsOnce(){
+  if(announcementsCheckedOnce) return;
+  announcementsCheckedOnce = true;
+  if(window.checkAndShowCrmAnnouncements){
+    window.checkAndShowCrmAnnouncements({ supabase: supabaseClient, user: AppState.user, profile: AppState.profile });
+  }
+}
+
 async function initApp(){
   const root = document.getElementById('app');
   root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
@@ -101,6 +113,7 @@ async function initApp(){
     await loadProfile();
     AppState.route = currentRouteFromHash();
     renderApp();
+    maybeCheckCrmAnnouncementsOnce();
     maybeTriggerInstallPromptOnce();
   } else {
     renderAuthScreen();
@@ -116,6 +129,7 @@ async function initApp(){
       loadProfile().then(()=>{
         location.hash = 'trang-chu';
         renderApp();
+        maybeCheckCrmAnnouncementsOnce();
         maybeTriggerInstallPromptOnce();
       });
     } else if(event === 'SIGNED_OUT'){
