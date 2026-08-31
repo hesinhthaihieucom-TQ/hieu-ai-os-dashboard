@@ -87,6 +87,16 @@ module.exports = async (req, res) => {
     const postsResp = await supabaseAdmin(`posts?user_id=eq.${user.id}&select=source_table,source_id`);
     const postsRows = postsResp.ok ? await postsResp.json() : [];
     const usedRefs = postsRows.filter((p) => p.source_table && p.source_id).map((p) => ({ table: p.source_table, id: p.source_id }));
+    // Số liệu chẩn đoán (2026-08-31, theo phản hồi chị Quỳnh "kho content viral còn đầy mà, ai kêu
+    // hết nguồn" — trả kèm số liệu THẬT trong response thay vì đoán qua đọc code) — pool_all_size là
+    // TOÀN BỘ kho hook/content (cá nhân + chung), pool_matched_truc_size là sau khi lọc đúng trục
+    // phân loại, pool_unused_size là trong số đó bao nhiêu CHƯA từng dùng viết bài nào trước đây.
+    const isUsedRef = (c) => usedRefs.some((r) => r.table === c.table && r.id === c.id);
+    const diagnostics = {
+      pool_all_size: poolCandidates.length,
+      pool_matched_truc_size: poolFiltered.length,
+      pool_unused_size: poolFiltered.filter((c) => !isUsedRef(c)).length,
+    };
 
     const filled = [];
     // "Lịch tự động làm đang bị 1 màu quá... y hệt chủ đề và nội dung luôn" (chị Quỳnh 2026-08-31) —
@@ -170,6 +180,7 @@ module.exports = async (req, res) => {
     res.status(200).json({
       filled, skipped_cap: skippedCap, skipped_no_candidate: skippedNoCandidate,
       quota_blocked: quotaBlockedMessage, mode: finalMode, truc, luot_used: luotUsed,
+      ...diagnostics,
     });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi tự động điền lịch.' });

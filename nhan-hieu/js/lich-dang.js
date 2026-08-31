@@ -997,6 +997,12 @@ function render(container, ctx){
       if(data.quota_blocked) parts.push(data.quota_blocked);
       if(data.skipped_cap) parts.push(`còn ${data.skipped_cap} ô trống nữa — bấm "Bắt đầu viết" thêm lần nữa để tiếp tục`);
       if(data.skipped_no_candidate && data.skipped_no_candidate.length) parts.push(`${data.skipped_no_candidate.length} ô không tìm được nguồn phù hợp nên bỏ qua`);
+      // Số liệu chẩn đoán nguồn (2026-08-31, theo phản hồi chị Quỳnh "kho content viral còn đầy mà,
+      // ai kêu hết nguồn" — hiện số liệu thật thay vì chỉ giải thích suông) — chỉ hiện khi pool đúng
+      // trục thật sự nhỏ (<5 bài chưa dùng), để không làm nhiễu thông báo lúc bình thường mọi thứ ổn.
+      if(typeof data.pool_unused_size === 'number' && data.pool_unused_size < 5){
+        parts.push(`⚠️ nguồn đúng trục "${data.truc||'—'}" hiện chỉ còn ${data.pool_unused_size} bài/hook chưa dùng (trong ${data.pool_matched_truc_size} bài khớp trục, ${data.pool_all_size} bài toàn kho) — dễ lặp lại chủ đề, cân nhắc bổ sung thêm nguồn cho trục này`);
+      }
       state.autoFillResult = parts.length ? parts.join(' — ') : (data.message || 'Không có gì để điền.');
       await loadEntries();
     } catch(e){ state.autoFillError = e.message; }
