@@ -1026,9 +1026,17 @@ function render(container, ctx){
     const stopProgress = animateProgressButton(container.querySelector('[data-action="regen-week"]'), 90, 'Đang viết lại');
     acquireWakeLock();
     try{
-      const dates = weekDays().map(isoDate);
-      await callApi('/api/regen-fanpage-week', { dates }, 280000);
-      await loadEntries();
+      // "bấm nút ai tự động trên lịch là ko làm đc nha, lỗi hoài" (chị Quỳnh 2026-08-31) — trước đây
+      // gửi CẢ 7 NGÀY trong 1 lần gọi, mỗi ngày cần ít nhất 2 lượt AI tuần tự nên rất dễ vượt quá 300s
+      // (timeout server) và lỗi gần như luôn luôn. Server giờ chỉ xử lý tối đa 3 ngày/lần gọi, trả về
+      // remaining_dates — tự lặp lại gọi cho tới hết, chị vẫn chỉ cần bấm 1 lần, chỉ là chờ lâu hơn
+      // (mỗi đợt cập nhật lịch ngay để thấy tiến độ dần, không phải chờ xong hết mới thấy gì).
+      let dates = weekDays().map(isoDate);
+      while(dates.length){
+        const data = await callApi('/api/regen-fanpage-week', { dates }, 280000);
+        dates = data.remaining_dates || [];
+        await loadEntries(); draw();
+      }
     } catch(e){ state.regenWeekError = e.message; }
     stopProgress(); releaseWakeLock();
     state.regenWeekLoading = false;

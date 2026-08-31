@@ -8,8 +8,8 @@
     { "source": "/tro-ly-crm/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
-    "api/*.js": { "maxDuration": 300 },
-    "api/cron/*.js": { "maxDuration": 300 }
+    "api/*.js": { "maxDuration": 300, "includeFiles": "api/_lib/fonts/**" },
+    "api/cron/*.js": { "maxDuration": 300, "includeFiles": "api/_lib/fonts/**" }
   },
   "crons": [
     { "path": "/api/cron/send-reminders", "schedule": "*/15 * * * *" },
