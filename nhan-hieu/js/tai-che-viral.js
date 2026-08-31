@@ -1,4 +1,9 @@
 (function(){
+const TOUR_STEPS = [
+  { selector: '#viral-text', title: 'Dán bài đang viral', text: 'Dán nguyên văn caption, kịch bản video, hoặc bài viết đang viral bạn muốn học theo cấu trúc.' },
+  { selector: '[data-action="analyze"]', title: 'Phân tích bài viral', text: 'AI mổ xẻ đúng lý do bài gốc viral (tốn 3 lượt AI) — sau khi có kết quả, chọn tái chế thành tiêu đề mới hoặc bài mới đúng chủ đề của bạn.' },
+];
+
 function render(container, ctx){
   const state = {
     screen:'loading', positioning:null, quickContext:'',
@@ -34,6 +39,7 @@ function render(container, ctx){
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
+      <span class="tour-trigger" id="tcv-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><h1>Phân Tích &amp; Tái Chế Content Viral</h1>
       <p>Dán 1 bài/video đang viral, để AI mổ xẻ đúng lý do nó thành công — rồi áp dụng chính cấu trúc tâm lý đó cho chủ đề của bạn.</p>
       ${(state.phanTich || state.viralText) ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
@@ -147,6 +153,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#tcv-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const vt = container.querySelector('#viral-text'); if(vt) vt.oninput = ()=>{ state.viralText = vt.value; };
     const qc = container.querySelector('#quick-context'); if(qc) qc.oninput = ()=>{ state.quickContext = qc.value; };
     const tp = container.querySelector('#topic-text'); if(tp) tp.oninput = ()=>{ state.topic = tp.value; };
