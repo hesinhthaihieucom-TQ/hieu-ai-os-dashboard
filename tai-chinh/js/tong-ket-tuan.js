@@ -1,4 +1,10 @@
 (function(){
+const TOUR_STEPS = [
+  { selector: '.source-grid', title: 'Tổng quan tuần', text: 'Tổng thu, tổng chi, và tỷ lệ tiết kiệm của tuần đang xem — bấm "← Tuần trước"/"Tuần sau →" ở trên để xem lại tuần khác.' },
+  { selector: '#tt-feeling-chips', title: 'Nhận xét & đánh giá tuần', text: 'Chấm điểm cảm giác chi tiêu và trả lời vài câu ngắn — 5 câu chấm điểm bên dưới tương ứng đúng 5 Trụ Cột ở Điểm Nghiệp.' },
+  { selector: '#tt-save', title: 'Lưu nhận xét tuần', text: 'Lưu lại để Trang chủ và Điểm Nghiệp cập nhật theo đúng cảm nhận thật của bạn tuần này.' },
+];
+
 const FEELING_OPTIONS = ['Tiết kiệm tốt', 'Vừa phải', 'Hơi nhiều', 'Quá nhiều'];
 const SELF_RATING_EMOJI = ['😞','😐','🙂','😊','🤩'];
 // "Soi Nút Chặn" — thái độ khi chứng kiến người khác nhận tin vui về tiền (ý tưởng gốc từ tài
@@ -134,6 +140,7 @@ function render(container, ctx){
     const top3 = [...expense].sort((a,b)=>Number(b.amount)-Number(a.amount)).slice(0,3);
 
     return `
+      <span class="tour-trigger" id="tt-start-tour">❓ Hướng dẫn</span>
       <div class="page-head">
         <h1>Tổng Kết Tuần</h1>
         <p>Nhận diện xu hướng chi tiêu theo từng tuần — cuối mỗi tuần cộng dồn lại và tìm ra 3 khoản chi lớn nhất.</p>
@@ -214,6 +221,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#tt-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     container.querySelectorAll('[data-breakdown-tab]').forEach(el=>{
       el.onclick = ()=>{
         const [id, tab] = el.getAttribute('data-breakdown-tab').split(':');
