@@ -1,4 +1,10 @@
 (function(){
+const TOUR_STEPS = [
+  { selector: '#gen-topic', title: 'Nhập chủ đề', text: 'Gõ chủ đề muốn viết hook vào đây.' },
+  { selector: '.chips', title: 'Chọn mục tiêu & loại hook', text: 'Chọn mục tiêu content này là gì (tò mò, cảnh báo...), rồi chọn loại hook phù hợp — hệ thống tự lọc sẵn các loại hợp với mục tiêu đã chọn.' },
+  { selector: '[data-action="generate-hooks"]', title: 'Tạo 5 hook', text: 'AI sinh ngay 5 hook + gợi ý tiêu đề thumbnail đúng chủ đề (tốn 1 lượt AI) — lưu vào Kho của tôi để dùng dần, hoặc viết content ngay từ hook vừa tạo.' },
+];
+
 const CATEGORIES = {
   noi_dau: 'Nỗi đau', su_that_nguoc: 'Sự thật ngược', canh_bao: 'Cảnh báo',
   ket_qua_mong_muon: 'Kết quả mong muốn', tu_khoa_kich_hoat: 'Từ khoá kích hoạt chú ý',
@@ -166,6 +172,7 @@ function render(container, ctx){
       <div class="page-head"><h1>Kho Hook</h1></div>
       <div class="error-box">Chưa dùng được mục này: ${esc(state.error)}. Cần chạy file supabase/schema_full.sql trong Supabase SQL Editor trước.</div>`;
     return `
+      <span class="tour-trigger" id="kh-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><h1>Kho Hook</h1><p>Nhập chủ đề, chọn loại hook, AI sinh ngay ví dụ đúng chủ đề — hoặc tra cứu kho có sẵn.</p></div>
       <div class="tab-row">
         <div class="tab-btn ${state.tab==='tao-hook'?'active':''}" data-tab="tao-hook">Tạo Hook</div>
@@ -378,6 +385,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#kh-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>{ if(state.tab!=='tao-hook'){ state.tab='tao-hook'; draw(); } window.startPageTour(TOUR_STEPS); };
+
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
