@@ -1,4 +1,10 @@
 (function(){
+const TOUR_STEPS = [
+  { selector: '#idea-input', title: 'Nhập chủ đề', text: 'Gõ chủ đề/ý tưởng muốn viết vào đây. Cũng có thể bấm "Viết →" từ 1 hook/bài trong Kho Content hoặc Kho Hook để tự động điền sẵn ý tưởng vào đây.' },
+  { selector: '[data-action="toggle-extra"]', title: 'Tuỳ chọn thêm', text: 'Bấm mở ra để chọn sản phẩm/group/kiến thức ngành muốn nhắc trong bài — giúp AI ghép đúng CTA và hashtag, không bắt buộc.' },
+  { selector: '[data-action="generate"]', title: 'Viết bài', text: 'Bấm để AI viết bài đầy đủ (tốn 3 lượt AI). Sau khi có bài, có thể chấm điểm, tối ưu, và đưa thẳng vào lịch đăng.' },
+];
+
 function render(container, ctx){
   const state = { screen:'loading', positioning:null, quickContext:'', ideaText:'', ideaIsHook:false, ideaId:null, result:null, error:null, generating:false, recentPosts:[], scheduledPostIds:new Set(), savedId:null,
     showExtra:false, channelHandle:'', brands:[], brandChoice:'', assets:[], productChoice:'', groupChoice:'', productNameOther:'', groupNameOther:'',
@@ -130,6 +136,7 @@ function render(container, ctx){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
 
     return `
+      <span class="tour-trigger" id="vc-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><div class="tag">Bước 4 · Viết Content</div><h1>Viết bài tự động</h1>
       <p>Nhập chủ đề/ý tưởng, hoặc bấm "Viết →" từ 1 ý tưởng ở bước khác — AI sẽ viết bài đầy đủ.</p>
       ${(state.result || state.ideaText || state.khoGocSource) ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
@@ -436,6 +443,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#vc-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const ideaInput = container.querySelector('#idea-input');
     if(ideaInput) ideaInput.oninput = ()=>{ state.ideaText = ideaInput.value; };
 
