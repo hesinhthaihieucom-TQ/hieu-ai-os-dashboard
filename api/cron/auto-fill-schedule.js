@@ -163,6 +163,27 @@ async function loadCandidatePool(userId) {
   ].filter((c) => c.text && c.text.trim());
 }
 
+// BUG THẬT (2026-08-31, chị Quỳnh: "lịch tự động nó đang lấy tất cả các mẫu content trong khi có
+// những cái k liên quan đến trục nội dung của e 1 tí nào") — 2 hàm lấp lịch riêng của admin
+// (fillSlotsForAdmin/autoFillPersonalForAdmin) trước giờ chọn thẳng từ poolCandidates KHÔNG hề lọc
+// theo trục nội dung — khác hẳn api/auto-fill-week.js (nút công khai) vốn đã lọc đúng trục qua
+// classifyUserPillar()/poolFiltered từ trước. Copy nguyên logic đó vào đây cho nhất quán, để cron
+// riêng của admin cũng chỉ chọn trong đúng trục đã định vị, không lấy bừa cả kho không liên quan.
+async function classifyUserPillar(apiKey, positioning) {
+  try {
+    const result = await callClaude({
+      apiKey, system: TEXT_CLASSIFY_SYSTEM_PROMPT, tool: TOOL_PHAN_LOAI_TRUC,
+      userContent: contextBlockOf(positioning, null).slice(0, 3000),
+    });
+    return (result && result.truc) || null;
+  } catch (e) { return null; }
+}
+function filterPoolByPillar(poolCandidates, truc) {
+  return (truc && poolCandidates.some((c) => Array.isArray(c.tags) && c.tags.includes(truc)))
+    ? poolCandidates.filter((c) => Array.isArray(c.tags) && c.tags.includes(truc))
+    : poolCandidates; // không có ứng viên nào khớp đúng trục — thà dùng tạm còn hơn bỏ qua cả lượt điền
+}
+
 // Y hệt usageCountFor()/sortUnusedFirst() ở nhan-hieu/js/kho-hook.js và kho-content.js — ưu tiên ứng
 // viên CHƯA TỪNG được viết thành bài (posts.source_table/source_id). usedRefs được cập nhật NGAY
 // trong vòng lặp (không chỉ đọc 1 lần từ DB) để không chọn trùng 1 nguồn cho 2 ô trống khác nhau
@@ -406,6 +427,8 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
   const posRows = posResp.ok ? await posResp.json() : [];
   const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
   if (!positioning) return { filled: [], skipped_no_positioning: true };
+  const truc = await classifyUserPillar(apiKey, positioning);
+  const poolFiltered = filterPoolByPillar(poolCandidates, truc);
 
   const profRows = profResp.ok ? await profResp.json() : [];
   const profile = profRows[0] || {};
@@ -454,7 +477,7 @@ async function fillSlotsForAdmin(admin, apiKey, slotInfos) {
         filled.push(result); recentTitles.push(result.title);
         continue;
       }
-      const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
+      const candidate = pickUnusedCandidate(poolFiltered, usedRefs, false);
       if (!candidate) {
         // Kho hook/content không còn ứng viên nào — dùng case study CHƯA DÙNG thay thế nếu có, còn
         // hơn bỏ qua cả lượt chỉ vì kho hook/content tạm cạn. Hết cả 2 mới thật sự bỏ trống ô.
@@ -516,6 +539,8 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
   const posRows = posResp.ok ? await posResp.json() : [];
   const positioning = posRows[0] && posRows[0].luot1 ? posRows[0] : null;
   if (!positioning) return { filled: [], skipped_no_positioning: true };
+  const truc = await classifyUserPillar(apiKey, positioning);
+  const poolFiltered = filterPoolByPillar(poolCandidates, truc);
 
   const profRows = profResp.ok ? await profResp.json() : [];
   const profile = profRows[0] || {};
@@ -549,7 +574,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
       if (slotInfo.slot === 'toi') {
         // 100% từ kho hook/content viral (KHÔNG bao giờ AI tự bịa mới) — pickUnusedCandidate() chỉ
         // chọn trong poolCandidates (hooks_bank_*/content_bank_*), không có nguồn nào khác ở đây.
-        const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
+        const candidate = pickUnusedCandidate(poolFiltered, usedRefs, false);
         if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
         usedRefs.push({ table: candidate.table, id: candidate.id });
         const result = await fillOneSlot({
@@ -577,7 +602,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         continue;
       }
       // Buổi sáng — bài thường từ hook/content.
-      const candidate = pickUnusedCandidate(poolCandidates, usedRefs, false);
+      const candidate = pickUnusedCandidate(poolFiltered, usedRefs, false);
       if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
       usedRefs.push({ table: candidate.table, id: candidate.id });
       const result = await fillOneSlot({
