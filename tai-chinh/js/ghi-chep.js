@@ -27,6 +27,12 @@ const VIBE_INFO = {
 // ghi"). "+ Khác" vẫn cho thêm nhanh ngay tại đây (xem submit()) — nhưng giờ ghi THẲNG vào
 // tc_categories luôn, để lần sau hiện lại ở đúng 1 nơi (cả đây và màn Quản Lý Danh Mục).
 
+const TOUR_STEPS = [
+  { selector: '#gc-type-chips', title: 'Thu nhập hay chi tiêu', text: 'Chọn đúng loại giao dịch trước — form bên dưới sẽ đổi theo (thu nhập hỏi chia quỹ, chi tiêu hỏi Tài sản/Tiêu sản).' },
+  { selector: '#gc-vibe-chips', title: 'Vibe Check — bước quan trọng nhất', text: 'Chọn cảm nhận thật của bạn lúc tiền vào/ra. Đây là dữ liệu gốc cho toàn bộ tâm thức tài chính của cuốn sổ này, không phải lựa chọn cho có.' },
+  { selector: '#gc-submit', title: 'Lưu giao dịch', text: 'Ghi chân thật mỗi ngày, dù khoản nhỏ nhất — đây là dữ liệu gốc mà Tổng Kết Tuần/Tháng và các tính năng khác đều dựa vào.' },
+];
+
 function fundSplitHtml(amount, debtWarning){
   if(debtWarning){
     return `⚠️ Bạn đang có khoản nợ <b>${esc(debtWarning.creditorName)}</b> lãi <b>${esc(debtWarning.rate)}%/năm</b> — ước tính mất <b>${Math.round(debtWarning.monthlyInterest).toLocaleString('vi-VN')}đ tiền lãi/tháng</b>. Chuyên gia khuyên dồn phần lớn khoản thu này trả nợ lãi cao trước, thay vì chia đều 10/5/85%. <a href="#quan-ly-no" style="color:var(--accent);font-weight:600;">Xem Quản Lý Nợ →</a>`;
@@ -139,6 +145,7 @@ function render(container, ctx){
     const isIncome = state.form.type === 'income';
 
     return `
+      <span class="tour-trigger" id="gc-start-tour">❓ Hướng dẫn</span>
       <div class="page-head">
         <h1>Ghi Chép Hàng Ngày</h1>
         <p>Ghi chân thật, dù những khoản nhỏ nhất — cách duy nhất để hiểu rõ tiền của bạn đi đâu.</p>
@@ -219,6 +226,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#gc-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     container.querySelector('#gc-date').onchange = (e)=>{ state.date = e.target.value; load(); };
     container.querySelectorAll('#gc-type-chips [data-type]').forEach(el=>{
       el.onclick = ()=>{ state.form.type = el.getAttribute('data-type'); state.error = null; draw(); persistDraft(); };
