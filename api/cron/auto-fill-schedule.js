@@ -384,24 +384,40 @@ async function fillOneSlot({ userId, positioning, slotInfo, candidate, slotTime,
   // tiêu đề khác. Riêng nguồn từ Kho Hook (hooks_bank_*) thì candidate.title thực chất là category
   // ('viral'/'uy_tin', xem loadCandidatePool()) chứ KHÔNG PHẢI tiêu đề thật — vẫn để AI tự đặt tiêu đề
   // như cũ, ép giữ category làm tiêu đề sẽ ra bài lỗi (tiêu đề bài viết thành chữ "viral").
+  const isHookSource = candidate.table === 'hooks_bank_personal' || candidate.table === 'hooks_bank_shared';
   const hasRealTitle = (candidate.table === 'content_bank_personal' || candidate.table === 'content_bank_shared') && candidate.title && candidate.title.trim();
   const titleLine = hasRealTitle
     ? `TIÊU ĐỀ (BẮT BUỘC GIỮ NGUYÊN Y HỆT — đây là tiêu đề đã viral/kiểm chứng hiệu quả, KHÔNG được tự đặt tiêu đề khác dù nghĩ ra hay hơn): ${candidate.title.trim()}`
     : `TIÊU ĐỀ: (không có tiêu đề gốc — tự đặt 1 tiêu đề mới khớp đúng hook/nội dung bên dưới)`;
+  // "các bài ko hề lấy hook chuẩn trong kho, cứ tự chế thôi" (chị Quỳnh 2026-08-31) — ĐÚNG, bug thật:
+  // khi nguồn là 1 HOOK (hooks_bank_*, chỉ 1 câu/đoạn ngắn, KHÔNG có thân bài), prompt cũ vẫn nói
+  // chung chung "BÀI GỐC TỪ KHO CONTENT... các đoạn còn lại paraphrase" — nhưng hook không CÓ "các
+  // đoạn còn lại" để paraphrase, nên AI hiểu lầm thành "cứ lấy cảm hứng rồi tự viết mới", kể cả câu
+  // hook cũng bị viết lại/tự chế thay vì giữ NGUYÊN VĂN. Giờ tách 2 trường hợp rõ ràng: hook thật (chỉ
+  // 1 câu, PHẢI giữ y hệt, viết THÊM phần sau) khác hẳn content thật (cả bài, hook nằm bên trong, giữ
+  // nguyên cấu trúc + paraphrase phần còn lại).
+  const sourceBlock = isHookSource
+    ? `HOOK GỐC (BẮT BUỘC dùng NGUYÊN VĂN đúng câu này làm câu hook mở đầu — TUYỆT ĐỐI KHÔNG paraphrase/đổi câu chữ/tự chế câu khác dù chỉ 1 chữ, đây là hook đã kiểm chứng hiệu quả thật):
+${candidate.text.trim()}
+
+Hook đã có sẵn ở trên — nhiệm vụ của bạn là viết TIẾP phần còn lại của bài (vấn đề, giá trị, niềm tin) ăn khớp với đúng hook này, theo giọng định vị và câu chuyện của người dùng. KHÔNG viết lại hook, chỉ viết phần SAU hook.`
+    : `BÀI GỐC TỪ KHO CONTENT (giữ nguyên cấu trúc/trình tự từng đoạn, chỉ giữ y hệt câu hook — các đoạn còn lại paraphrase lại câu chữ, không copy nguyên văn):
+${candidate.text.trim()}`;
   const core = await callClaude({
     apiKey, system: KHO_GOC_SYSTEM_PROMPT, tool: TOOL_POST_KHO_GOC,
     userContent: `${contextBlockOf(positioning, null)}
 
 ${titleLine}
 
-BÀI GỐC TỪ KHO CONTENT (giữ nguyên cấu trúc/trình tự từng đoạn, chỉ giữ y hệt câu hook — các đoạn còn lại paraphrase lại câu chữ, không copy nguyên văn):
-${candidate.text.trim()}
+${sourceBlock}
 
 CÂU CHUYỆN/TRẢI NGHIỆM RIÊNG CỦA NGƯỜI DÙNG (lấy chi tiết thật, diễn đạt lại bằng câu từ khác, lồng xuyên suốt thân bài): (không cung cấp — viết lại thân bài theo giọng định vị, không tự bịa câu chuyện)
 
 ${extraFieldsBlock({ channel_handle: channelHandle, brand_name: brandName, product_name: product && product.label })}
 ${productCtaBlock(product)}${recentTitlesBlock(recentTitles)}${customInstructionsBlock(customInstructions)}
-Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.`,
+${isHookSource
+      ? 'Hãy viết bài dựa trên đúng hook trên, theo đúng nguyên tắc đã nêu — giữ nguyên văn hook, viết mới phần còn lại.'
+      : 'Hãy viết lại bài này theo đúng nguyên tắc đã nêu — giữ nguyên cấu trúc/trình tự và câu hook, viết lại ít nhất 70% câu chữ ở các đoạn còn lại bằng giọng và câu chuyện của người dùng.'}`,
   });
 
   // KHÔNG gán image_data ở đây — case study (ảnh thật) chỉ dùng qua fillCaseStudySlot() riêng, luôn
