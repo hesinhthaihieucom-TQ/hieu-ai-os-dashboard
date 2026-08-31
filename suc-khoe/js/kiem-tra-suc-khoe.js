@@ -43,7 +43,11 @@ const SK_METABOLIC_CRITERIA = [
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], cart:new Set() };
+  // deselected (KHÔNG phải "selected") — 2026-08-31 chị Quỳnh chốt: mặc định LUÔN chọn hết mọi sản
+  // phẩm gợi ý, người dùng tự bỏ bớt nếu không muốn mua. Lưu chiều "đã bỏ" thay vì "đã chọn" để sản
+  // phẩm MỚI xuất hiện (khi tick thêm triệu chứng khác) cũng tự động ở trạng thái được chọn luôn,
+  // không cần logic đồng bộ riêng.
+  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set() };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -159,8 +163,10 @@ function render(container, ctx){
     const r = hasAny ? computeResult() : null;
     const libMatches = hasAny ? matchedLibraryEntries() : [];
     const productMatches = hasAny ? matchedProducts() : [];
-    const cartChosen = productMatches.filter(p=>state.cart.has(p.id));
+    const cartChosen = productMatches.filter(p=>!state.deselected.has(p.id));
     const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
+    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    const gift = skOrderGift(cartTotal, cartChosen.length);
     return `
       <div class="page-head">
         <h1>Kiểm Tra Sức Khỏe</h1>
@@ -204,33 +210,20 @@ function render(container, ctx){
       ` : ''}
 
       ${productMatches.length>0 ? `
-        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Sản phẩm Unicity liên quan</h2></div>
-        <p style="font-size:13.5px;color:var(--ink-soft);margin:-8px 0 14px;">Dựa trên các dấu hiệu bạn chọn, đây là sản phẩm có thể hỗ trợ — chọn sản phẩm bạn muốn đặt:</p>
-        ${productMatches.map(p=>`
-          <details class="kt-section">
-            <summary class="kt-summary" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-              <span style="display:flex;align-items:center;gap:10px;min-width:0;">
-                <span data-cart-toggle="${esc(p.id)}" title="${state.cart.has(p.id)?'Bỏ khỏi đơn hàng':'Thêm vào đơn hàng'}" style="width:24px;height:24px;border-radius:7px;border:1px solid ${state.cart.has(p.id)?'var(--accent)':'var(--line)'};background:${state.cart.has(p.id)?'var(--accent)':'#fff'};color:${state.cart.has(p.id)?'#fff':'var(--ink-soft)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;cursor:pointer;">${state.cart.has(p.id)?'✓':'+'}</span>
-                ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
-                <span style="min-width:0;">
-                  <span style="font-weight:700;">${esc(p.name)}</span>${p._priority ? ` <span style="font-size:10.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}
-                </span>
-              </span>
-              ${p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}
-            </summary>
-            <div style="margin-top:12px;">
-              ${p._note ? `<div class="hint-box" style="margin-bottom:12px;">${esc(p._note)}</div>` : ''}
-              ${skProductDetailHtml(p)}
-            </div>
-          </details>
-        `).join('')}
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Sản phẩm Unicity phù hợp với bạn</h2></div>
+        <p style="font-size:13.5px;color:var(--ink-soft);margin:-8px 0 14px;line-height:1.6;">✨ Dựa trên các dấu hiệu bạn vừa chọn, đây là những sản phẩm Unicity phù hợp nhất để hỗ trợ đúng vấn đề của bạn ngay từ hôm nay — xem lý do vì sao từng sản phẩm được đề xuất bên dưới, tất cả đã được chọn sẵn trong đơn, bạn có thể bỏ bớt nếu muốn.</p>
+        ${productMatches.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
 
-        ${cartChosen.length>0 ? `
-          <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(0,0,0,.12);">
-            <div style="font-size:13.5px;">Đã chọn <b>${cartChosen.length}</b> sản phẩm · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
-            <button class="btn btn-sm" id="sk-order-matched">Đặt hàng</button>
+        <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="display:flex;gap:8px;">
+              <span class="btn-ghost btn btn-sm" id="sk-toggle-all">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
+              <button class="btn btn-sm" id="sk-order-matched" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
+            </div>
           </div>
-        ` : ''}
+          ${gift ? `<div style="margin-top:8px;font-size:13px;color:#e8643c;font-weight:700;">${esc(gift.label)}</div>` : ''}
+        </div>
       ` : ''}
     `;
   }
@@ -243,15 +236,22 @@ function render(container, ctx){
       el.onclick = ()=>{ location.hash = 'thu-vien-suc-khoe'; };
     });
     container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
-      el.onclick = (e)=>{
-        e.preventDefault(); e.stopPropagation();
+      el.onchange = (e)=>{
         const id = el.getAttribute('data-cart-toggle');
-        if(state.cart.has(id)) state.cart.delete(id); else state.cart.add(id);
+        if(e.target.checked) state.deselected.delete(id); else state.deselected.add(id);
         draw();
       };
     });
+    const toggleAllBtn = container.querySelector('#sk-toggle-all');
+    if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
+      const ids = matchedProducts().map(p=>p.id);
+      const anySelected = ids.some(id=>!state.deselected.has(id));
+      if(anySelected) ids.forEach(id=>state.deselected.add(id));
+      else state.deselected.clear();
+      draw();
+    };
     const orderBtn = container.querySelector('#sk-order-matched');
-    if(orderBtn) orderBtn.onclick = (e)=>{ e.stopPropagation(); openOrderModal(ctx, matchedProducts().filter(p=>state.cart.has(p.id))); };
+    if(orderBtn) orderBtn.onclick = ()=>{ openOrderModal(ctx, matchedProducts().filter(p=>!state.deselected.has(p.id))); };
   }
 
   draw();

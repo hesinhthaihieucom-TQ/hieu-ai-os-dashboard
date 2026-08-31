@@ -1,10 +1,12 @@
-// Sản phẩm bổ trợ ở đây làm Y HỆT cách trình bày/đặt hàng đã làm ở Kiểm Tra Sức Khỏe (2026-08-30, chị
-// Quỳnh yêu cầu đồng bộ): mỗi sản phẩm hiện lý do riêng (sk_library_entries.product_notes), có nhãn
-// ưu tiên, bấm vào xổ đủ thông tin tại chỗ (skProductDetailHtml), tick chọn + đặt hàng qua giỏ hàng
-// chung của TRANG (1 sản phẩm có thể thuộc nhiều mục, chọn ở đâu cũng tính vào cùng 1 đơn).
+// Sản phẩm bổ trợ ở đây làm Y HỆT cách trình bày/đặt hàng đã làm ở Kiểm Tra Sức Khỏe (2026-08-31, chị
+// Quỳnh yêu cầu đồng bộ): mỗi sản phẩm hiện lý do riêng (sk_library_entries.product_notes) LUÔN hiện
+// sẵn (không cần bấm mở), có nhãn ưu tiên, dòng dạng đơn hàng thật (checkbox - ảnh - tên - PV - giá),
+// mặc định TẤT CẢ đã được chọn sẵn (deselected lưu chiều "đã bỏ", không phải "đã chọn" — sản phẩm mới
+// xuất hiện khi tìm mục khác cũng tự động được chọn), có nút Bỏ/Chọn lại tất cả + tổng tiền/PV/quà ở
+// thanh cố định cuối trang — xem cùng logic ở kiem-tra-suc-khoe.js.
 (function(){
 function render(container, ctx){
-  const state = { loading:true, entries:[], productById:{}, q:'', cart:new Set() };
+  const state = { loading:true, entries:[], productById:{}, q:'', deselected:new Set() };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -41,18 +43,22 @@ function render(container, ctx){
       .sort((a,b)=> (b._priority - a._priority));
   }
 
-  function allProductsById(){
-    const map = {};
-    Object.values(state.productById).forEach(p=>{ map[p.id] = p; });
-    return map;
+  // Toàn bộ sản phẩm đang khớp bộ lọc hiện tại (gộp mọi mục đang hiện, khử trùng theo id) — dùng cho
+  // thanh tổng cuối trang + nút Bỏ/Chọn lại tất cả.
+  function allVisibleProducts(list){
+    const seen = new Map();
+    list.forEach(e=>entryProducts(e).forEach(p=>{ if(!seen.has(p.id)) seen.set(p.id, p); }));
+    return [...seen.values()];
   }
 
   function html(){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
     const list = filtered();
-    const byId = allProductsById();
-    const cartChosen = [...state.cart].map(id=>byId[id]).filter(Boolean);
+    const visibleProducts = allVisibleProducts(list);
+    const cartChosen = visibleProducts.filter(p=>!state.deselected.has(p.id));
     const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
+    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    const gift = skOrderGift(cartTotal, cartChosen.length);
     return `
       <div class="page-head">
         <h1>Thư Viện Sức Khỏe</h1>
@@ -71,35 +77,24 @@ function render(container, ctx){
             ${e.remedies ? `<div style="margin-bottom:16px;border-left:3px solid #1f9d63;padding-left:14px;">${skSectionHeaderHtml('Cách xử lý', '#1f9d63', '✅')}${skRichBodyHtml(e.remedies)}</div>` : ''}
             ${products.length>0 ? `
               <div style="margin-top:14px;">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:10px;">🛍️ Sản phẩm Unicity bổ trợ</div>
-                ${products.map(p=>`
-                  <details class="kt-section" style="background:#fff;">
-                    <summary class="kt-summary" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-                      <span style="display:flex;align-items:center;gap:10px;min-width:0;">
-                        <span data-cart-toggle="${esc(p.id)}" title="${state.cart.has(p.id)?'Bỏ khỏi đơn hàng':'Thêm vào đơn hàng'}" style="width:24px;height:24px;border-radius:7px;border:1px solid ${state.cart.has(p.id)?'var(--accent)':'var(--line)'};background:${state.cart.has(p.id)?'var(--accent)':'#fff'};color:${state.cart.has(p.id)?'#fff':'var(--ink-soft)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;cursor:pointer;">${state.cart.has(p.id)?'✓':'+'}</span>
-                        ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:30px;height:30px;object-fit:cover;border-radius:7px;flex-shrink:0;">` : ''}
-                        <span style="min-width:0;">
-                          <span style="font-weight:700;">${esc(p.name)}</span>${p._priority ? ` <span style="font-size:10.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}
-                        </span>
-                      </span>
-                      ${p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}
-                    </summary>
-                    <div style="margin-top:10px;">
-                      ${p._note ? `<div class="hint-box" style="margin-bottom:12px;">${esc(p._note)}</div>` : ''}
-                      ${skProductDetailHtml(p)}
-                    </div>
-                  </details>
-                `).join('')}
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:10px;">✨ Sản phẩm Unicity phù hợp — lý do vì sao từng sản phẩm hỗ trợ đúng vấn đề này:</div>
+                ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
               </div>
             ` : ''}
           </div>
         </details>
       `;}).join('')}
 
-      ${cartChosen.length>0 ? `
-        <div style="position:sticky;bottom:14px;margin-top:20px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(0,0,0,.12);">
-          <div style="font-size:13.5px;">Đã chọn <b>${cartChosen.length}</b> sản phẩm · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
-          <button class="btn btn-sm" id="tv-order">Đặt hàng</button>
+      ${visibleProducts.length>0 ? `
+        <div style="position:sticky;bottom:14px;margin-top:20px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="display:flex;gap:8px;">
+              <span class="btn-ghost btn btn-sm" id="tv-toggle-all">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
+              <button class="btn btn-sm" id="tv-order" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
+            </div>
+          </div>
+          ${gift ? `<div style="margin-top:8px;font-size:13px;color:#e8643c;font-weight:700;">${esc(gift.label)}</div>` : ''}
         </div>
       ` : ''}
     `;
@@ -118,17 +113,24 @@ function render(container, ctx){
       if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
     };
     container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
-      el.onclick = (e)=>{
-        e.preventDefault(); e.stopPropagation();
+      el.onchange = (e)=>{
         const id = el.getAttribute('data-cart-toggle');
-        if(state.cart.has(id)) state.cart.delete(id); else state.cart.add(id);
+        if(e.target.checked) state.deselected.delete(id); else state.deselected.add(id);
         draw();
       };
     });
+    const toggleAllBtn = container.querySelector('#tv-toggle-all');
+    if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
+      const ids = allVisibleProducts(filtered()).map(p=>p.id);
+      const anySelected = ids.some(id=>!state.deselected.has(id));
+      if(anySelected) ids.forEach(id=>state.deselected.add(id));
+      else state.deselected.clear();
+      draw();
+    };
     const orderBtn = container.querySelector('#tv-order');
     if(orderBtn) orderBtn.onclick = ()=>{
-      const byId = allProductsById();
-      openOrderModal(ctx, [...state.cart].map(id=>byId[id]).filter(Boolean));
+      const chosen = allVisibleProducts(filtered()).filter(p=>!state.deselected.has(p.id));
+      openOrderModal(ctx, chosen);
     };
   }
 

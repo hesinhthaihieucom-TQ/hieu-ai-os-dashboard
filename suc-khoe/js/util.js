@@ -220,6 +220,34 @@ function skProductDetailHtml(p){
   `;
 }
 
+// 1 dòng sản phẩm dạng đơn hàng thật — checkbox (mặc định đã chọn) + ảnh + tên/nhãn ưu tiên + PV/giá,
+// tối đa 2 dòng lý do TÓM TẮT vì sao liên quan vấn đề khách đang gặp (p._note, cắt còn 2 dòng bằng
+// line-clamp — không phải toàn bộ công dụng), "Xem đầy đủ công dụng" mới mở ra skProductDetailHtml
+// (2026-08-31, chị Quỳnh chốt sau vài lần chỉnh: lý do ngắn hiện sẵn, công dụng ĐẦY ĐỦ mới cần bấm mở
+// — tránh dài dằng dặc). Dùng chung ở Kiểm Tra Sức Khỏe + Thư Viện Sức Khỏe cho đồng bộ tuyệt đối.
+function skProductOrderRowHtml(p, checked){
+  return `
+    <div class="section" style="background:#fff;display:flex;gap:12px;align-items:flex-start;${checked?'':'opacity:.55;'}">
+      <input type="checkbox" data-cart-toggle="${esc(p.id)}" ${checked?'checked':''} style="width:20px;height:20px;flex-shrink:0;margin-top:3px;cursor:pointer;accent-color:var(--accent);">
+      ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div style="font-weight:700;font-size:14px;">${esc(p.name)}${p._priority ? ` <span style="font-size:10.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}</div>
+          <div style="text-align:right;white-space:nowrap;">
+            ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
+            ${p.pv!=null ? `<div style="font-size:11px;color:var(--ink-soft);">${p.pv} PV</div>` : ''}
+          </div>
+        </div>
+        ${p._note ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(p._note)}</div>` : ''}
+        <details style="margin-top:6px;">
+          <summary style="cursor:pointer;font-size:12.5px;color:var(--accent);list-style:none;">Xem đầy đủ công dụng →</summary>
+          <div style="margin-top:10px;">${skProductDetailHtml(p)}</div>
+        </details>
+      </div>
+    </div>
+  `;
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });
