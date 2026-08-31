@@ -99,6 +99,11 @@ const FORMATS = [
 
 function imgSrc(id){ return `assets/formats/${id}.jpg`; }
 
+const TOUR_STEPS = [
+  { selector: '#fmt-search', title: 'Tìm dạng content', text: 'Gõ tên dạng content hoặc ngành của bạn (vd: sức khoẻ, coach, video...) để lọc nhanh trong 12 dạng bên dưới.' },
+  { selector: '[data-choose]', title: 'Chọn dạng phù hợp', text: 'Đọc "Khi nào dùng" và "Cách làm" của từng dạng, bấm "Chọn dạng này" để đánh dấu — không giới hạn số dạng được chọn.' },
+];
+
 function render(container, ctx){
   const state = { query:'', positioning:null, suggestLoading:false, suggestions:null, suggestError:null, chosen:[] };
 
@@ -186,6 +191,7 @@ function render(container, ctx){
   function html(){
     const list = filtered();
     return `
+      <span class="tour-trigger" id="ddc-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><h1>Dạng Content</h1><p>AI gợi ý 2-3 dạng phù hợp nhất với trục nội dung của bạn — vẫn hiển thị đủ các dạng còn lại để tham khảo, bạn có thể tự bấm "Chọn dạng này" ở bất kỳ dạng nào mình thấy hợp.</p></div>
       ${suggestBlock()}
       <div class="card" style="margin-bottom:20px;">
@@ -224,6 +230,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#ddc-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const search = container.querySelector('#fmt-search');
     if(search){
       search.oninput = () => {
