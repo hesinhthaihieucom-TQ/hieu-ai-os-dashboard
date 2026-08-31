@@ -1,4 +1,10 @@
 (function(){
+const TOUR_STEPS = [
+  { selector: '#ef-target', title: 'Quỹ Khẩn Cấp trước', text: 'Đặt mục tiêu Quỹ Khẩn Cấp (thường 10-20 triệu để bắt đầu, không cần đủ 3-6 tháng chi phí ngay khi đang nợ) — có quỹ nhỏ trước để 1 sự cố bất ngờ không đẻ ra khoản nợ mới.' },
+  { selector: '#add-debt', title: 'Khai chi tiết từng khoản nợ', text: 'Thêm từng khoản nợ với lãi suất, hạn trả — càng chi tiết, chiến lược trả nợ bên dưới càng chính xác.' },
+  { selector: '#extra-payment', title: 'Chiến lược trả nợ', text: 'Nhập số tiền dư ra có thể trả thêm mỗi tháng — hệ thống tự tính thứ tự nên trả khoản nào trước để hết nợ nhanh nhất, ít lãi nhất.' },
+];
+
 const MAX_MONTHS = 600; // trần mô phỏng (50 năm) — vượt mốc này coi như "chưa xác định" (trả tối
 // thiểu + dư không đủ bù lãi, nợ sẽ không bao giờ hết theo cách trả hiện tại).
 
@@ -346,6 +352,7 @@ function render(container, ctx){
     const efPct = efTarget>0 ? Math.min(100, Math.round(efCurrent/efTarget*100)) : 0;
 
     return `
+      <span class="tour-trigger" id="qln-start-tour">❓ Hướng dẫn</span>
       <div class="page-head">
         <h1>Quản Lý Nợ</h1>
         <p>Có quỹ khẩn cấp nhỏ trước, rồi dồn lực trả nợ theo đúng thứ tự — tránh 1 sự cố bất ngờ lại đẻ ra khoản nợ mới.</p>
@@ -409,6 +416,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#qln-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const efTargetEl = container.querySelector('#ef-target');
     if(efTargetEl) efTargetEl.oninput = (e)=>{ state.emergencyFund.target_amount = e.target.value; };
     const efCurrentEl = container.querySelector('#ef-current');
