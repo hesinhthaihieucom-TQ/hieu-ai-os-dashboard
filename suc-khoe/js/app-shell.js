@@ -2,8 +2,14 @@
 // Tên sản phẩm: "HIỂU ĐỂ KHOẺ MẠNH" (khớp tên app hiện có ở hieu-de-khoe-manh.vercel.app mà chị
 // Quỳnh dùng làm ví dụ, 2026-08-26) — đây là BỘ KHUNG ban đầu, chưa có thanh toán/khoá tính năng như
 // nhan-hieu/tai-chinh: mọi khách đăng ký xong vào được hết các mục, GÓI đang dùng (nếu có) do admin
-// gán tay qua Quản Trị > Thành viên. Không có freemium/premium/referral/review-prompt/thông báo tính
-// năng ở bản khung này — thêm sau nếu chị Quỳnh cần, giữ file này gọn để dễ đọc lúc mới dựng khung.
+// gán tay qua Quản Trị > Thành viên. Không có freemium/premium/referral/review-prompt ở bản khung
+// này — thêm sau nếu chị Quỳnh cần, giữ file này gọn để dễ đọc lúc mới dựng khung. Thông báo đẩy
+// (bản tin sức khỏe mỗi ngày) đã thêm 2026-08-31, xem tai-khoan.js + api/cron/send-reminders.js.
+
+// Public key VAPID DÙNG CHUNG với mọi app khác trong hệ sinh thái (1 cặp key cho cả Vercel project,
+// đã cấu hình VAPID_PRIVATE_KEY ở Vercel, xem api/_lib/push.js) — KHÔNG tự đổi key riêng cho app
+// này, đổi sẽ ký sai với server và mọi app khác cũng hỏng theo.
+const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY4xz2SisvwpU3IWo_ciiGTMxoLJq42QzkE';
 const NAV = [
   { key:'trang-chu', title:'Trang chủ', hidden:true }, // không hiện trong sidebar (giống nhan-hieu/tai-chinh) — vào lại qua bấm logo đầu sidebar
   { key:'kiem-tra-suc-khoe', title:'Kiểm Tra Sức Khỏe' },

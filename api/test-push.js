@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
   const subsResp = await supabaseAdmin(`push_subscriptions?user_id=eq.${user.id}&select=id`);
   const subs = subsResp.ok ? await subsResp.json() : [];
   if (!subs.length) {
-    res.status(200).json({ ok: false, reason: 'no_subscription', message: 'Tài khoản này chưa có thiết bị nào đăng ký nhận thông báo — vào Lịch Đăng Bài → tab "Thông báo & giờ đăng" → bấm "Bật thông báo" và cho phép quyền trên trình duyệt.' });
+    res.status(200).json({ ok: false, reason: 'no_subscription', message: 'Tài khoản này chưa có thiết bị nào đăng ký nhận thông báo — vào mục cài đặt thông báo trong app (Lịch Đăng Bài hoặc Tài khoản, tuỳ app) → bấm "Bật thông báo" và cho phép quyền trên trình duyệt.' });
     return;
   }
 

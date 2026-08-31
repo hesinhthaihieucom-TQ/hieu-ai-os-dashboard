@@ -8,7 +8,8 @@
 // Định Vị 12h mà chưa thử "AI tự viết + xếp cả tuần" (checkAutoFillNudge, thêm 29/8 — tối ưu chuyển
 // đổi dùng thử → mua gói), (6) khách CRM (Trợ Lý AI Tư Vấn & CRM) đến hạn/quá hạn follow hôm nay
 // (checkCrmFollowReminders, thêm 29/8 — "AI có tự đặt lịch thông báo đến ngày follow khách được
-// không", theo yêu cầu chị Quỳnh).
+// không", theo yêu cầu chị Quỳnh), (7) bản tin sức khỏe mỗi ngày cho khách app Hiểu Để Khoẻ Mạnh đã
+// được gán gói (checkSucKhoeDailyTip, thêm 31/8 theo yêu cầu chị Quỳnh).
 // Theo yêu cầu chị Quỳnh 2026-08-21.
 //
 // Mỗi loại dùng 1 CỬA SỔ THỜI GIAN ~25 phút (rộng hơn khoảng cách 15 phút giữa 2 lần cron 1 chút,
@@ -290,6 +291,45 @@ async function checkCrmFollowReminders() {
   return count;
 }
 
+// Bản tin sức khỏe mỗi ngày (Hiểu Để Khoẻ Mạnh, suc-khoe/, 2026-08-31 — chị Quỳnh: "làm cái bản tin
+// về sức khỏe mỗi ngày gửi thông báo cho người dùng mỗi ngày") — mỗi ngày lấy 1 mục trong
+// sk_library_entries làm nội dung, XOAY VÒNG theo số ngày (không ngẫu nhiên — ngẫu nhiên thật dễ lặp
+// liên tiếp gây nhàm, xoay vòng đảm bảo dàn đều hết nội dung thư viện), dẫn thẳng vào Thư Viện Sức
+// Khỏe — vừa cho kiến thức vừa kéo khách quay lại xem sản phẩm liên quan, đúng tinh thần liên kết
+// Kiểm Tra/Thư Viện/Sản Phẩm chị Quỳnh đã yêu cầu trước đó. CHỈ gửi cho khách ĐÃ được gán gói
+// (profiles.sk_package_id, xem lich-trinh.js) — đây là App RIÊNG (suc-khoe/) nhưng push_subscriptions
+// dùng chung 1 bảng cho cả hệ sinh thái (không có cột phân biệt theo app), nên PHẢI lọc đúng đối
+// tượng suc-khoe trước khi gọi notifyOnce, không thì user app khác cũng nhận nhầm bản tin sức khỏe.
+const SK_DAILY_TIP_TIME = '08:00';
+async function checkSucKhoeDailyTip() {
+  const { dateStr, minutesOfDay } = vnNowParts();
+  if (!withinWindow(parseHHMM(SK_DAILY_TIP_TIME), minutesOfDay)) return 0;
+
+  const usersResp = await supabaseAdmin(`profiles?sk_package_id=not.is.null&select=id`);
+  const users = usersResp.ok ? await usersResp.json() : [];
+  if (!users.length) return 0;
+
+  const entriesResp = await supabaseAdmin(`sk_library_entries?select=id,issue_name,symptoms,remedies&order=issue_name.asc`);
+  const entries = entriesResp.ok ? await entriesResp.json() : [];
+  if (!entries.length) return 0;
+
+  const dayIndex = Math.floor(new Date(dateStr + 'T00:00:00Z').getTime() / 86400000);
+  const entry = entries[dayIndex % entries.length];
+  const teaserSource = entry.remedies || entry.symptoms || '';
+  const teaser = teaserSource.split('\n').map((s) => s.trim().replace(/^[•-]\s*/, '')).filter(Boolean)[0] || '';
+
+  let count = 0;
+  for (const u of users) {
+    const result = await notifyOnce(u.id, `sk-daily-tip:${dateStr}`, {
+      title: '🌿 Bản tin sức khỏe hôm nay: ' + entry.issue_name,
+      body: teaser || 'Xem ngay trong Thư Viện Sức Khỏe.',
+      url: './#thu-vien-suc-khoe',
+    });
+    if (result.sent) count++;
+  }
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -301,7 +341,7 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
@@ -310,8 +350,9 @@ module.exports = async (req, res) => {
       checkTrialEnding(),
       checkAutoFillNudge(),
       checkCrmFollowReminders(),
+      checkSucKhoeDailyTip(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
