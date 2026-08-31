@@ -1,4 +1,10 @@
 (function(){
+const TOUR_STEPS = [
+  { selector: '#ta-upload', title: 'Tải ảnh nền', text: 'Chọn ảnh nền (AI hoặc ảnh thật của bạn) để làm ảnh có chữ đăng content dạng "Text trên ảnh".' },
+  { selector: '#ta-title', title: 'Tiêu đề chính', text: 'Gõ tiêu đề, bọc từ khoá muốn tô màu nhấn trong dấu **...**. Có thể lưu tiêu đề này thẳng vào Kho Hook để dùng lại sau.' },
+  { selector: '[data-action="download"]', title: 'Tải ảnh PNG', text: 'Sau khi ưng bố cục/font/màu/tiêu đề, bấm để tải ảnh về máy, đăng ngay được.' },
+];
+
 const CANVAS_W = 1080, CANVAS_H = 1350;
 const DEMO_TITLE = 'Facebook đang **trả lương** ảnh\ncao gấp đôi video?';
 const DEMO_HANDLE = '@tenban';
@@ -260,6 +266,7 @@ function render(container, ctx){
 
   function html(){
     return `
+      <span class="tour-trigger" id="ta-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><h1>Tạo Ảnh Thương Hiệu</h1><p>Dùng để tạo ảnh có chữ đăng content (dạng "Text trên ảnh") — tải ảnh nền, chọn bố cục / font / màu, điền tiêu đề, tải PNG đăng ngay.</p></div>
       <div class="ta-layout">
         <div class="card">
@@ -344,6 +351,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#ta-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const upload = container.querySelector('#ta-upload');
     if(upload) upload.onchange = () => {
       const file = upload.files[0];
