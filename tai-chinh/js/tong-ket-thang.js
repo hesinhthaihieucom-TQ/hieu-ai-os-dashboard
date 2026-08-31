@@ -1,4 +1,10 @@
 (function(){
+const TOUR_STEPS = [
+  { selector: '.source-grid', title: 'Dòng tiền tháng', text: 'Tổng thu, tổng chi, tỷ lệ tiết kiệm, và DTI (tỷ lệ nợ/thu nhập nếu có khai ở Quản Lý Nợ) của tháng đang xem.' },
+  { selector: '#tk-save-networth', title: 'Cân đối Tài Sản Ròng', text: 'Điền tài sản/tiêu sản-nợ để ra Tài Sản Ròng — con số QUAN TRỌNG NHẤT của trang này. Bấm lưu để cộng điểm cho Trụ Thân Tâm Bản Thể ở Điểm Nghiệp.' },
+  { selector: '#tk-save-reflection', title: 'Bài học nhìn lại tháng qua', text: 'Trả lời vài câu ngắn về khoản chi hối tiếc/xứng đáng, thói quen tốt/xấu, rồi lưu lại — muốn đặt mục tiêu tháng tới thì sang Mục Tiêu & Cam Kết.' },
+];
+
 const ASSET_FIELDS = [
   { key:'asset_cash', label:'Tiền mặt & Tiền gửi TK' },
   { key:'asset_savings', label:'Tiết kiệm có kỳ hạn' },
@@ -214,6 +220,7 @@ function render(container, ctx){
     const expenseByDayRange = groupByDayRange(state.expenseEntries, state.month);
 
     return `
+      <span class="tour-trigger" id="tk-start-tour">❓ Hướng dẫn</span>
       <div class="page-head">
         <h1>Tổng Kết Tháng</h1>
         <p>Cuối tháng, tính Tài Sản Ròng = Tổng Tài Sản − Tổng Tiêu Sản/Nợ. Đây là con số QUAN TRỌNG NHẤT.</p>
@@ -323,6 +330,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#tk-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const printBtn = container.querySelector('#tk-print');
     if(printBtn) printBtn.onclick = ()=>window.print();
     container.querySelectorAll('[data-breakdown-tab]').forEach(el=>{
