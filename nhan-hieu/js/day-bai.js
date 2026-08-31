@@ -7,6 +7,11 @@ const MILESTONES = [
   { key:'m5', label:'Trên 1 triệu view' },
 ];
 const MILESTONE_LABEL = Object.fromEntries(MILESTONES.map(m=>[m.key, m.label]));
+const TOUR_STEPS = [
+  { selector: '#db-post-card', title: 'Chọn bài đang đẩy', text: 'Chọn bài đang cần đẩy view — từ Lịch Đăng Bài, Kho Content, hoặc dán nội dung khác (không lưu được kế hoạch nếu chọn "Khác").' },
+  { selector: '#db-assets-card', title: 'Tài sản muốn đẩy', text: 'Chọn 1 hoặc nhiều tài sản (sản phẩm, khoá học, link cộng đồng...) — AI tự phân bổ hợp lý qua 5 mốc view, mốc đầu ít cam kết, mốc cuối giá trị cao hơn. Không chọn gì thì để AI tự chọn.' },
+  { selector: '[data-action="generate"]', title: 'Đẩy bài (đủ 5 mốc)', text: 'AI trả về đủ chiến lược bình luận cho cả 5 mốc view cùng lúc (tốn 2 lượt AI) — không cần bấm lại từng mốc.' },
+];
 const ASSET_KINDS = {
   san_pham_so: 'Sản phẩm số của tôi', khoa_hoc: 'Khoá học của tôi', aff_nguoi_khac: 'Aff sản phẩm người khác',
   aff_cua_toi: 'Aff của tôi', cong_dong: 'Link cộng đồng', khac: 'Khác',
@@ -110,6 +115,7 @@ function render(container, ctx){
   function html(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
+      <span class="tour-trigger" id="db-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — cho ĐỦ CẢ 5 mốc lượt xem cùng lúc, 1 lần bấm.</p>
       ${state.result ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
       </div>
@@ -120,7 +126,7 @@ function render(container, ctx){
         Về phía người xem: ở mốc view còn thấp, người xem lạ chưa đủ tin tưởng — <b>CTA mạnh</b> (bán/dẫn link) lúc này dễ bị lướt qua hoặc phản tác dụng. Đợi bài đủ view/bình luận (có <b>"bằng chứng xã hội"</b>) rồi mới tăng dần độ mạnh của CTA sẽ tự nhiên và chuyển đổi tốt hơn hẳn — đây là lý do mỗi mốc lượt xem có <b>1 chiến lược bình luận khác nhau</b>, không dùng chung 1 kiểu CTA cho mọi giai đoạn.
       </div>
 
-      <div class="card">
+      <div class="card" id="db-post-card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy</label>
         <div class="chips" style="margin-bottom:10px;">
           <div class="chip ${state.postSource==='lich'?'selected':''}" data-post-source="lich">Từ Lịch Đăng Bài</div>
@@ -163,7 +169,7 @@ function render(container, ctx){
 
   function assetsCardHtml(){
     return `
-      <div class="card" style="margin-top:16px;">
+      <div class="card" id="db-assets-card" style="margin-top:16px;">
         <h3 style="margin-bottom:4px;">Tài sản muốn đẩy cho bài này</h3>
         <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 hoặc nhiều tài sản muốn dùng — AI sẽ tự phân bổ hợp lý qua 5 mốc (mốc đầu ít cam kết, mốc cuối giá trị cao hơn). Không chọn gì thì để AI tự chọn từ kho.</p>
         ${state.assets.length===0?`<div style="font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào.</div>`: `
@@ -293,6 +299,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#db-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const resetDraftBtn = container.querySelector('[data-action="reset-draft"]');
     if(resetDraftBtn) resetDraftBtn.onclick = async ()=>{
       if(!(await confirmModal('Xoá kết quả đang làm dở và làm mới? Không khôi phục lại được.'))) return;
