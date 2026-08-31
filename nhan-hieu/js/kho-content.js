@@ -3,6 +3,14 @@
 // tự viết), tai_che_viral vẫn giữ để hiển thị đúng nhãn cho bài cũ — nhưng cả 2 key này KHÔNG còn
 // nằm trong danh sách người dùng tự chọn ở SOURCE_OPTIONS bên dưới, vì tai_che_viral đã được flow
 // Tái Chế Viral tự gắn sẵn (xem tai-che-viral.js), không cần chọn tay.
+// Tour ép về tab "kho-chung" trước khi chạy (xem trigger onclick trong bind()) — đây là tab LUÔN có
+// sẵn nội dung (kho do đội ngũ tuyển chọn), không phụ thuộc user đã có bài/kho riêng hay chưa, nên
+// selector [data-write-toggle] chắc chắn có ít nhất 1 phần tử để trỏ vào.
+const TOUR_STEPS = [
+  { selector: '.tab-row', title: '4 kho nội dung', text: '"Bài đã viết" là bài bạn tự viết ở Viết Content. "Kho của tôi" là tư liệu bạn tự sưu tầm. "Kho Content Viral" là bài mẫu đã kiểm chứng viral do đội ngũ tuyển chọn. "Case Study" là ảnh case study/ảnh cá nhân.' },
+  { selector: '[data-write-toggle]', title: 'Viết bài từ bài có sẵn', text: 'Bấm để viết bài mới, giữ nguyên hook và cấu trúc của bài này (công thức đã kiểm chứng viral) nhưng đổi câu từ bằng giọng và câu chuyện của bạn — không sao chép nguyên văn.' },
+];
+
 const SOURCE_MAP = {
   ca_nhan: 'Câu chuyện cá nhân', case_hoc_vien: 'Case học viên', cau_hoi_kh: 'Câu hỏi khách hàng',
   xu_huong: 'Xu hướng thị trường', quan_diem_nguoc_dong: 'Quan điểm ngược dòng', bai_mau: 'Bài mẫu tham khảo',
@@ -208,6 +216,7 @@ function render(container, ctx){
 
   function html(){
     return `
+      <span class="tour-trigger" id="kc-start-tour">❓ Hướng dẫn</span>
       <div class="page-head"><h1>Kho Content</h1><p>Bài đã viết, tư liệu bạn tự sưu tầm, và Kho Content Viral do đội ngũ tuyển chọn.</p></div>
       <div class="tab-row">
         <div class="tab-btn ${state.tab==='da-viet'?'active':''}" data-tab="da-viet">Bài đã viết (${state.posts.length})</div>
@@ -682,6 +691,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#kc-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>{ if(state.tab!=='kho-chung'){ state.tab='kho-chung'; draw(); } window.startPageTour(TOUR_STEPS); };
+
     container.querySelectorAll('[data-copy-value]').forEach(el=>{
       el.onclick = async ()=>{
         try{
