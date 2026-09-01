@@ -101,4 +101,39 @@ const TOOL_TAO_Y_TUONG_TU_LOAI = {
   },
 };
 
-module.exports = { TOOL_TIM_SAN_PHAM, TOOL_TAO_Y_TUONG_TU_LOAI };
+// Dùng cho bước "AI gợi ý định dạng" trong "Chọn Loại Sản Phẩm Số" — người dùng đã có chủ đề/đối
+// tượng rõ nhưng CHƯA chắc nên làm định dạng nào, chỉ cần AI đề xuất 1-2 định dạng phù hợp nhất
+// kèm lý do, KHÔNG cần dựng outline (outline là bước SAU, chạy bởi TOOL_TAO_Y_TUONG_TU_LOAI khi
+// định dạng đã chốt).
+const TOOL_GOI_Y_DINH_DANG = {
+  name: 'goi_y_dinh_dang',
+  description: 'Đề xuất 1-2 định dạng sản phẩm số phù hợp nhất với chủ đề/đối tượng đã cho, kèm lý do.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      goi_y: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 2,
+        description: '1-2 định dạng phù hợp nhất — chỉ đưa 2 khi thực sự có 2 lựa chọn ngang nhau hợp lý, còn lại đưa đúng 1 định dạng phù hợp nhất.',
+        items: {
+          type: 'object',
+          properties: {
+            dinh_dang: {
+              type: 'string',
+              enum: ['ebook', 'checklist_workbook', 'template_file_mau', 'mini_course', 'coaching_1_1', 'cong_dong_tra_phi', 'webinar'],
+            },
+            ly_do: {
+              type: 'string',
+              description: 'Lý do NGẮN GỌN (1-2 câu) vì sao định dạng này phù hợp với ĐÚNG chủ đề/đối tượng đã cho — nêu rõ đặc điểm chủ đề/đối tượng nào khiến định dạng này hợp.',
+            },
+          },
+          required: ['dinh_dang', 'ly_do'],
+        },
+      },
+    },
+    required: ['goi_y'],
+  },
+};
+
+module.exports = { TOOL_TIM_SAN_PHAM, TOOL_TAO_Y_TUONG_TU_LOAI, TOOL_GOI_Y_DINH_DANG };
