@@ -48,7 +48,7 @@ const TOOL_OUTLINE2 = {
 
 const TOOL_NGHIEN_CUU = {
   name: 'xuat_nghien_cuu_nen_tang',
-  description: 'Tổng hợp kiến thức nền cần thiết để viết 1 phần nội dung cụ thể, từ tri thức đã có (không tìm kiếm web trực tiếp).',
+  description: 'Tổng hợp kiến thức nền cần thiết để viết 1 phần nội dung cụ thể — từ tri thức sẵn có của Claude, hoặc từ khối "THÔNG TIN TỪ WEB" nếu userContent có kèm (tìm kiếm thật, xem researchViaWebSearch() ở api/xay-dung-noi-dung.js).',
   input_schema: {
     type: 'object',
     properties: {
@@ -62,18 +62,24 @@ const TOOL_NGHIEN_CUU = {
       },
       huong_vi_du: {
         type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4,
-        description: 'Hướng ví dụ/tình huống thật có thể dùng minh hoạ — gợi HƯỚNG, không bịa số liệu/tên riêng cụ thể giả làm như đã kiểm chứng.',
+        description: 'Ví dụ/tình huống minh hoạ cho chủ đề này. NẾU có khối "THÔNG TIN TỪ WEB" kèm theo: ưu tiên dùng case study/câu chuyện thành công-thất bại THẬT có số liệu/nguồn cụ thể tìm được từ đó (không còn phải mơ hồ). NẾU KHÔNG có thông tin web: chỉ gợi HƯỚNG ví dụ, không bịa số liệu/tên riêng cụ thể giả làm như đã kiểm chứng.',
       },
       rao_can_tam_ly: {
         type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4,
         description: 'Rào cản tâm lý phổ biến khiến người học dễ trì hoãn/bỏ cuộc với chủ đề này (VD "không có đủ thời gian", "đã từng thử mà thất bại") — mỗi mục nêu rõ rào cản + cách phần viết nên trả lời/trấn an ngay, không đợi người đọc tự vượt qua.',
       },
-      // KHÔNG bắt buộc — chỉ điền khi userContent có kèm khối "THÔNG TIN TỪ WEB" (tìm kiếm thật,
-      // xem researchViaWebSearch() ở api/xay-dung-noi-dung.js). Để người dùng thấy được nguồn thật,
-      // đúng tinh thần minh bạch của quy trình NotebookLM cũ.
+      // Cả 2 field dưới đây KHÔNG bắt buộc — chỉ điền khi userContent có kèm khối "THÔNG TIN TỪ WEB".
+      // nguon_tham_khao để người dùng thấy được nguồn thật (minh bạch, giống NotebookLM cũ);
+      // khoang_trong_thi_truong lấp đúng góc "nghiên cứu thị trường" trong quy trình cũ của Quỳnh
+      // (sản phẩm/khoá học tương tự đang bán tốt, người mua khen/chê gì) — CHỈ điền khi có dữ liệu
+      // tìm kiếm thật hỗ trợ, không suy đoán khi không có (tránh bịa số liệu "đang bán chạy").
       nguon_tham_khao: {
         type: 'array', items: { type: 'string' },
         description: 'CHỈ điền khi có dùng thông tin tìm được từ web trong ngữ liệu — mỗi mục 1 nguồn dạng "Tên trang — link". Bỏ trống/không điền nếu không có thông tin web nào được cung cấp.',
+      },
+      khoang_trong_thi_truong: {
+        type: 'array', items: { type: 'string' },
+        description: 'CHỈ điền khi có thông tin tìm được từ web về sản phẩm/khoá học/sách tương tự đang bán — mỗi mục 1 khoảng trống/thiếu sót mà nội dung phần này có thể lấp đầy (VD "các khoá học hiện có ít hướng dẫn thực hành, chỉ có lý thuyết"). Bỏ trống nếu không có dữ liệu thị trường thật, không suy đoán.',
       },
     },
     required: ['kien_thuc_nen', 'sai_lam_pho_bien', 'huong_vi_du', 'rao_can_tam_ly'],

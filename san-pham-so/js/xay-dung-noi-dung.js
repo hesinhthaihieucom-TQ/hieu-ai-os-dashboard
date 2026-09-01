@@ -19,15 +19,19 @@ const GIONG_VAN_OPTIONS = ['Gần gũi, tâm sự', 'Thẳng thắn, chuyên gia
 
 function render(container, ideaRow) {
   const idea = ideaRow.result.phuong_an[ideaRow.chosen_index];
-  // Tài liệu gốc (nhánh A của Giai đoạn 1, xem san-pham-so/js/tim-san-pham.js) + giọng văn — cả 2
-  // lồng trong answers (jsonb tự do sẵn có), không cần cột DB mới. materialPath chỉ có với sản phẩm
-  // tạo từ tài liệu; giọng văn chốt lại khi outline cấp 2 được tạo, dùng nhất quán cho mọi phần sau.
+  // Tài liệu gốc (nhánh A của Giai đoạn 1, xem san-pham-so/js/tim-san-pham.js) + giọng văn + ghi
+  // chú/case study — tất cả lồng trong answers (jsonb tự do sẵn có), không cần cột DB mới.
+  // materialPath chỉ có với sản phẩm tạo từ tài liệu; giọng văn/taiLieu/caseStudy chốt lại khi
+  // outline cấp 2 được tạo (xem generateOutline2()), dùng nhất quán cho mọi phần viết sau — kể cả
+  // sau khi rời trang quay lại (trước 2026-09-01, taiLieu bị xoá draft mà KHÔNG lưu lại đâu cả, nên
+  // không bao giờ tới được bước viết nội dung thật — bug đã sửa).
   const materialPath = (ideaRow.answers && ideaRow.answers.tai_lieu_path) || null;
   const state = {
     screen: ideaRow.outline_cap_2 ? 'outline2' : 'intro',
     outline2: ideaRow.outline_cap_2 || null,
     sections: ideaRow.sections || {},
-    taiLieu: '',
+    taiLieu: (ideaRow.answers && ideaRow.answers.tai_lieu_kinh_nghiem) || '',
+    caseStudy: (ideaRow.answers && ideaRow.answers.case_study) || '',
     giongVan: (ideaRow.answers && ideaRow.answers.giong_van) || GIONG_VAN_OPTIONS[0],
     activeIndex: null,
     workingStep: null, // 'nghien-cuu' | 'viet' | 'review' — hiện text tiến trình khi đang chạy chuỗi
@@ -48,7 +52,7 @@ function render(container, ideaRow) {
   }
 
   function persistIntroDraft() {
-    saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu, giongVan: state.giongVan });
+    saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu, caseStudy: state.caseStudy, giongVan: state.giongVan });
   }
 
   function draw() { container.innerHTML = html(); bind(); }
@@ -84,7 +88,10 @@ function render(container, ideaRow) {
       <div class="card">
         <h2 style="font-size:18px;">Trước khi viết: bạn có sẵn tài liệu/kinh nghiệm gì không?</h2>
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — nếu chưa có, AI sẽ tự tổng hợp kiến thức nền giúp bạn trước khi viết.</div>
-        <textarea id="xdnd-tailieu" rows="3" placeholder="VD: có 1 file ghi chú cũ về chủ đề này; từng giúp 1 người bạn xử lý việc tương tự và họ đã cải thiện rõ rệt sau 2 tuần...">${esc(state.taiLieu)}</textarea>
+        <textarea id="xdnd-tailieu" rows="3" placeholder="VD: có 1 file ghi chú cũ về chủ đề này...">${esc(state.taiLieu)}</textarea>
+        <label style="margin-top:14px;">Bạn đã từng giúp ai giải quyết vấn đề này chưa?</label>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Nếu có, kết quả cụ thể là gì? Đây là nguyên liệu quý nhất — dù chỉ 1-2 câu, giá trị hơn hẳn ví dụ AI tự nghĩ ra.</div>
+        <textarea id="xdnd-casestudy" rows="3" placeholder="VD: từng giúp 1 người bạn giảm 30% chi tiêu không cần thiết trong 2 tháng bằng cách...">${esc(state.caseStudy)}</textarea>
         <label style="margin-top:14px;">Giọng văn</label>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Áp dụng nhất quán cho mọi phần sẽ viết — chọn 1 lần ở đây.</div>
         <div class="chips">${GIONG_VAN_OPTIONS.map(o => `<div class="chip ${state.giongVan === o ? 'selected' : ''}" data-giongvan="${esc(o)}">${esc(o)}</div>`).join('')}</div>
@@ -220,17 +227,28 @@ function render(container, ideaRow) {
     `;
   }
 
+  // Nhắc mạnh hơn khi sản phẩm KHÔNG có gốc thật nào (tài liệu tải lên hoặc case study cá nhân) —
+  // theo đúng nguyên tắc "bổ sung góc nhìn cá nhân là bắt buộc" của quy trình cũ. Nhẹ nhàng hơn khi
+  // đã có ít nhất 1 gốc thật, vì nội dung khi đó đã ít nhiều bám sát thực tế của người dùng rồi.
+  function personalPerspectiveHintHtml() {
+    if (materialPath || state.caseStudy) {
+      return `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>`;
+    }
+    return `<div class="hint-box" style="margin-bottom:6px;">✍️ Bổ sung góc nhìn cá nhân là BẮT BUỘC — nội dung này được AI viết hoàn toàn từ kiến thức chung, dù chỉ 1-2 câu từ trải nghiệm thật của bạn cũng tạo khác biệt lớn hơn nhiều. Sửa trực tiếp vào ô bên dưới rồi bấm "Lưu chỉnh sửa".</div>`;
+  }
+
   function sectionDraftHtml() {
     const s = state.sections[state.activeIndex];
     return `
       <div class="card">
         <h2 style="font-size:16px;">Bản nháp — ${esc(flattenSections(state.outline2)[state.activeIndex].tieu_de)}</h2>
-        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>
+        ${personalPerspectiveHintHtml()}
         <textarea id="xdnd-draft-textarea" rows="14" style="font-size:14.5px;">${esc(s.viet.noi_dung)}</textarea>
         <div class="hint-box"><b>Ví dụ:</b> ${esc(s.viet.vi_du)}</div>
         <div class="hint-box"><b>Bài tập:</b> ${esc(s.viet.bai_tap)}</div>
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.nguon_tham_khao && s.nghien_cuu.nguon_tham_khao.length) ? `<div class="hint-box"><b>🔍 Nguồn tham khảo:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.nguon_tham_khao.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${(s.nghien_cuu && s.nghien_cuu.khoang_trong_thi_truong && s.nghien_cuu.khoang_trong_thi_truong.length) ? `<div class="hint-box"><b>📊 Khoảng trống thị trường:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.khoang_trong_thi_truong.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -259,10 +277,11 @@ function render(container, ideaRow) {
           ${items.map(([k, label]) => `<li>${c[k] ? '✅' : '⚠️'} ${label}</li>`).join('')}
         </ul>
         ${s.review.gop_y ? `<div class="hint-box"><b>Góp ý:</b> ${esc(s.review.gop_y)}</div>` : ''}
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:10px;margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>
+        <div style="margin-top:10px;">${personalPerspectiveHintHtml()}</div>
         <textarea id="xdnd-final-textarea" rows="14" style="font-size:14.5px;">${esc(s.review.ban_da_chinh || s.viet.noi_dung)}</textarea>
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.nguon_tham_khao && s.nghien_cuu.nguon_tham_khao.length) ? `<div class="hint-box"><b>🔍 Nguồn tham khảo:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.nguon_tham_khao.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${(s.nghien_cuu && s.nghien_cuu.khoang_trong_thi_truong && s.nghien_cuu.khoang_trong_thi_truong.length) ? `<div class="hint-box"><b>📊 Khoảng trống thị trường:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.khoang_trong_thi_truong.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -279,6 +298,8 @@ function render(container, ideaRow) {
     if (state.screen === 'intro') {
       const ta = container.querySelector('#xdnd-tailieu');
       ta.oninput = () => { state.taiLieu = ta.value; persistIntroDraft(); };
+      const csTa = container.querySelector('#xdnd-casestudy');
+      csTa.oninput = () => { state.caseStudy = csTa.value; persistIntroDraft(); };
       container.querySelectorAll('[data-giongvan]').forEach(el => {
         el.onclick = () => { state.giongVan = el.getAttribute('data-giongvan'); persistIntroDraft(); draw(); };
       });
@@ -386,9 +407,13 @@ function render(container, ideaRow) {
       });
       if (!data.result || !Array.isArray(data.result.phan)) throw new Error('AI trả về outline không đúng định dạng — thử lại giúp mình.');
       state.outline2 = data.result;
-      // Chốt giọng văn vĩnh viễn vào answers (merge, không ghi đè các key khác đã có) — dùng nhất
-      // quán cho mọi lần viết/viết lại phần sau, kể cả sau khi rời trang rồi quay lại.
-      await saveIdeaResult({ outline_cap_2: state.outline2, answers: { ...(ideaRow.answers || {}), giong_van: state.giongVan } });
+      // Chốt giọng văn/tài liệu/case study vĩnh viễn vào answers (merge, không ghi đè các key khác
+      // đã có) — dùng nhất quán cho mọi lần viết/viết lại phần sau, kể cả sau khi rời trang rồi quay
+      // lại (trước đây taiLieu bị xoá draft mà không lưu lại đâu cả — bug đã sửa).
+      await saveIdeaResult({
+        outline_cap_2: state.outline2,
+        answers: { ...(ideaRow.answers || {}), giong_van: state.giongVan, tai_lieu_kinh_nghiem: state.taiLieu || null, case_study: state.caseStudy || null },
+      });
       await clearDraft(XDND_INTRO_DRAFT_KEY);
       state.screen = 'outline2';
     } catch (e) {
@@ -416,10 +441,14 @@ function render(container, ideaRow) {
     const phanSau = index < flat.length - 1 ? flat[index + 1] : null;
     state.screen = 'section-working'; state.workingStep = useWebSearch ? 'nghien-cuu-web' : 'nghien-cuu'; state.error = null; draw();
     try {
-      const nghienCuuData = await callApi('api/xay-dung-noi-dung', { step: 'nghien-cuu', idea, phan: s, useWebSearch });
+      const nghienCuuData = await callApi('api/xay-dung-noi-dung', {
+        step: 'nghien-cuu', idea, phan: s, useWebSearch,
+        taiLieuKinhNghiem: state.taiLieu || null, caseStudy: state.caseStudy || null,
+      });
       state.workingStep = 'viet'; draw();
       const vietData = await callApi('api/xay-dung-noi-dung', {
         step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath,
+        taiLieuKinhNghiem: state.taiLieu || null, caseStudy: state.caseStudy || null,
         phanTruoc: phanTruoc ? { tieu_de: phanTruoc.tieu_de, ket_qua_cu_the: phanTruoc.ket_qua_cu_the } : null,
         phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
       });
@@ -477,6 +506,7 @@ function render(container, ideaRow) {
     if (state.screen === 'intro') {
       const draft = await loadDraft(XDND_INTRO_DRAFT_KEY);
       if (draft && draft.taiLieu) state.taiLieu = draft.taiLieu;
+      if (draft && draft.caseStudy) state.caseStudy = draft.caseStudy;
       if (draft && draft.giongVan) state.giongVan = draft.giongVan;
     }
     draw();
