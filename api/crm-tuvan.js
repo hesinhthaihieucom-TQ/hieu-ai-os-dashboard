@@ -2,8 +2,10 @@
 // tư vấn câu hỏi/câu chốt dùng ngay theo đúng nhánh A/D (chỉ Sức khỏe/Kinh doanh, chị Quỳnh bỏ nhánh
 // B/C Tâm linh-Tài chính/Nhân hiệu-Content ngày 2026-08-30), và TỰ ghi thẳng vào crm_customers +
 // crm_interactions — thay cho kiểu multi-tool-call (search→upsert→log tách rời qua GPT Actions) của
-// bản ChatGPT+Lark cũ. Không giới hạn lượt AI/tháng cho sản phẩm này (chị Quỳnh chốt 2026-08-29) —
-// chỉ gate theo profiles.crm_has_paid/crm_access_until, không đụng hệ trial-quota của Xây Nhân Hiệu.
+// bản ChatGPT+Lark cũ. Gate theo profiles.crm_has_paid/crm_access_until (admin bỏ qua gate này,
+// xem isActive bên dưới) CỘNG THÊM hệ lượt AI riêng của tro-ly-crm (CRM_MONTHLY_AI_LIMIT, xem
+// api/_lib/crm-ai-quota.js — thêm sau ngày viết comment "không giới hạn" cũ, chốt 2026-08-30/31) —
+// không đụng hệ trial-quota của Xây Nhân Hiệu.
 
 const { requireUser } = require('./_lib/auth');
 const { TOOL_TU_VAN_CRM } = require('./_lib/crm-tuvan-schema');
@@ -225,10 +227,12 @@ module.exports = async (req, res) => {
   if (!user || !token) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
   // Gate riêng sản phẩm này — không đụng has_paid/access_until (Xây Nhân Hiệu) hay hệ trial-quota.
-  const profResp = await supabaseAsUser(token, `profiles?id=eq.${user.id}&select=crm_has_paid,crm_access_until,full_name`);
+  const profResp = await supabaseAsUser(token, `profiles?id=eq.${user.id}&select=crm_has_paid,crm_access_until,full_name,role`);
   const profRows = profResp.ok ? await profResp.json() : [];
   const profile = profRows[0];
-  const isActive = profile && profile.crm_has_paid && profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now();
+  // Admin không cần crm_has_paid/crm_access_until — khớp đúng cách quan-tri.js đã hiển thị (admin
+  // hiện nhãn "Admin", không có ô "Gia hạn" nào để set access_until cho chính mình).
+  const isActive = profile && (profile.role === 'admin' || (profile.crm_has_paid && profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now()));
   if (!isActive) {
     res.status(402).json({ error: 'Gói của bạn chưa kích hoạt hoặc đã hết hạn — vào mục "Nâng Cấp" để tiếp tục dùng.', needsUpgrade: true });
     return;

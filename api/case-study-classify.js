@@ -87,10 +87,12 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user || !token) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const profResp = await supabaseAsUser(token, `profiles?id=eq.${user.id}&select=crm_has_paid,crm_access_until`);
+  const profResp = await supabaseAsUser(token, `profiles?id=eq.${user.id}&select=crm_has_paid,crm_access_until,role`);
   const profRows = profResp.ok ? await profResp.json() : [];
   const profile = profRows[0];
-  const isActive = profile && profile.crm_has_paid && profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now();
+  // Admin không cần crm_has_paid/crm_access_until — khớp đúng cách quan-tri.js đã hiển thị (admin
+  // hiện nhãn "Admin", không có ô "Gia hạn" nào để set access_until cho chính mình).
+  const isActive = profile && (profile.role === 'admin' || (profile.crm_has_paid && profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now()));
   if (!isActive) {
     res.status(402).json({ error: 'Gói của bạn chưa kích hoạt hoặc đã hết hạn — vào mục "Nâng Cấp" để tiếp tục dùng.', needsUpgrade: true });
     return;
