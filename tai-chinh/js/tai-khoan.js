@@ -20,10 +20,31 @@ function render(container, ctx){
     referrals: [],
     xnhReferralCount: 0,
     referralLinkCopied: false,
+    pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
+    pushSubscribed: false,
+    pushBusy: false,
+    pushError: null,
+    reminderFreq: (ctx.profile && ctx.profile.tc_reminder_frequency) || 'daily',
+    savingFreq: false,
+    testPushBusy: false,
+    testPushResult: null,
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
+
+  // Đọc trạng thái đã đăng ký push sẵn có chưa (vd đã bật ở thiết bị này trước đó) — không tự hỏi
+  // quyền, chỉ đọc để hiện đúng nút Bật/Tắt. Copy pattern từ nhan-hieu/js/lich-dang.js.
+  async function checkPushSubscription(){
+    if(!state.pushSupported) return;
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      state.pushSubscribed = !!sub;
+    } catch(e){ state.pushSubscribed = false; }
+    draw();
+  }
+  checkPushSubscription();
 
   async function loadReferrals(){
     const [{ data }, { data: xnhData }] = await Promise.all([
@@ -68,6 +89,68 @@ function render(container, ctx){
     draw();
   }
 
+  // Bật nhắc ghi chép: xin quyền → đăng ký PushManager → gửi lên server lưu lại. Trên iPhone CHỈ
+  // hoạt động nếu đã "Thêm vào Màn hình chính" trước (Safari không hỗ trợ Web Push cho tab thường).
+  // Copy pattern từ nhan-hieu/js/lich-dang.js enablePush(), giữ nguyên lý do lỗi để không bị hiểu
+  // nhầm "app lỗi" trong khi thực ra là chưa cài app/chưa cấp quyền.
+  async function enablePush(){
+    if(state.pushBusy) return;
+    state.pushBusy = true; state.pushError = null; draw();
+    try{
+      if(!state.pushSupported) throw new Error('Trình duyệt này không hỗ trợ thông báo đẩy.');
+      const permission = await Notification.requestPermission();
+      if(permission !== 'granted') throw new Error('Bạn chưa cấp quyền thông báo — vào cài đặt trình duyệt/điện thoại để bật lại nếu muốn thử lại.');
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      await callApi('/api/push-subscribe', sub.toJSON());
+      state.pushSubscribed = true;
+    } catch(e){
+      state.pushError = e.message || 'Không bật được thông báo — thử lại giúp mình.';
+    }
+    state.pushBusy = false; draw();
+  }
+
+  async function disablePush(){
+    if(state.pushBusy) return;
+    state.pushBusy = true; state.pushError = null; draw();
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if(sub){
+        await callApi('/api/push-unsubscribe', { endpoint: sub.endpoint });
+        await sub.unsubscribe();
+      }
+      state.pushSubscribed = false;
+    } catch(e){
+      state.pushError = e.message || 'Không tắt được thông báo — thử lại giúp mình.';
+    }
+    state.pushBusy = false; draw();
+  }
+
+  // Qua RPC vì user không update() thẳng profiles được (RLS đã khoá — xem comment ở schema_tai_chinh.sql).
+  async function setReminderFreq(freq){
+    if(state.savingFreq || state.reminderFreq === freq) return;
+    state.savingFreq = true; draw();
+    const { error } = await ctx.supabase.rpc('set_tc_reminder_frequency', { freq });
+    if(!error){ state.reminderFreq = freq; if(ctx.profile) ctx.profile.tc_reminder_frequency = freq; }
+    state.savingFreq = false; draw();
+  }
+
+  async function testPush(){
+    if(state.testPushBusy) return;
+    state.testPushBusy = true; state.testPushResult = null; draw();
+    try{
+      const data = await callApi('/api/test-push', {});
+      state.testPushResult = { ok: !!data.ok, message: data.message || (data.ok ? 'Đã gửi thành công.' : 'Không gửi được.') };
+    } catch(e){
+      state.testPushResult = { ok:false, message: e.message || 'Không gửi được — thử lại giúp mình.' };
+    }
+    state.testPushBusy = false; draw();
+  }
+
   function html(){
     return `
       <div class="page-head">
@@ -98,6 +181,33 @@ function render(container, ctx){
         ${state.passError ? `<div class="error-box">${esc(state.passError)}</div>` : ''}
         ${state.passMsg ? `<div class="hint-box">${esc(state.passMsg)}</div>` : ''}
         <button class="btn" style="margin-top:14px;" id="tk-save-pass" ${state.savingPass?'disabled':''}>${state.savingPass?'Đang xử lý…':'Đổi mật khẩu'}</button>
+      </div>
+
+      <div class="section">
+        <h3>Nhắc ghi chép</h3>
+        <div class="hint-box" style="margin-bottom:14px;">Bật để được nhắc ghi thu chi, tự chọn tần suất theo thói quen của bạn. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> trước khi bật được (Safari không hỗ trợ thông báo cho tab trình duyệt thường) — mở bằng Safari thật, không mở trong Facebook/Zalo/Instagram.</div>
+        ${!state.pushSupported ? `
+          <div class="error-box">Trình duyệt/thiết bị này không hỗ trợ thông báo đẩy.</div>
+        ` : state.pushSubscribed ? `
+          <button class="btn-ghost btn btn-sm" data-action="disable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</button>
+        ` : `
+          <button class="btn btn-sm" data-action="enable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang bật…':'Bật thông báo'}</button>
+        `}
+        ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
+        ${state.pushSubscribed ? `
+          <div style="margin-top:16px;">
+            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Tần suất nhắc</label>
+            <div class="chips">
+              <div class="chip ${state.reminderFreq==='daily'?'selected':''}" data-freq="daily">Hằng ngày (20h)</div>
+              <div class="chip ${state.reminderFreq==='weekly'?'selected':''}" data-freq="weekly">Hằng tuần (Chủ Nhật 19h)</div>
+              <div class="chip ${state.reminderFreq==='off'?'selected':''}" data-freq="off">Tắt nhắc</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <span class="btn-ghost btn btn-sm" data-action="test-push" ${state.testPushBusy?'disabled':''}>${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
+            ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
+          </div>
+        ` : ''}
       </div>
 
       ${(()=>{
@@ -146,6 +256,16 @@ function render(container, ctx){
     container.querySelector('#tk-save-pass').onclick = changePassword;
 
     container.querySelector('#tk-signout-btn').onclick = async ()=>{ await ctx.supabase.auth.signOut(); };
+
+    const enablePushBtn = container.querySelector('[data-action="enable-push"]');
+    if(enablePushBtn) enablePushBtn.onclick = enablePush;
+    const disablePushBtn = container.querySelector('[data-action="disable-push"]');
+    if(disablePushBtn) disablePushBtn.onclick = disablePush;
+    const testPushBtn = container.querySelector('[data-action="test-push"]');
+    if(testPushBtn) testPushBtn.onclick = testPush;
+    container.querySelectorAll('[data-freq]').forEach(el=>{
+      el.onclick = ()=>setReminderFreq(el.getAttribute('data-freq'));
+    });
 
     const copyRefBtn = container.querySelector('#tk-copy-referral-link');
     if(copyRefBtn) copyRefBtn.onclick = async ()=>{

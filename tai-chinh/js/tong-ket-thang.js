@@ -260,14 +260,14 @@ function render(container, ctx){
               <div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:8px;">🏦 Tài sản sinh lợi</div>
               ${ASSET_FIELDS.map(f=>`
                 <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">${esc(f.label)}</label>
-                <input type="number" min="0" data-networth="${f.key}" value="${esc(state.networth[f.key])}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+                <input type="text" inputmode="numeric" data-networth="${f.key}" value="${esc(formatThousands(state.networth[f.key]))}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
               `).join('')}
             </div>
             <div>
               <div style="font-weight:600;font-size:13px;color:var(--danger);margin-bottom:8px;">🔴 Tiêu sản / Nợ</div>
               ${DEBT_FIELDS.map(f=>`
                 <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">${esc(f.label)}</label>
-                <input type="number" min="0" data-networth="${f.key}" value="${esc(state.networth[f.key])}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+                <input type="text" inputmode="numeric" data-networth="${f.key}" value="${esc(formatThousands(state.networth[f.key]))}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
               `).join('')}
             </div>
           </div>
@@ -353,7 +353,11 @@ function render(container, ctx){
     if(nextEl) nextEl.onclick = ()=>{ state.month = nextMonthKey(state.month); load(); };
 
     container.querySelectorAll('[data-networth]').forEach(el=>{
-      el.oninput = ()=>{ state.networth[el.getAttribute('data-networth')] = el.value; recomputeNetworthPreview(); persistDraft(); };
+      el.oninput = ()=>{
+        el.value = formatThousands(el.value);
+        state.networth[el.getAttribute('data-networth')] = onlyDigits(el.value);
+        recomputeNetworthPreview(); persistDraft();
+      };
     });
     const saveNetworthBtn = container.querySelector('#tk-save-networth');
     if(saveNetworthBtn) saveNetworthBtn.onclick = saveNetworth;

@@ -59,4 +59,68 @@ function maybeShowInstallPrompt(){
 }
 
 window.maybeShowInstallPrompt = maybeShowInstallPrompt;
+
+// Cảnh báo trình duyệt-trong-app (2026-09-01, chị Quỳnh phản ánh: khách bấm link Facebook vào làm
+// bài test, thoát ra là mất luôn, không quay lại ghi chép được). Facebook/Instagram/Zalo/Line mở
+// link trong 1 webview RIÊNG của chính app đó, không phải Chrome/Safari thật — 2 hệ quả: (1) trên
+// Android, KHÔNG BAO GIỜ bắn được sự kiện beforeinstallprompt (hasNativePrompt luôn false) nên
+// maybeShowInstallPrompt() ở trên tự động không làm gì được, im lặng vô hiệu; (2) trên iOS, dù nút
+// Chia sẻ trong webview này CÓ thể "Thêm vào MH chính" được, phần lớn các bản Facebook/Instagram vẫn
+// không cho web push hoạt động ổn định (khác Safari thật). Vì vậy phải chủ động khuyên mở bằng trình
+// duyệt ngoài THẬT SỰ, không chỉ dựa vào maybeShowInstallPrompt() như bình thường.
+function detectInAppBrowser(){
+  const ua = navigator.userAgent || '';
+  if(/FBAN|FBAV|FB_IAB|FBIOS/i.test(ua)) return { key:'facebook', label:'Facebook' };
+  if(/Instagram/i.test(ua)) return { key:'instagram', label:'Instagram' };
+  if(/Zalo/i.test(ua)) return { key:'zalo', label:'Zalo' };
+  if(/Line\//i.test(ua)) return { key:'line', label:'Line' };
+  return null;
+}
+
+const IAB_BANNER_STORAGE_KEY = 'tc_iab_banner_dismissed_at';
+function maybeShowInAppBrowserBanner(){
+  if(isStandalone()) return; // đang chạy dạng app cài rồi thì chắc chắn không phải webview này nữa
+  if(document.getElementById('iab-banner')) return;
+  const iab = detectInAppBrowser();
+  if(!iab) return;
+
+  // Nhắc lại mỗi ngày (không phải mỗi lần mở trang) — đủ dai để họ thực sự để ý qua vài lần vào lại,
+  // nhưng không làm phiền tới mức gây khó chịu ngay trong 1 phiên.
+  try{
+    const dismissedAt = Number(localStorage.getItem(IAB_BANNER_STORAGE_KEY) || 0);
+    if(Date.now() - dismissedAt < 24 * 3600 * 1000) return;
+  } catch(e){}
+
+  const ios = isIOS();
+  const instruction = ios
+    ? `Bấm nút <b>···</b> (góc dưới màn hình) → chọn <b>"Mở bằng Safari"</b>`
+    : `Bấm nút <b>⋮</b> (góc trên màn hình) → chọn <b>"Mở bằng Chrome"</b>`;
+
+  const banner = document.createElement('div');
+  banner.id = 'iab-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#1E2420;color:#fff;padding:14px 16px;font-size:13px;line-height:1.6;box-shadow:0 2px 12px rgba(0,0,0,.3);';
+  banner.innerHTML = `
+    <div style="max-width:480px;margin:0 auto;">
+      ⚠️ Bạn đang mở trong <b>${iab.label}</b> — trình duyệt này không lưu được app lên máy và không gửi được thông báo nhắc ghi chép.<br>
+      ${instruction}, hoặc bấm nút bên dưới để copy link rồi tự dán vào trình duyệt.
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span id="iab-copy" style="background:var(--accent,#2F6F62);padding:8px 16px;border-radius:999px;font-weight:600;cursor:pointer;">Copy link</span>
+        <span id="iab-dismiss" style="padding:8px 16px;color:#C8CFC5;cursor:pointer;">Để sau</span>
+      </div>
+    </div>
+  `;
+  document.body.prepend(banner);
+
+  const copyBtn = banner.querySelector('#iab-copy');
+  copyBtn.onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(location.href); copyBtn.textContent = '✓ Đã copy — dán vào trình duyệt'; }
+    catch(e){ copyBtn.textContent = location.href; }
+  };
+  banner.querySelector('#iab-dismiss').onclick = ()=>{
+    try{ localStorage.setItem(IAB_BANNER_STORAGE_KEY, String(Date.now())); } catch(e){}
+    banner.remove();
+  };
+}
+
+window.maybeShowInAppBrowserBanner = maybeShowInAppBrowserBanner;
 })();

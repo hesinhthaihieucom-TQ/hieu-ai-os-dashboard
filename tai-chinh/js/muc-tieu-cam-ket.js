@@ -179,19 +179,19 @@ function render(container, ctx){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div>
           <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu thu nhập (đ)</label>
-          <input type="number" min="0" data-goal="goal_income" value="${esc(state.goal.goal_income)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <input type="text" inputmode="numeric" data-goal="goal_income" data-money value="${esc(formatThousands(state.goal.goal_income))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
           <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu tiết kiệm (đ)</label>
-          <input type="number" min="0" data-goal="goal_savings" value="${esc(state.goal.goal_savings)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <input type="text" inputmode="numeric" data-goal="goal_savings" data-money value="${esc(formatThousands(state.goal.goal_savings))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
           <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu giảm nợ (đ)</label>
-          <input type="number" min="0" data-goal="goal_debt_reduction" value="${esc(state.goal.goal_debt_reduction)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <input type="text" inputmode="numeric" data-goal="goal_debt_reduction" data-money value="${esc(formatThousands(state.goal.goal_debt_reduction))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
           <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu tài sản mới (đ)</label>
-          <input type="number" min="0" data-goal="goal_new_asset" value="${esc(state.goal.goal_new_asset)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <input type="text" inputmode="numeric" data-goal="goal_new_asset" data-money value="${esc(formatThousands(state.goal.goal_new_asset))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
         </div>
       </div>
       <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:12px 0 4px;">Loại tài sản sẽ mua/đầu tư</label>
@@ -210,7 +210,7 @@ function render(container, ctx){
           return `
             <div style="margin-top:10px;">
               <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">${esc(h.label)}</label>
-              <textarea data-house-reason="${h.key}" placeholder="${esc(HOUSE_GOAL_ANCHOR[h.key])}">${esc((state.goal.goal_house_reasons||{})[h.key] || '')}</textarea>
+              <textarea data-house-reason="${h.key}" placeholder="${esc(HOUSE_REASON_SUGGESTION[h.key] || '')}">${esc((state.goal.goal_house_reasons||{})[h.key] || '')}</textarea>
             </div>
           `;
         }).join('')}
@@ -294,7 +294,7 @@ function render(container, ctx){
                   <div style="flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden;">
                     <div style="height:100%;width:${limit>0?pct:0}%;background:${over?'var(--danger)':'var(--accent)'};border-radius:999px;"></div>
                   </div>
-                  <input type="number" min="0" data-budget="${esc(key)}" value="${esc(state.budgetForm[key]||'')}" placeholder="Hạn mức" style="width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#FDFCF8;color:var(--ink);">
+                  <input type="text" inputmode="numeric" data-budget="${esc(key)}" data-money value="${esc(formatThousands(state.budgetForm[key]||''))}" placeholder="Hạn mức" style="width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#FDFCF8;color:var(--ink);">
                 </div>
                 ${over?`<div style="font-size:11.5px;color:var(--danger);margin-top:2px;">Đã vượt hạn mức ${(actual-limit).toLocaleString('vi-VN')}đ</div>`:''}
               </div>
@@ -305,7 +305,7 @@ function render(container, ctx){
             <datalist id="mt-budget-category-datalist">
               ${state.expenseCategories.map(c=>`<option value="${esc(c.label)}">`).join('')}
             </datalist>
-            <input type="number" min="0" id="mt-new-budget-amount" placeholder="Hạn mức" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
+            <input type="text" inputmode="numeric" id="mt-new-budget-amount" data-money placeholder="Hạn mức" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;color:var(--ink);">
             <span class="btn-ghost btn btn-sm" id="mt-add-budget-category">+ Thêm</span>
           </div>
           <button class="btn btn-sm" style="margin-top:14px;" id="mt-save-budget" ${state.savingBudget?'disabled':''}>${state.savingBudget?'Đang lưu…':'Lưu ngân sách'}</button>
@@ -363,7 +363,11 @@ function render(container, ctx){
       el.onclick = ()=>{ state.selectedResistance = el.getAttribute('data-resistance'); draw(); persistDraft(); };
     });
     container.querySelectorAll('[data-goal]').forEach(el=>{
-      el.oninput = ()=>{ state.goal[el.getAttribute('data-goal')] = el.value; persistDraft(); };
+      el.oninput = ()=>{
+        if(el.hasAttribute('data-money')){ el.value = formatThousands(el.value); state.goal[el.getAttribute('data-goal')] = onlyDigits(el.value); }
+        else state.goal[el.getAttribute('data-goal')] = el.value;
+        persistDraft();
+      };
     });
     const saveGoalBtn = container.querySelector('#mt-save-goal');
     if(saveGoalBtn) saveGoalBtn.onclick = saveGoal;
@@ -377,16 +381,19 @@ function render(container, ctx){
     if(editBtn) editBtn.onclick = ()=>{ state.step = 'goal'; draw(); persistDraft(); };
 
     container.querySelectorAll('[data-budget]').forEach(el=>{
-      el.oninput = ()=>{ state.budgetForm[el.getAttribute('data-budget')] = el.value; persistDraft(); };
+      el.oninput = ()=>{ el.value = formatThousands(el.value); state.budgetForm[el.getAttribute('data-budget')] = onlyDigits(el.value); persistDraft(); };
     });
+    const newBudgetAmountEl = container.querySelector('#mt-new-budget-amount');
+    if(newBudgetAmountEl) newBudgetAmountEl.oninput = ()=>{ newBudgetAmountEl.value = formatThousands(newBudgetAmountEl.value); };
     const addBudgetCategoryBtn = container.querySelector('#mt-add-budget-category');
     if(addBudgetCategoryBtn) addBudgetCategoryBtn.onclick = async ()=>{
       const nameEl = container.querySelector('#mt-new-budget-category');
       const amountEl = container.querySelector('#mt-new-budget-amount');
       const name = nameEl.value.trim();
-      if(!name || !Number(amountEl.value)) return;
+      const amountDigits = onlyDigits(amountEl.value);
+      if(!name || !Number(amountDigits)) return;
       state.budgetActuals[name] = state.budgetActuals[name] || 0;
-      state.budgetForm[name] = amountEl.value;
+      state.budgetForm[name] = amountDigits;
       // Gõ danh mục mới ngay đây (chưa có trong Quản Lý Danh Mục) — lưu luôn vào tc_categories để
       // Ghi Chép Hàng Ngày/Quản Lý Danh Mục cũng thấy đúng 1 danh sách, không lệch nhau.
       if(!state.expenseCategories.some(c=>c.label===name)){

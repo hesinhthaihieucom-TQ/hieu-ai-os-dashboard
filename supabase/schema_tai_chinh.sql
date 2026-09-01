@@ -476,3 +476,26 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_tc_review_prompt_dismissed() to authenticated;
+
+-- Nhắc ghi chép qua Web Push (2026-09-01, chị Quỳnh phản ánh khách bấm link vào từ Facebook/Zalo
+-- xong làm xong bài Chấm Điểm là thoát luôn, không quay lại ghi thu chi đều). Dùng LẠI hạ tầng
+-- push_subscriptions/notification_log đã có sẵn cho cả hệ sinh thái (tạo ở schema_nhan_hieu.sql,
+-- xem api/_lib/push.js + api/cron/send-reminders.js) — không tạo bảng riêng. Mỗi user tự chọn tần
+-- suất ở Tài khoản: 'daily' (mặc định — nhắc mỗi tối 20:00) hoặc 'weekly' (nhắc 1 lần Chủ Nhật
+-- 19:00, cho người chỉ muốn ghi bù cả tuần 1 lần — Ghi Chép Hàng Ngày đã có sẵn ô chọn ngày nên ghi
+-- bù ngày cũ vẫn ra đúng dữ liệu) hoặc 'off'. Default 'daily' CHỈ áp dụng cho user đã bật thông báo
+-- (cron lọc thêm theo có subscription hay không, xem send-reminders.js) nên không tự làm phiền ai
+-- chưa từng bấm "Bật thông báo".
+alter table profiles add column if not exists tc_reminder_frequency text not null default 'daily' check (tc_reminder_frequency in ('daily','weekly','off'));
+
+-- Qua RPC vì user không update() thẳng profiles được (RLS đã khoá, xem mark_tc_announcement_seen ở trên).
+create or replace function public.set_tc_reminder_frequency(freq text)
+returns void as $$
+begin
+  if freq not in ('daily','weekly','off') then
+    raise exception 'invalid tc_reminder_frequency: %', freq;
+  end if;
+  update public.profiles set tc_reminder_frequency = freq where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.set_tc_reminder_frequency(text) to authenticated;

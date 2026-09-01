@@ -111,6 +111,32 @@ function excerpt(s, maxLen){
   return str.slice(0, maxLen).trim() + '…';
 }
 
+// Định dạng số tiền có dấu chấm ngăn cách hàng nghìn (8.000.000) NGAY LÚC GÕ, cho dễ nhìn (2026-09-01,
+// góp ý chị Quỳnh) — mọi ô nhập số tiền trong app đổi từ type="number" sang type="text"
+// inputmode="numeric" (input type="number" của trình duyệt KHÔNG hiển thị được dấu chấm ngăn cách,
+// sẽ hiểu nhầm là dấu thập phân) rồi tự format lại value bằng 2 hàm này trong oninput. State vẫn
+// LƯU SỐ THÔ không dấu chấm (onlyDigits) — chỉ phần HIỂN THỊ trên input mới có dấu chấm
+// (formatThousands), để mọi phép tính/parseFloat ở chỗ khác không bị ảnh hưởng.
+function onlyDigits(s){
+  return String(s==null?'':s).replace(/[^\d]/g, '');
+}
+function formatThousands(s){
+  const digits = onlyDigits(s);
+  return digits ? Number(digits).toLocaleString('vi-VN') : '';
+}
+
+// PushManager.subscribe() cần applicationServerKey dạng Uint8Array, nhưng VAPID public key ta có
+// là chuỗi base64url — chuyển đổi qua lại theo đúng chuẩn. Copy từ nhan-hieu/js/util.js, dùng chung
+// cho tai-khoan.js lúc bật nhắc ghi chép.
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
 function fmtDate(d){
   const dt = (d instanceof Date) ? d : new Date(d);
   return dt.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });
@@ -521,6 +547,20 @@ const HOUSE_GOAL_ANCHOR = {
   thuan_phap_nhan_qua: 'Đây là sự bình an toàn vẹn — đón nhận cuộc sống, kiến tạo vận mệnh thong dong. Khoản nợ chỉ là một điểm trũng tạm thời trong quy luật lên-xuống tự nhiên, không phải bản án. Đón nhận (thay vì chỉ cắn răng chịu đựng) giúp bạn đứng cao hơn vấn đề, đủ bình tĩnh để chủ động tìm giải pháp.',
 };
 function houseLabel(key){ const f = HOUSES.find(h=>h.key===key); return f ? f.label : ''; }
+
+// Gợi ý mẫu (không phải định nghĩa trụ — HOUSE_GOAL_ANCHOR ở trên đã giải thích trụ là gì, hiện
+// riêng ở hint-box phía trên ô này rồi) cho ô "Vì sao trụ này quan trọng với bạn?" — trước đây lấy
+// nhầm luôn HOUSE_GOAL_ANCHOR làm placeholder nên ô trống lại hiện y hệt đoạn định nghĩa vừa đọc ở
+// trên, thành ra lặp lại vô nghĩa (2026-09-01, chị Quỳnh báo "ghi gợi ý chứ không phải ghi lại định
+// nghĩa"). Viết theo giọng NGÔI THỨ NHẤT ("tôi muốn...") để người dùng có thể bấm sửa lại thành đúng
+// lý do CỦA HỌ thay vì phải tự nghĩ từ đầu.
+const HOUSE_REASON_SUGGESTION = {
+  than_tam_ban_the: 'Vì tôi muốn ngủ ngon, không giật mình lúc nửa đêm nghĩ tới khoản nợ — còn sức khoẻ thì mới còn sức đi làm để trả nợ.',
+  coi_nguon_sinh_thanh: 'Vì tôi muốn bố mẹ an tâm, không phải giấu chuyện nợ nần với gia đình nữa.',
+  ban_doi_moi_quan_he: 'Vì tôi muốn vợ/chồng mình cùng nhìn về một hướng, không còn cãi nhau mỗi khi nhắc tới tiền.',
+  tai_chinh_tam_thuc: 'Vì tôi muốn giữ đúng lời hứa với người đã tin tưởng cho tôi vay — để sau này cần, họ vẫn sẵn lòng giúp.',
+  thuan_phap_nhan_qua: 'Vì tôi muốn coi đây là một giai đoạn rồi sẽ qua, không phải một bản án đeo bám mình cả đời.',
+};
 
 // 4 khâu "Nút Chặn Dòng Tiền" đo được ở Vibe Check (Chấm Điểm Nghiệp Tiền, thiet-lap-nhanh.js).
 const WEAKEST_AREA_INFO = {

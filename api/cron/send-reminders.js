@@ -9,7 +9,10 @@
 // đổi dùng thử → mua gói), (6) khách CRM (Trợ Lý AI Tư Vấn & CRM) đến hạn/quá hạn follow hôm nay
 // (checkCrmFollowReminders, thêm 29/8 — "AI có tự đặt lịch thông báo đến ngày follow khách được
 // không", theo yêu cầu chị Quỳnh), (7) bản tin sức khỏe mỗi ngày cho khách app Hiểu Để Khoẻ Mạnh đã
-// được gán gói (checkSucKhoeDailyTip, thêm 31/8 theo yêu cầu chị Quỳnh).
+// được gán gói (checkSucKhoeDailyTip, thêm 31/8 theo yêu cầu chị Quỳnh), (8) nhắc ghi thu chi cho
+// khách Sổ Dòng Tiền Tâm Thức, tuỳ tần suất họ tự chọn — hằng ngày 20h hoặc hằng tuần Chủ Nhật 19h
+// (checkTaiChinhLogReminder, thêm 1/9 — chị Quỳnh phản ánh khách vào từ link Facebook làm xong bài
+// test rồi thoát, không quay lại ghi chép đều).
 // Theo yêu cầu chị Quỳnh 2026-08-21.
 //
 // Mỗi loại dùng 1 CỬA SỔ THỜI GIAN ~25 phút (rộng hơn khoảng cách 15 phút giữa 2 lần cron 1 chút,
@@ -330,6 +333,48 @@ async function checkSucKhoeDailyTip() {
   return count;
 }
 
+// Chỉ gửi cho user ĐÃ bật thông báo (có ít nhất 1 push_subscriptions) — join qua 2 bước vì
+// push_subscriptions dùng chung cho cả hệ sinh thái, không lọc được thẳng bằng 1 câu query profiles.
+// 'daily' nhắc mỗi tối, 'weekly' chỉ nhắc đúng tối Chủ Nhật (dayOfWeek=0, giờ VN) — cho người chỉ
+// muốn ghi bù cả tuần 1 lần, Ghi Chép Hàng Ngày đã có ô chọn ngày nên ghi bù vẫn ra đúng dữ liệu.
+const TC_DAILY_REMINDER_TIME = '20:00';
+const TC_WEEKLY_REMINDER_TIME = '19:00';
+async function checkTaiChinhLogReminder() {
+  const { dateStr, minutesOfDay } = vnNowParts();
+  const dayOfWeek = new Date(Date.now() + 7 * 3600 * 1000).getUTCDay();
+
+  const wantDaily = withinWindow(parseHHMM(TC_DAILY_REMINDER_TIME), minutesOfDay);
+  const wantWeekly = dayOfWeek === 0 && withinWindow(parseHHMM(TC_WEEKLY_REMINDER_TIME), minutesOfDay);
+  if (!wantDaily && !wantWeekly) return 0;
+
+  let count = 0;
+  if (wantDaily) {
+    const usersResp = await supabaseAdmin(`profiles?tc_reminder_frequency=eq.daily&select=id`);
+    const users = usersResp.ok ? await usersResp.json() : [];
+    for (const u of users) {
+      const result = await notifyOnce(u.id, `tc-daily-reminder:${dateStr}`, {
+        title: '📒 Ghi thu chi hôm nay chưa?',
+        body: 'Chỉ mất 30 giây — dòng tiền hôm nay là dữ liệu cho Điểm Nghiệp tuần này.',
+        url: './#ghi-chep',
+      });
+      if (result.sent) count++;
+    }
+  }
+  if (wantWeekly) {
+    const usersResp = await supabaseAdmin(`profiles?tc_reminder_frequency=eq.weekly&select=id`);
+    const users = usersResp.ok ? await usersResp.json() : [];
+    for (const u of users) {
+      const result = await notifyOnce(u.id, `tc-weekly-reminder:${dateStr}`, {
+        title: '📒 Ghi thu chi cả tuần này',
+        body: 'Ghi bù từng ngày cũng được — chọn lại ngày ở mỗi dòng khi ghi.',
+        url: './#ghi-chep',
+      });
+      if (result.sent) count++;
+    }
+  }
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -341,7 +386,7 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
@@ -351,8 +396,9 @@ module.exports = async (req, res) => {
       checkAutoFillNudge(),
       checkCrmFollowReminders(),
       checkSucKhoeDailyTip(),
+      checkTaiChinhLogReminder(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

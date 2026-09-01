@@ -238,11 +238,11 @@ function render(container, ctx){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
           <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Nguồn Lực Đã Đón Nhận — số dư hiện tại (đ)</label>
-          <input type="number" min="0" data-${prefix}="current_balance" value="${esc(d.current_balance)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <input type="text" inputmode="numeric" data-${prefix}="current_balance" data-money value="${esc(formatThousands(d.current_balance))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
           <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Trả tối thiểu/tháng (đ)</label>
-          <input type="number" min="0" data-${prefix}="minimum_payment" value="${esc(d.minimum_payment)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <input type="text" inputmode="numeric" data-${prefix}="minimum_payment" data-money value="${esc(formatThousands(d.minimum_payment))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
           <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Ngày Cam Kết Tri Ân (ngày trong tháng)</label>
@@ -260,7 +260,7 @@ function render(container, ctx){
         <input type="number" min="0" data-${prefix}="interest_rate" value="${esc(d.interest_rate)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
       ` : `
         <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Phí cố định (đ) — vd phí trả góp/phí đáo hạn thẻ tín dụng</label>
-        <input type="number" min="0" data-${prefix}="flat_fee_amount" value="${esc(d.flat_fee_amount)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+        <input type="text" inputmode="numeric" data-${prefix}="flat_fee_amount" data-money value="${esc(formatThousands(d.flat_fee_amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
       `}
 
       <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:14px 0 6px;">${glossaryWrap('Khoản nợ này có phải Nợ Kiến Tạo?', 'no_xanh', 'no_do')} — tích cả 3 ý dưới đây thì mới là Nợ Kiến Tạo, thiếu 1 ý là Nợ Hoảng Loạn:</label>
@@ -331,7 +331,7 @@ function render(container, ctx){
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
                 <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Số tiền trả (đ)</label>
-                <input type="number" min="0" id="pay-amount" value="${esc(state.paymentForm.amount)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+                <input type="text" inputmode="numeric" id="pay-amount" value="${esc(formatThousands(state.paymentForm.amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
               </div>
               <div>
                 <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Ngày trả</label>
@@ -364,11 +364,11 @@ function render(container, ctx){
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
               <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu (đ)</label>
-              <input type="number" min="0" id="ef-target" value="${esc(ef.target_amount)}" placeholder="VD: 15.000.000" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+              <input type="text" inputmode="numeric" id="ef-target" value="${esc(formatThousands(ef.target_amount))}" placeholder="VD: 15.000.000" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
             </div>
             <div>
               <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Hiện có (đ)</label>
-              <input type="number" min="0" id="ef-current" value="${esc(ef.current_amount)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+              <input type="text" inputmode="numeric" id="ef-current" value="${esc(formatThousands(ef.current_amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
             </div>
           </div>
           <div style="margin-top:14px;height:10px;border-radius:999px;background:var(--line);overflow:hidden;">
@@ -401,7 +401,7 @@ function render(container, ctx){
           <div class="section">
             <h3>C. Chiến lược trả nợ</h3>
             <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Số tiền dư ra có thể trả THÊM mỗi tháng (ngoài mức tối thiểu)</label>
-            <input type="number" min="0" id="extra-payment" value="${esc(state.extraPerMonth)}" placeholder="0" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
+            <input type="text" inputmode="numeric" id="extra-payment" value="${esc(formatThousands(state.extraPerMonth))}" placeholder="0" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
             <div id="strategy-results">${strategyResultsHtml()}</div>
           </div>
         ` : ''}
@@ -411,7 +411,7 @@ function render(container, ctx){
 
   function readDebtForm(prefix, target){
     container.querySelectorAll(`[data-${prefix}]`).forEach(el=>{
-      target[el.getAttribute(`data-${prefix}`)] = el.type === 'checkbox' ? el.checked : el.value;
+      target[el.getAttribute(`data-${prefix}`)] = el.type === 'checkbox' ? el.checked : (el.hasAttribute('data-money') ? onlyDigits(el.value) : el.value);
     });
   }
 
@@ -420,14 +420,24 @@ function render(container, ctx){
     if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
 
     const efTargetEl = container.querySelector('#ef-target');
-    if(efTargetEl) efTargetEl.oninput = (e)=>{ state.emergencyFund.target_amount = e.target.value; };
+    if(efTargetEl) efTargetEl.oninput = (e)=>{ e.target.value = formatThousands(e.target.value); state.emergencyFund.target_amount = onlyDigits(e.target.value); };
     const efCurrentEl = container.querySelector('#ef-current');
-    if(efCurrentEl) efCurrentEl.oninput = (e)=>{ state.emergencyFund.current_amount = e.target.value; };
+    if(efCurrentEl) efCurrentEl.oninput = (e)=>{ e.target.value = formatThousands(e.target.value); state.emergencyFund.current_amount = onlyDigits(e.target.value); };
+    // Các ô trong form thêm/sửa khoản nợ (current_balance/minimum_payment/flat_fee_amount) chỉ cần
+    // format HIỂN THỊ ngay lúc gõ — giá trị thật được đọc lại (bỏ dấu chấm) ở readDebtForm() lúc bấm
+    // Lưu, không cần đồng bộ vào state mỗi phím gõ như các ô có state riêng.
+    container.querySelectorAll('input[data-money]').forEach(el=>{
+      el.oninput = ()=>{ el.value = formatThousands(el.value); };
+    });
     const efSaveEl = container.querySelector('#ef-save');
     if(efSaveEl) efSaveEl.onclick = saveEmergencyFund;
 
     container.querySelectorAll('[data-new]').forEach(el=>{
-      el.oninput = ()=>{ state.newDebt[el.getAttribute('data-new')] = el.type==='checkbox' ? el.checked : el.value; persistDraft(); };
+      el.oninput = ()=>{
+        if(el.hasAttribute('data-money')){ el.value = formatThousands(el.value); state.newDebt[el.getAttribute('data-new')] = onlyDigits(el.value); }
+        else state.newDebt[el.getAttribute('data-new')] = el.type==='checkbox' ? el.checked : el.value;
+        persistDraft();
+      };
     });
     container.querySelectorAll('[data-new-costtype]').forEach(el=>{
       el.onclick = ()=>{ state.newDebt.cost_type = el.getAttribute('data-new-costtype'); persistDraft(); draw(); };
@@ -488,7 +498,7 @@ function render(container, ctx){
       el.onclick = ()=>{ submitGratitude(el.getAttribute('data-submit-gratitude')); };
     });
     const payAmountEl = container.querySelector('#pay-amount');
-    if(payAmountEl) payAmountEl.oninput = (e)=>{ state.paymentForm.amount = e.target.value; };
+    if(payAmountEl) payAmountEl.oninput = (e)=>{ e.target.value = formatThousands(e.target.value); state.paymentForm.amount = onlyDigits(e.target.value); };
     const payDateEl = container.querySelector('#pay-date');
     if(payDateEl) payDateEl.oninput = (e)=>{ state.paymentForm.date = e.target.value; };
     container.querySelectorAll('[data-submit-payment]').forEach(el=>{
@@ -500,7 +510,8 @@ function render(container, ctx){
 
     const extraEl = container.querySelector('#extra-payment');
     if(extraEl) extraEl.oninput = (e)=>{
-      state.extraPerMonth = e.target.value;
+      e.target.value = formatThousands(e.target.value);
+      state.extraPerMonth = onlyDigits(e.target.value);
       const resultsEl = container.querySelector('#strategy-results');
       if(resultsEl) resultsEl.innerHTML = strategyResultsHtml();
     };

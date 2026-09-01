@@ -117,6 +117,11 @@ function tcPriceAnchorHtml(profile){
 // nào đang được thanh toán chỉ qua số tiền, không cần đổi định dạng ref_code.
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 
+// Public key VAPID cho Web Push — DÙNG CHUNG đúng 1 cặp key cho cả hệ sinh thái (copy verbatim từ
+// nhan-hieu/js/app-shell.js, đổi key này thì phải đổi VAPID_PRIVATE_KEY tương ứng ở Vercel env, xem
+// api/_lib/push.js). tai-khoan.js dùng key này lúc bật "Nhắc ghi chép".
+const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY4xz2SisvwpU3IWo_ciiGTMxoLJq42QzkE';
+
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null, tcReviewPromptEligible:false };
 
 function sidebarFootHtml(){
@@ -156,6 +161,13 @@ async function initApp(){
   // khung khách (renderGuestShell()) cho đúng route công khai, xem GUEST_ALLOWED_ROUTES ở trên.
   AppState.route = currentRouteFromHash();
   renderApp();
+
+  // Cảnh báo trình duyệt trong app (Facebook/Instagram/Zalo...) NGAY LẦN ĐẦU VÀO, kể cả CHƯA đăng
+  // nhập — đây chính là lúc khách bấm link chia sẻ từ Facebook/Zalo vào làm bài Chấm Điểm Nghiệp
+  // Tiền (route công khai, xem GUEST_ALLOWED_ROUTES), rồi thoát ra là mất hẳn kết quả vì trình duyệt
+  // trong app không cài được PWA/không nhận thông báo (2026-09-01, chị Quỳnh phản ánh). Gọi ĐỘC LẬP
+  // với maybeShowInstallPrompt() (cái đó chỉ chạy sau tour, chỉ cho user đã đăng nhập).
+  if(window.maybeShowInAppBrowserBanner) window.maybeShowInAppBrowserBanner();
 
   // Kiểm tra định kỳ thông báo tính năng mới — để người ĐANG MỞ SẴN app (không tải lại trang) cũng
   // thấy popup mà không cần tắt/mở lại app (giống cơ chế bên nhan-hieu/js/app-shell.js).

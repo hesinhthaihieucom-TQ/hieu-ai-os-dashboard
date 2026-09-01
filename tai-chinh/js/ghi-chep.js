@@ -154,6 +154,7 @@ function render(container, ctx){
       <div class="card" style="margin-bottom:20px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Ngày</label>
         <input type="date" id="gc-date" value="${esc(state.date)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Chỉ ghi được 1 lần/tuần cũng không sao — chọn lại đúng ngày ở đây cho từng khoản, ghi bù cả tuần vẫn ra đúng dữ liệu.</div>
 
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Loại giao dịch</label>
         <div class="chips" id="gc-type-chips">
@@ -165,7 +166,7 @@ function render(container, ctx){
         <input type="text" id="gc-desc" placeholder="${isIncome?'VD: Lương tháng 8':'VD: Ăn trưa, đổ xăng...'}" value="${esc(state.form.description)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
 
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Số tiền (đồng)</label>
-        <input type="number" id="gc-amount" min="0" placeholder="0" value="${esc(state.form.amount)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <input type="text" inputmode="numeric" id="gc-amount" placeholder="0" value="${esc(formatThousands(state.form.amount))}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
 
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Bạn đang cảm nhận gì lúc này?', 'dong_tien_xanh', 'dong_tien_do')}</label>
         <div class="chips" id="gc-vibe-chips">
@@ -261,7 +262,8 @@ function render(container, ctx){
     if(customInput) customInput.oninput = (e)=>{ state.form.category_label = e.target.value; persistDraft(); };
     container.querySelector('#gc-desc').oninput = (e)=>{ state.form.description = e.target.value; persistDraft(); };
     container.querySelector('#gc-amount').oninput = (e)=>{
-      state.form.amount = e.target.value;
+      state.form.amount = onlyDigits(e.target.value);
+      e.target.value = formatThousands(state.form.amount);
       // Chỉ cập nhật riêng ô gợi ý chia quỹ, KHÔNG gọi draw() lại toàn bộ — nếu không sẽ mất focus
       // ngay sau ký tự đầu tiên gõ vào (innerHTML bị thay hoàn toàn mỗi lần gõ).
       const splitEl = container.querySelector('#gc-fund-split');
