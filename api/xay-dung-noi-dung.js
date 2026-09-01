@@ -143,7 +143,11 @@ module.exports = async (req, res) => {
       const userContent = materialUrl
         ? [{ type: 'document', source: { type: 'url', url: materialUrl } }, { type: 'text', text: `${outlineText}\n\nCó tài liệu gốc đính kèm — outline cấp 2 phải phản ánh đúng cấu trúc/nội dung thật trong tài liệu đó, không bịa thêm ngoài phạm vi tài liệu + thông tin đã cho.` }]
         : outlineText;
-      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_OUTLINE2 });
+      // outline_cap_1 có thể tới 7 phần, mỗi phần nhiều mục con (tieu_de/ket_qua_cu_the/noi_dung_con/
+      // bai_tap/vi_du_goi_y) + mo_dau/ket — mặc định 6000 token của callClaude() từng bị cắt giữa
+      // chừng với outline nhiều phần (báo lỗi thật, Quỳnh gặp 2026-09-01), nâng lên 8000 giống mức
+      // đã dùng cho output nhiều mục tương tự ở api/tim-san-pham-phu-hop.js.
+      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_OUTLINE2, maxTokens: 8000 });
       res.status(200).json({ result });
       return;
     }
