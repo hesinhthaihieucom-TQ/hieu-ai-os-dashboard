@@ -393,13 +393,22 @@ function render(container, ideaRow) {
 
   // Ghi nội dung sửa tay (bấm "Lưu chỉnh sửa") KHÔNG gọi AI — thuần lưu textarea vào đúng chỗ trong
   // state.sections (viet.noi_dung ở bản nháp, review.ban_da_chinh ở bản hoàn chỉnh) rồi lưu DB.
+  // KHÔNG gọi draw() ngay sau khi lưu — màn hình sẽ y hệt như trước (cùng chữ trong ô), khiến người
+  // dùng không chắc đã lưu hay chưa (Quỳnh hỏi "chưa được à?" 2026-09-01). Hiện xác nhận "✓ Đã lưu"
+  // ngay trên nút — giống đúng cách các nút "Copy link"/"Copy caption" đã làm — rồi mới draw().
   async function saveManualEdit(selector, applyFn) {
     const ta = container.querySelector(selector);
     const s = state.sections[state.activeIndex];
     applyFn(s, ta.value);
     await saveIdeaResult({ sections: state.sections });
     state.error = null;
-    draw();
+    const btn = container.querySelector('#xdnd-save-edit-btn');
+    if (btn) {
+      btn.textContent = '✓ Đã lưu';
+      setTimeout(() => { draw(); }, 1200);
+    } else {
+      draw();
+    }
   }
 
   async function exportEbook() {
