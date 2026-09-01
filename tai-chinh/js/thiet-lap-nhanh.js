@@ -891,7 +891,7 @@ function render(container, ctx){
           <div class="label">Tài sản ròng${state.netWorthMonth?` (${esc(state.netWorthMonth)})`:''}</div>
         </div>
         <div class="source-card"><div class="ic" style="font-size:17px;${state.totalDebt>0?'color:var(--danger);':''}">${state.totalDebt.toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
-        <div class="source-card"><div class="ic" style="font-size:17px;">${state.tichLuy==null?'Chưa có':state.tichLuy.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ (<a href="#tich-luy" style="color:var(--accent);">xem →</a>)</div></div>
+        <div class="source-card"><div class="ic" style="font-size:17px;">${state.tichLuy==null?'Chưa có':state.tichLuy.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ (<a href="#danh-muc" style="color:var(--accent);">xem →</a>)</div></div>
       </div>
 
       ${state.upcomingDebts.length>0 ? `

@@ -125,7 +125,7 @@ function render(container, ctx){
             <div class="source-card"><div class="ic" style="font-size:16px;${netWorthChange==null?'':`color:${netWorthChange>=0?'var(--accent)':'var(--danger)'};`}">${netWorthChange==null?'Chưa đủ dữ liệu':(netWorthChange>=0?'+':'')+netWorthChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tài sản ròng thay đổi</div></div>
             <div class="source-card"><div class="ic" style="font-size:16px;${tichLuyChange==null?'':`color:${tichLuyChange>=0?'var(--accent)':'var(--danger)'};`}">${tichLuyChange==null?'Chưa đủ dữ liệu':(tichLuyChange>=0?'+':'')+tichLuyChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ thay đổi</div></div>
           </div>
-          <div class="hint-box" style="margin-top:10px;">Dựa vào cân đối tài sản đã lưu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> đầu năm và tháng gần nhất trong năm ${state.year}. Xem xu hướng chi tiết hơn ở <a href="#tich-luy" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>.</div>
+          <div class="hint-box" style="margin-top:10px;">Dựa vào cân đối tài sản đã lưu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> đầu năm và tháng gần nhất trong năm ${state.year}. Xem xu hướng chi tiết hơn ở <a href="#danh-muc" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>.</div>
         </div>
 
         <div class="section">
