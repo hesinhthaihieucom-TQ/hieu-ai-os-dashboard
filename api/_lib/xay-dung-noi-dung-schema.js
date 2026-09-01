@@ -94,7 +94,16 @@ const TOOL_VIET = {
     properties: {
       noi_dung: {
         type: 'string',
-        description: 'Nội dung ĐẦY ĐỦ, CHI TIẾT của phần này — đây là sản phẩm số người đọc TRẢ TIỀN mua, không phải bản tóm tắt sơ sài. Viết dài khoảng 500-800 từ (không tính ví dụ/bài tập), khai triển từng ý trong "nội dung con" thành đoạn văn đầy đủ có giải thích/lý do/cách làm cụ thể, không liệt kê gạch đầu dòng cụt lủn. Theo đúng giọng văn/đối tượng đã cho, có ví dụ thật, không viết chung chung.' + XUONG_DONG,
+        description: 'Nội dung ĐẦY ĐỦ, SÂU của phần này — đây là sản phẩm số người đọc TRẢ TIỀN mua, không phải bản tóm tắt sơ sài. KHÔNG giới hạn theo số từ cố định — viết tới khi thật sự hết ý cần nói, theo các nguyên tắc: '
+          + '(1) mỗi ý phải TỰ ĐỦ — có khái niệm, VÌ SAO quan trọng, và CÁCH LÀM cụ thể, không dừng ở gợi ý mà thiếu lý do/cách làm; '
+          + '(2) mỗi luận điểm chính có ít nhất 1 VÍ DỤ ĐIỂN HÌNH gắn với đời sống thật của đúng đối tượng, đặt ngay tại chỗ đó, không dồn hết ví dụ vào cuối; '
+          + '(3) đào tới GỐC RỄ vấn đề (tại sao vấn đề này thật sự tồn tại), không dừng ở mô tả triệu chứng bề mặt, và chạm đúng ĐIỂM ĐAU/cảm xúc thật của người đọc; '
+          + '(4) vẽ rõ bức tranh "trước/sau" — sẽ khác thế nào nếu áp dụng đúng phần này, không chỉ chẩn đoán vấn đề rồi dừng lại; '
+          + '(5) ở đoạn chạm điểm đau, viết ra đúng "tiếng lòng" của người đọc — như đang nói hộ suy nghĩ/cảm giác thầm kín họ đang có, không chỉ mô tả vấn đề từ bên ngoài; '
+          + '(6) chủ động trả lời trước các câu hỏi/phản bác người đọc có thể nghĩ khi đọc tới đó; '
+          + '(7) nếu có nhiều bước/tình huống khác nhau, viết rõ TỪNG cái, không gộp chung "làm tương tự cho các trường hợp khác"; '
+          + '(8) không lặp lại ý đã nói ở phần trước, nếu nhắc lại phải đào sâu thêm góc mới. '
+          + 'Theo đúng giọng văn/đối tượng đã cho, không viết chung chung, không bịa số liệu/tên riêng cụ thể làm như đã kiểm chứng khi không có căn cứ.' + XUONG_DONG,
       },
       vi_du: { type: 'string', description: 'Ví dụ minh hoạ cụ thể được lồng vào nội dung (tách riêng để dễ kiểm tra ở bước review) — ưu tiên có số liệu/tình huống cụ thể (không phải mô tả trừu tượng).' },
       bai_tap: {

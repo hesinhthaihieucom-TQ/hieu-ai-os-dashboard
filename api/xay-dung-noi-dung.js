@@ -20,7 +20,7 @@ const { signMaterialUrl } = require('./_lib/material-storage');
 const SYSTEM_PROMPT = `Bạn là chuyên gia thiết kế nội dung sản phẩm số — giúp người dùng xây nội dung chất lượng cho sản phẩm số họ đã chọn, từng bước một, luôn dựa sát vào đối tượng/định dạng/outline đã có.
 
 NGUYÊN TẮC BẮT BUỘC:
-- Khi viết nội dung đầy đủ 1 phần (bước viết, KHÔNG áp dụng cho bước xây outline — outline vẫn phải ngắn gọn dạng khung sườn): đây là sản phẩm số người đọc TRẢ TIỀN mua, nội dung phải đủ SÂU và CHI TIẾT để xứng đáng với số tiền bỏ ra — khai triển đầy đủ từng ý thành đoạn văn có giải thích/lý do/cách làm cụ thể, không viết ngắn gọn qua loa kiểu tóm tắt.
+- Khi viết nội dung đầy đủ 1 phần (bước viết, KHÔNG áp dụng cho bước xây outline — outline vẫn phải ngắn gọn dạng khung sườn): đây là sản phẩm số người đọc TRẢ TIỀN mua, nội dung phải đủ SÂU để xứng đáng với số tiền bỏ ra. KHÔNG giới hạn theo số từ — viết tới khi thật sự hết ý, đào tới GỐC RỄ vấn đề (không dừng ở triệu chứng bề mặt), chạm đúng điểm đau thật của người đọc, luôn có ví dụ điển hình gắn với đời sống thật của họ (chi tiết đầy đủ ở schema field noi_dung).
 - Không chung chung, không sáo rỗng — mỗi phần phải đủ cụ thể để người đọc áp dụng được ngay.
 - Luôn có ít nhất 1 ví dụ thật hoặc hướng ví dụ hợp lý — KHÔNG bịa số liệu/tên riêng cụ thể làm như đã kiểm chứng khi không có căn cứ.
 - Mỗi phần phải có 1 bài tập/checklist làm được NGAY, không cần giải thích thêm — DẠNG checklist để tick hoặc câu hỏi có chỗ trống để người đọc TỰ VIẾT RA câu trả lời bằng chữ của họ, không phải đoạn mô tả lý thuyết nên làm gì (tự viết ra thì mới nhớ lâu, mới áp dụng thật, hơn là chỉ đọc-hiểu thụ động).
@@ -189,7 +189,10 @@ module.exports = async (req, res) => {
       const userContent = materialUrl
         ? [{ type: 'document', source: { type: 'url', url: materialUrl } }, { type: 'text', text: `${vietText}\n\nCó tài liệu gốc đính kèm — ưu tiên bám sát nội dung/quan điểm/ví dụ THẬT trong tài liệu đó khi viết phần này, không viết chung chung như thể chưa có tài liệu.` }]
         : vietText;
-      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_VIET, maxTokens: 6000 });
+      // Đã bỏ giới hạn số từ cứng (2026-09-01, theo yêu cầu Quỳnh — để AI tự quyết định độ dài cần
+      // thiết thay vì ép khung), nội dung có thể dài hơn hẳn mức cũ khi chủ đề thật sự cần đào sâu —
+      // nâng max_tokens theo đúng bài học đã lặp lại nhiều lần trong ngày (đừng để cắt giữa chừng).
+      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_VIET, maxTokens: 12000, timeoutMs: 200000 });
       res.status(200).json({ result });
       return;
     }

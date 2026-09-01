@@ -505,13 +505,15 @@ function render(container, ideaRow) {
       }, 150000);
       stopProgress();
       state.workingStep = 'viet'; draw();
-      stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 25);
+      // Không còn giới hạn số từ cứng — nội dung có thể dài hơn, thời gian sinh chữ lâu hơn (khớp
+      // max_tokens=12000/timeoutMs=200000 đã nâng ở server).
+      stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 40);
       const vietData = await callApi('api/xay-dung-noi-dung', {
         step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath: getMaterialPath(),
         taiLieuKinhNghiem: state.taiLieu || null,
         phanTruoc: phanTruoc ? { tieu_de: phanTruoc.tieu_de, ket_qua_cu_the: phanTruoc.ket_qua_cu_the } : null,
         phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
-      }, 150000);
+      }, 200000);
       state.sections[index] = { nghien_cuu: nghienCuuData.result, viet: vietData.result, review: null, status: 'viet-done', used_web_search: !!useWebSearch };
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-draft';
