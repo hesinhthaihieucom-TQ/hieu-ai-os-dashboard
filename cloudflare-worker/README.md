@@ -4,8 +4,9 @@ Worker đứng trước domain `hesinhthaihieu.com`, proxy ngược từng path 
 (`worker.js`) sang đúng thư mục con tương ứng trên Vercel (`hieu-ai-os-dashboard.vercel.app`).
 
 **Đây KHÔNG phải phần của `hieu-dashboard` repo trên Vercel** — nó là 1 Cloudflare Worker riêng,
-được lưu source ở đây (trong repo này) để dễ theo dõi thay đổi, nhưng **không tự deploy theo git
-push** như phần còn lại của repo.
+được lưu source ở đây (trong repo này) để dễ theo dõi thay đổi. Từ 2026-08-29 đã nối Git nên **git
+push lên `main` là tự deploy** (xem mục "Deploy" bên dưới) — chỉ riêng bước thêm Route mới trong
+Cloudflare Dashboard vẫn phải làm tay.
 
 ## Đổi route (thêm/sửa app mới)
 
