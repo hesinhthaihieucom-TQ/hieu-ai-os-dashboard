@@ -62,7 +62,7 @@ const TOOL_NGHIEN_CUU = {
       },
       huong_vi_du: {
         type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4,
-        description: 'Ví dụ/tình huống minh hoạ cho chủ đề này. NẾU có khối "THÔNG TIN TỪ WEB" kèm theo: ưu tiên dùng case study/câu chuyện thành công-thất bại THẬT có số liệu/nguồn cụ thể tìm được từ đó (không còn phải mơ hồ). NẾU KHÔNG có thông tin web: chỉ gợi HƯỚNG ví dụ, không bịa số liệu/tên riêng cụ thể giả làm như đã kiểm chứng.',
+        description: 'Ví dụ/tình huống minh hoạ cho chủ đề này. NẾU có khối "THÔNG TIN TỪ WEB" kèm theo: ưu tiên dùng case study/câu chuyện thành công-thất bại THẬT có số liệu/nguồn cụ thể tìm được từ đó (không còn phải mơ hồ). NẾU KHÔNG có thông tin web: được dùng câu chuyện có thật của danh nhân/doanh nhân/người nổi tiếng NẾU đó là sự kiện đã được biết rộng rãi, chắc chắn đúng — không chắc chắn thì chỉ gợi HƯỚNG ví dụ (tình huống điển hình, không nêu tên người thật), tuyệt đối không bịa số liệu/tên riêng cụ thể giả làm như đã kiểm chứng.',
       },
       rao_can_tam_ly: {
         type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4,
@@ -96,7 +96,7 @@ const TOOL_VIET = {
         type: 'string',
         description: 'Nội dung ĐẦY ĐỦ, SÂU của phần này — đây là sản phẩm số người đọc TRẢ TIỀN mua, không phải bản tóm tắt sơ sài. KHÔNG giới hạn theo số từ cố định — viết tới khi thật sự hết ý cần nói, theo các nguyên tắc: '
           + '(1) mỗi ý phải TỰ ĐỦ — có khái niệm, VÌ SAO quan trọng, và CÁCH LÀM cụ thể, không dừng ở gợi ý mà thiếu lý do/cách làm; '
-          + '(2) mỗi luận điểm chính có ít nhất 1 VÍ DỤ ĐIỂN HÌNH gắn với đời sống thật của đúng đối tượng, đặt ngay tại chỗ đó, không dồn hết ví dụ vào cuối; '
+          + '(2) mỗi luận điểm chính có ít nhất 1 VÍ DỤ ĐIỂN HÌNH THẬT, đặt ngay tại chỗ đó, không dồn hết ví dụ vào cuối — ưu tiên câu chuyện có thật của danh nhân/doanh nhân/người nổi tiếng NẾU đó là sự kiện/chi tiết đã được biết rộng rãi, chắc chắn đúng, hoặc tình huống đời thường gắn với đúng đối tượng; TUYỆT ĐỐI KHÔNG bịa/đoán câu nói, số liệu, chi tiết cụ thể rồi gán cho người có thật khi không chắc chắn — nếu không chắc 1 chi tiết, chuyển sang ví dụ tình huống điển hình KHÔNG nêu tên người thật cụ thể; '
           + '(3) đào tới GỐC RỄ vấn đề (tại sao vấn đề này thật sự tồn tại), không dừng ở mô tả triệu chứng bề mặt, và chạm đúng ĐIỂM ĐAU/cảm xúc thật của người đọc; '
           + '(4) vẽ rõ bức tranh "trước/sau" — sẽ khác thế nào nếu áp dụng đúng phần này, không chỉ chẩn đoán vấn đề rồi dừng lại; '
           + '(5) ở đoạn chạm điểm đau, viết ra đúng "tiếng lòng" của người đọc — như đang nói hộ suy nghĩ/cảm giác thầm kín họ đang có, không chỉ mô tả vấn đề từ bên ngoài; '
@@ -105,7 +105,7 @@ const TOOL_VIET = {
           + '(8) không lặp lại ý đã nói ở phần trước, nếu nhắc lại phải đào sâu thêm góc mới. '
           + 'Theo đúng giọng văn/đối tượng đã cho, không viết chung chung, không bịa số liệu/tên riêng cụ thể làm như đã kiểm chứng khi không có căn cứ.' + XUONG_DONG,
       },
-      vi_du: { type: 'string', description: 'Ví dụ minh hoạ cụ thể được lồng vào nội dung (tách riêng để dễ kiểm tra ở bước review) — ưu tiên có số liệu/tình huống cụ thể (không phải mô tả trừu tượng).' },
+      vi_du: { type: 'string', description: 'Ví dụ minh hoạ cụ thể được lồng vào nội dung (tách riêng để dễ kiểm tra ở bước review) — ưu tiên câu chuyện THẬT (danh nhân/doanh nhân/người nổi tiếng đã được biết rộng rãi, hoặc tình huống đời thường cụ thể) hơn mô tả trừu tượng. Không bịa chi tiết/số liệu/câu nói gán cho người có thật khi không chắc chắn — nếu không chắc, dùng tình huống điển hình không nêu tên người thật.' },
       bai_tap: {
         type: 'string',
         description: 'Bài tập/checklist cuối phần, làm được ngay, không cần giải thích thêm — DẠNG checklist để tick hoặc câu hỏi có chỗ trống để người đọc tự viết ra câu trả lời của họ (không phải đoạn mô tả lý thuyết nên làm gì). PHẢI gắn với tình huống CỤ THỂ, thật, có thể xảy ra trong đời sống của đúng đối tượng đã cho (nhắc tới hoàn cảnh/con số/lựa chọn quen thuộc với họ) — không phải câu hỏi chung chung ai cũng viết được.',
