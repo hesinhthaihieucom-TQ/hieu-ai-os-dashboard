@@ -53,6 +53,8 @@ function render(container, ctx){
     // Tab "Chi tiết" (donut theo danh mục) / "Xu hướng" (cột theo từng ngày trong tuần) — kiểu Money
     // Lover, 2026-08-24 góp ý Quỳnh. Không lưu draft — chỉ là cách xem, không phải dữ liệu.
     breakdownTab: { expense:'chi-tiet', income:'chi-tiet' },
+    budgets: {},
+    spentBeforeThisWeek: {},
   };
   // Draft khoá riêng theo TỪNG TUẦN — không thì đổi tuần (Tuần trước/sau) sẽ vô tình dán nhầm bản
   // nháp của tuần khác vào tuần đang xem (góp ý Quỳnh 2026-08-22: gõ dở bị mất khi rời trang).
@@ -68,17 +70,52 @@ function render(container, ctx){
     return `${s.getDate()}/${s.getMonth()+1} — ${e.getDate()}/${e.getMonth()+1}/${e.getFullYear()}`;
   }
 
+  // Tuần thuộc về tháng nào = tháng của chính ngày Thứ Hai đầu tuần (state.weekStart) — quy ước đơn
+  // giản cho tuần giao 2 tháng (VD tuần 28/8-3/9 tính hẳn vào tháng 8, không chia đôi ngân sách).
+  function monthOfWeek(){ return isoDate(state.weekStart).slice(0,7); }
+
+  // Tất cả các Thứ Hai (đúng định nghĩa "tuần" app dùng, startOfWeek() ở util.js) rơi vào tháng này —
+  // dùng để chia đều hạn mức ngân sách/tháng cho từng tuần, và biết tuần đang xem là tuần thứ mấy/
+  // còn lại bao nhiêu tuần để phân bổ lại phần dư/thiếu của các tuần trước.
+  function mondaysInMonth(monthStr){
+    const [y, m] = monthStr.split('-').map(Number);
+    const list = [];
+    const d = new Date(y, m-1, 1);
+    const dow = d.getDay();
+    const offset = dow===0 ? 1 : (dow===1 ? 0 : 8-dow);
+    d.setDate(d.getDate()+offset);
+    while(d.getMonth() === m-1){
+      list.push(new Date(d));
+      d.setDate(d.getDate()+7);
+    }
+    return list;
+  }
+
   async function load(){
     state.loading = true; draw();
     const weekStartIso = isoDate(state.weekStart);
     const weekEndIso = isoDate(weekEnd());
-    const [entriesRes, reflectionRes] = await Promise.all([
+    const month = monthOfWeek();
+    const [entriesRes, reflectionRes, budgetsRes, priorSpendRes] = await Promise.all([
       ctx.supabase.from('tc_finance_entries').select('*')
         .eq('user_id', ctx.user.id).gte('entry_date', weekStartIso).lte('entry_date', weekEndIso),
       ctx.supabase.from('tc_weekly_reflections').select('*')
         .eq('user_id', ctx.user.id).eq('week_start', weekStartIso).maybeSingle(),
+      ctx.supabase.from('tc_budgets').select('*').eq('user_id', ctx.user.id).eq('month', month),
+      // Chi tiêu TRƯỚC tuần này trong cùng tháng (không lấy trùng tuần đang xem, đã có ở entriesRes)
+      // — để biết ngân sách tháng còn lại bao nhiêu trước khi chia cho các tuần còn lại.
+      ctx.supabase.from('tc_finance_entries').select('category_label, amount')
+        .eq('user_id', ctx.user.id).eq('type', 'expense')
+        .gte('entry_date', month + '-01').lt('entry_date', weekStartIso),
     ]);
     state.entries = entriesRes.data || [];
+    state.budgets = {};
+    (budgetsRes.data||[]).forEach(b=>{ state.budgets[b.category_label] = Number(b.limit_amount)||0; });
+    state.spentBeforeThisWeek = {};
+    (priorSpendRes.data||[]).forEach(e=>{
+      const key = e.category_label || 'Khác';
+      state.spentBeforeThisWeek[key] = (state.spentBeforeThisWeek[key]||0) + Number(e.amount);
+    });
     const r = reflectionRes.data;
     state.reflection = r
       ? { regret_expense: r.regret_expense||'', unexpected_expense: r.unexpected_expense||'', spending_feeling: r.spending_feeling||'', went_well: r.went_well||'', to_change: r.to_change||'', relationship_score: r.relationship_score||null, health_score: r.health_score||null, purpose_score: r.purpose_score||null, parents_connection_score: r.parents_connection_score||null, finance_mindset_score: r.finance_mindset_score||null, reaction_to_others_success: r.reaction_to_others_success||null }
@@ -110,7 +147,10 @@ function render(container, ctx){
     const income = state.entries.filter(e=>e.type==='income');
     const expense = state.entries.filter(e=>e.type==='expense');
     const totalIncome = income.reduce((s,e)=>s+Number(e.amount),0);
-    const totalExpense = expense.reduce((s,e)=>s+Number(e.amount),0);
+    // Tiền chuyển vào Tích Lũy KHÔNG tính vào "chi tiêu thật" — loại khỏi tổng để Tỷ lệ tiết kiệm
+    // không bị trừ 2 lần (xem comment TICH_LUY_CATEGORY_LABEL ở util.js). Vẫn hiện đủ ở breakdown
+    // theo danh mục bên dưới.
+    const totalExpense = expense.filter(e=>e.category_label !== TICH_LUY_CATEGORY_LABEL).reduce((s,e)=>s+Number(e.amount),0);
     const savingsRate = totalIncome>0 ? Math.round(((totalIncome-totalExpense)/totalIncome)*100) : 0;
 
     function groupByCategory(list){
@@ -138,6 +178,52 @@ function render(container, ctx){
     const incomeByDay = groupByDayOfWeek(income);
 
     const top3 = [...expense].sort((a,b)=>Number(b.amount)-Number(a.amount)).slice(0,3);
+
+    // Chia hạn mức ngân sách/tháng (đặt ở Mục Tiêu & Cam Kết) cho tuần này — KHÔNG chia đều máy móc
+    // theo 1/N cố định, mà tính lại mỗi lần dựa trên phần NGÂN SÁCH THÁNG CÒN LẠI (sau khi trừ các
+    // tuần trước đã tiêu bao nhiêu) chia cho SỐ TUẦN CÒN LẠI — tuần nào tiêu vượt/thiếu so với gợi ý,
+    // phần chênh lệch tự động dồn/bớt cho các tuần sau trong cùng tháng, đúng ý "nên phân bổ cho các
+    // tuần như nào" (2026-09-01, chị Quỳnh yêu cầu) thay vì cứ lặp lại đúng 1 con số mỗi tuần.
+    function weeklyBudgetHtml(){
+      const categories = Object.keys(state.budgets).filter(k=>state.budgets[k] > 0);
+      if(!categories.length){
+        return `<div class="hint-box">Chưa đặt hạn mức ngân sách tháng này — đặt ở <a href="#muc-tieu" style="color:var(--accent);font-weight:600;">Mục Tiêu & Cam Kết →</a> để tự động chia theo từng tuần ở đây.</div>`;
+      }
+      const mondays = mondaysInMonth(monthOfWeek());
+      const weeksTotal = mondays.length;
+      const thisIso = isoDate(state.weekStart);
+      let thisIndex = mondays.findIndex(d=>isoDate(d)===thisIso) + 1;
+      if(thisIndex <= 0) thisIndex = 1;
+      const weeksRemaining = Math.max(1, weeksTotal - thisIndex + 1);
+      const spentThisWeekByCategory = {};
+      expenseByCategory.forEach(c=>{ spentThisWeekByCategory[c.label] = c.amount; });
+
+      return `
+        <div class="hint-box" style="margin-bottom:14px;">Hạn mức tháng ${monthOfWeek().split('-')[1]}/${monthOfWeek().split('-')[0]} chia cho ${weeksRemaining} tuần còn lại (kể cả tuần này) — tuần nào tiêu ít/nhiều hơn gợi ý, phần chênh lệch tự dồn/bớt cho các tuần sau.</div>
+        ${categories.map(key=>{
+          const monthlyLimit = state.budgets[key];
+          const spentBefore = state.spentBeforeThisWeek[key] || 0;
+          const remainingBudget = monthlyLimit - spentBefore;
+          const suggestedThisWeek = remainingBudget / weeksRemaining;
+          const spentThisWeek = spentThisWeekByCategory[key] || 0;
+          const remainingThisWeek = suggestedThisWeek - spentThisWeek;
+          const overspentMonth = remainingBudget < 0;
+          return `
+            <div style="padding:10px 0;border-bottom:1px solid var(--line);">
+              <div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:600;">
+                <span>${esc(key)}</span>
+                <span style="color:${remainingThisWeek<0?'var(--danger)':'var(--accent)'};">${remainingThisWeek<0?'Vượt ':'Còn '}${Math.abs(Math.round(remainingThisWeek)).toLocaleString('vi-VN')}đ</span>
+              </div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">
+                ${overspentMonth
+                  ? `Đã vượt hạn mức cả tháng ${Math.abs(Math.round(remainingBudget)).toLocaleString('vi-VN')}đ trước tuần này — nên tạm dừng chi mục này tới hết tháng.`
+                  : `Gợi ý tuần này: ${Math.round(suggestedThisWeek).toLocaleString('vi-VN')}đ (ngân sách tháng còn ${Math.round(remainingBudget).toLocaleString('vi-VN')}đ ÷ ${weeksRemaining} tuần) — đã chi ${Math.round(spentThisWeek).toLocaleString('vi-VN')}đ.`}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      `;
+    }
 
     return `
       <span class="tour-trigger" id="tt-start-tour">❓ Hướng dẫn</span>
@@ -177,6 +263,11 @@ function render(container, ctx){
               <b style="color:var(--danger);">${Number(e.amount).toLocaleString('vi-VN')}đ</b>
             </div>
           `).join('')}
+        </div>
+
+        <div class="section">
+          <h3>Ngân sách tuần này</h3>
+          ${weeklyBudgetHtml()}
         </div>
 
         <div class="section">

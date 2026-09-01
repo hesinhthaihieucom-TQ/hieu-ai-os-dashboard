@@ -335,8 +335,14 @@ const SUGGESTED_EXPENSE_CATEGORIES = [
   'Ăn uống', 'Di chuyển / Xăng xe', 'Mua sắm / Quần áo', 'Giải trí / Du lịch',
   'Sức khỏe / Làm đẹp', 'Hoá đơn (điện, nước, mạng)', 'Học phí cho con', 'Thuê nhà',
   'Trả góp nhà / xe', 'Đồ dùng thiết yếu', 'Giáo dục / Sách vở', 'Quà tặng / Việc xã hội',
-  'Trả nợ', 'Khác',
+  'Tích Lũy', 'Trả nợ', 'Khác',
 ];
+// Danh mục RIÊNG cho hành động "chuyển tiền vào tiết kiệm" (2026-09-01, góp ý Quỳnh) — ghi dưới dạng
+// 1 dòng chi để có chỗ "ghi công" hành động để dành (giống app Money Lover), NHƯNG không phải tiền
+// mất đi thật nên PHẢI loại khỏi Tổng chi tiêu/Tỷ lệ tiết kiệm ở tong-ket-tuan.js/tong-ket-thang.js
+// — nếu không loại, tiền để dành bị trừ 2 lần (vừa tính là "chi" vừa không còn nằm trong "thu-chi"),
+// làm Tỷ lệ tiết kiệm hiện THẤP hơn thực tế. Vẫn hiện bình thường ở biểu đồ/list theo danh mục.
+const TICH_LUY_CATEGORY_LABEL = 'Tích Lũy';
 const SUGGESTED_INCOME_CATEGORIES = [
   'Lương', 'Thưởng', 'Hoa hồng kinh doanh', 'Đầu tư / Lãi', 'Được tặng / biếu', 'Khác',
 ];

@@ -142,7 +142,9 @@ function render(container, ctx){
     const entries = entriesRes.data || [];
     state.cashFlow = {
       income: entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0),
-      expense: entries.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0),
+      // Tiền chuyển vào Tích Lũy không tính vào "chi tiêu thật" — loại khỏi tổng để Tỷ lệ tiết kiệm
+      // không bị trừ 2 lần (xem comment TICH_LUY_CATEGORY_LABEL ở util.js).
+      expense: entries.filter(e=>e.type==='expense' && e.category_label!==TICH_LUY_CATEGORY_LABEL).reduce((s,e)=>s+Number(e.amount),0),
     };
     state.expenseEntries = entries.filter(e=>e.type==='expense');
     state.budgetActuals = {};
