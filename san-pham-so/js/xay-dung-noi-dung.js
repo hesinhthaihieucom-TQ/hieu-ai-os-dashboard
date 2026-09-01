@@ -24,6 +24,7 @@ function render(container, ideaRow) {
     taiLieu: '',
     activeIndex: null,
     workingStep: null, // 'nghien-cuu' | 'viet' | 'review' — hiện text tiến trình khi đang chạy chuỗi
+    ebookResult: ideaRow.ebook_result || null, // {heyzineUrl, thumbnail, pdfStoragePath} — giữ qua reload
     error: null,
   };
 
@@ -39,6 +40,7 @@ function render(container, ideaRow) {
     if (state.screen === 'intro') return introHtml();
     if (state.screen === 'generating-outline2') return `<div class="loading"><div class="spinner"></div><p>Đang xây outline chi tiết…</p></div>`;
     if (state.screen === 'outline2') return outline2Html();
+    if (state.screen === 'exporting-ebook') return `<div class="loading"><div class="spinner"></div><p>Đang xuất PDF & tạo sách lật…</p></div>`;
     if (state.screen === 'section-working') return `<div class="loading"><div class="spinner"></div><p>${esc(workingLabel())}</p></div>`;
     if (state.screen === 'section-draft') return sectionDraftHtml();
     if (state.screen === 'section-review-loading') return `<div class="loading"><div class="spinner"></div><p>Đang kiểm tra chất lượng…</p></div>`;
@@ -64,11 +66,37 @@ function render(container, ideaRow) {
     `;
   }
 
+  function ebookExportCardHtml() {
+    if (state.ebookResult) {
+      return `
+        <div class="card">
+          <h2 style="font-size:16px;">📖 Ebook đã xuất</h2>
+          ${state.ebookResult.thumbnail ? `<img src="${esc(state.ebookResult.thumbnail)}" style="max-width:140px;border-radius:8px;margin-bottom:10px;display:block;border:1px solid var(--line);">` : ''}
+          ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+          <div class="btn-row" style="margin-top:0;">
+            <a class="btn-ghost btn" href="${esc(state.ebookResult.heyzineUrl)}" target="_blank" rel="noopener">Xem thử sách lật →</a>
+            <span class="btn" id="xdnd-use-as-product-btn">✅ Dùng làm sản phẩm để bán</span>
+            <span class="btn-ghost btn" id="xdnd-export-ebook-btn">Xuất lại</span>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="card">
+        <h2 style="font-size:16px;">📖 Xuất thành Ebook</h2>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Đóng gói nội dung đã viết thành file PDF, tự động biến thành sách lật đẹp (Heyzine) — phần nào chưa viết xong sẽ hiện dạng outline, vẫn xuất được ngay, không cần viết xong hết.</div>
+        ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+        <button class="btn" id="xdnd-export-ebook-btn">📖 Xuất thành Ebook (PDF + sách lật)</button>
+      </div>
+    `;
+  }
+
   function outline2Html() {
     const sections = flattenSections(state.outline2);
     return `
       <h2>${esc(idea.ten_san_pham)}</h2>
       <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
+      ${ebookExportCardHtml()}
       ${sections.map((s, i) => {
         const st = state.sections[i];
         const status = st ? st.status : null;
@@ -137,12 +165,48 @@ function render(container, ideaRow) {
       container.querySelectorAll('[data-open-section]').forEach(el => {
         el.onclick = () => openSection(Number(el.getAttribute('data-open-section')));
       });
+      const exportBtn = container.querySelector('#xdnd-export-ebook-btn');
+      if (exportBtn) exportBtn.onclick = exportEbook;
+      const useBtn = container.querySelector('#xdnd-use-as-product-btn');
+      if (useBtn) useBtn.onclick = useEbookAsProduct;
     } else if (state.screen === 'section-draft') {
       container.querySelector('#xdnd-review-btn').onclick = runReview;
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
     } else if (state.screen === 'section-final') {
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
     }
+  }
+
+  async function exportEbook() {
+    state.screen = 'exporting-ebook'; state.error = null; draw();
+    try {
+      const data = await callApi('api/san-pham-so-xuat-ebook', { idea, outline2: state.outline2, sections: state.sections });
+      state.ebookResult = { heyzineUrl: data.heyzineUrl, thumbnail: data.thumbnail, pdfStoragePath: data.pdfStoragePath };
+      await saveIdeaResult({ ebook_result: state.ebookResult });
+      state.screen = 'outline2';
+    } catch (e) {
+      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
+      state.screen = 'outline2';
+    }
+    safeDraw('outline2');
+  }
+
+  // Hand-off sang màn "Sản phẩm của tôi" qua ĐÚNG module_drafts key mà màn đó tự đọc khi mở
+  // (xem san-pham-so/js/danh-sach-san-pham.js DRAFT_KEY='san-pham-so') — tái dùng cơ chế draft có
+  // sẵn thay vì dựng đường truyền dữ liệu mới giữa 2 màn.
+  async function useEbookAsProduct() {
+    await saveDraft('san-pham-so', {
+      id: null,
+      title: idea.ten_san_pham || '',
+      description: idea.ly_do || '',
+      price: '',
+      cover_image_url: null,
+      file_storage_path: null,
+      file_name: null,
+      external_link: state.ebookResult.heyzineUrl,
+      published: false,
+    });
+    location.hash = 'san-pham';
   }
 
   async function generateOutline2() {

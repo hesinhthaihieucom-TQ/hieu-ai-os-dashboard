@@ -85,9 +85,12 @@ function renderProduct(product, order) {
       <button class="btn" id="buy-btn">Mua ngay — ${Number(product.price).toLocaleString('vi-VN')}đ</button>
     `;
   } else if (order.status === 'paid') {
+    // fileName rỗng = sản phẩm giao bằng link ngoài (VD sách lật Heyzine) — không phải file tải về,
+    // đổi nhãn nút cho đúng bản chất thay vì "Tải xuống" một link không phải file.
+    const label = order.fileName ? `📥 Tải xuống ${esc(order.fileName)}` : '📖 Xem tài liệu của bạn →';
     buyHtml = `
       <div class="hint-box">✅ Đã thanh toán thành công!</div>
-      <a class="btn" href="${esc(order.downloadUrl)}" target="_blank" rel="noopener">📥 Tải xuống ${esc(order.fileName || '')}</a>
+      <a class="btn" href="${esc(order.downloadUrl)}" target="_blank" rel="noopener">${label}</a>
     `;
   } else {
     const transferContent = `SEVQR ${order.ref_code}`;

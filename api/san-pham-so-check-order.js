@@ -26,11 +26,18 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const prodResp = await supabaseAdmin(`digital_products?id=eq.${order.product_id}&select=file_storage_path,file_name`);
+    const prodResp = await supabaseAdmin(`digital_products?id=eq.${order.product_id}&select=file_storage_path,file_name,external_link`);
     const prodRows = prodResp.ok ? await prodResp.json() : [];
     const product = prodRows[0];
-    if (!product || !product.file_storage_path) {
+    if (!product || (!product.file_storage_path && !product.external_link)) {
       res.status(200).json({ status: 'paid', error: 'Đã thanh toán nhưng file chưa sẵn sàng — liên hệ người bán để được hỗ trợ.' });
+      return;
+    }
+
+    // Sản phẩm giao bằng LINK NGOÀI (VD sách lật Heyzine) — trả thẳng, không cần ký URL Storage vì
+    // không có file nào trong Storage của app này cho trường hợp này.
+    if (product.external_link) {
+      res.status(200).json({ status: 'paid', downloadUrl: product.external_link, fileName: null });
       return;
     }
 

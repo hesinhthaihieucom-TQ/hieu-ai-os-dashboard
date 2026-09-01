@@ -3,7 +3,7 @@
 const DRAFT_KEY = 'san-pham-so';
 
 function newForm() {
-  return { id: null, title: '', description: '', price: '', cover_image_url: null, file_storage_path: null, file_name: null, published: false };
+  return { id: null, title: '', description: '', price: '', cover_image_url: null, file_storage_path: null, file_name: null, external_link: null, published: false };
 }
 
 // Domain công khai cuối cùng cho khách mua — KHÁC với domain app này đang chạy (app này là màn
@@ -90,9 +90,11 @@ function render(container) {
         <label>Ảnh bìa (tuỳ chọn)</label>
         <input id="sps-cover" type="file" accept="image/*">
         ${f.cover_image_url ? `<img src="${f.cover_image_url}" style="max-width:160px;border-radius:8px;margin-top:8px;display:block;">` : ''}
-        <label>File sản phẩm (bắt buộc để đăng công khai)</label>
+        <label>File sản phẩm (bắt buộc để đăng công khai, trừ khi đã có link ngoài bên dưới)</label>
         <input id="sps-file" type="file">
         <div id="sps-file-status" style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.file_name ? `📎 ${esc(f.file_name)} — đã upload` : 'Chưa có file.'}</div>
+        <label>Hoặc link ngoài (sách lật Heyzine, Notion, Canva...)</label>
+        <input id="sps-external-link" type="text" value="${esc(f.external_link || '')}" placeholder="https://heyzine.com/flip-book/...">
         <label style="display:flex;align-items:center;gap:8px;margin-top:16px;cursor:pointer;font-size:13.5px;">
           <input id="sps-published" type="checkbox" ${f.published ? 'checked' : ''}> Công khai (cho khách mua ngay)
         </label>
@@ -114,7 +116,7 @@ function render(container) {
         el.onclick = () => {
           const p = state.products.find(x => x.id === el.getAttribute('data-edit'));
           if (!p) return;
-          state.form = { id: p.id, title: p.title, description: p.description || '', price: p.price, cover_image_url: p.cover_image_url || null, file_storage_path: p.file_storage_path || null, file_name: p.file_name || null, published: p.status === 'published' };
+          state.form = { id: p.id, title: p.title, description: p.description || '', price: p.price, cover_image_url: p.cover_image_url || null, file_storage_path: p.file_storage_path || null, file_name: p.file_name || null, external_link: p.external_link || null, published: p.status === 'published' };
           state.error = null; state.view = 'edit'; draw(); persistDraft();
         };
       });
@@ -150,6 +152,8 @@ function render(container) {
     descEl.oninput = () => { state.form.description = descEl.value; persistDraft(); };
     const priceEl = container.querySelector('#sps-price');
     priceEl.oninput = () => { state.form.price = priceEl.value; persistDraft(); };
+    const externalLinkEl = container.querySelector('#sps-external-link');
+    externalLinkEl.oninput = () => { state.form.external_link = externalLinkEl.value; persistDraft(); };
     const publishedEl = container.querySelector('#sps-published');
     publishedEl.onchange = () => { state.form.published = publishedEl.checked; persistDraft(); };
 
@@ -208,13 +212,14 @@ function render(container) {
       const priceNum = Number(state.form.price);
       if (!state.form.title.trim()) { state.error = 'Vui lòng nhập tên sản phẩm.'; draw(); return; }
       if (!priceNum || priceNum <= 0) { state.error = 'Giá sản phẩm phải lớn hơn 0.'; draw(); return; }
-      if (state.form.published && !state.form.file_storage_path) { state.error = 'Cần upload file trước khi đăng công khai.'; draw(); return; }
+      if (state.form.published && !state.form.file_storage_path && !state.form.external_link) { state.error = 'Cần upload file hoặc dán link ngoài trước khi đăng công khai.'; draw(); return; }
       state.saving = true; state.error = null; draw();
       try {
         const data = await callApi('api/san-pham-so-product', {
           action: 'save', id: state.form.id, title: state.form.title, description: state.form.description,
           price: priceNum, cover_image_url: state.form.cover_image_url,
           file_storage_path: state.form.file_storage_path, file_name: state.form.file_name,
+          external_link: state.form.external_link,
           status: state.form.published ? 'published' : 'draft',
         });
         state.form.id = data.product.id;

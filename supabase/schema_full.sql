@@ -1392,9 +1392,16 @@ create table if not exists digital_products (
   updated_at timestamptz not null default now()
 );
 
--- Bật tính năng bán sản phẩm số theo TỪNG tài khoản (MVP giới hạn allowlist trước khi mở cho toàn bộ
--- user Xây Nhân Hiệu — chị Quỳnh tự bật cho ai qua Quản trị hoặc SQL trực tiếp).
+-- Bật tính năng bán sản phẩm số theo TỪNG tài khoản — KHÔNG còn dùng để chặn quyền truy cập nữa
+-- (đã mở cho mọi user Xây Nhân Hiệu 2026-08-25, xem san-pham-so/js/app-shell.js), giữ lại cột phòng
+-- khi cần dùng lại cho việc khác, không phải xoá/thêm lại cột sau này.
 alter table profiles add column if not exists can_sell_products boolean not null default false;
+
+-- Link ngoài (VD sách lật Heyzine từ api/san-pham-so-xuat-ebook.js, hoặc Notion/Canva người bán tự
+-- dán) — sản phẩm giao bằng LINK thay vì file Storage khi cột này có giá trị. Một sản phẩm chỉ cần
+-- MỘT trong hai (file_storage_path HOẶC external_link), không bắt buộc cả hai — xem điều kiện
+-- publish ở api/san-pham-so-product.js.
+alter table digital_products add column if not exists external_link text;
 
 -- Mỗi lượt khách mua 1 sản phẩm. Khách KHÔNG có tài khoản/đăng nhập — ref_code (sinh ngẫu nhiên lúc
 -- tạo đơn ở api/san-pham-so-create-order.js, tiền tố "SPS" để phân biệt với ref_code "XNH" của
@@ -1526,6 +1533,10 @@ create table if not exists product_idea_results (
   updated_at timestamptz not null default now()
 );
 create unique index if not exists product_idea_results_user_unique on product_idea_results(user_id);
+-- Kết quả xuất Ebook (api/san-pham-so-xuat-ebook.js) — {heyzineUrl, thumbnail, pdfStoragePath}, lưu
+-- lại để không mất khi rời trang trước khi bấm "Dùng làm sản phẩm để bán" (auto-save mọi màn đang
+-- làm dở, xem quy ước chung của app).
+alter table product_idea_results add column if not exists ebook_result jsonb;
 alter table product_idea_results enable row level security;
 drop policy if exists "product_idea_results_owner_all" on product_idea_results;
 create policy "product_idea_results_owner_all" on product_idea_results for all

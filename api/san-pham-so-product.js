@@ -43,11 +43,16 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'save') {
-      const { title, description, price, cover_image_url, status, file_storage_path, file_name } = req.body || {};
+      const { title, description, price, cover_image_url, status, file_storage_path, file_name, external_link } = req.body || {};
       if (!title || !String(title).trim()) { res.status(400).json({ error: 'Vui lòng nhập tên sản phẩm.' }); return; }
       const priceNum = Number(price);
       if (!priceNum || priceNum <= 0) { res.status(400).json({ error: 'Giá sản phẩm phải lớn hơn 0.' }); return; }
-      if (status === 'published' && !file_storage_path) { res.status(400).json({ error: 'Cần upload file trước khi đăng công khai.' }); return; }
+      // Đăng công khai cần MỘT trong hai: file đã upload, HOẶC link ngoài (VD sách lật Heyzine) —
+      // không còn bắt buộc phải là file Storage như trước.
+      if (status === 'published' && !file_storage_path && !external_link) {
+        res.status(400).json({ error: 'Cần upload file hoặc dán link sản phẩm trước khi đăng công khai.' });
+        return;
+      }
 
       if (id) {
         // Sửa sản phẩm ĐÃ CÓ — chỉ đúng chủ sở hữu mới sửa được (lọc owner_id ngay trong query, PATCH
@@ -57,6 +62,7 @@ module.exports = async (req, res) => {
         if (status) patchBody.status = status;
         if (file_storage_path !== undefined) patchBody.file_storage_path = file_storage_path || null;
         if (file_name !== undefined) patchBody.file_name = file_name || null;
+        if (external_link !== undefined) patchBody.external_link = external_link || null;
         const resp = await supabaseAdmin(`digital_products?id=eq.${id}&owner_id=eq.${user.id}`, {
           method: 'PATCH',
           body: JSON.stringify(patchBody),
@@ -83,6 +89,7 @@ module.exports = async (req, res) => {
             price: priceNum,
             file_storage_path: file_storage_path || null,
             file_name: file_name || null,
+            external_link: external_link || null,
             status: status === 'published' ? 'published' : 'draft',
           }),
         });
