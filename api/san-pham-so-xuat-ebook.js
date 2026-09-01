@@ -52,6 +52,11 @@ module.exports = async (req, res) => {
       clientId: heyzineClientId,
       pdfUrl: pdfSignedUrl,
       title: idea.ten_san_pham,
+      // ID flipbook mẫu (Quỳnh tự thiết kế sẵn — kiểu lật trang/nền/nhạc nền/tiếng lật trang) để mọi
+      // ebook xuất ra đều mang đúng phong cách đó thay vì bản mặc định "thô sơ" (2026-09-01). Đặt qua
+      // biến môi trường HEYZINE_TEMPLATE_ID để Quỳnh đổi mẫu sau này không cần sửa code — mặc định
+      // dùng đúng flipbook Quỳnh đã gửi làm ví dụ (heyzine.com/flip-book/63e3352a94.html).
+      template: process.env.HEYZINE_TEMPLATE_ID || '63e3352a94',
     });
 
     res.status(200).json({

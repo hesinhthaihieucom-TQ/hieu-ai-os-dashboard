@@ -2,7 +2,7 @@
 // thành sách lật. Cần 2 thông tin xác thực RIÊNG BIỆT — API key (header Bearer) VÀ client_id
 // (tham số body) — thiếu 1 trong 2 sẽ lỗi. Endpoint /api1/rest là bản ĐỒNG BỘ (chờ xử lý xong mới
 // trả về), phù hợp gọi trực tiếp trong 1 request thay vì phải poll trạng thái riêng.
-async function createFlipbook({ apiKey, clientId, pdfUrl, title }) {
+async function createFlipbook({ apiKey, clientId, pdfUrl, title, template }) {
   // Nội dung ebook giờ có thể dài hơn hẳn (không còn giới hạn số từ, xem xay-dung-noi-dung-schema.js)
   // -> file PDF nhiều trang hơn -> Heyzine cần nhiều thời gian xử lý hơn. Nâng lên 200s — lệnh gọi
   // export (api/san-pham-so-xuat-ebook.js) còn thêm bước dựng PDF/tải lên Storage trước bước này,
@@ -21,6 +21,11 @@ async function createFlipbook({ apiKey, clientId, pdfUrl, title }) {
         client_id: clientId,
         pdf: pdfUrl,
         title: title || undefined,
+        // Copy logo/kiểu lật trang/nền/style từ 1 flipbook mẫu có sẵn (Quỳnh tự thiết kế sẵn trong
+        // Heyzine dashboard — nhạc nền/tiếng lật trang chỉ set được qua giao diện Heyzine, KHÔNG có
+        // tham số API riêng, nên phải nhờ template copy lại — 2026-09-01, chưa xác nhận template có
+        // thực sự copy được nhạc/âm thanh hay không, cần Quỳnh test 1 lần trên bản thật).
+        template: template || undefined,
       }),
       signal: controller.signal,
     });
