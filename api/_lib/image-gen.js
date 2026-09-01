@@ -499,7 +499,36 @@ async function renderPersonalTemplateImage({ photoBuffer, title, handle, allowed
     .toBuffer();
 }
 
+// Chọn nguồn ảnh + đè 1 trong 4 mẫu — cùng thứ tự ưu tiên chị Quỳnh đã chốt cho Fanpage (xem comment
+// đầu file): tâm linh → ảnh cá nhân thật → ảnh AI chung. Viết riêng hàm này (2026-09-01, theo yêu cầu
+// chị Quỳnh: "phần cá nhân thêm các phần y hệt như fanpage trừ cái đăng tự động") để lane Cá nhân
+// (Phase 9, KHÔNG tự đăng lên Facebook) cũng có ảnh sẵn trong app cho chị tự đăng tay, thay vì chỉ
+// riêng case study mới có ảnh như trước — KHÔNG sửa logic đang chạy thật trong auto-publish-fb.js (nơi
+// đó còn phân biệt lỗi theo từng bước để báo đúng nguyên nhân khi đăng thất bại, gộp lại dễ vỡ luồng
+// đang chạy), chấp nhận lặp lại phần logic chọn nguồn ảnh thay vì refactor chỗ nhạy cảm đó.
+async function autoPickAndRenderImage({ title, handle, tags, personalPhotos }) {
+  const isSpiritual = Array.isArray(tags) && tags.includes('tam_linh');
+  let templatePhoto = null;
+  if (isSpiritual && process.env.OPENAI_API_KEY) {
+    try { templatePhoto = await generateSpiritualBackground({ apiKey: process.env.OPENAI_API_KEY }); }
+    catch (e) { /* rơi xuống ảnh cá nhân/AI chung ở dưới nếu lỗi */ }
+  }
+  if (!templatePhoto && !isSpiritual && personalPhotos && personalPhotos.length) {
+    const chosen = personalPhotos[Math.floor(Math.random() * personalPhotos.length)];
+    templatePhoto = Buffer.from(chosen.image.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+  }
+  if (templatePhoto) {
+    try { return await renderPersonalTemplateImage({ photoBuffer: templatePhoto, title, handle }); }
+    catch (e) { /* rơi xuống ảnh AI chung ở dưới nếu lỗi */ }
+  }
+  if (process.env.OPENAI_API_KEY) {
+    try { return await generatePostImage({ apiKey: process.env.OPENAI_API_KEY, title }); }
+    catch (e) { return null; }
+  }
+  return null;
+}
+
 module.exports = {
   generatePostImage, compositeCaseStudyImage, applyTitleBar, renderPersonalTemplateImage, generateSpiritualBackground,
-  safeLayoutsForCorner,
+  safeLayoutsForCorner, autoPickAndRenderImage,
 };

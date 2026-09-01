@@ -21,7 +21,7 @@ const {
   assemblePost, stripDiacritics, contextBlockOf, extraFieldsBlock, customInstructionsBlock,
 } = require('../_lib/post-schema');
 const { FORMAT_GUIDE } = require('../_lib/formats');
-const { compositeCaseStudyImage, renderPersonalTemplateImage, safeLayoutsForCorner } = require('../_lib/image-gen');
+const { compositeCaseStudyImage, renderPersonalTemplateImage, safeLayoutsForCorner, autoPickAndRenderImage } = require('../_lib/image-gen');
 const { TEXT_CLASSIFY_SYSTEM_PROMPT, TOOL_PHAN_LOAI_TRUC } = require('../_lib/pillars');
 
 const MAX_FILL_PER_RUN = 3;
@@ -680,6 +680,28 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
   const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN_PERSONAL);
   const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN_PERSONAL);
 
+  // Chữ ký "@tenkhongdau" y hệt cách hiển thị khi tự đăng lên Fanpage (xem auto-publish-fb.js) — dùng
+  // cho ảnh tự tạo bên dưới, dù lane Cá nhân không tự đăng thật, vẫn giữ đồng bộ hình thức 1 kiểu.
+  const rawHandle = profile.brand_name || profile.channel_handle || '';
+  const handle = rawHandle ? `@${stripDiacritics(rawHandle).toLowerCase()}` : '';
+  // "phần cá nhân thêm các phần y hệt như fanpage trừ cái đăng tự động" (chị Quỳnh 2026-09-01) — trước
+  // đây CHỈ case study (fillCaseStudySlot tự ghép ảnh) có ảnh sẵn trong app, bài thường (Sáng/Tối) và
+  // quote (Trưa) lưu KHÔNG ảnh, chị phải tự tìm/gắn ảnh khi đăng tay. Giờ áp DÙNG CHUNG đúng thứ tự ưu
+  // tiên nguồn ảnh của Fanpage (autoPickAndRenderImage — xem image-gen.js): tâm linh → ảnh cá nhân thật
+  // → ảnh AI chung, đè 1 trong 4 mẫu — chỉ khác là ghép NGAY lúc lấp lịch (không có bước "đăng" để hoãn
+  // tới lúc đó như Fanpage). Lỗi ghép ảnh không làm fail cả lượt lấp lịch, chỉ để bài đó thiếu ảnh.
+  async function attachAutoImage(result, tags) {
+    try {
+      const image = await autoPickAndRenderImage({ title: result.title, handle, tags, personalPhotos });
+      if (image) {
+        await supabaseAdmin(`posts?id=eq.${result.post_id}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: JSON.stringify({ image_data: image.toString('base64') }),
+        });
+      }
+    } catch (e) { /* không ghép được ảnh — bài vẫn đã lưu, chỉ thiếu ảnh, chị tự thêm tay khi đăng */ }
+  }
+
   const filled = [];
   const skippedNoCandidate = [];
   const recentTitles = []; // cộng dồn tiêu đề đã viết trong đợt này, feed vào lượt sau để né lặp mô-típ
@@ -702,6 +724,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
           channel: 'ca_nhan', formatConstraint: FORCE_NGOI_NOI, recentTitles,
         });
+        await attachAutoImage(result, candidate.tags);
         filled.push(result); recentTitles.push(result.title);
         continue;
       }
@@ -724,6 +747,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
             channelHandle: profile.channel_handle, brandName: profile.brand_name,
             channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
           });
+          await attachAutoImage(result, picked.quote.tags);
         } else {
           // Case study không có văn bản nguồn trước (chỉ ảnh) — vẫn random sản phẩm, không có gì để
           // so khớp trước khi AI viết xong.
@@ -749,6 +773,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         channelHandle: profile.channel_handle, brandName: profile.brand_name,
         channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
       });
+      await attachAutoImage(result, candidate.tags);
       filled.push(result); recentTitles.push(result.title);
     } catch (e) {
       skippedNoCandidate.push({ ...slotInfo, error: e.message });
