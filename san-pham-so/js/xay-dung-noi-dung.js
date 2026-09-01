@@ -14,19 +14,26 @@ function flattenSections(outline2) {
 }
 
 const XDND_INTRO_DRAFT_KEY = 'xay-dung-noi-dung-intro';
+const GIONG_VAN_OPTIONS = ['Gần gũi, tâm sự', 'Thẳng thắn, chuyên gia', 'Vui vẻ, hài hước', 'Trang trọng, uy tín'];
 
 function render(container, ideaRow) {
   const idea = ideaRow.result.phuong_an[ideaRow.chosen_index];
+  // Tài liệu gốc (nhánh A của Giai đoạn 1, xem san-pham-so/js/tim-san-pham.js) + giọng văn — cả 2
+  // lồng trong answers (jsonb tự do sẵn có), không cần cột DB mới. materialPath chỉ có với sản phẩm
+  // tạo từ tài liệu; giọng văn chốt lại khi outline cấp 2 được tạo, dùng nhất quán cho mọi phần sau.
+  const materialPath = (ideaRow.answers && ideaRow.answers.tai_lieu_path) || null;
   const state = {
     screen: ideaRow.outline_cap_2 ? 'outline2' : 'intro',
     outline2: ideaRow.outline_cap_2 || null,
     sections: ideaRow.sections || {},
     taiLieu: '',
+    giongVan: (ideaRow.answers && ideaRow.answers.giong_van) || GIONG_VAN_OPTIONS[0],
     activeIndex: null,
     workingStep: null, // 'nghien-cuu' | 'viet' | 'review' — hiện text tiến trình khi đang chạy chuỗi
     ebookResult: ideaRow.ebook_result || null, // {heyzineUrl, thumbnail, pdfStoragePath} — giữ qua reload
     editingOutlineIndex: null, // index (flattenSections) của phần outline cấp 2 đang sửa tay, null = không sửa
     editOutlineForm: null,
+    tongDuyetLoading: false, tongDuyetResult: null, // KHÔNG lưu DB — tính lại mỗi lần bấm, xem plan
     error: null,
   };
 
@@ -37,6 +44,10 @@ function render(container, ideaRow) {
     if (i === 0) return { get: () => state.outline2.mo_dau, set: (v) => { state.outline2.mo_dau = v; } };
     if (i === total - 1) return { get: () => state.outline2.ket, set: (v) => { state.outline2.ket = v; } };
     return { get: () => state.outline2.phan[i - 1], set: (v) => { state.outline2.phan[i - 1] = v; } };
+  }
+
+  function persistIntroDraft() {
+    saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu, giongVan: state.giongVan });
   }
 
   function draw() { container.innerHTML = html(); bind(); }
@@ -71,6 +82,9 @@ function render(container, ideaRow) {
         <h2 style="font-size:18px;">Trước khi viết: bạn có sẵn tài liệu/kinh nghiệm gì không?</h2>
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — nếu chưa có, AI sẽ tự tổng hợp kiến thức nền giúp bạn trước khi viết.</div>
         <textarea id="xdnd-tailieu" rows="3" placeholder="VD: có 1 file ghi chú cũ về chủ đề này; từng giúp 1 người bạn xử lý việc tương tự và họ đã cải thiện rõ rệt sau 2 tuần...">${esc(state.taiLieu)}</textarea>
+        <label style="margin-top:14px;">Giọng văn</label>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Áp dụng nhất quán cho mọi phần sẽ viết — chọn 1 lần ở đây.</div>
+        <div class="chips">${GIONG_VAN_OPTIONS.map(o => `<div class="chip ${state.giongVan === o ? 'selected' : ''}" data-giongvan="${esc(o)}">${esc(o)}</div>`).join('')}</div>
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         <div class="btn-row"><button class="btn" id="xdnd-outline2-btn">Xây outline chi tiết → (3 lượt AI)</button></div>
       </div>
@@ -102,6 +116,39 @@ function render(container, ideaRow) {
     `;
   }
 
+  function tongDuyetCardHtml() {
+    const sections = flattenSections(state.outline2);
+    const allStarted = sections.every((_, i) => !!state.sections[i]);
+    if (!allStarted) {
+      return `<div class="hint-box">🔍 Khi đã viết xong bản nháp cho TẤT CẢ các phần, bạn có thể "Duyệt tổng thể" để AI kiểm tra mạch lạc, trùng lặp giữa các phần.</div>`;
+    }
+    if (state.tongDuyetLoading) {
+      return `<div class="card"><h2 style="font-size:16px;">🔍 Đang duyệt tổng thể…</h2></div>`;
+    }
+    if (!state.tongDuyetResult) {
+      return `
+        <div class="card">
+          <h2 style="font-size:16px;">🔍 Duyệt tổng thể sản phẩm</h2>
+          <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">AI đọc lại toàn bộ nội dung đã viết, kiểm tra mạch lạc, trùng lặp giữa các phần, và có giữ đúng lời hứa outline không.</div>
+          ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+          <button class="btn" id="xdnd-tong-duyet-btn">🔍 Duyệt tổng thể (2 lượt AI)</button>
+        </div>
+      `;
+    }
+    const r = state.tongDuyetResult;
+    return `
+      <div class="card">
+        <h2 style="font-size:16px;">🔍 Kết quả duyệt tổng thể</h2>
+        <div style="font-size:13.5px;margin-bottom:10px;">${r.mach_lac ? '✅ Mạch lạc' : '⚠️ Chưa thật mạch lạc'} · ${r.giu_dung_loi_hua_outline ? '✅ Đúng lời hứa outline' : '⚠️ Chưa đúng lời hứa outline'}</div>
+        ${r.nhan_xet_tong_quan ? `<div class="hint-box">${esc(r.nhan_xet_tong_quan)}</div>` : ''}
+        ${(r.trung_lap || []).length ? `<div class="error-box"><b>Chỗ bị lặp ý:</b><ul style="margin:6px 0 0;padding-left:18px;">${r.trung_lap.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${(r.cho_thieu_lien_ket || []).length ? `<div class="error-box"><b>Chỗ chuyển phần bị cộc:</b><ul style="margin:6px 0 0;padding-left:18px;">${r.cho_thieu_lien_ket.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+        <div class="btn-row"><span class="btn-ghost btn btn-sm" id="xdnd-tong-duyet-btn">Duyệt lại (2 lượt AI)</span></div>
+      </div>
+    `;
+  }
+
   function outline2Html() {
     if (state.editingOutlineIndex != null) return outlineEditHtml();
     const sections = flattenSections(state.outline2);
@@ -109,6 +156,7 @@ function render(container, ideaRow) {
       <h2>${esc(idea.ten_san_pham)}</h2>
       <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
       ${ebookExportCardHtml()}
+      ${tongDuyetCardHtml()}
       ${sections.map((s, i) => {
         const st = state.sections[i];
         const status = st ? st.status : null;
@@ -160,6 +208,7 @@ function render(container, ideaRow) {
         <textarea id="xdnd-draft-textarea" rows="14" style="font-size:14.5px;">${esc(s.viet.noi_dung)}</textarea>
         <div class="hint-box"><b>Ví dụ:</b> ${esc(s.viet.vi_du)}</div>
         <div class="hint-box"><b>Bài tập:</b> ${esc(s.viet.bai_tap)}</div>
+        ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -190,6 +239,7 @@ function render(container, ideaRow) {
         ${s.review.gop_y ? `<div class="hint-box"><b>Góp ý:</b> ${esc(s.review.gop_y)}</div>` : ''}
         <div style="font-size:12px;color:var(--ink-soft);margin-top:10px;margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>
         <textarea id="xdnd-final-textarea" rows="14" style="font-size:14.5px;">${esc(s.review.ban_da_chinh || s.viet.noi_dung)}</textarea>
+        ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -205,7 +255,10 @@ function render(container, ideaRow) {
   function bind() {
     if (state.screen === 'intro') {
       const ta = container.querySelector('#xdnd-tailieu');
-      ta.oninput = () => { state.taiLieu = ta.value; saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu }); };
+      ta.oninput = () => { state.taiLieu = ta.value; persistIntroDraft(); };
+      container.querySelectorAll('[data-giongvan]').forEach(el => {
+        el.onclick = () => { state.giongVan = el.getAttribute('data-giongvan'); persistIntroDraft(); draw(); };
+      });
       container.querySelector('#xdnd-outline2-btn').onclick = generateOutline2;
     } else if (state.screen === 'outline2') {
       if (state.editingOutlineIndex != null) { bindOutlineEdit(); return; }
@@ -225,6 +278,8 @@ function render(container, ideaRow) {
       if (exportBtn) exportBtn.onclick = exportEbook;
       const useBtn = container.querySelector('#xdnd-use-as-product-btn');
       if (useBtn) useBtn.onclick = useEbookAsProduct;
+      const tongDuyetBtn = container.querySelector('#xdnd-tong-duyet-btn');
+      if (tongDuyetBtn) tongDuyetBtn.onclick = runTongDuyet;
     } else if (state.screen === 'section-draft') {
       container.querySelector('#xdnd-review-btn').onclick = runReview;
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
@@ -300,10 +355,13 @@ function render(container, ideaRow) {
     try {
       const data = await callApi('api/xay-dung-noi-dung', {
         step: 'outline2', idea, outlineCap1: idea.outline_cap_1, taiLieuKinhNghiem: state.taiLieu || null,
+        materialPath,
       });
       if (!data.result || !Array.isArray(data.result.phan)) throw new Error('AI trả về outline không đúng định dạng — thử lại giúp mình.');
       state.outline2 = data.result;
-      await saveIdeaResult({ outline_cap_2: state.outline2 });
+      // Chốt giọng văn vĩnh viễn vào answers (merge, không ghi đè các key khác đã có) — dùng nhất
+      // quán cho mọi lần viết/viết lại phần sau, kể cả sau khi rời trang rồi quay lại.
+      await saveIdeaResult({ outline_cap_2: state.outline2, answers: { ...(ideaRow.answers || {}), giong_van: state.giongVan } });
       await clearDraft(XDND_INTRO_DRAFT_KEY);
       state.screen = 'outline2';
     } catch (e) {
@@ -322,12 +380,19 @@ function render(container, ideaRow) {
   }
 
   async function runNghienCuuAndViet(index) {
-    const s = flattenSections(state.outline2)[index];
+    const flat = flattenSections(state.outline2);
+    const s = flat[index];
+    const phanTruoc = index > 0 ? flat[index - 1] : null;
+    const phanSau = index < flat.length - 1 ? flat[index + 1] : null;
     state.screen = 'section-working'; state.workingStep = 'nghien-cuu'; state.error = null; draw();
     try {
       const nghienCuuData = await callApi('api/xay-dung-noi-dung', { step: 'nghien-cuu', idea, phan: s });
       state.workingStep = 'viet'; draw();
-      const vietData = await callApi('api/xay-dung-noi-dung', { step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result });
+      const vietData = await callApi('api/xay-dung-noi-dung', {
+        step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath,
+        phanTruoc: phanTruoc ? { tieu_de: phanTruoc.tieu_de, ket_qua_cu_the: phanTruoc.ket_qua_cu_the } : null,
+        phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
+      });
       state.sections[index] = { nghien_cuu: nghienCuuData.result, viet: vietData.result, review: null, status: 'viet-done' };
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-draft';
@@ -335,6 +400,28 @@ function render(container, ideaRow) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'outline2';
     }
+    safeDraw('outline2');
+  }
+
+  // Duyệt tổng thể — chỉ CHẨN ĐOÁN (mạch lạc/trùng lặp/đúng lời hứa outline), không tự sửa nội dung.
+  // Người dùng chủ động sửa qua ô "Lưu chỉnh sửa" đã có ở từng phần. KHÔNG lưu DB — tính lại mỗi lần
+  // bấm (giống "💡 Xem gợi ý" ở wizard cũ), vì đây là 1 bản kiểm tra dùng trước khi xuất bản, không
+  // phải nội dung sản phẩm.
+  async function runTongDuyet() {
+    state.tongDuyetLoading = true; state.error = null; draw();
+    try {
+      const flat = flattenSections(state.outline2);
+      const noiDungTheoPhan = {};
+      flat.forEach((_, i) => {
+        const s = state.sections[i];
+        noiDungTheoPhan[i] = s ? (s.review && s.review.ban_da_chinh ? s.review.ban_da_chinh : s.viet.noi_dung) : null;
+      });
+      const data = await callApi('api/xay-dung-noi-dung', { step: 'tong-duyet', idea, outlineCap2: state.outline2, noiDungTheoPhan });
+      state.tongDuyetResult = data.result;
+    } catch (e) {
+      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
+    }
+    state.tongDuyetLoading = false;
     safeDraw('outline2');
   }
 
@@ -360,6 +447,7 @@ function render(container, ideaRow) {
     if (state.screen === 'intro') {
       const draft = await loadDraft(XDND_INTRO_DRAFT_KEY);
       if (draft && draft.taiLieu) state.taiLieu = draft.taiLieu;
+      if (draft && draft.giongVan) state.giongVan = draft.giongVan;
     }
     draw();
   })();

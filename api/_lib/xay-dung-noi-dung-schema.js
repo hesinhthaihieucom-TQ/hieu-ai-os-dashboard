@@ -25,7 +25,7 @@ const TOOL_OUTLINE2 = {
             tieu_de: { type: 'string' },
             ket_qua_cu_the: { type: 'string', description: '1 câu, đo được — người đọc đạt được gì cụ thể sau phần này.' },
             noi_dung_con: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 5, description: '3-5 nội dung con cần có trong phần này.' },
-            bai_tap: { type: 'string', description: '1 bài tập/checklist/template thực hành cuối phần, làm được ngay không cần giải thích thêm.' },
+            bai_tap: { type: 'string', description: '1 bài tập/checklist/template thực hành cuối phần, làm được ngay không cần giải thích thêm — gợi ý DẠNG checklist để tick hoặc câu hỏi có chỗ trống để người đọc tự điền bằng chữ của họ, không phải mô tả lý thuyết chung chung.' },
             vi_du_goi_y: { type: 'string', description: 'Hướng ví dụ thật có thể dùng minh hoạ cho phần này — gợi hướng, KHÔNG bịa số liệu/tên riêng cụ thể giả làm như thật.' },
           },
           required: ['tieu_de', 'ket_qua_cu_the', 'noi_dung_con', 'bai_tap', 'vi_du_goi_y'],
@@ -64,8 +64,12 @@ const TOOL_NGHIEN_CUU = {
         type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4,
         description: 'Hướng ví dụ/tình huống thật có thể dùng minh hoạ — gợi HƯỚNG, không bịa số liệu/tên riêng cụ thể giả làm như đã kiểm chứng.',
       },
+      rao_can_tam_ly: {
+        type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4,
+        description: 'Rào cản tâm lý phổ biến khiến người học dễ trì hoãn/bỏ cuộc với chủ đề này (VD "không có đủ thời gian", "đã từng thử mà thất bại") — mỗi mục nêu rõ rào cản + cách phần viết nên trả lời/trấn an ngay, không đợi người đọc tự vượt qua.',
+      },
     },
-    required: ['kien_thuc_nen', 'sai_lam_pho_bien', 'huong_vi_du'],
+    required: ['kien_thuc_nen', 'sai_lam_pho_bien', 'huong_vi_du', 'rao_can_tam_ly'],
   },
 };
 
@@ -77,9 +81,35 @@ const TOOL_VIET = {
     properties: {
       noi_dung: { type: 'string', description: 'Nội dung đầy đủ của phần này, viết theo đúng giọng văn/đối tượng đã cho, có ví dụ thật, không viết chung chung.' + XUONG_DONG },
       vi_du: { type: 'string', description: 'Ví dụ minh hoạ cụ thể được lồng vào nội dung (tách riêng để dễ kiểm tra ở bước review).' },
-      bai_tap: { type: 'string', description: 'Bài tập/checklist cuối phần, làm được ngay, không cần giải thích thêm.' },
+      bai_tap: { type: 'string', description: 'Bài tập/checklist cuối phần, làm được ngay, không cần giải thích thêm — DẠNG checklist để tick hoặc câu hỏi có chỗ trống để người đọc tự viết ra câu trả lời của họ (không phải đoạn mô tả lý thuyết nên làm gì).' },
+      tom_tat_3_y: {
+        type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 3,
+        description: 'Đúng 3 ý quan trọng nhất người đọc cần nhớ sau phần này — ngắn gọn (1 câu/ý), để hiện thành khối tóm tắt cuối phần, giúp người đọc không phải đọc lại cả phần để nắm ý chính.',
+      },
     },
-    required: ['noi_dung', 'vi_du', 'bai_tap'],
+    required: ['noi_dung', 'vi_du', 'bai_tap', 'tom_tat_3_y'],
+  },
+};
+
+const TOOL_TONG_DUYET = {
+  name: 'xuat_danh_gia_tong_the',
+  description: 'Đọc lại toàn bộ nội dung đã viết của sản phẩm số và đánh giá tính mạch lạc, trùng lặp giữa các phần, có đúng lời hứa outline không.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      mach_lac: { type: 'boolean', description: 'true nếu các phần đọc liền mạch, có chuyển tiếp hợp lý giữa các phần.' },
+      trung_lap: {
+        type: 'array', items: { type: 'string' },
+        description: 'Các ý bị lặp lại giữa nhiều phần — mỗi mục nêu rõ lặp ở đâu (tên phần) và nội dung gì. Mảng rỗng nếu không phát hiện trùng lặp.',
+      },
+      cho_thieu_lien_ket: {
+        type: 'array', items: { type: 'string' },
+        description: 'Các chỗ chuyển từ phần này sang phần khác bị cộc/đột ngột, cần thêm câu nối — mỗi mục nêu rõ giữa 2 phần nào. Mảng rỗng nếu mạch đã liền.',
+      },
+      giu_dung_loi_hua_outline: { type: 'boolean', description: 'true nếu nội dung đã viết đúng những gì outline cấp 2 đã hứa (kết quả cụ thể, nội dung con của từng phần).' },
+      nhan_xet_tong_quan: { type: 'string', description: '2-4 câu tóm tắt đánh giá chung, nêu rõ ưu điểm và điều nên sửa nếu có.' },
+    },
+    required: ['mach_lac', 'trung_lap', 'cho_thieu_lien_ket', 'giu_dung_loi_hua_outline', 'nhan_xet_tong_quan'],
   },
 };
 
@@ -107,4 +137,4 @@ const TOOL_REVIEW = {
   },
 };
 
-module.exports = { TOOL_OUTLINE2, TOOL_NGHIEN_CUU, TOOL_VIET, TOOL_REVIEW };
+module.exports = { TOOL_OUTLINE2, TOOL_NGHIEN_CUU, TOOL_VIET, TOOL_REVIEW, TOOL_TONG_DUYET };

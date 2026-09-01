@@ -64,6 +64,9 @@ const AI_WEIGHTS = {
   'xay-dung-noi-dung-nghien-cuu': 2,
   'xay-dung-noi-dung-viet': 3,
   'xay-dung-noi-dung-review': 1,
+  // Duyệt tổng thể sản phẩm sau khi viết xong hết (2026-09-01) — đọc lại toàn bộ nội dung đã viết,
+  // ngang mức nghien-cuu — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
+  'xay-dung-noi-dung-tong-duyet': 2,
   // Nhánh "đã có sẵn tài liệu" (mục A, 2026-09-01) — đọc thẳng 1 file PDF qua Claude thay vì suy từ
   // 12 câu trả lời ngắn, ngang mức tim-san-pham-phu-hop vì cùng vai trò (ra 2-3 phương án + outline).
   'tim-san-pham-tu-tai-lieu': 8,

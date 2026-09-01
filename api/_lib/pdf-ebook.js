@@ -17,7 +17,7 @@ function sectionBody(section, outlineItem) {
   return `[Phần này chưa viết nội dung đầy đủ — mới có outline]\n\n${bullets}`;
 }
 
-function addSectionPage(doc, titleLabel, item, body) {
+function addSectionPage(doc, titleLabel, item, body, section) {
   doc.addPage();
   doc.font(FONT_BOLD).fontSize(11).fillColor('#5B5F55').text(titleLabel.toUpperCase(), { characterSpacing: 0.5 });
   doc.moveDown(0.3);
@@ -28,6 +28,14 @@ function addSectionPage(doc, titleLabel, item, body) {
     doc.moveDown(1.2);
     doc.font(FONT_BOLD).fontSize(12).fillColor('#2F6F62').text('Bài tập:');
     doc.font(FONT_REGULAR).fontSize(12).fillColor('#1E2420').text(item.bai_tap, { lineGap: 4 });
+  }
+  // tom_tat_3_y chỉ có ở các phần đã viết bằng AI SAU khi field này ra đời (2026-09-01) — phần cũ
+  // hoặc phần chưa viết (chỉ có outline) sẽ không có, bỏ qua khối này, không lỗi.
+  const tomTat = section && section.viet && section.viet.tom_tat_3_y;
+  if (tomTat && tomTat.length) {
+    doc.moveDown(1.2);
+    doc.font(FONT_BOLD).fontSize(12).fillColor('#2F6F62').text('3 điều cần nhớ:');
+    doc.font(FONT_REGULAR).fontSize(12).fillColor('#1E2420').text(tomTat.map((t, i) => `${i + 1}. ${t}`).join('\n'), { lineGap: 4 });
   }
 }
 
@@ -61,7 +69,7 @@ function buildEbookPdf({ idea, outline2, sections }) {
     flat.forEach((entry, index) => {
       if (!entry.item) return;
       const body = sectionBody(sections[index], entry.item);
-      addSectionPage(doc, entry.kind, entry.item, body);
+      addSectionPage(doc, entry.kind, entry.item, body, sections[index]);
     });
 
     doc.end();

@@ -490,7 +490,9 @@ function render(container, profile) {
       await clearDraft(MATERIAL_DRAFT_KEY);
       await saveIdeaResult({
         nganh: f.nganh || null,
-        answers: { nguon: 'tai_lieu', nganh: f.nganh, doi_tuong: f.doiTuong, dinh_dang_mong_muon: f.dinhDang || null, gia_mong_muon: f.gia || null },
+        // tai_lieu_path lưu lại để Giai đoạn 2 (xay-dung-noi-dung.js) dùng lại đúng tài liệu này khi
+        // viết nội dung thật, không chỉ dùng 1 lần ở bước tìm ý tưởng rồi bỏ (xem CLAUDE.md/plan).
+        answers: { nguon: 'tai_lieu', nganh: f.nganh, doi_tuong: f.doiTuong, dinh_dang_mong_muon: f.dinhDang || null, gia_mong_muon: f.gia || null, tai_lieu_path: f.materialPath },
         result: state.result, chosen_index: null,
       });
       state.screen = 'result';
