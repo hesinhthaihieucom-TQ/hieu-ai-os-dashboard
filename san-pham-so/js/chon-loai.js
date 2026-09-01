@@ -49,15 +49,10 @@ function render(container, profile) {
 
   async function boot() {
     // 2026-09-01: có thể có NHIỀU sản phẩm đang xây cùng lúc (Quỳnh: muốn lưu tạm 1 cái để bắt đầu
-    // cái khác) — không còn tự động giao thẳng vào 1 sản phẩm duy nhất nữa, luôn hiện danh sách để
-    // tự chọn tiếp tục cái nào hoặc bắt đầu mới, kể cả khi chỉ có đúng 1 sản phẩm đang dở.
-    const active = await listActiveIdeaResults();
-    if (active.length > 0) {
-      state.activeProducts = active;
-      state.screen = 'active-list';
-      draw();
-      return;
-    }
+    // cái khác). Màn "Chọn Loại Sản Phẩm Số" LUÔN phải hiện đúng nội dung của nó (form chọn loại) —
+    // sản phẩm đang xây dở chỉ là 1 dải gợi ý nhỏ ở đầu trang (activeBannerHtml), KHÔNG thay hẳn màn
+    // hình như bản trước (Quỳnh phản hồi 2026-09-01: "đáng nhẽ phải hiện sẵn các loại chứ").
+    state.activeProducts = await listActiveIdeaResults();
     await bootFreshFlow();
   }
 
@@ -87,26 +82,28 @@ function render(container, profile) {
   function html() {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
     if (state.screen === 'generating') return `<div class="loading"><div id="cl-progress-el">${progressBarHtml(0)}</div><p>Đang dựng outline…</p></div>`;
-    if (state.screen === 'active-list') return activeListHtml();
     if (state.screen === 'format-pick') return formatPickHtml();
     if (state.screen === 'result') return resultHtml();
     return formHtml();
   }
 
-  function activeListHtml() {
+  // Dải gợi ý nhỏ ở đầu màn "form" (chỉ khi có sản phẩm đang xây dở) — KHÔNG thay hẳn màn hình, màn
+  // "Chọn Loại Sản Phẩm Số" luôn phải hiện đúng form chọn loại của nó trước tiên.
+  function activeBannerHtml() {
+    if (!state.activeProducts || !state.activeProducts.length) return '';
     return `
-      <h2>Sản phẩm đang xây dở</h2>
-      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Chọn 1 sản phẩm để tiếp tục viết, hoặc bắt đầu sản phẩm mới — sản phẩm cũ vẫn được giữ nguyên, không bị mất.</div>
-      ${state.activeProducts.map((p, i) => {
-        const idea = p.result.phuong_an[p.chosen_index];
-        return `
-          <div class="card" data-continue-active="${i}" style="cursor:pointer;">
-            <h2 style="font-size:16px;margin-bottom:6px;">${esc(idea.ten_san_pham)}</h2>
-            <div style="font-size:13px;color:var(--ink-soft);">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
-          </div>
-        `;
-      }).join('')}
-      <div class="btn-row"><span class="btn-ghost btn" id="cl-new-product-btn">+ Bắt đầu sản phẩm mới</span></div>
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Đang xây dở (${state.activeProducts.length})</div>
+        ${state.activeProducts.map((p, i) => {
+          const idea = p.result.phuong_an[p.chosen_index];
+          return `
+            <div class="card" data-continue-active="${i}" style="cursor:pointer;padding:12px 16px;margin-bottom:8px;">
+              <b style="font-size:14px;">${esc(idea.ten_san_pham)}</b>
+              <span style="font-size:12.5px;color:var(--ink-soft);"> — ${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
     `;
   }
 
@@ -119,6 +116,7 @@ function render(container, profile) {
     const f = state.form;
     const isOther = f.nganh && !NGANH_OPTIONS.includes(f.nganh);
     return `
+      ${activeBannerHtml()}
       <h2>Chọn loại sản phẩm số</h2>
       <div class="card">
         <label>Ngành/lĩnh vực</label>
@@ -239,24 +237,24 @@ function render(container, profile) {
   }
 
   function bind() {
-    if (state.screen === 'active-list') { bindActiveList(); return; }
     if (state.screen === 'result') { bindResult(); return; }
     if (state.screen === 'format-pick') { bindFormatPick(); return; }
     if (state.screen !== 'form') return;
     bindForm();
   }
 
-  function bindActiveList() {
+  // Dùng chung bởi bindForm() — dải "Đang xây dở" chỉ xuất hiện ở màn form nhưng có thể trống.
+  function bindActiveBanner() {
     container.querySelectorAll('[data-continue-active]').forEach(el => {
       el.onclick = () => {
         const p = state.activeProducts[Number(el.getAttribute('data-continue-active'))];
         window.renderXayDungNoiDung(container, p);
       };
     });
-    container.querySelector('#cl-new-product-btn').onclick = () => { bootFreshFlow(); };
   }
 
   function bindForm() {
+    bindActiveBanner();
     const f = state.form;
     container.querySelectorAll('[data-cl-nganh]').forEach(el => {
       el.onclick = () => { f.nganh = el.getAttribute('data-cl-nganh'); f.showNganhOther = false; persistFormDraft(); draw(); };

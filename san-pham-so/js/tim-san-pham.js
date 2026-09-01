@@ -75,15 +75,10 @@ function render(container, profile) {
 
   async function boot() {
     // 2026-09-01: có thể có NHIỀU sản phẩm đang xây cùng lúc (Quỳnh: muốn lưu tạm 1 cái để bắt đầu
-    // cái khác) — không còn tự động giao thẳng vào 1 sản phẩm duy nhất nữa, luôn hiện danh sách để
-    // tự chọn tiếp tục cái nào hoặc bắt đầu mới, kể cả khi chỉ có đúng 1 sản phẩm đang dở.
-    const active = await listActiveIdeaResults();
-    if (active.length > 0) {
-      state.activeProducts = active;
-      state.screen = 'active-list';
-      draw();
-      return;
-    }
+    // cái khác). Màn "Tìm Sản Phẩm Phù Hợp" LUÔN phải hiện đúng nội dung của nó trước — sản phẩm
+    // đang xây dở chỉ là 1 dải gợi ý nhỏ ở đầu màn "choose-path" (activeBannerHtml), KHÔNG thay hẳn
+    // màn hình (Quỳnh phản hồi 2026-09-01: "đáng nhẽ phải hiện sẵn các loại chứ").
+    state.activeProducts = await listActiveIdeaResults();
     await bootFreshFlow();
   }
 
@@ -113,32 +108,35 @@ function render(container, profile) {
   function html() {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
     if (state.screen === 'generating') return `<div class="loading"><div id="tsp-progress-el">${progressBarHtml(0)}</div><p>Đang tổng hợp kết quả…</p></div>`;
-    if (state.screen === 'active-list') return activeListHtml();
     if (state.screen === 'result') return resultHtml();
     if (state.screen === 'choose-path') return choosePathHtml();
     if (state.screen === 'material-form') return materialFormHtml();
     return wizardHtml();
   }
 
-  function activeListHtml() {
+  // Dải gợi ý nhỏ ở đầu màn "choose-path" (chỉ khi có sản phẩm đang xây dở) — KHÔNG thay hẳn màn
+  // hình, "Tìm Sản Phẩm Phù Hợp" luôn phải hiện đúng nội dung của nó trước tiên.
+  function activeBannerHtml() {
+    if (!state.activeProducts || !state.activeProducts.length) return '';
     return `
-      <h2>Sản phẩm đang xây dở</h2>
-      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Chọn 1 sản phẩm để tiếp tục viết, hoặc bắt đầu sản phẩm mới — sản phẩm cũ vẫn được giữ nguyên, không bị mất.</div>
-      ${state.activeProducts.map((p, i) => {
-        const idea = p.result.phuong_an[p.chosen_index];
-        return `
-          <div class="card" data-continue-active="${i}" style="cursor:pointer;">
-            <h2 style="font-size:16px;margin-bottom:6px;">${esc(idea.ten_san_pham)}</h2>
-            <div style="font-size:13px;color:var(--ink-soft);">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
-          </div>
-        `;
-      }).join('')}
-      <div class="btn-row"><span class="btn-ghost btn" id="tsp-new-product-btn">+ Bắt đầu sản phẩm mới</span></div>
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Đang xây dở (${state.activeProducts.length})</div>
+        ${state.activeProducts.map((p, i) => {
+          const idea = p.result.phuong_an[p.chosen_index];
+          return `
+            <div class="card" data-continue-active="${i}" style="cursor:pointer;padding:12px 16px;margin-bottom:8px;">
+              <b style="font-size:14px;">${esc(idea.ten_san_pham)}</b>
+              <span style="font-size:12.5px;color:var(--ink-soft);"> — ${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
     `;
   }
 
   function choosePathHtml() {
     return `
+      ${activeBannerHtml()}
       <h2>Bắt đầu tìm sản phẩm phù hợp</h2>
       <div class="card" data-choose-path="material" style="cursor:pointer;">
         <h2 style="font-size:16px;margin-bottom:6px;">📚 Tôi đã có sẵn tài liệu/kiến thức</h2>
@@ -307,7 +305,6 @@ function render(container, profile) {
   }
 
   function bind() {
-    if (state.screen === 'active-list') { bindActiveList(); return; }
     if (state.screen === 'result') { bindResult(); return; }
     if (state.screen === 'choose-path') { bindChoosePath(); return; }
     if (state.screen === 'material-form') { bindMaterialForm(); return; }
@@ -315,17 +312,13 @@ function render(container, profile) {
     bindWizard();
   }
 
-  function bindActiveList() {
+  function bindChoosePath() {
     container.querySelectorAll('[data-continue-active]').forEach(el => {
       el.onclick = () => {
         const p = state.activeProducts[Number(el.getAttribute('data-continue-active'))];
         window.renderXayDungNoiDung(container, p);
       };
     });
-    container.querySelector('#tsp-new-product-btn').onclick = () => { bootFreshFlow(); };
-  }
-
-  function bindChoosePath() {
     container.querySelectorAll('[data-choose-path]').forEach(el => {
       el.onclick = () => {
         const v = el.getAttribute('data-choose-path');
