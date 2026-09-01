@@ -1,20 +1,23 @@
-// Sản Phẩm Số — "🗂️ Chọn Loại Sản Phẩm Số": dành cho người ĐÃ BIẾT chủ đề/đối tượng muốn làm nhưng
-// CHƯA CHẮC nên làm ĐỊNH DẠNG nào (ebook/checklist/mini-course/...) — khác "Tìm Sản Phẩm Phù Hợp"
-// (tim-san-pham.js), nơi AI phải đánh giá CẢ ý tưởng lẫn định dạng từ đầu qua 11 câu hỏi. Luồng ở
-// đây (chốt 2026-09-01 sau khi Quỳnh phản hồi bản đầu bị lẫn với tim-san-pham): (1) nhập nhanh
-// ngành/chủ đề/đối tượng, (2) chốt định dạng — AI gợi ý (1 lượt) HOẶC tự chọn tay trong 7 loại có
-// mô tả tham khảo, (3) AI dựng outline cho đúng định dạng đã chốt (api/san-pham-so-tao-tu-loai.js,
-// vẫn dùng nguyên như bản đầu, chỉ đẩy xuống sau bước chốt định dạng), (4) chọn xong outline → vào
-// thẳng Giai đoạn 2 (xay-dung-noi-dung.js).
+// Sản Phẩm Số — "🗂️ Chọn Loại Sản Phẩm Số": trang này TRƯỚC HẾT là để xem/chọn LOẠI sản phẩm số có
+// thể bán (Ebook, Template, Mini-course, Coaching 1-1, Cộng đồng trả phí, Webinar...) — khác "Tìm
+// Sản Phẩm Phù Hợp" (tim-san-pham.js), nơi AI phải đánh giá CẢ ý tưởng lẫn định dạng từ đầu qua 11
+// câu hỏi. Luồng (chốt 2026-09-01 sau nhiều vòng phản hồi trực tiếp của Quỳnh — ban đầu để form
+// ngành/chủ đề/đối tượng lên TRƯỚC rồi mới chọn loại ở bước ẩn phía sau, bị phản hồi "sao mấy cái
+// loại sản phẩm số đâu" vì LOẠI phải là thứ nhìn thấy đầu tiên khi vào trang này):
+// (1) hiện ngay 7 loại sản phẩm số kèm bảng "cần chuẩn bị gì / người mua nhận được gì" để tự chọn
+// tay, HOẶC bấm "AI gợi ý" (nhập nhanh ngành/chủ đề/đối tượng, AI đề xuất 1-2 loại phù hợp);
+// (2) loại đã chốt → điền/xác nhận chủ đề/đối tượng cụ thể (+ tài liệu PDF tuỳ chọn);
+// (3) AI dựng outline cho đúng loại đã chốt (api/san-pham-so-tao-tu-loai.js);
+// (4) chọn xong outline → vào thẳng Giai đoạn 2 (xay-dung-noi-dung.js).
 (function () {
 const FORM_DRAFT_KEY = 'chon-loai-form';
 
-// Thông tin tham khảo cho từng định dạng — hiện ở bước "Tôi tự chọn" VÀ như phần bổ sung dưới mỗi
-// gợi ý của AI, để người dùng thật sự hiểu mình đang chọn gì (không chỉ đúng "khi nào nên dùng", mà
-// cả CẦN CHUẨN BỊ GÌ và NGƯỜI MUA NHẬN ĐƯỢC GÌ — mục tiêu "để người dùng còn học được từ web này",
-// Quỳnh 2026-09-01). can_chuan_bi/nguoi_mua_nhan lấy đúng theo bảng thật Quỳnh đã đưa (cơ chế giao
-// hàng của "Sản phẩm của tôi"/landing page — ebook đã chạy, các loại còn lại là hướng sẽ làm, không
-// phải đã có sẵn UI riêng cho từng loại ở bước này).
+// Thông tin tham khảo cho từng định dạng — hiện NGAY trên màn chọn loại (đây chính là nội dung
+// chính của trang, không phải phụ) VÀ như phần bổ sung dưới mỗi gợi ý của AI, để người dùng thật sự
+// hiểu mình đang chọn gì: không chỉ "khi nào nên dùng", mà cả CẦN CHUẨN BỊ GÌ và NGƯỜI MUA NHẬN ĐƯỢC
+// GÌ — mục tiêu "để người dùng còn học được từ web này" (Quỳnh 2026-09-01). can_chuan_bi/nguoi_mua_nhan
+// lấy đúng theo bảng thật Quỳnh đã đưa (cơ chế giao hàng của "Sản phẩm của tôi"/landing page — ebook
+// đã chạy, các loại còn lại là hướng sẽ làm, không phải đã có sẵn UI riêng cho từng loại ở bước này).
 const DINH_DANG_INFO = {
   ebook: {
     khi_nao: 'Cần giải thích khái niệm/tư duy — người đọc chỉ cần đọc là hiểu, không cần thực hành theo tiến trình.',
@@ -55,18 +58,19 @@ const DINH_DANG_INFO = {
 
 function newForm() {
   return {
-    screen: 'form',
+    screen: 'pick-type',
+    dinhDang: '',
     nganh: '', showNganhOther: false,
     chuDe: '', doiTuong: '',
     materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
-    dinhDang: '', formatMode: null, aiSuggestions: null,
+    aiSuggestions: null,
   };
 }
 
 function render(container, profile) {
   const state = {
     screen: 'loading', form: newForm(), result: null, error: null,
-    formatSuggestLoading: false, formatSuggestError: null,
+    aiSuggestLoading: false, aiSuggestError: null,
     editing: false, editForm: null, editSaving: false,
     // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
     // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
@@ -81,9 +85,8 @@ function render(container, profile) {
 
   async function boot() {
     // 2026-09-01: có thể có NHIỀU sản phẩm đang xây cùng lúc (Quỳnh: muốn lưu tạm 1 cái để bắt đầu
-    // cái khác). Màn "Chọn Loại Sản Phẩm Số" LUÔN phải hiện đúng nội dung của nó (form chọn loại) —
-    // sản phẩm đang xây dở chỉ là 1 dải gợi ý nhỏ ở đầu trang (activeBannerHtml), KHÔNG thay hẳn màn
-    // hình như bản trước (Quỳnh phản hồi 2026-09-01: "đáng nhẽ phải hiện sẵn các loại chứ").
+    // cái khác). Màn "Chọn Loại Sản Phẩm Số" LUÔN phải hiện đúng nội dung của nó (chọn loại trước
+    // tiên) — sản phẩm đang xây dở chỉ là 1 dải gợi ý nhỏ ở đầu trang, KHÔNG thay hẳn màn hình.
     state.activeProducts = await listActiveIdeaResults();
     await bootFreshFlow();
   }
@@ -116,20 +119,21 @@ function render(container, profile) {
       state.form.nganh = pending.nganh || pending.answers.nganh || '';
       state.form.doiTuong = pending.answers.d1 || pending.answers.doi_tuong || '';
     }
-    state.screen = state.form.screen || 'form';
+    state.screen = state.form.screen || 'pick-type';
     draw();
   }
 
   function html() {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
     if (state.screen === 'generating') return `<div class="loading"><div id="cl-progress-el">${progressBarHtml(0)}</div><p>Đang dựng outline…</p></div>`;
-    if (state.screen === 'format-pick') return formatPickHtml();
+    if (state.screen === 'ai-suggest-input') return aiSuggestInputHtml();
+    if (state.screen === 'ai-suggest-result') return aiSuggestResultHtml();
+    if (state.screen === 'form') return formHtml();
     if (state.screen === 'result') return resultHtml();
-    return formHtml();
+    return pickTypeHtml();
   }
 
-  // Dải gợi ý nhỏ ở đầu màn "form" (chỉ khi có sản phẩm đang xây dở) — KHÔNG thay hẳn màn hình, màn
-  // "Chọn Loại Sản Phẩm Số" luôn phải hiện đúng form chọn loại của nó trước tiên.
+  // Dải gợi ý nhỏ ở đầu trang (chỉ khi có sản phẩm đang xây dở) — KHÔNG thay hẳn màn hình.
   function activeBannerHtml() {
     if (!state.activeProducts || !state.activeProducts.length) return '';
     return `
@@ -148,18 +152,107 @@ function render(container, profile) {
     `;
   }
 
+  // Bảng tham khảo "cần chuẩn bị gì / người mua nhận được gì" cho 1 định dạng — dùng chung cho cả
+  // danh sách chọn tay (pickTypeHtml) lẫn gợi ý của AI (aiSuggestResultHtml).
+  function dinhDangInfoHtml(value) {
+    const info = DINH_DANG_INFO[value];
+    if (!info) return '';
+    return `
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">
+        <b>Cần chuẩn bị:</b> ${esc(info.can_chuan_bi)}<br>
+        <b>Người mua nhận được:</b> ${esc(info.nguoi_mua_nhan)}
+      </div>
+    `;
+  }
+
+  // MÀN CHÍNH của trang này — 7 loại sản phẩm số hiện NGAY, không ẩn sau bước nào khác.
+  function pickTypeHtml() {
+    return `
+      ${activeBannerHtml()}
+      <h2>Chọn loại sản phẩm số</h2>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
+        <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>
+      </div>
+      ${DINH_DANG_OPTIONS.map(o => `
+        <div class="card" data-pt-choose="${esc(o.value)}" style="cursor:pointer;margin-bottom:10px;">
+          <h2 style="font-size:16px;margin-bottom:6px;">${esc(o.label)}</h2>
+          <div style="font-size:13px;color:var(--ink-soft);margin-bottom:4px;">${esc((DINH_DANG_INFO[o.value] || {}).khi_nao || '')}</div>
+          ${dinhDangInfoHtml(o.value)}
+        </div>
+      `).join('')}
+    `;
+  }
+
+  function canSubmitAiInput() {
+    const f = state.form;
+    return !!(f.nganh && f.chuDe.trim() && f.doiTuong.trim());
+  }
+
+  function aiSuggestInputHtml() {
+    const f = state.form;
+    const isOther = f.nganh && !NGANH_OPTIONS.includes(f.nganh);
+    return `
+      <h2>AI gợi ý loại phù hợp</h2>
+      <div class="card">
+        <label>Ngành/lĩnh vực</label>
+        <div class="chips">
+          ${NGANH_OPTIONS.map(o => `<div class="chip ${f.nganh === o ? 'selected' : ''}" data-ai-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
+          <div class="chip ${isOther || f.showNganhOther ? 'selected' : ''}" data-ai-nganh-other="1">Khác (tự nhập)</div>
+        </div>
+        ${isOther || f.showNganhOther ? `<input id="ai-nganh-other-input" type="text" placeholder="Nhập đúng ngành/lĩnh vực của bạn" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">` : ''}
+
+        <label style="margin-top:14px;">Chủ đề/tên sản phẩm muốn làm</label>
+        <input id="ai-chude" type="text" value="${esc(f.chuDe)}" placeholder='VD: Quản lý chi tiêu cho mẹ bỉm sữa'>
+
+        <label style="margin-top:14px;">Đối tượng cụ thể</label>
+        <input id="ai-doituong" type="text" value="${esc(f.doiTuong)}" placeholder='VD: mẹ bỉm sữa mới sinh con đầu lòng'>
+
+        ${state.aiSuggestLoading ? `<div id="ai-progress-el" style="margin-top:14px;">${progressBarHtml(0)}</div>` : ''}
+        ${state.aiSuggestError ? `<div class="error-box" style="margin-top:10px;">${esc(state.aiSuggestError)}</div>` : ''}
+        <div class="btn-row">
+          <span class="btn-ghost btn" id="ai-back-btn">← Quay lại</span>
+          <button class="btn" id="ai-submit-btn" ${(!canSubmitAiInput() || state.aiSuggestLoading) ? 'disabled' : ''}>${state.aiSuggestLoading ? 'Đang gợi ý…' : 'Gợi ý giúp mình'}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function aiSuggestResultHtml() {
+    const f = state.form;
+    return `
+      <h2>Gợi ý cho bạn</h2>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b></div>
+      ${(f.aiSuggestions || []).map(s => {
+        const opt = DINH_DANG_OPTIONS.find(o => o.value === s.dinh_dang);
+        return `
+          <div class="card" style="margin-bottom:10px;">
+            <h2 style="font-size:16px;margin-bottom:6px;">${esc(opt ? opt.label : s.dinh_dang)}</h2>
+            <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">${esc(s.ly_do)}</div>
+            ${dinhDangInfoHtml(s.dinh_dang)}
+            <div class="btn-row" style="margin-top:10px;"><span class="btn btn-sm" data-ai-choose="${esc(s.dinh_dang)}">Chọn loại này →</span></div>
+          </div>
+        `;
+      }).join('')}
+      <div class="btn-row"><span class="btn-ghost btn btn-sm" id="ai-switch-manual-btn">Không cái nào phù hợp — để mình tự chọn</span></div>
+    `;
+  }
+
   function canSubmitForm() {
     const f = state.form;
     return !!(f.nganh && f.chuDe.trim() && f.doiTuong.trim() && !f.materialUploading);
   }
 
+  // Bước 2 — chủ đề/đối tượng cụ thể, SAU KHI đã chốt loại (dù tự chọn hay theo AI gợi ý).
   function formHtml() {
     const f = state.form;
+    const opt = DINH_DANG_OPTIONS.find(o => o.value === f.dinhDang);
     const isOther = f.nganh && !NGANH_OPTIONS.includes(f.nganh);
     return `
-      ${activeBannerHtml()}
-      <h2>Chọn loại sản phẩm số</h2>
+      <h2>Chi tiết sản phẩm</h2>
       <div class="card">
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Loại đã chọn: <b>${esc(opt ? opt.label : f.dinhDang)}</b> — <span id="cl-change-type-btn" style="cursor:pointer;text-decoration:underline;">Đổi loại khác</span></div>
+
         <label>Ngành/lĩnh vực</label>
         <div class="chips">
           ${NGANH_OPTIONS.map(o => `<div class="chip ${f.nganh === o ? 'selected' : ''}" data-cl-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
@@ -180,71 +273,9 @@ function render(container, profile) {
 
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
-          <button class="btn" id="cl-submit-btn" ${!canSubmitForm() ? 'disabled' : ''}>Tiếp tục →</button>
+          <span class="btn-ghost btn" id="cl-back-btn">← Quay lại</span>
+          <button class="btn" id="cl-submit-btn" ${!canSubmitForm() ? 'disabled' : ''}>Tạo outline (5 lượt AI)</button>
         </div>
-      </div>
-    `;
-  }
-
-  // Bảng tham khảo "cần chuẩn bị gì / người mua nhận được gì" cho 1 định dạng — dùng chung cho cả
-  // gợi ý của AI (bổ sung dưới lý do của AI) lẫn danh sách tự chọn tay.
-  function dinhDangInfoHtml(value) {
-    const info = DINH_DANG_INFO[value];
-    if (!info) return '';
-    return `
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">
-        <b>Cần chuẩn bị:</b> ${esc(info.can_chuan_bi)}<br>
-        <b>Người mua nhận được:</b> ${esc(info.nguoi_mua_nhan)}
-      </div>
-    `;
-  }
-
-  function formatPickHtml() {
-    const f = state.form;
-    const summary = `Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b>`;
-    let body = '';
-    if (!f.formatMode) {
-      body = `
-        <div class="btn-row" style="flex-direction:column;align-items:stretch;gap:10px;">
-          <button class="btn" id="fp-ai-btn" ${state.formatSuggestLoading ? 'disabled' : ''}>${state.formatSuggestLoading ? 'Đang gợi ý…' : '🤖 AI gợi ý giúp mình (1 lượt AI)'}</button>
-          <span class="btn-ghost btn" id="fp-manual-btn">✋ Tôi tự chọn</span>
-        </div>
-        ${state.formatSuggestLoading ? `<div id="fp-progress-el" style="margin-top:12px;">${progressBarHtml(0)}</div>` : ''}
-        ${state.formatSuggestError ? `<div class="error-box" style="margin-top:10px;">${esc(state.formatSuggestError)}</div>` : ''}
-      `;
-    } else if (f.formatMode === 'ai') {
-      body = `
-        ${(f.aiSuggestions || []).map((s, i) => {
-          const opt = DINH_DANG_OPTIONS.find(o => o.value === s.dinh_dang);
-          return `
-            <div class="card" style="margin-bottom:10px;">
-              <h2 style="font-size:16px;margin-bottom:6px;">${esc(opt ? opt.label : s.dinh_dang)}</h2>
-              <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">${esc(s.ly_do)}</div>
-              ${dinhDangInfoHtml(s.dinh_dang)}
-              <div class="btn-row" style="margin-top:10px;"><span class="btn btn-sm" data-fp-choose="${esc(s.dinh_dang)}">Chọn định dạng này →</span></div>
-            </div>
-          `;
-        }).join('')}
-        <div class="btn-row"><span class="btn-ghost btn btn-sm" id="fp-switch-manual-btn">Không cái nào phù hợp — để mình tự chọn</span></div>
-      `;
-    } else {
-      body = `
-        <div class="chips" style="flex-direction:column;align-items:stretch;">
-          ${DINH_DANG_OPTIONS.map(o => `
-            <div class="chip ${f.dinhDang === o.value ? 'selected' : ''}" data-fp-choose="${esc(o.value)}" style="margin-bottom:8px;text-align:left;">
-              <b>${esc(o.label)}</b><br><span style="font-size:12.5px;color:var(--ink-soft);">${esc((DINH_DANG_INFO[o.value] || {}).khi_nao || '')}</span>
-              ${dinhDangInfoHtml(o.value)}
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-    return `
-      <h2>Chọn định dạng phù hợp</h2>
-      <div class="card">
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${summary}</div>
-        ${body}
-        <div class="btn-row" style="margin-top:14px;"><span class="btn-ghost btn" id="fp-back-btn">← Quay lại</span></div>
       </div>
     `;
   }
@@ -293,13 +324,14 @@ function render(container, profile) {
   }
 
   function bind() {
+    if (state.screen === 'loading' || state.screen === 'generating') return;
     if (state.screen === 'result') { bindResult(); return; }
-    if (state.screen === 'format-pick') { bindFormatPick(); return; }
-    if (state.screen !== 'form') return;
-    bindForm();
+    if (state.screen === 'ai-suggest-input') { bindAiSuggestInput(); return; }
+    if (state.screen === 'ai-suggest-result') { bindAiSuggestResult(); return; }
+    if (state.screen === 'form') { bindForm(); return; }
+    bindPickType();
   }
 
-  // Dùng chung bởi bindForm() — dải "Đang xây dở" chỉ xuất hiện ở màn form nhưng có thể trống.
   function bindActiveBanner() {
     container.querySelectorAll('[data-continue-active]').forEach(el => {
       el.onclick = () => {
@@ -309,9 +341,72 @@ function render(container, profile) {
     });
   }
 
-  function bindForm() {
+  function bindPickType() {
     bindActiveBanner();
+    container.querySelector('#pt-ai-btn').onclick = () => {
+      state.form.screen = 'ai-suggest-input'; state.screen = 'ai-suggest-input'; persistFormDraft(); draw();
+    };
+    container.querySelectorAll('[data-pt-choose]').forEach(el => {
+      el.onclick = () => {
+        state.form.dinhDang = el.getAttribute('data-pt-choose');
+        state.form.screen = 'form'; state.screen = 'form';
+        persistFormDraft(); draw();
+      };
+    });
+  }
+
+  function bindAiSuggestInput() {
     const f = state.form;
+    container.querySelectorAll('[data-ai-nganh]').forEach(el => {
+      el.onclick = () => { f.nganh = el.getAttribute('data-ai-nganh'); f.showNganhOther = false; persistFormDraft(); draw(); };
+    });
+    const otherChip = container.querySelector('[data-ai-nganh-other]');
+    if (otherChip) otherChip.onclick = () => { f.showNganhOther = true; f.nganh = ''; draw(); };
+    const otherInput = container.querySelector('#ai-nganh-other-input');
+    if (otherInput) otherInput.oninput = () => {
+      f.nganh = otherInput.value;
+      persistFormDraft();
+      const btn = container.querySelector('#ai-submit-btn');
+      if (btn) btn.disabled = !canSubmitAiInput();
+    };
+    const chuDeEl = container.querySelector('#ai-chude');
+    chuDeEl.oninput = () => {
+      f.chuDe = chuDeEl.value;
+      persistFormDraft();
+      const btn = container.querySelector('#ai-submit-btn');
+      if (btn) btn.disabled = !canSubmitAiInput();
+    };
+    const doiTuongEl = container.querySelector('#ai-doituong');
+    doiTuongEl.oninput = () => {
+      f.doiTuong = doiTuongEl.value;
+      persistFormDraft();
+      const btn = container.querySelector('#ai-submit-btn');
+      if (btn) btn.disabled = !canSubmitAiInput();
+    };
+    container.querySelector('#ai-back-btn').onclick = () => {
+      f.screen = 'pick-type'; state.screen = 'pick-type'; persistFormDraft(); draw();
+    };
+    container.querySelector('#ai-submit-btn').onclick = runSuggestFormat;
+  }
+
+  function bindAiSuggestResult() {
+    container.querySelectorAll('[data-ai-choose]').forEach(el => {
+      el.onclick = () => {
+        state.form.dinhDang = el.getAttribute('data-ai-choose');
+        state.form.screen = 'form'; state.screen = 'form';
+        persistFormDraft(); draw();
+      };
+    });
+    container.querySelector('#ai-switch-manual-btn').onclick = () => {
+      state.form.screen = 'pick-type'; state.screen = 'pick-type'; persistFormDraft(); draw();
+    };
+  }
+
+  function bindForm() {
+    const f = state.form;
+    container.querySelector('#cl-change-type-btn').onclick = () => {
+      f.screen = 'pick-type'; state.screen = 'pick-type'; persistFormDraft(); draw();
+    };
     container.querySelectorAll('[data-cl-nganh]').forEach(el => {
       el.onclick = () => { f.nganh = el.getAttribute('data-cl-nganh'); f.showNganhOther = false; persistFormDraft(); draw(); };
     });
@@ -359,33 +454,10 @@ function render(container, profile) {
       draw();
     };
 
-    container.querySelector('#cl-submit-btn').onclick = () => {
-      f.screen = 'format-pick';
-      state.screen = 'format-pick';
-      persistFormDraft();
-      draw();
+    container.querySelector('#cl-back-btn').onclick = () => {
+      f.screen = 'pick-type'; state.screen = 'pick-type'; persistFormDraft(); draw();
     };
-  }
-
-  function bindFormatPick() {
-    const f = state.form;
-    container.querySelector('#fp-back-btn').onclick = () => {
-      if (f.formatMode) { f.formatMode = null; f.aiSuggestions = null; state.formatSuggestError = null; draw(); return; }
-      f.screen = 'form'; state.screen = 'form'; persistFormDraft(); draw();
-    };
-    const aiBtn = container.querySelector('#fp-ai-btn');
-    if (aiBtn) aiBtn.onclick = runSuggestFormat;
-    const manualBtn = container.querySelector('#fp-manual-btn');
-    if (manualBtn) manualBtn.onclick = () => { f.formatMode = 'manual'; persistFormDraft(); draw(); };
-    const switchManualBtn = container.querySelector('#fp-switch-manual-btn');
-    if (switchManualBtn) switchManualBtn.onclick = () => { f.formatMode = 'manual'; persistFormDraft(); draw(); };
-    container.querySelectorAll('[data-fp-choose]').forEach(el => {
-      el.onclick = () => {
-        f.dinhDang = el.getAttribute('data-fp-choose');
-        persistFormDraft();
-        runGenerateOutline();
-      };
-    });
+    container.querySelector('#cl-submit-btn').onclick = runGenerateOutline;
   }
 
   function bindResult() {
@@ -428,19 +500,20 @@ function render(container, profile) {
   }
 
   async function runSuggestFormat() {
-    state.formatSuggestLoading = true; state.formatSuggestError = null; draw();
-    const stopProgress = animateProgressBar(container.querySelector('#fp-progress-el'), 15);
+    state.aiSuggestLoading = true; state.aiSuggestError = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#ai-progress-el'), 15);
     try {
       const f = state.form;
       const data = await callApi('api/san-pham-so-goi-y-dinh-dang', { nganh: f.nganh, chuDe: f.chuDe, doiTuong: f.doiTuong }, 180000);
       if (!data.result || !Array.isArray(data.result.goi_y) || !data.result.goi_y.length) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
-      f.formatMode = 'ai'; f.aiSuggestions = data.result.goi_y;
+      f.aiSuggestions = data.result.goi_y;
+      f.screen = 'ai-suggest-result'; state.screen = 'ai-suggest-result';
       persistFormDraft();
     } catch (e) {
-      state.formatSuggestError = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
+      state.aiSuggestError = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
     }
     stopProgress();
-    state.formatSuggestLoading = false;
+    state.aiSuggestLoading = false;
     draw();
   }
 
@@ -467,13 +540,13 @@ function render(container, profile) {
       state.screen = 'result';
     } catch (e) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
-      state.screen = 'format-pick';
+      state.screen = 'form';
     }
     stopProgress();
     try {
       draw();
     } catch (e) {
-      state.result = null; state.screen = 'format-pick'; state.error = 'Có lỗi khi hiển thị kết quả — thử lại giúp mình.';
+      state.result = null; state.screen = 'form'; state.error = 'Có lỗi khi hiển thị kết quả — thử lại giúp mình.';
       draw();
     }
   }
