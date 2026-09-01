@@ -117,12 +117,13 @@ function render(container, ctx){
   }
 
   async function loadReferralPartners(){
-    const [{ data }, { data: tcData }] = await Promise.all([
+    const [{ data }, { data: tcData }, { data: crmData }] = await Promise.all([
       ctx.supabase.from('referrals').select('referrer_id, reward_luot'),
-      // Hạng "Hiểu Partner" đếm CỘNG DỒN cả referrals (Xây Nhân Hiệu) lẫn tc_referrals (Sổ Dòng
-      // Tiền) — không lưu tổng ở profiles, tính trực tiếp mỗi lần cần (xem comment is_vip_partner
-      // ở schema_full.sql).
+      // Hạng "Hiểu Partner" đếm CỘNG DỒN cả referrals (Xây Nhân Hiệu), tc_referrals (Sổ Dòng Tiền),
+      // và crm_referrals (Trợ Lý AI Tư Vấn & CRM) — không lưu tổng ở profiles, tính trực tiếp mỗi
+      // lần cần (xem comment is_vip_partner ở schema_full.sql).
       ctx.supabase.from('tc_referrals').select('referrer_id'),
+      ctx.supabase.from('crm_referrals').select('referrer_id, reward_luot'),
     ]);
     const rows = data || [];
     const byReferrer = {};
@@ -134,6 +135,11 @@ function render(container, ctx){
     (tcData || []).forEach(r=>{
       if(!byReferrer[r.referrer_id]) byReferrer[r.referrer_id] = { count:0, luot:0 };
       byReferrer[r.referrer_id].count++;
+    });
+    (crmData || []).forEach(r=>{
+      if(!byReferrer[r.referrer_id]) byReferrer[r.referrer_id] = { count:0, luot:0 };
+      byReferrer[r.referrer_id].count++;
+      byReferrer[r.referrer_id].luot += (r.reward_luot||0);
     });
     // Giữ lại TOÀN BỘ map (không chỉ ai đủ ngưỡng partner) để hiện số liệu giới thiệu ngay trên
     // từng thẻ tài khoản bên dưới — không phải chỉ ai đạt >= PARTNER_REFERRAL_THRESHOLD mới thấy.

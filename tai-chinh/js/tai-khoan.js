@@ -18,7 +18,7 @@ function render(container, ctx){
     passMsg: '',
     passError: '',
     referrals: [],
-    xnhReferralCount: 0,
+    otherProductReferralCount: 0,
     referralLinkCopied: false,
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushSubscribed: false,
@@ -47,14 +47,16 @@ function render(container, ctx){
   checkPushSubscription();
 
   async function loadReferrals(){
-    const [{ data }, { data: xnhData }] = await Promise.all([
+    const [{ data }, { data: xnhData }, { data: crmData }] = await Promise.all([
       ctx.supabase.from('tc_referrals').select('*').eq('referrer_id', ctx.user.id).order('created_at', { ascending:false }),
-      // Hạng "Hiểu Partner" đếm CỘNG DỒN cả tc_referrals (app này) lẫn referrals (Xây Nhân Hiệu) —
-      // không lưu tổng ở profiles, tính trực tiếp mỗi lần cần (xem comment is_vip_partner ở schema_full.sql).
+      // Hạng "Hiểu Partner" đếm CỘNG DỒN cả tc_referrals (app này), referrals (Xây Nhân Hiệu), và
+      // crm_referrals (Trợ Lý AI Tư Vấn & CRM) — không lưu tổng ở profiles, tính trực tiếp mỗi lần
+      // cần (xem comment is_vip_partner ở schema_full.sql).
       ctx.supabase.from('referrals').select('id').eq('referrer_id', ctx.user.id),
+      ctx.supabase.from('crm_referrals').select('id').eq('referrer_id', ctx.user.id),
     ]);
     state.referrals = data || [];
-    state.xnhReferralCount = (xnhData || []).length;
+    state.otherProductReferralCount = (xnhData || []).length + (crmData || []).length;
     draw();
   }
   loadReferrals();
@@ -215,7 +217,7 @@ function render(container, ctx){
         const totalEarned = state.referrals.reduce((s,r)=>s+Number(r.reward_amount),0);
         const totalPaid = state.referrals.filter(r=>r.paid).reduce((s,r)=>s+Number(r.reward_amount),0);
         const totalPending = totalEarned - totalPaid;
-        const hieuPartnerCount = totalCount + state.xnhReferralCount;
+        const hieuPartnerCount = totalCount + state.otherProductReferralCount;
         const isVip = ctx.profile && ctx.profile.is_vip_partner;
         const effectivePercent = TC_REFERRAL_REWARD_PERCENT + (isVip ? 10 : 0);
         return `

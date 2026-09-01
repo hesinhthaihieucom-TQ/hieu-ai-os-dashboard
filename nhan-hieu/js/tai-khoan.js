@@ -90,17 +90,18 @@ function render(container, ctx){
   // khi referee đã trả tiền THẬT (xem creditReferralReward trong api/sepay-webhook.js), nên đây
   // đúng nghĩa "đã giới thiệu thành công", không tính người mới bấm link nhưng chưa mua gì.
   async function loadReferralStats(){
-    const [{ data }, { data: tcData }] = await Promise.all([
+    const [{ data }, { data: tcData }, { data: crmData }] = await Promise.all([
       ctx.supabase.from('referrals').select('reward_luot').eq('referrer_id', ctx.user.id),
-      // Hạng "Hiểu Partner" (xem PARTNER_REFERRAL_THRESHOLD) đếm CỘNG DỒN cả referrals (app này) lẫn
-      // tc_referrals (Sổ Dòng Tiền) — không lưu tổng ở profiles, tính trực tiếp mỗi lần cần (xem
-      // comment is_vip_partner ở schema_full.sql).
+      // Hạng "Hiểu Partner" (xem PARTNER_REFERRAL_THRESHOLD) đếm CỘNG DỒN cả referrals (app này),
+      // tc_referrals (Sổ Dòng Tiền), và crm_referrals (Trợ Lý AI Tư Vấn & CRM) — không lưu tổng ở
+      // profiles, tính trực tiếp mỗi lần cần (xem comment is_vip_partner ở schema_full.sql).
       ctx.supabase.from('tc_referrals').select('id').eq('referrer_id', ctx.user.id),
+      ctx.supabase.from('crm_referrals').select('id').eq('referrer_id', ctx.user.id),
     ]);
     const rows = data || [];
     state.referralCount = rows.length;
     state.referralLuotEarned = rows.reduce((sum,r)=> sum + (r.reward_luot||0), 0);
-    state.hieuPartnerCount = rows.length + (tcData || []).length;
+    state.hieuPartnerCount = rows.length + (tcData || []).length + (crmData || []).length;
     draw();
   }
 

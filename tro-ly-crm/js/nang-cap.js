@@ -14,6 +14,17 @@ const PLANS = [
   { key:'12m', label:'Theo năm', amount:3990000 },
 ];
 
+// Giá giới thiệu (2026-09-01, "làm tương tự như web xây nhân hiệu") — giảm 15% so giá thường, CHỈ
+// hiện cho người có profiles.referred_by_ref_code (đăng ký qua link giới thiệu, gán 1 lần lúc đăng
+// ký ở handle_new_user, xem supabase/schema_core.sql — dùng CHUNG ecosystem-wide, không riêng gì
+// tro-ly-crm). Khớp đúng CRM_AMOUNT_TO_DAYS/CRM_REFERRAL_AMOUNTS ở api/sepay-webhook.js.
+const PLANS_REFERRAL = [
+  { key:'1m_ref', label:'1 tháng (giá giới thiệu)', amount:424000, note:'Giảm 15% nhờ qua link giới thiệu — còn 424.000đ so với giá thường 499.000đ.' },
+  { key:'6m_ref', label:'6 tháng (giá giới thiệu)', amount:2116000, recommended:true, note:'Giảm 15% nhờ qua link giới thiệu — còn 2.116.000đ so với giá thường 2.490.000đ.' },
+  { key:'12m_ref', label:'12 tháng (giá giới thiệu)', amount:3392000, note:'Giảm 15% nhờ qua link giới thiệu — còn 3.392.000đ so với giá thường 3.990.000đ.' },
+];
+function currentPlans(ctx){ return (ctx.profile && ctx.profile.referred_by_ref_code) ? PLANS_REFERRAL : PLANS; }
+
 // "Mua thêm lượt" (2026-08-30, chị Quỳnh chốt "tính tiền như web xây nhân hiệu") — CỐ Ý dùng lại
 // đúng giá của nhan-hieu (AMOUNT_TO_TOPUP_LUOT) vì webhook phân biệt qua tiền tố "CRM" trong nội
 // dung chuyển khoản, không phải qua số tiền — an toàn dùng chung giá dù trùng số tiền (xem
@@ -25,8 +36,9 @@ const TOPUP_PACKS = [
 ];
 
 function render(container, ctx){
+  const plans = currentPlans(ctx);
   const state = {
-    loading:true, refCode:null, selectedPlanKey: PLANS.find(p=>p.recommended).key, checking:false, checkedOnce:false, error:'',
+    loading:true, refCode:null, selectedPlanKey: (plans.find(p=>p.recommended)||plans[0]).key, checking:false, checkedOnce:false, error:'',
     selectedTopupKey: TOPUP_PACKS[1].key, topupChecking:false, topupCheckedOnce:false,
   };
 
@@ -93,7 +105,8 @@ function render(container, ctx){
   function html(){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
 
-    const plan = PLANS.find(pl => pl.key === state.selectedPlanKey) || PLANS[0];
+    const plans = currentPlans(ctx);
+    const plan = plans.find(pl => pl.key === state.selectedPlanKey) || plans[0];
     const transferContent = state.refCode ? `SEVQR ${state.refCode}` : null;
     const qrUrl = state.refCode
       ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
@@ -112,8 +125,9 @@ function render(container, ctx){
       <div class="card" style="max-width:460px;margin-top:16px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
         <div class="chips" id="plan-chips">
-          ${PLANS.map(pl => `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${pl.recommended?` <span style="opacity:.72;font-size:11.5px;">(khuyên dùng)</span>`:''}</div>`).join('')}
+          ${plans.map(pl => `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${pl.recommended?` <span style="opacity:.72;font-size:11.5px;">(khuyên dùng)</span>`:''}</div>`).join('')}
         </div>
+        ${plan.note ? `<div class="hint-box" style="margin-top:10px;">🎉 ${esc(plan.note)}</div>` : ''}
 
         ${qrUrl ? `
           <div style="text-align:center;margin-top:18px;">

@@ -19,6 +19,21 @@ const NAV = [
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
 
+// Chương trình giới thiệu (2026-09-01, "làm tương tự như web xây nhân hiệu") — bắt lấy ?ref=<mã>
+// ngay khi vào web (kể cả trước khi đăng ký/đăng nhập) và lưu tạm vào localStorage, tới lúc signUp()
+// mới thực sự gửi lên (xem renderAuthScreen bên dưới). Tiền tố RIÊNG "crm_..." khác "xnh_..." của
+// nhan-hieu vì 2 app có thể chung 1 origin. profiles.referred_by_ref_code là cột ecosystem-wide
+// (schema_core.sql, handle_new_user) — hầu hết user đã có mã này từ trước nếu từng đăng ký qua app
+// khác trong hệ sinh thái; capture ở đây chỉ cần cho người CHƯA TỪNG dùng app nào, đăng ký thẳng qua
+// link giới thiệu riêng của tro-ly-crm.
+const CRM_REF_STORAGE_KEY = 'crm_referred_by_ref_code';
+(function captureCrmReferralCode(){
+  try {
+    const m = /[?&]ref=([A-Za-z0-9]+)/.exec(location.search);
+    if(m && !localStorage.getItem(CRM_REF_STORAGE_KEY)) localStorage.setItem(CRM_REF_STORAGE_KEY, m[1].toUpperCase());
+  } catch(e){}
+})();
+
 // Cùng cặp VAPID key với nhan-hieu/tai-chinh (server chỉ có 1 VAPID_PRIVATE_KEY dùng chung cho toàn
 // bộ hệ sinh thái HIỂU, xem api/_lib/push.js) — dùng khi bật thông báo nhắc follow khách.
 const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY4xz2SisvwpU3IWo_ciiGTMxoLJq42QzkE';
@@ -214,8 +229,11 @@ function renderAuthScreen(err, successMsg){
         if(pass !== confirmPass){ renderAuthScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
         btn.disabled = true; btn.textContent = 'Đang xử lý…';
         const full_name = root.querySelector('#af-name').value.trim();
-        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name } } });
+        let referredByRefCode = null;
+        try { referredByRefCode = localStorage.getItem(CRM_REF_STORAGE_KEY) || null; } catch(e){}
+        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass, options:{ data:{ full_name, referred_by_ref_code: referredByRefCode } } });
         if(error) throw error;
+        try { localStorage.removeItem(CRM_REF_STORAGE_KEY); } catch(e){}
         if(!data.session){
           AppState.authMode = 'login';
           authFields = { name:'', email:'', pass:'', passConfirm:'' };

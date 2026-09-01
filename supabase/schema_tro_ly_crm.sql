@@ -294,3 +294,34 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_crm_announcement_seen(timestamptz) to authenticated;
+
+-- Chương trình giới thiệu tro-ly-crm (2026-09-01, chị Quỳnh: "làm tương tự như web xây nhân hiệu")
+-- — dùng LẠI đúng cơ chế lượt AI của Xây Nhân Hiệu (referrals bảng, KHÔNG phải tiền mặt như
+-- tc_referrals), vì tro-ly-crm đã có sẵn hệ lượt AI riêng (crm_ai_bonus). Referrer/referee vẫn dùng
+-- CHUNG profiles.ref_code/referred_by_ref_code (cột ecosystem-wide ở schema_core.sql, sinh 1 lần lúc
+-- đăng ký bất kể đăng ký qua app nào) — chỉ CỘT ĐÁNH DẤU ĐÃ THƯỞNG và BẢNG GHI SỔ là riêng cho từng
+-- sản phẩm (giống referral_reward_given/referrals của Xây Nhân Hiệu và tc_referral_reward_given/
+-- tc_referrals của Sổ Dòng Tiền), để 1 referee mua ở nhiều sản phẩm khác nhau thì referrer được
+-- thưởng riêng ở TỪNG sản phẩm, không bị chặn lẫn nhau.
+alter table profiles add column if not exists crm_referral_reward_given boolean not null default false;
+
+create table if not exists crm_referrals (
+  id uuid primary key default gen_random_uuid(),
+  referrer_id uuid not null references profiles(id) on delete cascade,
+  referee_id uuid not null references profiles(id) on delete cascade,
+  package_amount bigint not null,
+  reward_luot integer not null,
+  created_at timestamptz not null default now()
+);
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'crm_referrals_referee_id_unique') then
+    alter table crm_referrals add constraint crm_referrals_referee_id_unique unique (referee_id);
+  end if;
+end $$;
+create index if not exists crm_referrals_referrer_idx on crm_referrals(referrer_id);
+alter table crm_referrals enable row level security;
+drop policy if exists "crm_referrals_admin_read" on crm_referrals;
+create policy "crm_referrals_admin_read" on crm_referrals for select using (is_admin());
+drop policy if exists "crm_referrals_own_read" on crm_referrals;
+create policy "crm_referrals_own_read" on crm_referrals for select using (auth.uid() = referrer_id);

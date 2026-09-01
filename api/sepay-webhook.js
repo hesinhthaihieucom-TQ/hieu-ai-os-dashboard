@@ -155,7 +155,22 @@ const CRM_AMOUNT_TO_DAYS = {
   499000: 30,    // 1 tháng
   2490000: 180,  // 6 tháng
   3990000: 365,  // 1 năm
+  // Giá giới thiệu (referral, 2026-09-01, "làm tương tự như web xây nhân hiệu") — giảm 15% so giá
+  // thường, CHỈ hiện cho người có referred_by_ref_code (xem tro-ly-crm/js/nang-cap.js). Khớp đúng
+  // những số tiền này còn kích hoạt thưởng lượt AI cho người đã giới thiệu (creditCrmReferralReward
+  // bên dưới). 1 tháng/1 năm TRÙNG SỐ với giá giới thiệu của nhan-hieu (424000/3392000) vì 2 sản
+  // phẩm cùng giá gốc 499000/3990000 — an toàn vì nhánh crmRefCode đã tách biệt hoàn toàn theo tiền
+  // tố trước khi so số tiền, không có rủi ro đụng độ.
+  424000: 30,    // 1 tháng, giá giới thiệu
+  2116000: 180,  // 6 tháng, giá giới thiệu (giảm 15% so 2.490.000đ — KHÁC số của nhan-hieu vì giá gốc 6 tháng khác nhau)
+  3392000: 365,  // 1 năm, giá giới thiệu
 };
+// Số tiền coi là "đã mua giá giới thiệu" — khớp 1 trong 3 số này thì mới kích hoạt thưởng cho
+// referrer (không tính khi mua "Mua thêm lượt" hay các số tiền khác).
+const CRM_REFERRAL_AMOUNTS = new Set([424000, 2116000, 3392000]);
+// Quy đổi giống hệt nhan-hieu — thưởng lượt AI = 15% giá trị đơn hàng, quy đổi theo giá bán lẻ
+// "Mua thêm lượt" hiện tại (1.500đ/lượt, dùng lại REFERRAL_LUOT_PER_DONG đã khai báo ở trên).
+const CRM_REFERRAL_REWARD_PERCENT = 0.15;
 // "Mua thêm lượt" tro-ly-crm (2026-08-30, chị Quỳnh chốt "tính tiền như web xây nhân hiệu") — CỐ Ý
 // dùng lại ĐÚNG số tiền/giá của AMOUNT_TO_TOPUP_LUOT (nhan-hieu) — an toàn vì nhánh crmRefCode ở
 // dưới tách biệt hoàn toàn (chỉ vào nhánh này khi content khớp "CRM......", không rơi qua nhánh XNH
@@ -253,6 +268,59 @@ async function creditTcReferralReward(refereeProfile, transferAmount) {
   await supabaseAdmin(`profiles?id=eq.${refereeProfile.id}`, {
     method: 'PATCH',
     body: JSON.stringify({ tc_referral_reward_given: true }),
+  });
+}
+
+// Thưởng referrer của tro-ly-crm khi referee vừa mua giá giới thiệu lần ĐẦU TIÊN — best-effort,
+// KHÔNG throw ra ngoài (referee đã kích hoạt crm_access_until xong ở trên rồi). Khác nhan-hieu ở
+// chỗ tro-ly-crm KHÔNG có khái niệm "dùng thử" — referrer chưa từng trả phí vẫn được cộng thẳng
+// vào crm_ai_bonus (giống hệt cách nhánh topupLuot cộng bonus bên dưới), nằm chờ tới khi họ trả phí
+// thì dùng được ngay, không cần refund ngược 1 bộ đếm dùng thử nào (không tồn tại ở sản phẩm này).
+async function creditCrmReferralReward(refereeProfile, transferAmount) {
+  if (!CRM_REFERRAL_AMOUNTS.has(transferAmount)) return;
+  if (!refereeProfile.referred_by_ref_code || refereeProfile.crm_referral_reward_given) return;
+
+  const referrerResp = await supabaseAdmin(
+    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,is_vip_partner,crm_ai_uses,crm_ai_month,crm_ai_bonus`
+  );
+  const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
+  const referrer = referrerRows[0];
+  if (!referrer) return; // mã giới thiệu không còn khớp ai (vd tài khoản đã bị xoá) — bỏ qua, không lỗi
+
+  // VIP Partner (xem VIP_PARTNER_AMOUNT ở trên) cộng thêm +10 điểm % — 15% thành 25%.
+  const rewardPercent = CRM_REFERRAL_REWARD_PERCENT + (referrer.is_vip_partner ? VIP_PARTNER_BONUS_PERCENT : 0);
+  const rewardLuot = Math.round((transferAmount * rewardPercent) / REFERRAL_LUOT_PER_DONG);
+  if (rewardLuot <= 0) return;
+
+  // Cộng vào crm_ai_bonus của THÁNG HIỆN TẠI — khớp đúng logic nhánh topupLuot ở dưới (crm dùng
+  // tháng lịch, không phải chu kỳ 30 ngày như paid_ai_* của nhan-hieu).
+  const month = new Date().toISOString().slice(0, 7);
+  const sameMonth = referrer.crm_ai_month === month;
+  const rewardPatch = sameMonth
+    ? { crm_ai_bonus: (referrer.crm_ai_bonus || 0) + rewardLuot }
+    : { crm_ai_month: month, crm_ai_uses: 0, crm_ai_bonus: rewardLuot };
+
+  const patchResp = await supabaseAdmin(`profiles?id=eq.${referrer.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(rewardPatch),
+  });
+  if (!patchResp.ok) return;
+
+  // Đánh dấu đã thưởng NGAY (trước khi ghi log crm_referrals) — referee này không được thưởng lại
+  // lần 2 kể cả nếu bước ghi log bên dưới lỗi.
+  await supabaseAdmin(`profiles?id=eq.${refereeProfile.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ crm_referral_reward_given: true }),
+  });
+  await supabaseAdmin('crm_referrals', {
+    method: 'POST',
+    prefer: 'return=minimal',
+    body: JSON.stringify({
+      referrer_id: referrer.id,
+      referee_id: refereeProfile.id,
+      package_amount: transferAmount,
+      reward_luot: rewardLuot,
+    }),
   });
 }
 
@@ -456,7 +524,7 @@ module.exports = async (req, res) => {
       // Trợ Lý AI Tư Vấn & CRM — hạn dùng RIÊNG (crm_access_until), cộng dồn giống access_until của
       // nhan-hieu (base = hạn cũ nếu còn hiệu lực, else từ hôm nay). Không có ưu đãi mua sớm/giới
       // thiệu/học viên cho sản phẩm này (bản đầu, thêm sau nếu chị Quỳnh cần).
-      const profResp = await supabaseAdmin(`profiles?crm_ref_code=eq.${crmRefCode}&select=id,crm_access_until,crm_ai_uses,crm_ai_month,crm_ai_bonus`);
+      const profResp = await supabaseAdmin(`profiles?crm_ref_code=eq.${crmRefCode}&select=id,crm_access_until,crm_ai_uses,crm_ai_month,crm_ai_bonus,referred_by_ref_code,crm_referral_reward_given`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
@@ -475,6 +543,9 @@ module.exports = async (req, res) => {
             status = 'matched';
             matchedProfileId = profile.id;
             daysGranted = days;
+            // Best-effort, KHÔNG để lỗi ở đây làm mất luôn việc ghi log sepay_transactions bên
+            // dưới — referee đã kích hoạt xong gói của họ rồi, phần thưởng cho referrer là phụ.
+            try { await creditCrmReferralReward(profile, transferAmount); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
           } else {
             status = 'unmatched_amount';
           }
