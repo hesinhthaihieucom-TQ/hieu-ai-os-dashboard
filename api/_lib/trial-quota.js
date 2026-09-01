@@ -64,6 +64,13 @@ const AI_WEIGHTS = {
   'xay-dung-noi-dung-nghien-cuu': 2,
   'xay-dung-noi-dung-viet': 3,
   'xay-dung-noi-dung-review': 1,
+  // Nhánh "đã có sẵn tài liệu" (mục A, 2026-09-01) — đọc thẳng 1 file PDF qua Claude thay vì suy từ
+  // 12 câu trả lời ngắn, ngang mức tim-san-pham-phu-hop vì cùng vai trò (ra 2-3 phương án + outline).
+  'tim-san-pham-tu-tai-lieu': 8,
+  // Viết mô tả bán hàng / caption quảng cáo (mục D, H) — 1 lượt gọi ngắn, rẻ, không phải bước chính
+  // của luồng tạo sản phẩm mà chỉ là tiện ích phụ trợ.
+  'san-pham-so-viet-mo-ta': 1,
+  'san-pham-so-viet-caption': 1,
 };
 
 // Trước đây fetch() này KHÔNG có giới hạn thời gian chờ — nếu RPC bị kẹt (vd khoá dòng "for

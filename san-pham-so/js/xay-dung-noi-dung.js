@@ -25,8 +25,19 @@ function render(container, ideaRow) {
     activeIndex: null,
     workingStep: null, // 'nghien-cuu' | 'viet' | 'review' — hiện text tiến trình khi đang chạy chuỗi
     ebookResult: ideaRow.ebook_result || null, // {heyzineUrl, thumbnail, pdfStoragePath} — giữ qua reload
+    editingOutlineIndex: null, // index (flattenSections) của phần outline cấp 2 đang sửa tay, null = không sửa
+    editOutlineForm: null,
     error: null,
   };
+
+  // Đối chiếu index phẳng (flattenSections) về đúng vị trí gốc trong state.outline2 (mo_dau/phan[i]/ket)
+  // — dùng chung cho đọc và ghi khi sửa tay outline cấp 2 (mục C).
+  function outlineSectionRef(i) {
+    const total = flattenSections(state.outline2).length;
+    if (i === 0) return { get: () => state.outline2.mo_dau, set: (v) => { state.outline2.mo_dau = v; } };
+    if (i === total - 1) return { get: () => state.outline2.ket, set: (v) => { state.outline2.ket = v; } };
+    return { get: () => state.outline2.phan[i - 1], set: (v) => { state.outline2.phan[i - 1] = v; } };
+  }
 
   function draw() { container.innerHTML = html(); bind(); }
   // Bọc lỗi render (không chỉ lỗi gọi API) — nếu html() throw vì dữ liệu AI bất thường, màn hình sẽ
@@ -92,6 +103,7 @@ function render(container, ideaRow) {
   }
 
   function outline2Html() {
+    if (state.editingOutlineIndex != null) return outlineEditHtml();
     const sections = flattenSections(state.outline2);
     return `
       <h2>${esc(idea.ten_san_pham)}</h2>
@@ -105,7 +117,10 @@ function render(container, ideaRow) {
         if (status === 'review-done') btnLabel = '✅ Xem bản hoàn chỉnh';
         return `
           <div class="card">
-            <div style="font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">${esc(s.kind)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+              <div style="font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">${esc(s.kind)}</div>
+              <span class="btn-ghost btn btn-sm" data-edit-outline-section="${i}">✏️ Sửa</span>
+            </div>
             <h2 style="font-size:16px;margin-bottom:6px;">${esc(s.tieu_de)}</h2>
             <div style="font-size:13.5px;margin-bottom:8px;"><b>Kết quả đạt được:</b> ${esc(s.ket_qua_cu_the)}</div>
             <ul style="margin:0 0 10px;padding-left:20px;font-size:13px;color:var(--ink-soft);">${(s.noi_dung_con || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul>
@@ -116,15 +131,40 @@ function render(container, ideaRow) {
     `;
   }
 
+  function outlineEditHtml() {
+    const f = state.editOutlineForm;
+    return `
+      <div class="card">
+        <h2 style="font-size:18px;">Sửa phần outline</h2>
+        <label>Tiêu đề</label>
+        <input id="xdnd-edit-tieude" type="text" value="${esc(f.tieu_de)}">
+        <label>Kết quả cụ thể</label>
+        <input id="xdnd-edit-ketqua" type="text" value="${esc(f.ket_qua_cu_the)}">
+        <label>Nội dung con (mỗi dòng 1 ý)</label>
+        <textarea id="xdnd-edit-noidungcon" rows="5">${esc((f.noi_dung_con || []).join('\n'))}</textarea>
+        ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
+        <div class="btn-row">
+          <button class="btn" id="xdnd-edit-outline-save-btn">Lưu</button>
+          <span class="btn-ghost btn" id="xdnd-edit-outline-cancel-btn">Huỷ</span>
+        </div>
+      </div>
+    `;
+  }
+
   function sectionDraftHtml() {
     const s = state.sections[state.activeIndex];
     return `
       <div class="card">
         <h2 style="font-size:16px;">Bản nháp — ${esc(flattenSections(state.outline2)[state.activeIndex].tieu_de)}</h2>
-        <div style="font-size:14.5px;white-space:pre-line;margin-bottom:12px;">${esc(s.viet.noi_dung)}</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>
+        <textarea id="xdnd-draft-textarea" rows="14" style="font-size:14.5px;">${esc(s.viet.noi_dung)}</textarea>
         <div class="hint-box"><b>Ví dụ:</b> ${esc(s.viet.vi_du)}</div>
         <div class="hint-box"><b>Bài tập:</b> ${esc(s.viet.bai_tap)}</div>
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+        <div class="btn-row">
+          <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
+          <span class="btn-ghost btn btn-sm" id="xdnd-rewrite-btn">🔄 Viết lại bằng AI</span>
+        </div>
         <div class="btn-row">
           <button class="btn" id="xdnd-review-btn">🔍 Kiểm tra chất lượng (1 lượt AI)</button>
           <span class="btn-ghost btn" id="xdnd-back-outline-btn">← Quay lại outline</span>
@@ -148,7 +188,13 @@ function render(container, ideaRow) {
           ${items.map(([k, label]) => `<li>${c[k] ? '✅' : '⚠️'} ${label}</li>`).join('')}
         </ul>
         ${s.review.gop_y ? `<div class="hint-box"><b>Góp ý:</b> ${esc(s.review.gop_y)}</div>` : ''}
-        <div style="font-size:14.5px;white-space:pre-line;margin-top:10px;">${esc(s.review.ban_da_chinh || s.viet.noi_dung)}</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:10px;margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>
+        <textarea id="xdnd-final-textarea" rows="14" style="font-size:14.5px;">${esc(s.review.ban_da_chinh || s.viet.noi_dung)}</textarea>
+        ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+        <div class="btn-row">
+          <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
+          <span class="btn-ghost btn btn-sm" id="xdnd-rewrite-btn">🔄 Viết lại bằng AI</span>
+        </div>
         <div class="btn-row">
           <span class="btn-ghost btn" id="xdnd-back-outline-btn">← Quay lại outline</span>
         </div>
@@ -162,8 +208,18 @@ function render(container, ideaRow) {
       ta.oninput = () => { state.taiLieu = ta.value; saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu }); };
       container.querySelector('#xdnd-outline2-btn').onclick = generateOutline2;
     } else if (state.screen === 'outline2') {
+      if (state.editingOutlineIndex != null) { bindOutlineEdit(); return; }
       container.querySelectorAll('[data-open-section]').forEach(el => {
         el.onclick = () => openSection(Number(el.getAttribute('data-open-section')));
+      });
+      container.querySelectorAll('[data-edit-outline-section]').forEach(el => {
+        el.onclick = () => {
+          const i = Number(el.getAttribute('data-edit-outline-section'));
+          state.editingOutlineIndex = i;
+          state.editOutlineForm = JSON.parse(JSON.stringify(outlineSectionRef(i).get()));
+          state.error = null;
+          draw();
+        };
       });
       const exportBtn = container.querySelector('#xdnd-export-ebook-btn');
       if (exportBtn) exportBtn.onclick = exportEbook;
@@ -172,9 +228,39 @@ function render(container, ideaRow) {
     } else if (state.screen === 'section-draft') {
       container.querySelector('#xdnd-review-btn').onclick = runReview;
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
+      container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-draft-textarea', (s, val) => { s.viet.noi_dung = val; });
+      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex);
     } else if (state.screen === 'section-final') {
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
+      container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-final-textarea', (s, val) => { s.review.ban_da_chinh = val; });
+      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex);
     }
+  }
+
+  function bindOutlineEdit() {
+    container.querySelector('#xdnd-edit-tieude').oninput = (e) => { state.editOutlineForm.tieu_de = e.target.value; };
+    container.querySelector('#xdnd-edit-ketqua').oninput = (e) => { state.editOutlineForm.ket_qua_cu_the = e.target.value; };
+    container.querySelector('#xdnd-edit-noidungcon').oninput = (e) => { state.editOutlineForm.noi_dung_con = e.target.value.split('\n').map(x => x.trim()).filter(Boolean); };
+    container.querySelector('#xdnd-edit-outline-cancel-btn').onclick = () => { state.editingOutlineIndex = null; state.editOutlineForm = null; state.error = null; draw(); };
+    container.querySelector('#xdnd-edit-outline-save-btn').onclick = async () => {
+      if (!state.editOutlineForm.tieu_de.trim()) { state.error = 'Vui lòng nhập tiêu đề.'; draw(); return; }
+      if (!state.editOutlineForm.noi_dung_con.length) { state.error = 'Cần ít nhất 1 nội dung con.'; draw(); return; }
+      outlineSectionRef(state.editingOutlineIndex).set(state.editOutlineForm);
+      await saveIdeaResult({ outline_cap_2: state.outline2 });
+      state.editingOutlineIndex = null; state.editOutlineForm = null; state.error = null;
+      draw();
+    };
+  }
+
+  // Ghi nội dung sửa tay (bấm "Lưu chỉnh sửa") KHÔNG gọi AI — thuần lưu textarea vào đúng chỗ trong
+  // state.sections (viet.noi_dung ở bản nháp, review.ban_da_chinh ở bản hoàn chỉnh) rồi lưu DB.
+  async function saveManualEdit(selector, applyFn) {
+    const ta = container.querySelector(selector);
+    const s = state.sections[state.activeIndex];
+    applyFn(s, ta.value);
+    await saveIdeaResult({ sections: state.sections });
+    state.error = null;
+    draw();
   }
 
   async function exportEbook() {

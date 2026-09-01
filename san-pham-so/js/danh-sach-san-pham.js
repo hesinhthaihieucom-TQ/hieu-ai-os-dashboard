@@ -14,7 +14,7 @@ function publicLink(slug) {
 }
 
 function render(container) {
-  const state = { view: 'list', products: [], loading: true, saving: false, error: null, form: null };
+  const state = { view: 'list', products: [], loading: true, saving: false, error: null, form: null, moTaLoading: false, captions: {} };
 
   function persistDraft() {
     if (state.view === 'edit' && state.form) saveDraft(DRAFT_KEY, state.form);
@@ -69,6 +69,15 @@ function render(container) {
                 <span class="mono" style="font-size:12.5px;background:var(--accent-soft);padding:3px 8px;border-radius:6px;word-break:break-all;">${esc(publicLink(p.slug))}</span>
                 <span class="btn-ghost btn btn-sm" data-copy-link="${esc(publicLink(p.slug))}">Copy link</span>
               </div>
+              <div style="margin-top:8px;">
+                <span class="btn-ghost btn btn-sm" data-caption-btn="${p.id}" ${(state.captions[p.id] && state.captions[p.id].loading) ? 'style="opacity:.5;pointer-events:none;"' : ''}>${(state.captions[p.id] && state.captions[p.id].loading) ? 'Đang viết…' : '📣 Viết caption quảng cáo (1 lượt)'}</span>
+              </div>
+              ${state.captions[p.id] && state.captions[p.id].text ? `
+                <div class="hint-box" style="margin-top:8px;white-space:pre-line;">${esc(state.captions[p.id].text)}
+                  <div class="btn-row" style="margin-top:8px;"><span class="btn-ghost btn btn-sm" data-copy-caption="${p.id}">Copy caption</span></div>
+                </div>
+              ` : ''}
+              ${state.captions[p.id] && state.captions[p.id].error ? `<div class="error-box" style="margin-top:8px;">${esc(state.captions[p.id].error)}</div>` : ''}
             ` : ''}
           </div>
         `).join('')}
@@ -85,8 +94,12 @@ function render(container) {
         <input id="sps-title" type="text" value="${esc(f.title)}" placeholder="VD: Ebook 30 ngày quản lý chi tiêu">
         <label>Mô tả (hiện trên trang giới thiệu)</label>
         <textarea id="sps-desc" rows="4" placeholder="Giới thiệu ngắn gọn nội dung, lợi ích cho người mua...">${esc(f.description || '')}</textarea>
+        <div class="btn-row" style="margin-top:6px;">
+          <span class="btn-ghost btn btn-sm" id="sps-ai-mo-ta-btn" ${(state.moTaLoading || !f.title.trim()) ? 'style="opacity:.5;pointer-events:none;"' : ''}>${state.moTaLoading ? 'Đang viết…' : '✨ Viết mô tả bằng AI (1 lượt)'}</span>
+        </div>
         <label>Giá bán (đ)</label>
         <input id="sps-price" type="number" min="1000" step="1000" value="${esc(f.price)}" placeholder="VD: 99000">
+        <div class="hint-box" style="margin-top:6px;">💡 Gợi ý khoảng giá tham khảo: Checklist/Workbook 49.000-149.000đ · Ebook 99.000-299.000đ · Mini-course 299.000-990.000đ · Template/File mẫu 49.000-199.000đ</div>
         <label>Ảnh bìa (tuỳ chọn)</label>
         <input id="sps-cover" type="file" accept="image/*">
         ${f.cover_image_url ? `<img src="${f.cover_image_url}" style="max-width:160px;border-radius:8px;margin-top:8px;display:block;">` : ''}
@@ -142,6 +155,37 @@ function render(container) {
           } catch (e) {}
         };
       });
+
+      container.querySelectorAll('[data-caption-btn]').forEach(el => {
+        el.onclick = async () => {
+          const id = el.getAttribute('data-caption-btn');
+          const p = state.products.find(x => x.id === id);
+          if (!p) return;
+          state.captions[id] = { loading: true, text: null, error: null };
+          draw();
+          try {
+            const data = await callApi('api/san-pham-so-viet-caption', { title: p.title, description: p.description || '' });
+            state.captions[id] = { loading: false, text: data.caption, error: null };
+          } catch (e) {
+            state.captions[id] = { loading: false, text: null, error: e.message };
+          }
+          draw();
+        };
+      });
+
+      container.querySelectorAll('[data-copy-caption]').forEach(el => {
+        el.onclick = async () => {
+          const id = el.getAttribute('data-copy-caption');
+          const c = state.captions[id];
+          if (!c || !c.text) return;
+          try {
+            await navigator.clipboard.writeText(c.text);
+            const old = el.textContent;
+            el.textContent = 'Đã copy ✓';
+            setTimeout(() => { el.textContent = old; }, 1500);
+          } catch (e) {}
+        };
+      });
       return;
     }
 
@@ -156,6 +200,21 @@ function render(container) {
     externalLinkEl.oninput = () => { state.form.external_link = externalLinkEl.value; persistDraft(); };
     const publishedEl = container.querySelector('#sps-published');
     publishedEl.onchange = () => { state.form.published = publishedEl.checked; persistDraft(); };
+
+    const aiMoTaBtn = container.querySelector('#sps-ai-mo-ta-btn');
+    if (aiMoTaBtn) aiMoTaBtn.onclick = async () => {
+      if (!state.form.title.trim()) { state.error = 'Vui lòng nhập tên sản phẩm trước.'; draw(); return; }
+      state.moTaLoading = true; state.error = null; draw();
+      try {
+        const data = await callApi('api/san-pham-so-viet-mo-ta', { title: state.form.title, description_hien_tai: state.form.description || '' });
+        state.form.description = data.mo_ta;
+        persistDraft();
+      } catch (e) {
+        state.error = e.message;
+      }
+      state.moTaLoading = false;
+      draw();
+    };
 
     const coverEl = container.querySelector('#sps-cover');
     coverEl.onchange = () => {

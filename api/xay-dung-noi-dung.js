@@ -15,6 +15,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Luôn có ít nhất 1 ví dụ thật hoặc hướng ví dụ hợp lý — KHÔNG bịa số liệu/tên riêng cụ thể làm như đã kiểm chứng khi không có căn cứ.
 - Mỗi phần phải có 1 bài tập/checklist làm được NGAY, không cần giải thích thêm.
 - Giọng văn tự nhiên, như người thật đang nói chuyện, không như văn bản AI.
+- Khi xây outline cấp 2 (bước outline2): phần đầu tiên NGAY SAU Mở đầu phải cho người đọc 1 kết quả nhỏ làm được NGAY (early win) — không dồn hết giá trị về các phần cuối, để người đọc thấy hiệu quả sớm và có động lực đi tiếp.
 - Output tiếng Việt, gọi người dùng là "bạn".`;
 
 async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {

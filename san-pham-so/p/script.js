@@ -115,6 +115,7 @@ function renderProduct(product, order) {
       ${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}
       <div class="price">${Number(product.price).toLocaleString('vi-VN')}đ</div>
       ${buyHtml}
+      <div class="hint-box" style="margin-top:12px;text-align:center;">🔒 Cam kết hoàn tiền 100% nếu không hài lòng trong 7 ngày</div>
     </div></div>
   `;
 
