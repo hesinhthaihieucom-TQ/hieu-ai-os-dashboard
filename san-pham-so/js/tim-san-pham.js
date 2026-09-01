@@ -8,18 +8,8 @@ const WIZARD_DRAFT_KEY = 'tim-san-pham-wizard';
 const MATERIAL_DRAFT_KEY = 'tim-san-pham-material';
 const SUGGEST_LIMIT_PER_QUESTION = 1;
 
-const NGANH_OPTIONS = ['Tài chính', 'Tâm linh', 'Hôn nhân & Gia đình', 'Phát triển bản thân', 'Kinh doanh', 'Sức khoẻ & Làm đẹp', 'Xây kênh & Content'];
-
-// Khớp đúng enum dinh_dang trong TOOL_TIM_SAN_PHAM (api/_lib/tim-san-pham-schema.js).
-const DINH_DANG_OPTIONS = [
-  { value: 'ebook', label: 'Ebook' },
-  { value: 'checklist_workbook', label: 'Checklist/Workbook' },
-  { value: 'template_file_mau', label: 'Template/File mẫu' },
-  { value: 'mini_course', label: 'Mini-course' },
-  { value: 'coaching_1_1', label: 'Coaching 1-1' },
-  { value: 'cong_dong_tra_phi', label: 'Cộng đồng trả phí' },
-  { value: 'webinar', label: 'Webinar' },
-];
+// NGANH_OPTIONS/DINH_DANG_OPTIONS chuyển sang san-pham-so/js/util.js (2026-09-01) — dùng chung với
+// màn "Chọn Loại Sản Phẩm Số" (san-pham-so/js/chon-loai.js), tránh 2 danh sách lệch nhau về sau.
 
 function newMaterialForm() {
   return {

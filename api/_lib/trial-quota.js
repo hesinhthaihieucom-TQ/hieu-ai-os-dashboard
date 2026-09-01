@@ -75,6 +75,9 @@ const AI_WEIGHTS = {
   // Kế Hoạch Ra Mắt (2026-09-01) — 1 lệnh gọi duy nhất, output tương đương mức viet-mo-ta/caption
   // nhưng dài hơn (3-5 mốc thời gian) — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
   'san-pham-so-ke-hoach-ra-mat': 2,
+  // Chọn Loại Sản Phẩm Số (2026-09-01) — chỉ dựng 1 outline theo lựa chọn đã rõ, không đánh giá
+  // Ikigai/độ khả thi như tim-san-pham-phu-hop (8 lượt) — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
+  'san-pham-so-tao-tu-loai': 5,
   // Nhánh "đã có sẵn tài liệu" (mục A, 2026-09-01) — đọc thẳng 1 file PDF qua Claude thay vì suy từ
   // 12 câu trả lời ngắn, ngang mức tim-san-pham-phu-hop vì cùng vai trò (ra 2-3 phương án + outline).
   'tim-san-pham-tu-tai-lieu': 8,

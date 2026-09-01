@@ -59,4 +59,46 @@ const TOOL_TIM_SAN_PHAM = {
   },
 };
 
-module.exports = { TOOL_TIM_SAN_PHAM };
+// Dùng cho mục "Chọn Loại Sản Phẩm Số" — người dùng ĐÃ TỰ QUYẾT ĐỊNH ngành/loại/chủ đề/đối tượng
+// (khác TOOL_TIM_SAN_PHAM, nơi AI phải đánh giá dữ liệu có đủ mạnh để chốt ý tưởng không). Vì vậy
+// KHÔNG cần bọc phuong_an/du_lieu_du_manh — chỉ cần dựng 1 outline tốt nhất cho đúng lựa chọn đã có,
+// cùng shape 1 phần tử của TOOL_TIM_SAN_PHAM.phuong_an để cắm thẳng vào Giai đoạn 2 không cần đổi gì.
+const TOOL_TAO_Y_TUONG_TU_LOAI = {
+  name: 'xuat_y_tuong_tu_loai_da_chon',
+  description: 'Dựng 1 outline sản phẩm số hoàn chỉnh, bám sát đúng ngành/loại/chủ đề/đối tượng người dùng đã tự chọn sẵn.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      ten_san_pham: {
+        type: 'string',
+        description: 'Tên sản phẩm cụ thể, tối đa 5-6 từ, hiểu ngay trong 2 giây, đúng đủ 5 tiêu chí: có số/mốc thời gian nếu hợp công thức, có động từ mạnh nếu hợp công thức, hiểu ngay, không trùng brand đã phổ biến, độ dài tối đa 5-6 từ.',
+      },
+      cong_thuc_dat_ten: {
+        type: 'string',
+        enum: ['So + Thoi gian + Dong tu chuyen hoa', 'So + Danh tu cu the + Muc tieu', 'An du + Chu de', 'Doi tuong cu the + Loi hua'],
+        description: 'Công thức đã dùng để đặt tên — chọn đúng công thức hợp với định dạng: workbook/mini-course theo ngày dùng "So + Thoi gian + Dong tu chuyen hoa"; template/prompt-pack dùng "So + Danh tu cu the + Muc tieu"; sản phẩm cần cảm giác sang/chiều sâu dùng "An du + Chu de"; sản phẩm nhắm đúng 1 nhóm rất cụ thể dùng "Doi tuong cu the + Loi hua".',
+      },
+      doi_tuong: { type: 'string', description: 'Đối tượng CỤ THỂ — lấy đúng theo đối tượng người dùng đã nhập, có thể làm rõ/cụ thể hoá thêm (tuổi/hoàn cảnh) nếu người dùng nhập còn chung chung, nhưng KHÔNG đổi sang đối tượng khác.' },
+      dinh_dang: {
+        type: 'string',
+        enum: ['ebook', 'checklist_workbook', 'template_file_mau', 'mini_course', 'coaching_1_1', 'cong_dong_tra_phi', 'webinar'],
+        description: 'PHẢI đúng bằng định dạng người dùng đã chọn sẵn — không tự đổi sang định dạng khác dù thấy hợp hơn.',
+      },
+      do_dai_uoc_luong: { type: 'string', description: 'Độ dài ước lượng cụ thể, vd "12-15 trang", "7 bài học ngắn", "1 file mẫu + hướng dẫn dùng".' },
+      ly_do: {
+        type: 'string',
+        description: 'Lý do NGẮN GỌN (2-3 câu, xuống dòng thật giữa các ý) outline này phù hợp với đúng ngành/chủ đề/đối tượng người dùng đã chọn — nêu rõ outline giải quyết đúng vấn đề gì cho đối tượng đó.',
+      },
+      outline_cap_1: {
+        type: 'array',
+        items: { type: 'string' },
+        minItems: 4,
+        maxItems: 7,
+        description: '4-7 phần outline cấp 1, mỗi phần 1 dòng ngắn mô tả, đi theo trình tự vấn đề → giải pháp → hành động.',
+      },
+    },
+    required: ['ten_san_pham', 'cong_thuc_dat_ten', 'doi_tuong', 'dinh_dang', 'do_dai_uoc_luong', 'ly_do', 'outline_cap_1'],
+  },
+};
+
+module.exports = { TOOL_TIM_SAN_PHAM, TOOL_TAO_Y_TUONG_TU_LOAI };

@@ -14,7 +14,7 @@ function comingSoon(title, desc) {
 }
 
 window.SanPhamSoScreens = window.SanPhamSoScreens || {};
-window.SanPhamSoScreens['chon-loai'] = comingSoon('Chọn Loại Sản Phẩm Số', 'Chọn thẳng loại sản phẩm muốn làm, không cần qua bước Tìm Sản Phẩm Phù Hợp.');
+// 'chon-loai' đã build thật ở san-pham-so/js/chon-loai.js (2026-09-01).
 window.SanPhamSoScreens['tao-landing-page'] = comingSoon('Tạo Landing Page', 'Công cụ tạo trang giới thiệu/bán hàng đầy đủ hơn form nhanh ở "Sản phẩm của tôi" hiện tại.');
 window.SanPhamSoScreens['tao-template'] = comingSoon('Tạo Template', 'Công cụ tạo bộ file mẫu (checklist/Notion/Excel...) để bán.');
 // 'nghien-cuu-thi-truong' đã đổi thành 'ke-hoach-ra-mat' (san-pham-so/js/ke-hoach-ra-mat.js, đã build
