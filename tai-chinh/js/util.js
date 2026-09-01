@@ -364,21 +364,31 @@ const SUGGESTED_EXPENSE_CLASSIFICATION = {
 // chỉ seed khi bảng đang trống.
 async function ensureCategoriesSeeded(ctx){
   const { data: existing } = await ctx.supabase.from('tc_categories').select('id').eq('user_id', ctx.user.id).limit(1);
-  if(existing && existing.length > 0) return;
-  const { data: historyRows } = await ctx.supabase.from('tc_finance_entries')
-    .select('type, category_label').eq('user_id', ctx.user.id).not('category_label', 'is', null);
-  const rows = [];
-  const seen = new Set();
-  function addRow(type, label, classification){
-    const key = type+'|'+label;
-    if(seen.has(key) || !label) return;
-    seen.add(key);
-    rows.push({ user_id: ctx.user.id, type, label, default_classification: classification || null });
+  if(!existing || existing.length === 0){
+    const { data: historyRows } = await ctx.supabase.from('tc_finance_entries')
+      .select('type, category_label').eq('user_id', ctx.user.id).not('category_label', 'is', null);
+    const rows = [];
+    const seen = new Set();
+    function addRow(type, label, classification){
+      const key = type+'|'+label;
+      if(seen.has(key) || !label) return;
+      seen.add(key);
+      rows.push({ user_id: ctx.user.id, type, label, default_classification: classification || null });
+    }
+    SUGGESTED_EXPENSE_CATEGORIES.forEach(c=>addRow('expense', c, SUGGESTED_EXPENSE_CLASSIFICATION[c]));
+    SUGGESTED_INCOME_CATEGORIES.forEach(c=>addRow('income', c, null));
+    (historyRows||[]).forEach(r=>addRow(r.type, r.category_label, r.type==='expense' ? 'cp_bien_doi' : null));
+    if(rows.length > 0) await ctx.supabase.from('tc_categories').insert(rows);
+    return;
   }
-  SUGGESTED_EXPENSE_CATEGORIES.forEach(c=>addRow('expense', c, SUGGESTED_EXPENSE_CLASSIFICATION[c]));
-  SUGGESTED_INCOME_CATEGORIES.forEach(c=>addRow('income', c, null));
-  (historyRows||[]).forEach(r=>addRow(r.type, r.category_label, r.type==='expense' ? 'cp_bien_doi' : null));
-  if(rows.length > 0) await ctx.supabase.from('tc_categories').insert(rows);
+  // Backfill cho user ĐÃ có danh mục từ trước khi thêm "Tích Lũy" (2026-09-01) — seed ở trên chỉ
+  // chạy đúng 1 lần lúc tc_categories còn trống, nên user cũ không tự có danh mục mới thêm sau này.
+  // Check tồn tại + insert nếu thiếu, không động tới danh mục họ đã tự sửa/xoá.
+  const { data: hasTichLuy } = await ctx.supabase.from('tc_categories').select('id')
+    .eq('user_id', ctx.user.id).eq('type', 'expense').eq('label', TICH_LUY_CATEGORY_LABEL).limit(1);
+  if(!hasTichLuy || hasTichLuy.length === 0){
+    await ctx.supabase.from('tc_categories').insert({ user_id: ctx.user.id, type:'expense', label: TICH_LUY_CATEGORY_LABEL, default_classification: null });
+  }
 }
 
 // Gán 1 màu cố định cho mỗi tên danh mục (hash chuỗi) — cùng 1 tên luôn ra cùng 1 màu giữa các lần
