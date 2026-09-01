@@ -92,9 +92,15 @@ const TOOL_VIET = {
   input_schema: {
     type: 'object',
     properties: {
-      noi_dung: { type: 'string', description: 'Nội dung đầy đủ của phần này, viết theo đúng giọng văn/đối tượng đã cho, có ví dụ thật, không viết chung chung.' + XUONG_DONG },
-      vi_du: { type: 'string', description: 'Ví dụ minh hoạ cụ thể được lồng vào nội dung (tách riêng để dễ kiểm tra ở bước review).' },
-      bai_tap: { type: 'string', description: 'Bài tập/checklist cuối phần, làm được ngay, không cần giải thích thêm — DẠNG checklist để tick hoặc câu hỏi có chỗ trống để người đọc tự viết ra câu trả lời của họ (không phải đoạn mô tả lý thuyết nên làm gì).' },
+      noi_dung: {
+        type: 'string',
+        description: 'Nội dung ĐẦY ĐỦ, CHI TIẾT của phần này — đây là sản phẩm số người đọc TRẢ TIỀN mua, không phải bản tóm tắt sơ sài. Viết dài khoảng 500-800 từ (không tính ví dụ/bài tập), khai triển từng ý trong "nội dung con" thành đoạn văn đầy đủ có giải thích/lý do/cách làm cụ thể, không liệt kê gạch đầu dòng cụt lủn. Theo đúng giọng văn/đối tượng đã cho, có ví dụ thật, không viết chung chung.' + XUONG_DONG,
+      },
+      vi_du: { type: 'string', description: 'Ví dụ minh hoạ cụ thể được lồng vào nội dung (tách riêng để dễ kiểm tra ở bước review) — ưu tiên có số liệu/tình huống cụ thể (không phải mô tả trừu tượng).' },
+      bai_tap: {
+        type: 'string',
+        description: 'Bài tập/checklist cuối phần, làm được ngay, không cần giải thích thêm — DẠNG checklist để tick hoặc câu hỏi có chỗ trống để người đọc tự viết ra câu trả lời của họ (không phải đoạn mô tả lý thuyết nên làm gì). PHẢI gắn với tình huống CỤ THỂ, thật, có thể xảy ra trong đời sống của đúng đối tượng đã cho (nhắc tới hoàn cảnh/con số/lựa chọn quen thuộc với họ) — không phải câu hỏi chung chung ai cũng viết được.',
+      },
       tom_tat_3_y: {
         type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 3,
         description: 'Đúng 3 ý quan trọng nhất người đọc cần nhớ sau phần này — ngắn gọn (1 câu/ý), để hiện thành khối tóm tắt cuối phần, giúp người đọc không phải đọc lại cả phần để nắm ý chính.',
