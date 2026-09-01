@@ -14,7 +14,7 @@ const NAV = [
   { key: 'chon-loai', title: '🗂️ Chọn Loại Sản Phẩm Số' },
   { key: 'tao-ebook', title: '📖 Tạo Ebook/Workbook' },
   { key: 'tao-template', title: '🎨 Tạo Template' },
-  { key: 'nghien-cuu-thi-truong', title: '📊 Nghiên Cứu Thị Trường & Giá/Marketing' },
+  { key: 'ke-hoach-ra-mat', title: '🚀 Kế Hoạch Ra Mắt' },
   { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
 ];

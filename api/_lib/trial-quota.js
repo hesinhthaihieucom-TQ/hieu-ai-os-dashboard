@@ -72,6 +72,9 @@ const AI_WEIGHTS = {
   // ($10/1.000 lượt tìm ~250đ/lượt, tối đa 4 lượt/lần) — ĐỀ XUẤT, CHƯA xác nhận với Quỳnh, cần theo
   // dõi chi phí thật sau khi dùng thử để chốt số cuối.
   'xay-dung-noi-dung-nghien-cuu-web': 4,
+  // Kế Hoạch Ra Mắt (2026-09-01) — 1 lệnh gọi duy nhất, output tương đương mức viet-mo-ta/caption
+  // nhưng dài hơn (3-5 mốc thời gian) — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
+  'san-pham-so-ke-hoach-ra-mat': 2,
   // Nhánh "đã có sẵn tài liệu" (mục A, 2026-09-01) — đọc thẳng 1 file PDF qua Claude thay vì suy từ
   // 12 câu trả lời ngắn, ngang mức tim-san-pham-phu-hop vì cùng vai trò (ra 2-3 phương án + outline).
   'tim-san-pham-tu-tai-lieu': 8,

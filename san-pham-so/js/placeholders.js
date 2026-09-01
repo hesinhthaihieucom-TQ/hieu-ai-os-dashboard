@@ -17,7 +17,8 @@ window.SanPhamSoScreens = window.SanPhamSoScreens || {};
 window.SanPhamSoScreens['chon-loai'] = comingSoon('Chọn Loại Sản Phẩm Số', 'Chọn thẳng loại sản phẩm muốn làm, không cần qua bước Tìm Sản Phẩm Phù Hợp.');
 window.SanPhamSoScreens['tao-landing-page'] = comingSoon('Tạo Landing Page', 'Công cụ tạo trang giới thiệu/bán hàng đầy đủ hơn form nhanh ở "Sản phẩm của tôi" hiện tại.');
 window.SanPhamSoScreens['tao-template'] = comingSoon('Tạo Template', 'Công cụ tạo bộ file mẫu (checklist/Notion/Excel...) để bán.');
-window.SanPhamSoScreens['nghien-cuu-thi-truong'] = comingSoon('Nghiên Cứu Thị Trường & Giá/Marketing', 'Sau khi có sản phẩm, nghiên cứu thị trường để quyết định giá bán và hướng marketing.');
+// 'nghien-cuu-thi-truong' đã đổi thành 'ke-hoach-ra-mat' (san-pham-so/js/ke-hoach-ra-mat.js, đã build
+// thật) — phần hữu ích nhất của mục cũ (nghiên cứu thị trường, giá/marketing) đã có ở nơi khác rồi.
 
 // "Tạo Ebook/Workbook" thực ra ĐÃ chạy được — nhưng hiện chỉ vào qua sau khi chọn xong 1 phương án
 // ở "Tìm Sản Phẩm Phù Hợp" (route 'tao-ai'), chưa có lối vào thẳng riêng (bỏ qua bước tìm ý tưởng).
