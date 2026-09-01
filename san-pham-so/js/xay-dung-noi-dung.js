@@ -487,10 +487,13 @@ function render(container, ideaRow) {
     // #xdnd-progress-el MỚI — phải lấy lại tham chiếu + khởi động lại thanh tiến trình cho từng pha.
     let stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), useWebSearch ? 40 : 18);
     try {
+      // Timeout mặc định 90s của callApi() từng áp cho MỌI bước, không riêng outline2 — lỗi thật
+      // Quỳnh gặp lại 2026-09-01 xảy ra đúng ở bước này (nghien-cuu/viet), không phải outline2. Nâng
+      // lên 150s khớp DEFAULT_TIMEOUT_MS đã nâng ở server (api/xay-dung-noi-dung.js).
       const nghienCuuData = await callApi('api/xay-dung-noi-dung', {
         step: 'nghien-cuu', idea, phan: s, useWebSearch,
         taiLieuKinhNghiem: state.taiLieu || null,
-      });
+      }, 150000);
       stopProgress();
       state.workingStep = 'viet'; draw();
       stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 25);
@@ -499,7 +502,7 @@ function render(container, ideaRow) {
         taiLieuKinhNghiem: state.taiLieu || null,
         phanTruoc: phanTruoc ? { tieu_de: phanTruoc.tieu_de, ket_qua_cu_the: phanTruoc.ket_qua_cu_the } : null,
         phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
-      });
+      }, 150000);
       state.sections[index] = { nghien_cuu: nghienCuuData.result, viet: vietData.result, review: null, status: 'viet-done', used_web_search: !!useWebSearch };
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-draft';
@@ -525,7 +528,7 @@ function render(container, ideaRow) {
         const s = state.sections[i];
         noiDungTheoPhan[i] = s ? (s.review && s.review.ban_da_chinh ? s.review.ban_da_chinh : s.viet.noi_dung) : null;
       });
-      const data = await callApi('api/xay-dung-noi-dung', { step: 'tong-duyet', idea, outlineCap2: state.outline2, noiDungTheoPhan });
+      const data = await callApi('api/xay-dung-noi-dung', { step: 'tong-duyet', idea, outlineCap2: state.outline2, noiDungTheoPhan }, 150000);
       state.tongDuyetResult = data.result;
     } catch (e) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
@@ -541,7 +544,7 @@ function render(container, ideaRow) {
     state.screen = 'section-review-loading'; state.error = null; draw();
     const stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 15);
     try {
-      const data = await callApi('api/xay-dung-noi-dung', { step: 'review', noiDungDaViet: s.viet.noi_dung });
+      const data = await callApi('api/xay-dung-noi-dung', { step: 'review', noiDungDaViet: s.viet.noi_dung }, 150000);
       state.sections[index] = { ...s, review: data.result, status: 'review-done' };
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-final';

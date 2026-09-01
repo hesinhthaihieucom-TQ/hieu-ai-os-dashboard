@@ -80,7 +80,7 @@ function render(container) {
         draw();
         const stopProgress = animateProgressButton(container.querySelector(`[data-plan-btn="${id}"]`), 20, 'Đang lập kế hoạch');
         try {
-          const data = await callApi('api/san-pham-so-ke-hoach-ra-mat', { title: p.title, description: p.description || '', price: p.price });
+          const data = await callApi('api/san-pham-so-ke-hoach-ra-mat', { title: p.title, description: p.description || '', price: p.price }, 150000);
           state.plans[id] = { loading: false, result: data.result, error: null };
           await saveDraft(draftKey(id), data.result);
         } catch (e) {

@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
     const userContent = `TÊN SẢN PHẨM: ${title}\n${description_hien_tai ? `MÔ TẢ HIỆN TẠI (có thể dùng làm gợi ý, không bắt buộc giữ nguyên):\n${description_hien_tai}` : 'Chưa có mô tả — viết mới hoàn toàn dựa trên tên sản phẩm.'}\n\nHãy viết mô tả bán hàng theo đúng schema.`;
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 90000);
+    const timer = setTimeout(() => controller.abort(), 150000);
     let resp;
     try {
       resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
         signal: controller.signal,
       });
     } catch (e) {
-      if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — thử lại giúp mình.');
+      if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 150 giây) — thử lại giúp mình.');
       throw e;
     } finally {
       clearTimeout(timer);

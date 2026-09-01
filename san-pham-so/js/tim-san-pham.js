@@ -465,7 +465,7 @@ function render(container, profile) {
     state.suggestCounts[q.id] = (state.suggestCounts[q.id] || 0) + 1;
     state.suggestLoading = true; state.suggestError = null; draw();
     try {
-      const data = await callApi('api/tim-san-pham-goi-y', { question: q.q, previousAnswers: state.answers });
+      const data = await callApi('api/tim-san-pham-goi-y', { question: q.q, previousAnswers: state.answers }, 150000);
       const viDu = data && data.result && data.result.vi_du;
       if (!viDu || !viDu.length) throw new Error('AI không trả về gợi ý — thử bấm lại giúp mình.');
       state.suggestions = viDu; state.suggestForQ = state.qIndex;

@@ -165,7 +165,7 @@ function render(container) {
           draw();
           const stopProgress = animateProgressButton(container.querySelector(`[data-caption-btn="${id}"]`), 12, 'Đang viết');
           try {
-            const data = await callApi('api/san-pham-so-viet-caption', { title: p.title, description: p.description || '' });
+            const data = await callApi('api/san-pham-so-viet-caption', { title: p.title, description: p.description || '' }, 150000);
             state.captions[id] = { loading: false, text: data.caption, error: null };
           } catch (e) {
             state.captions[id] = { loading: false, text: null, error: e.message };
@@ -209,7 +209,7 @@ function render(container) {
       state.moTaLoading = true; state.error = null; draw();
       const stopProgress = animateProgressButton(container.querySelector('#sps-ai-mo-ta-btn'), 12, 'Đang viết');
       try {
-        const data = await callApi('api/san-pham-so-viet-mo-ta', { title: state.form.title, description_hien_tai: state.form.description || '' });
+        const data = await callApi('api/san-pham-so-viet-mo-ta', { title: state.form.title, description_hien_tai: state.form.description || '' }, 150000);
         state.form.description = data.mo_ta;
         persistDraft();
       } catch (e) {

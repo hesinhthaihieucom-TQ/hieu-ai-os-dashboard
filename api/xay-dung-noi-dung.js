@@ -30,14 +30,17 @@ NGUYÊN TẮC BẮT BUỘC:
 - Khi xây outline cấp 2 (bước outline2): phần đầu tiên NGAY SAU Mở đầu phải cho người đọc 1 kết quả nhỏ làm được NGAY (early win) — không dồn hết giá trị về các phần cuối, để người đọc thấy hiệu quả sớm và có động lực đi tiếp.
 - Output tiếng Việt, gọi người dùng là "bạn".`;
 
+// 90s từng là mặc định cho MỌI bước (nghien-cuu/viet/review/tong-duyet), không chỉ outline2 — lỗi
+// timeout thật Quỳnh gặp lại 2026-09-01 xảy ra đúng lúc "bắt đầu viết 1 phần" (bước nghien-cuu/viet),
+// không phải outline2 (đã sửa riêng trước đó). System prompt đã dày lên nhiều qua các đợt (bắc cầu,
+// rào cản tâm lý, tom_tat_3_y, khoang_trong_thi_truong...) khiến MỌI bước có thể mất lâu hơn 90s cũ,
+// không riêng gì bước có max_tokens cao. Nâng mặc định chung lên 150s — không có downside cho request
+// chạy nhanh (chỉ ảnh hưởng khi thật sự bị kẹt), Vercel vẫn còn dư địa lớn tới trần 300s.
+const DEFAULT_TIMEOUT_MS = 150000;
+
 async function callClaude({ apiKey, system, userContent, tool, maxTokens, timeoutMs }) {
   const controller = new AbortController();
-  // max_tokens cao (VD outline2 = 8000) khiến Claude cần nhiều thời gian sinh chữ hơn — timeout PHẢI
-  // đủ dài để không tự ngắt trước khi Claude sinh xong (Vercel cho phép hàm chạy tới 300s, còn dư rất
-  // nhiều dư địa, xem lưu ý tương tự ở api/_lib/trial-quota.js). Lỗi thật Quỳnh gặp 2026-09-01: nâng
-  // max_tokens outline2 lên 8000 (sửa lỗi cắt giữa chừng) mà không nâng timeout theo, khiến request
-  // bị timeout đúng ở ngưỡng cũ (90s) trước khi Claude sinh xong 8000 token.
-  const timer = setTimeout(() => controller.abort(), timeoutMs || 90000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs || DEFAULT_TIMEOUT_MS);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -57,7 +60,7 @@ async function callClaude({ apiKey, system, userContent, tool, maxTokens, timeou
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error(`AI phản hồi quá lâu (quá ${Math.round((timeoutMs || 90000) / 1000)} giây) — có thể đang quá tải, thử lại giúp mình.`);
+    if (e.name === 'AbortError') throw new Error(`AI phản hồi quá lâu (quá ${Math.round((timeoutMs || DEFAULT_TIMEOUT_MS) / 1000)} giây) — có thể đang quá tải, thử lại giúp mình.`);
     throw e;
   } finally {
     clearTimeout(timer);
