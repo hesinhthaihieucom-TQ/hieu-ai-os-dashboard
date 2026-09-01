@@ -3,8 +3,8 @@
 // — chỉ để HIỂN THỊ cho admin theo dõi, không phải nơi chặn thật (chặn thật luôn ở server).
 function aiUsageLabel(p){
   if(p.has_paid){
-    const month = new Date().toISOString().slice(0,7);
-    const sameMonth = p.paid_ai_month === month;
+    // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
+    const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
     const used = sameMonth ? (p.paid_ai_uses||0) : 0;
     const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
     // Chuyển sang trả phí là ĐỔI SANG bộ đếm khác (paid_ai_uses, theo tháng) chứ không xoá trial_ai_uses

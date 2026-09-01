@@ -130,6 +130,16 @@ function isoDate(d){
   return new Date(dt - tzOffset).toISOString().slice(0,10);
 }
 
+// Y HỆT currentCycleKey() ở api/_lib/quota-cycle.js (server) — PHẢI giữ đúng công thức giống nhau,
+// xem giải thích đầy đủ ở file đó. "tính theo tháng kể từ ngày người dùng đăng ký chứ không phải
+// theo tháng trên lịch" (chị Quỳnh 2026-09-01) — paid_ai_month đổi từ chuỗi tháng lịch 'YYYY-MM'
+// sang chỉ số chu kỳ 30 ngày kể từ profiles.created_at, mỗi user có mốc reset riêng.
+function currentCycleKey(createdAtIso){
+  const createdAt = new Date(createdAtIso).getTime();
+  const days = Math.floor((Date.now() - createdAt) / 86400000);
+  return String(Math.max(0, Math.floor(days / 30)));
+}
+
 // % tiến trình ước lượng cho các màn chờ AI (1-2 phút) — API không stream nên không có % thật từ
 // server, tính theo thời gian đã trôi qua so với thời gian trung bình của tác vụ đó. Dừng dưới
 // 100% (cap) cho tới khi có kết quả thật, tránh cảm giác "treo" khi phải chờ lâu.

@@ -152,15 +152,16 @@ function render(container, ctx){
   const LUOT_THUONG_VIRAL = 5;
   async function creditViralBonus(userId){
     const { data: rows } = await ctx.supabase.from('profiles')
-      .select('has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,email,full_name').eq('id', userId);
+      .select('has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,email,full_name,created_at').eq('id', userId);
     const p = rows && rows[0];
     if(!p) return null;
     if(p.has_paid){
-      const month = new Date().toISOString().slice(0,7);
-      const sameMonth = p.paid_ai_month === month;
+      // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
+      const cycleKey = currentCycleKey(p.created_at);
+      const sameMonth = p.paid_ai_month === cycleKey;
       const patch = sameMonth
         ? { paid_ai_bonus: (p.paid_ai_bonus||0) + LUOT_THUONG_VIRAL }
-        : { paid_ai_month: month, paid_ai_uses: 0, paid_ai_bonus: LUOT_THUONG_VIRAL };
+        : { paid_ai_month: cycleKey, paid_ai_uses: 0, paid_ai_bonus: LUOT_THUONG_VIRAL };
       await ctx.supabase.from('profiles').update(patch).eq('id', userId);
     } else {
       await ctx.supabase.from('profiles').update({ trial_ai_uses: Math.max(0, (p.trial_ai_uses||0) - LUOT_THUONG_VIRAL) }).eq('id', userId);

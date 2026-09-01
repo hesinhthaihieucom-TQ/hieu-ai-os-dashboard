@@ -20,7 +20,7 @@ function monthKeyAdd(monthKey, n){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', totalLuot:0, revenueTotal:0, revenueThisMonth:0, monthlyRows:[], error:null };
+  const state = { screen:'loading', totalLuot:0, revenueTotal:0, revenueThisMonth:0, monthlyRows:[], userTotals:[], error:null };
 
   function draw(){ container.innerHTML = html(); }
 
@@ -36,7 +36,7 @@ function render(container, ctx){
 
   async function load(){
     const [{ data: profiles }, { data: txRows }, usageResult] = await Promise.all([
-      ctx.supabase.from('profiles').select('id, role, has_paid, trial_ai_uses, paid_ai_uses, paid_ai_month'),
+      ctx.supabase.from('profiles').select('id, role, has_paid, trial_ai_uses, paid_ai_uses, paid_ai_month, created_at, full_name, email'),
       ctx.supabase.from('sepay_transactions').select('transfer_amount, created_at, status, days_granted').eq('status', 'matched'),
       ctx.supabase.from('ai_usage_log').select('user_id, weight, created_at'),
     ]);
@@ -44,13 +44,14 @@ function render(container, ctx){
     const adminIds = new Set((profiles||[]).filter(p=>p.role==='admin').map(p=>p.id));
 
     // Tổng lượt hiện tại (snapshot, không phải theo tháng) — dùng thử tính trọn đời, trả phí tính
-    // tháng này, khớp đúng cách hiển thị "Đã dùng: x/y" ở từng thẻ tài khoản.
-    const month = new Date().toISOString().slice(0,7);
+    // đúng CHU KỲ HIỆN TẠI của từng người (chị Quỳnh 2026-09-01: "tính theo tháng kể từ ngày người
+    // dùng đăng ký chứ không phải theo tháng trên lịch" — xem currentCycleKey ở util.js), khớp đúng
+    // cách hiển thị "Đã dùng: x/y" ở từng thẻ tài khoản.
     state.totalLuot = (profiles||[])
       .filter(p => p.role !== 'admin')
       .reduce((sum,p) => {
         if(p.has_paid){
-          return sum + (p.paid_ai_month === month ? (p.paid_ai_uses||0) : 0);
+          return sum + (p.paid_ai_month === currentCycleKey(p.created_at) ? (p.paid_ai_uses||0) : 0);
         }
         return sum + (p.trial_ai_uses||0);
       }, 0);
@@ -90,6 +91,30 @@ function render(container, ctx){
     state.monthlyRows = Object.values(byMonth)
       .sort((a,b)=> b.month.localeCompare(a.month))
       .map(row => ({ ...row, cost: row.luot * RATE_PER_LUOT, profit: row.revenue - row.luot * RATE_PER_LUOT }));
+
+    // "cần có mục tính tổng lượt ng dùng đã dùng từ trước tới giờ để có cơ sở tính tiền" (chị Quỳnh
+    // 2026-09-01) — TỔNG TRỌN ĐỜI mỗi người, khác hẳn bảng "Theo từng tháng" ở trên (theo calendar,
+    // dùng để xem xu hướng). trial_ai_uses là bộ đếm KHÔNG BAO GIỜ reset (giữ nguyên cả sau khi
+    // chuyển sang trả phí) nên cộng thẳng được; phần trả phí (paid_ai_uses) tự reset mỗi chu kỳ nên
+    // KHÔNG dùng cột đó — phải cộng dồn từ ai_usage_log (chỉ có từ LOG_START trở đi, xem hằng số ở
+    // trên — tổng trước ngày đó sẽ thiếu, không phải lỗi tính toán).
+    const paidLogByUser = {};
+    usageRows.forEach(r=>{
+      if(adminIds.has(r.user_id)) return;
+      paidLogByUser[r.user_id] = (paidLogByUser[r.user_id]||0) + (r.weight||0);
+    });
+    state.userTotals = (profiles||[])
+      .filter(p => p.role !== 'admin')
+      .map(p => {
+        const paidLogUsed = paidLogByUser[p.id] || 0;
+        const total = (p.trial_ai_uses||0) + paidLogUsed;
+        return {
+          id: p.id, name: p.full_name || p.email || p.id.slice(0,8),
+          trialUsed: p.trial_ai_uses||0, paidLogUsed, total, estCost: total * RATE_PER_LUOT,
+        };
+      })
+      .filter(u => u.total > 0)
+      .sort((a,b)=> b.total - a.total);
   }
 
   function html(){
@@ -137,6 +162,35 @@ function render(container, ctx){
                 <td style="padding:10px 14px;">${row.luot.toLocaleString('vi-VN')}</td>
                 <td style="padding:10px 14px;">${row.cost.toLocaleString('vi-VN')}đ</td>
                 <td style="padding:10px 14px;color:${row.profit>=0?'var(--accent)':'var(--danger)'};font-weight:600;">${row.profit.toLocaleString('vi-VN')}đ</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      `}
+
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:28px 0 10px;">Tổng lượt đã dùng theo từng người (từ trước tới giờ)</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:10px;">Tổng TRỌN ĐỜI, không reset theo tháng/chu kỳ — dùng làm cơ sở tính chi phí/tiền cho từng người. Lượt dùng thử tính đủ; lượt trả phí chỉ tính được từ ${esc(LOG_START)} trở đi (trước đó chưa có log chi tiết).</div>
+      ${state.userTotals.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có dữ liệu.</div>` : `
+      <div class="card" style="overflow-x:auto;padding:0;">
+        <table style="width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;">
+          <thead>
+            <tr style="text-align:left;border-bottom:1px solid var(--line);">
+              <th style="padding:10px 14px;">Người dùng</th>
+              <th style="padding:10px 14px;">Lượt dùng thử</th>
+              <th style="padding:10px 14px;">Lượt trả phí (từ ${esc(LOG_START.slice(0,7))})</th>
+              <th style="padding:10px 14px;">Tổng lượt</th>
+              <th style="padding:10px 14px;">Ước tính chi phí</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.userTotals.map(u => `
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px;font-weight:600;">${esc(u.name)}</td>
+                <td style="padding:10px 14px;">${u.trialUsed.toLocaleString('vi-VN')}</td>
+                <td style="padding:10px 14px;">${u.paidLogUsed.toLocaleString('vi-VN')}</td>
+                <td style="padding:10px 14px;font-weight:600;">${u.total.toLocaleString('vi-VN')}</td>
+                <td style="padding:10px 14px;">${u.estCost.toLocaleString('vi-VN')}đ</td>
               </tr>
             `).join('')}
           </tbody>

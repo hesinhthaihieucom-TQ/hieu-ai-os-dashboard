@@ -318,6 +318,14 @@ alter table ai_usage_log enable row level security;
 -- (xem checkAndConsumeTrialQuota), không cấp insert cho authenticated/anon để tránh tự khai khống.
 drop policy if exists "ai_usage_log_own_read" on ai_usage_log;
 create policy "ai_usage_log_own_read" on ai_usage_log for select using (auth.uid() = user_id);
+-- BUG THẬT phát hiện 2026-09-01 (chị Quỳnh: "bị mất luôn tổng lượt dùng của tháng 8"): thiếu policy
+-- admin-read ở đây (khác sepay_transactions_admin_read đã có) — trang Tài chính (quan-tri-taichinh.js)
+-- đọc ai_usage_log bằng client thường (RLS), nên dù là admin cũng CHỈ thấy đúng dòng CỦA CHÍNH MÌNH,
+-- không thấy lượt dùng của khách khác — khiến "Lượt dùng"/"Chi phí ước tính" các tháng cũ gần như
+-- luôn ra 0 (admin hiếm khi tự dùng AI nhiều). Thêm policy admin đọc TOÀN BỘ, giống hệt cách
+-- sepay_transactions đã làm.
+drop policy if exists "ai_usage_log_admin_read" on ai_usage_log;
+create policy "ai_usage_log_admin_read" on ai_usage_log for select using (is_admin());
 alter table weekly_ai_drafts enable row level security;
 alter table module_drafts enable row level security;
 

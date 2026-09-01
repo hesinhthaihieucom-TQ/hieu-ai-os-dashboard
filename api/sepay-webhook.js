@@ -12,6 +12,7 @@
 // (bỏ qua RLS) vì đây là thao tác hệ thống, không gắn với 1 phiên đăng nhập user nào.
 
 const crypto = require('crypto');
+const { currentCycleKey } = require('./_lib/quota-cycle');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
@@ -178,7 +179,7 @@ async function creditReferralReward(refereeProfile, transferAmount) {
   if (!refereeProfile.referred_by_ref_code || refereeProfile.referral_reward_given) return;
 
   const referrerResp = await supabaseAdmin(
-    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,is_vip_partner`
+    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,is_vip_partner,created_at`
   );
   const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
   const referrer = referrerRows[0];
@@ -191,11 +192,12 @@ async function creditReferralReward(refereeProfile, transferAmount) {
 
   const rewardPatch = referrer.has_paid
     ? (() => {
-        const month = new Date().toISOString().slice(0, 7);
-        const sameMonth = referrer.paid_ai_month === month;
-        return sameMonth
+        // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (xem api/_lib/quota-cycle.js).
+        const cycleKey = currentCycleKey(referrer.created_at);
+        const sameCycle = referrer.paid_ai_month === cycleKey;
+        return sameCycle
           ? { paid_ai_bonus: (referrer.paid_ai_bonus || 0) + rewardLuot }
-          : { paid_ai_month: month, paid_ai_uses: 0, paid_ai_bonus: rewardLuot };
+          : { paid_ai_month: cycleKey, paid_ai_uses: 0, paid_ai_bonus: rewardLuot };
       })()
     : { trial_ai_uses: Math.max(0, (referrer.trial_ai_uses || 0) - rewardLuot) };
 
@@ -364,13 +366,14 @@ module.exports = async (req, res) => {
             status = 'unmatched_amount'; // update thất bại, giữ nguyên để admin soát lại
           }
         } else if (topupLuot) {
-          // Cộng thẳng vào lượt bonus của THÁNG HIỆN TẠI — nếu profile đang ở tháng cũ (paid_ai_month
-          // khác tháng nay) thì coi bonus/uses hiện có là đã hết hạn, cộng lượt mới vào tháng mới.
-          const month = new Date().toISOString().slice(0, 7);
-          const sameMonth = profile.paid_ai_month === month;
-          const patchBody = sameMonth
+          // Cộng thẳng vào lượt bonus của CHU KỲ HIỆN TẠI (30 ngày từ ngày đăng ký, không phải tháng
+          // lịch — xem api/_lib/quota-cycle.js) — nếu profile đang ở chu kỳ cũ (paid_ai_month khác
+          // chu kỳ hiện tại) thì coi bonus/uses hiện có là đã hết hạn, cộng lượt mới vào chu kỳ mới.
+          const cycleKey = currentCycleKey(profile.created_at);
+          const sameCycle = profile.paid_ai_month === cycleKey;
+          const patchBody = sameCycle
             ? { paid_ai_bonus: (profile.paid_ai_bonus || 0) + topupLuot }
-            : { paid_ai_month: month, paid_ai_uses: 0, paid_ai_bonus: topupLuot };
+            : { paid_ai_month: cycleKey, paid_ai_uses: 0, paid_ai_bonus: topupLuot };
           const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
             method: 'PATCH',
             body: JSON.stringify(patchBody),

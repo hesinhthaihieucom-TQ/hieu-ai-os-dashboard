@@ -172,7 +172,7 @@ create or replace function public.consume_ai_quota(p_user_id uuid, p_trial_limit
 returns jsonb as $$
 declare
   v_profile profiles%rowtype;
-  v_month text := to_char(now(), 'YYYY-MM');
+  v_month text;
   v_current_uses int;
   v_bonus int;
   v_effective_limit int;
@@ -182,6 +182,11 @@ begin
   if not found then
     return jsonb_build_object('allowed', true); -- không tìm thấy profile: fail open, không chặn oan
   end if;
+
+  -- "tính theo tháng kể từ ngày người dùng đăng ký chứ không phải theo tháng trên lịch" (chị Quỳnh
+  -- 2026-09-01) — chu kỳ 30 ngày RIÊNG cho từng user, tính từ created_at, không còn dồn chung về
+  -- ngày 1 mỗi tháng (xem giải thích đầy đủ ở api/_lib/quota-cycle.js — công thức PHẢI khớp y hệt).
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
 
   v_is_admin := (v_profile.role = 'admin');
 
@@ -241,10 +246,12 @@ create or replace function public.refund_ai_quota(p_user_id uuid, p_weight int d
 returns void as $$
 declare
   v_profile profiles%rowtype;
-  v_month text := to_char(now(), 'YYYY-MM');
+  v_month text;
 begin
   select * into v_profile from profiles where id = p_user_id for update;
   if not found then return; end if;
+  -- Cùng công thức chu kỳ 30 ngày từ created_at như consume_ai_quota() ở trên — xem giải thích ở đó.
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
   if not v_profile.has_paid then
     update profiles set trial_ai_uses = greatest(0, trial_ai_uses - p_weight) where id = p_user_id;
     return;

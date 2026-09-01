@@ -60,8 +60,8 @@ const REF_STORAGE_KEY = 'xnh_referred_by_ref_code';
   } catch(e){}
 })();
 function paidMonthlyUsage(p){
-  const month = new Date().toISOString().slice(0,7);
-  const sameMonth = p.paid_ai_month === month;
+  // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
+  const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
   const used = sameMonth ? (p.paid_ai_uses||0) : 0;
   const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
   return { used, limit: PAID_MONTHLY_AI_LIMIT + bonus };
@@ -135,8 +135,9 @@ window.onGatedApiSuccess = function(relativePath, weightOverride){
   if(!p.has_paid){
     p.trial_ai_uses = (p.trial_ai_uses||0) + weight;
   } else {
-    const month = new Date().toISOString().slice(0,7);
-    if(p.paid_ai_month !== month){ p.paid_ai_month = month; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
+    // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
+    const cycleKey = currentCycleKey(p.created_at);
+    if(p.paid_ai_month !== cycleKey){ p.paid_ai_month = cycleKey; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
     p.paid_ai_uses = (p.paid_ai_uses||0) + weight;
   }
   const el = document.getElementById('sidebar-foot-info');
@@ -478,8 +479,9 @@ window.onReviewSubmitted = function(result){
   p.review_prompt_dismissed = true;
   if(result && result.rewarded){
     if(p.has_paid){
-      const month = new Date().toISOString().slice(0,7);
-      if(p.paid_ai_month !== month){ p.paid_ai_month = month; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
+      // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
+      const cycleKey = currentCycleKey(p.created_at);
+      if(p.paid_ai_month !== cycleKey){ p.paid_ai_month = cycleKey; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
       p.paid_ai_bonus = (p.paid_ai_bonus||0) + (result.rewardLuot || REVIEW_REWARD_LUOT);
     } else {
       p.trial_ai_limit = (p.trial_ai_limit || TRIAL_AI_LIMIT) + (result.rewardLuot || REVIEW_REWARD_LUOT);

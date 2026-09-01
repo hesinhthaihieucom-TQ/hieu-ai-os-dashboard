@@ -16,6 +16,7 @@ const { requireUser } = require('./_lib/auth');
 const { TRIAL_AI_LIMIT } = require('./_lib/trial-quota');
 const { supabaseAdmin } = require('./_lib/supabase-admin');
 const { sendPushToUser } = require('./_lib/push');
+const { currentCycleKey } = require('./_lib/quota-cycle');
 
 const MIN_WORDS_FOR_REWARD = 50;
 const REWARD_LUOT = 20;
@@ -58,7 +59,7 @@ module.exports = async (req, res) => {
     const trimmed = comment.trim();
     if (trimmed.length > 3000) { res.status(400).json({ error: 'Cảm nhận quá dài, rút gọn lại giúp mình.' }); return; }
 
-    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given`);
+    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given,created_at`);
     const profRows = profResp.ok ? await profResp.json() : [];
     const profile = profRows[0];
 
@@ -89,14 +90,15 @@ module.exports = async (req, res) => {
       if (profile && !profile.review_reward_given) {
         const patch = { review_reward_given: true, review_prompt_dismissed: true };
         if (profile.has_paid) {
-          const month = new Date().toISOString().slice(0, 7);
-          if (profile.paid_ai_month === month) {
+          // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (xem api/_lib/quota-cycle.js).
+          const cycleKey = currentCycleKey(profile.created_at);
+          if (profile.paid_ai_month === cycleKey) {
             patch.paid_ai_bonus = (profile.paid_ai_bonus || 0) + REWARD_LUOT;
           } else {
-            // Chưa dùng lượt AI nào tháng này — mô phỏng đúng bước "reset sang tháng mới" mà
-            // consume_ai_quota() tự làm khi có lượt dùng thật đầu tiên trong tháng, tránh để
-            // paid_ai_month nhảy sang tháng mới nhưng paid_ai_uses vẫn còn số cũ của tháng trước.
-            patch.paid_ai_month = month;
+            // Chưa dùng lượt AI nào ở chu kỳ này — mô phỏng đúng bước "reset sang chu kỳ mới" mà
+            // consume_ai_quota() tự làm khi có lượt dùng thật đầu tiên trong chu kỳ, tránh để
+            // paid_ai_month nhảy sang chu kỳ mới nhưng paid_ai_uses vẫn còn số cũ của chu kỳ trước.
+            patch.paid_ai_month = cycleKey;
             patch.paid_ai_uses = 0;
             patch.paid_ai_bonus = REWARD_LUOT;
           }

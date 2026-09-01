@@ -114,8 +114,8 @@ function render(container, ctx){
     const p = ctx.profile;
     if(!p) return { used:0, limit:TRIAL_AI_LIMIT, remaining:TRIAL_AI_LIMIT, isTrial:true };
     if(p.has_paid){
-      const month = new Date().toISOString().slice(0,7);
-      const sameMonth = p.paid_ai_month === month;
+      // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
+      const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
       const used = sameMonth ? (p.paid_ai_uses||0) : 0;
       const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
       const limit = PAID_MONTHLY_AI_LIMIT + bonus;
