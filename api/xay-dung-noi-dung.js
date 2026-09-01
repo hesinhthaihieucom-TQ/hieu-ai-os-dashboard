@@ -149,10 +149,12 @@ module.exports = async (req, res) => {
         ? [{ type: 'document', source: { type: 'url', url: materialUrl } }, { type: 'text', text: `${outlineText}\n\nCó tài liệu gốc đính kèm — outline cấp 2 phải phản ánh đúng cấu trúc/nội dung thật trong tài liệu đó, không bịa thêm ngoài phạm vi tài liệu + thông tin đã cho.` }]
         : outlineText;
       // outline_cap_1 có thể tới 7 phần, mỗi phần nhiều mục con (tieu_de/ket_qua_cu_the/noi_dung_con/
-      // bai_tap/vi_du_goi_y) + mo_dau/ket — mặc định 6000 token của callClaude() từng bị cắt giữa
-      // chừng với outline nhiều phần (báo lỗi thật, Quỳnh gặp 2026-09-01), nâng lên 8000 giống mức
-      // đã dùng cho output nhiều mục tương tự ở api/tim-san-pham-phu-hop.js.
-      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_OUTLINE2, maxTokens: 8000, timeoutMs: 180000 });
+      // bai_tap/vi_du_goi_y) + mo_dau/ket — 6000 rồi 8000 đều từng bị cắt giữa chừng với outline
+      // nhiều phần/nhiều nội dung con (báo lỗi thật, Quỳnh gặp liên tiếp 2026-09-01). Sonnet 5 hỗ trợ
+      // tới 128.000 token output trên Messages API đồng bộ (docs.claude.com/models/overview) — 8000
+      // không hề gần chạm trần thật, chỉ là ước lượng ban đầu quá thấp. Nâng hẳn lên 16000 để dư địa
+      // rộng, không tốn thêm phí nếu output không dùng hết (chỉ tính phí đúng số token đã sinh ra).
+      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_OUTLINE2, maxTokens: 16000, timeoutMs: 250000 });
       res.status(200).json({ result });
       return;
     }

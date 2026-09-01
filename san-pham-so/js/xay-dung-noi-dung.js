@@ -442,7 +442,7 @@ function render(container, ideaRow) {
       const data = await callApi('api/xay-dung-noi-dung', {
         step: 'outline2', idea, outlineCap1: idea.outline_cap_1, taiLieuKinhNghiem: state.taiLieu || null,
         materialPath: getMaterialPath(),
-      }, 180000);
+      }, 250000);
       if (!data.result || !Array.isArray(data.result.phan)) throw new Error('AI trả về outline không đúng định dạng — thử lại giúp mình.');
       state.outline2 = data.result;
       // Chốt giọng văn/tài liệu/ghi chú vĩnh viễn vào answers (merge, không ghi đè các key khác đã
