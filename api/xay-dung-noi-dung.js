@@ -30,9 +30,14 @@ NGUYÊN TẮC BẮT BUỘC:
 - Khi xây outline cấp 2 (bước outline2): phần đầu tiên NGAY SAU Mở đầu phải cho người đọc 1 kết quả nhỏ làm được NGAY (early win) — không dồn hết giá trị về các phần cuối, để người đọc thấy hiệu quả sớm và có động lực đi tiếp.
 - Output tiếng Việt, gọi người dùng là "bạn".`;
 
-async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {
+async function callClaude({ apiKey, system, userContent, tool, maxTokens, timeoutMs }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  // max_tokens cao (VD outline2 = 8000) khiến Claude cần nhiều thời gian sinh chữ hơn — timeout PHẢI
+  // đủ dài để không tự ngắt trước khi Claude sinh xong (Vercel cho phép hàm chạy tới 300s, còn dư rất
+  // nhiều dư địa, xem lưu ý tương tự ở api/_lib/trial-quota.js). Lỗi thật Quỳnh gặp 2026-09-01: nâng
+  // max_tokens outline2 lên 8000 (sửa lỗi cắt giữa chừng) mà không nâng timeout theo, khiến request
+  // bị timeout đúng ở ngưỡng cũ (90s) trước khi Claude sinh xong 8000 token.
+  const timer = setTimeout(() => controller.abort(), timeoutMs || 90000);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -52,7 +57,7 @@ async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — có thể đang quá tải, thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error(`AI phản hồi quá lâu (quá ${Math.round((timeoutMs || 90000) / 1000)} giây) — có thể đang quá tải, thử lại giúp mình.`);
     throw e;
   } finally {
     clearTimeout(timer);
@@ -147,7 +152,7 @@ module.exports = async (req, res) => {
       // bai_tap/vi_du_goi_y) + mo_dau/ket — mặc định 6000 token của callClaude() từng bị cắt giữa
       // chừng với outline nhiều phần (báo lỗi thật, Quỳnh gặp 2026-09-01), nâng lên 8000 giống mức
       // đã dùng cho output nhiều mục tương tự ở api/tim-san-pham-phu-hop.js.
-      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_OUTLINE2, maxTokens: 8000 });
+      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_OUTLINE2, maxTokens: 8000, timeoutMs: 180000 });
       res.status(200).json({ result });
       return;
     }

@@ -23,7 +23,9 @@ NGUYÊN TẮC BẮT BUỘC:
 
 async function callClaude({ apiKey, system, userContent, tool }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  // max_tokens=8000 cần nhiều thời gian sinh chữ hơn mức 90s cũ cho phép — cùng lớp lỗi timeout thật
+  // Quỳnh gặp 2026-09-01 ở outline2 (api/xay-dung-noi-dung.js). Vercel cho phép hàm chạy tới 300s.
+  const timer = setTimeout(() => controller.abort(), 180000);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -40,7 +42,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — có thể đang quá tải, thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 180 giây) — có thể đang quá tải, thử lại giúp mình.');
     throw e;
   } finally {
     clearTimeout(timer);

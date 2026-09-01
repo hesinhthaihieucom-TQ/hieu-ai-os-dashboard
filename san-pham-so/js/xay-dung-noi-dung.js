@@ -437,10 +437,12 @@ function render(container, ideaRow) {
   async function generateOutline2() {
     state.screen = 'generating-outline2'; state.error = null; draw();
     try {
+      // Outline cấp 2 có thể cần AI sinh tới 8000 token — timeout mặc định 90s của callApi() không
+      // đủ, khớp đúng lỗi thật Quỳnh gặp 2026-09-01. Nâng lên 180s (server cũng đã nâng tương ứng).
       const data = await callApi('api/xay-dung-noi-dung', {
         step: 'outline2', idea, outlineCap1: idea.outline_cap_1, taiLieuKinhNghiem: state.taiLieu || null,
         materialPath: getMaterialPath(),
-      });
+      }, 180000);
       if (!data.result || !Array.isArray(data.result.phan)) throw new Error('AI trả về outline không đúng định dạng — thử lại giúp mình.');
       state.outline2 = data.result;
       // Chốt giọng văn/tài liệu/ghi chú vĩnh viễn vào answers (merge, không ghi đè các key khác đã

@@ -19,11 +19,11 @@ function esc(s) {
 // im ở màn "Đang xử lý…" vô thời hạn thay vì báo lỗi cho người dùng biết mà thử lại (phát hiện
 // 2026-08-25: wizard Tìm Sản Phẩm Phù Hợp bị đứng ở "Đang tổng hợp kết quả…"). Đặt trần 90s giống
 // nhan-hieu/js/util.js.
-async function callApi(path, body) {
+async function callApi(path, body, timeoutMs) {
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData && sessionData.session ? sessionData.session.access_token : null;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs || 90000);
   let resp;
   try {
     resp = await fetch(path, {
@@ -33,7 +33,7 @@ async function callApi(path, body) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('Yêu cầu mất quá lâu (quá 90 giây) — server có thể đang quá tải, thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error(`Yêu cầu mất quá lâu (quá ${Math.round((timeoutMs || 90000) / 1000)} giây) — server có thể đang quá tải, thử lại giúp mình.`);
     throw new Error('Không kết nối được tới server — kiểm tra lại mạng và thử lại.');
   } finally {
     clearTimeout(timer);

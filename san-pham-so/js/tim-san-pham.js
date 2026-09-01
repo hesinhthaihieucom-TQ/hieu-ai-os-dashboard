@@ -480,10 +480,11 @@ function render(container, profile) {
     state.screen = 'generating'; state.error = null; draw();
     try {
       const f = state.materialForm;
+      // max_tokens=8000 ở server có thể cần hơn 90s để sinh xong — nâng timeout khớp server (180s).
       const data = await callApi('api/tim-san-pham-tu-tai-lieu', {
         materialPath: f.materialPath, nganh: f.nganh, doiTuong: f.doiTuong,
         dinhDangMongMuon: f.dinhDang || null, giaMongMuon: f.gia || null,
-      });
+      }, 180000);
       if (!data.result || !Array.isArray(data.result.phuong_an)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
       state.result = data.result;
       state.resultSource = 'material';
@@ -511,7 +512,8 @@ function render(container, profile) {
   async function runGenerate() {
     state.screen = 'generating'; state.error = null; draw();
     try {
-      const data = await callApi('api/tim-san-pham-phu-hop', { answers: state.answers });
+      // max_tokens=8000 ở server có thể cần hơn 90s để sinh xong — nâng timeout khớp server (180s).
+      const data = await callApi('api/tim-san-pham-phu-hop', { answers: state.answers }, 180000);
       if (!data.result || !Array.isArray(data.result.phuong_an)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
       state.result = data.result;
       state.resultSource = 'wizard';
