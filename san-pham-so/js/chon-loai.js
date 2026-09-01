@@ -36,6 +36,9 @@ function render(container, profile) {
     screen: 'loading', form: newForm(), result: null, error: null,
     formatSuggestLoading: false, formatSuggestError: null,
     editing: false, editForm: null, editSaving: false,
+    // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
+    // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
+    pendingId: null, activeProducts: null,
   };
 
   function persistFormDraft() {
@@ -45,21 +48,31 @@ function render(container, profile) {
   function draw() { container.innerHTML = html(); bind(); }
 
   async function boot() {
-    const existing = await loadIdeaResult();
-    if (existing && existing.chosen_index != null) {
-      // Đang viết dở 1 sản phẩm (dù tạo từ đường nào) — giao thẳng cho Giai đoạn 2, không phá luồng.
-      window.renderXayDungNoiDung(container, existing);
+    // 2026-09-01: có thể có NHIỀU sản phẩm đang xây cùng lúc (Quỳnh: muốn lưu tạm 1 cái để bắt đầu
+    // cái khác) — không còn tự động giao thẳng vào 1 sản phẩm duy nhất nữa, luôn hiện danh sách để
+    // tự chọn tiếp tục cái nào hoặc bắt đầu mới, kể cả khi chỉ có đúng 1 sản phẩm đang dở.
+    const active = await listActiveIdeaResults();
+    if (active.length > 0) {
+      state.activeProducts = active;
+      state.screen = 'active-list';
+      draw();
       return;
     }
-    if (existing && existing.result && existing.answers && existing.answers.nguon === 'chon_loai') {
+    await bootFreshFlow();
+  }
+
+  async function bootFreshFlow() {
+    const pending = await loadPendingIdeaResult();
+    if (pending && pending.result && pending.answers && pending.answers.nguon === 'chon_loai') {
       // Outline đã dựng xong nhưng chưa bấm "Bắt đầu xây nội dung" — khôi phục màn kết quả, không
       // bắt làm lại từ đầu (xem feedback_auto_save_state).
-      state.result = existing.result.phuong_an[0];
-      state.form.nganh = existing.answers.nganh || '';
-      state.form.chuDe = existing.answers.chu_de || '';
-      state.form.doiTuong = existing.answers.doi_tuong || '';
-      state.form.dinhDang = existing.answers.dinh_dang_mong_muon || '';
-      state.form.materialPath = existing.answers.tai_lieu_path || null;
+      state.pendingId = pending.id;
+      state.result = pending.result.phuong_an[0];
+      state.form.nganh = pending.answers.nganh || '';
+      state.form.chuDe = pending.answers.chu_de || '';
+      state.form.doiTuong = pending.answers.doi_tuong || '';
+      state.form.dinhDang = pending.answers.dinh_dang_mong_muon || '';
+      state.form.materialPath = pending.answers.tai_lieu_path || null;
       state.screen = 'result';
       await clearDraft(FORM_DRAFT_KEY);
       draw();
@@ -74,9 +87,27 @@ function render(container, profile) {
   function html() {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
     if (state.screen === 'generating') return `<div class="loading"><div id="cl-progress-el">${progressBarHtml(0)}</div><p>Đang dựng outline…</p></div>`;
+    if (state.screen === 'active-list') return activeListHtml();
     if (state.screen === 'format-pick') return formatPickHtml();
     if (state.screen === 'result') return resultHtml();
     return formHtml();
+  }
+
+  function activeListHtml() {
+    return `
+      <h2>Sản phẩm đang xây dở</h2>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Chọn 1 sản phẩm để tiếp tục viết, hoặc bắt đầu sản phẩm mới — sản phẩm cũ vẫn được giữ nguyên, không bị mất.</div>
+      ${state.activeProducts.map((p, i) => {
+        const idea = p.result.phuong_an[p.chosen_index];
+        return `
+          <div class="card" data-continue-active="${i}" style="cursor:pointer;">
+            <h2 style="font-size:16px;margin-bottom:6px;">${esc(idea.ten_san_pham)}</h2>
+            <div style="font-size:13px;color:var(--ink-soft);">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
+          </div>
+        `;
+      }).join('')}
+      <div class="btn-row"><span class="btn-ghost btn" id="cl-new-product-btn">+ Bắt đầu sản phẩm mới</span></div>
+    `;
   }
 
   function canSubmitForm() {
@@ -208,10 +239,21 @@ function render(container, profile) {
   }
 
   function bind() {
+    if (state.screen === 'active-list') { bindActiveList(); return; }
     if (state.screen === 'result') { bindResult(); return; }
     if (state.screen === 'format-pick') { bindFormatPick(); return; }
     if (state.screen !== 'form') return;
     bindForm();
+  }
+
+  function bindActiveList() {
+    container.querySelectorAll('[data-continue-active]').forEach(el => {
+      el.onclick = () => {
+        const p = state.activeProducts[Number(el.getAttribute('data-continue-active'))];
+        window.renderXayDungNoiDung(container, p);
+      };
+    });
+    container.querySelector('#cl-new-product-btn').onclick = () => { bootFreshFlow(); };
   }
 
   function bindForm() {
@@ -313,7 +355,8 @@ function render(container, profile) {
       if (!state.editForm.outline_cap_1.length) { state.error = 'Outline cần ít nhất 1 phần.'; draw(); return; }
       state.editSaving = true; draw();
       state.result = state.editForm;
-      await saveIdeaResult({ result: { du_lieu_du_manh: true, canh_bao: '', phuong_an: [state.result] } });
+      const saved = await saveIdeaResult({ result: { du_lieu_du_manh: true, canh_bao: '', phuong_an: [state.result] } }, state.pendingId);
+      if (saved) state.pendingId = saved.id;
       state.editSaving = false;
       await chooseAndProceed();
     };
@@ -321,14 +364,13 @@ function render(container, profile) {
 
   async function chooseAndProceed() {
     const f = state.form;
-    await saveIdeaResult({
+    const saved = await saveIdeaResult({
       nganh: f.nganh || null,
       answers: { nguon: 'chon_loai', nganh: f.nganh, dinh_dang_mong_muon: f.dinhDang, chu_de: f.chuDe, doi_tuong: f.doiTuong, tai_lieu_path: f.materialPath },
       result: { du_lieu_du_manh: true, canh_bao: '', phuong_an: [state.result] },
       chosen_index: 0,
-    });
-    const ideaRow = await loadIdeaResult();
-    window.renderXayDungNoiDung(container, ideaRow);
+    }, state.pendingId);
+    window.renderXayDungNoiDung(container, saved);
   }
 
   async function runSuggestFormat() {
@@ -360,12 +402,13 @@ function render(container, profile) {
       state.result = data.result;
       // Lưu ngay khi vừa dựng xong (chosen_index vẫn null) để không mất outline nếu người dùng rời
       // trang trước khi bấm "Bắt đầu xây nội dung" — xem feedback_auto_save_state.
-      await saveIdeaResult({
+      const saved = await saveIdeaResult({
         nganh: f.nganh || null,
         answers: { nguon: 'chon_loai', nganh: f.nganh, dinh_dang_mong_muon: f.dinhDang, chu_de: f.chuDe, doi_tuong: f.doiTuong, tai_lieu_path: f.materialPath },
         result: { du_lieu_du_manh: true, canh_bao: '', phuong_an: [state.result] },
         chosen_index: null,
-      });
+      }, state.pendingId);
+      if (saved) state.pendingId = saved.id;
       await clearDraft(FORM_DRAFT_KEY);
       state.screen = 'result';
     } catch (e) {

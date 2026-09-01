@@ -71,25 +71,53 @@ async function clearDraft(key) {
   try { await supabaseClient.from('module_drafts').delete().eq('user_id', currentUser.id).eq('module_key', key); } catch (e) {}
 }
 
-// product_idea_results — 1 dòng/user, dùng chung giữa Giai đoạn 1 (Tìm Sản Phẩm Phù Hợp) và Giai
-// đoạn 2 (Xây Dựng Nội Dung). Ghi trực tiếp qua RLS (auth.uid()=user_id), không cần qua api/ vì đây
-// chỉ là lưu dữ liệu của chính chủ, không cần service role/quota.
-async function loadIdeaResult() {
+// product_idea_results — dùng chung giữa Giai đoạn 1 (Tìm Sản Phẩm Phù Hợp/Chọn Loại) và Giai đoạn 2
+// (Xây Dựng Nội Dung). Ghi trực tiếp qua RLS (auth.uid()=user_id), không cần qua api/ vì đây chỉ là
+// lưu dữ liệu của chính chủ, không cần service role/quota.
+//
+// 2026-09-01: đổi từ "1 dòng/user" sang MỖI SẢN PHẨM 1 DÒNG (Quỳnh: muốn "lưu tạm" 1 sản phẩm đang
+// xây để bắt đầu sản phẩm khác, không bị mất/đè lên nhau — trước đó user chỉ có đúng 1 sản phẩm AI
+// active tại 1 thời điểm). Quy ước: TỐI ĐA 1 dòng CHƯA chọn (chosen_index null — "ý tưởng đang cân
+// nhắc", quản lý bằng code ở đây, không có ràng buộc DB); có thể NHIỀU dòng ĐÃ chọn (chosen_index
+// khác null — mỗi dòng 1 sản phẩm đang xây ở Giai đoạn 2). Xem supabase/schema_san_pham_so.sql (đã
+// bỏ unique index theo user_id).
+
+// Dòng "đang cân nhắc" (chưa chọn phương án nào) hiện có của user, nếu có — dùng ở đầu wizard/form để
+// biết nên tạo mới hay ghi tiếp lên phiên đang cân nhắc dở.
+async function loadPendingIdeaResult() {
   try {
-    const { data } = await supabaseClient.from('product_idea_results').select('*').eq('user_id', currentUser.id).maybeSingle();
+    const { data } = await supabaseClient.from('product_idea_results').select('*').eq('user_id', currentUser.id).is('chosen_index', null).order('updated_at', { ascending: false }).limit(1).maybeSingle();
     return data || null;
   } catch (e) { return null; }
 }
-async function saveIdeaResult(patch) {
+// TẤT CẢ sản phẩm ĐÃ CHỌN (đang xây ở Giai đoạn 2) của user, mới cập nhật nhất trước — dùng để hiện
+// danh sách "sản phẩm đang dở" khi vào Tìm Sản Phẩm Phù Hợp/Chọn Loại Sản Phẩm Số.
+async function listActiveIdeaResults() {
   try {
-    await supabaseClient.from('product_idea_results').upsert(
-      { user_id: currentUser.id, ...patch, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-  } catch (e) {}
+    const { data } = await supabaseClient.from('product_idea_results').select('*').eq('user_id', currentUser.id).not('chosen_index', 'is', null).order('updated_at', { ascending: false });
+    return data || [];
+  } catch (e) { return []; }
 }
-async function clearIdeaResult() {
-  try { await supabaseClient.from('product_idea_results').delete().eq('user_id', currentUser.id); } catch (e) {}
+async function loadIdeaResultById(id) {
+  try {
+    const { data } = await supabaseClient.from('product_idea_results').select('*').eq('user_id', currentUser.id).eq('id', id).maybeSingle();
+    return data || null;
+  } catch (e) { return null; }
+}
+// id có -> update đúng dòng đó. id KHÔNG có -> INSERT dòng mới. Luôn trả về dòng đã lưu (kèm id) để
+// caller biết id vừa tạo, dùng cho các lần lưu tiếp theo (tránh insert trùng dòng "đang cân nhắc").
+async function saveIdeaResult(patch, id) {
+  try {
+    if (id) {
+      const { data } = await supabaseClient.from('product_idea_results').update({ ...patch, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id).eq('id', id).select().maybeSingle();
+      return data || null;
+    }
+    const { data } = await supabaseClient.from('product_idea_results').insert({ user_id: currentUser.id, ...patch, updated_at: new Date().toISOString() }).select().maybeSingle();
+    return data || null;
+  } catch (e) { return null; }
+}
+async function clearIdeaResultById(id) {
+  try { await supabaseClient.from('product_idea_results').delete().eq('user_id', currentUser.id).eq('id', id); } catch (e) {}
 }
 
 // Port nguyên xi từ nhan-hieu/js/util.js (2026-09-01, Quỳnh: "áp dụng với tất cả các web app làm

@@ -184,7 +184,10 @@ function render(container, ideaRow) {
     if (state.editingOutlineIndex != null) return outlineEditHtml();
     const sections = flattenSections(state.outline2);
     return `
-      <h2>${esc(idea.ten_san_pham)}</h2>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <h2>${esc(idea.ten_san_pham)}</h2>
+        <span class="btn-ghost btn btn-sm" id="xdnd-luu-tam-btn" style="white-space:nowrap;">💾 Lưu tạm, bắt đầu sản phẩm khác</span>
+      </div>
       <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
       ${ebookExportCardHtml()}
       ${tongDuyetCardHtml()}
@@ -342,6 +345,17 @@ function render(container, ideaRow) {
       container.querySelector('#xdnd-outline2-btn').onclick = generateOutline2;
     } else if (state.screen === 'outline2') {
       if (state.editingOutlineIndex != null) { bindOutlineEdit(); return; }
+      const luuTamBtn = container.querySelector('#xdnd-luu-tam-btn');
+      // Sản phẩm này đã tự lưu liên tục rồi (mỗi lần viết/sửa đều gọi saveIdeaResult) — bấm nút này
+      // chỉ đơn giản là QUAY LẠI màn chọn ý tưởng, không xoá/động gì tới dữ liệu. Ở đó giờ luôn hiện
+      // danh sách "sản phẩm đang dở" (kể cả chỉ có 1 cái) kèm nút "+ Bắt đầu sản phẩm mới".
+      if (luuTamBtn) luuTamBtn.onclick = () => {
+        // location.hash='tao-ai' không tự re-render nếu đang SẴN ở đúng hash đó (Giai đoạn 2 không có
+        // hash riêng, chỉ "mượn" hash của màn gọi nó) — gọi thẳng renderShell (global, app-shell.js
+        // không bọc IIFE) để chắc chắn quay lại được dù đang ở #tao-ai hay #chon-loai.
+        if (location.hash === '#tao-ai') { renderShell(currentProfile); return; }
+        location.hash = 'tao-ai';
+      };
       container.querySelectorAll('[data-open-section]').forEach(el => {
         el.onclick = () => openSection(Number(el.getAttribute('data-open-section')));
       });
@@ -385,7 +399,7 @@ function render(container, ideaRow) {
       if (!state.editOutlineForm.tieu_de.trim()) { state.error = 'Vui lòng nhập tiêu đề.'; draw(); return; }
       if (!state.editOutlineForm.noi_dung_con.length) { state.error = 'Cần ít nhất 1 nội dung con.'; draw(); return; }
       outlineSectionRef(state.editingOutlineIndex).set(state.editOutlineForm);
-      await saveIdeaResult({ outline_cap_2: state.outline2 });
+      await saveIdeaResult({ outline_cap_2: state.outline2 }, ideaRow.id);
       state.editingOutlineIndex = null; state.editOutlineForm = null; state.error = null;
       draw();
     };
@@ -400,7 +414,7 @@ function render(container, ideaRow) {
     const ta = container.querySelector(selector);
     const s = state.sections[state.activeIndex];
     applyFn(s, ta.value);
-    await saveIdeaResult({ sections: state.sections });
+    await saveIdeaResult({ sections: state.sections }, ideaRow.id);
     state.error = null;
     const btn = container.querySelector('#xdnd-save-edit-btn');
     if (btn) {
@@ -421,7 +435,7 @@ function render(container, ideaRow) {
       // do client bỏ cuộc trước khi chuỗi xử lý xong).
       const data = await callApi('api/san-pham-so-xuat-ebook', { idea, outline2: state.outline2, sections: state.sections }, 260000);
       state.ebookResult = { heyzineUrl: data.heyzineUrl, thumbnail: data.thumbnail, pdfStoragePath: data.pdfStoragePath };
-      await saveIdeaResult({ ebook_result: state.ebookResult });
+      await saveIdeaResult({ ebook_result: state.ebookResult }, ideaRow.id);
       state.screen = 'outline2';
     } catch (e) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
@@ -468,7 +482,7 @@ function render(container, ideaRow) {
       await saveIdeaResult({
         outline_cap_2: state.outline2,
         answers: { ...(ideaRow.answers || {}), giong_van: state.giongVan, tai_lieu_kinh_nghiem: state.taiLieu || null, tai_lieu_path: getMaterialPath() },
-      });
+      }, ideaRow.id);
       await clearDraft(XDND_INTRO_DRAFT_KEY);
       state.screen = 'outline2';
     } catch (e) {
@@ -519,7 +533,7 @@ function render(container, ideaRow) {
         phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
       }, 250000);
       state.sections[index] = { nghien_cuu: nghienCuuData.result, viet: vietData.result, review: null, status: 'viet-done', used_web_search: !!useWebSearch };
-      await saveIdeaResult({ sections: state.sections });
+      await saveIdeaResult({ sections: state.sections }, ideaRow.id);
       state.screen = 'section-draft';
     } catch (e) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
@@ -561,7 +575,7 @@ function render(container, ideaRow) {
     try {
       const data = await callApi('api/xay-dung-noi-dung', { step: 'review', noiDungDaViet: s.viet.noi_dung }, 150000);
       state.sections[index] = { ...s, review: data.result, status: 'review-done' };
-      await saveIdeaResult({ sections: state.sections });
+      await saveIdeaResult({ sections: state.sections }, ideaRow.id);
       state.screen = 'section-final';
     } catch (e) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';

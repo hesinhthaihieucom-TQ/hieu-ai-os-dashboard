@@ -58,6 +58,9 @@ function render(container, profile) {
     suggestLoading: false, suggestions: null, suggestForQ: null, suggestCounts: {}, suggestError: null,
     editing: false, editForm: null, editSaving: false, showNganhOther: false,
     materialForm: newMaterialForm(), resultSource: null,
+    // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
+    // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
+    pendingId: null, activeProducts: null,
   };
 
   function persistWizardDraft() {
@@ -71,16 +74,25 @@ function render(container, profile) {
   function draw() { container.innerHTML = html(); bind(); }
 
   async function boot() {
-    const existing = await loadIdeaResult();
-    if (existing && existing.result) {
-      state.result = existing.result;
-      state.chosenIndex = existing.chosen_index != null ? existing.chosen_index : null;
-      state.resultSource = (existing.answers && existing.answers.nguon === 'tai_lieu') ? 'material' : 'wizard';
-      if (state.chosenIndex != null) {
-        // Đã chọn phương án ở lần trước — giao thẳng cho Giai đoạn 2, không quay lại kết quả Giai đoạn 1.
-        window.renderXayDungNoiDung(container, existing);
-        return;
-      }
+    // 2026-09-01: có thể có NHIỀU sản phẩm đang xây cùng lúc (Quỳnh: muốn lưu tạm 1 cái để bắt đầu
+    // cái khác) — không còn tự động giao thẳng vào 1 sản phẩm duy nhất nữa, luôn hiện danh sách để
+    // tự chọn tiếp tục cái nào hoặc bắt đầu mới, kể cả khi chỉ có đúng 1 sản phẩm đang dở.
+    const active = await listActiveIdeaResults();
+    if (active.length > 0) {
+      state.activeProducts = active;
+      state.screen = 'active-list';
+      draw();
+      return;
+    }
+    await bootFreshFlow();
+  }
+
+  async function bootFreshFlow() {
+    const pending = await loadPendingIdeaResult();
+    if (pending && pending.result) {
+      state.result = pending.result;
+      state.pendingId = pending.id;
+      state.resultSource = (pending.answers && pending.answers.nguon === 'tai_lieu') ? 'material' : 'wizard';
       state.screen = 'result';
     } else {
       const wizardDraft = await loadDraft(WIZARD_DRAFT_KEY);
@@ -101,10 +113,28 @@ function render(container, profile) {
   function html() {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
     if (state.screen === 'generating') return `<div class="loading"><div id="tsp-progress-el">${progressBarHtml(0)}</div><p>Đang tổng hợp kết quả…</p></div>`;
+    if (state.screen === 'active-list') return activeListHtml();
     if (state.screen === 'result') return resultHtml();
     if (state.screen === 'choose-path') return choosePathHtml();
     if (state.screen === 'material-form') return materialFormHtml();
     return wizardHtml();
+  }
+
+  function activeListHtml() {
+    return `
+      <h2>Sản phẩm đang xây dở</h2>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Chọn 1 sản phẩm để tiếp tục viết, hoặc bắt đầu sản phẩm mới — sản phẩm cũ vẫn được giữ nguyên, không bị mất.</div>
+      ${state.activeProducts.map((p, i) => {
+        const idea = p.result.phuong_an[p.chosen_index];
+        return `
+          <div class="card" data-continue-active="${i}" style="cursor:pointer;">
+            <h2 style="font-size:16px;margin-bottom:6px;">${esc(idea.ten_san_pham)}</h2>
+            <div style="font-size:13px;color:var(--ink-soft);">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
+          </div>
+        `;
+      }).join('')}
+      <div class="btn-row"><span class="btn-ghost btn" id="tsp-new-product-btn">+ Bắt đầu sản phẩm mới</span></div>
+    `;
   }
 
   function choosePathHtml() {
@@ -277,11 +307,22 @@ function render(container, profile) {
   }
 
   function bind() {
+    if (state.screen === 'active-list') { bindActiveList(); return; }
     if (state.screen === 'result') { bindResult(); return; }
     if (state.screen === 'choose-path') { bindChoosePath(); return; }
     if (state.screen === 'material-form') { bindMaterialForm(); return; }
     if (state.screen !== 'wizard') return;
     bindWizard();
+  }
+
+  function bindActiveList() {
+    container.querySelectorAll('[data-continue-active]').forEach(el => {
+      el.onclick = () => {
+        const p = state.activeProducts[Number(el.getAttribute('data-continue-active'))];
+        window.renderXayDungNoiDung(container, p);
+      };
+    });
+    container.querySelector('#tsp-new-product-btn').onclick = () => { bootFreshFlow(); };
   }
 
   function bindChoosePath() {
@@ -407,7 +448,8 @@ function render(container, profile) {
       const backScreen = state.resultSource === 'material' ? 'material-form' : 'wizard';
       if (!state.result.du_lieu_du_manh) { state.screen = backScreen; draw(); return; }
       if (!confirm('Làm lại từ đầu? Kết quả hiện tại sẽ bị xoá.')) return;
-      await clearIdeaResult();
+      await clearIdeaResultById(state.pendingId);
+      state.pendingId = null;
       state.result = null; state.answers = {}; state.qIndex = 0; state.materialForm = newMaterialForm(); state.screen = 'choose-path';
       draw();
     };
@@ -436,7 +478,8 @@ function render(container, profile) {
       state.editSaving = true; draw();
       const i = state.editing;
       state.result.phuong_an[i] = state.editForm;
-      await saveIdeaResult({ result: state.result });
+      const saved = await saveIdeaResult({ result: state.result }, state.pendingId);
+      if (saved) state.pendingId = saved.id;
       state.editSaving = false;
       await chooseAndProceed(i);
     };
@@ -444,9 +487,8 @@ function render(container, profile) {
 
   async function chooseAndProceed(i) {
     state.chosenIndex = i;
-    await saveIdeaResult({ result: state.result, chosen_index: i });
-    const ideaRow = await loadIdeaResult();
-    window.renderXayDungNoiDung(container, ideaRow);
+    const saved = await saveIdeaResult({ result: state.result, chosen_index: i }, state.pendingId);
+    window.renderXayDungNoiDung(container, saved);
   }
 
   async function fetchSuggestion() {
@@ -480,13 +522,14 @@ function render(container, profile) {
       state.result = data.result;
       state.resultSource = 'material';
       await clearDraft(MATERIAL_DRAFT_KEY);
-      await saveIdeaResult({
+      const saved = await saveIdeaResult({
         nganh: f.nganh || null,
         // tai_lieu_path lưu lại để Giai đoạn 2 (xay-dung-noi-dung.js) dùng lại đúng tài liệu này khi
         // viết nội dung thật, không chỉ dùng 1 lần ở bước tìm ý tưởng rồi bỏ (xem CLAUDE.md/plan).
         answers: { nguon: 'tai_lieu', nganh: f.nganh, doi_tuong: f.doiTuong, dinh_dang_mong_muon: f.dinhDang || null, gia_mong_muon: f.gia || null, tai_lieu_path: f.materialPath },
         result: state.result, chosen_index: null,
-      });
+      }, state.pendingId);
+      if (saved) state.pendingId = saved.id;
       state.screen = 'result';
     } catch (e) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
@@ -510,7 +553,8 @@ function render(container, profile) {
       state.result = data.result;
       state.resultSource = 'wizard';
       await clearDraft(WIZARD_DRAFT_KEY);
-      await saveIdeaResult({ nganh: state.answers.nganh || null, answers: state.answers, result: state.result, chosen_index: null });
+      const saved = await saveIdeaResult({ nganh: state.answers.nganh || null, answers: state.answers, result: state.result, chosen_index: null }, state.pendingId);
+      if (saved) state.pendingId = saved.id;
       state.screen = 'result';
     } catch (e) {
       // Bọc cả lỗi render (không chỉ lỗi gọi API) — nếu không, màn hình sẽ đứng im ở "Đang tổng hợp

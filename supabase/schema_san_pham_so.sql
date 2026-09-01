@@ -81,9 +81,12 @@ on conflict (id) do nothing;
 
 
 -- ============================================================
--- 17. TẠO SẢN PHẨM BẰNG AI (san-pham-so/ — Giai đoạn 1 Tìm Sản Phẩm Phù Hợp + Giai đoạn 2 Xây Dựng
--- Nội Dung). 1 dòng/user (giống positioning_results của Định Vị) — giả định 1 người làm 1 pipeline
--- ý tưởng→nội dung tại 1 thời điểm.
+-- 17. TẠO SẢN PHẨM BẰNG AI (san-pham-so/ — Giai đoạn 1 Tìm Sản Phẩm Phù Hợp/Chọn Loại + Giai đoạn 2
+-- Xây Dựng Nội Dung). MỖI SẢN PHẨM 1 DÒNG (2026-09-01, đổi từ "1 dòng/user" — Quỳnh: muốn "lưu tạm"
+-- 1 sản phẩm đang xây để bắt đầu sản phẩm khác, không bị mất/đè lên nhau). Quy ước: TỐI ĐA 1 dòng
+-- CHƯA chọn phương án (chosen_index null, "ý tưởng đang cân nhắc") — quản lý bằng code ở
+-- san-pham-so/js/util.js (loadPendingIdeaResult/saveIdeaResult), không có ràng buộc DB; có thể NHIỀU
+-- dòng ĐÃ chọn (mỗi dòng 1 sản phẩm đang xây ở Giai đoạn 2).
 -- ============================================================
 create table if not exists product_idea_results (
   id uuid primary key default gen_random_uuid(),
@@ -97,7 +100,9 @@ create table if not exists product_idea_results (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-create unique index if not exists product_idea_results_user_unique on product_idea_results(user_id);
+-- 2026-09-01: bỏ giới hạn 1 dòng/user (đã đổi sang mỗi sản phẩm 1 dòng, xem ghi chú ở trên).
+drop index if exists product_idea_results_user_unique;
+create index if not exists product_idea_results_user_id_idx on product_idea_results(user_id);
 alter table product_idea_results enable row level security;
 drop policy if exists "product_idea_results_owner_all" on product_idea_results;
 create policy "product_idea_results_owner_all" on product_idea_results for all
