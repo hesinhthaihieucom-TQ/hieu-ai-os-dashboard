@@ -110,7 +110,7 @@ function render(container, profile) {
 
   function html() {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
-    if (state.screen === 'generating') return `<div class="loading"><div class="spinner"></div><p>Đang tổng hợp kết quả…</p></div>`;
+    if (state.screen === 'generating') return `<div class="loading"><div id="tsp-progress-el">${progressBarHtml(0)}</div><p>Đang tổng hợp kết quả…</p></div>`;
     if (state.screen === 'result') return resultHtml();
     if (state.screen === 'choose-path') return choosePathHtml();
     if (state.screen === 'material-form') return materialFormHtml();
@@ -478,6 +478,7 @@ function render(container, profile) {
 
   async function runGenerateFromMaterial() {
     state.screen = 'generating'; state.error = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#tsp-progress-el'), 50);
     try {
       const f = state.materialForm;
       // max_tokens=8000 ở server có thể cần hơn 90s để sinh xong — nâng timeout khớp server (180s).
@@ -501,6 +502,7 @@ function render(container, profile) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'material-form';
     }
+    stopProgress();
     try {
       draw();
     } catch (e) {
@@ -511,8 +513,8 @@ function render(container, profile) {
 
   async function runGenerate() {
     state.screen = 'generating'; state.error = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#tsp-progress-el'), 50);
     try {
-      // max_tokens=8000 ở server có thể cần hơn 90s để sinh xong — nâng timeout khớp server (180s).
       const data = await callApi('api/tim-san-pham-phu-hop', { answers: state.answers }, 250000);
       if (!data.result || !Array.isArray(data.result.phuong_an)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
       state.result = data.result;
@@ -526,6 +528,7 @@ function render(container, profile) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'wizard';
     }
+    stopProgress();
     try {
       draw();
     } catch (e) {

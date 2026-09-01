@@ -78,3 +78,49 @@ async function saveIdeaResult(patch) {
 async function clearIdeaResult() {
   try { await supabaseClient.from('product_idea_results').delete().eq('user_id', currentUser.id); } catch (e) {}
 }
+
+// Port nguyên xi từ nhan-hieu/js/util.js (2026-09-01, Quỳnh: "áp dụng với tất cả các web app làm
+// sau này") — thanh % tiến trình thay cho vòng xoay tĩnh ở MỌI màn chờ AI, để cảm giác app đang
+// chạy chứ không đứng im, nhất là các lệnh gọi có thể mất 1-2 phút.
+function progressBarHtml(percent) {
+  const pct = Math.max(0, Math.min(100, percent));
+  return `<div style="width:100%;max-width:280px;margin:0 auto;height:8px;border-radius:999px;background:var(--line);overflow:hidden;">
+    <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:999px;"></div>
+  </div>
+  <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);font-weight:600;">${Math.round(pct)}%</div>`;
+}
+function animateProgressBar(el, estimatedSeconds) {
+  if (!el) return () => {};
+  const startedAt = Date.now();
+  const cap = 96;
+  const tick = () => {
+    const elapsed = (Date.now() - startedAt) / 1000;
+    const pct = Math.min(cap, (elapsed / estimatedSeconds) * cap);
+    el.innerHTML = progressBarHtml(pct);
+  };
+  tick();
+  const timer = setInterval(tick, 350);
+  return () => clearInterval(timer);
+}
+// Dùng khi màn chờ bám vào 1 nút bấm cụ thể (VD nút "Lập kế hoạch"/"Viết caption" trong 1 thẻ sản
+// phẩm) thay vì chiếm cả màn hình — gradient chạy trong nền nút + % ngay trên chữ nút.
+function animateProgressButton(btnEl, estimatedSeconds, baseLabel) {
+  if (!btnEl) return () => {};
+  const startedAt = Date.now();
+  const cap = 96;
+  let dots = 0;
+  const tick = () => {
+    const elapsed = (Date.now() - startedAt) / 1000;
+    const pct = Math.min(cap, (elapsed / estimatedSeconds) * cap);
+    btnEl.style.background = `linear-gradient(to right, var(--accent) ${pct}%, #DCD8C9 ${pct}%)`;
+    if (elapsed > estimatedSeconds * 1.25) {
+      dots = (dots + 1) % 4;
+      btnEl.textContent = `${baseLabel} — vẫn đang xử lý${'.'.repeat(dots)}`;
+    } else {
+      btnEl.textContent = `${baseLabel} ${Math.round(pct)}%`;
+    }
+  };
+  tick();
+  const timer = setInterval(tick, 500);
+  return () => clearInterval(timer);
+}

@@ -65,13 +65,13 @@ function render(container, ideaRow) {
 
   function html() {
     if (state.screen === 'intro') return introHtml();
-    if (state.screen === 'generating-outline2') return `<div class="loading"><div class="spinner"></div><p>Đang xây outline chi tiết…</p></div>`;
+    if (state.screen === 'generating-outline2') return `<div class="loading"><div id="xdnd-progress-el">${progressBarHtml(0)}</div><p>Đang xây outline chi tiết…</p></div>`;
     if (state.screen === 'outline2') return outline2Html();
-    if (state.screen === 'exporting-ebook') return `<div class="loading"><div class="spinner"></div><p>Đang xuất PDF & tạo sách lật…</p></div>`;
+    if (state.screen === 'exporting-ebook') return `<div class="loading"><div id="xdnd-progress-el">${progressBarHtml(0)}</div><p>Đang xuất PDF & tạo sách lật…</p></div>`;
     if (state.screen === 'section-start-choice') return sectionStartChoiceHtml();
-    if (state.screen === 'section-working') return `<div class="loading"><div class="spinner"></div><p>${esc(workingLabel())}</p></div>`;
+    if (state.screen === 'section-working') return `<div class="loading"><div id="xdnd-progress-el">${progressBarHtml(0)}</div><p>${esc(workingLabel())}</p></div>`;
     if (state.screen === 'section-draft') return sectionDraftHtml();
-    if (state.screen === 'section-review-loading') return `<div class="loading"><div class="spinner"></div><p>Đang kiểm tra chất lượng…</p></div>`;
+    if (state.screen === 'section-review-loading') return `<div class="loading"><div id="xdnd-progress-el">${progressBarHtml(0)}</div><p>Đang kiểm tra chất lượng…</p></div>`;
     if (state.screen === 'section-final') return sectionFinalHtml();
     return '';
   }
@@ -154,7 +154,7 @@ function render(container, ideaRow) {
       return `<div class="hint-box">🔍 Khi đã viết xong bản nháp cho TẤT CẢ các phần, bạn có thể "Duyệt tổng thể" để AI kiểm tra mạch lạc, trùng lặp giữa các phần.</div>`;
     }
     if (state.tongDuyetLoading) {
-      return `<div class="card"><h2 style="font-size:16px;">🔍 Đang duyệt tổng thể…</h2></div>`;
+      return `<div class="card"><h2 style="font-size:16px;margin-bottom:10px;">🔍 Đang duyệt tổng thể…</h2><button class="btn" id="xdnd-tong-duyet-btn" disabled>Đang duyệt tổng thể 0%</button></div>`;
     }
     if (!state.tongDuyetResult) {
       return `
@@ -404,6 +404,7 @@ function render(container, ideaRow) {
 
   async function exportEbook() {
     state.screen = 'exporting-ebook'; state.error = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 20);
     try {
       const data = await callApi('api/san-pham-so-xuat-ebook', { idea, outline2: state.outline2, sections: state.sections });
       state.ebookResult = { heyzineUrl: data.heyzineUrl, thumbnail: data.thumbnail, pdfStoragePath: data.pdfStoragePath };
@@ -413,6 +414,7 @@ function render(container, ideaRow) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'outline2';
     }
+    stopProgress();
     safeDraw('outline2');
   }
 
@@ -436,6 +438,7 @@ function render(container, ideaRow) {
 
   async function generateOutline2() {
     state.screen = 'generating-outline2'; state.error = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 50);
     try {
       // Outline cấp 2 có thể cần AI sinh tới 8000 token — timeout mặc định 90s của callApi() không
       // đủ, khớp đúng lỗi thật Quỳnh gặp 2026-09-01. Nâng lên 180s (server cũng đã nâng tương ứng).
@@ -459,6 +462,7 @@ function render(container, ideaRow) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'intro';
     }
+    stopProgress();
     safeDraw('intro');
   }
 
@@ -479,12 +483,17 @@ function render(container, ideaRow) {
     const phanTruoc = index > 0 ? flat[index - 1] : null;
     const phanSau = index < flat.length - 1 ? flat[index + 1] : null;
     state.screen = 'section-working'; state.workingStep = useWebSearch ? 'nghien-cuu-web' : 'nghien-cuu'; state.error = null; draw();
+    // 2 pha (nghiên cứu -> viết) đổi màn hình con qua workingStep, mỗi lần draw() lại tạo phần tử
+    // #xdnd-progress-el MỚI — phải lấy lại tham chiếu + khởi động lại thanh tiến trình cho từng pha.
+    let stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), useWebSearch ? 40 : 18);
     try {
       const nghienCuuData = await callApi('api/xay-dung-noi-dung', {
         step: 'nghien-cuu', idea, phan: s, useWebSearch,
         taiLieuKinhNghiem: state.taiLieu || null,
       });
+      stopProgress();
       state.workingStep = 'viet'; draw();
+      stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 25);
       const vietData = await callApi('api/xay-dung-noi-dung', {
         step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath: getMaterialPath(),
         taiLieuKinhNghiem: state.taiLieu || null,
@@ -498,6 +507,7 @@ function render(container, ideaRow) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'outline2';
     }
+    stopProgress();
     safeDraw('outline2');
   }
 
@@ -507,6 +517,7 @@ function render(container, ideaRow) {
   // phải nội dung sản phẩm.
   async function runTongDuyet() {
     state.tongDuyetLoading = true; state.error = null; draw();
+    const stopProgress = animateProgressButton(container.querySelector('#xdnd-tong-duyet-btn'), 30, 'Đang duyệt tổng thể');
     try {
       const flat = flattenSections(state.outline2);
       const noiDungTheoPhan = {};
@@ -519,6 +530,7 @@ function render(container, ideaRow) {
     } catch (e) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
     }
+    stopProgress();
     state.tongDuyetLoading = false;
     safeDraw('outline2');
   }
@@ -527,6 +539,7 @@ function render(container, ideaRow) {
     const index = state.activeIndex;
     const s = state.sections[index];
     state.screen = 'section-review-loading'; state.error = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 15);
     try {
       const data = await callApi('api/xay-dung-noi-dung', { step: 'review', noiDungDaViet: s.viet.noi_dung });
       state.sections[index] = { ...s, review: data.result, status: 'review-done' };
@@ -536,6 +549,7 @@ function render(container, ideaRow) {
       state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       state.screen = 'section-draft';
     }
+    stopProgress();
     safeDraw('section-draft');
   }
 

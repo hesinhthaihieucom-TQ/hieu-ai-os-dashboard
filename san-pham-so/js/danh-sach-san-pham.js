@@ -163,12 +163,14 @@ function render(container) {
           if (!p) return;
           state.captions[id] = { loading: true, text: null, error: null };
           draw();
+          const stopProgress = animateProgressButton(container.querySelector(`[data-caption-btn="${id}"]`), 12, 'Đang viết');
           try {
             const data = await callApi('api/san-pham-so-viet-caption', { title: p.title, description: p.description || '' });
             state.captions[id] = { loading: false, text: data.caption, error: null };
           } catch (e) {
             state.captions[id] = { loading: false, text: null, error: e.message };
           }
+          stopProgress();
           draw();
         };
       });
@@ -205,6 +207,7 @@ function render(container) {
     if (aiMoTaBtn) aiMoTaBtn.onclick = async () => {
       if (!state.form.title.trim()) { state.error = 'Vui lòng nhập tên sản phẩm trước.'; draw(); return; }
       state.moTaLoading = true; state.error = null; draw();
+      const stopProgress = animateProgressButton(container.querySelector('#sps-ai-mo-ta-btn'), 12, 'Đang viết');
       try {
         const data = await callApi('api/san-pham-so-viet-mo-ta', { title: state.form.title, description_hien_tai: state.form.description || '' });
         state.form.description = data.mo_ta;
@@ -212,6 +215,7 @@ function render(container) {
       } catch (e) {
         state.error = e.message;
       }
+      stopProgress();
       state.moTaLoading = false;
       draw();
     };

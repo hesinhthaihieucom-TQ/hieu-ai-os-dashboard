@@ -78,6 +78,7 @@ function render(container) {
         if (!p) return;
         state.plans[id] = { loading: true, result: null, error: null };
         draw();
+        const stopProgress = animateProgressButton(container.querySelector(`[data-plan-btn="${id}"]`), 20, 'Đang lập kế hoạch');
         try {
           const data = await callApi('api/san-pham-so-ke-hoach-ra-mat', { title: p.title, description: p.description || '', price: p.price });
           state.plans[id] = { loading: false, result: data.result, error: null };
@@ -85,6 +86,7 @@ function render(container) {
         } catch (e) {
           state.plans[id] = { loading: false, result: null, error: e.message };
         }
+        stopProgress();
         draw();
       };
     });
