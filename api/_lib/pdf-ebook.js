@@ -17,17 +17,26 @@ function sectionBody(section, outlineItem) {
   return `[Phần này chưa viết nội dung đầy đủ — mới có outline]\n\n${bullets}`;
 }
 
-function addSectionPage(doc, titleLabel, item, body, section) {
+// Bài tập THẬT đã viết (section.viet.bai_tap — đúng bài tập hiện trong hộp "Bài tập" trên web, có
+// thể đã được AI viết chi tiết hơn bản gợi ý) — chỉ rơi về bài tập GỢI Ý ở outline (outlineItem.bai_tap)
+// khi phần đó CHƯA viết gì. Lỗi cũ: PDF luôn lấy bài tập gợi ý ở outline dù phần đã viết xong, khiến
+// bản xuất ra khác với những gì người dùng thấy/sửa trên web (Quỳnh hỏi 2026-09-01).
+function sectionBaiTap(section, outlineItem) {
+  if (section && section.viet && section.viet.bai_tap) return section.viet.bai_tap;
+  return outlineItem.bai_tap || null;
+}
+
+function addSectionPage(doc, titleLabel, item, body, baiTap, section) {
   doc.addPage();
   doc.font(FONT_BOLD).fontSize(11).fillColor('#5B5F55').text(titleLabel.toUpperCase(), { characterSpacing: 0.5 });
   doc.moveDown(0.3);
   doc.font(FONT_BOLD).fontSize(20).fillColor('#1E2420').text(item.tieu_de || '');
   doc.moveDown(1);
   doc.font(FONT_REGULAR).fontSize(12).fillColor('#1E2420').text(body, { lineGap: 4 });
-  if (item.bai_tap) {
+  if (baiTap) {
     doc.moveDown(1.2);
     doc.font(FONT_BOLD).fontSize(12).fillColor('#2F6F62').text('Bài tập:');
-    doc.font(FONT_REGULAR).fontSize(12).fillColor('#1E2420').text(item.bai_tap, { lineGap: 4 });
+    doc.font(FONT_REGULAR).fontSize(12).fillColor('#1E2420').text(baiTap, { lineGap: 4 });
   }
   // tom_tat_3_y chỉ có ở các phần đã viết bằng AI SAU khi field này ra đời (2026-09-01) — phần cũ
   // hoặc phần chưa viết (chỉ có outline) sẽ không có, bỏ qua khối này, không lỗi.
@@ -69,7 +78,8 @@ function buildEbookPdf({ idea, outline2, sections }) {
     flat.forEach((entry, index) => {
       if (!entry.item) return;
       const body = sectionBody(sections[index], entry.item);
-      addSectionPage(doc, entry.kind, entry.item, body, sections[index]);
+      const baiTap = sectionBaiTap(sections[index], entry.item);
+      addSectionPage(doc, entry.kind, entry.item, body, baiTap, sections[index]);
     });
 
     doc.end();
