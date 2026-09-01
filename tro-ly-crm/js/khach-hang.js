@@ -292,7 +292,7 @@ function render(container, ctx){
     try{
       const data = await callApi('/api/crm-cap-nhat-ho-so', {
         customer_id: d.customer.id, images: u.images, note: u.note,
-      }, 90000);
+      }, 150000);
       if(data.customer){
         d.customer = data.customer;
         d.editForm = toEditForm(data.customer);
@@ -401,7 +401,7 @@ function render(container, ctx){
       const data = await callApi('/api/crm-cap-nhat-ho-so', {
         images: p.images, note: p.note,
         manual_ten_khach_hang: p.needsName ? p.manualName.trim() : undefined,
-      }, 90000);
+      }, 150000);
       if(data.needsName){ p.needsName = true; p.submitting = false; draw(); return; }
       state.showNewForm = false; state.newForm = null; state.newFromPhoto = null;
       await load();

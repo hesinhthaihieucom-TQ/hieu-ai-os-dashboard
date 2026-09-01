@@ -258,7 +258,7 @@ async function callApiOnce(relativePath, body, timeoutMs){
   // không đóng gọn gàng), trình duyệt sẽ chờ vô thời hạn — màn hình đứng ở "Đang xử lý…" mãi mãi,
   // không báo lỗi, không có cách nào tự thoát. Đặt trần thời gian để luôn có phản hồi cho người dùng.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs || 90000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs || 150000);
   try{
     return await fetch(relativePath, {
       method:'POST',
@@ -270,7 +270,7 @@ async function callApiOnce(relativePath, body, timeoutMs){
       signal: controller.signal,
     });
   } catch(e){
-    if(e.name === 'AbortError') throw new Error(`Yêu cầu mất quá lâu (quá ${Math.round((timeoutMs||90000)/1000)} giây) — server có thể đang quá tải, thử lại giúp mình.`);
+    if(e.name === 'AbortError') throw new Error(`Yêu cầu mất quá lâu (quá ${Math.round((timeoutMs||150000)/1000)} giây) — server có thể đang quá tải, thử lại giúp mình.`);
     throw new Error('Không kết nối được tới server — kiểm tra lại mạng và thử lại.');
   } finally {
     clearTimeout(timer);

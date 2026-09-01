@@ -4,7 +4,7 @@
 // trả về), phù hợp gọi trực tiếp trong 1 request thay vì phải poll trạng thái riêng.
 async function createFlipbook({ apiKey, clientId, pdfUrl, title }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), 150000);
   let resp;
   try {
     resp = await fetch('https://heyzine.com/api1/rest', {
@@ -21,7 +21,7 @@ async function createFlipbook({ apiKey, clientId, pdfUrl, title }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('Heyzine xử lý quá lâu (quá 90 giây) — thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error('Heyzine xử lý quá lâu (quá 150 giây) — thử lại giúp mình.');
     throw new Error('Không kết nối được tới Heyzine — kiểm tra lại mạng và thử lại.');
   } finally {
     clearTimeout(timer);

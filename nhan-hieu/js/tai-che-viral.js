@@ -232,7 +232,7 @@ function render(container, ctx){
         viral_text: state.viralText, stage:'tieu_de', topic: state.topic, phan_tich: state.phanTich,
         positioning: state.positioning ? { luot1: state.positioning.luot1, luot2: state.positioning.luot2 } : null,
         quick_context: state.quickContext,
-      }, 90000);
+      }, 150000);
       state.titles = data.result.tieu_de_moi;
       state.savedTitleIdx = {};
       persistDraft();
@@ -253,7 +253,7 @@ function render(container, ctx){
         quick_context: state.quickContext,
         post_index: state.posts.length, total_posts: TOTAL_POSTS,
         previous_ideas: state.posts.map(p=>p.tieu_de),
-      }, 90000);
+      }, 150000);
       state.posts.push({ tieu_de: data.result.tieu_de, noi_dung: data.result.noi_dung });
       persistDraft();
     } catch(e){ state.postsError = e.message; }

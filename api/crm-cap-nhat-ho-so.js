@@ -62,7 +62,7 @@ function buildTool(isCreate) {
 
 async function callClaude({ apiKey, contentBlocks, tool, system }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), 150000);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -79,7 +79,7 @@ async function callClaude({ apiKey, contentBlocks, tool, system }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 150 giây) — thử lại giúp mình.');
     throw e;
   } finally {
     clearTimeout(timer);

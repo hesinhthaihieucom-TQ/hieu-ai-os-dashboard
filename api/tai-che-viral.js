@@ -77,7 +77,7 @@ async function callClaudeOnce({ apiKey, system, userContent, tool, maxTokens }) 
   // request có thể "treo" tới tận khi Vercel tự ngắt hàm (300s) mới có phản hồi, thay vì báo lỗi
   // sớm để người dùng biết mà thử lại. Đặt trần 90s riêng cho lệnh gọi AI.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), 150000);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -94,7 +94,7 @@ async function callClaudeOnce({ apiKey, system, userContent, tool, maxTokens }) 
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — có thể đang quá tải, thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 150 giây) — có thể đang quá tải, thử lại giúp mình.');
     throw e;
   } finally {
     clearTimeout(timer);

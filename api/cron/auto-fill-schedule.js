@@ -111,7 +111,7 @@ function stripDataUrlPrefix(dataUrl) {
 // 1 helper dùng chung để import, nên viết lại đúng khuôn ở đây thay vì bịa cách khác.
 async function callClaude({ apiKey, system, userContent, tool }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), 150000);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -128,7 +128,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây).');
+    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 150 giây).');
     throw e;
   } finally {
     clearTimeout(timer);

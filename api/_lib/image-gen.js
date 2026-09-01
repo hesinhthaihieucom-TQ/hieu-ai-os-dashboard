@@ -81,7 +81,7 @@ function wrapText(text, maxCharsPerLine, maxLines) {
 
 async function callOpenAiImage(apiKey, prompt, size) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), 150000);
   let resp;
   try {
     resp = await fetch('https://api.openai.com/v1/images/generations', {
@@ -91,7 +91,7 @@ async function callOpenAiImage(apiKey, prompt, size) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('OpenAI tạo ảnh quá lâu (quá 90 giây).');
+    if (e.name === 'AbortError') throw new Error('OpenAI tạo ảnh quá lâu (quá 150 giây).');
     throw e;
   } finally {
     clearTimeout(timer);

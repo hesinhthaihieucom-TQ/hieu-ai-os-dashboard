@@ -58,9 +58,10 @@ const { TOOL_LUOT1, TOOL_LUOT2 } = require('./_lib/positioning-schema');
 async function callClaude({ apiKey, system, userContent, tool }) {
   // fetch() mặc định KHÔNG có giới hạn thời gian chờ — nếu Anthropic bị treo/chậm bất thường,
   // request có thể "treo" tới tận khi Vercel tự ngắt hàm (300s) mới có phản hồi, thay vì báo lỗi
-  // sớm để người dùng biết mà thử lại. Đặt trần 90s riêng cho lệnh gọi AI.
+  // sớm để người dùng biết mà thử lại. max_tokens=16000 (nâng 2026-09-01) cần nhiều thời gian sinh
+  // chữ hơn — trần riêng 250s cho lệnh gọi AI này, vẫn còn dư địa dưới trần 300s của Vercel.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), 250000);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -72,7 +73,10 @@ async function callClaude({ apiKey, system, userContent, tool }) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 8000,
+        // 8000 từng đủ nhưng cùng công thức đã bị cắt giữa chừng ở san-pham-so (outline nhiều mục) —
+        // Sonnet 5 hỗ trợ tới 128.000 token output trên Messages API đồng bộ, 8000 không hề gần trần
+        // thật. Nâng phòng ngừa lên 16000 (2026-09-01) — không tốn thêm phí nếu không dùng hết.
+        max_tokens: 16000,
         system,
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
@@ -81,7 +85,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — có thể đang quá tải, thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 150 giây) — có thể đang quá tải, thử lại giúp mình.');
     throw e;
   } finally {
     clearTimeout(timer);

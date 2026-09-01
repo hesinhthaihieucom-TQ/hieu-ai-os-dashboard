@@ -29,7 +29,7 @@ const TOOL_PHAN_LOAI = {
 
 async function callClaude({ apiKey, system, userContent, tool }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), 150000);
   let resp;
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -46,7 +46,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 90 giây) — có thể đang quá tải, thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error('AI phản hồi quá lâu (quá 150 giây) — có thể đang quá tải, thử lại giúp mình.');
     throw e;
   } finally {
     clearTimeout(timer);
