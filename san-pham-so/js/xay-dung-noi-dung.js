@@ -1,8 +1,9 @@
 // Sản Phẩm Số — "✨ Tạo Sản Phẩm Bằng AI", Giai đoạn 2: Xây Dựng Nội Dung. Nhận thẳng phương án đã
 // chọn ở Giai đoạn 1 (window.renderXayDungNoiDung được gọi trực tiếp từ tim-san-pham.js, không qua
-// hash route riêng) — mở rộng outline cấp 2, rồi với từng phần: nghiên cứu nền tảng (dùng kiến thức
-// sẵn có của Claude, KHÔNG tích hợp web-search — quyết định 2026-08-25) → viết nội dung → review
-// theo 5 tiêu chí chất lượng.
+// hash route riêng) — mở rộng outline cấp 2, rồi với từng phần: nghiên cứu nền tảng (mặc định dùng
+// kiến thức sẵn có của Claude, nhưng có thể bật tùy chọn "Tìm kiến thức từ web" — 2026-09-01, thay
+// quy trình thủ công cũ của Quỳnh tự tìm nguồn + NotebookLM, xem api/xay-dung-noi-dung.js) → viết
+// nội dung → review theo 5 tiêu chí chất lượng.
 (function () {
 
 function flattenSections(outline2) {
@@ -63,6 +64,7 @@ function render(container, ideaRow) {
     if (state.screen === 'generating-outline2') return `<div class="loading"><div class="spinner"></div><p>Đang xây outline chi tiết…</p></div>`;
     if (state.screen === 'outline2') return outline2Html();
     if (state.screen === 'exporting-ebook') return `<div class="loading"><div class="spinner"></div><p>Đang xuất PDF & tạo sách lật…</p></div>`;
+    if (state.screen === 'section-start-choice') return sectionStartChoiceHtml();
     if (state.screen === 'section-working') return `<div class="loading"><div class="spinner"></div><p>${esc(workingLabel())}</p></div>`;
     if (state.screen === 'section-draft') return sectionDraftHtml();
     if (state.screen === 'section-review-loading') return `<div class="loading"><div class="spinner"></div><p>Đang kiểm tra chất lượng…</p></div>`;
@@ -71,6 +73,7 @@ function render(container, ideaRow) {
   }
 
   function workingLabel() {
+    if (state.workingStep === 'nghien-cuu-web') return 'Đang tìm kiến thức từ web…';
     if (state.workingStep === 'nghien-cuu') return 'Đang tổng hợp kiến thức nền…';
     if (state.workingStep === 'viet') return 'Đang viết nội dung…';
     return 'Đang xử lý…';
@@ -172,7 +175,10 @@ function render(container, ideaRow) {
             <h2 style="font-size:16px;margin-bottom:6px;">${esc(s.tieu_de)}</h2>
             <div style="font-size:13.5px;margin-bottom:8px;"><b>Kết quả đạt được:</b> ${esc(s.ket_qua_cu_the)}</div>
             <ul style="margin:0 0 10px;padding-left:20px;font-size:13px;color:var(--ink-soft);">${(s.noi_dung_con || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul>
-            <div class="btn-row" style="margin-top:0;"><span class="btn-ghost btn btn-sm" data-open-section="${i}">${btnLabel}</span></div>
+            <div class="btn-row" style="margin-top:0;align-items:center;">
+              <span class="btn-ghost btn btn-sm" data-open-section="${i}">${btnLabel}</span>
+              ${st && st.used_web_search ? `<span style="font-size:12px;color:var(--ink-soft);">🔍 Có dùng nguồn web</span>` : ''}
+            </div>
           </div>
         `;
       }).join('')}
@@ -199,6 +205,21 @@ function render(container, ideaRow) {
     `;
   }
 
+  function sectionStartChoiceHtml() {
+    const s = flattenSections(state.outline2)[state.activeIndex];
+    return `
+      <div class="card">
+        <h2 style="font-size:16px;">Bắt đầu viết — ${esc(s.tieu_de)}</h2>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">AI cần tổng hợp kiến thức nền trước khi viết phần này. Chọn nguồn kiến thức:</div>
+        <div class="btn-row">
+          <button class="btn" id="xdnd-start-normal-btn">✍️ Viết luôn (kiến thức sẵn có của AI)</button>
+          <span class="btn-ghost btn" id="xdnd-start-websearch-btn">🔍 Tìm thêm từ web trước (phát sinh phí tìm kiếm)</span>
+        </div>
+        <div class="btn-row"><span class="btn-ghost btn btn-sm" id="xdnd-back-outline-btn">← Quay lại outline</span></div>
+      </div>
+    `;
+  }
+
   function sectionDraftHtml() {
     const s = state.sections[state.activeIndex];
     return `
@@ -209,6 +230,7 @@ function render(container, ideaRow) {
         <div class="hint-box"><b>Ví dụ:</b> ${esc(s.viet.vi_du)}</div>
         <div class="hint-box"><b>Bài tập:</b> ${esc(s.viet.bai_tap)}</div>
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${(s.nghien_cuu && s.nghien_cuu.nguon_tham_khao && s.nghien_cuu.nguon_tham_khao.length) ? `<div class="hint-box"><b>🔍 Nguồn tham khảo:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.nguon_tham_khao.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -240,6 +262,7 @@ function render(container, ideaRow) {
         <div style="font-size:12px;color:var(--ink-soft);margin-top:10px;margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>
         <textarea id="xdnd-final-textarea" rows="14" style="font-size:14.5px;">${esc(s.review.ban_da_chinh || s.viet.noi_dung)}</textarea>
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${(s.nghien_cuu && s.nghien_cuu.nguon_tham_khao && s.nghien_cuu.nguon_tham_khao.length) ? `<div class="hint-box"><b>🔍 Nguồn tham khảo:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.nguon_tham_khao.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -280,15 +303,19 @@ function render(container, ideaRow) {
       if (useBtn) useBtn.onclick = useEbookAsProduct;
       const tongDuyetBtn = container.querySelector('#xdnd-tong-duyet-btn');
       if (tongDuyetBtn) tongDuyetBtn.onclick = runTongDuyet;
+    } else if (state.screen === 'section-start-choice') {
+      container.querySelector('#xdnd-start-normal-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, false);
+      container.querySelector('#xdnd-start-websearch-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, true);
+      container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
     } else if (state.screen === 'section-draft') {
       container.querySelector('#xdnd-review-btn').onclick = runReview;
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
       container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-draft-textarea', (s, val) => { s.viet.noi_dung = val; });
-      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex);
+      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, state.sections[state.activeIndex].used_web_search);
     } else if (state.screen === 'section-final') {
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
       container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-final-textarea', (s, val) => { s.review.ban_da_chinh = val; });
-      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex);
+      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, state.sections[state.activeIndex].used_web_search);
     }
   }
 
@@ -376,24 +403,27 @@ function render(container, ideaRow) {
     const existing = state.sections[index];
     if (existing && existing.status === 'viet-done') { state.screen = 'section-draft'; draw(); return; }
     if (existing && existing.status === 'review-done') { state.screen = 'section-final'; draw(); return; }
-    await runNghienCuuAndViet(index);
+    // Phần CHƯA viết gì — hỏi nguồn kiến thức trước (kiến thức sẵn có của AI, hay tìm thêm từ web —
+    // tùy chọn, tốn thêm phí thật nếu chọn web) thay vì tự động chạy luôn như trước 2026-09-01.
+    state.screen = 'section-start-choice';
+    draw();
   }
 
-  async function runNghienCuuAndViet(index) {
+  async function runNghienCuuAndViet(index, useWebSearch) {
     const flat = flattenSections(state.outline2);
     const s = flat[index];
     const phanTruoc = index > 0 ? flat[index - 1] : null;
     const phanSau = index < flat.length - 1 ? flat[index + 1] : null;
-    state.screen = 'section-working'; state.workingStep = 'nghien-cuu'; state.error = null; draw();
+    state.screen = 'section-working'; state.workingStep = useWebSearch ? 'nghien-cuu-web' : 'nghien-cuu'; state.error = null; draw();
     try {
-      const nghienCuuData = await callApi('api/xay-dung-noi-dung', { step: 'nghien-cuu', idea, phan: s });
+      const nghienCuuData = await callApi('api/xay-dung-noi-dung', { step: 'nghien-cuu', idea, phan: s, useWebSearch });
       state.workingStep = 'viet'; draw();
       const vietData = await callApi('api/xay-dung-noi-dung', {
         step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath,
         phanTruoc: phanTruoc ? { tieu_de: phanTruoc.tieu_de, ket_qua_cu_the: phanTruoc.ket_qua_cu_the } : null,
         phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
       });
-      state.sections[index] = { nghien_cuu: nghienCuuData.result, viet: vietData.result, review: null, status: 'viet-done' };
+      state.sections[index] = { nghien_cuu: nghienCuuData.result, viet: vietData.result, review: null, status: 'viet-done', used_web_search: !!useWebSearch };
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-draft';
     } catch (e) {

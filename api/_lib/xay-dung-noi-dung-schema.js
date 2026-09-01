@@ -68,6 +68,13 @@ const TOOL_NGHIEN_CUU = {
         type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4,
         description: 'Rào cản tâm lý phổ biến khiến người học dễ trì hoãn/bỏ cuộc với chủ đề này (VD "không có đủ thời gian", "đã từng thử mà thất bại") — mỗi mục nêu rõ rào cản + cách phần viết nên trả lời/trấn an ngay, không đợi người đọc tự vượt qua.',
       },
+      // KHÔNG bắt buộc — chỉ điền khi userContent có kèm khối "THÔNG TIN TỪ WEB" (tìm kiếm thật,
+      // xem researchViaWebSearch() ở api/xay-dung-noi-dung.js). Để người dùng thấy được nguồn thật,
+      // đúng tinh thần minh bạch của quy trình NotebookLM cũ.
+      nguon_tham_khao: {
+        type: 'array', items: { type: 'string' },
+        description: 'CHỈ điền khi có dùng thông tin tìm được từ web trong ngữ liệu — mỗi mục 1 nguồn dạng "Tên trang — link". Bỏ trống/không điền nếu không có thông tin web nào được cung cấp.',
+      },
     },
     required: ['kien_thuc_nen', 'sai_lam_pho_bien', 'huong_vi_du', 'rao_can_tam_ly'],
   },

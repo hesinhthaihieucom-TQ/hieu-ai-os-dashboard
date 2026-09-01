@@ -67,6 +67,11 @@ const AI_WEIGHTS = {
   // Duyệt tổng thể sản phẩm sau khi viết xong hết (2026-09-01) — đọc lại toàn bộ nội dung đã viết,
   // ngang mức nghien-cuu — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
   'xay-dung-noi-dung-tong-duyet': 2,
+  // Tìm kiến thức từ web (tùy chọn, 2026-09-01) — thay quy trình thủ công cũ của Quỳnh (từ khóa +
+  // NotebookLM). Tách thành 2 lệnh gọi (tìm web + tổng hợp) + phí tìm kiếm thật của Anthropic
+  // ($10/1.000 lượt tìm ~250đ/lượt, tối đa 4 lượt/lần) — ĐỀ XUẤT, CHƯA xác nhận với Quỳnh, cần theo
+  // dõi chi phí thật sau khi dùng thử để chốt số cuối.
+  'xay-dung-noi-dung-nghien-cuu-web': 4,
   // Nhánh "đã có sẵn tài liệu" (mục A, 2026-09-01) — đọc thẳng 1 file PDF qua Claude thay vì suy từ
   // 12 câu trả lời ngắn, ngang mức tim-san-pham-phu-hop vì cùng vai trò (ra 2-3 phương án + outline).
   'tim-san-pham-tu-tai-lieu': 8,

@@ -7,7 +7,10 @@
 // 2026-09-01). 'outline2' và 'viet' có thể nhận kèm `materialPath` — tài liệu PDF người dùng đã tải
 // lên ở nhánh A của Giai đoạn 1 (xem api/tim-san-pham-tu-tai-lieu.js) — để nội dung viết ra BÁM SÁT
 // tài liệu gốc thay vì chỉ dùng 1 lần ở bước tìm ý tưởng rồi bỏ; 'nghien-cuu' CỐ Ý không nhận tài
-// liệu vì đó là bước tổng hợp kiến thức nền CHUNG, không phải nội dung riêng của user.
+// liệu vì đó là bước tổng hợp kiến thức nền CHUNG, không phải nội dung riêng của user. 'nghien-cuu'
+// có thể nhận `useWebSearch: true` (tùy chọn, thêm 2026-09-01) — thay quy trình thủ công cũ của
+// Quỳnh (tự nghĩ từ khóa -> tìm nguồn -> NotebookLM tổng hợp) bằng công cụ web_search của Anthropic,
+// xem researchViaWebSearch() bên dưới.
 
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
@@ -66,6 +69,46 @@ function ideaBlock(idea) {
   return `SẢN PHẨM: ${idea.ten_san_pham}\nĐỐI TƯỢNG: ${idea.doi_tuong}\nĐỊNH DẠNG: ${idea.dinh_dang}\nĐỘ DÀI: ${idea.do_dai_uoc_luong}`;
 }
 
+// Thay quy trình thủ công cũ của Quỳnh (tự nghĩ từ khóa -> tìm nguồn -> đưa vào NotebookLM tổng
+// hợp) — người dùng app không tự nghĩ từ khóa, để Claude tự làm hết qua công cụ web_search có sẵn
+// của Anthropic (docs.claude.com/agents-and-tools/tool-use/web-search-tool, $10/1.000 lượt tìm).
+// KHÔNG ép tool_choice ở lệnh này (khác mọi lệnh gọi khác trong file) — bắt buộc 1 tool cụ thể sẽ
+// chặn Claude tự quyết định tìm web trước, nên đây PHẢI là 1 lệnh gọi riêng, kết quả text của nó
+// mới được đưa làm ngữ liệu cho lệnh TOOL_NGHIEN_CUU ép-tool bình thường ở dưới. Lỗi bất kỳ -> trả
+// về '' (không throw) — tìm web là phần BỔ SUNG, lỗi thì rơi về nghiên cứu bằng kiến thức sẵn có
+// của AI, không được chặn luồng viết chính.
+async function researchViaWebSearch({ apiKey, idea, phan }) {
+  const prompt = `Hãy tìm kiếm trên web thông tin thực tế, cập nhật, liên quan tới chủ đề "${phan.tieu_de}" trong bối cảnh sản phẩm số "${idea.ten_san_pham}" (đối tượng: ${idea.doi_tuong}). Tự chọn từ khóa tìm kiếm phù hợp, không cần hỏi lại. Tổng hợp lại thành 1 đoạn kiến thức nền ngắn gọn (khoảng 200-400 từ), ghi rõ nguồn (tên trang + link) cho từng ý quan trọng.`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-5',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }],
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4 }],
+      }),
+      signal: controller.signal,
+    });
+    if (!resp.ok) return '';
+    const data = await resp.json();
+    const content = data.content || [];
+    // Lấy các block text xuất hiện SAU block web_search_tool_result CUỐI CÙNG — đó là câu trả lời
+    // tổng hợp sau khi đã tìm xong (có thể tìm nhiều lượt), không lẫn câu narrate "tôi sẽ tìm..."
+    // xuất hiện trước khi tìm. Nếu Claude không tìm gì cả (hiếm), lastIdx=-1 -> lấy hết text có sẵn.
+    let lastIdx = -1;
+    content.forEach((b, i) => { if (b.type === 'web_search_tool_result') lastIdx = i; });
+    return content.slice(lastIdx + 1).filter((b) => b.type === 'text').map((b) => b.text).join('\n\n');
+  } catch (e) {
+    return '';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
@@ -75,8 +118,10 @@ module.exports = async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
-  const { step, idea, outlineCap1, taiLieuKinhNghiem, outlineCap2, phan, nghienCuu, giongVan, noiDungDaViet, materialPath, phanTruoc, phanSau, noiDungTheoPhan } = req.body || {};
-  const actionKey = `xay-dung-noi-dung-${step}`;
+  const { step, idea, outlineCap1, taiLieuKinhNghiem, outlineCap2, phan, nghienCuu, giongVan, noiDungDaViet, materialPath, phanTruoc, phanSau, noiDungTheoPhan, useWebSearch } = req.body || {};
+  // Tìm web tốn thêm 1 lệnh gọi + phí tìm kiếm thật — tính actionKey riêng để KHÔNG tính phí cao lây
+  // sang người không bật tìm web (xem AI_WEIGHTS['xay-dung-noi-dung-nghien-cuu-web'] trong trial-quota.js).
+  const actionKey = (step === 'nghien-cuu' && useWebSearch) ? 'xay-dung-noi-dung-nghien-cuu-web' : `xay-dung-noi-dung-${step}`;
 
   const quotaError = await checkAndConsumeTrialQuota(user.id, actionKey);
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
@@ -96,7 +141,12 @@ module.exports = async (req, res) => {
 
     if (step === 'nghien-cuu') {
       if (!idea || !phan) { res.status(400).json({ error: 'Thiếu thông tin phần cần nghiên cứu.' }); return; }
-      const userContent = `${ideaBlock(idea)}\n\nPHẦN CẦN NGHIÊN CỨU NỀN TẢNG: ${phan.tieu_de}\nKẾT QUẢ CỤ THỂ CẦN ĐẠT: ${phan.ket_qua_cu_the}\nNỘI DUNG CON: ${(phan.noi_dung_con || []).join('; ')}\n\nHãy tổng hợp kiến thức nền cho đúng phần này.`;
+      let webBlock = '';
+      if (useWebSearch) {
+        const webText = await researchViaWebSearch({ apiKey, idea, phan });
+        if (webText) webBlock = `\nTHÔNG TIN TỪ WEB (đã tìm kiếm, có trích dẫn nguồn — ưu tiên dùng làm căn cứ thay vì tự bịa, nhớ điền nguon_tham_khao):\n${webText}\n`;
+      }
+      const userContent = `${ideaBlock(idea)}\n\nPHẦN CẦN NGHIÊN CỨU NỀN TẢNG: ${phan.tieu_de}\nKẾT QUẢ CỤ THỂ CẦN ĐẠT: ${phan.ket_qua_cu_the}\nNỘI DUNG CON: ${(phan.noi_dung_con || []).join('; ')}\n${webBlock}\nHãy tổng hợp kiến thức nền cho đúng phần này.`;
       const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_NGHIEN_CUU });
       res.status(200).json({ result });
       return;
