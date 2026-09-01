@@ -36,6 +36,11 @@ const DEFAULT_SLOT_TIME = { sang: '08:00', trua: '12:00', toi: '19:00' };
 // dục) khi cả 2 nguồn đều sẵn sàng — chốt 2026-08-28 sau khi kho ảnh case study/cá nhân đầy khiến
 // MỌI bài đều rơi vào case study, mất đa dạng. Xem nhánh chọn ở autoFillForAdmin().
 const CASE_STUDY_RATIO = 0.3;
+// "1 tuần nên có 2-3 case thôi. còn lại quote." (chị Quỳnh 2026-09-01) — trước đây Trưa random tuyệt
+// đối 50/50 giữa quote/case study, ra nhiều case study hơn ý chị muốn. ~2.5 case/7 buổi trưa mỗi tuần
+// — xấp xỉ bằng xác suất (cron lấp cuốn chiếu 3 ngày/lần, không đếm chính xác theo mốc tuần cố định
+// được), cùng kiểu CASE_STUDY_RATIO ở trên.
+const TRUA_CASE_STUDY_RATIO = 2.5 / 7;
 
 // Phase 9 (2026-08-29) — lane Cá nhân cũng được tự động viết + xếp lịch như Fanpage, nhưng KHÔNG tự
 // đăng (Facebook không cho app đăng hộ trang cá nhân) — chị Quỳnh tự đăng tay. Chốt 3 bài/ngày, đúng
@@ -729,17 +734,15 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
         continue;
       }
       if (slotInfo.slot === 'trua') {
-        // "phần case study buổi trưa thì xen kẽ câu quote với case study" (chị Quỳnh 2026-08-31) —
-        // random 50/50 ưu tiên quote hay case study trước, rơi sang loại còn lại nếu loại ưu tiên đã
-        // hết CHƯA DÙNG — chỉ thật sự để TRỐNG ô khi CẢ 2 đều cạn (giữ đúng nguyên tắc "hết thì để
-        // trống, ko tự điền" đã chốt 2026-08-30, không âm thầm rơi về bài thường).
-        const preferQuote = Math.random() < 0.5;
+        // "phần case study buổi trưa thì xen kẽ câu quote với case study" + "1 tuần nên có 2-3 case
+        // thôi, còn lại quote" (chị Quỳnh 2026-08-31 / 2026-09-01) — ưu tiên quote theo TRUA_CASE_STUDY_
+        // RATIO (~2.5/7, không còn 50/50), rơi sang loại còn lại nếu loại ưu tiên đã hết CHƯA DÙNG.
+        const preferQuote = Math.random() >= TRUA_CASE_STUDY_RATIO;
         const tryQuote = () => { const quote = pickUnusedQuote(poolFiltered, usedRefs); return quote ? { type: 'quote', quote } : null; };
         const tryCaseStudy = () => { const caseStudy = pickUnusedCaseStudy(caseStudies, usedRefs); return caseStudy ? { type: 'case_study', caseStudy } : null; };
         const picked = preferQuote ? (tryQuote() || tryCaseStudy()) : (tryCaseStudy() || tryQuote());
-        if (!picked) { skippedNoCandidate.push(slotInfo); continue; }
         let result;
-        if (picked.type === 'quote') {
+        if (picked && picked.type === 'quote') {
           usedRefs.push({ table: picked.quote.table, id: picked.quote.id });
           const product = pickMatchingProduct(products, picked.quote.text);
           result = await fillQuoteSlot({
@@ -748,7 +751,7 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
             channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
           });
           await attachAutoImage(result, picked.quote.tags);
-        } else {
+        } else if (picked && picked.type === 'case_study') {
           // Case study không có văn bản nguồn trước (chỉ ảnh) — vẫn random sản phẩm, không có gì để
           // so khớp trước khi AI viết xong.
           const product = products.length ? products[Math.floor(Math.random() * products.length)] : null;
@@ -759,6 +762,22 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
             channelHandle: profile.channel_handle, brandName: profile.brand_name,
             channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
           });
+        } else {
+          // "chỗ nào ko có thì cứ auto lấp bằng tên trụ nội dung, gợi ý dạng content, ko đc bỏ trống"
+          // (chị Quỳnh 2026-09-01) — ĐỔI quy tắc cũ ("hết thì để trống, không tự điền"): hết CẢ quote
+          // lẫn case study chưa dùng thì rơi về bài thường từ kho hook/content (giống buổi Sáng), vẫn
+          // đã lọc đúng trục (poolFiltered) và có gợi ý dạng content riêng qua bước EXTRAS như mọi bài
+          // khác — chỉ thật sự để trống khi CẢ 3 nguồn (quote/case study/hook-content) đều cạn.
+          const candidate = pickUnusedCandidate(poolFiltered, usedRefs, false);
+          if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
+          usedRefs.push({ table: candidate.table, id: candidate.id });
+          const product = pickMatchingProduct(products, candidate.text);
+          result = await fillOneSlot({
+            userId: admin.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
+            channelHandle: profile.channel_handle, brandName: profile.brand_name,
+            channel: 'ca_nhan', formatConstraint: EXCLUDE_NGOI_NOI, recentTitles,
+          });
+          await attachAutoImage(result, candidate.tags);
         }
         filled.push(result); recentTitles.push(result.title);
         continue;

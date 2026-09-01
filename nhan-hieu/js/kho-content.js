@@ -64,6 +64,7 @@ function render(container, ctx){
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'', scheduledPostIds:new Set(),
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
     caseStudies:[], caseStudyUploading:false, caseStudyError:null, caseStudyUploadProgress:null,
+    adminMenuFor:null,
     // Ảnh cá nhân (2026-08-28, theo yêu cầu chị Quỳnh) — dùng làm NỀN ghép cùng ảnh case study khi
     // lịch Fanpage tự động viết bài (compositeCaseStudyImage ở api/_lib/image-gen.js). Sống chung
     // tab "Case Study" qua 1 sub-tab chip, không cần phân loại trục (dùng chung cho mọi bài).
@@ -613,6 +614,33 @@ function render(container, ctx){
     `).join('');
   }
 
+  // "cho e quyền đc xóa ở kho hook luôn. và quyền đc chuyển trụ nội dung ở các kho khi e thấy phân
+  // loại chưa chuẩn. các quyền này gộp thành dấu ... cho gọn" (chị Quỳnh 2026-09-01) — gộp nút "Xoá"
+  // admin đã có (2026-08-31) với quyền đổi trục mới vào 1 nút "⋯" duy nhất, đỡ chiếm chỗ khi phần lớn
+  // người dùng (không phải admin) không thấy gì cả.
+  function adminMenuHtml(b){
+    if(!isAdmin) return '';
+    const isOpen = state.adminMenuFor === b.id;
+    const currentPillar = (b.tags && b.tags[0]) || '';
+    return `
+      <div>
+        <span style="cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:700;" data-admin-menu-toggle="${b.id}">⋯</span>
+        ${isOpen ? `
+          <div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;gap:8px;background:var(--panel);">
+            <div>
+              <label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Đổi trục nội dung (khi thấy phân loại chưa chuẩn)</label>
+              <select data-admin-pillar-select="${b.id}" style="width:100%;font-size:12.5px;padding:4px;">
+                <option value="" ${!currentPillar?'selected':''}>— Chưa phân loại —</option>
+                ${PILLARS.map(p=>`<option value="${p.key}" ${currentPillar===p.key?'selected':''}>${esc(p.label)}</option>`).join('')}
+              </select>
+            </div>
+            <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-admin-del-shared="${b.id}">Xoá khỏi Kho chung</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
   function khoChungTab(){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Kho bài mẫu <b>đã được kiểm chứng viral</b>, do đội ngũ tuyển chọn và cập nhật liên tục — dùng làm <b>khung sườn (hook + cấu trúc)</b> để viết lại theo giọng văn và câu chuyện thật của bạn, không phải để sao chép nguyên văn.<br><br>Đây là <b>cách nhanh nhất</b> để bài mới của bạn có nền tảng đã được thị trường kiểm chứng thay vì viết từ số 0.</div>`;
     if(state.sharedBank.length===0) return hint + `<div class="card" style="color:var(--ink-soft);">Kho Content Viral chưa có nội dung — sẽ được cập nhật từ đội ngũ.</div>`;
@@ -630,7 +658,7 @@ function render(container, ctx){
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
-          ${isAdmin ? `<span style="color:var(--danger);cursor:pointer;font-size:12px;white-space:nowrap;" data-del-shared="${b.id}">Xoá</span>` : ''}
+          ${adminMenuHtml(b)}
         </div>
         <h3>${esc(b.title)}</h3>
         ${contentBodyHtml('shared:'+b.id, b.content, { protected:true })}
@@ -797,15 +825,31 @@ function render(container, ctx){
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
     });
-    // Admin xoá thẳng 1 mục trong Kho Content Viral (2026-08-31, theo yêu cầu chị Quỳnh: "cho mình
-    // admin quyền đc xóa bài") — trước đây chỉ xoá được bằng cách nhờ viết SQL riêng, giờ tự dọn được
-    // ngay trong app. Chỉ admin thấy nút này (isAdmin, khai báo đầu render()).
-    container.querySelectorAll('[data-del-shared]').forEach(el=>{
+    // Menu admin "⋯" cho Kho Content Viral (2026-08-31 xoá + 2026-09-01 đổi trục, gộp chung 1 nút
+    // theo yêu cầu chị Quỳnh) — chỉ admin thấy (isAdmin, khai báo đầu render()).
+    container.querySelectorAll('[data-admin-menu-toggle]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-admin-menu-toggle');
+        state.adminMenuFor = state.adminMenuFor===id ? null : id;
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-admin-pillar-select]').forEach(el=>{
+      el.onchange = async ()=>{
+        const id = el.getAttribute('data-admin-pillar-select');
+        const newTag = el.value || null;
+        await ctx.supabase.from('content_bank_shared').update({ tags: newTag ? [newTag] : [] }).eq('id', id);
+        await loadShared();
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-admin-del-shared]').forEach(el=>{
       el.onclick = async ()=>{
-        const id = el.getAttribute('data-del-shared');
+        const id = el.getAttribute('data-admin-del-shared');
         if(!(await confirmModal('Xoá vĩnh viễn mục này khỏi Kho Content Viral? Mọi khách đang dùng chung kho này sẽ không còn thấy nữa. Không khôi phục được.'))) return;
         await ctx.supabase.from('content_bank_shared').delete().eq('id', id);
         await loadShared();
+        state.adminMenuFor = null;
         draw();
       };
     });

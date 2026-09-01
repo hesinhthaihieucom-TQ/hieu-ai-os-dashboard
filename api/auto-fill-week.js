@@ -142,9 +142,14 @@ module.exports = async (req, res) => {
           const hooks = Array.isArray(hookResult.hooks) ? hookResult.hooks.filter(Boolean) : [];
           if (!hooks.length) { skippedNoCandidate.push(slotInfo); continue; }
           const hookText = hooks[Math.floor(Math.random() * hooks.length)];
+          // "tất cả những câu nào dài trên 2 dòng đều là quote đó" (chị Quỳnh 2026-09-01) — cùng ngưỡng
+          // ước lượng ~2 dòng (HOOK_QUOTE_LENGTH_THRESHOLD) và cùng cách ghi đè RAW KEY 'quote' như
+          // isLongHook()/addHook() ở nhan-hieu/js/kho-hook.js — hook tự sinh ở đây cũng cần qua đúng 1
+          // quy tắc, không để lọt hook dài mà vẫn gắn category='viral'/'uy_tin'.
+          const savedCategory = hookText.trim().length > 100 ? 'quote' : goal;
           const savedResp = await supabaseAdmin('hooks_bank_personal', {
             method: 'POST',
-            body: JSON.stringify({ user_id: user.id, hook_text: hookText, category: goal, tags: truc ? [truc] : null }),
+            body: JSON.stringify({ user_id: user.id, hook_text: hookText, category: savedCategory, tags: truc ? [truc] : null }),
           });
           if (!savedResp.ok) { skippedNoCandidate.push(slotInfo); continue; }
           const [savedHook] = await savedResp.json();

@@ -61,7 +61,19 @@ function categoryLabel(key){
   return HOOK_GEN_LABEL_BY_KEY[key] || CATEGORIES[key] || key || '';
 }
 
+// "tất cả những câu nào dài trên 2 dòng đều là quote đó, a tách riêng ra đi" (chị Quỳnh 2026-09-01) —
+// quote hoàn chỉnh (đọc là hiểu hết ý) thường dài hẳn so với 1 hook thật (câu ngắn, cố tình bỏ lửng để
+// tạo tò mò). Ước lượng "2 dòng" bằng số ký tự (~50 ký tự/dòng trên thẻ hiển thị hook, không đo pixel
+// thật vì không có canvas ở module này) — không cần chính xác tuyệt đối, chỉ cần tách được đoạn văn rõ
+// ràng dài khỏi câu hook ngắn. Dùng RAW KEY 'quote' (không phải categoryLabel('quote')) khi ghi đè —
+// pickUnusedQuote() ở api/cron/auto-fill-schedule.js so khớp đúng chuỗi 'quote' trong cột category.
+const HOOK_QUOTE_LENGTH_THRESHOLD = 100;
+function isLongHook(text){
+  return String(text || '').trim().length > HOOK_QUOTE_LENGTH_THRESHOLD;
+}
+
 function render(container, ctx){
+  const isAdmin = !!(ctx.profile && ctx.profile.role==='admin');
   const state = {
     tab:'tao-hook', personal:[], shared:[], sharedContent:[], error:null, positioning:null,
     newEntry:{ hook_text:'', note:'', isViral:null, viralViews:'', viralLikes:'' }, addingHook:false, addError:null,
@@ -71,6 +83,7 @@ function render(container, ctx){
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{}, genThumbSavedIdx:{},
     chungPillar:'all', khoToiPillar:'all', posts:[], khoToiSearch:'', chungSearch:'',
+    adminMenuFor:null,
   };
 
   // Giữ lại hook vừa tạo (tab "Tạo Hook") khi chuyển sang tab/trang khác rồi quay lại — trước đây
@@ -370,6 +383,35 @@ function render(container, ctx){
     `).join('');
   }
 
+  // "cho e quyền đc xóa ở kho hook luôn. và quyền đc chuyển trụ nội dung ở các kho khi e thấy phân
+  // loại chưa chuẩn. các quyền này gộp thành dấu ... cho gọn" (chị Quỳnh 2026-09-01) — gộp 2 quyền
+  // admin (xoá + đổi trục) vào 1 nút "⋯" duy nhất, mở ra mới thấy, đỡ chiếm chỗ trên mỗi thẻ khi
+  // phần lớn người dùng (không phải admin) không thấy gì cả. Item có thể từ 2 bảng gốc khác nhau
+  // (combinedShared() gộp hooks_bank_shared + content_bank_shared) — dispatch đúng bảng theo _src.
+  function adminMenuHtml(h){
+    if(!isAdmin) return '';
+    const key = h._src+':'+h.id;
+    const isOpen = state.adminMenuFor === key;
+    const currentPillar = (h.tags && h.tags[0]) || '';
+    return `
+      <div>
+        <span style="cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:700;" data-admin-menu-toggle="${key}">⋯</span>
+        ${isOpen ? `
+          <div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;gap:8px;background:var(--panel);">
+            <div>
+              <label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Đổi trục nội dung (khi thấy phân loại chưa chuẩn)</label>
+              <select data-admin-pillar-select="${key}" style="width:100%;font-size:12.5px;padding:4px;">
+                <option value="" ${!currentPillar?'selected':''}>— Chưa phân loại —</option>
+                ${HOOK_PILLARS.map(p=>`<option value="${p.key}" ${currentPillar===p.key?'selected':''}>${esc(p.label)}</option>`).join('')}
+              </select>
+            </div>
+            <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-admin-del="${key}">Xoá khỏi Kho chung</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
   function khoChungTab(){
     const all = combinedShared();
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook <b>đã được kiểm chứng viral</b> — câu mở đầu đã khiến rất nhiều người dừng lại xem — do đội ngũ tuyển chọn và cập nhật liên tục.<br><br>Dùng làm <b>mẫu</b> để viết hook riêng cho chủ đề của bạn, <b>không phải để copy nguyên văn</b>.</div>`;
@@ -383,7 +425,10 @@ function render(container, ctx){
     if(items.length===0) return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
     return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + items.map(h=>`
       <div class="section">
-        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
+          ${adminMenuHtml(h)}
+        </div>
         <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
         ${writeActionHtml(h._src+':'+h.id)}
       </div>
@@ -506,6 +551,37 @@ function render(container, ctx){
     if(copyBtn) copyBtn.onclick = async ()=>{
       try{ await navigator.clipboard.writeText(findSourceText(state.writeFor)); state.copiedFor = state.writeFor; draw(); } catch(e){}
     };
+
+    container.querySelectorAll('[data-admin-menu-toggle]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-admin-menu-toggle');
+        state.adminMenuFor = state.adminMenuFor===key ? null : key;
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-admin-pillar-select]').forEach(el=>{
+      el.onchange = async ()=>{
+        const key = el.getAttribute('data-admin-pillar-select');
+        const [src, id] = key.split(':');
+        const newTag = el.value || null;
+        const table = src==='content' ? 'content_bank_shared' : 'hooks_bank_shared';
+        await ctx.supabase.from(table).update({ tags: newTag ? [newTag] : [] }).eq('id', id);
+        if(src==='content') await loadSharedContent(); else await loadShared();
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-admin-del]').forEach(el=>{
+      el.onclick = async ()=>{
+        const key = el.getAttribute('data-admin-del');
+        const [src, id] = key.split(':');
+        if(!(await confirmModal('Xoá vĩnh viễn mục này khỏi Kho chung? Mọi khách đang dùng chung kho này sẽ không còn thấy nữa. Không khôi phục được.'))) return;
+        const table = src==='content' ? 'content_bank_shared' : 'hooks_bank_shared';
+        await ctx.supabase.from(table).delete().eq('id', id);
+        if(src==='content') await loadSharedContent(); else await loadShared();
+        state.adminMenuFor = null;
+        draw();
+      };
+    });
   }
 
   async function generateHooksByTopic(){
@@ -542,7 +618,7 @@ function render(container, ctx){
     const hookText = state.genResult[i];
     const catLabel = (HOOK_GEN_CATEGORIES.find(c=>c.key===state.genCategory)||{}).label || state.genCategory;
     await ctx.supabase.from('hooks_bank_personal').insert({
-      user_id: ctx.user.id, hook_text: hookText, category: catLabel, note: `Chủ đề: ${state.genTopic}`,
+      user_id: ctx.user.id, hook_text: hookText, category: isLongHook(hookText) ? 'quote' : catLabel, note: `Chủ đề: ${state.genTopic}`,
     });
     state.genSavedIdx[i] = true; draw();
     persistGenDraft();
@@ -567,6 +643,7 @@ function render(container, ctx){
       // Không phân loại được (vd lỗi mạng) — vẫn lưu hook, chỉ thiếu nhãn loại, không chặn người dùng.
       classifyWarning = `Không tự nhận diện được loại hook (${hookResult.reason.message}) — đã lưu hook, bạn có thể bỏ qua.`;
     }
+    if(isLongHook(entry.hook_text)) category = 'quote';
     if(trucResult.status==='fulfilled' && trucResult.value.result && trucResult.value.result.truc){
       tags = [trucResult.value.result.truc];
     }
