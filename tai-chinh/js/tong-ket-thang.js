@@ -278,7 +278,7 @@ function render(container, ctx){
 
           <button class="btn no-print" style="margin-top:14px;" id="tk-save-networth" ${state.savingNetworth?'disabled':''}>${state.savingNetworth?'Đang lưu…':'Lưu cân đối tháng này'}</button>
           <span class="no-print" id="tk-networth-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedNetworthMsg}</span>
-          <div class="hint-box" style="margin-top:12px;">Lưu cân đối tháng này giúp cộng thêm điểm cho Trụ Thân Tâm Bản Thể ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp →</a> — bỏ trống tháng nào, Điểm Nghiệp tháng đó cũng bị kéo nhẹ xuống theo.</div>
+          <div class="hint-box" style="margin-top:12px;">Lưu cân đối tháng này giúp cộng thêm điểm cho Trụ Thân Tâm Bản Thể ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp →</a> — bỏ trống tháng nào, Điểm Nghiệp tháng đó cũng bị kéo nhẹ xuống theo. Xem xu hướng riêng phần tiết kiệm/vàng/cổ phiếu ở <a href="#tich-luy" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>, hoặc cả năm ở <a href="#tong-ket-nam" style="color:var(--accent);font-weight:600;">Tổng Kết Năm →</a>.</div>
 
           ${historyRows.length>1 ? `
             <div style="margin-top:20px;">

@@ -499,3 +499,23 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.set_tc_reminder_frequency(text) to authenticated;
+
+-- "Tổng Kết Năm" (2026-08-26, góp ý Quỳnh: thêm tổng kết năm, liên kết với Chấm Điểm Nghiệp Tiền +
+-- Hạt Giống Phước - Nghiệp) — chỉ lưu ĐÚNG phần không suy ra được từ bảng khác: lời cam kết cho năm
+-- tới theo từng Trụ Cột (giống goal_house_reasons ở tc_monthly_reflections, nhưng quy mô năm) + 1
+-- đoạn nhìn lại năm qua tự do. Số liệu tổng hợp cả năm (thu/chi/tài sản ròng/tích luỹ), điểm nghiệp
+-- cuối năm, và danh sách hạt giống trong năm đều TÍNH TƯƠI từ tc_finance_entries/tc_networth_snapshots/
+-- tc_karma_history/tc_core_beliefs đã có sẵn — không lưu trùng số liệu suy ra được (đúng nguyên tắc
+-- "Điểm Nghiệp không lưu số cố định" đã áp dụng xuyên suốt app này), xem tong-ket-nam.js.
+create table if not exists tc_yearly_reflections (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  year integer not null,
+  reflection_summary text,
+  next_year_goals jsonb, -- { house_key: "lời cam kết cho năm tới" }
+  updated_at timestamptz not null default now(),
+  primary key (user_id, year)
+);
+alter table tc_yearly_reflections enable row level security;
+drop policy if exists "tc_yearly_reflections_owner_all" on tc_yearly_reflections;
+create policy "tc_yearly_reflections_owner_all" on tc_yearly_reflections for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);

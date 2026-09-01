@@ -403,7 +403,7 @@ function render(container, ctx){
     // Điểm Nghiệp — cùng bộ state di chuyển từ trang-chu.js, xem bootDashboard() bên dưới. Khách
     // không có lịch sử gì để tính (bootDashboard() không chạy) nên tắt sẵn loading, khỏi treo spinner.
     dashboardLoading: !isGuest,
-    monthIncome: 0, monthExpense: 0, netWorth: null, netWorthMonth: null, totalDebt: 0,
+    monthIncome: 0, monthExpense: 0, netWorth: null, netWorthMonth: null, tichLuy: null, totalDebt: 0,
     upcomingDebts: [], karmaAxes: [], activeBeliefsCount: 0, selectedPillarKey: null,
     // Tab "Theo Dõi Kết Quả" — 1 TAB của trang này, KHÔNG phải route riêng (2026-08-25, góp ý Quỳnh:
     // "là 1 mục của chấm điểm nghiệp chứ không phải trang mới ẩn trong sidebar"). Load lười (chỉ query
@@ -457,6 +457,9 @@ function render(container, ctx){
       const debts = Number(s.debt_credit_card||0)+Number(s.debt_installment||0)+Number(s.debt_bank_loan||0)+Number(s.debt_other||0);
       state.netWorth = assets - debts;
       state.netWorthMonth = s.snapshot_month;
+      // Liên kết với mục "Tích Lũy" mới (2026-08-26, góp ý Quỳnh) — cùng công thức tichLuyStockOf()
+      // ở tich-luy.js, tính lại tại đây thay vì query thêm lần nữa (netWorthRes đã có sẵn đủ field).
+      state.tichLuy = Number(s.asset_savings||0) + Number(s.asset_gold_fx||0) + Number(s.asset_stocks||0);
     }
     const activeDebts = debtsRes.data || [];
     state.totalDebt = activeDebts.reduce((s,d)=>s+Number(d.current_balance),0);
@@ -888,6 +891,7 @@ function render(container, ctx){
           <div class="label">Tài sản ròng${state.netWorthMonth?` (${esc(state.netWorthMonth)})`:''}</div>
         </div>
         <div class="source-card"><div class="ic" style="font-size:17px;${state.totalDebt>0?'color:var(--danger);':''}">${state.totalDebt.toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
+        <div class="source-card"><div class="ic" style="font-size:17px;">${state.tichLuy==null?'Chưa có':state.tichLuy.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ (<a href="#tich-luy" style="color:var(--accent);">xem →</a>)</div></div>
       </div>
 
       ${state.upcomingDebts.length>0 ? `

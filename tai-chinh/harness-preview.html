@@ -58,6 +58,13 @@ const APP_REVIEWS = [
   { id:'rev2', user_id:'member-2', app:'tai-chinh', comment:'Chờ duyệt: phần quản lý nợ dễ hiểu.', display_name:'Khách B', approved:false, created_at:new Date().toISOString() },
 ];
 let appReviewIdSeq = 1;
+// Mô phỏng tc_core_beliefs + tc_yearly_reflections — để test mục "Tổng Kết Năm" mới (2026-08-26,
+// góp ý Quỳnh) đọc đúng Hạt Giống trong năm + lưu/đọc lời cam kết năm tới.
+const CORE_BELIEFS = [
+  { id:'cb1', user_id:'admin-1', belief_text:'Tiền là thứ khan hiếm, phải giữ chặt mới an toàn.', still_active:false, created_at:new Date(TODAY.getFullYear(),2,15).toISOString() },
+  { id:'cb2', user_id:'admin-1', belief_text:'Mình không xứng đáng có dòng tiền tự động.', still_active:true, created_at:new Date(TODAY.getFullYear(),6,3).toISOString() },
+];
+const YEARLY_REFLECTIONS = {};
 // Mô phỏng sepay_transactions (CHUNG bảng với nhan-hieu) — để test tab Tài Chính bên Quản Trị chỉ
 // tính đúng 3 mức giá tai-chinh (299k/599k/999k), không lẫn doanh thu nhan-hieu.
 const SEPAY_TXNS = [
@@ -88,6 +95,10 @@ function makeChain(table){
         const rows = Array.isArray(payload) ? payload : [payload];
         rows.forEach(r=>{ MONTHLY_REFLECTIONS[r.month] = { ...(MONTHLY_REFLECTIONS[r.month]||{}), ...r }; });
       }
+      if(table==='tc_yearly_reflections'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>{ YEARLY_REFLECTIONS[r.year] = { ...(YEARLY_REFLECTIONS[r.year]||{}), ...r }; });
+      }
       return Promise.resolve({ data:null, error:null });
     },
     maybeSingle(){
@@ -100,6 +111,10 @@ function makeChain(table){
       if(table === 'tc_monthly_reflections'){
         const key = chain._filters.month;
         return Promise.resolve({ data: MONTHLY_REFLECTIONS[key] || null, error:null });
+      }
+      if(table === 'tc_yearly_reflections'){
+        const key = chain._filters.year;
+        return Promise.resolve({ data: YEARLY_REFLECTIONS[key] || null, error:null });
       }
       if(table === 'tc_networth_snapshots'){
         const key = chain._filters.snapshot_month;
@@ -186,10 +201,25 @@ function makeChain(table){
         return resolve({ data: rows, error:null });
       }
       if(table === 'tc_networth_snapshots'){
-        const rows = Object.values(NETWORTH_SNAPSHOTS).sort((a,b)=> a.snapshot_month < b.snapshot_month ? -1 : 1);
+        const r = chain._range.snapshot_month || {};
+        let rows = Object.values(NETWORTH_SNAPSHOTS).filter(row =>
+          (!r.gte || row.snapshot_month >= r.gte) && (!r.lte || row.snapshot_month <= r.lte));
+        rows = rows.sort((a,b)=> a.snapshot_month < b.snapshot_month ? -1 : 1);
         return resolve({ data: rows, error:null });
       }
-      if(table === 'tc_karma_history') return resolve({ data: KARMA_HISTORY.slice(0, 20), error:null });
+      if(table === 'tc_karma_history'){
+        const r = chain._range.taken_at || {};
+        let rows = KARMA_HISTORY.filter(row =>
+          (!r.gte || row.taken_at >= r.gte) && (!r.lt || row.taken_at < r.lt));
+        if(!r.gte && !r.lt) rows = rows.slice(0, 20);
+        return resolve({ data: rows, error:null });
+      }
+      if(table === 'tc_core_beliefs'){
+        const r = chain._range.created_at || {};
+        const rows = CORE_BELIEFS.filter(row =>
+          (!r.gte || row.created_at >= r.gte) && (!r.lt || row.created_at < r.lt));
+        return resolve({ data: rows, error:null });
+      }
       if(table === 'app_reviews'){
         let rows = APP_REVIEWS;
         if(chain._filters.app) rows = rows.filter(r=>r.app===chain._filters.app);
@@ -259,6 +289,8 @@ window.REFERRALS = REFERRALS;
 <script src="js/ghi-chep.js"></script>
 <script src="js/tong-ket-tuan.js"></script>
 <script src="js/tong-ket-thang.js"></script>
+<script src="js/tich-luy.js"></script>
+<script src="js/tong-ket-nam.js"></script>
 <script src="js/quan-ly-no.js"></script>
 <script src="js/tai-khoan.js"></script>
 <script src="js/quan-tri.js"></script>

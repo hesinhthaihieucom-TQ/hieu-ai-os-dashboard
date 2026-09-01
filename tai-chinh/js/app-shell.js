@@ -37,6 +37,8 @@ const NAV = [
   { key:'danh-muc', title:'Danh Mục', hidden:true }, // không hiện trong sidebar — vào qua link "Quản lý danh mục →" ở Ghi Chép Hàng Ngày/Ngân sách. KHÔNG premium (dù Ngân sách premium) vì Ghi Chép Hàng Ngày free cần danh mục hoạt động được ngay.
   { key:'tong-ket-tuan', title:'Tổng Kết Tuần', premium:true },
   { key:'tong-ket-thang', title:'Tổng Kết Tháng', premium:true },
+  { key:'tich-luy', title:'Tích Lũy', premium:true }, // 2026-08-26, góp ý Quỳnh: tách riêng khỏi Tổng Kết Tháng cho rõ, gộp cả 2 nguồn số liệu đã có sẵn (dòng tiền chuyển vào "Tích Lũy" ở Ghi Chép + số dư tài sản tích luỹ ở Tổng Kết Tháng), không lưu số liệu mới nào
+  { key:'tong-ket-nam', title:'Tổng Kết Năm', premium:true }, // 2026-08-26, góp ý Quỳnh — gộp 12 tháng + chấm điểm nghiệp cuối năm (từ tc_karma_history) + ôn lại Hạt Giống trong năm + lời cam kết năm tới
   { key:'quan-ly-no', title:'Quản Lý Nợ', premium:true },
   { key:'nang-cap', title:'Nâng Cấp' }, // luôn vào được, kể cả đang còn hạn dùng thử — không phải premium
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm email ở cuối sidebar, không hiện trong danh sách
