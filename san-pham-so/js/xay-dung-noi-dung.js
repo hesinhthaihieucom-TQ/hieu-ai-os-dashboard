@@ -19,20 +19,20 @@ const GIONG_VAN_OPTIONS = ['Gần gũi, tâm sự', 'Thẳng thắn, chuyên gia
 
 function render(container, ideaRow) {
   const idea = ideaRow.result.phuong_an[ideaRow.chosen_index];
-  // Tài liệu gốc (nhánh A của Giai đoạn 1, xem san-pham-so/js/tim-san-pham.js) + giọng văn + ghi
-  // chú/case study — tất cả lồng trong answers (jsonb tự do sẵn có), không cần cột DB mới.
-  // materialPath chỉ có với sản phẩm tạo từ tài liệu; giọng văn/taiLieu/caseStudy chốt lại khi
-  // outline cấp 2 được tạo (xem generateOutline2()), dùng nhất quán cho mọi phần viết sau — kể cả
-  // sau khi rời trang quay lại (trước 2026-09-01, taiLieu bị xoá draft mà KHÔNG lưu lại đâu cả, nên
-  // không bao giờ tới được bước viết nội dung thật — bug đã sửa).
+  // Tài liệu gốc (nhánh A của Giai đoạn 1, xem san-pham-so/js/tim-san-pham.js, HOẶC tải lên ngay ở
+  // màn intro này nếu chưa có) + giọng văn — lồng trong answers (jsonb tự do sẵn có), không cần cột
+  // DB mới. materialPath chỉ có với sản phẩm tạo từ tài liệu ở Giai đoạn 1; giọng văn/taiLieu chốt
+  // lại khi outline cấp 2 được tạo (xem generateOutline2()), dùng nhất quán cho mọi phần viết sau —
+  // kể cả sau khi rời trang quay lại (trước 2026-09-01, taiLieu bị xoá draft mà KHÔNG lưu lại đâu cả,
+  // nên không bao giờ tới được bước viết nội dung thật — bug đã sửa).
   const materialPath = (ideaRow.answers && ideaRow.answers.tai_lieu_path) || null;
   const state = {
     screen: ideaRow.outline_cap_2 ? 'outline2' : 'intro',
     outline2: ideaRow.outline_cap_2 || null,
     sections: ideaRow.sections || {},
     taiLieu: (ideaRow.answers && ideaRow.answers.tai_lieu_kinh_nghiem) || '',
-    caseStudy: (ideaRow.answers && ideaRow.answers.case_study) || '',
     giongVan: (ideaRow.answers && ideaRow.answers.giong_van) || GIONG_VAN_OPTIONS[0],
+    newMaterialPath: null, materialUploading: false, materialUploadError: null, materialFileName: null,
     activeIndex: null,
     workingStep: null, // 'nghien-cuu' | 'viet' | 'review' — hiện text tiến trình khi đang chạy chuỗi
     ebookResult: ideaRow.ebook_result || null, // {heyzineUrl, thumbnail, pdfStoragePath} — giữ qua reload
@@ -52,7 +52,7 @@ function render(container, ideaRow) {
   }
 
   function persistIntroDraft() {
-    saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu, caseStudy: state.caseStudy, giongVan: state.giongVan });
+    saveDraft(XDND_INTRO_DRAFT_KEY, { taiLieu: state.taiLieu, giongVan: state.giongVan });
   }
 
   function draw() { container.innerHTML = html(); bind(); }
@@ -86,19 +86,40 @@ function render(container, ideaRow) {
   function introHtml() {
     return `
       <div class="card">
-        <h2 style="font-size:18px;">Trước khi viết: bạn có sẵn tài liệu/kinh nghiệm gì không?</h2>
+        <h2 style="font-size:18px;">Trước khi viết: bạn có sẵn tài liệu gì không?</h2>
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — nếu chưa có, AI sẽ tự tổng hợp kiến thức nền giúp bạn trước khi viết.</div>
-        <textarea id="xdnd-tailieu" rows="3" placeholder="VD: có 1 file ghi chú cũ về chủ đề này...">${esc(state.taiLieu)}</textarea>
-        <label style="margin-top:14px;">Bạn đã từng giúp ai giải quyết vấn đề này chưa?</label>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Nếu có, kết quả cụ thể là gì? Đây là nguyên liệu quý nhất — dù chỉ 1-2 câu, giá trị hơn hẳn ví dụ AI tự nghĩ ra.</div>
-        <textarea id="xdnd-casestudy" rows="3" placeholder="VD: từng giúp 1 người bạn giảm 30% chi tiêu không cần thiết trong 2 tháng bằng cách...">${esc(state.caseStudy)}</textarea>
+        ${taiLieuUploadHtml()}
+        <label style="margin-top:14px;">Ghi chú thêm (tuỳ chọn)</label>
+        <textarea id="xdnd-tailieu" rows="3" placeholder="VD: điều bạn muốn AI đặc biệt lưu ý khi viết...">${esc(state.taiLieu)}</textarea>
         <label style="margin-top:14px;">Giọng văn</label>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Áp dụng nhất quán cho mọi phần sẽ viết — chọn 1 lần ở đây.</div>
         <div class="chips">${GIONG_VAN_OPTIONS.map(o => `<div class="chip ${state.giongVan === o ? 'selected' : ''}" data-giongvan="${esc(o)}">${esc(o)}</div>`).join('')}</div>
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
-        <div class="btn-row"><button class="btn" id="xdnd-outline2-btn">Xây outline chi tiết → (3 lượt AI)</button></div>
+        <div class="btn-row"><button class="btn" id="xdnd-outline2-btn" ${state.materialUploading ? 'disabled' : ''}>Xây outline chi tiết → (3 lượt AI)</button></div>
       </div>
     `;
+  }
+
+  // materialPath (const, đọc từ ideaRow.answers) chỉ có khi sản phẩm được tạo từ nhánh A của Giai
+  // đoạn 1 (đã tải PDF lên lúc tìm ý tưởng). Nếu chưa có (sản phẩm đi từ wizard 11 câu hỏi), cho tải
+  // lên NGAY tại đây — dùng lại đúng endpoint/luồng ký URL đã có ở san-pham-so/js/tim-san-pham.js.
+  function taiLieuUploadHtml() {
+    if (materialPath) {
+      return `<div class="hint-box">📎 Đã có tài liệu tải lên từ bước tìm ý tưởng — AI sẽ dùng file đó khi viết nội dung.</div>`;
+    }
+    return `
+      <label>Tài liệu (PDF)</label>
+      <input id="xdnd-material-file" type="file" accept="application/pdf">
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+      ${state.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(state.materialUploadError)}</div>` : ''}
+    `;
+  }
+
+  // Path thật sự dùng cho mọi lệnh gọi AI — ưu tiên materialPath có sẵn từ nhánh A, nếu không thì
+  // dùng file vừa tải lên ở màn này (state.newMaterialPath, vì materialPath là const nên không gán
+  // lại được).
+  function getMaterialPath() {
+    return materialPath || state.newMaterialPath;
   }
 
   function ebookExportCardHtml() {
@@ -227,11 +248,11 @@ function render(container, ideaRow) {
     `;
   }
 
-  // Nhắc mạnh hơn khi sản phẩm KHÔNG có gốc thật nào (tài liệu tải lên hoặc case study cá nhân) —
-  // theo đúng nguyên tắc "bổ sung góc nhìn cá nhân là bắt buộc" của quy trình cũ. Nhẹ nhàng hơn khi
-  // đã có ít nhất 1 gốc thật, vì nội dung khi đó đã ít nhiều bám sát thực tế của người dùng rồi.
+  // Nhắc mạnh hơn khi sản phẩm KHÔNG có tài liệu gốc nào — theo đúng nguyên tắc "bổ sung góc nhìn cá
+  // nhân là bắt buộc" của quy trình cũ. Nhẹ nhàng hơn khi đã có tài liệu, vì nội dung khi đó đã ít
+  // nhiều bám sát thực tế của người dùng rồi.
   function personalPerspectiveHintHtml() {
-    if (materialPath || state.caseStudy) {
+    if (getMaterialPath()) {
       return `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>`;
     }
     return `<div class="hint-box" style="margin-bottom:6px;">✍️ Bổ sung góc nhìn cá nhân là BẮT BUỘC — nội dung này được AI viết hoàn toàn từ kiến thức chung, dù chỉ 1-2 câu từ trải nghiệm thật của bạn cũng tạo khác biệt lớn hơn nhiều. Sửa trực tiếp vào ô bên dưới rồi bấm "Lưu chỉnh sửa".</div>`;
@@ -298,8 +319,23 @@ function render(container, ideaRow) {
     if (state.screen === 'intro') {
       const ta = container.querySelector('#xdnd-tailieu');
       ta.oninput = () => { state.taiLieu = ta.value; persistIntroDraft(); };
-      const csTa = container.querySelector('#xdnd-casestudy');
-      csTa.oninput = () => { state.caseStudy = csTa.value; persistIntroDraft(); };
+      const fileEl = container.querySelector('#xdnd-material-file');
+      if (fileEl) fileEl.onchange = async () => {
+        const file = fileEl.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') { state.materialUploadError = 'Chỉ nhận file PDF.'; draw(); return; }
+        state.materialUploading = true; state.materialUploadError = null; draw();
+        try {
+          const { uploadUrl, path } = await callApi('api/san-pham-so-upload-material-url', { file_name: file.name });
+          const putResp = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': 'application/pdf' }, body: file });
+          if (!putResp.ok) throw new Error('Upload file thất bại — thử lại giúp mình.');
+          state.newMaterialPath = path; state.materialFileName = file.name;
+        } catch (e) {
+          state.materialUploadError = e.message;
+        }
+        state.materialUploading = false;
+        draw();
+      };
       container.querySelectorAll('[data-giongvan]').forEach(el => {
         el.onclick = () => { state.giongVan = el.getAttribute('data-giongvan'); persistIntroDraft(); draw(); };
       });
@@ -403,16 +439,17 @@ function render(container, ideaRow) {
     try {
       const data = await callApi('api/xay-dung-noi-dung', {
         step: 'outline2', idea, outlineCap1: idea.outline_cap_1, taiLieuKinhNghiem: state.taiLieu || null,
-        materialPath,
+        materialPath: getMaterialPath(),
       });
       if (!data.result || !Array.isArray(data.result.phan)) throw new Error('AI trả về outline không đúng định dạng — thử lại giúp mình.');
       state.outline2 = data.result;
-      // Chốt giọng văn/tài liệu/case study vĩnh viễn vào answers (merge, không ghi đè các key khác
-      // đã có) — dùng nhất quán cho mọi lần viết/viết lại phần sau, kể cả sau khi rời trang rồi quay
-      // lại (trước đây taiLieu bị xoá draft mà không lưu lại đâu cả — bug đã sửa).
+      // Chốt giọng văn/tài liệu/ghi chú vĩnh viễn vào answers (merge, không ghi đè các key khác đã
+      // có) — dùng nhất quán cho mọi lần viết/viết lại phần sau, kể cả sau khi rời trang rồi quay lại
+      // (trước đây taiLieu bị xoá draft mà không lưu lại đâu cả — bug đã sửa). tai_lieu_path chỉ ghi
+      // đè khi vừa tải file mới ở màn này (getMaterialPath() ưu tiên materialPath cũ nếu đã có).
       await saveIdeaResult({
         outline_cap_2: state.outline2,
-        answers: { ...(ideaRow.answers || {}), giong_van: state.giongVan, tai_lieu_kinh_nghiem: state.taiLieu || null, case_study: state.caseStudy || null },
+        answers: { ...(ideaRow.answers || {}), giong_van: state.giongVan, tai_lieu_kinh_nghiem: state.taiLieu || null, tai_lieu_path: getMaterialPath() },
       });
       await clearDraft(XDND_INTRO_DRAFT_KEY);
       state.screen = 'outline2';
@@ -443,12 +480,12 @@ function render(container, ideaRow) {
     try {
       const nghienCuuData = await callApi('api/xay-dung-noi-dung', {
         step: 'nghien-cuu', idea, phan: s, useWebSearch,
-        taiLieuKinhNghiem: state.taiLieu || null, caseStudy: state.caseStudy || null,
+        taiLieuKinhNghiem: state.taiLieu || null,
       });
       state.workingStep = 'viet'; draw();
       const vietData = await callApi('api/xay-dung-noi-dung', {
-        step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath,
-        taiLieuKinhNghiem: state.taiLieu || null, caseStudy: state.caseStudy || null,
+        step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath: getMaterialPath(),
+        taiLieuKinhNghiem: state.taiLieu || null,
         phanTruoc: phanTruoc ? { tieu_de: phanTruoc.tieu_de, ket_qua_cu_the: phanTruoc.ket_qua_cu_the } : null,
         phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
       });
@@ -506,7 +543,6 @@ function render(container, ideaRow) {
     if (state.screen === 'intro') {
       const draft = await loadDraft(XDND_INTRO_DRAFT_KEY);
       if (draft && draft.taiLieu) state.taiLieu = draft.taiLieu;
-      if (draft && draft.caseStudy) state.caseStudy = draft.caseStudy;
       if (draft && draft.giongVan) state.giongVan = draft.giongVan;
     }
     draw();

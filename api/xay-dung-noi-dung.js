@@ -127,7 +127,7 @@ module.exports = async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
-  const { step, idea, outlineCap1, taiLieuKinhNghiem, caseStudy, outlineCap2, phan, nghienCuu, giongVan, noiDungDaViet, materialPath, phanTruoc, phanSau, noiDungTheoPhan, useWebSearch } = req.body || {};
+  const { step, idea, outlineCap1, taiLieuKinhNghiem, outlineCap2, phan, nghienCuu, giongVan, noiDungDaViet, materialPath, phanTruoc, phanSau, noiDungTheoPhan, useWebSearch } = req.body || {};
   // Tìm web tốn thêm 1 lệnh gọi + phí tìm kiếm thật — tính actionKey riêng để KHÔNG tính phí cao lây
   // sang người không bật tìm web (xem AI_WEIGHTS['xay-dung-noi-dung-nghien-cuu-web'] trong trial-quota.js).
   const actionKey = (step === 'nghien-cuu' && useWebSearch) ? 'xay-dung-noi-dung-nghien-cuu-web' : `xay-dung-noi-dung-${step}`;
@@ -155,10 +155,7 @@ module.exports = async (req, res) => {
         const webText = await researchViaWebSearch({ apiKey, idea, phan });
         if (webText) webBlock = `\nTHÔNG TIN TỪ WEB (đã tìm kiếm, có trích dẫn nguồn — ưu tiên dùng làm căn cứ thay vì tự bịa, nhớ điền nguon_tham_khao và khoang_trong_thi_truong nếu có dữ liệu phù hợp):\n${webText}\n`;
       }
-      const userText = [
-        taiLieuKinhNghiem ? `TÀI LIỆU/GHI CHÚ CỦA NGƯỜI DÙNG:\n${taiLieuKinhNghiem}` : null,
-        caseStudy ? `CASE STUDY THẬT TỪ NGƯỜI DÙNG (ưu tiên dùng làm ví dụ thật khi phù hợp):\n${caseStudy}` : null,
-      ].filter(Boolean).join('\n\n');
+      const userText = taiLieuKinhNghiem ? `TÀI LIỆU/GHI CHÚ CỦA NGƯỜI DÙNG:\n${taiLieuKinhNghiem}` : '';
       const userContent = `${ideaBlock(idea)}\n\nPHẦN CẦN NGHIÊN CỨU NỀN TẢNG: ${phan.tieu_de}\nKẾT QUẢ CỤ THỂ CẦN ĐẠT: ${phan.ket_qua_cu_the}\nNỘI DUNG CON: ${(phan.noi_dung_con || []).join('; ')}\n${webBlock}${userText ? `\n${userText}\n` : ''}\nHãy tổng hợp kiến thức nền cho đúng phần này.`;
       const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_NGHIEN_CUU });
       res.status(200).json({ result });
@@ -171,11 +168,8 @@ module.exports = async (req, res) => {
         phanTruoc ? `PHẦN TRƯỚC ĐÓ: ${phanTruoc.tieu_de} (đã đạt: ${phanTruoc.ket_qua_cu_the})` : null,
         phanSau ? `PHẦN TIẾP THEO: ${phanSau.tieu_de}` : null,
       ].filter(Boolean).join('\n');
-      const userMaterialLines = [
-        taiLieuKinhNghiem ? `TÀI LIỆU/GHI CHÚ CỦA NGƯỜI DÙNG:\n${taiLieuKinhNghiem}` : null,
-        caseStudy ? `CASE STUDY THẬT TỪ NGƯỜI DÙNG (ưu tiên dùng làm ví dụ thật khi phù hợp với phần này):\n${caseStudy}` : null,
-      ].filter(Boolean).join('\n\n');
-      const vietText = `${ideaBlock(idea)}\nGIỌNG VĂN MONG MUỐN: ${giongVan || '(chưa nêu rõ — chọn giọng gần gũi, thẳng thắn, phù hợp đối tượng)'}\n${contextLines ? `${contextLines}\n` : ''}\nPHẦN CẦN VIẾT: ${phan.tieu_de}\nKẾT QUẢ CỤ THỂ CẦN ĐẠT: ${phan.ket_qua_cu_the}\nNỘI DUNG CON: ${(phan.noi_dung_con || []).join('; ')}\nBÀI TẬP GỢI Ý: ${phan.bai_tap || ''}\n\nNGUYÊN LIỆU NGHIÊN CỨU NỀN TẢNG:\nKiến thức nền: ${(nghienCuu.kien_thuc_nen || []).join(' | ')}\nSai lầm phổ biến: ${(nghienCuu.sai_lam_pho_bien || []).join(' | ')}\nHướng ví dụ: ${(nghienCuu.huong_vi_du || []).join(' | ')}\nRào cản tâm lý: ${(nghienCuu.rao_can_tam_ly || []).join(' | ')}\nKhoảng trống thị trường: ${(nghienCuu.khoang_trong_thi_truong || []).join(' | ')}\n${userMaterialLines ? `\n${userMaterialLines}\n` : ''}\nHãy viết nội dung đầy đủ cho phần này.`;
+      const userMaterialLines = taiLieuKinhNghiem ? `TÀI LIỆU/GHI CHÚ CỦA NGƯỜI DÙNG:\n${taiLieuKinhNghiem}` : '';
+      const vietText =`${ideaBlock(idea)}\nGIỌNG VĂN MONG MUỐN: ${giongVan || '(chưa nêu rõ — chọn giọng gần gũi, thẳng thắn, phù hợp đối tượng)'}\n${contextLines ? `${contextLines}\n` : ''}\nPHẦN CẦN VIẾT: ${phan.tieu_de}\nKẾT QUẢ CỤ THỂ CẦN ĐẠT: ${phan.ket_qua_cu_the}\nNỘI DUNG CON: ${(phan.noi_dung_con || []).join('; ')}\nBÀI TẬP GỢI Ý: ${phan.bai_tap || ''}\n\nNGUYÊN LIỆU NGHIÊN CỨU NỀN TẢNG:\nKiến thức nền: ${(nghienCuu.kien_thuc_nen || []).join(' | ')}\nSai lầm phổ biến: ${(nghienCuu.sai_lam_pho_bien || []).join(' | ')}\nHướng ví dụ: ${(nghienCuu.huong_vi_du || []).join(' | ')}\nRào cản tâm lý: ${(nghienCuu.rao_can_tam_ly || []).join(' | ')}\nKhoảng trống thị trường: ${(nghienCuu.khoang_trong_thi_truong || []).join(' | ')}\n${userMaterialLines ? `\n${userMaterialLines}\n` : ''}\nHãy viết nội dung đầy đủ cho phần này.`;
       const materialUrl = await signMaterialUrl(user.id, materialPath);
       const userContent = materialUrl
         ? [{ type: 'document', source: { type: 'url', url: materialUrl } }, { type: 'text', text: `${vietText}\n\nCó tài liệu gốc đính kèm — ưu tiên bám sát nội dung/quan điểm/ví dụ THẬT trong tài liệu đó khi viết phần này, không viết chung chung như thể chưa có tài liệu.` }]

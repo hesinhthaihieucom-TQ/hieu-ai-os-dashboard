@@ -13,9 +13,9 @@ const NAV = [
   { key: 'tao-ai', title: '🧭 Tìm Sản Phẩm Phù Hợp' },
   { key: 'chon-loai', title: '🗂️ Chọn Loại Sản Phẩm Số' },
   { key: 'tao-ebook', title: '📖 Tạo Ebook/Workbook' },
-  { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
   { key: 'tao-template', title: '🎨 Tạo Template' },
   { key: 'nghien-cuu-thi-truong', title: '📊 Nghiên Cứu Thị Trường & Giá/Marketing' },
+  { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
 ];
 let currentRoute = 'home';
