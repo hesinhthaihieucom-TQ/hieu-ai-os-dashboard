@@ -9,16 +9,48 @@
 (function () {
 const FORM_DRAFT_KEY = 'chon-loai-form';
 
-// Mô tả tham khảo khi nào nên dùng định dạng nào — hiện ở bước "Tôi tự chọn" và không đổi tuỳ chủ
-// đề/đối tượng (khác goi_y của AI, vốn nối trực tiếp với chủ đề/đối tượng cụ thể).
-const DINH_DANG_DESC = {
-  ebook: 'Cần giải thích khái niệm/tư duy — người đọc chỉ cần đọc là hiểu, không cần thực hành theo tiến trình.',
-  checklist_workbook: 'Cần thực hành theo từng bước — có form/checklist để tự theo dõi tiến trình.',
-  template_file_mau: 'Cần công cụ tra cứu, dùng đi dùng lại nhiều lần (không phải đọc 1 lần rồi thôi).',
-  mini_course: 'Cần học có tiến trình nhiều bài, đi từng bước theo thời gian.',
-  coaching_1_1: 'Cần hướng dẫn riêng theo từng người, gặp trực tiếp.',
-  cong_dong_tra_phi: 'Cần đồng hành lâu dài, hỏi đáp liên tục trong 1 nhóm.',
-  webinar: 'Cần 1 buổi học/sự kiện trực tiếp, tương tác thời gian thực.',
+// Thông tin tham khảo cho từng định dạng — hiện ở bước "Tôi tự chọn" VÀ như phần bổ sung dưới mỗi
+// gợi ý của AI, để người dùng thật sự hiểu mình đang chọn gì (không chỉ đúng "khi nào nên dùng", mà
+// cả CẦN CHUẨN BỊ GÌ và NGƯỜI MUA NHẬN ĐƯỢC GÌ — mục tiêu "để người dùng còn học được từ web này",
+// Quỳnh 2026-09-01). can_chuan_bi/nguoi_mua_nhan lấy đúng theo bảng thật Quỳnh đã đưa (cơ chế giao
+// hàng của "Sản phẩm của tôi"/landing page — ebook đã chạy, các loại còn lại là hướng sẽ làm, không
+// phải đã có sẵn UI riêng cho từng loại ở bước này).
+const DINH_DANG_INFO = {
+  ebook: {
+    khi_nao: 'Cần giải thích khái niệm/tư duy — người đọc chỉ cần đọc là hiểu, không cần thực hành theo tiến trình.',
+    can_chuan_bi: 'AI tự viết (chọn "Tạo bằng AI"), hoặc tự upload file PDF sẵn có.',
+    nguoi_mua_nhan: 'Link tải file PDF.',
+  },
+  checklist_workbook: {
+    khi_nao: 'Cần thực hành theo từng bước — có form/checklist để tự theo dõi tiến trình.',
+    can_chuan_bi: 'AI tự viết (chọn "Tạo bằng AI"), hoặc tự upload file PDF sẵn có.',
+    nguoi_mua_nhan: 'Link tải file PDF.',
+  },
+  template_file_mau: {
+    khi_nao: 'Cần công cụ tra cứu, dùng đi dùng lại nhiều lần (không phải đọc 1 lần rồi thôi).',
+    can_chuan_bi: '1 link chia sẻ (Canva/Notion/Excel...) — không phải upload file, vì bản chất là link dùng lại nhiều lần.',
+    nguoi_mua_nhan: 'Link mở template đó.',
+  },
+  mini_course: {
+    khi_nao: 'Cần học có tiến trình nhiều bài, đi từng bước theo thời gian.',
+    can_chuan_bi: 'Danh sách nhiều bài học (mỗi bài: tên + link video/Zoom hoặc file).',
+    nguoi_mua_nhan: '1 trang riêng liệt kê từng bài học + link mở từng bài.',
+  },
+  coaching_1_1: {
+    khi_nao: 'Cần hướng dẫn riêng theo từng người, gặp trực tiếp.',
+    can_chuan_bi: '1 link đặt lịch (Calendly...).',
+    nguoi_mua_nhan: 'Nút "Đặt lịch ngay" hiện sau khi thanh toán, dẫn tới link đó.',
+  },
+  cong_dong_tra_phi: {
+    khi_nao: 'Cần đồng hành lâu dài, hỏi đáp liên tục trong 1 nhóm.',
+    can_chuan_bi: '1 link mời nhóm (Zalo/Telegram/Facebook).',
+    nguoi_mua_nhan: 'Link mời nhóm (nên giới hạn thời gian dùng, giống link tải file).',
+  },
+  webinar: {
+    khi_nao: 'Cần 1 buổi học/sự kiện trực tiếp, tương tác thời gian thực.',
+    can_chuan_bi: 'Ngày giờ diễn ra + link Zoom/Meet.',
+    nguoi_mua_nhan: 'Trang chờ hiện đồng hồ đếm ngược, sau khi mua gửi link tham gia.',
+  },
 };
 
 function newForm() {
@@ -74,7 +106,16 @@ function render(container, profile) {
       return;
     }
     const draft = await loadDraft(FORM_DRAFT_KEY);
-    if (draft) state.form = { ...state.form, ...draft };
+    if (draft) {
+      state.form = { ...state.form, ...draft };
+    } else if (pending && pending.answers && pending.answers.nguon !== 'chon_loai') {
+      // Chưa có draft riêng của màn này, nhưng có ý tưởng đang cân nhắc dở từ "Tìm Sản Phẩm Phù Hợp"
+      // (chưa chọn phương án) — gợi ý điền sẵn ngành/đối tượng đã trả lời ở đó, đỡ phải gõ lại
+      // (Quỳnh 2026-09-01: "tùy vào... nội dung trả lời của mục tìm sản phẩm số"). Chỉ điền sẵn, vẫn
+      // sửa được thoải mái — không tự ý tạo/đụng tới dòng pending đó.
+      state.form.nganh = pending.nganh || pending.answers.nganh || '';
+      state.form.doiTuong = pending.answers.d1 || pending.answers.doi_tuong || '';
+    }
     state.screen = state.form.screen || 'form';
     draw();
   }
@@ -145,6 +186,19 @@ function render(container, profile) {
     `;
   }
 
+  // Bảng tham khảo "cần chuẩn bị gì / người mua nhận được gì" cho 1 định dạng — dùng chung cho cả
+  // gợi ý của AI (bổ sung dưới lý do của AI) lẫn danh sách tự chọn tay.
+  function dinhDangInfoHtml(value) {
+    const info = DINH_DANG_INFO[value];
+    if (!info) return '';
+    return `
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">
+        <b>Cần chuẩn bị:</b> ${esc(info.can_chuan_bi)}<br>
+        <b>Người mua nhận được:</b> ${esc(info.nguoi_mua_nhan)}
+      </div>
+    `;
+  }
+
   function formatPickHtml() {
     const f = state.form;
     const summary = `Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b>`;
@@ -165,8 +219,9 @@ function render(container, profile) {
           return `
             <div class="card" style="margin-bottom:10px;">
               <h2 style="font-size:16px;margin-bottom:6px;">${esc(opt ? opt.label : s.dinh_dang)}</h2>
-              <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">${esc(s.ly_do)}</div>
-              <span class="btn btn-sm" data-fp-choose="${esc(s.dinh_dang)}">Chọn định dạng này →</span>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">${esc(s.ly_do)}</div>
+              ${dinhDangInfoHtml(s.dinh_dang)}
+              <div class="btn-row" style="margin-top:10px;"><span class="btn btn-sm" data-fp-choose="${esc(s.dinh_dang)}">Chọn định dạng này →</span></div>
             </div>
           `;
         }).join('')}
@@ -177,7 +232,8 @@ function render(container, profile) {
         <div class="chips" style="flex-direction:column;align-items:stretch;">
           ${DINH_DANG_OPTIONS.map(o => `
             <div class="chip ${f.dinhDang === o.value ? 'selected' : ''}" data-fp-choose="${esc(o.value)}" style="margin-bottom:8px;text-align:left;">
-              <b>${esc(o.label)}</b><br><span style="font-size:12.5px;color:var(--ink-soft);">${esc(DINH_DANG_DESC[o.value] || '')}</span>
+              <b>${esc(o.label)}</b><br><span style="font-size:12.5px;color:var(--ink-soft);">${esc((DINH_DANG_INFO[o.value] || {}).khi_nao || '')}</span>
+              ${dinhDangInfoHtml(o.value)}
             </div>
           `).join('')}
         </div>
