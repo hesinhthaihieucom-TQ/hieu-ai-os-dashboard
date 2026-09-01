@@ -192,7 +192,10 @@ module.exports = async (req, res) => {
       // Đã bỏ giới hạn số từ cứng (2026-09-01, theo yêu cầu Quỳnh — để AI tự quyết định độ dài cần
       // thiết thay vì ép khung), nội dung có thể dài hơn hẳn mức cũ khi chủ đề thật sự cần đào sâu —
       // nâng max_tokens theo đúng bài học đã lặp lại nhiều lần trong ngày (đừng để cắt giữa chừng).
-      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_VIET, maxTokens: 12000, timeoutMs: 200000 });
+      // 12000 vẫn không đủ khi nội dung thật sự cần dài (8 nguyên tắc chiều sâu mới, không giới hạn
+      // số từ) — nâng tiếp lên 16000 (khớp mức đã dùng cho outline2, cũng từng bị cắt ở mức thấp
+      // hơn), timeout tương ứng.
+      const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_VIET, maxTokens: 16000, timeoutMs: 250000 });
       res.status(200).json({ result });
       return;
     }

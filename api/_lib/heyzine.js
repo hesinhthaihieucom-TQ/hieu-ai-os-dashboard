@@ -3,8 +3,12 @@
 // (tham số body) — thiếu 1 trong 2 sẽ lỗi. Endpoint /api1/rest là bản ĐỒNG BỘ (chờ xử lý xong mới
 // trả về), phù hợp gọi trực tiếp trong 1 request thay vì phải poll trạng thái riêng.
 async function createFlipbook({ apiKey, clientId, pdfUrl, title }) {
+  // Nội dung ebook giờ có thể dài hơn hẳn (không còn giới hạn số từ, xem xay-dung-noi-dung-schema.js)
+  // -> file PDF nhiều trang hơn -> Heyzine cần nhiều thời gian xử lý hơn. Nâng lên 200s — lệnh gọi
+  // export (api/san-pham-so-xuat-ebook.js) còn thêm bước dựng PDF/tải lên Storage trước bước này,
+  // nên timeout phía client của TOÀN BỘ chuỗi phải cao hơn mức này, không chỉ bằng đúng mức này.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 150000);
+  const timer = setTimeout(() => controller.abort(), 200000);
   let resp;
   try {
     resp = await fetch('https://heyzine.com/api1/rest', {
@@ -21,7 +25,7 @@ async function createFlipbook({ apiKey, clientId, pdfUrl, title }) {
       signal: controller.signal,
     });
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('Heyzine xử lý quá lâu (quá 150 giây) — thử lại giúp mình.');
+    if (e.name === 'AbortError') throw new Error('Heyzine xử lý quá lâu (quá 200 giây) — thử lại giúp mình.');
     throw new Error('Không kết nối được tới Heyzine — kiểm tra lại mạng và thử lại.');
   } finally {
     clearTimeout(timer);

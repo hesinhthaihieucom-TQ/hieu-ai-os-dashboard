@@ -413,9 +413,13 @@ function render(container, ideaRow) {
 
   async function exportEbook() {
     state.screen = 'exporting-ebook'; state.error = null; draw();
-    const stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 20);
+    const stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 45);
     try {
-      const data = await callApi('api/san-pham-so-xuat-ebook', { idea, outline2: state.outline2, sections: state.sections });
+      // Chuỗi này gồm dựng PDF + tải lên Storage + ký URL + gọi Heyzine (riêng Heyzine đã có thể
+      // mất tới 200s, xem api/_lib/heyzine.js) — timeout phía client PHẢI cao hơn hẳn timeout của
+      // riêng bước Heyzine, không được để bằng nhau (lỗi thật Quỳnh gặp 2026-09-01: "Có lỗi xảy ra"
+      // do client bỏ cuộc trước khi chuỗi xử lý xong).
+      const data = await callApi('api/san-pham-so-xuat-ebook', { idea, outline2: state.outline2, sections: state.sections }, 260000);
       state.ebookResult = { heyzineUrl: data.heyzineUrl, thumbnail: data.thumbnail, pdfStoragePath: data.pdfStoragePath };
       await saveIdeaResult({ ebook_result: state.ebookResult });
       state.screen = 'outline2';
@@ -506,14 +510,14 @@ function render(container, ideaRow) {
       stopProgress();
       state.workingStep = 'viet'; draw();
       // Không còn giới hạn số từ cứng — nội dung có thể dài hơn, thời gian sinh chữ lâu hơn (khớp
-      // max_tokens=12000/timeoutMs=200000 đã nâng ở server).
-      stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 40);
+      // max_tokens=16000/timeoutMs=250000 đã nâng ở server).
+      stopProgress = animateProgressBar(container.querySelector('#xdnd-progress-el'), 45);
       const vietData = await callApi('api/xay-dung-noi-dung', {
         step: 'viet', idea, phan: s, nghienCuu: nghienCuuData.result, giongVan: state.giongVan, materialPath: getMaterialPath(),
         taiLieuKinhNghiem: state.taiLieu || null,
         phanTruoc: phanTruoc ? { tieu_de: phanTruoc.tieu_de, ket_qua_cu_the: phanTruoc.ket_qua_cu_the } : null,
         phanSau: phanSau ? { tieu_de: phanSau.tieu_de } : null,
-      }, 200000);
+      }, 250000);
       state.sections[index] = { nghien_cuu: nghienCuuData.result, viet: vietData.result, review: null, status: 'viet-done', used_web_search: !!useWebSearch };
       await saveIdeaResult({ sections: state.sections });
       state.screen = 'section-draft';
