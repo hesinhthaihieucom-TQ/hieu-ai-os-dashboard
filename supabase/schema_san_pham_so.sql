@@ -371,3 +371,25 @@ grant select on digital_products_public to anon, authenticated;
 -- vẫn KHÔNG có policy nào cho anon/authenticated (xem mục 17 phía trên) — đọc qua api/san-pham-so-my-orders.js
 -- (service role, tự lọc product_id thuộc đúng owner_id = user.id trước khi query orders), không cần
 -- policy DB mới.
+
+-- ============================================================
+-- 21. LANDING PAGE — LÀM SÂU HƠN + ƯU ĐÃI TẶNG KÈM (2026-09-02, sau khi Quỳnh so với landing page
+-- thật 30ngaytamlinhtaichinh.netlify.app: bản trước "hời hợt" — thiếu lộ trình/chương trình chia
+-- từng chặng, vấn đề chưa được đặt tên riêng, chưa có ưu đãi tặng kèm). bonus_items: NGƯỜI BÁN TỰ
+-- VIẾT (không phải AI) — bonus là 1 CAM KẾT thật của người bán, AI không được tự bịa ra ưu đãi thay
+-- họ (khác hẳn landing_page_content, do AI viết). AI_WEIGHTS/schema công thức xem
+-- api/_lib/landing-page-schema.js (van_de → van_de_intro+van_de_chi_tiet, noi_dung_gioi_thieu →
+-- chuong_trinh, thêm loi_nhan_nguoi_ban) — sản phẩm cũ có landing_page_content theo schema cũ vẫn
+-- hiển thị được ở trang mua (các field cũ không khớp field mới chỉ đơn giản không render phần đó,
+-- không lỗi) nhưng nên "Viết lại bằng AI" để có bản đầy đủ theo schema mới.
+-- ============================================================
+alter table digital_products add column if not exists bonus_items jsonb;
+
+create or replace view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images, dp.bonus_items,
+         p.sps_seller_photo_url as seller_photo_url
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;

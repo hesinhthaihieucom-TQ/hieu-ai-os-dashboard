@@ -61,6 +61,19 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .lp-seller{ display:flex; align-items:flex-start; gap:14px; }
 .lp-seller-photo{ width:56px; height:56px; border-radius:999px; object-fit:cover; flex:0 0 auto; border:1px solid var(--line); }
 
+/* Vấn đề có tên riêng + lộ trình theo chặng + lời nhắn cá nhân (2026-09-02, làm sâu hơn theo landing
+   page thật Quỳnh tham khảo — xem api/_lib/landing-page-schema.js). */
+.lp-problem-grid{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.lp-problem-item{ background:var(--accent-soft); border-radius:10px; padding:12px 14px; }
+.lp-problem-ten{ font-weight:700; color:var(--accent); font-size:13.5px; margin-bottom:3px; }
+.lp-problem-mota{ color:var(--ink-soft); font-size:13.5px; line-height:1.55; }
+.lp-program-list{ display:flex; flex-direction:column; gap:12px; }
+.lp-program-item{ display:flex; gap:12px; align-items:flex-start; }
+.lp-program-num{ flex:0 0 auto; width:26px; height:26px; border-radius:999px; background:var(--accent); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; }
+.lp-program-ten{ font-weight:600; font-size:14px; margin-bottom:2px; }
+.lp-program-mota{ color:var(--ink-soft); font-size:13.5px; line-height:1.5; }
+.lp-letter{ background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:16px 18px; color:var(--ink); font-size:14.5px; line-height:1.7; font-style:italic; white-space:pre-line; }
+
 /* Mẫu giao diện landing page (2026-09-02, chọn ở san-pham-so/js/tao-landing-page.js) — CHỈ đổi màu/
    bố cục hiển thị, không đổi nội dung/công thức AI viết. "classic" = mặc định ở trên, không cần khối
    riêng. Áp qua [data-lp-template] trên .wrap để không đụng gì tới trang không có landing page. */
@@ -85,6 +98,12 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .wrap[data-lp-template="bold"] .lp-case-study-item img,
 .wrap[data-lp-template="bold"] .lp-seller-photo{ border-color:#2B342E; }
 .wrap[data-lp-template="bold"] .lp-case-study-caption{ color:#C7C9BE; }
+.wrap[data-lp-template="bold"] .lp-problem-item{ background:#232B25; }
+.wrap[data-lp-template="bold"] .lp-problem-ten{ color:#F2A93B; }
+.wrap[data-lp-template="bold"] .lp-problem-mota{ color:#C7C9BE; }
+.wrap[data-lp-template="bold"] .lp-program-num{ background:#F2A93B; color:#171E1A; }
+.wrap[data-lp-template="bold"] .lp-program-mota{ color:#C7C9BE; }
+.wrap[data-lp-template="bold"] .lp-letter{ background:#232B25; border-left-color:#F2A93B; color:#F4F1E8; }
 
 /* "Tối giản" — nền trắng, nhiều khoảng trắng, ít trang trí, cảm giác cao cấp. */
 .wrap[data-lp-template="minimal"] .card{ background:transparent; border:none; box-shadow:none; padding:10px 4px; }

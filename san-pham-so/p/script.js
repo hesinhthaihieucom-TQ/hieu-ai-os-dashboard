@@ -58,12 +58,23 @@ function demoProduct(tpl) {
       { url: placeholderImg('Case study 1', '#EFE7D6', '#8A6A3C'), caption: 'Chị Hạnh — hết nợ thẻ tín dụng sau 3 tháng' },
       { url: placeholderImg('Case study 2', '#EFE7D6', '#8A6A3C'), caption: 'Anh Khoa — tiết kiệm được 15% thu nhập mỗi tháng' },
     ],
+    bonus_items: ['Sổ tay theo dõi chi tiêu 21 ngày (PDF)', 'Nhóm Zalo hỗ trợ riêng cho học viên'],
     landing_page_content: {
-      hook: 'Ngừng lo tiền bạc — bắt đầu kiểm soát nó chỉ trong 21 ngày',
-      van_de: 'Bạn kiếm ra tiền nhưng cuối tháng vẫn không biết tiền đi đâu hết. Muốn tiết kiệm nhưng không biết bắt đầu từ đâu, muốn thoát nợ nhưng cứ trả rồi lại vay.',
-      loi_ich: ['Biết chính xác tiền của mình đang đi đâu mỗi ngày', 'Xây quỹ dự phòng đầu tiên trong đời chỉ sau 21 ngày', 'Thoát khỏi cảm giác lo lắng mỗi khi nghĩ đến tiền'],
-      noi_dung_gioi_thieu: '21 chương ngắn, mỗi ngày 1 bài tập cụ thể — từ ghi chép chi tiêu, lập ngân sách, đến xây quỹ khẩn cấp đầu tiên.',
-      ve_nguoi_ban: 'Người viết đã tự áp dụng đúng quy trình này để thoát khỏi 80 triệu nợ tiêu dùng trong 8 tháng.',
+      hook: 'Không phải nhịn tiêu — mà là hiểu đúng tiền của mình đang đi đâu, chỉ trong 21 ngày',
+      van_de_intro: 'Bạn kiếm ra tiền nhưng cuối tháng vẫn không biết tiền đi đâu hết. Muốn tiết kiệm nhưng không biết bắt đầu từ đâu, muốn thoát nợ nhưng cứ trả rồi lại vay.',
+      van_de_chi_tiet: [
+        { ten: 'Chi Tiêu Vô Hình', mo_ta: 'Tiền cứ trôi đi qua những khoản nhỏ lẻ mỗi ngày mà bạn không hề để ý.' },
+        { ten: 'Vòng Xoáy Vay-Trả', mo_ta: 'Vừa trả xong khoản này lại phải vay khoản khác, không bao giờ thấy dư ra.' },
+        { ten: 'Sợ Nhìn Vào Số Dư', mo_ta: 'Né tránh kiểm tra tài khoản vì sợ đối diện với con số thật.' },
+      ],
+      ket_qua_dat_duoc: ['Biết chính xác tiền của mình đang đi đâu mỗi ngày', 'Xây quỹ dự phòng đầu tiên trong đời chỉ sau 21 ngày', 'Thoát khỏi cảm giác lo lắng mỗi khi nghĩ đến tiền'],
+      chuong_trinh: [
+        { ten: 'Ngày 1-7: Nhìn thẳng vào sự thật', mo_ta: 'Ghi chép toàn bộ chi tiêu, nhận diện các khoản rò rỉ.' },
+        { ten: 'Ngày 8-14: Dựng lại ngân sách', mo_ta: 'Lập ngân sách thực tế theo đúng thu nhập của bạn.' },
+        { ten: 'Ngày 15-21: Xây quỹ dự phòng', mo_ta: 'Bắt đầu khoản tiết kiệm đầu tiên, dù nhỏ.' },
+      ],
+      loi_nhan_nguoi_ban: 'Tôi từng đứng đúng chỗ bạn đang đứng — không biết tiền của mình đi đâu, chỉ biết là không đủ. 21 ngày này là đúng những gì tôi đã tự làm để thay đổi.',
+      ve_nguoi_ban: 'Người viết đã tự áp dụng đúng quy trình này để thoát khỏi nợ tiêu dùng.',
       phu_hop_voi_ai: ['Người mới đi làm, chưa có thói quen quản lý tiền', 'Người đang có nợ muốn tìm lối ra rõ ràng'],
       faq: [
         { cau_hoi: 'Không giỏi tính toán có làm được không?', tra_loi: 'Được — mỗi ngày chỉ cần 10-15 phút, có mẫu điền sẵn.' },
@@ -112,11 +123,26 @@ function qrUrl(amount, content) {
 
 // Landing page ĐẦY ĐỦ (san-pham-so/js/tao-landing-page.js, AI viết) — CHỈ hiện khi người bán đã tạo,
 // không thì trang vẫn dùng đúng bản đơn giản cũ (title/description) như trước, không bắt buộc.
-// case_study_images/seller_photo_url nằm ở `product` (không phải `lp`/landing_page_content) — ảnh
-// THẬT do người bán tự tải lên (2026-09-02), khác nội dung chữ do AI viết.
+// case_study_images/seller_photo_url/bonus_items nằm ở `product` (không phải `lp`/landing_page_content)
+// — nội dung THẬT do người bán tự cung cấp (2026-09-02), khác nội dung chữ do AI viết.
+//
+// 2026-09-02: schema landing_page_content ĐỔI (van_de→van_de_intro+van_de_chi_tiet, noi_dung_gioi_thieu
+// →chuong_trinh, thêm loi_nhan_nguoi_ban — xem api/_lib/landing-page-schema.js) sau khi Quỳnh phản hồi
+// bản cũ "hời hợt" so với landing page thật của chị. VẪN ĐỌC ĐƯỢC field cũ (van_de/loi_ich/
+// noi_dung_gioi_thieu) cho sản phẩm đã tạo landing page TRƯỚC batch này — không lỗi, chỉ đơn giản
+// không có phần "đặt tên vấn đề"/"lộ trình theo chặng"/"lời nhắn cá nhân" cho tới khi viết lại bằng AI.
 function landingPageIntroHtml(product, lp) {
-  const loiIchHtml = Array.isArray(lp.loi_ich) && lp.loi_ich.length
-    ? `<ul class="lp-list">${lp.loi_ich.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  const vanDeChiTietHtml = Array.isArray(lp.van_de_chi_tiet) && lp.van_de_chi_tiet.length
+    ? `<div class="lp-problem-grid">${lp.van_de_chi_tiet.map(v => `
+        <div class="lp-problem-item"><div class="lp-problem-ten">${esc(v.ten || '')}</div><div class="lp-problem-mota">${esc(v.mo_ta || '')}</div></div>
+      `).join('')}</div>` : '';
+  const chuongTrinhHtml = Array.isArray(lp.chuong_trinh) && lp.chuong_trinh.length
+    ? `<div class="lp-program-list">${lp.chuong_trinh.map((c, i) => `
+        <div class="lp-program-item"><div class="lp-program-num">${i + 1}</div><div><div class="lp-program-ten">${esc(c.ten || '')}</div><div class="lp-program-mota">${esc(c.mo_ta || '')}</div></div></div>
+      `).join('')}</div>` : '';
+  const ketQuaHtml = Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
+    ? `<ul class="lp-list">${lp.ket_qua_dat_duoc.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+    : (Array.isArray(lp.loi_ich) && lp.loi_ich.length ? `<ul class="lp-list">${lp.loi_ich.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '');
   const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
     ? `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
   const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
@@ -126,12 +152,16 @@ function landingPageIntroHtml(product, lp) {
           ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
         </div>
       `).join('')}</div></div>` : '';
+  const bonusHtml = Array.isArray(product.bonus_items) && product.bonus_items.length
+    ? `<div class="lp-section"><h2 class="lp-h2">Ưu đãi tặng kèm</h2><ul class="lp-list">${product.bonus_items.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>` : '';
   return `
-    ${lp.van_de ? `<div class="lp-section"><p class="lp-body">${esc(lp.van_de)}</p></div>` : ''}
-    ${lp.noi_dung_gioi_thieu ? `<div class="lp-section"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : ''}
-    ${loiIchHtml ? `<div class="lp-section"><h2 class="lp-h2">Lợi ích</h2>${loiIchHtml}</div>` : ''}
+    ${lp.van_de_intro || lp.van_de ? `<div class="lp-section"><p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : ''}
+    ${chuongTrinhHtml ? `<div class="lp-section"><h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '')}
+    ${ketQuaHtml ? `<div class="lp-section"><h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : ''}
     ${caseStudyHtml}
+    ${bonusHtml}
     ${phuHopHtml ? `<div class="lp-section"><h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
+    ${lp.loi_nhan_nguoi_ban ? `<div class="lp-section"><div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : ''}
     ${lp.ve_nguoi_ban ? `<div class="lp-section"><h2 class="lp-h2">Về người bán</h2><div class="lp-seller">${product.seller_photo_url ? `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">` : ''}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div></div>` : ''}
   `;
 }

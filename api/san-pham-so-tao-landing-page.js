@@ -13,11 +13,13 @@ const DINH_DANG_LABEL = {
   mini_course: 'Mini-course', coaching_1_1: 'Coaching 1-1', cong_dong_tra_phi: 'Cộng đồng trả phí', webinar: 'Webinar',
 };
 
-const SYSTEM_PROMPT = `Bạn là chuyên gia viết landing page bán sản phẩm số — nhiệm vụ viết nội dung thuyết phục, cụ thể, chạm đúng vấn đề/lợi ích thật của sản phẩm đã có, theo đúng schema.
+const SYSTEM_PROMPT = `Bạn là chuyên gia viết landing page bán sản phẩm số — nhiệm vụ viết nội dung ĐẦY ĐỦ, CÓ CẤU TRÚC như 1 landing page bán hàng thật (không hời hợt, không viết chung chung qua loa), chạm đúng vấn đề/kết quả thật của sản phẩm đã có, theo đúng schema.
 
 NGUYÊN TẮC BẮT BUỘC:
-- TUYỆT ĐỐI không bịa số liệu/thành tích/testimonial không có thật — nếu thiếu thông tin cụ thể, viết chung chung thay vì tự chế ra chi tiết giả.
-- Bám sát ĐÚNG nội dung/mô tả sản phẩm đã có, không tự thêm nội dung/tính năng không tồn tại.
+- TUYỆT ĐỐI không bịa số liệu/thành tích/testimonial/tên người/ưu đãi không có thật — nếu thiếu thông tin cụ thể, viết chung chung thay vì tự chế ra chi tiết giả. Ảnh case study thật và ưu đãi tặng kèm do người bán tự cung cấp riêng, KHÔNG thuộc phần bạn viết.
+- Vấn đề (van_de_chi_tiet) phải tách thành các vấn đề CON có TÊN RIÊNG dễ nhớ, không viết 1 đoạn văn chung.
+- Chương trình (chuong_trinh) phải chia theo từng phần/chặng cụ thể, BÁM SÁT mô tả sản phẩm đã có — không tự thêm nội dung/tính năng không tồn tại.
+- Lời nhắn người bán (loi_nhan_nguoi_ban) viết giọng cá nhân, xưng "tôi", khác hẳn đoạn tiểu sử "về người bán".
 - Output tiếng Việt, gọi người đọc là "bạn".`;
 
 async function callClaude({ apiKey, userContent }) {
@@ -49,7 +51,7 @@ async function callClaude({ apiKey, userContent }) {
   if (data.stop_reason === 'max_tokens') throw new Error('AI trả lời quá dài bị cắt giữa chừng — thử lại giúp mình.');
   const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
   if (!toolUse) throw new Error('Không nhận được kết quả có cấu trúc từ AI.');
-  if (!Array.isArray(toolUse.input.loi_ich) || !Array.isArray(toolUse.input.faq)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
+  if (!Array.isArray(toolUse.input.van_de_chi_tiet) || !Array.isArray(toolUse.input.chuong_trinh) || !Array.isArray(toolUse.input.faq)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
   return toolUse.input;
 }
 
