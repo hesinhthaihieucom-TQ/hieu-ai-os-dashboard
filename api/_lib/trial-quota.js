@@ -88,6 +88,10 @@ const AI_WEIGHTS = {
   // của luồng tạo sản phẩm mà chỉ là tiện ích phụ trợ.
   'san-pham-so-viet-mo-ta': 1,
   'san-pham-so-viet-caption': 1,
+  // Tạo Landing Page (2026-09-01) — viết 1 lần cả 9 phần (hook/vấn đề/lợi ích/FAQ/CTA...), output lớn
+  // hơn hẳn mô tả/caption đơn — ngang mức san-pham-so-tao-tu-loai (cũng ra nhiều nội dung có cấu
+  // trúc trong 1 lần gọi) — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
+  'san-pham-so-tao-landing-page': 4,
 };
 
 // Trước đây fetch() này KHÔNG có giới hạn thời gian chờ — nếu RPC bị kẹt (vd khoá dòng "for

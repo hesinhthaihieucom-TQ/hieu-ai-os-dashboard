@@ -73,6 +73,38 @@ function qrUrl(amount, content) {
   return `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(content)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`;
 }
 
+// Landing page ĐẦY ĐỦ (san-pham-so/js/tao-landing-page.js, AI viết) — CHỈ hiện khi người bán đã tạo,
+// không thì trang vẫn dùng đúng bản đơn giản cũ (title/description) như trước, không bắt buộc.
+function landingPageIntroHtml(lp) {
+  const loiIchHtml = Array.isArray(lp.loi_ich) && lp.loi_ich.length
+    ? `<ul class="lp-list">${lp.loi_ich.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
+    ? `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  return `
+    ${lp.van_de ? `<div class="lp-section"><p class="lp-body">${esc(lp.van_de)}</p></div>` : ''}
+    ${lp.noi_dung_gioi_thieu ? `<div class="lp-section"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : ''}
+    ${loiIchHtml ? `<div class="lp-section"><h2 class="lp-h2">Lợi ích</h2>${loiIchHtml}</div>` : ''}
+    ${phuHopHtml ? `<div class="lp-section"><h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
+    ${lp.ve_nguoi_ban ? `<div class="lp-section"><h2 class="lp-h2">Về người bán</h2><p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>` : ''}
+  `;
+}
+function landingPageFaqHtml(lp) {
+  if (!Array.isArray(lp.faq) || !lp.faq.length) return '';
+  return `
+    <div class="lp-section">
+      <h2 class="lp-h2">Câu hỏi thường gặp</h2>
+      <div class="lp-faq">
+        ${lp.faq.map(f => `
+          <details class="lp-faq-item">
+            <summary>${esc(f.cau_hoi || '')}</summary>
+            <div class="lp-faq-answer">${esc(f.tra_loi || '')}</div>
+          </details>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function renderNotFound() {
   app.innerHTML = `<div class="wrap"><div class="card">
     <h1>Không tìm thấy sản phẩm</h1>
@@ -103,12 +135,15 @@ function renderProduct(product, order) {
   const webinarPreHtml = product.dinh_dang === 'webinar' && product.webinar_datetime
     ? `<div class="hint-box" style="margin-bottom:12px;">🗓️ Diễn ra: <b>${esc(formatWebinarDatetime(product.webinar_datetime))}</b></div>`
     : '';
+  const lp = product.landing_page_content || null;
+  const hookHtml = lp && lp.hook ? `<div class="lp-hook">${esc(lp.hook)}</div>` : '';
   let buyHtml;
 
   if (!order) {
+    const buyLabel = lp && lp.cta_text ? esc(lp.cta_text) : 'Mua ngay';
     buyHtml = `
       <input id="buyer-email" type="email" placeholder="Email (không bắt buộc — để nhận lại link nếu mất)">
-      <button class="btn" id="buy-btn">Mua ngay — ${Number(product.price).toLocaleString('vi-VN')}đ</button>
+      <button class="btn" id="buy-btn">${buyLabel} — ${Number(product.price).toLocaleString('vi-VN')}đ</button>
     `;
   } else if (order.status === 'paid') {
     // Giao hàng ĐÚNG THEO LOẠI (2026-09-01): mini_course trả về NHIỀU bài học (danh sách link), các
@@ -154,12 +189,15 @@ function renderProduct(product, order) {
     <div class="wrap"><div class="card">
       ${coverHtml}
       ${dinhDangBadgeHtml}
+      ${hookHtml}
       <h1>${esc(product.title)}</h1>
       ${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}
       ${webinarPreHtml}
+      ${lp ? landingPageIntroHtml(lp) : ''}
       <div class="price">${Number(product.price).toLocaleString('vi-VN')}đ</div>
       ${buyHtml}
       <div class="hint-box" style="margin-top:12px;text-align:center;">🔒 Cam kết hoàn tiền 100% nếu không hài lòng trong 7 ngày</div>
+      ${lp ? landingPageFaqHtml(lp) : ''}
     </div></div>
   `;
 

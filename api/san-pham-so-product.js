@@ -42,6 +42,21 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // Sửa tay nội dung landing page SAU KHI AI đã viết (san-pham-so-tao-landing-page.js) — tách riêng
+    // khỏi 'save' vì không cần validate title/price/deliverable, chỉ ghi đúng 1 cột.
+    if (action === 'update_landing_page') {
+      const { landing_page_content } = req.body || {};
+      if (!id) { res.status(400).json({ error: 'Thiếu id.' }); return; }
+      const resp = await supabaseAdmin(`digital_products?id=eq.${id}&owner_id=eq.${user.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ landing_page_content: landing_page_content || null, updated_at: new Date().toISOString() }),
+      });
+      const rows = resp.ok ? await resp.json() : [];
+      if (!resp.ok || !rows[0]) { res.status(404).json({ error: 'Không tìm thấy sản phẩm.' }); return; }
+      res.status(200).json({ product: rows[0] });
+      return;
+    }
+
     if (action === 'save') {
       const { title, description, price, cover_image_url, status, file_storage_path, file_name, external_link, dinh_dang, mini_course_lessons, webinar_datetime } = req.body || {};
       if (!title || !String(title).trim()) { res.status(400).json({ error: 'Vui lòng nhập tên sản phẩm.' }); return; }

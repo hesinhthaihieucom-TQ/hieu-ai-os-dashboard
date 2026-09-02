@@ -15,7 +15,7 @@ function comingSoon(title, desc) {
 
 window.SanPhamSoScreens = window.SanPhamSoScreens || {};
 // 'chon-loai' đã build thật ở san-pham-so/js/chon-loai.js (2026-09-01).
-window.SanPhamSoScreens['tao-landing-page'] = comingSoon('Tạo Landing Page', 'Công cụ tạo trang giới thiệu/bán hàng đầy đủ hơn form nhanh ở "Sản phẩm của tôi" hiện tại.');
+// 'tao-landing-page' đã build thật ở san-pham-so/js/tao-landing-page.js (2026-09-01).
 window.SanPhamSoScreens['tao-template'] = comingSoon('Tạo Template', 'Công cụ tạo bộ file mẫu (checklist/Notion/Excel...) để bán.');
 // 'nghien-cuu-thi-truong' đã đổi thành 'ke-hoach-ra-mat' (san-pham-so/js/ke-hoach-ra-mat.js, đã build
 // thật) — phần hữu ích nhất của mục cũ (nghiên cứu thị trường, giá/marketing) đã có ở nơi khác rồi.

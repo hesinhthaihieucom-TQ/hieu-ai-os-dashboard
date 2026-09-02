@@ -304,3 +304,18 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_sps_review_prompt_dismissed() to authenticated;
+
+-- ============================================================
+-- 19. TẠO LANDING PAGE (2026-09-01) — AI viết nội dung landing page đầy đủ hơn (hook/vấn đề/lợi
+-- ích/FAQ/CTA...) cho 1 sản phẩm, LƯU LẠI thành JSON thay vì tạo lại mỗi lần khách xem trang (đỡ tốn
+-- lượt AI, và người bán có thể tự sửa tay sau khi AI viết). null = chưa tạo, trang mua công khai vẫn
+-- dùng bản đơn giản hiện tại (title/description/price) như trước — không phá sản phẩm cũ.
+-- KHÔNG chứa gì nhạy cảm (chỉ là nội dung quảng cáo) nên an toàn lộ công khai qua
+-- digital_products_public, khác hẳn external_link/mini_course_lessons/file_storage_path.
+-- ============================================================
+alter table digital_products add column if not exists landing_page_content jsonb;
+
+create or replace view digital_products_public as
+  select id, slug, title, description, cover_image_url, price, dinh_dang, webinar_datetime, landing_page_content
+  from digital_products where status = 'published';
+grant select on digital_products_public to anon, authenticated;
