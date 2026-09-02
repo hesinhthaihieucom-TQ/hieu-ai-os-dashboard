@@ -89,7 +89,10 @@ alter table digital_product_orders enable row level security;
 -- TRƯỚC khi mua) — nhưng external_link/mini_course_lessons/file_storage_path (nội dung giao hàng
 -- thật) TUYỆT ĐỐI không lộ ở đây, chỉ trả về SAU khi xác nhận đã thanh toán qua
 -- api/san-pham-so-check-order.js.
-create or replace view digital_products_public as
+-- drop+create (không phải "or replace") vì Postgres không cho "or replace" đổi vị trí/số lượng cột
+-- của 1 view đã tồn tại — mỗi bản dưới đây thêm cột mới nên PHẢI drop trước, tránh lỗi 42P16.
+drop view if exists digital_products_public;
+create view digital_products_public as
   select id, slug, title, description, cover_image_url, price, dinh_dang, webinar_datetime
   from digital_products where status = 'published';
 grant select on digital_products_public to anon, authenticated;
@@ -320,7 +323,8 @@ alter table digital_products add column if not exists landing_page_content jsonb
 -- cũ chưa từng chọn mẫu).
 alter table digital_products add column if not exists landing_page_template text default 'classic';
 
-create or replace view digital_products_public as
+drop view if exists digital_products_public;
+create view digital_products_public as
   select id, slug, title, description, cover_image_url, price, dinh_dang, webinar_datetime, landing_page_content, landing_page_template
   from digital_products where status = 'published';
 grant select on digital_products_public to anon, authenticated;
@@ -358,7 +362,8 @@ alter table digital_products add column if not exists case_study_images jsonb;
 
 -- View cuối cùng cho trang mua công khai — thêm case_study_images + JOIN lấy ảnh cá nhân người bán
 -- (chỉ lộ đúng 1 cột ảnh, không lộ thêm gì khác từ profiles).
-create or replace view digital_products_public as
+drop view if exists digital_products_public;
+create view digital_products_public as
   select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
          dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
          p.sps_seller_photo_url as seller_photo_url
@@ -389,7 +394,8 @@ alter table digital_products add column if not exists bonus_items jsonb;
 -- không cho "create or replace view" đổi vị trí cột đã tồn tại, dù tên/kiểu dữ liệu giữ nguyên (lỗi
 -- 42P16 "cannot drop columns from view" Quỳnh gặp 2026-09-02 khi bonus_items bị chèn giữa
 -- case_study_images và seller_photo_url — chỉ được PHÉP thêm cột mới vào cuối danh sách).
-create or replace view digital_products_public as
+drop view if exists digital_products_public;
+create view digital_products_public as
   select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
          dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
          p.sps_seller_photo_url as seller_photo_url, dp.bonus_items
