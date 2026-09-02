@@ -165,3 +165,12 @@ function animateProgressButton(btnEl, estimatedSeconds, baseLabel) {
   const timer = setInterval(tick, 500);
   return () => clearInterval(timer);
 }
+
+// Chu kỳ 30 ngày TỪ NGÀY TẠO TÀI KHOẢN (không phải tháng lịch) — khớp ĐÚNG công thức
+// consume_sps_ai_quota (schema_san_pham_so.sql) và nhan-hieu/js/util.js's currentCycleKey (port
+// nguyên xi, dùng cho gói riêng Sản Phẩm Số — xem san-pham-so/js/app-shell.js).
+function currentCycleKey(createdAtIso) {
+  const createdAt = new Date(createdAtIso).getTime();
+  const days = Math.floor((Date.now() - createdAt) / 86400000);
+  return String(Math.max(0, Math.floor(days / 30)));
+}
