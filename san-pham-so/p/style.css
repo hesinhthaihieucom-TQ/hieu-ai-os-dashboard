@@ -51,3 +51,35 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:14.5px; }
 .lp-faq-item[open] summary{ margin-bottom:8px; }
 .lp-faq-answer{ color:var(--ink-soft); font-size:14px; line-height:1.6; white-space:pre-line; }
+
+/* Mẫu giao diện landing page (2026-09-02, chọn ở san-pham-so/js/tao-landing-page.js) — CHỈ đổi màu/
+   bố cục hiển thị, không đổi nội dung/công thức AI viết. "classic" = mặc định ở trên, không cần khối
+   riêng. Áp qua [data-lp-template] trên .wrap để không đụng gì tới trang không có landing page. */
+
+/* "Nổi bật" — nền tối, chữ to đậm, màu nhấn rực, cảm giác quảng cáo mạnh. */
+.wrap[data-lp-template="bold"] .card{ background:#171E1A; border-color:#2B342E; color:#F4F1E8; }
+.wrap[data-lp-template="bold"] h1{ color:#F4F1E8; font-size:28px; }
+.wrap[data-lp-template="bold"] .lp-hook{ color:#F2A93B; font-size:21px; text-transform:uppercase; letter-spacing:.03em; }
+.wrap[data-lp-template="bold"] .desc,
+.wrap[data-lp-template="bold"] .lp-body,
+.wrap[data-lp-template="bold"] .lp-list{ color:#C7C9BE; }
+.wrap[data-lp-template="bold"] .lp-h2{ color:#F2A93B; }
+.wrap[data-lp-template="bold"] .lp-section{ border-top-color:#2B342E; }
+.wrap[data-lp-template="bold"] .price{ color:#F2A93B; font-size:26px; }
+.wrap[data-lp-template="bold"] .btn{ background:#F2A93B; color:#171E1A; font-weight:700; }
+.wrap[data-lp-template="bold"] .hint-box{ background:#232B25; border-color:#2B342E; color:#C7C9BE; }
+.wrap[data-lp-template="bold"] .mono{ background:#232B25; color:#F2A93B; }
+.wrap[data-lp-template="bold"] .lp-faq-item{ background:#1F2620; border-color:#2B342E; }
+.wrap[data-lp-template="bold"] .lp-faq-item summary{ color:#F4F1E8; }
+.wrap[data-lp-template="bold"] .lp-faq-answer{ color:#C7C9BE; }
+.wrap[data-lp-template="bold"] .buy-area input[type="email"]{ background:#1F2620; border-color:#2B342E; color:#F4F1E8; }
+
+/* "Tối giản" — nền trắng, nhiều khoảng trắng, ít trang trí, cảm giác cao cấp. */
+.wrap[data-lp-template="minimal"] .card{ background:transparent; border:none; box-shadow:none; padding:10px 4px; }
+.wrap[data-lp-template="minimal"] h1{ font-family:'Be Vietnam Pro',sans-serif; font-weight:700; }
+.wrap[data-lp-template="minimal"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:var(--ink-soft); font-weight:600; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
+.wrap[data-lp-template="minimal"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; font-size:15px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); }
+.wrap[data-lp-template="minimal"] .lp-section{ border-top:none; margin:30px 0; padding-top:0; }
+.wrap[data-lp-template="minimal"] .btn{ background:transparent; border:1.5px solid var(--ink); color:var(--ink); font-weight:600; }
+.wrap[data-lp-template="minimal"] .hint-box{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); }
+.wrap[data-lp-template="minimal"] .lp-faq-item{ background:transparent; border:none; border-bottom:1px solid var(--line); border-radius:0; padding:12px 0; }

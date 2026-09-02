@@ -136,6 +136,9 @@ function renderProduct(product, order) {
     ? `<div class="hint-box" style="margin-bottom:12px;">🗓️ Diễn ra: <b>${esc(formatWebinarDatetime(product.webinar_datetime))}</b></div>`
     : '';
   const lp = product.landing_page_content || null;
+  // Mẫu giao diện (2026-09-02, chọn ở san-pham-so/js/tao-landing-page.js) — chỉ đổi CSS hiển thị qua
+  // [data-lp-template], không đổi nội dung/công thức AI viết. Không có landing page thì bỏ qua luôn.
+  const lpTemplate = lp ? (product.landing_page_template || 'classic') : 'classic';
   const hookHtml = lp && lp.hook ? `<div class="lp-hook">${esc(lp.hook)}</div>` : '';
   let buyHtml;
 
@@ -186,7 +189,7 @@ function renderProduct(product, order) {
   }
 
   app.innerHTML = `
-    <div class="wrap"><div class="card">
+    <div class="wrap" data-lp-template="${esc(lpTemplate)}"><div class="card">
       ${coverHtml}
       ${dinhDangBadgeHtml}
       ${hookHtml}

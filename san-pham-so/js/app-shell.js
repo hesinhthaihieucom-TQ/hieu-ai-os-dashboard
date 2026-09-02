@@ -13,9 +13,9 @@ const NAV = [
   { key: 'tao-ai', title: '🧭 Tìm Sản Phẩm Phù Hợp' },
   { key: 'chon-loai', title: '🗂️ Chọn Loại Sản Phẩm Số' },
   { key: 'tao-template', title: '🎨 Tạo Template' },
-  { key: 'ke-hoach-ra-mat', title: '🚀 Kế Hoạch Ra Mắt' },
-  { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
+  { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
+  { key: 'ke-hoach-ra-mat', title: '🚀 Kế Hoạch Ra Mắt' },
   { key: 'nang-cap', title: '🔥 Nâng cấp / Mua gói' },
   { key: 'quan-tri', title: 'Quản trị', adminOnly: true },
   { key: 'tai-khoan', title: 'Tài khoản', hidden: true }, // không hiện trong sidebar — vào qua bấm tên ở cuối sidebar

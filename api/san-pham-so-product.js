@@ -45,11 +45,15 @@ module.exports = async (req, res) => {
     // Sửa tay nội dung landing page SAU KHI AI đã viết (san-pham-so-tao-landing-page.js) — tách riêng
     // khỏi 'save' vì không cần validate title/price/deliverable, chỉ ghi đúng 1 cột.
     if (action === 'update_landing_page') {
-      const { landing_page_content } = req.body || {};
+      const { landing_page_content, landing_page_template } = req.body || {};
       if (!id) { res.status(400).json({ error: 'Thiếu id.' }); return; }
       const resp = await supabaseAdmin(`digital_products?id=eq.${id}&owner_id=eq.${user.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ landing_page_content: landing_page_content || null, updated_at: new Date().toISOString() }),
+        body: JSON.stringify({
+          landing_page_content: landing_page_content || null,
+          landing_page_template: landing_page_template || 'classic',
+          updated_at: new Date().toISOString(),
+        }),
       });
       const rows = resp.ok ? await resp.json() : [];
       if (!resp.ok || !rows[0]) { res.status(404).json({ error: 'Không tìm thấy sản phẩm.' }); return; }

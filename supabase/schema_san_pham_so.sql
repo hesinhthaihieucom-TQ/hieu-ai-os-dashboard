@@ -314,8 +314,13 @@ grant execute on function public.mark_sps_review_prompt_dismissed() to authentic
 -- digital_products_public, khác hẳn external_link/mini_course_lessons/file_storage_path.
 -- ============================================================
 alter table digital_products add column if not exists landing_page_content jsonb;
+-- landing_page_template (2026-09-02): NỘI DUNG do AI viết luôn theo đúng 1 công thức đã chốt với
+-- Quỳnh — mẫu chỉ đổi GIAO DIỆN (màu/bố cục/typography) hiển thị nội dung đó, không đổi số câu hỏi
+-- AI hay các trường dữ liệu. 'classic' = mặc định (giao diện card hiện có, không đổi gì cho sản phẩm
+-- cũ chưa từng chọn mẫu).
+alter table digital_products add column if not exists landing_page_template text default 'classic';
 
 create or replace view digital_products_public as
-  select id, slug, title, description, cover_image_url, price, dinh_dang, webinar_datetime, landing_page_content
+  select id, slug, title, description, cover_image_url, price, dinh_dang, webinar_datetime, landing_page_content, landing_page_template
   from digital_products where status = 'published';
 grant select on digital_products_public to anon, authenticated;
