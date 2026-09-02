@@ -385,10 +385,14 @@ grant select on digital_products_public to anon, authenticated;
 -- ============================================================
 alter table digital_products add column if not exists bonus_items jsonb;
 
+-- CỘT MỚI (bonus_items) PHẢI đứng SAU cùng, giữ nguyên đúng thứ tự các cột đã có trước đó — Postgres
+-- không cho "create or replace view" đổi vị trí cột đã tồn tại, dù tên/kiểu dữ liệu giữ nguyên (lỗi
+-- 42P16 "cannot drop columns from view" Quỳnh gặp 2026-09-02 khi bonus_items bị chèn giữa
+-- case_study_images và seller_photo_url — chỉ được PHÉP thêm cột mới vào cuối danh sách).
 create or replace view digital_products_public as
   select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
-         dp.landing_page_content, dp.landing_page_template, dp.case_study_images, dp.bonus_items,
-         p.sps_seller_photo_url as seller_photo_url
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, dp.bonus_items
   from digital_products dp
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
