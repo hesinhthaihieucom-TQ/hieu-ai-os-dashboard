@@ -47,10 +47,36 @@ function render(container) {
     return state.screen === 'edit' ? editHtml() : listHtml();
   }
 
+  // Bảng mẫu giao diện — hiện NGAY trên màn danh sách, KỂ CẢ khi chưa có sản phẩm nào (Quỳnh
+  // 2026-09-02: "landing page phải có mẫu cơ mà", không được để trống chỉ báo "chưa có sản phẩm").
+  // Ở đây chỉ để XEM TRƯỚC (không chọn được — mẫu áp cho từng sản phẩm, chọn thật ở editHtml() sau
+  // khi đã vào 1 sản phẩm cụ thể) nên không cần data-lp-pick-template/dấu ✓ như templatePickerHtml().
+  function templateShowcaseHtml() {
+    return `
+      <div class="card" style="margin-bottom:14px;">
+        <label style="margin-bottom:10px;display:block;">🎨 3 mẫu giao diện có sẵn — chọn khi vào 1 sản phẩm cụ thể bên dưới</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          ${LP_TEMPLATES.map(t => `
+            <div style="flex:1;min-width:140px;border:1px solid var(--line);border-radius:10px;padding:10px;">
+              <div style="background:${t.swatchBg};border-radius:6px;padding:10px 8px;margin-bottom:8px;">
+                <div style="width:60%;height:6px;background:${t.swatchAccent};border-radius:3px;margin-bottom:6px;"></div>
+                <div style="width:90%;height:4px;background:${t.swatchText};opacity:.5;border-radius:2px;margin-bottom:4px;"></div>
+                <div style="width:75%;height:4px;background:${t.swatchText};opacity:.5;border-radius:2px;"></div>
+              </div>
+              <div style="font-size:13.5px;font-weight:600;">${esc(t.label)}</div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${esc(t.desc)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   function listHtml() {
     if (state.products.length === 0) {
       return `
         <h2>Tạo Landing Page</h2>
+        ${templateShowcaseHtml()}
         <div class="card" style="text-align:center;padding:36px 24px;">
           <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:16px;">Chưa có sản phẩm nào để viết landing page — tạo 1 sản phẩm (tên/giá/mô tả) ở "Sản phẩm của tôi" trước, rồi quay lại đây.</div>
           <span class="btn" id="lp-goto-product-btn" style="display:inline-block;width:auto;padding:12px 24px;">🛒 Tạo sản phẩm ngay</span>
@@ -59,6 +85,7 @@ function render(container) {
     }
     return `
       <h2>Tạo Landing Page</h2>
+      ${templateShowcaseHtml()}
       <div class="hint-box">AI viết nội dung landing page đầy đủ hơn (vấn đề/lợi ích/FAQ...) cho 1 sản phẩm đã có — chọn sản phẩm bên dưới.</div>
       ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
       ${state.products.map(p => `
