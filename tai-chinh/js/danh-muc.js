@@ -92,11 +92,12 @@ function render(container, ctx){
       <div class="chips" style="margin-bottom:16px;">
         <div class="chip ${state.tab==='expense'?'selected':''}" data-tab="expense">Danh mục chi tiêu</div>
         <div class="chip ${state.tab==='income'?'selected':''}" data-tab="income">Danh mục thu nhập</div>
-        <div class="chip ${state.tab==='tich-luy'?'selected':''}" data-tab="tich-luy">Tích Lũy</div>
+        <div class="chip ${state.tab==='tich_luy'?'selected':''}" data-tab="tich_luy">Tích Lũy</div>
       </div>
 
-      ${state.tab==='tich-luy' ? `<div id="dm-tich-luy-sub"></div>` : `
+      ${state.tab==='tich_luy' ? `<div id="dm-tich-luy-sub" style="margin-bottom:20px;"></div>` : ''}
       ${state.tab==='expense' ? `<div class="hint-box" style="margin-bottom:14px;">Chọn sẵn ${glossaryWrap('CP cố định', 'cp_co_dinh')} hoặc ${glossaryWrap('CP biến đổi', 'cp_bien_doi')} cho từng danh mục — Ghi Chép Hàng Ngày sẽ tự điền sẵn đúng loại này, không phải chọn lại mỗi lần.</div>` : ''}
+      ${state.tab==='tich_luy' ? `<div class="hint-box" style="margin-bottom:14px;">Danh mục con để phân loại RÕ mỗi lần chuyển tiền vào Tích Lũy là đi vào đâu (VD: Tiết kiệm ngân hàng, Vàng, Cổ phiếu, Quỹ đầu tư...) — chọn được ngay ở Ghi Chép Hàng Ngày khi ghi 1 khoản Tích Lũy.</div>` : ''}
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">
@@ -114,7 +115,6 @@ function render(container, ctx){
           ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         </div>
       `}
-      `}
     `;
   }
 
@@ -123,8 +123,10 @@ function render(container, ctx){
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); state.error = null; draw(); };
     });
     // "Tích Lũy" giờ là 1 tab TẠI ĐÂY, không phải mục riêng ở sidebar nữa (2026-08-26, góp ý Quỳnh:
-    // "tích lũy ko phải là 1 mục riêng ở taskbar mà là mục riêng chỗ quản lý danh mục á") — tận dụng
-    // lại nguyên module tich-luy.js (không đổi logic bên trong), chỉ đổi CHỖ gọi render() của nó.
+    // "tích lũy ko phải là 1 mục riêng ở taskbar mà là mục riêng chỗ quản lý danh mục á"), VÀ có danh
+    // mục con riêng như Chi Tiêu/Thu Nhập (2026-09-01, góp ý Quỳnh: "tích lũy phải có ở những phần mà
+    // chi tiêu và thu nhập có chứ nhỉ") — module key/file vẫn tên "tich-luy" (gạch ngang), chỉ riêng
+    // GIÁ TRỊ state.tab/tc_categories.type dùng "tich_luy" (gạch dưới, khớp check constraint DB).
     const tichLuySub = container.querySelector('#dm-tich-luy-sub');
     if(tichLuySub && window.Modules && window.Modules['tich-luy']) window.Modules['tich-luy'].render(tichLuySub, ctx);
     container.querySelectorAll('[data-classification]').forEach(el=>{

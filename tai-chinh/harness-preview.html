@@ -58,6 +58,7 @@ const APP_REVIEWS = [
   { id:'rev2', user_id:'member-2', app:'tai-chinh', comment:'Chờ duyệt: phần quản lý nợ dễ hiểu.', display_name:'Khách B', approved:false, created_at:new Date().toISOString() },
 ];
 let appReviewIdSeq = 1;
+let financeEntryIdSeq = 1000;
 // Mô phỏng tc_core_beliefs + tc_yearly_reflections — để test mục "Tổng Kết Năm" mới (2026-08-26,
 // góp ý Quỳnh) đọc đúng Hạt Giống trong năm + lưu/đọc lời cam kết năm tới.
 const CORE_BELIEFS = [
@@ -162,6 +163,10 @@ function makeChain(table){
         const rows = Array.isArray(payload) ? payload : [payload];
         rows.forEach(r=>APP_REVIEWS.unshift({ id:'rev'+(appReviewIdSeq++), approved:false, created_at:new Date().toISOString(), ...r }));
       }
+      if(table==='tc_finance_entries'){
+        const rows = Array.isArray(payload) ? payload : [payload];
+        rows.forEach(r=>FINANCE_ENTRIES.push({ id:'fe'+(financeEntryIdSeq++), created_at:new Date().toISOString(), ...r }));
+      }
       return Promise.resolve({ data:null, error:null });
     },
     delete(){
@@ -235,7 +240,8 @@ function makeChain(table){
       if(table === 'tc_finance_entries'){
         const r = chain._range.entry_date || {};
         const rows = FINANCE_ENTRIES.filter(e =>
-          (!r.gte || e.entry_date >= r.gte) && (!r.lte || e.entry_date <= r.lte) && (!r.lt || e.entry_date < r.lt)
+          (!r.gte || e.entry_date >= r.gte) && (!r.lte || e.entry_date <= r.lte) && (!r.lt || e.entry_date < r.lt) &&
+          (!chain._filters.entry_date || e.entry_date === chain._filters.entry_date)
         );
         return resolve({ data: rows, error:null });
       }

@@ -519,3 +519,15 @@ alter table tc_yearly_reflections enable row level security;
 drop policy if exists "tc_yearly_reflections_owner_all" on tc_yearly_reflections;
 create policy "tc_yearly_reflections_owner_all" on tc_yearly_reflections for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Danh mục con cho "Tích Lũy" (2026-09-01, góp ý Quỳnh: "tích lũy phải có ở những phần mà chi tiêu
+-- và thu nhập có chứ nhỉ") — thêm 'tich_luy' làm giá trị type thứ 3 hợp lệ ở tc_categories, để Quản
+-- Lý Danh Mục quản lý được danh mục con cho Tích Lũy (VD: Tiết kiệm ngân hàng, Vàng, Cổ phiếu...)
+-- giống hệt cách Chi Tiêu/Thu Nhập đã có sẵn. KHÔNG đổi tc_finance_entries.type — giao dịch Tích Lũy
+-- vẫn ghi type='expense' + category_label='Tích Lũy' như cũ (giữ nguyên logic loại trừ
+-- TICH_LUY_CATEGORY_LABEL đang dùng ở tong-ket-tuan.js/tong-ket-thang.js), chỉ thêm cột
+-- tich_luy_category để lưu đúng danh mục con nào vừa chọn.
+alter table tc_categories drop constraint if exists tc_categories_type_check;
+alter table tc_categories add constraint tc_categories_type_check check (type in ('income','expense','tich_luy'));
+
+alter table tc_finance_entries add column if not exists tich_luy_category text;

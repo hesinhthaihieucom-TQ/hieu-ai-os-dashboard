@@ -48,7 +48,7 @@ function render(container, ctx){
     loading: true,
     date: isoDate(new Date()),
     entries: [],
-    form: { type:'expense', amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' },
+    form: { type:'expense', amount:'', description:'', category:'', category_label:'', tich_luy_category:'', vibe:null, vibe_reason:'' },
     saving: false,
     error: null,
     debtWarning: null,
@@ -199,6 +199,10 @@ function render(container, ctx){
       description: state.form.description.trim(),
       category: (state.form.type === 'expense' && state.form.category) ? state.form.category : null,
       category_label: state.form.category_label.trim() || null,
+      // Danh mục con của "Tích Lũy" (2026-09-01, góp ý Quỳnh: "tích lũy phải có ở những phần mà chi
+      // tiêu và thu nhập có chứ nhỉ") — CHỈ có ý nghĩa khi category_label đúng là Tích Lũy, không thì
+      // luôn để trống. Không đổi type/category_label — giữ nguyên logic loại trừ đang dùng ở nơi khác.
+      tich_luy_category: (state.form.category_label.trim()===TICH_LUY_CATEGORY_LABEL && state.form.tich_luy_category) ? state.form.tich_luy_category : null,
       vibe: state.form.vibe,
       vibe_reason: state.form.vibe_reason.trim() || null,
     };
@@ -216,7 +220,7 @@ function render(container, ctx){
         default_classification: null,
       });
     }
-    state.form = { type: state.form.type, amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' };
+    state.form = { type: state.form.type, amount:'', description:'', category:'', category_label:'', tich_luy_category:'', vibe:null, vibe_reason:'' };
     state.showCustomCategory = false;
     await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
@@ -284,6 +288,14 @@ function render(container, ctx){
           <input type="text" id="gc-category-label-custom" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Cho thuê nhà...':'VD: Tiền điện nước...'}" style="width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
         ` : ''}
 
+        ${!isIncome && state.form.category_label === TICH_LUY_CATEGORY_LABEL ? `
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Tích Lũy vào đâu? <span style="font-weight:400;">(không bắt buộc, <a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục con →</a>)</span></label>
+          <select id="gc-tich-luy-category-select" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+            <option value="" ${!state.form.tich_luy_category?'selected':''}>— Chọn danh mục con —</option>
+            ${state.categories.filter(c=>c.type==='tich_luy').map(c=>`<option value="${esc(c.label)}" ${state.form.tich_luy_category===c.label?'selected':''}>${esc(c.label)}</option>`).join('')}
+          </select>
+        ` : ''}
+
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <button class="btn btn-full" id="gc-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'+ Thêm giao dịch'}</button>
       </div>
@@ -299,7 +311,7 @@ function render(container, ctx){
         return `
         <div class="list-item">
           <div class="txt">
-            <div class="meta">${vibeIcon(e.vibe)} ${e.type==='income'?'💰 Thu nhập':'💸 Chi tiêu'}${catLabel?` · ${esc(catLabel)}`:''}${spendLabel?` · ${esc(spendLabel)}`:''}</div>
+            <div class="meta">${vibeIcon(e.vibe)} ${e.type==='income'?'💰 Thu nhập':'💸 Chi tiêu'}${catLabel?` · ${esc(catLabel)}`:''}${spendLabel?` · ${esc(spendLabel)}`:''}${e.tich_luy_category?` · ${esc(e.tich_luy_category)}`:''}</div>
             ${esc(e.description||'(không ghi chú)')}
             ${e.vibe_reason ? `<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:4px;">"${esc(e.vibe_reason)}"</div>` : ''}
           </div>
@@ -373,6 +385,8 @@ function render(container, ctx){
     };
     const customInput = container.querySelector('#gc-category-label-custom');
     if(customInput) customInput.oninput = (e)=>{ state.form.category_label = e.target.value; persistDraft(); };
+    const tichLuyCategorySelect = container.querySelector('#gc-tich-luy-category-select');
+    if(tichLuyCategorySelect) tichLuyCategorySelect.onchange = (e)=>{ state.form.tich_luy_category = e.target.value; persistDraft(); };
     container.querySelector('#gc-desc').oninput = (e)=>{ state.form.description = e.target.value; persistDraft(); };
     container.querySelector('#gc-amount').oninput = (e)=>{
       state.form.amount = onlyDigits(e.target.value);
