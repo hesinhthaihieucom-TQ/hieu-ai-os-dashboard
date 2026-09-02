@@ -2,7 +2,7 @@
 // bán, người bán copy ra đăng thẳng. Không lưu tự động — chỉ hiện kết quả kèm nút Copy.
 
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeSpsQuota, refundSpsQuota } = require('./_lib/sps-ai-quota');
 
 const TOOL_VIET_CAPTION = {
   name: 'xuat_caption_quang_cao',
@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id, 'san-pham-so-viet-caption');
+  const quotaError = await checkAndConsumeSpsQuota(user.id, 'san-pham-so-viet-caption');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -75,7 +75,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ caption: toolUse.input.caption });
   } catch (err) {
-    await refundTrialQuota(user.id, 'san-pham-so-viet-caption');
+    await refundSpsQuota(user.id, 'san-pham-so-viet-caption');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi viết caption.' });
   }
 };

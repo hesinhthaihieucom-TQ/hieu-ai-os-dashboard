@@ -151,6 +151,20 @@ function extractCrmRefCode(content) {
   const m = /CRM[A-Z0-9]{6}/i.exec(content || '');
   return m ? m[0].toUpperCase() : null;
 }
+
+// Sản Phẩm Số — GÓI THÁNG riêng (2026-09-01, chị Quỳnh: "e vẫn thu phí người dùng là 599k cho app
+// này 1 tháng"), KHÁC HẲN nhánh SPS ở trên (đơn mua lẻ 1 sản phẩm, không có profile) — đây là gói
+// thuê bao gắn với 1 profile (giống crm_ref_code), dùng cột riêng profiles.sps_ref_code/sps_has_paid/
+// sps_access_until. Tiền tố "SPUP" (Sản Phẩm Số Upgrade) CỐ Ý không bắt đầu bằng "SPS" — mã bắt đầu
+// "SPS..." đã bị regex extractProductOrderRefCode ở trên "vồ" mất trước khi tới được đây.
+function extractSpsSubRefCode(content) {
+  const m = /SPUP[A-Z0-9]{6}/i.exec(content || '');
+  return m ? m[0].toUpperCase() : null;
+}
+// Chỉ 1 gói (599.000đ/tháng) — chưa có gói 6/12 tháng hay "mua thêm lượt" (thêm sau nếu Quỳnh cần).
+const SPS_SUB_AMOUNT_TO_DAYS = {
+  599000: 30,
+};
 const CRM_AMOUNT_TO_DAYS = {
   499000: 30,    // 1 tháng
   2490000: 180,  // 6 tháng
@@ -394,6 +408,7 @@ module.exports = async (req, res) => {
     // 1 nội dung chuyển khoản thật (tiền tố khác nhau), nhưng giữ if/else rõ ràng cho dễ đọc.
     const productOrderRefCode = !refCode ? extractProductOrderRefCode(content) : null;
     const crmRefCode = (!refCode && !productOrderRefCode) ? extractCrmRefCode(content) : null;
+    const spsSubRefCode = (!refCode && !productOrderRefCode && !crmRefCode) ? extractSpsSubRefCode(content) : null;
     let status = 'unmatched_code';
     let matchedProfileId = null;
     let matchedProductOrderId = null;
@@ -575,6 +590,37 @@ module.exports = async (req, res) => {
       } else {
         status = 'unmatched_code';
       }
+    } else if (spsSubRefCode) {
+      // Gói tháng Sản Phẩm Số — hạn dùng RIÊNG (sps_access_until), cộng dồn giống access_until của
+      // nhan-hieu (base = hạn cũ nếu còn hiệu lực, else từ hôm nay). Không đụng gì tới has_paid/
+      // access_until gốc (Xây Nhân Hiệu) hay crm_has_paid (Trợ Lý CRM).
+      const profResp = await supabaseAdmin(`profiles?sps_ref_code=eq.${spsSubRefCode}&select=id,sps_access_until`);
+      const profRows = profResp.ok ? await profResp.json() : [];
+      const profile = profRows[0];
+
+      if (profile) {
+        const days = SPS_SUB_AMOUNT_TO_DAYS[transferAmount];
+        if (days) {
+          const base = (profile.sps_access_until && new Date(profile.sps_access_until).getTime() > Date.now())
+            ? new Date(profile.sps_access_until) : new Date();
+          const next = new Date(base.getTime() + days * 86400000);
+          const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ sps_access_until: next.toISOString(), sps_has_paid: true }),
+          });
+          if (updateResp.ok) {
+            status = 'matched';
+            matchedProfileId = profile.id;
+            daysGranted = days;
+          } else {
+            status = 'unmatched_amount';
+          }
+        } else {
+          status = 'unmatched_amount';
+        }
+      } else {
+        status = 'unmatched_code';
+      }
     }
 
     await supabaseAdmin('sepay_transactions', {
@@ -587,7 +633,7 @@ module.exports = async (req, res) => {
         account_number: accountNumber || null,
         transfer_amount: transferAmount || null,
         content: content || null,
-        ref_code_found: refCode || productOrderRefCode || crmRefCode,
+        ref_code_found: refCode || productOrderRefCode || crmRefCode || spsSubRefCode,
         matched_profile_id: matchedProfileId,
         matched_product_order_id: matchedProductOrderId,
         days_granted: daysGranted,

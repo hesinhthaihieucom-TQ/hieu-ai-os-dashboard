@@ -107,3 +107,145 @@ alter table product_idea_results enable row level security;
 drop policy if exists "product_idea_results_owner_all" on product_idea_results;
 create policy "product_idea_results_owner_all" on product_idea_results for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ============================================================
+-- 17. GÓI RIÊNG SẢN PHẨM SỐ (2026-09-01) — Quỳnh: "2 cái này không liên quan đến nhau, e vẫn thu phí
+-- người dùng là 599k cho app này 1 tháng". Sản Phẩm Số có gói/lượt AI HOÀN TOÀN TÁCH BIỆT khỏi Xây
+-- Nhân Hiệu, dù vẫn đăng nhập chung 1 tài khoản (cùng bảng profiles/auth.users) — KHÔNG đụng tới
+-- has_paid/access_until/trial_ai_uses/trial_ai_limit/paid_ai_uses/paid_ai_month/paid_ai_bonus gốc
+-- (đó vẫn là của riêng Xây Nhân Hiệu). Mọi cột/hàm dưới đây tiền tố "sps_" để không bao giờ lẫn.
+-- Bản sao mô phỏng ĐÚNG pattern đã có cho Trợ Lý CRM (crm_has_paid/consume_crm_ai_quota/
+-- get_or_create_crm_ref_code, xem schema_tro_ly_crm.sql) — khác 1 điểm: Sản Phẩm Số CÓ dùng thử
+-- (trial) trước khi trả phí (CRM thì không), nên consume_sps_ai_quota mô phỏng consume_ai_quota
+-- (schema_core.sql, có nhánh trial/paid) thay vì consume_crm_ai_quota (chỉ có 1 mức trả phí).
+-- 240 lượt/tháng trả phí + 20 lượt dùng thử trọn đời — ĐỀ XUẤT theo đúng tỷ lệ giá/lượt Xây Nhân
+-- Hiệu đang áp (499k/tháng ≈ 200 lượt), Quỳnh đã xác nhận số này.
+-- ============================================================
+alter table profiles add column if not exists sps_has_paid boolean not null default false;
+alter table profiles add column if not exists sps_access_until timestamptz;
+alter table profiles add column if not exists sps_trial_ai_uses int not null default 0;
+alter table profiles add column if not exists sps_trial_ai_limit int; -- null = dùng SPS_TRIAL_AI_LIMIT mặc định (20)
+alter table profiles add column if not exists sps_paid_ai_uses int not null default 0;
+alter table profiles add column if not exists sps_paid_ai_month text;
+alter table profiles add column if not exists sps_paid_ai_bonus int not null default 0;
+alter table profiles add column if not exists sps_ref_code text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_sps_ref_code_unique') then
+    alter table profiles add constraint profiles_sps_ref_code_unique unique (sps_ref_code);
+  end if;
+end $$;
+
+-- get_or_create_sps_ref_code(): sinh LAZY khi người dùng vào màn "Nâng Cấp" lần đầu (không sinh sẵn
+-- lúc đăng ký như ref_code "XNH" gốc, vì không phải ai dùng Xây Nhân Hiệu cũng dùng Sản Phẩm Số) —
+-- y hệt get_or_create_crm_ref_code(), chỉ đổi tiền tố "SPUP" (Sản Phẩm Số Upgrade). CỐ Ý KHÔNG dùng
+-- tiền tố bắt đầu bằng "SPS" — mã đơn hàng lẻ hiện có (extractProductOrderRefCode/api/sepay-webhook.js)
+-- đã khớp regex /SPS[A-Z0-9]{6,}/i, nên bất kỳ mã nào bắt đầu "SPS..." cũng bị nhánh đó "vồ" mất
+-- trước khi tới nhánh gói tháng này — "SPUP" tránh hẳn việc phải sửa regex cũ, không rủi ro đụng độ.
+create or replace function public.get_or_create_sps_ref_code()
+returns text as $$
+declare
+  v_code text;
+begin
+  select sps_ref_code into v_code from public.profiles where id = auth.uid();
+  if v_code is not null then
+    return v_code;
+  end if;
+  loop
+    v_code := 'SPUP' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
+    begin
+      update public.profiles set sps_ref_code = v_code where id = auth.uid();
+      exit;
+    exception when unique_violation then
+      -- trùng cực hiếm (gen_random_uuid va chạm) — thử lại với mã khác
+    end;
+  end loop;
+  return v_code;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.get_or_create_sps_ref_code() to authenticated;
+
+-- consume_sps_ai_quota / refund_sps_ai_quota — bản sao logic consume_ai_quota/refund_ai_quota
+-- (schema_core.sql) nhưng đọc/ghi đúng bộ cột sps_* riêng. Dùng chu kỳ 30 ngày từ profiles.created_at
+-- giống hệt (KHÔNG cần cột "ngày bắt đầu dùng Sản Phẩm Số" riêng — ngày tạo tài khoản gốc là đủ).
+drop function if exists public.consume_sps_ai_quota(uuid, int, int, int);
+create or replace function public.consume_sps_ai_quota(p_user_id uuid, p_trial_limit int, p_paid_limit int, p_weight int default 1)
+returns jsonb as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text;
+  v_current_uses int;
+  v_bonus int;
+  v_effective_limit int;
+  v_is_admin boolean;
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then
+    return jsonb_build_object('allowed', true); -- không tìm thấy profile: fail open, không chặn oan
+  end if;
+
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  v_is_admin := (v_profile.role = 'admin');
+
+  if (not v_is_admin) and v_profile.sps_access_until is not null and v_profile.sps_access_until <= now() then
+    return jsonb_build_object('allowed', false, 'effective_limit', 0, 'mode', 'expired');
+  end if;
+
+  if not v_profile.sps_has_paid then
+    declare
+      v_trial_limit int := coalesce(v_profile.sps_trial_ai_limit, p_trial_limit);
+    begin
+      if (not v_is_admin) and v_profile.sps_trial_ai_uses + p_weight > v_trial_limit then
+        return jsonb_build_object('allowed', false, 'effective_limit', v_trial_limit, 'mode', 'trial');
+      end if;
+      update profiles set sps_trial_ai_uses = sps_trial_ai_uses + p_weight where id = p_user_id;
+      return jsonb_build_object('allowed', true);
+    end;
+  end if;
+
+  if v_profile.sps_paid_ai_month = v_month then
+    v_current_uses := v_profile.sps_paid_ai_uses;
+    v_bonus := coalesce(v_profile.sps_paid_ai_bonus, 0);
+  else
+    v_current_uses := 0;
+    v_bonus := 0;
+  end if;
+  v_effective_limit := p_paid_limit + v_bonus;
+
+  if (not v_is_admin) and v_current_uses + p_weight > v_effective_limit then
+    return jsonb_build_object('allowed', false, 'effective_limit', v_effective_limit, 'mode', 'paid');
+  end if;
+
+  if v_profile.sps_paid_ai_month = v_month then
+    update profiles set sps_paid_ai_uses = sps_paid_ai_uses + p_weight where id = p_user_id;
+  else
+    update profiles set sps_paid_ai_uses = p_weight, sps_paid_ai_month = v_month, sps_paid_ai_bonus = 0 where id = p_user_id;
+  end if;
+  return jsonb_build_object('allowed', true);
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.consume_sps_ai_quota(uuid, int, int, int) from public, authenticated, anon;
+grant execute on function public.consume_sps_ai_quota(uuid, int, int, int) to service_role;
+
+drop function if exists public.refund_sps_ai_quota(uuid, int);
+create or replace function public.refund_sps_ai_quota(p_user_id uuid, p_weight int default 1)
+returns void as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text;
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then return; end if;
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  if not v_profile.sps_has_paid then
+    update profiles set sps_trial_ai_uses = greatest(0, sps_trial_ai_uses - p_weight) where id = p_user_id;
+    return;
+  end if;
+  if v_profile.sps_paid_ai_month = v_month then
+    update profiles set sps_paid_ai_uses = greatest(0, sps_paid_ai_uses - p_weight) where id = p_user_id;
+  end if;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.refund_sps_ai_quota(uuid, int) from public, authenticated, anon;
+grant execute on function public.refund_sps_ai_quota(uuid, int) to service_role;

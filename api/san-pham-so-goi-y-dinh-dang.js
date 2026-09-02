@@ -4,7 +4,7 @@
 // dạng đã chốt). Output nhỏ nên max_tokens/lượt AI thấp hơn hẳn bước dựng outline.
 
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeSpsQuota, refundSpsQuota } = require('./_lib/sps-ai-quota');
 const { TOOL_GOI_Y_DINH_DANG } = require('./_lib/tim-san-pham-schema');
 
 const SYSTEM_PROMPT = `Bạn là chuyên gia tư vấn sản phẩm số — người dùng đã có chủ đề/đối tượng rõ ràng, chỉ cần bạn đề xuất 1-2 định dạng phù hợp nhất, kèm lý do ngắn gọn nối trực tiếp với đặc điểm của chủ đề/đối tượng đó. Output tiếng Việt, gọi người dùng là "bạn".`;
@@ -48,7 +48,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id, 'san-pham-so-goi-y-dinh-dang');
+  const quotaError = await checkAndConsumeSpsQuota(user.id, 'san-pham-so-goi-y-dinh-dang');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, userContent });
     res.status(200).json({ result });
   } catch (err) {
-    await refundTrialQuota(user.id, 'san-pham-so-goi-y-dinh-dang');
+    await refundSpsQuota(user.id, 'san-pham-so-goi-y-dinh-dang');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi gợi ý định dạng.' });
   }
 };

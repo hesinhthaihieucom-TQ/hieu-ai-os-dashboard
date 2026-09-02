@@ -13,7 +13,7 @@
 // xem researchViaWebSearch() bên dưới.
 
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeSpsQuota, refundSpsQuota } = require('./_lib/sps-ai-quota');
 const { TOOL_OUTLINE2, TOOL_NGHIEN_CUU, TOOL_VIET, TOOL_REVIEW, TOOL_TONG_DUYET } = require('./_lib/xay-dung-noi-dung-schema');
 const { signMaterialUrl } = require('./_lib/material-storage');
 
@@ -141,7 +141,7 @@ module.exports = async (req, res) => {
   // sang người không bật tìm web (xem AI_WEIGHTS['xay-dung-noi-dung-nghien-cuu-web'] trong trial-quota.js).
   const actionKey = (step === 'nghien-cuu' && useWebSearch) ? 'xay-dung-noi-dung-nghien-cuu-web' : `xay-dung-noi-dung-${step}`;
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id, actionKey);
+  const quotaError = await checkAndConsumeSpsQuota(user.id, actionKey);
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   try {
@@ -224,7 +224,7 @@ module.exports = async (req, res) => {
 
     res.status(400).json({ error: 'Thiếu step hợp lệ.' });
   } catch (err) {
-    await refundTrialQuota(user.id, actionKey);
+    await refundSpsQuota(user.id, actionKey);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi xây dựng nội dung.' });
   }
 };

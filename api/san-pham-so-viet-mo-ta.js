@@ -3,7 +3,7 @@
 // vào ô mô tả — đây chỉ là bản nháp gợi ý, không tự động lưu.
 
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeSpsQuota, refundSpsQuota } = require('./_lib/sps-ai-quota');
 
 const TOOL_VIET_MO_TA = {
   name: 'xuat_mo_ta_ban_hang',
@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id, 'san-pham-so-viet-mo-ta');
+  const quotaError = await checkAndConsumeSpsQuota(user.id, 'san-pham-so-viet-mo-ta');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -76,7 +76,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ mo_ta: toolUse.input.mo_ta });
   } catch (err) {
-    await refundTrialQuota(user.id, 'san-pham-so-viet-mo-ta');
+    await refundSpsQuota(user.id, 'san-pham-so-viet-mo-ta');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi viết mô tả.' });
   }
 };

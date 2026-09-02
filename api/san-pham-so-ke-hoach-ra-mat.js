@@ -5,7 +5,7 @@
 // còn thiếu: người bán 1 mình cần biết CHÍNH XÁC nên làm gì, khi nào.
 
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeSpsQuota, refundSpsQuota } = require('./_lib/sps-ai-quota');
 
 const TOOL_KE_HOACH_RA_MAT = {
   name: 'xuat_ke_hoach_ra_mat',
@@ -48,7 +48,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id, 'san-pham-so-ke-hoach-ra-mat');
+  const quotaError = await checkAndConsumeSpsQuota(user.id, 'san-pham-so-ke-hoach-ra-mat');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -91,7 +91,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ result: toolUse.input });
   } catch (err) {
-    await refundTrialQuota(user.id, 'san-pham-so-ke-hoach-ra-mat');
+    await refundSpsQuota(user.id, 'san-pham-so-ke-hoach-ra-mat');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi lập kế hoạch ra mắt.' });
   }
 };

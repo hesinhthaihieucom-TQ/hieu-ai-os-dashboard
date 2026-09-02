@@ -5,7 +5,7 @@
 // api/san-pham-so-upload-material-url.js) để outline bám sát tài liệu nếu người dùng có sẵn.
 
 const { requireUser } = require('./_lib/auth');
-const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
+const { checkAndConsumeSpsQuota, refundSpsQuota } = require('./_lib/sps-ai-quota');
 const { TOOL_TAO_Y_TUONG_TU_LOAI } = require('./_lib/tim-san-pham-schema');
 const { signMaterialUrl } = require('./_lib/material-storage');
 
@@ -57,7 +57,7 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const quotaError = await checkAndConsumeTrialQuota(user.id, 'san-pham-so-tao-tu-loai');
+  const quotaError = await checkAndConsumeSpsQuota(user.id, 'san-pham-so-tao-tu-loai');
   if (quotaError) { res.status(402).json({ error: quotaError, quotaExceeded: true }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -76,7 +76,7 @@ module.exports = async (req, res) => {
     const result = await callClaude({ apiKey, userContent });
     res.status(200).json({ result });
   } catch (err) {
-    await refundTrialQuota(user.id, 'san-pham-so-tao-tu-loai');
+    await refundSpsQuota(user.id, 'san-pham-so-tao-tu-loai');
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra khi dựng outline.' });
   }
 };
