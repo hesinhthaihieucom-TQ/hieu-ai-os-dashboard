@@ -60,7 +60,7 @@ function render(container, profile) {
     materialForm: newMaterialForm(), resultSource: null,
     // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
     // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
-    pendingId: null, activeProducts: null,
+    pendingId: null,
   };
 
   function persistWizardDraft() {
@@ -74,11 +74,6 @@ function render(container, profile) {
   function draw() { container.innerHTML = html(); bind(); }
 
   async function boot() {
-    // 2026-09-01: có thể có NHIỀU sản phẩm đang xây cùng lúc (Quỳnh: muốn lưu tạm 1 cái để bắt đầu
-    // cái khác). Màn "Tìm Sản Phẩm Phù Hợp" LUÔN phải hiện đúng nội dung của nó trước — sản phẩm
-    // đang xây dở chỉ là 1 dải gợi ý nhỏ ở đầu màn "choose-path" (activeBannerHtml), KHÔNG thay hẳn
-    // màn hình (Quỳnh phản hồi 2026-09-01: "đáng nhẽ phải hiện sẵn các loại chứ").
-    state.activeProducts = await listActiveIdeaResults();
     await bootFreshFlow();
   }
 
@@ -114,29 +109,8 @@ function render(container, profile) {
     return wizardHtml();
   }
 
-  // Dải gợi ý nhỏ ở đầu màn "choose-path" (chỉ khi có sản phẩm đang xây dở) — KHÔNG thay hẳn màn
-  // hình, "Tìm Sản Phẩm Phù Hợp" luôn phải hiện đúng nội dung của nó trước tiên.
-  function activeBannerHtml() {
-    if (!state.activeProducts || !state.activeProducts.length) return '';
-    return `
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Đang xây dở (${state.activeProducts.length})</div>
-        ${state.activeProducts.map((p, i) => {
-          const idea = p.result.phuong_an[p.chosen_index];
-          return `
-            <div class="card" data-continue-active="${i}" style="cursor:pointer;padding:12px 16px;margin-bottom:8px;">
-              <b style="font-size:14px;">${esc(idea.ten_san_pham)}</b>
-              <span style="font-size:12.5px;color:var(--ink-soft);"> — ${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
-
   function choosePathHtml() {
     return `
-      ${activeBannerHtml()}
       <h2>Bắt đầu tìm sản phẩm phù hợp</h2>
       <div class="hint-box">Dành cho người CHƯA rõ nên làm sản phẩm gì hoặc dạng nào. Nếu đã biết rõ chủ đề/đối tượng, chỉ cần chọn định dạng, dùng "🗂️ Chọn Loại Sản Phẩm Số" ở mục 2 sẽ nhanh hơn.</div>
       <div class="card" data-choose-path="material" style="cursor:pointer;">
@@ -314,12 +288,6 @@ function render(container, profile) {
   }
 
   function bindChoosePath() {
-    container.querySelectorAll('[data-continue-active]').forEach(el => {
-      el.onclick = () => {
-        const p = state.activeProducts[Number(el.getAttribute('data-continue-active'))];
-        window.renderXayDungNoiDung(container, p);
-      };
-    });
     container.querySelectorAll('[data-choose-path]').forEach(el => {
       el.onclick = () => {
         const v = el.getAttribute('data-choose-path');

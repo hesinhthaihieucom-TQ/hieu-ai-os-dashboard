@@ -110,7 +110,7 @@ function render(container, profile) {
     editing: false, editForm: null, editSaving: false,
     // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
     // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
-    pendingId: null, activeProducts: null,
+    pendingId: null,
     // { [dinh_dang]: true } — loại nào đang mở "Tìm hiểu thêm" ở màn pick-type, chỉ là UI tạm, không
     // cần lưu draft.
     expandedTypes: {},
@@ -123,10 +123,6 @@ function render(container, profile) {
   function draw() { container.innerHTML = html(); bind(); }
 
   async function boot() {
-    // 2026-09-01: có thể có NHIỀU sản phẩm đang xây cùng lúc (Quỳnh: muốn lưu tạm 1 cái để bắt đầu
-    // cái khác). Màn "Chọn Loại Sản Phẩm Số" LUÔN phải hiện đúng nội dung của nó (chọn loại trước
-    // tiên) — sản phẩm đang xây dở chỉ là 1 dải gợi ý nhỏ ở đầu trang, KHÔNG thay hẳn màn hình.
-    state.activeProducts = await listActiveIdeaResults();
     await bootFreshFlow();
   }
 
@@ -172,25 +168,6 @@ function render(container, profile) {
     return pickTypeHtml();
   }
 
-  // Dải gợi ý nhỏ ở đầu trang (chỉ khi có sản phẩm đang xây dở) — KHÔNG thay hẳn màn hình.
-  function activeBannerHtml() {
-    if (!state.activeProducts || !state.activeProducts.length) return '';
-    return `
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Đang xây dở (${state.activeProducts.length})</div>
-        ${state.activeProducts.map((p, i) => {
-          const idea = p.result.phuong_an[p.chosen_index];
-          return `
-            <div class="card" data-continue-active="${i}" style="cursor:pointer;padding:12px 16px;margin-bottom:8px;">
-              <b style="font-size:14px;">${esc(idea.ten_san_pham)}</b>
-              <span style="font-size:12.5px;color:var(--ink-soft);"> — ${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
-
   // Bảng tham khảo "cần chuẩn bị gì / người mua nhận được gì" cho 1 định dạng — dùng chung cho cả
   // danh sách chọn tay (pickTypeHtml) lẫn gợi ý của AI (aiSuggestResultHtml).
   function dinhDangInfoHtml(value) {
@@ -224,7 +201,6 @@ function render(container, profile) {
   // phản hồi 2026-09-01: "làm rõ ràng hơn, chi tiết hơn... đầu mục làm nổi bật lên".
   function pickTypeHtml() {
     return `
-      ${activeBannerHtml()}
       <h2>Chọn loại sản phẩm số</h2>
       <div class="hint-box">Dành cho người ĐÃ biết chủ đề/đối tượng muốn nhắm tới, chỉ cần chốt định dạng. Nếu chưa có ý tưởng gì cả, dùng "🧭 Tìm Sản Phẩm Phù Hợp" ở mục 1 sẽ hợp hơn.</div>
       <div class="card" style="margin-bottom:14px;">
@@ -408,17 +384,7 @@ function render(container, profile) {
     bindPickType();
   }
 
-  function bindActiveBanner() {
-    container.querySelectorAll('[data-continue-active]').forEach(el => {
-      el.onclick = () => {
-        const p = state.activeProducts[Number(el.getAttribute('data-continue-active'))];
-        window.renderXayDungNoiDung(container, p);
-      };
-    });
-  }
-
   function bindPickType() {
-    bindActiveBanner();
     container.querySelector('#pt-ai-btn').onclick = () => {
       state.form.screen = 'ai-suggest-input'; state.screen = 'ai-suggest-input'; persistFormDraft(); draw();
     };

@@ -12,7 +12,7 @@ const NAV = [
   { key: 'home', title: 'Trang chủ', hidden: true }, // không hiện trong sidebar — vào qua bấm logo
   { key: 'tao-ai', title: '🧭 Tìm Sản Phẩm Phù Hợp' },
   { key: 'chon-loai', title: '🗂️ Chọn Loại Sản Phẩm Số' },
-  { key: 'tao-template', title: '🎨 Tạo Template' },
+  { key: 'viet-noi-dung', title: '✍️ Viết Nội Dung' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
   { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
   { key: 'ke-hoach-ra-mat', title: '🚀 Kế Hoạch Ra Mắt' },

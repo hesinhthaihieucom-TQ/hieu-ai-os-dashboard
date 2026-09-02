@@ -91,7 +91,8 @@ async function loadPendingIdeaResult() {
   } catch (e) { return null; }
 }
 // TẤT CẢ sản phẩm ĐÃ CHỌN (đang xây ở Giai đoạn 2) của user, mới cập nhật nhất trước — dùng để hiện
-// danh sách "sản phẩm đang dở" khi vào Tìm Sản Phẩm Phù Hợp/Chọn Loại Sản Phẩm Số.
+// danh sách "sản phẩm đang dở" ở "Viết Nội Dung" (san-pham-so/js/viet-noi-dung.js, 2026-09-02; trước
+// đó hiện dải nhỏ ở đầu Tìm Sản Phẩm Phù Hợp/Chọn Loại, đã gộp về đúng 1 chỗ để đỡ trùng lặp).
 async function listActiveIdeaResults() {
   try {
     const { data } = await supabaseClient.from('product_idea_results').select('*').eq('user_id', currentUser.id).not('chosen_index', 'is', null).order('updated_at', { ascending: false });
