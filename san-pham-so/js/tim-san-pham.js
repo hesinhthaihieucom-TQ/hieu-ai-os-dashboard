@@ -138,6 +138,7 @@ function render(container, profile) {
     return `
       ${activeBannerHtml()}
       <h2>Bắt đầu tìm sản phẩm phù hợp</h2>
+      <div class="hint-box">Dành cho người CHƯA rõ nên làm sản phẩm gì hoặc dạng nào. Nếu đã biết rõ chủ đề/đối tượng, chỉ cần chọn định dạng, dùng "🗂️ Chọn Loại Sản Phẩm Số" ở mục 2 sẽ nhanh hơn.</div>
       <div class="card" data-choose-path="material" style="cursor:pointer;">
         <h2 style="font-size:16px;margin-bottom:6px;">📚 Tôi đã có sẵn tài liệu/kiến thức</h2>
         <div style="font-size:13.5px;color:var(--ink-soft);">Tải lên 1 file PDF (ghi chú, bài viết, tài liệu cũ...) — AI đọc thẳng nội dung để đề xuất sản phẩm, không cần trả lời 11 câu hỏi.</div>

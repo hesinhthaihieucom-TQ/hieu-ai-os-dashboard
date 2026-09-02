@@ -226,6 +226,7 @@ function render(container, profile) {
     return `
       ${activeBannerHtml()}
       <h2>Chọn loại sản phẩm số</h2>
+      <div class="hint-box">Dành cho người ĐÃ biết chủ đề/đối tượng muốn nhắm tới, chỉ cần chốt định dạng. Nếu chưa có ý tưởng gì cả, dùng "🧭 Tìm Sản Phẩm Phù Hợp" ở mục 1 sẽ hợp hơn.</div>
       <div class="card" style="margin-bottom:14px;">
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
         <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>

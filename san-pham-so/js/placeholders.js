@@ -20,15 +20,8 @@ window.SanPhamSoScreens['tao-template'] = comingSoon('Tạo Template', 'Công c�
 // 'nghien-cuu-thi-truong' đã đổi thành 'ke-hoach-ra-mat' (san-pham-so/js/ke-hoach-ra-mat.js, đã build
 // thật) — phần hữu ích nhất của mục cũ (nghiên cứu thị trường, giá/marketing) đã có ở nơi khác rồi.
 
-// "Tạo Ebook/Workbook" thực ra ĐÃ chạy được — nhưng hiện chỉ vào qua sau khi chọn xong 1 phương án
-// ở "Tìm Sản Phẩm Phù Hợp" (route 'tao-ai'), chưa có lối vào thẳng riêng (bỏ qua bước tìm ý tưởng).
-// Màn này là cầu nối tạm, sẽ thay bằng lối vào thẳng khi build chi tiết mục "Chọn Loại Sản Phẩm Số".
-window.SanPhamSoScreens['tao-ebook'] = function (container) {
-  container.innerHTML = `
-    <h2>📖 Tạo Ebook/Workbook</h2>
-    <div class="hint-box">Tính năng viết nội dung bằng AI hiện nằm trong luồng "Tìm Sản Phẩm Phù Hợp" — sau khi có ý tưởng, bạn sẽ được dẫn thẳng sang viết nội dung. Lối vào thẳng riêng (bỏ qua bước tìm ý tưởng) sẽ có khi build chi tiết mục "Chọn Loại Sản Phẩm Số".</div>
-    <div class="btn-row"><button class="btn" id="ph-go-tao-ai">Bắt đầu từ Tìm Sản Phẩm Phù Hợp →</button></div>
-  `;
-  container.querySelector('#ph-go-tao-ai').onclick = () => { location.hash = 'tao-ai'; };
-};
+// 'tao-ebook' (mục sidebar "Tạo Ebook/Workbook") đã BỎ hẳn khỏi NAV (app-shell.js) 2026-09-01 — nó
+// từng là màn cầu nối tạm dẫn sang 'tao-ai' trong lúc "Chọn Loại Sản Phẩm Số" chưa xây xong, giờ
+// "Chọn Loại" đã là lối vào thẳng thật (bỏ qua bước tìm ý tưởng đúng như màn cầu nối này định làm),
+// nên không còn lý do giữ mục riêng — tránh 3 lối vào cho cùng 1 đích gây rối người dùng mới.
 })();
