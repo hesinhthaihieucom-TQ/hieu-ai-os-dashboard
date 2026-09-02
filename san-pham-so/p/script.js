@@ -37,6 +37,43 @@ const slug = params.get('slug');
 const orderStorageKey = slug ? `sps_order_${slug}` : null;
 let pollTimer = null;
 
+// Chế độ xem trước mẫu giao diện (?demo=1&tpl=classic|bold|minimal) — dùng bởi bảng chọn mẫu ở
+// san-pham-so/js/tao-landing-page.js (nhúng qua <iframe>, 2026-09-02). Render THẲNG bằng đúng code
+// thật của trang mua công khai với dữ liệu mẫu dựng sẵn, để người bán thấy "mẫu thật" thay vì hình
+// minh hoạ giả — không gọi API/DB nào, không tạo đơn hàng thật.
+const isDemo = params.get('demo') === '1';
+
+function placeholderImg(label, bg, fg) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320"><rect width="480" height="320" fill="${bg}"/><text x="240" y="165" font-family="sans-serif" font-size="22" fill="${fg}" text-anchor="middle">${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function demoProduct(tpl) {
+  return {
+    slug: 'demo', title: 'Ebook: 21 Ngày Giải Nghiệp Tiền Bạc', description: 'Hành trình 21 ngày giúp bạn thoát khỏi vòng lặp chi tiêu mất kiểm soát, xây thói quen tài chính lành mạnh.',
+    price: 299000, cover_image_url: placeholderImg('Ảnh bìa sản phẩm', '#D7CDBA', '#5B5F55'),
+    dinh_dang: 'ebook', webinar_datetime: null, landing_page_template: tpl,
+    seller_photo_url: placeholderImg('Ảnh người bán', '#C9D6CF', '#2F6F62'),
+    case_study_images: [
+      { url: placeholderImg('Case study 1', '#EFE7D6', '#8A6A3C'), caption: 'Chị Hạnh — hết nợ thẻ tín dụng sau 3 tháng' },
+      { url: placeholderImg('Case study 2', '#EFE7D6', '#8A6A3C'), caption: 'Anh Khoa — tiết kiệm được 15% thu nhập mỗi tháng' },
+    ],
+    landing_page_content: {
+      hook: 'Ngừng lo tiền bạc — bắt đầu kiểm soát nó chỉ trong 21 ngày',
+      van_de: 'Bạn kiếm ra tiền nhưng cuối tháng vẫn không biết tiền đi đâu hết. Muốn tiết kiệm nhưng không biết bắt đầu từ đâu, muốn thoát nợ nhưng cứ trả rồi lại vay.',
+      loi_ich: ['Biết chính xác tiền của mình đang đi đâu mỗi ngày', 'Xây quỹ dự phòng đầu tiên trong đời chỉ sau 21 ngày', 'Thoát khỏi cảm giác lo lắng mỗi khi nghĩ đến tiền'],
+      noi_dung_gioi_thieu: '21 chương ngắn, mỗi ngày 1 bài tập cụ thể — từ ghi chép chi tiêu, lập ngân sách, đến xây quỹ khẩn cấp đầu tiên.',
+      ve_nguoi_ban: 'Người viết đã tự áp dụng đúng quy trình này để thoát khỏi 80 triệu nợ tiêu dùng trong 8 tháng.',
+      phu_hop_voi_ai: ['Người mới đi làm, chưa có thói quen quản lý tiền', 'Người đang có nợ muốn tìm lối ra rõ ràng'],
+      faq: [
+        { cau_hoi: 'Không giỏi tính toán có làm được không?', tra_loi: 'Được — mỗi ngày chỉ cần 10-15 phút, có mẫu điền sẵn.' },
+        { cau_hoi: 'Nhận sản phẩm bằng cách nào?', tra_loi: 'Link tải PDF gửi ngay sau khi thanh toán thành công.' },
+      ],
+      cta_text: 'Bắt đầu 21 ngày ngay',
+    },
+  };
+}
+
 async function fetchProduct() {
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/digital_products_public?slug=eq.${encodeURIComponent(slug)}&select=*`, {
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
@@ -75,17 +112,27 @@ function qrUrl(amount, content) {
 
 // Landing page ĐẦY ĐỦ (san-pham-so/js/tao-landing-page.js, AI viết) — CHỈ hiện khi người bán đã tạo,
 // không thì trang vẫn dùng đúng bản đơn giản cũ (title/description) như trước, không bắt buộc.
-function landingPageIntroHtml(lp) {
+// case_study_images/seller_photo_url nằm ở `product` (không phải `lp`/landing_page_content) — ảnh
+// THẬT do người bán tự tải lên (2026-09-02), khác nội dung chữ do AI viết.
+function landingPageIntroHtml(product, lp) {
   const loiIchHtml = Array.isArray(lp.loi_ich) && lp.loi_ich.length
     ? `<ul class="lp-list">${lp.loi_ich.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
   const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
     ? `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
+    ? `<div class="lp-section"><h2 class="lp-h2">Kết quả thực tế</h2><div class="lp-case-studies">${product.case_study_images.map(c => `
+        <div class="lp-case-study-item">
+          <img src="${esc(c.url)}" alt="">
+          ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
+        </div>
+      `).join('')}</div></div>` : '';
   return `
     ${lp.van_de ? `<div class="lp-section"><p class="lp-body">${esc(lp.van_de)}</p></div>` : ''}
     ${lp.noi_dung_gioi_thieu ? `<div class="lp-section"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : ''}
     ${loiIchHtml ? `<div class="lp-section"><h2 class="lp-h2">Lợi ích</h2>${loiIchHtml}</div>` : ''}
+    ${caseStudyHtml}
     ${phuHopHtml ? `<div class="lp-section"><h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
-    ${lp.ve_nguoi_ban ? `<div class="lp-section"><h2 class="lp-h2">Về người bán</h2><p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>` : ''}
+    ${lp.ve_nguoi_ban ? `<div class="lp-section"><h2 class="lp-h2">Về người bán</h2><div class="lp-seller">${product.seller_photo_url ? `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">` : ''}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div></div>` : ''}
   `;
 }
 function landingPageFaqHtml(lp) {
@@ -196,7 +243,7 @@ function renderProduct(product, order) {
       <h1>${esc(product.title)}</h1>
       ${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}
       ${webinarPreHtml}
-      ${lp ? landingPageIntroHtml(lp) : ''}
+      ${lp ? landingPageIntroHtml(product, lp) : ''}
       <div class="price">${Number(product.price).toLocaleString('vi-VN')}đ</div>
       ${buyHtml}
       <div class="hint-box" style="margin-top:12px;text-align:center;">🔒 Cam kết hoàn tiền 100% nếu không hài lòng trong 7 ngày</div>
@@ -205,7 +252,10 @@ function renderProduct(product, order) {
   `;
 
   const buyBtn = document.getElementById('buy-btn');
-  if (buyBtn) buyBtn.onclick = async () => {
+  if (buyBtn && isDemo) {
+    buyBtn.disabled = true;
+    buyBtn.title = 'Bản xem trước mẫu — không mua được ở đây.';
+  } else if (buyBtn) buyBtn.onclick = async () => {
     buyBtn.disabled = true; buyBtn.textContent = 'Đang xử lý…';
     try {
       const emailEl = document.getElementById('buyer-email');
@@ -224,6 +274,7 @@ function renderProduct(product, order) {
 }
 
 async function main() {
+  if (isDemo) { renderProduct(demoProduct(params.get('tpl') || 'classic'), null); return; }
   if (!slug) { renderNotFound(); return; }
   const product = await fetchProduct().catch(() => null);
   if (!product) { renderNotFound(); return; }

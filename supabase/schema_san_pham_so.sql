@@ -324,3 +324,50 @@ create or replace view digital_products_public as
   select id, slug, title, description, cover_image_url, price, dinh_dang, webinar_datetime, landing_page_content, landing_page_template
   from digital_products where status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 20. LANDING PAGE TỰ ĐỘNG — ẢNH CÁ NHÂN + CASE STUDY THẬT + ĐƠN HÀNG CỦA TÔI (2026-09-02)
+-- Quỳnh: "làm cho họ 90% luôn, 10% chỉ là người dùng tải thông tin của họ lên thôi" — người bán chỉ
+-- tải ảnh cá nhân (dùng chung mọi sản phẩm) + ảnh case study THẬT (khách/học viên thật của HỌ, ảnh do
+-- CHÍNH NGƯỜI BÁN tải lên — giải quyết đúng nguyên tắc "AI không được bịa testimonial" vì đây là ảnh
+-- thật, không phải chữ AI tự nghĩ ra), chọn mẫu giao diện, còn lại AI viết hết + tự động thu tiền/giao
+-- hàng như cũ (dòng tiền KHÔNG đổi trong batch này — vẫn về tài khoản Quỳnh, xem project memory về
+-- phương án "mỗi người dùng tự kết nối ngân hàng riêng qua SePay Bank Hub", để dự án riêng sau).
+-- ============================================================
+
+-- sps_seller_photo_url: ảnh cá nhân/thương hiệu, DÙNG CHUNG cho MỌI sản phẩm của 1 người bán (khác
+-- case_study_images — ảnh riêng theo TỪNG sản phẩm) — lưu base64 trong cột text, đúng quy ước ảnh nhỏ
+-- toàn repo (xem CLAUDE.md), không cần bucket Storage mới.
+alter table profiles add column if not exists sps_seller_photo_url text;
+
+-- profiles RLS đã KHOÁ profiles_self_update từ v3 (user thường không tự UPDATE thẳng profiles của
+-- mình được) — như mọi cột user tự ghi khác trong file này, phải qua 1 RPC security definer riêng,
+-- không đi qua .update() thẳng từ client (xem util.js/tao-landing-page.js).
+create or replace function public.update_sps_seller_photo(p_photo_url text)
+returns void as $$
+begin
+  update public.profiles set sps_seller_photo_url = p_photo_url where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.update_sps_seller_photo(text) to authenticated;
+
+-- case_study_images: mảng jsonb [{url, caption}], ảnh THẬT + chú thích do người bán tự viết, RIÊNG
+-- theo từng sản phẩm — hiện công khai TRƯỚC khi mua (là nội dung bán hàng, không phải deliverable),
+-- khác hẳn file_storage_path/external_link/mini_course_lessons.
+alter table digital_products add column if not exists case_study_images jsonb;
+
+-- View cuối cùng cho trang mua công khai — thêm case_study_images + JOIN lấy ảnh cá nhân người bán
+-- (chỉ lộ đúng 1 cột ảnh, không lộ thêm gì khác từ profiles).
+create or replace view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;
+
+-- "Đơn hàng của tôi" (san-pham-so/js/don-hang.js) — người bán tự xem đơn của MÌNH. digital_product_orders
+-- vẫn KHÔNG có policy nào cho anon/authenticated (xem mục 17 phía trên) — đọc qua api/san-pham-so-my-orders.js
+-- (service role, tự lọc product_id thuộc đúng owner_id = user.id trước khi query orders), không cần
+-- policy DB mới.

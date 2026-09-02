@@ -25,6 +25,33 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
+// Nén ảnh về JPEG + giới hạn kích thước cạnh dài trước khi lưu base64 vào cột text (đúng quy ước ảnh
+// nhỏ toàn repo, xem CLAUDE.md) — dùng cho ảnh cá nhân/case study (san-pham-so/js/tao-landing-page.js,
+// 2026-09-02), CÓ THỂ nhiều ảnh/sản phẩm nên phải nén để không phình payload/DB (cover_image_url cũ
+// chỉ 1 ảnh/sản phẩm nên chưa cần nén). maxDim=1000, quality=0.75 vừa đủ rõ cho ảnh minh hoạ trên web,
+// không cần chất lượng gốc.
+function compressImageToDataUrl(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Không đọc được file ảnh.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('File không phải ảnh hợp lệ.'));
+      img.onload = () => {
+        const scale = Math.min(1, (maxDim || 1000) / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality || 0.75));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // Đường dẫn TƯƠNG ĐỐI ("api/...", không phải "/api/...") — tự khớp đúng dù app chạy ở gốc Vercel
 // hay dưới tiền tố hesinhthaihieu.com/apptaosanphamso sau này (xem CLAUDE.md).
 //
