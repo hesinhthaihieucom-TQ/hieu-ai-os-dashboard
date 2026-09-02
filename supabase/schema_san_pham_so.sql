@@ -53,6 +53,10 @@ alter table sepay_transactions add column if not exists matched_product_order_id
 alter table digital_products enable row level security;
 drop policy if exists "digital_products_owner_all" on digital_products;
 create policy "digital_products_owner_all" on digital_products for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+-- Cho admin xem TOÀN BỘ sản phẩm (mọi người bán) — cần cho mục Quản trị (2026-09-01), trước đây
+-- KHÔNG có policy nào cho admin nên Quản trị không đọc được digital_products của người khác.
+drop policy if exists "digital_products_admin_read" on digital_products;
+create policy "digital_products_admin_read" on digital_products for select using (is_admin());
 
 alter table digital_product_orders enable row level security;
 -- KHÔNG có policy nào cho anon/authenticated trên BẢNG GỐC — đơn hàng chỉ được tạo/đọc/sửa qua
@@ -249,3 +253,28 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 revoke all on function public.refund_sps_ai_quota(uuid, int) from public, authenticated, anon;
 grant execute on function public.refund_sps_ai_quota(uuid, int) to service_role;
+
+-- ============================================================
+-- 18. ĐÁNH GIÁ cho Sản Phẩm Số (2026-09-01) — dùng LẠI bảng app_reviews có sẵn (chung với nhan-hieu/
+-- tai-chinh), giống đúng cách tai-chinh đã mở rộng (xem schema_tai_chinh.sql). QUAN TRỌNG: cột `app`
+-- có CHECK CONSTRAINT chỉ cho phép 'nhan-hieu'/'tai-chinh' — phải nới constraint này trước, nếu
+-- không insert app='san-pham-so' sẽ lỗi ngay (phát hiện lúc build, chưa từng báo lỗi thật vì chưa ai
+-- gửi giá trị này). sps_review_reward_given/sps_review_prompt_dismissed TÁCH RIÊNG khỏi
+-- review_reward_given/review_prompt_dismissed gốc (nhan-hieu) và tc_review_prompt_dismissed
+-- (tai-chinh) — 1 người có thể đã đánh giá Xây Nhân Hiệu nhưng chưa từng được hỏi đánh giá Sản Phẩm
+-- Số, không dùng chung cờ được.
+alter table app_reviews drop constraint if exists app_reviews_app_check;
+alter table app_reviews add constraint app_reviews_app_check check (app in ('nhan-hieu', 'tai-chinh', 'san-pham-so'));
+
+alter table profiles add column if not exists sps_review_reward_given boolean not null default false;
+alter table profiles add column if not exists sps_review_prompt_dismissed boolean not null default false;
+
+-- profiles RLS đã khoá update trực tiếp từ client cho user thường (xem ghi chú ở đầu file) — cần RPC
+-- riêng để bấm "Để sau" ghi được cờ đã bỏ qua, y hệt mark_review_prompt_dismissed() bên nhan-hieu.
+create or replace function public.mark_sps_review_prompt_dismissed()
+returns void as $$
+begin
+  update public.profiles set sps_review_prompt_dismissed = true where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_sps_review_prompt_dismissed() to authenticated;

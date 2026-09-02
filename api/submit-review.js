@@ -14,6 +14,7 @@
 // sau khi đã tự xác thực người gọi qua requireUser(). Không cho client tự khai reward.
 const { requireUser } = require('./_lib/auth');
 const { TRIAL_AI_LIMIT } = require('./_lib/trial-quota');
+const { SPS_TRIAL_AI_LIMIT } = require('./_lib/sps-ai-quota');
 const { supabaseAdmin } = require('./_lib/supabase-admin');
 const { sendPushToUser } = require('./_lib/push');
 const { currentCycleKey } = require('./_lib/quota-cycle');
@@ -33,7 +34,7 @@ async function notifyAdminsOfNewReview(targetApp, comment) {
   try {
     const resp = await supabaseAdmin('profiles?role=eq.admin&select=id');
     const admins = resp.ok ? await resp.json() : [];
-    const appLabel = targetApp === 'tai-chinh' ? 'Sổ Dòng Tiền Tâm Thức' : 'Xây Nhân Hiệu';
+    const appLabel = targetApp === 'tai-chinh' ? 'Sổ Dòng Tiền Tâm Thức' : targetApp === 'san-pham-so' ? 'Sản Phẩm Số' : 'Xây Nhân Hiệu';
     const preview = comment.length > 100 ? comment.slice(0, 100) + '…' : comment;
     await Promise.all(admins.map(a => sendPushToUser(a.id, {
       title: `⭐ Đánh giá mới — ${appLabel}`,
@@ -54,12 +55,12 @@ module.exports = async (req, res) => {
 
   try {
     const { comment, app } = req.body || {};
-    const targetApp = app === 'tai-chinh' ? 'tai-chinh' : 'nhan-hieu';
+    const targetApp = app === 'tai-chinh' ? 'tai-chinh' : app === 'san-pham-so' ? 'san-pham-so' : 'nhan-hieu';
     if (!comment || !comment.trim()) { res.status(400).json({ error: 'Chưa nhập cảm nhận.' }); return; }
     const trimmed = comment.trim();
     if (trimmed.length > 3000) { res.status(400).json({ error: 'Cảm nhận quá dài, rút gọn lại giúp mình.' }); return; }
 
-    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given,created_at`);
+    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given,sps_has_paid,sps_paid_ai_month,sps_paid_ai_bonus,sps_trial_ai_limit,sps_review_reward_given,created_at`);
     const profRows = profResp.ok ? await profResp.json() : [];
     const profile = profRows[0];
 
@@ -85,6 +86,40 @@ module.exports = async (req, res) => {
 
     const wordCount = countWords(trimmed);
     let rewarded = false;
+
+    // Sản Phẩm Số có hệ lượt AI RIÊNG (sps_*, tách biệt hoàn toàn khỏi nhan-hieu — xem
+    // api/_lib/sps-ai-quota.js) — thưởng vào đúng cột riêng đó, cờ "đã đánh giá/đã thưởng" cũng tách
+    // riêng (sps_review_reward_given/sps_review_prompt_dismissed) vì đã đánh giá Xây Nhân Hiệu không
+    // có nghĩa đã từng được hỏi đánh giá Sản Phẩm Số.
+    if (targetApp === 'san-pham-so') {
+      if (wordCount >= MIN_WORDS_FOR_REWARD) {
+        if (profile && !profile.sps_review_reward_given) {
+          const patch = { sps_review_reward_given: true, sps_review_prompt_dismissed: true };
+          if (profile.sps_has_paid) {
+            const cycleKey = currentCycleKey(profile.created_at);
+            if (profile.sps_paid_ai_month === cycleKey) {
+              patch.sps_paid_ai_bonus = (profile.sps_paid_ai_bonus || 0) + REWARD_LUOT;
+            } else {
+              patch.sps_paid_ai_month = cycleKey;
+              patch.sps_paid_ai_uses = 0;
+              patch.sps_paid_ai_bonus = REWARD_LUOT;
+            }
+          } else {
+            patch.sps_trial_ai_limit = (profile.sps_trial_ai_limit || SPS_TRIAL_AI_LIMIT) + REWARD_LUOT;
+          }
+          const patchResp = await supabaseAdmin(`profiles?id=eq.${user.id}`, {
+            method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(patch),
+          });
+          rewarded = patchResp.ok;
+        }
+      } else {
+        await supabaseAdmin(`profiles?id=eq.${user.id}`, {
+          method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify({ sps_review_prompt_dismissed: true }),
+        });
+      }
+      res.status(200).json({ rewarded, wordCount, minWords: MIN_WORDS_FOR_REWARD, rewardLuot: REWARD_LUOT });
+      return;
+    }
 
     if (wordCount >= MIN_WORDS_FOR_REWARD) {
       if (profile && !profile.review_reward_given) {

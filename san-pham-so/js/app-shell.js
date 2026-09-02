@@ -17,6 +17,7 @@ const NAV = [
   { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
   { key: 'nang-cap', title: '🔥 Nâng cấp / Mua gói' },
+  { key: 'quan-tri', title: 'Quản trị', adminOnly: true },
   { key: 'tai-khoan', title: 'Tài khoản', hidden: true }, // không hiện trong sidebar — vào qua bấm tên ở cuối sidebar
 ];
 let currentRoute = 'home';
@@ -123,6 +124,87 @@ function bindSpsPaymentCard(container) {
   });
 }
 
+// ============================================================
+// Đánh giá app (2026-09-01) — port nguyên xi maybeShowReviewPrompt()/loadReviewPromptEligibility()
+// từ nhan-hieu/js/app-shell.js, đổi ngưỡng đủ điều kiện (nhan-hieu dùng bảng "posts", ở đây dùng
+// digital_products vì Sản Phẩm Số không có khái niệm "bài đăng") + cờ riêng sps_review_prompt_dismissed
+// (dùng chung bảng app_reviews, app='san-pham-so' — xem api/submit-review.js).
+// ============================================================
+const SPS_REVIEW_PROMPT_MIN_DAYS = 3;
+const SPS_REVIEW_PROMPT_MIN_PRODUCTS = 1;
+const SPS_REVIEW_MIN_WORDS_FOR_REWARD = 50;
+const SPS_REVIEW_REWARD_LUOT = 20;
+let spsReviewPromptEligible = false;
+
+async function loadSpsReviewPromptEligibility() {
+  if (!currentUser || !currentProfile) { spsReviewPromptEligible = false; return; }
+  const daysSinceSignup = currentProfile.created_at
+    ? (Date.now() - new Date(currentProfile.created_at).getTime()) / 86400000 : 0;
+  let qualifies = daysSinceSignup >= SPS_REVIEW_PROMPT_MIN_DAYS;
+  if (!qualifies) {
+    try {
+      const { count } = await supabaseClient.from('digital_products').select('id', { count: 'exact', head: true }).eq('owner_id', currentUser.id);
+      qualifies = (count || 0) >= SPS_REVIEW_PROMPT_MIN_PRODUCTS;
+    } catch (e) { /* fail open về false, không chặn gì thêm */ }
+  }
+  spsReviewPromptEligible = qualifies && !currentProfile.sps_review_prompt_dismissed;
+}
+
+function maybeShowSpsReviewPrompt() {
+  if (!spsReviewPromptEligible) return;
+  if (document.getElementById('sps-review-prompt-overlay')) return;
+  spsReviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sps-review-prompt-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Sản Phẩm Số 🎉</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${SPS_REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${SPS_REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái bạn thích nhất điều gì — làm sản phẩm nhanh hơn bao nhiêu, dễ bán hơn thế nào... Viết càng thật càng tốt.</div>
+      <textarea id="sps-rp-comment" placeholder="Ví dụ: Từ lúc chưa có ý tưởng gì tới lúc ra được sản phẩm hoàn chỉnh chỉ mất..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+      <div id="sps-rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
+        <span id="sps-rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="sps-rp-submit" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close() { overlay.remove(); }
+  const dismissServerSide = async () => {
+    if (currentProfile) currentProfile.sps_review_prompt_dismissed = true;
+    try { await supabaseClient.rpc('mark_sps_review_prompt_dismissed'); } catch (e) {}
+  };
+  overlay.querySelector('#sps-rp-skip').onclick = async () => { close(); await dismissServerSide(); };
+
+  overlay.querySelector('#sps-rp-submit').onclick = async () => {
+    const textarea = overlay.querySelector('#sps-rp-comment');
+    const errorEl = overlay.querySelector('#sps-rp-error');
+    const comment = textarea.value.trim();
+    if (!comment) { errorEl.textContent = 'Chưa nhập cảm nhận.'; errorEl.style.display = 'block'; return; }
+    const btn = overlay.querySelector('#sps-rp-submit');
+    btn.disabled = true; btn.textContent = 'Đang gửi…';
+    try {
+      const data = await callApi('api/submit-review', { comment, app: 'san-pham-so' });
+      if (currentProfile) {
+        currentProfile.sps_review_prompt_dismissed = true;
+        if (data && data.rewarded) {
+          if (currentProfile.sps_has_paid) currentProfile.sps_paid_ai_bonus = (currentProfile.sps_paid_ai_bonus || 0) + SPS_REVIEW_REWARD_LUOT;
+          else currentProfile.sps_trial_ai_limit = (currentProfile.sps_trial_ai_limit || SPS_TRIAL_AI_LIMIT) + SPS_REVIEW_REWARD_LUOT;
+        }
+      }
+      const footEl = document.getElementById('sidebar-foot-info');
+      if (footEl) footEl.innerHTML = `<div style="margin-bottom:6px;">${esc((currentProfile && currentProfile.full_name) || '')}</div>${spsQuotaHint()}`;
+      close();
+    } catch (e) {
+      errorEl.textContent = e.message; errorEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Gửi đánh giá';
+    }
+  };
+}
+
 function renderLogin(err) {
   const app = document.getElementById('app');
   app.innerHTML = `
@@ -181,7 +263,8 @@ function renderShell(profile) {
     </div>
   `;
 
-  const visibleNav = NAV.filter(n => !n.hidden);
+  const isAdmin = profile && profile.role === 'admin';
+  const visibleNav = NAV.filter(n => !n.hidden && (!n.adminOnly || isAdmin));
   const nav = app.querySelector('#sidebar-nav');
   nav.innerHTML = visibleNav.map((n, i) => `
     <div class="sidebar-item ${currentRoute === n.key ? 'active' : ''}" data-key="${n.key}">
@@ -224,9 +307,11 @@ async function boot() {
   // Cần thêm role/created_at/sps_* so với bản trước (chỉ id,full_name) — role để nhận diện admin
   // (không giới hạn lượt), created_at để tính đúng chu kỳ 30 ngày (currentCycleKey), sps_* để hiện
   // đúng số lượt còn lại + trạng thái gói riêng của Sản Phẩm Số (xem spsQuotaHint()).
-  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,role,created_at,sps_has_paid,sps_access_until,sps_trial_ai_uses,sps_trial_ai_limit,sps_paid_ai_uses,sps_paid_ai_month,sps_paid_ai_bonus,sps_ref_code').eq('id', currentUser.id).maybeSingle();
+  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,role,created_at,sps_has_paid,sps_access_until,sps_trial_ai_uses,sps_trial_ai_limit,sps_paid_ai_uses,sps_paid_ai_month,sps_paid_ai_bonus,sps_ref_code,sps_review_prompt_dismissed').eq('id', currentUser.id).maybeSingle();
   currentProfile = profile;
   renderShell(profile);
+  await loadSpsReviewPromptEligibility();
+  maybeShowSpsReviewPrompt();
 }
 
 supabaseClient.auth.onAuthStateChange((event) => {
