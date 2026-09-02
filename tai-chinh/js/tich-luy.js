@@ -53,14 +53,20 @@ function render(container, ctx){
     state.loading = true; draw();
     const yearAgo = new Date(); yearAgo.setMonth(yearAgo.getMonth()-11);
     const yearAgoDate = `${yearAgo.getFullYear()}-${String(yearAgo.getMonth()+1).padStart(2,'0')}-01`;
-    const [snapshotsRes, entriesRes] = await Promise.all([
+    const [snapshotsRes, entriesRes, legacyEntriesRes] = await Promise.all([
       ctx.supabase.from('tc_networth_snapshots').select('*').eq('user_id', ctx.user.id).order('snapshot_month', { ascending:true }),
+      // "Tích Lũy" giờ là 1 LOẠI giao dịch riêng (2026-09-01, góp ý Quỳnh) — giao dịch mới ghi thẳng
+      // type='tich_luy'.
+      ctx.supabase.from('tc_finance_entries').select('amount, entry_date')
+        .eq('user_id', ctx.user.id).eq('type', 'tich_luy').gte('entry_date', yearAgoDate),
+      // Tương thích ngược với vài dòng (nếu có) còn ghi theo bản CŨ hơn: type='expense' +
+      // category_label='Tích Lũy' — xem comment ở schema_tai_chinh.sql.
       ctx.supabase.from('tc_finance_entries').select('amount, entry_date')
         .eq('user_id', ctx.user.id).eq('type', 'expense').eq('category_label', TICH_LUY_CATEGORY_LABEL).gte('entry_date', yearAgoDate),
     ]);
     state.snapshots = snapshotsRes.data || [];
     state.flowByMonth = {};
-    (entriesRes.data||[]).forEach(e=>{
+    [...(entriesRes.data||[]), ...(legacyEntriesRes.data||[])].forEach(e=>{
       const m = e.entry_date.slice(0,7);
       state.flowByMonth[m] = (state.flowByMonth[m]||0) + Number(e.amount);
     });

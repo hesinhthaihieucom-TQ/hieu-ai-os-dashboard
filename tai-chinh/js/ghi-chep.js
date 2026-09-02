@@ -48,7 +48,7 @@ function render(container, ctx){
     loading: true,
     date: isoDate(new Date()),
     entries: [],
-    form: { type:'expense', amount:'', description:'', category:'', category_label:'', tich_luy_category:'', vibe:null, vibe_reason:'' },
+    form: { type:'expense', amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' },
     saving: false,
     error: null,
     debtWarning: null,
@@ -198,11 +198,11 @@ function render(container, ctx){
       amount: amt,
       description: state.form.description.trim(),
       category: (state.form.type === 'expense' && state.form.category) ? state.form.category : null,
+      // "Tích Lũy" giờ là 1 LOẠI giao dịch riêng (2026-09-01, góp ý Quỳnh: "mục loại giao dịch cũng
+      // phải có mục tích lũy riêng chứ" — nâng cấp từ bản trước chỉ là danh mục con ẩn dưới Chi tiêu)
+      // — category_label ở đây chính là danh mục con Tích Lũy (Vàng, Cổ phiếu...), đọc từ
+      // tc_categories type='tich_luy' giống hệt cách Thu nhập/Chi tiêu đã có danh mục riêng.
       category_label: state.form.category_label.trim() || null,
-      // Danh mục con của "Tích Lũy" (2026-09-01, góp ý Quỳnh: "tích lũy phải có ở những phần mà chi
-      // tiêu và thu nhập có chứ nhỉ") — CHỈ có ý nghĩa khi category_label đúng là Tích Lũy, không thì
-      // luôn để trống. Không đổi type/category_label — giữ nguyên logic loại trừ đang dùng ở nơi khác.
-      tich_luy_category: (state.form.category_label.trim()===TICH_LUY_CATEGORY_LABEL && state.form.tich_luy_category) ? state.form.tich_luy_category : null,
       vibe: state.form.vibe,
       vibe_reason: state.form.vibe_reason.trim() || null,
     };
@@ -220,7 +220,7 @@ function render(container, ctx){
         default_classification: null,
       });
     }
-    state.form = { type: state.form.type, amount:'', description:'', category:'', category_label:'', tich_luy_category:'', vibe:null, vibe_reason:'' };
+    state.form = { type: state.form.type, amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' };
     state.showCustomCategory = false;
     await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
@@ -230,9 +230,12 @@ function render(container, ctx){
   function html(){
     const income = state.entries.filter(e=>e.type==='income');
     const expense = state.entries.filter(e=>e.type==='expense');
+    const tichLuy = state.entries.filter(e=>e.type==='tich_luy');
     const totalIncome = income.reduce((s,e)=>s+Number(e.amount),0);
     const totalExpense = expense.reduce((s,e)=>s+Number(e.amount),0);
+    const totalTichLuy = tichLuy.reduce((s,e)=>s+Number(e.amount),0);
     const isIncome = state.form.type === 'income';
+    const isTichLuy = state.form.type === 'tich_luy';
 
     return `
       <span class="tour-trigger" id="gc-start-tour">❓ Hướng dẫn</span>
@@ -249,11 +252,12 @@ function render(container, ctx){
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Loại giao dịch</label>
         <div class="chips" id="gc-type-chips">
           <div class="chip ${isIncome?'selected':''}" data-type="income">💰 Thu nhập</div>
-          <div class="chip ${!isIncome?'selected':''}" data-type="expense">💸 Chi tiêu</div>
+          <div class="chip ${state.form.type==='expense'?'selected':''}" data-type="expense">💸 Chi tiêu</div>
+          <div class="chip ${isTichLuy?'selected':''}" data-type="tich_luy">🏦 Tích Lũy</div>
         </div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Nguồn thu (Lương, thưởng, thu nhập phụ...)':'Nội dung chi (Mua gì? Ở đâu?)'}</label>
-        <input type="text" id="gc-desc" placeholder="${isIncome?'VD: Lương tháng 8':'VD: Ăn trưa, đổ xăng...'}" value="${esc(state.form.description)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Nguồn thu (Lương, thưởng, thu nhập phụ...)':isTichLuy?'Chuyển vào đâu?':'Nội dung chi (Mua gì? Ở đâu?)'}</label>
+        <input type="text" id="gc-desc" placeholder="${isIncome?'VD: Lương tháng 8':isTichLuy?'VD: Mua vàng tiết kiệm':'VD: Ăn trưa, đổ xăng...'}" value="${esc(state.form.description)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
 
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Số tiền (đồng)</label>
         <input type="text" inputmode="numeric" id="gc-amount" placeholder="0" value="${esc(formatThousands(state.form.amount))}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
@@ -271,29 +275,21 @@ function render(container, ctx){
 
         ${isIncome ? `
           <div class="hint-box" id="gc-fund-split" style="margin-top:14px;">${fundSplitHtml(state.form.amount, state.debtWarning)}</div>
-        ` : `
+        ` : state.form.type==='expense' ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Khoản này là Tài sản hay Tiêu sản?', 'tai_san', 'tieu_san')} <span style="font-weight:400;">(không bắt buộc)</span></label>
           <div class="chips" id="gc-category-chips">
             ${EXPENSE_CATEGORIES.map(c=>`<div class="chip ${state.form.category===c.key?'selected':''}" data-category="${c.key}" title="${esc(c.hint)}">${esc(c.label)}</div>`).join('')}
           </div>
-        `}
+        ` : ''}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':'Danh mục chi tiêu'} <span style="font-weight:400;">(<a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':isTichLuy?'Tích Lũy vào đâu':'Danh mục chi tiêu'} <span style="font-weight:400;">(<a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
         <select id="gc-category-label-select" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
           <option value="" ${!state.form.category_label && !state.showCustomCategory?'selected':''}>— Chọn danh mục —</option>
           ${state.categories.filter(c=>c.type===state.form.type).map(c=>`<option value="${esc(c.label)}" ${state.form.category_label===c.label && !state.showCustomCategory?'selected':''}>${esc(c.label)}</option>`).join('')}
           <option value="__custom__" ${state.showCustomCategory?'selected':''}>+ Khác (thêm mới)...</option>
         </select>
         ${state.showCustomCategory ? `
-          <input type="text" id="gc-category-label-custom" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Cho thuê nhà...':'VD: Tiền điện nước...'}" style="width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
-        ` : ''}
-
-        ${!isIncome && state.form.category_label === TICH_LUY_CATEGORY_LABEL ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Tích Lũy vào đâu? <span style="font-weight:400;">(không bắt buộc, <a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục con →</a>)</span></label>
-          <select id="gc-tich-luy-category-select" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
-            <option value="" ${!state.form.tich_luy_category?'selected':''}>— Chọn danh mục con —</option>
-            ${state.categories.filter(c=>c.type==='tich_luy').map(c=>`<option value="${esc(c.label)}" ${state.form.tich_luy_category===c.label?'selected':''}>${esc(c.label)}</option>`).join('')}
-          </select>
+          <input type="text" id="gc-category-label-custom" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Cho thuê nhà...':isTichLuy?'VD: Vàng, Cổ phiếu...':'VD: Tiền điện nước...'}" style="width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
         ` : ''}
 
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
@@ -303,20 +299,23 @@ function render(container, ctx){
       <div class="source-grid" style="margin-bottom:16px;">
         <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu ngày này</div></div>
         <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi ngày này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--gold);">${totalTichLuy.toLocaleString('vi-VN')}đ</div><div class="label">Tổng tích luỹ ngày này</div></div>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (state.entries.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào cho ngày này.</div>` : state.entries.map(e=>{
         const catLabel = e.type==='expense' ? ((EXPENSE_CATEGORIES.find(c=>c.key===e.category)||{}).label) : null;
         const spendLabel = e.category_label || null;
+        const typeLabel = e.type==='income' ? '💰 Thu nhập' : e.type==='tich_luy' ? '🏦 Tích Lũy' : '💸 Chi tiêu';
+        const amountColor = e.type==='income' ? 'var(--accent)' : e.type==='tich_luy' ? 'var(--gold)' : 'var(--danger)';
         return `
         <div class="list-item">
           <div class="txt">
-            <div class="meta">${vibeIcon(e.vibe)} ${e.type==='income'?'💰 Thu nhập':'💸 Chi tiêu'}${catLabel?` · ${esc(catLabel)}`:''}${spendLabel?` · ${esc(spendLabel)}`:''}${e.tich_luy_category?` · ${esc(e.tich_luy_category)}`:''}</div>
+            <div class="meta">${vibeIcon(e.vibe)} ${typeLabel}${catLabel?` · ${esc(catLabel)}`:''}${spendLabel?` · ${esc(spendLabel)}`:''}${e.tich_luy_category?` · ${esc(e.tich_luy_category)}`:''}</div>
             ${esc(e.description||'(không ghi chú)')}
             ${e.vibe_reason ? `<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:4px;">"${esc(e.vibe_reason)}"</div>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-            <div style="font-weight:700;color:${e.type==='income'?'var(--accent)':'var(--danger)'};">${e.type==='income'?'+':'-'}${Number(e.amount).toLocaleString('vi-VN')}đ</div>
+            <div style="font-weight:700;color:${amountColor};">${e.type==='income'?'+':'-'}${Number(e.amount).toLocaleString('vi-VN')}đ</div>
             <span class="btn-ghost btn btn-sm" data-delete="${e.id}" style="padding:5px 10px;font-size:12px;">Xoá</span>
           </div>
         </div>
@@ -385,8 +384,6 @@ function render(container, ctx){
     };
     const customInput = container.querySelector('#gc-category-label-custom');
     if(customInput) customInput.oninput = (e)=>{ state.form.category_label = e.target.value; persistDraft(); };
-    const tichLuyCategorySelect = container.querySelector('#gc-tich-luy-category-select');
-    if(tichLuyCategorySelect) tichLuyCategorySelect.onchange = (e)=>{ state.form.tich_luy_category = e.target.value; persistDraft(); };
     container.querySelector('#gc-desc').oninput = (e)=>{ state.form.description = e.target.value; persistDraft(); };
     container.querySelector('#gc-amount').oninput = (e)=>{
       state.form.amount = onlyDigits(e.target.value);

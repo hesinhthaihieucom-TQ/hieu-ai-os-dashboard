@@ -530,4 +530,17 @@ create policy "tc_yearly_reflections_owner_all" on tc_yearly_reflections for all
 alter table tc_categories drop constraint if exists tc_categories_type_check;
 alter table tc_categories add constraint tc_categories_type_check check (type in ('income','expense','tich_luy'));
 
+-- CỘT CŨ, không còn ghi mới nữa (xem migration ngay dưới) — giữ lại chỉ để không mất dữ liệu nếu đã
+-- lỡ ghi vài dòng trong lúc bản "danh mục con ẩn dưới Chi tiêu" còn tồn tại (rất ngắn, 1 bản build).
 alter table tc_finance_entries add column if not exists tich_luy_category text;
+
+-- NÂNG CẤP tiếp: "Tích Lũy" giờ là 1 LOẠI giao dịch riêng ngang hàng Thu nhập/Chi tiêu, không còn là
+-- danh mục con ẩn dưới Chi tiêu nữa (2026-09-01, góp ý Quỳnh: "mục loại giao dịch cũng phải có mục
+-- tích lũy riêng chứ" — sau khi đã thấy bản trước chưa đủ). Giao dịch Tích Lũy MỚI ghi thẳng
+-- type='tich_luy' + category_label=<danh mục con, VD "Vàng"> — không dùng type='expense' +
+-- category_label='Tích Lũy' + tich_luy_category nữa (bản cũ ở trên). tong-ket-tuan.js/
+-- tong-ket-thang.js đã tự loại type='tich_luy' khỏi tổng thu/chi (chỉ cộng type==='income'/'expense'),
+-- không cần sửa gì thêm ở đó — VẪN giữ nguyên loại trừ category_label==='Tích Lũy' để tương thích
+-- ngược với vài dòng cũ (nếu có) còn mang type='expense'.
+alter table tc_finance_entries drop constraint if exists tc_finance_entries_type_check;
+alter table tc_finance_entries add constraint tc_finance_entries_type_check check (type in ('income','expense','tich_luy'));
