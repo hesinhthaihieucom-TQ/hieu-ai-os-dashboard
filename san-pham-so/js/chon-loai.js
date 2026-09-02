@@ -18,41 +18,77 @@ const FORM_DRAFT_KEY = 'chon-loai-form';
 // GÌ — mục tiêu "để người dùng còn học được từ web này" (Quỳnh 2026-09-01). can_chuan_bi/nguoi_mua_nhan
 // lấy đúng theo bảng thật Quỳnh đã đưa (cơ chế giao hàng của "Sản phẩm của tôi"/landing page — ebook
 // đã chạy, các loại còn lại là hướng sẽ làm, không phải đã có sẵn UI riêng cho từng loại ở bước này).
+// la_gi/uu_diem/thach_thuc/phu_hop_neu: nội dung "Tìm hiểu thêm" — mở rộng sâu hơn hẳn 3 dòng tóm
+// tắt ở trên, để người dùng thật sự cân nhắc kỹ trước khi chọn (Quỳnh 2026-09-01: "chi tiết từng
+// thứ nhỏ cho các loại"). KHÔNG có giá tham khảo ở đây (Quỳnh xác nhận không cần) — giá tham khảo
+// theo định dạng đã có sẵn ở màn "Sản phẩm của tôi" (danh-sach-san-pham.js), không lặp lại ở đây.
+const DINH_DANG_ICON = {
+  ebook: '📘', checklist_workbook: '✅', template_file_mau: '🧰', mini_course: '🎓',
+  coaching_1_1: '🧑‍🏫', cong_dong_tra_phi: '👥', webinar: '🎥',
+};
 const DINH_DANG_INFO = {
   ebook: {
     khi_nao: 'Cần giải thích khái niệm/tư duy — người đọc chỉ cần đọc là hiểu, không cần thực hành theo tiến trình.',
     can_chuan_bi: 'AI tự viết (chọn "Tạo bằng AI"), hoặc tự upload file PDF sẵn có.',
     nguoi_mua_nhan: 'Link tải file PDF.',
+    la_gi: '1 file PDF hoàn chỉnh, người mua đọc trên điện thoại hoặc máy tính — không cần cài thêm công cụ nào khác.',
+    uu_diem: 'Làm nhanh nhất trong các loại — AI viết xong là xuất được luôn, không cần quay video/ghi âm, không phải làm gì thêm sau khi bán.',
+    thach_thuc: 'Nội dung phải đủ chi tiết để người đọc tự làm được một mình — không có ai hướng dẫn trực tiếp nếu họ bị mắc kẹt giữa chừng.',
+    phu_hop_neu: 'Bạn giỏi diễn đạt bằng chữ, và chủ đề có thể trình bày rõ ràng theo từng bước mà không cần hình ảnh/video minh hoạ.',
   },
   checklist_workbook: {
     khi_nao: 'Cần thực hành theo từng bước — có form/checklist để tự theo dõi tiến trình.',
     can_chuan_bi: 'AI tự viết (chọn "Tạo bằng AI"), hoặc tự upload file PDF sẵn có.',
     nguoi_mua_nhan: 'Link tải file PDF.',
+    la_gi: 'Giống ebook nhưng thiên về biểu mẫu để điền/tích vào, không phải đọc-hiểu mà là làm-theo.',
+    uu_diem: 'Người mua cảm thấy "dùng được ngay" rõ hơn ebook thuần chữ — dễ thấy giá trị nhanh, dễ tạo cảm giác hoàn thành.',
+    thach_thuc: 'Phải chia nội dung thành từng bước hành động cụ thể, không chỉ lý thuyết — nếu chỉ liệt kê ý tưởng chung chung sẽ không có gì để "điền".',
+    phu_hop_neu: 'Chủ đề của bạn có quy trình rõ ràng (ví dụ: làm trong 30 ngày, 5 bước, checklist trước khi làm gì đó).',
   },
   template_file_mau: {
     khi_nao: 'Cần công cụ tra cứu, dùng đi dùng lại nhiều lần (không phải đọc 1 lần rồi thôi).',
     can_chuan_bi: '1 link chia sẻ (Canva/Notion/Excel...) — không phải upload file, vì bản chất là link dùng lại nhiều lần.',
     nguoi_mua_nhan: 'Link mở template đó.',
+    la_gi: '1 công cụ (thường là file Excel/Notion/Canva) người mua tải về và dùng đi dùng lại nhiều lần, không phải đọc 1 lần rồi cất đi.',
+    uu_diem: 'Giá trị lâu dài với người mua nên dễ được đánh giá cao — bạn cũng gần như không cần cập nhật nội dung sau khi đã bán.',
+    thach_thuc: 'Bạn cần tự chuẩn bị sẵn file công cụ đó (Excel/Notion/Canva...) — AI ở app này chỉ giúp viết outline/hướng dẫn cách dùng, không tự tạo ra file Excel/Notion thật.',
+    phu_hop_neu: 'Bạn đã có sẵn 1 bảng tính/công cụ mình hay dùng, và thấy nhiều người khác cũng đang cần đúng thứ đó.',
   },
   mini_course: {
     khi_nao: 'Cần học có tiến trình nhiều bài, đi từng bước theo thời gian.',
     can_chuan_bi: 'Danh sách nhiều bài học (mỗi bài: tên + link video/Zoom hoặc file).',
     nguoi_mua_nhan: '1 trang riêng liệt kê từng bài học + link mở từng bài.',
+    la_gi: 'Nhiều bài học nhỏ có thứ tự, mỗi bài giải quyết 1 phần của vấn đề lớn hơn — người mua đi theo tiến trình chứ không đọc 1 lần là xong.',
+    uu_diem: 'Cảm giác "được đồng hành" rõ hơn hẳn 1 file đơn lẻ — khối lượng nội dung/công sức nhiều hơn nên thường được định giá cao hơn.',
+    thach_thuc: 'Cần chuẩn bị nội dung cho TỪNG bài học riêng (không chỉ 1 file) — tốn thời gian hơn ebook nhiều, và phải giữ chất lượng đều giữa các bài.',
+    phu_hop_neu: 'Chủ đề cần đi theo tiến trình thời gian (ngày 1 làm gì, ngày 2 làm gì...), không phải kiến thức đọc 1 lần là áp dụng được ngay.',
   },
   coaching_1_1: {
     khi_nao: 'Cần hướng dẫn riêng theo từng người, gặp trực tiếp.',
     can_chuan_bi: '1 link đặt lịch (Calendly...).',
     nguoi_mua_nhan: 'Nút "Đặt lịch ngay" hiện sau khi thanh toán, dẫn tới link đó.',
+    la_gi: 'Không phải 1 file cố định mà là buổi gặp trực tiếp (online/offline) giữa bạn và người mua — sản phẩm chính là chính bạn và thời gian của bạn.',
+    uu_diem: 'Thường được định giá cao nhất trong các loại vì là kinh nghiệm cá nhân, không nhân bản/copy được như file.',
+    thach_thuc: 'Không "bán xong là xong" — bạn phải có mặt cho từng buổi, nên không nhân rộng được nếu bán nhiều cùng lúc (giới hạn bởi chính thời gian của bạn).',
+    phu_hop_neu: 'Bạn thoải mái nói chuyện trực tiếp, có kinh nghiệm thật để tư vấn theo đúng tình huống riêng của từng người, không phải nội dung chung chung ai cũng như ai.',
   },
   cong_dong_tra_phi: {
     khi_nao: 'Cần đồng hành lâu dài, hỏi đáp liên tục trong 1 nhóm.',
     can_chuan_bi: '1 link mời nhóm (Zalo/Telegram/Facebook).',
     nguoi_mua_nhan: 'Link mời nhóm (nên giới hạn thời gian dùng, giống link tải file).',
+    la_gi: '1 nhóm kín (Zalo/Telegram/Facebook) người mua trả phí để tham gia, thường thu phí định kỳ theo tháng/quý.',
+    uu_diem: 'Doanh thu đều đặn hàng tháng thay vì bán 1 lần rồi thôi — đồng thời xây được cộng đồng gắn bó lâu dài với bạn.',
+    thach_thuc: 'Cần hoạt động/trả lời trong nhóm thường xuyên — 1 nhóm im lặng sẽ nhanh bị huỷ phí, đây là loại tốn công sức duy trì nhiều nhất trong 7 loại.',
+    phu_hop_neu: 'Bạn có thời gian đều đặn để chăm nhóm, và thích tương tác/trả lời câu hỏi mỗi ngày hoặc mỗi tuần.',
   },
   webinar: {
     khi_nao: 'Cần 1 buổi học/sự kiện trực tiếp, tương tác thời gian thực.',
     can_chuan_bi: 'Ngày giờ diễn ra + link Zoom/Meet.',
     nguoi_mua_nhan: 'Trang chờ hiện đồng hồ đếm ngược, sau khi mua gửi link tham gia.',
+    la_gi: '1 buổi học/chia sẻ trực tiếp online (Zoom/Meet) diễn ra vào đúng 1 thời điểm cố định, không phải nội dung xem lại bất cứ lúc nào.',
+    uu_diem: 'Làm nhanh nhất để ra mắt — không cần viết nội dung dài trước, chỉ cần chuẩn bị dàn ý nói và tổ chức 1 buổi.',
+    thach_thuc: 'Phụ thuộc vào đúng 1 thời điểm — người mua bận không tham dự được sẽ dễ khó chịu nếu bạn không có bản ghi lại; cần chọn giờ phù hợp với số đông.',
+    phu_hop_neu: 'Bạn tự tin nói chuyện trực tiếp/livestream, và muốn ra mắt sản phẩm thật nhanh trước khi có nội dung hoàn chỉnh.',
   },
 };
 
@@ -75,6 +111,9 @@ function render(container, profile) {
     // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
     // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
     pendingId: null, activeProducts: null,
+    // { [dinh_dang]: true } — loại nào đang mở "Tìm hiểu thêm" ở màn pick-type, chỉ là UI tạm, không
+    // cần lưu draft.
+    expandedTypes: {},
   };
 
   function persistFormDraft() {
@@ -158,14 +197,31 @@ function render(container, profile) {
     const info = DINH_DANG_INFO[value];
     if (!info) return '';
     return `
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">
-        <b>Cần chuẩn bị:</b> ${esc(info.can_chuan_bi)}<br>
-        <b>Người mua nhận được:</b> ${esc(info.nguoi_mua_nhan)}
+      <div class="hint-box" style="margin-top:8px;margin-bottom:0;font-size:12.5px;">
+        <div>🧩 <b>Cần chuẩn bị:</b> ${esc(info.can_chuan_bi)}</div>
+        <div style="margin-top:4px;">🎁 <b>Người mua nhận được:</b> ${esc(info.nguoi_mua_nhan)}</div>
       </div>
     `;
   }
 
-  // MÀN CHÍNH của trang này — 7 loại sản phẩm số hiện NGAY, không ẩn sau bước nào khác.
+  // "Tìm hiểu thêm" — nội dung mở rộng, chỉ hiện khi bấm mở (Quỳnh 2026-09-01: cần chi tiết hơn hẳn,
+  // như 1 phần kiến thức cho người dùng, không chỉ 2 dòng tóm tắt ở dinhDangInfoHtml).
+  function dinhDangDetailHtml(value) {
+    const info = DINH_DANG_INFO[value];
+    if (!info) return '';
+    return `
+      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:13px;line-height:1.6;">
+        <div style="margin-bottom:8px;"><b style="color:var(--accent);">Là gì:</b> ${esc(info.la_gi)}</div>
+        <div style="margin-bottom:8px;"><b style="color:var(--accent);">Ưu điểm:</b> ${esc(info.uu_diem)}</div>
+        <div style="margin-bottom:8px;"><b style="color:var(--accent);">Thách thức:</b> ${esc(info.thach_thuc)}</div>
+        <div><b style="color:var(--accent);">Phù hợp nếu:</b> ${esc(info.phu_hop_neu)}</div>
+      </div>
+    `;
+  }
+
+  // MÀN CHÍNH của trang này — 7 loại sản phẩm số hiện NGAY, không ẩn sau bước nào khác. Tiêu đề/icon
+  // mỗi loại làm nổi bật (màu accent, icon riêng) + có "Tìm hiểu thêm" mở rộng từng loại, theo đúng
+  // phản hồi 2026-09-01: "làm rõ ràng hơn, chi tiết hơn... đầu mục làm nổi bật lên".
   function pickTypeHtml() {
     return `
       ${activeBannerHtml()}
@@ -174,13 +230,24 @@ function render(container, profile) {
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
         <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>
       </div>
-      ${DINH_DANG_OPTIONS.map(o => `
-        <div class="card" data-pt-choose="${esc(o.value)}" style="cursor:pointer;margin-bottom:10px;">
-          <h2 style="font-size:16px;margin-bottom:6px;">${esc(o.label)}</h2>
-          <div style="font-size:13px;color:var(--ink-soft);margin-bottom:4px;">${esc((DINH_DANG_INFO[o.value] || {}).khi_nao || '')}</div>
+      ${DINH_DANG_OPTIONS.map(o => {
+        const expanded = !!state.expandedTypes[o.value];
+        return `
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:22px;line-height:1;">${DINH_DANG_ICON[o.value] || ''}</span>
+            <h2 style="font-size:18px;color:var(--accent);margin:0;">${esc(o.label)}</h2>
+          </div>
+          <div style="font-size:13.5px;color:var(--ink);margin-bottom:2px;">${esc((DINH_DANG_INFO[o.value] || {}).khi_nao || '')}</div>
           ${dinhDangInfoHtml(o.value)}
+          <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span data-pt-toggle="${esc(o.value)}" style="cursor:pointer;color:var(--accent);font-size:13px;text-decoration:underline;">${expanded ? '▲ Ẩn bớt' : '🔍 Tìm hiểu thêm'}</span>
+            <button class="btn btn-sm" data-pt-choose="${esc(o.value)}">Chọn loại này →</button>
+          </div>
+          ${expanded ? dinhDangDetailHtml(o.value) : ''}
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     `;
   }
 
@@ -225,12 +292,20 @@ function render(container, profile) {
       <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b></div>
       ${(f.aiSuggestions || []).map(s => {
         const opt = DINH_DANG_OPTIONS.find(o => o.value === s.dinh_dang);
+        const expanded = !!state.expandedTypes[s.dinh_dang];
         return `
           <div class="card" style="margin-bottom:10px;">
-            <h2 style="font-size:16px;margin-bottom:6px;">${esc(opt ? opt.label : s.dinh_dang)}</h2>
-            <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">${esc(s.ly_do)}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:22px;line-height:1;">${DINH_DANG_ICON[s.dinh_dang] || ''}</span>
+              <h2 style="font-size:18px;color:var(--accent);margin:0;">${esc(opt ? opt.label : s.dinh_dang)}</h2>
+            </div>
+            <div style="font-size:13.5px;color:var(--ink);margin-bottom:2px;">${esc(s.ly_do)}</div>
             ${dinhDangInfoHtml(s.dinh_dang)}
-            <div class="btn-row" style="margin-top:10px;"><span class="btn btn-sm" data-ai-choose="${esc(s.dinh_dang)}">Chọn loại này →</span></div>
+            <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span data-pt-toggle="${esc(s.dinh_dang)}" style="cursor:pointer;color:var(--accent);font-size:13px;text-decoration:underline;">${expanded ? '▲ Ẩn bớt' : '🔍 Tìm hiểu thêm'}</span>
+              <button class="btn btn-sm" data-ai-choose="${esc(s.dinh_dang)}">Chọn loại này →</button>
+            </div>
+            ${expanded ? dinhDangDetailHtml(s.dinh_dang) : ''}
           </div>
         `;
       }).join('')}
@@ -346,6 +421,13 @@ function render(container, profile) {
     container.querySelector('#pt-ai-btn').onclick = () => {
       state.form.screen = 'ai-suggest-input'; state.screen = 'ai-suggest-input'; persistFormDraft(); draw();
     };
+    container.querySelectorAll('[data-pt-toggle]').forEach(el => {
+      el.onclick = () => {
+        const v = el.getAttribute('data-pt-toggle');
+        state.expandedTypes[v] = !state.expandedTypes[v];
+        draw();
+      };
+    });
     container.querySelectorAll('[data-pt-choose]').forEach(el => {
       el.onclick = () => {
         state.form.dinhDang = el.getAttribute('data-pt-choose');
@@ -390,6 +472,13 @@ function render(container, profile) {
   }
 
   function bindAiSuggestResult() {
+    container.querySelectorAll('[data-pt-toggle]').forEach(el => {
+      el.onclick = () => {
+        const v = el.getAttribute('data-pt-toggle');
+        state.expandedTypes[v] = !state.expandedTypes[v];
+        draw();
+      };
+    });
     container.querySelectorAll('[data-ai-choose]').forEach(el => {
       el.onclick = () => {
         state.form.dinhDang = el.getAttribute('data-ai-choose');
