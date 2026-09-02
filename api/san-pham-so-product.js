@@ -43,15 +43,20 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'save') {
-      const { title, description, price, cover_image_url, status, file_storage_path, file_name, external_link } = req.body || {};
+      const { title, description, price, cover_image_url, status, file_storage_path, file_name, external_link, dinh_dang, mini_course_lessons, webinar_datetime } = req.body || {};
       if (!title || !String(title).trim()) { res.status(400).json({ error: 'Vui lòng nhập tên sản phẩm.' }); return; }
       const priceNum = Number(price);
       if (!priceNum || priceNum <= 0) { res.status(400).json({ error: 'Giá sản phẩm phải lớn hơn 0.' }); return; }
-      // Đăng công khai cần MỘT trong hai: file đã upload, HOẶC link ngoài (VD sách lật Heyzine) —
-      // không còn bắt buộc phải là file Storage như trước.
-      if (status === 'published' && !file_storage_path && !external_link) {
-        res.status(400).json({ error: 'Cần upload file hoặc dán link sản phẩm trước khi đăng công khai.' });
-        return;
+      // Sản phẩm nào cần deliverable gì để đăng công khai — KHÁC NHAU theo dinh_dang (2026-09-01,
+      // trước đây chỉ có 1 quy tắc chung "file HOẶC link"). mini_course cần ít nhất 1 bài học có link;
+      // các loại còn lại (kể cả không set dinh_dang — sản phẩm cũ) vẫn theo quy tắc cũ.
+      const hasLessons = Array.isArray(mini_course_lessons) && mini_course_lessons.some(l => l && l.link && String(l.link).trim());
+      const hasGenericDeliverable = !!file_storage_path || !!external_link;
+      if (status === 'published') {
+        if (dinh_dang === 'mini_course' ? !hasLessons : !hasGenericDeliverable) {
+          res.status(400).json({ error: 'Chưa đủ nội dung giao hàng cho khách — kiểm tra lại file/link/danh sách bài học trước khi đăng công khai.' });
+          return;
+        }
       }
 
       if (id) {
@@ -63,6 +68,9 @@ module.exports = async (req, res) => {
         if (file_storage_path !== undefined) patchBody.file_storage_path = file_storage_path || null;
         if (file_name !== undefined) patchBody.file_name = file_name || null;
         if (external_link !== undefined) patchBody.external_link = external_link || null;
+        if (dinh_dang !== undefined) patchBody.dinh_dang = dinh_dang || null;
+        if (mini_course_lessons !== undefined) patchBody.mini_course_lessons = mini_course_lessons || null;
+        if (webinar_datetime !== undefined) patchBody.webinar_datetime = webinar_datetime || null;
         const resp = await supabaseAdmin(`digital_products?id=eq.${id}&owner_id=eq.${user.id}`, {
           method: 'PATCH',
           body: JSON.stringify(patchBody),
@@ -90,6 +98,9 @@ module.exports = async (req, res) => {
             file_storage_path: file_storage_path || null,
             file_name: file_name || null,
             external_link: external_link || null,
+            dinh_dang: dinh_dang || null,
+            mini_course_lessons: mini_course_lessons || null,
+            webinar_datetime: webinar_datetime || null,
             status: status === 'published' ? 'published' : 'draft',
           }),
         });

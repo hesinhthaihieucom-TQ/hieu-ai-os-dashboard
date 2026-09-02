@@ -28,6 +28,28 @@ create table if not exists digital_products (
 -- user Xây Nhân Hiệu — chị Quỳnh tự bật cho ai qua Quản trị hoặc SQL trực tiếp).
 alter table profiles add column if not exists can_sell_products boolean not null default false;
 
+-- external_link: đưa về ĐÚNG file này (trước đây bị thêm nhầm ở schema_full.sql, vi phạm quy ước
+-- schema-per-app từ 2026-08-30 — tiện sửa luôn lúc thêm các cột giao hàng theo loại bên dưới, xem
+-- CLAUDE.md/memory "Known pre-existing schema-file drift"). Đã live ở production từ trước rồi, chỉ
+-- là dòng khai báo bị sai chỗ, KHÔNG phải cột mới.
+alter table digital_products add column if not exists external_link text;
+
+-- Giao hàng ĐÚNG THEO LOẠI sản phẩm (2026-09-01, Quỳnh: "cơ chế giao hàng theo từng loại"). dinh_dang
+-- khớp đúng enum ở TOOL_TIM_SAN_PHAM/DINH_DANG_OPTIONS (api/_lib/tim-san-pham-schema.js,
+-- san-pham-so/js/util.js) — KHÔNG bắt buộc (null = sản phẩm cũ trước khi có tính năng này, coi như
+-- ebook/checklist, vẫn dùng file_storage_path/external_link như trước, không phá dữ liệu cũ).
+-- Cơ chế giao hàng theo loại (xem api/san-pham-so-check-order.js):
+--   ebook/checklist_workbook -> file_storage_path (file tải về) — ĐÃ có sẵn, không đổi.
+--   template_file_mau/coaching_1_1/cong_dong_tra_phi/webinar -> external_link (1 link duy nhất,
+--     nhãn khác nhau theo loại ở UI: link template / link đặt lịch / link mời nhóm / link Zoom-Meet)
+--     — ĐÃ có sẵn cột, chỉ thêm dinh_dang để UI hiện đúng nhãn/hướng dẫn theo loại.
+--   mini_course -> mini_course_lessons (nhiều bài, mỗi bài 1 tên + 1 link riêng, không phải 1 link
+--     chung) — CẦN cột mới vì external_link không đủ (chỉ chứa được 1 link).
+--   webinar -> THÊM webinar_datetime (ngày giờ diễn ra) cạnh external_link (link Zoom/Meet).
+alter table digital_products add column if not exists dinh_dang text;
+alter table digital_products add column if not exists mini_course_lessons jsonb;
+alter table digital_products add column if not exists webinar_datetime timestamptz;
+
 -- Mỗi lượt khách mua 1 sản phẩm. Khách KHÔNG có tài khoản/đăng nhập — ref_code (sinh ngẫu nhiên lúc
 -- tạo đơn ở api/san-pham-so-create-order.js, tiền tố "SPS" để phân biệt với ref_code "XNH" của
 -- Xây Nhân Hiệu trong CÙNG 1 webhook, xem api/sepay-webhook.js) là credential DUY NHẤT của họ để
@@ -63,8 +85,12 @@ alter table digital_product_orders enable row level security;
 -- api/ (service_role, bỏ qua RLS: tạo đơn, webhook đối soát, cấp link tải). Khách công khai tra
 -- cứu trạng thái đơn CỦA CHÍNH MÌNH qua view digital_product_order_status bên dưới.
 
+-- dinh_dang/webinar_datetime lộ CÔNG KHAI (cần để trang mua hiện đúng "bạn sẽ nhận được gì"/ngày giờ
+-- TRƯỚC khi mua) — nhưng external_link/mini_course_lessons/file_storage_path (nội dung giao hàng
+-- thật) TUYỆT ĐỐI không lộ ở đây, chỉ trả về SAU khi xác nhận đã thanh toán qua
+-- api/san-pham-so-check-order.js.
 create or replace view digital_products_public as
-  select id, slug, title, description, cover_image_url, price
+  select id, slug, title, description, cover_image_url, price, dinh_dang, webinar_datetime
   from digital_products where status = 'published';
 grant select on digital_products_public to anon, authenticated;
 

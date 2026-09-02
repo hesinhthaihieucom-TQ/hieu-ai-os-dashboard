@@ -3,8 +3,21 @@
 const DRAFT_KEY = 'san-pham-so';
 
 function newForm() {
-  return { id: null, title: '', description: '', price: '', cover_image_url: null, file_storage_path: null, file_name: null, external_link: null, published: false };
+  return {
+    id: null, title: '', description: '', price: '', cover_image_url: null,
+    file_storage_path: null, file_name: null, external_link: null, published: false,
+    dinh_dang: '', mini_course_lessons: [], webinar_datetime: '',
+  };
 }
+
+// Nhãn/hướng dẫn cho ô "link ngoài" — KHÁC NHAU theo dinh_dang (2026-09-01, giao hàng đúng theo
+// loại sản phẩm — trước đây chỉ có 1 ô "link ngoài" chung chung cho mọi loại).
+const EXTERNAL_LINK_LABEL = {
+  template_file_mau: { label: 'Link template', placeholder: 'https://canva.com/... hoặc notion.so/...' },
+  coaching_1_1: { label: 'Link đặt lịch', placeholder: 'https://calendly.com/...' },
+  cong_dong_tra_phi: { label: 'Link mời nhóm', placeholder: 'https://zalo.me/g/... hoặc t.me/...' },
+  webinar: { label: 'Link Zoom/Meet', placeholder: 'https://zoom.us/j/... hoặc meet.google.com/...' },
+};
 
 // Domain công khai cuối cùng cho khách mua — KHÁC với domain app này đang chạy (app này là màn
 // quản lý của người bán, không phải trang khách xem). Hard-code domain thật vì đây là link được
@@ -85,6 +98,45 @@ function render(container) {
     `;
   }
 
+  // Nội dung giao hàng — KHÁC NHAU theo dinh_dang (2026-09-01). Chưa chọn loại (sản phẩm cũ trước
+  // khi có tính năng này) mặc định về hành vi cũ (file HOẶC link chung chung).
+  function deliverableFieldsHtml(f) {
+    const dd = f.dinh_dang;
+    if (dd === 'mini_course') {
+      return `
+        <label style="margin-top:14px;">Danh sách bài học</label>
+        <div id="sps-lessons-list">
+          ${(f.mini_course_lessons || []).map((l, i) => `
+            <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+              <input type="text" data-lesson-title="${i}" value="${esc(l.title || '')}" placeholder="Tên bài học" style="flex:1;">
+              <input type="text" data-lesson-link="${i}" value="${esc(l.link || '')}" placeholder="Link video/Zoom/file" style="flex:1;">
+              <span class="btn-ghost btn btn-sm" data-lesson-remove="${i}" style="color:var(--danger);white-space:nowrap;">Xoá</span>
+            </div>
+          `).join('')}
+        </div>
+        <span class="btn-ghost btn btn-sm" id="sps-lesson-add">+ Thêm bài học</span>
+      `;
+    }
+    if (EXTERNAL_LINK_LABEL[dd]) {
+      const info = EXTERNAL_LINK_LABEL[dd];
+      return `
+        <label style="margin-top:14px;">${esc(info.label)}</label>
+        <input id="sps-external-link" type="text" value="${esc(f.external_link || '')}" placeholder="${esc(info.placeholder)}">
+        ${dd === 'webinar' ? `
+          <label style="margin-top:14px;">Ngày giờ diễn ra</label>
+          <input id="sps-webinar-datetime" type="datetime-local" value="${esc(f.webinar_datetime || '')}">
+        ` : ''}
+      `;
+    }
+    return `
+      <label style="margin-top:14px;">File sản phẩm (bắt buộc để đăng công khai, trừ khi đã có link ngoài bên dưới)</label>
+      <input id="sps-file" type="file">
+      <div id="sps-file-status" style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.file_name ? `📎 ${esc(f.file_name)} — đã upload` : 'Chưa có file.'}</div>
+      <label style="margin-top:14px;">Hoặc link ngoài (sách lật Heyzine, Notion, Canva...)</label>
+      <input id="sps-external-link" type="text" value="${esc(f.external_link || '')}" placeholder="https://heyzine.com/flip-book/...">
+    `;
+  }
+
   function editHtml() {
     const f = state.form;
     return `
@@ -92,7 +144,11 @@ function render(container) {
       <div class="card" style="max-width:520px;">
         <label>Tên sản phẩm</label>
         <input id="sps-title" type="text" value="${esc(f.title)}" placeholder="VD: Ebook 30 ngày quản lý chi tiêu">
-        <label>Mô tả (hiện trên trang giới thiệu)</label>
+        <label style="margin-top:14px;">Loại sản phẩm</label>
+        <div class="chips">
+          ${DINH_DANG_OPTIONS.map(o => `<div class="chip ${f.dinh_dang === o.value ? 'selected' : ''}" data-sps-dinhdang="${esc(o.value)}">${esc(o.label)}</div>`).join('')}
+        </div>
+        <label style="margin-top:14px;">Mô tả (hiện trên trang giới thiệu)</label>
         <textarea id="sps-desc" rows="4" placeholder="Giới thiệu ngắn gọn nội dung, lợi ích cho người mua...">${esc(f.description || '')}</textarea>
         <div class="btn-row" style="margin-top:6px;">
           <span class="btn-ghost btn btn-sm" id="sps-ai-mo-ta-btn" ${(state.moTaLoading || !f.title.trim()) ? 'style="opacity:.5;pointer-events:none;"' : ''}>${state.moTaLoading ? 'Đang viết…' : '✨ Viết mô tả bằng AI (1 lượt)'}</span>
@@ -103,11 +159,7 @@ function render(container) {
         <label>Ảnh bìa (tuỳ chọn)</label>
         <input id="sps-cover" type="file" accept="image/*">
         ${f.cover_image_url ? `<img src="${f.cover_image_url}" style="max-width:160px;border-radius:8px;margin-top:8px;display:block;">` : ''}
-        <label>File sản phẩm (bắt buộc để đăng công khai, trừ khi đã có link ngoài bên dưới)</label>
-        <input id="sps-file" type="file">
-        <div id="sps-file-status" style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.file_name ? `📎 ${esc(f.file_name)} — đã upload` : 'Chưa có file.'}</div>
-        <label>Hoặc link ngoài (sách lật Heyzine, Notion, Canva...)</label>
-        <input id="sps-external-link" type="text" value="${esc(f.external_link || '')}" placeholder="https://heyzine.com/flip-book/...">
+        ${deliverableFieldsHtml(f)}
         <label style="display:flex;align-items:center;gap:8px;margin-top:16px;cursor:pointer;font-size:13.5px;">
           <input id="sps-published" type="checkbox" ${f.published ? 'checked' : ''}> Công khai (cho khách mua ngay)
         </label>
@@ -129,7 +181,11 @@ function render(container) {
         el.onclick = () => {
           const p = state.products.find(x => x.id === el.getAttribute('data-edit'));
           if (!p) return;
-          state.form = { id: p.id, title: p.title, description: p.description || '', price: p.price, cover_image_url: p.cover_image_url || null, file_storage_path: p.file_storage_path || null, file_name: p.file_name || null, external_link: p.external_link || null, published: p.status === 'published' };
+          state.form = {
+            id: p.id, title: p.title, description: p.description || '', price: p.price, cover_image_url: p.cover_image_url || null,
+            file_storage_path: p.file_storage_path || null, file_name: p.file_name || null, external_link: p.external_link || null, published: p.status === 'published',
+            dinh_dang: p.dinh_dang || '', mini_course_lessons: Array.isArray(p.mini_course_lessons) ? p.mini_course_lessons : [], webinar_datetime: p.webinar_datetime ? p.webinar_datetime.slice(0, 16) : '',
+          };
           state.error = null; state.view = 'edit'; draw(); persistDraft();
         };
       });
@@ -198,10 +254,42 @@ function render(container) {
     descEl.oninput = () => { state.form.description = descEl.value; persistDraft(); };
     const priceEl = container.querySelector('#sps-price');
     priceEl.oninput = () => { state.form.price = priceEl.value; persistDraft(); };
-    const externalLinkEl = container.querySelector('#sps-external-link');
-    externalLinkEl.oninput = () => { state.form.external_link = externalLinkEl.value; persistDraft(); };
     const publishedEl = container.querySelector('#sps-published');
     publishedEl.onchange = () => { state.form.published = publishedEl.checked; persistDraft(); };
+
+    container.querySelectorAll('[data-sps-dinhdang]').forEach(el => {
+      el.onclick = () => {
+        const v = el.getAttribute('data-sps-dinhdang');
+        state.form.dinh_dang = (state.form.dinh_dang === v) ? '' : v;
+        persistDraft(); draw();
+      };
+    });
+
+    // #sps-external-link/#sps-file chỉ tồn tại tuỳ dinh_dang đang chọn (xem deliverableFieldsHtml).
+    const externalLinkEl = container.querySelector('#sps-external-link');
+    if (externalLinkEl) externalLinkEl.oninput = () => { state.form.external_link = externalLinkEl.value; persistDraft(); };
+    const webinarDatetimeEl = container.querySelector('#sps-webinar-datetime');
+    if (webinarDatetimeEl) webinarDatetimeEl.oninput = () => { state.form.webinar_datetime = webinarDatetimeEl.value; persistDraft(); };
+
+    // Danh sách bài học (mini_course) — thêm/xoá/sửa từng dòng, không cần API riêng, lưu cùng lúc
+    // bấm "Lưu" như mọi field khác của form.
+    const lessonAddBtn = container.querySelector('#sps-lesson-add');
+    if (lessonAddBtn) lessonAddBtn.onclick = () => {
+      state.form.mini_course_lessons = [...(state.form.mini_course_lessons || []), { title: '', link: '' }];
+      persistDraft(); draw();
+    };
+    container.querySelectorAll('[data-lesson-title]').forEach(el => {
+      el.oninput = () => { state.form.mini_course_lessons[Number(el.getAttribute('data-lesson-title'))].title = el.value; persistDraft(); };
+    });
+    container.querySelectorAll('[data-lesson-link]').forEach(el => {
+      el.oninput = () => { state.form.mini_course_lessons[Number(el.getAttribute('data-lesson-link'))].link = el.value; persistDraft(); };
+    });
+    container.querySelectorAll('[data-lesson-remove]').forEach(el => {
+      el.onclick = () => {
+        state.form.mini_course_lessons.splice(Number(el.getAttribute('data-lesson-remove')), 1);
+        persistDraft(); draw();
+      };
+    });
 
     const aiMoTaBtn = container.querySelector('#sps-ai-mo-ta-btn');
     if (aiMoTaBtn) aiMoTaBtn.onclick = async () => {
@@ -230,7 +318,7 @@ function render(container) {
     };
 
     const fileEl = container.querySelector('#sps-file');
-    fileEl.onchange = async () => {
+    if (fileEl) fileEl.onchange = async () => {
       const file = fileEl.files[0];
       if (!file) return;
       if (!state.form.title.trim()) { state.error = 'Vui lòng nhập tên sản phẩm trước khi upload file.'; draw(); return; }
@@ -275,7 +363,14 @@ function render(container) {
       const priceNum = Number(state.form.price);
       if (!state.form.title.trim()) { state.error = 'Vui lòng nhập tên sản phẩm.'; draw(); return; }
       if (!priceNum || priceNum <= 0) { state.error = 'Giá sản phẩm phải lớn hơn 0.'; draw(); return; }
-      if (state.form.published && !state.form.file_storage_path && !state.form.external_link) { state.error = 'Cần upload file hoặc dán link ngoài trước khi đăng công khai.'; draw(); return; }
+      // Đủ nội dung giao hàng để công khai — KHÁC theo dinh_dang (mini_course cần ít nhất 1 bài học
+      // có link, các loại còn lại cần file HOẶC link — xem lại đúng quy tắc này ở api/san-pham-so-product.js).
+      const hasLessons = state.form.dinh_dang === 'mini_course' && (state.form.mini_course_lessons || []).some(l => l && l.link && l.link.trim());
+      const hasGenericDeliverable = !!state.form.file_storage_path || !!state.form.external_link;
+      if (state.form.published && (state.form.dinh_dang === 'mini_course' ? !hasLessons : !hasGenericDeliverable)) {
+        state.error = state.form.dinh_dang === 'mini_course' ? 'Cần ít nhất 1 bài học có link trước khi đăng công khai.' : 'Cần upload file hoặc dán link ngoài trước khi đăng công khai.';
+        draw(); return;
+      }
       state.saving = true; state.error = null; draw();
       try {
         const data = await callApi('api/san-pham-so-product', {
@@ -283,6 +378,9 @@ function render(container) {
           price: priceNum, cover_image_url: state.form.cover_image_url,
           file_storage_path: state.form.file_storage_path, file_name: state.form.file_name,
           external_link: state.form.external_link,
+          dinh_dang: state.form.dinh_dang || null,
+          mini_course_lessons: (state.form.mini_course_lessons || []).filter(l => l && ((l.title || '').trim() || (l.link || '').trim())),
+          webinar_datetime: state.form.webinar_datetime ? new Date(state.form.webinar_datetime).toISOString() : null,
           status: state.form.published ? 'published' : 'draft',
         });
         state.form.id = data.product.id;

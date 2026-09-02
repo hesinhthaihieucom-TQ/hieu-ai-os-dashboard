@@ -26,18 +26,27 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const prodResp = await supabaseAdmin(`digital_products?id=eq.${order.product_id}&select=file_storage_path,file_name,external_link`);
+    const prodResp = await supabaseAdmin(`digital_products?id=eq.${order.product_id}&select=file_storage_path,file_name,external_link,dinh_dang,mini_course_lessons,webinar_datetime`);
     const prodRows = prodResp.ok ? await prodResp.json() : [];
     const product = prodRows[0];
-    if (!product || (!product.file_storage_path && !product.external_link)) {
-      res.status(200).json({ status: 'paid', error: 'Đã thanh toán nhưng file chưa sẵn sàng — liên hệ người bán để được hỗ trợ.' });
+    const hasLessons = Array.isArray(product && product.mini_course_lessons) && product.mini_course_lessons.length > 0;
+    if (!product || (!product.file_storage_path && !product.external_link && !hasLessons)) {
+      res.status(200).json({ status: 'paid', error: 'Đã thanh toán nhưng nội dung chưa sẵn sàng — liên hệ người bán để được hỗ trợ.' });
       return;
     }
 
-    // Sản phẩm giao bằng LINK NGOÀI (VD sách lật Heyzine) — trả thẳng, không cần ký URL Storage vì
-    // không có file nào trong Storage của app này cho trường hợp này.
+    // Mini-course: nhiều bài, mỗi bài 1 link riêng — trả thẳng danh sách, trang mua tự hiện đúng dạng
+    // "chương trình học" thay vì 1 nút tải/mở duy nhất.
+    if (product.dinh_dang === 'mini_course' && hasLessons) {
+      res.status(200).json({ status: 'paid', dinhDang: 'mini_course', lessons: product.mini_course_lessons, downloadUrl: null, fileName: null });
+      return;
+    }
+
+    // Sản phẩm giao bằng LINK NGOÀI (VD sách lật Heyzine, link đặt lịch coaching, link mời nhóm, link
+    // Zoom/Meet webinar) — trả thẳng, không cần ký URL Storage vì không có file nào trong Storage của
+    // app này cho trường hợp này. dinhDang/webinarDatetime đi kèm để trang mua hiện đúng nhãn/ngày giờ.
     if (product.external_link) {
-      res.status(200).json({ status: 'paid', downloadUrl: product.external_link, fileName: null });
+      res.status(200).json({ status: 'paid', downloadUrl: product.external_link, fileName: null, dinhDang: product.dinh_dang || null, webinarDatetime: product.webinar_datetime || null });
       return;
     }
 

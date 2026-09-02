@@ -13,6 +13,24 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
+// Giao hàng ĐÚNG THEO LOẠI sản phẩm (2026-09-01) — nhãn hiển thị + nhãn nút sau khi mua, khớp đúng
+// dinh_dang/DINH_DANG_OPTIONS ở san-pham-so/js/util.js.
+const DINH_DANG_LABEL = {
+  ebook: 'Ebook', checklist_workbook: 'Checklist/Workbook', template_file_mau: 'Template/File mẫu',
+  mini_course: 'Mini-course', coaching_1_1: 'Coaching 1-1', cong_dong_tra_phi: 'Cộng đồng trả phí', webinar: 'Webinar',
+};
+const DINH_DANG_BUY_BUTTON_LABEL = {
+  template_file_mau: '🧰 Mở template →',
+  coaching_1_1: '🧑‍🏫 Đặt lịch ngay →',
+  cong_dong_tra_phi: '👥 Tham gia nhóm →',
+  webinar: '🎥 Vào phòng Zoom/Meet →',
+};
+function formatWebinarDatetime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 const app = document.getElementById('app');
 const params = new URLSearchParams(location.search);
 const slug = params.get('slug');
@@ -69,7 +87,7 @@ function startPolling(product, refCode) {
       const data = await checkOrder(refCode);
       if (data.status === 'paid') {
         clearInterval(pollTimer);
-        renderProduct(product, { ref_code: refCode, status: 'paid', downloadUrl: data.downloadUrl, fileName: data.fileName });
+        renderProduct(product, { ref_code: refCode, status: 'paid', downloadUrl: data.downloadUrl, fileName: data.fileName, dinhDang: data.dinhDang, lessons: data.lessons, webinarDatetime: data.webinarDatetime });
       }
     } catch (e) { /* lỗi mạng thoáng qua — thử lại ở lượt poll kế tiếp, không làm phiền bằng lỗi */ }
   }, 4000);
@@ -77,6 +95,14 @@ function startPolling(product, refCode) {
 
 function renderProduct(product, order) {
   const coverHtml = product.cover_image_url ? `<img class="cover" src="${esc(product.cover_image_url)}" alt="">` : '';
+  // Nhãn loại + ngày giờ webinar (nếu có) lộ công khai TRƯỚC khi mua — giúp khách biết rõ mình sắp
+  // mua dạng gì (2026-09-01, xem digital_products_public trong schema_san_pham_so.sql).
+  const dinhDangBadgeHtml = product.dinh_dang && DINH_DANG_LABEL[product.dinh_dang]
+    ? `<div class="mono" style="display:inline-block;background:var(--accent-soft,#E7F0EC);color:var(--accent,#2F6F62);padding:3px 10px;border-radius:999px;font-size:12px;margin-bottom:8px;">${esc(DINH_DANG_LABEL[product.dinh_dang])}</div>`
+    : '';
+  const webinarPreHtml = product.dinh_dang === 'webinar' && product.webinar_datetime
+    ? `<div class="hint-box" style="margin-bottom:12px;">🗓️ Diễn ra: <b>${esc(formatWebinarDatetime(product.webinar_datetime))}</b></div>`
+    : '';
   let buyHtml;
 
   if (!order) {
@@ -85,12 +111,28 @@ function renderProduct(product, order) {
       <button class="btn" id="buy-btn">Mua ngay — ${Number(product.price).toLocaleString('vi-VN')}đ</button>
     `;
   } else if (order.status === 'paid') {
-    // fileName rỗng = sản phẩm giao bằng link ngoài (VD sách lật Heyzine) — không phải file tải về,
-    // đổi nhãn nút cho đúng bản chất thay vì "Tải xuống" một link không phải file.
-    const label = order.fileName ? `📥 Tải xuống ${esc(order.fileName)}` : '📖 Xem tài liệu của bạn →';
+    // Giao hàng ĐÚNG THEO LOẠI (2026-09-01): mini_course trả về NHIỀU bài học (danh sách link), các
+    // loại khác trả về 1 link/file duy nhất — nhãn nút khớp đúng bản chất (đặt lịch/tham gia nhóm/
+    // vào phòng Zoom thay vì luôn ghi "Tải xuống" một thứ không phải file).
+    let deliverableHtml;
+    if (order.dinhDang === 'mini_course' && Array.isArray(order.lessons) && order.lessons.length) {
+      deliverableHtml = `
+        <div class="hint-box" style="text-align:left;">
+          ${order.lessons.map((l, i) => `<div style="margin-bottom:8px;"><b>Bài ${i + 1}:</b> ${esc(l.title || '')}${l.link ? ` — <a href="${esc(l.link)}" target="_blank" rel="noopener">Mở bài học →</a>` : ''}</div>`).join('')}
+        </div>
+      `;
+    } else {
+      const label = order.dinhDang && DINH_DANG_BUY_BUTTON_LABEL[order.dinhDang]
+        ? DINH_DANG_BUY_BUTTON_LABEL[order.dinhDang]
+        : (order.fileName ? `📥 Tải xuống ${esc(order.fileName)}` : '📖 Xem tài liệu của bạn →');
+      deliverableHtml = `<a class="btn" href="${esc(order.downloadUrl)}" target="_blank" rel="noopener">${label}</a>`;
+    }
+    const webinarPostHtml = order.dinhDang === 'webinar' && order.webinarDatetime
+      ? `<div class="hint-box" style="margin-bottom:12px;">🗓️ Diễn ra: <b>${esc(formatWebinarDatetime(order.webinarDatetime))}</b></div>` : '';
     buyHtml = `
       <div class="hint-box">✅ Đã thanh toán thành công!</div>
-      <a class="btn" href="${esc(order.downloadUrl)}" target="_blank" rel="noopener">${label}</a>
+      ${webinarPostHtml}
+      ${deliverableHtml}
     `;
   } else {
     const transferContent = `SEVQR ${order.ref_code}`;
@@ -111,8 +153,10 @@ function renderProduct(product, order) {
   app.innerHTML = `
     <div class="wrap"><div class="card">
       ${coverHtml}
+      ${dinhDangBadgeHtml}
       <h1>${esc(product.title)}</h1>
       ${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}
+      ${webinarPreHtml}
       <div class="price">${Number(product.price).toLocaleString('vi-VN')}đ</div>
       ${buyHtml}
       <div class="hint-box" style="margin-top:12px;text-align:center;">🔒 Cam kết hoàn tiền 100% nếu không hài lòng trong 7 ngày</div>
@@ -148,7 +192,7 @@ async function main() {
     const saved = JSON.parse(localStorage.getItem(orderStorageKey) || 'null');
     if (saved && saved.ref_code) {
       const data = await checkOrder(saved.ref_code);
-      order = { ref_code: saved.ref_code, amount: saved.amount, status: data.status, downloadUrl: data.downloadUrl, fileName: data.fileName };
+      order = { ref_code: saved.ref_code, amount: saved.amount, status: data.status, downloadUrl: data.downloadUrl, fileName: data.fileName, dinhDang: data.dinhDang, lessons: data.lessons, webinarDatetime: data.webinarDatetime };
     }
   } catch (e) { /* đơn cũ tra lỗi (vd đã bị xoá) — coi như chưa mua, không chặn xem trang */ }
 
