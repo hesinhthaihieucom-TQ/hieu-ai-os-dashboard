@@ -73,14 +73,14 @@ function trialQuotaHint(){
   // nhẹ nhàng (không cảnh báo đỏ) để chủ web tự theo dõi mức dùng thật của chính mình.
   if(p.role==='admin'){
     const used = p.has_paid ? paidMonthlyUsage(p).used : (p.trial_ai_uses||0);
-    const period = p.has_paid ? 'tháng này' : 'trọn đời';
+    const period = p.has_paid ? currentCycleRangeLabel(p.created_at) : 'trọn đời';
     return `<span style="color:#8A8F82;">🔥 Đã dùng ${used} lượt (${period}) — không giới hạn</span>`;
   }
   if(p.has_paid){
     const { used, limit } = paidMonthlyUsage(p);
     const remaining = Math.max(0, limit - used);
     const color = remaining<=10 ? 'var(--danger)' : '#9CA396';
-    return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt tháng này</span>`;
+    return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt (${currentCycleRangeLabel(p.created_at)})</span>`;
   }
   // trial_ai_limit chốt riêng lúc đăng ký (xem schema_full.sql) — người đăng ký trước/sau có thể
   // khác nhau, KHÔNG dùng chung 1 số TRIAL_AI_LIMIT cho mọi người nữa. Cột null (tài khoản có từ

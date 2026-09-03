@@ -139,7 +139,7 @@ function render(container, ctx){
     const totalNote = `<div style="margin-top:6px;font-size:12px;opacity:.85;">Tổng lượt bạn có thể dùng qua cả 2 giai đoạn: <b>${trialLimit} lượt dùng thử</b> (trọn đời) + <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi mua gói.</div>`;
     return (isTrial
       ? `Đã dùng <b>${used}/${limit}</b> lượt AI dùng thử (trọn đời) — còn <b>${Math.max(0,limit-used)}</b> lượt.`
-      : `Đã dùng <b>${used}/${limit}</b> lượt AI tháng này — còn <b>${Math.max(0,limit-used)}</b> lượt.`) + totalNote;
+      : `Đã dùng <b>${used}/${limit}</b> lượt AI (chu kỳ ${currentCycleRangeLabel(ctx.profile.created_at)}) — còn <b>${Math.max(0,limit-used)}</b> lượt.`) + totalNote;
   }
 
   function goalTotal(){
@@ -217,8 +217,8 @@ function render(container, ctx){
           </div>
         `).join('')}
 
-        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--accent);margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line);">Đặt mục tiêu tháng này — tự tính xem có đủ lượt không</label>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Ô bên dưới điền <b>số LẦN</b> bạn dự định làm (không phải số lượt) — hệ thống tự nhân theo trọng số để ra tổng lượt cần, rồi báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" hiện cả số lần đã thực sự làm và số lượt AI thật đã tiêu cho đúng nhóm đó${remainingInfo().isTrial?' (tính trọn đời dùng thử)':' (tính trong tháng này)'}, để tự đối chiếu với kế hoạch.</div>
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--accent);margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line);">Đặt mục tiêu cho chu kỳ này — tự tính xem có đủ lượt không</label>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Ô bên dưới điền <b>số LẦN</b> bạn dự định làm (không phải số lượt) — hệ thống tự nhân theo trọng số để ra tổng lượt cần, rồi báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" hiện cả số lần đã thực sự làm và số lượt AI thật đã tiêu cho đúng nhóm đó${remainingInfo().isTrial?' (tính trọn đời dùng thử)':` (tính trong chu kỳ ${currentCycleRangeLabel(ctx.profile.created_at)})`}, để tự đối chiếu với kế hoạch.</div>
         ${GOAL_ITEMS.map(g=>`
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;flex-wrap:wrap;">
             <span style="font-size:13.5px;">${esc(g.label)} <span style="color:var(--ink-soft);font-size:12px;">(${g.weight} lượt/lần)</span></span>

@@ -140,6 +140,18 @@ function currentCycleKey(createdAtIso){
   return String(Math.max(0, Math.floor(days / 30)));
 }
 
+// Chuỗi "dd/mm - dd/mm" của đúng chu kỳ 30 ngày HIỆN TẠI (tính từ created_at) — thay cho nhãn
+// "tháng này" giờ không còn đúng nữa (chu kỳ không trùng tháng lịch, xem currentCycleKey() ở trên).
+// Chị Quỳnh 2026-09-03: "không nên ghi tháng này mà là ghi từ ngày bao nhiêu đến ngày bao nhiêu".
+function currentCycleRangeLabel(createdAtIso){
+  const createdAt = new Date(createdAtIso).getTime();
+  const cycleIndex = Number(currentCycleKey(createdAtIso));
+  const start = new Date(createdAt + cycleIndex * 30 * 86400000);
+  const end = new Date(start.getTime() + 29 * 86400000);
+  const fmt = (d) => `${d.getDate()}/${d.getMonth()+1}`;
+  return `${fmt(start)} - ${fmt(end)}`;
+}
+
 // % tiến trình ước lượng cho các màn chờ AI (1-2 phút) — API không stream nên không có % thật từ
 // server, tính theo thời gian đã trôi qua so với thời gian trung bình của tác vụ đó. Dừng dưới
 // 100% (cap) cho tới khi có kết quả thật, tránh cảm giác "treo" khi phải chờ lâu.

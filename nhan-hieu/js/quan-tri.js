@@ -13,7 +13,7 @@ function aiUsageLabel(p){
     // dùng đã đăng ký gói thì ngoài 200 lượt/tháng thì thông tin của họ cũng hiện luôn 100 lượt
     // free" — trước đây chỉ hiện dòng dùng thử NẾU trial_ai_uses>0, ẩn mất với khách chưa dùng thử
     // lượt nào trước khi mua, gây cảm giác thiếu thông tin.
-    const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (tháng này)`;
+    const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (chu kỳ ${currentCycleRangeLabel(p.created_at)})`;
     return `${paidLabel} · ${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt dùng thử trọn đời đã dùng trước đó (không tính vào trần tháng)`;
   }
   // trial_ai_limit chốt riêng lúc đăng ký — người đăng ký trước/sau có thể khác nhau (xem
@@ -30,7 +30,7 @@ function aiUsageShortLabel(p){
     const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
     const used = sameMonth ? (p.paid_ai_uses||0) : 0;
     const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
-    return `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI/tháng`;
+    return `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (${currentCycleRangeLabel(p.created_at)})`;
   }
   return `${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt AI dùng thử`;
 }

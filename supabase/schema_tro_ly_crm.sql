@@ -208,7 +208,7 @@ create or replace function public.consume_crm_ai_quota(p_user_id uuid, p_monthly
 returns jsonb as $$
 declare
   v_profile profiles%rowtype;
-  v_month text := to_char(now(), 'YYYY-MM');
+  v_month text;
   v_current_uses int;
   v_bonus int;
   v_effective_limit int;
@@ -218,6 +218,9 @@ begin
   if not found then
     return jsonb_build_object('allowed', true); -- không tìm thấy profile: fail open, không chặn oan
   end if;
+  -- Cùng công thức chu kỳ 30 ngày từ created_at như consume_ai_quota() (Xây Nhân Hiệu) — xem giải
+  -- thích đầy đủ ở api/_lib/quota-cycle.js. Áp dụng cho Trợ Lý CRM để cùng logic reset công bằng.
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
   v_is_admin := (v_profile.role = 'admin');
   if v_profile.crm_ai_month = v_month then
     v_current_uses := v_profile.crm_ai_uses;
@@ -246,10 +249,12 @@ create or replace function public.refund_crm_ai_quota(p_user_id uuid, p_weight i
 returns void as $$
 declare
   v_profile profiles%rowtype;
-  v_month text := to_char(now(), 'YYYY-MM');
+  v_month text;
 begin
   select * into v_profile from profiles where id = p_user_id for update;
   if not found then return; end if;
+  -- Cùng công thức chu kỳ 30 ngày từ created_at như consume_crm_ai_quota() ở trên.
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
   if v_profile.crm_ai_month = v_month then
     update profiles set crm_ai_uses = greatest(0, crm_ai_uses - p_weight) where id = p_user_id;
   end if;
@@ -257,6 +262,18 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 revoke all on function public.refund_crm_ai_quota(uuid, int) from public, authenticated, anon;
 grant execute on function public.refund_crm_ai_quota(uuid, int) to service_role;
+
+-- Migrate 1 lần: đổi crm_ai_month của MỌI user còn ở định dạng CŨ 'YYYY-MM' (bất kể tháng nào) sang
+-- định dạng chu kỳ mới (số chu kỳ 30 ngày từ created_at) — giữ nguyên crm_ai_uses/crm_ai_bonus hiện
+-- có, tránh mất lượt/bonus khách đang dùng dở khi đổi công thức (2026-09-02).
+-- BUG THẬT (phát hiện 2026-09-03, y hệt lỗi ở schema_core.sql/paid_ai_month): bản đầu chỉ khớp
+-- where crm_ai_month = to_char(now(),'YYYY-MM') — bỏ sót MỌI user có crm_ai_month từ tháng trước đó
+-- trở về trước, khiến họ bị hiểu nhầm "sang chu kỳ mới" và hiện 0 lượt đã dùng. Sửa bằng cách khớp
+-- theo ĐỊNH DẠNG (còn dấu gạch ngang) thay vì khớp đúng 1 giá trị tháng cụ thể.
+-- AN TOÀN CHẠY LẠI: sau lần đầu không còn ai khớp điều kiện where, chạy lại là no-op.
+update profiles
+set crm_ai_month = floor(extract(epoch from (now() - created_at)) / (30 * 86400))::text
+where crm_ai_month ~ '^\d{4}-\d{2}$';
 
 -- Thông báo tính năng mới (2026-08-31, chị Quỳnh: "cho e mục thông báo ở quản trị để e thông báo cho
 -- khách về cái hướng dẫn") — RIÊNG cho tro-ly-crm, cùng khuôn với feature_announcements của Xây Nhân
