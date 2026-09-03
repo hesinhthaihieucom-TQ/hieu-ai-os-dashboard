@@ -31,6 +31,27 @@ function formatWebinarDatetime(iso) {
   return d.toLocaleString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+// 2026-09-03 (Quỳnh: "3 mẫu đang na ná nhau... phải làm cho rõ như này luôn" + 4 link tham khảo thật)
+// — đổi từ 3 biến thể màu/font trên CÙNG 1 bố cục sang 4 BỐ CỤC thật sự khác nhau, mỗi mẫu lấy cảm
+// hứng rõ rệt từ 1 trang thật (không sao chép chữ/ảnh/thương hiệu của họ — chỉ lấy cấu trúc/phong
+// cách hiển thị, nội dung vẫn luôn là dữ liệu thật của người bán đang dùng app này):
+// - quynh: mẫu GỐC của Quỳnh (30ngaytamlinhtaichinh.netlify.app) — kem/serif, đã có từ đầu.
+// - video: lấy cảm hứng thanhnguyen.vn/7ngaylamvideo — nền tối, hồng rực, hero riêng full-width,
+//   vấn đề đánh số lớn kiểu "01/02/03".
+// - sach: lấy cảm hứng teedoo.io — nền đen, vàng/gold, hero riêng, chương trình hiện dạng lưới mục lục.
+// - chuyengia: lấy cảm hứng aichuyengia.topexpert.vn — nền trắng sạch, tím/indigo, khối giá nổi bật
+//   ngay đầu trang, thẻ "PHẦN" viền rõ cho từng phần chương trình.
+// normalizeTemplate() giữ tương thích sản phẩm đã lỡ chọn tên mẫu CŨ (classic/bold/minimal, trước
+// 2026-09-03) — không lỗi, tự động quy về mẫu gần nhất.
+function normalizeTemplate(t) {
+  if (t === 'classic') return 'quynh';
+  if (t === 'bold') return 'video';
+  if (t === 'minimal') return 'sach';
+  if (t === 'video' || t === 'sach' || t === 'chuyengia' || t === 'quynh') return t;
+  return 'quynh';
+}
+const BANNER_TEMPLATES = new Set(['video', 'sach']);
+
 const app = document.getElementById('app');
 const params = new URLSearchParams(location.search);
 const slug = params.get('slug');
@@ -132,7 +153,10 @@ function qrUrl(amount, content) {
 // bản cũ "hời hợt" so với landing page thật của chị. VẪN ĐỌC ĐƯỢC field cũ (van_de/loi_ich/
 // noi_dung_gioi_thieu) cho sản phẩm đã tạo landing page TRƯỚC batch này — không lỗi, chỉ đơn giản
 // không có phần "đặt tên vấn đề"/"lộ trình theo chặng"/"lời nhắn cá nhân" cho tới khi viết lại bằng AI.
-function landingPageIntroHtml(product, lp) {
+function landingPageIntroHtml(product, lp, template) {
+  // Nhãn nhỏ viết hoa phía trên tiêu đề (kiểu "BÓC TRẦN SỰ THẬT" ở mẫu gốc của Quỳnh) — CHỈ mẫu
+  // "quynh" mới có, đúng đặc trưng riêng của trang tham khảo đó.
+  const eyebrow = template === 'quynh' ? (t => `<div class="lp-eyebrow">${esc(t)}</div>`) : (() => '');
   const vanDeChiTietHtml = Array.isArray(lp.van_de_chi_tiet) && lp.van_de_chi_tiet.length
     ? `<div class="lp-problem-grid">${lp.van_de_chi_tiet.map(v => `
         <div class="lp-problem-item"><div class="lp-problem-ten">${esc(v.ten || '')}</div><div class="lp-problem-mota">${esc(v.mo_ta || '')}</div></div>
@@ -147,23 +171,23 @@ function landingPageIntroHtml(product, lp) {
   const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
     ? `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
   const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
-    ? `<div class="lp-section"><h2 class="lp-h2">Kết quả thực tế</h2><div class="lp-case-studies">${product.case_study_images.map(c => `
+    ? `<div class="lp-section">${eyebrow('Người dùng nói gì')}<h2 class="lp-h2">Kết quả thực tế</h2><div class="lp-case-studies">${product.case_study_images.map(c => `
         <div class="lp-case-study-item">
           <img src="${esc(c.url)}" alt="">
           ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
         </div>
       `).join('')}</div></div>` : '';
   const bonusHtml = Array.isArray(product.bonus_items) && product.bonus_items.length
-    ? `<div class="lp-section"><h2 class="lp-h2">Ưu đãi tặng kèm</h2><ul class="lp-list">${product.bonus_items.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>` : '';
+    ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2><ul class="lp-list">${product.bonus_items.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>` : '';
   return `
-    ${lp.van_de_intro || lp.van_de ? `<div class="lp-section"><p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : ''}
-    ${chuongTrinhHtml ? `<div class="lp-section"><h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '')}
-    ${ketQuaHtml ? `<div class="lp-section"><h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : ''}
+    ${lp.van_de_intro || lp.van_de ? `<div class="lp-section">${eyebrow('Bóc trần sự thật')}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : ''}
+    ${chuongTrinhHtml ? `<div class="lp-section">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '')}
+    ${ketQuaHtml ? `<div class="lp-section">${eyebrow('Sau khi hoàn thành')}<h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : ''}
     ${caseStudyHtml}
     ${bonusHtml}
-    ${phuHopHtml ? `<div class="lp-section"><h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
-    ${lp.loi_nhan_nguoi_ban ? `<div class="lp-section"><div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : ''}
-    ${lp.ve_nguoi_ban ? `<div class="lp-section"><h2 class="lp-h2">Về người bán</h2><div class="lp-seller">${product.seller_photo_url ? `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">` : ''}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div></div>` : ''}
+    ${phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
+    ${lp.loi_nhan_nguoi_ban ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : ''}
+    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller">${product.seller_photo_url ? `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">` : ''}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div></div>` : ''}
   `;
 }
 function landingPageFaqHtml(lp) {
@@ -214,10 +238,13 @@ function renderProduct(product, order) {
     ? `<div class="hint-box" style="margin-bottom:12px;">🗓️ Diễn ra: <b>${esc(formatWebinarDatetime(product.webinar_datetime))}</b></div>`
     : '';
   const lp = product.landing_page_content || null;
-  // Mẫu giao diện (2026-09-02, chọn ở san-pham-so/js/tao-landing-page.js) — chỉ đổi CSS hiển thị qua
-  // [data-lp-template], không đổi nội dung/công thức AI viết. Không có landing page thì bỏ qua luôn.
-  const lpTemplate = lp ? (product.landing_page_template || 'classic') : 'classic';
+  // Mẫu giao diện (2026-09-02, chọn ở san-pham-so/js/tao-landing-page.js) — chỉ đổi CÁCH HIỂN THỊ
+  // (bố cục hero + màu + kiểu đánh số) qua [data-lp-template], không đổi nội dung/công thức AI viết.
+  // Không có landing page thì bỏ qua luôn, dùng mẫu gốc.
+  const lpTemplate = lp ? normalizeTemplate(product.landing_page_template) : 'quynh';
+  const isBanner = BANNER_TEMPLATES.has(lpTemplate);
   const hookHtml = lp && lp.hook ? `<div class="lp-hook">${esc(lp.hook)}</div>` : '';
+  const titleBlockHtml = `${dinhDangBadgeHtml}${hookHtml}<h1>${esc(product.title)}</h1>${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}`;
   let buyHtml;
 
   if (!order) {
@@ -279,14 +306,12 @@ function renderProduct(product, order) {
     ? `<div class="hint-box" style="margin-top:12px;text-align:center;">🔒 ${esc(product.guarantee_text)}</div>` : '';
 
   app.innerHTML = `
-    <div class="wrap" data-lp-template="${esc(lpTemplate)}"><div class="card">
-      ${coverHtml}
-      ${dinhDangBadgeHtml}
-      ${hookHtml}
-      <h1>${esc(product.title)}</h1>
-      ${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}
+    <div class="wrap" data-lp-template="${esc(lpTemplate)}">
+      ${isBanner ? `<div class="lp-hero-banner">${coverHtml}${titleBlockHtml}</div>` : ''}
+      <div class="card">
+      ${isBanner ? '' : `${coverHtml}${titleBlockHtml}`}
       ${webinarPreHtml}
-      ${lp ? landingPageIntroHtml(product, lp) : ''}
+      ${lp ? landingPageIntroHtml(product, lp, lpTemplate) : ''}
       <div id="buy-area-anchor">
         <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
         ${soldCountHtml}

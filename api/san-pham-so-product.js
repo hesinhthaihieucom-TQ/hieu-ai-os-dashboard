@@ -51,7 +51,7 @@ module.exports = async (req, res) => {
         method: 'PATCH',
         body: JSON.stringify({
           landing_page_content: landing_page_content || null,
-          landing_page_template: landing_page_template || 'classic',
+          landing_page_template: landing_page_template || 'quynh',
           case_study_images: case_study_images || null,
           bonus_items: bonus_items || null,
           guarantee_text: guarantee_text || null,

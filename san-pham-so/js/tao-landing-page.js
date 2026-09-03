@@ -19,12 +19,25 @@ function newContent() {
 // bằng [data-lp-template]. Xem trước bằng chính trang mua THẬT qua <iframe src="p/?demo=1&tpl=...">
 // (2026-09-02, Quỳnh: "phải cho người ta xem 1 mẫu thật chứ không phải giả") — không phải hình vẽ
 // minh hoạ, mà là đúng code/CSS thật sẽ hiện cho khách, chỉ khác dữ liệu là mẫu dựng sẵn.
+// 2026-09-03 — 4 BỐ CỤC THẬT (không phải 3 biến thể màu na ná nhau như bản trước), mỗi mẫu lấy cảm
+// hứng rõ rệt từ 1 trang landing page thật Quỳnh gửi (nội dung vẫn luôn là dữ liệu thật của người
+// bán, không sao chép chữ/thương hiệu của các trang đó — xem chú thích BANNER_TEMPLATES ở p/script.js).
 const LP_TEMPLATES = [
-  { value: 'classic', label: 'Cổ điển', desc: 'Nền kem, chữ serif — đúng phong cách hiện có của app.' },
-  { value: 'bold', label: 'Nổi bật', desc: 'Nền tối, chữ to đậm, màu nhấn rực — cảm giác quảng cáo mạnh.' },
-  { value: 'minimal', label: 'Tối giản', desc: 'Nền trắng, nhiều khoảng trắng, ít trang trí — cảm giác cao cấp.' },
+  { value: 'quynh', label: 'Quỳnh gốc', desc: 'Kem/serif, có nhãn nhỏ trên mỗi mục — đúng mẫu 30 Ngày Tâm Linh Tài Chính.' },
+  { value: 'video', label: 'Nổi bật', desc: 'Nền tối, hồng rực, hero riêng, vấn đề đánh số 01/02/03 — kiểu khoá học video viral.' },
+  { value: 'sach', label: 'Sách/ebook', desc: 'Nền đen, vàng gold, chương trình dạng lưới mục lục — kiểu trang bán sách.' },
+  { value: 'chuyengia', label: 'Chuyên gia', desc: 'Nền trắng sạch, tím indigo, thẻ "Phần" viền rõ — kiểu khoá học cho coach/chuyên gia.' },
 ];
 const MAX_CASE_STUDIES = 6;
+// Tương thích sản phẩm đã lỡ chọn tên mẫu CŨ (classic/bold/minimal, trước 2026-09-03) — khớp đúng
+// hàm normalizeTemplate() ở san-pham-so/p/script.js.
+function normalizeTemplate(t) {
+  if (t === 'classic') return 'quynh';
+  if (t === 'bold') return 'video';
+  if (t === 'minimal') return 'sach';
+  if (t === 'video' || t === 'sach' || t === 'chuyengia' || t === 'quynh') return t;
+  return 'quynh';
+}
 
 function newProductForm() {
   return { title: '', price: '', description: '', deliverableType: 'file', externalLink: '', fileStoragePath: null, fileName: null, fileUploading: false, error: null, saving: false };
@@ -32,7 +45,7 @@ function newProductForm() {
 
 function render(container) {
   const state = {
-    screen: 'list', products: [], loading: true, selected: null, content: null, template: 'classic',
+    screen: 'list', products: [], loading: true, selected: null, content: null, template: 'quynh',
     caseStudies: [], bonusItems: [], referencePrice: '', guaranteeText: '', caseStudyUploading: false, sellerPhotoUploading: false,
     generating: false, saving: false, error: null, showManualEdit: false,
     // Tạo nhanh 1 sản phẩm NGAY TẠI ĐÂY (2026-09-02, Quỳnh: "người dùng không cần làm bước 1-2-3
@@ -86,7 +99,7 @@ function render(container) {
   function templateShowcaseHtml() {
     return `
       <div class="card" style="margin-bottom:14px;">
-        <label style="margin-bottom:10px;display:block;">🎨 3 mẫu giao diện có sẵn (xem trước thật) — chọn khi vào 1 sản phẩm cụ thể bên dưới</label>
+        <label style="margin-bottom:10px;display:block;">🎨 4 mẫu giao diện có sẵn (xem trước thật) — chọn khi vào 1 sản phẩm cụ thể bên dưới</label>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           ${LP_TEMPLATES.map(t => templateCellHtml(t, false, false)).join('')}
         </div>
@@ -312,7 +325,7 @@ function render(container) {
   function pickProduct(p) {
     state.selected = p;
     state.content = p.landing_page_content ? { ...newContent(), ...p.landing_page_content } : newContent();
-    state.template = p.landing_page_template || 'classic';
+    state.template = normalizeTemplate(p.landing_page_template);
     state.caseStudies = Array.isArray(p.case_study_images) ? [...p.case_study_images] : [];
     state.bonusItems = Array.isArray(p.bonus_items) ? [...p.bonus_items] : [];
     state.referencePrice = p.reference_price || '';
