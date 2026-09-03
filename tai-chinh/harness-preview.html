@@ -281,7 +281,13 @@ window.supabaseClient = {
   },
   from(table){ return makeChain(table); },
   rpc(name){
-    if(name==='mark_tc_review_prompt_dismissed') PROFILES_BY_ID['admin-1'].tc_review_prompt_dismissed = true;
+    // Dùng ĐÚNG user đang đăng nhập (window.MOCK_SESSION, xem ?uid=<id> ở dưới) thay vì luôn hardcode
+    // 'admin-1' — bug cũ khiến test bằng ?uid=member-1 (vd popup mời bật thông báo) không thấy cờ
+    // "đã đánh dấu" cập nhật đúng người.
+    const uid = window.MOCK_SESSION && window.MOCK_SESSION.user && window.MOCK_SESSION.user.id;
+    const p = uid && PROFILES_BY_ID[uid];
+    if(p && name==='mark_tc_review_prompt_dismissed') p.tc_review_prompt_dismissed = true;
+    if(p && name==='mark_tc_push_prompt_seen') p.tc_push_prompt_seen = true;
     return Promise.resolve({ data:null, error:null });
   },
 };
@@ -308,5 +314,13 @@ window.REFERRALS = REFERRALS;
 <script src="js/feature-tour.js"></script>
 <script src="js/install-prompt.js"></script>
 <script src="js/app-shell.js"></script>
+<script>
+  // Đăng ký sw.js THẬT (2026-09-03, thêm để test popup mời bật thông báo — maybeShowTcPushPrompt()
+  // chờ navigator.serviceWorker.ready, không đăng ký gì thì promise đó treo mãi, popup không bao giờ
+  // vẽ được trong harness). index.html thật cũng đăng ký y hệt.
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+</script>
 </body>
 </html>

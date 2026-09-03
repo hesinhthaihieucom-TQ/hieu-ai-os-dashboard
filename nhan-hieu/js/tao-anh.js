@@ -223,8 +223,20 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
 function render(container, ctx){
   const pendingTitle = window.PendingImageTitle;
   window.PendingImageTitle = null;
+  // "Sửa ảnh này" từ Lịch Đăng Bài (2026-09-03, chị Quỳnh: "cho mình được sửa" ảnh AI tự tạo) — ảnh
+  // AI đã có chữ in sẵn lên nền, KHÔNG tách được thành lớp chữ/nền riêng để sửa tại chỗ, nên hướng đi
+  // đã chốt là dùng thẳng ảnh đó làm ẢNH NỀN ở đây, người dùng tự gõ/chỉnh chữ mới đè lên như bình
+  // thường — coi như "làm lại" từ ảnh cũ, không phải sửa từng chữ trong ảnh gốc.
+  const pendingImageBg = window.PendingImageBg;
+  window.PendingImageBg = null;
   const state = { bgImage:null, bgImageDataUrl:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE, size:'doc',
     imgZoom:1, imgOffsetX:0, imgOffsetY:0, titleSavedAsHook:false };
+
+  if(pendingImageBg){
+    const img = new Image();
+    img.onload = () => { state.bgImage = img; state.bgImageDataUrl = pendingImageBg; paintAll(); persistDraft(); };
+    img.src = pendingImageBg;
+  }
 
   // Giữ lại ảnh đã tải lên + toàn bộ tuỳ chỉnh (layout/font/màu/tiêu đề...) khi chuyển trang rồi
   // quay lại — trước đây mất trắng, phải tải ảnh lên lại từ đầu mỗi lần.
@@ -450,9 +462,11 @@ function render(container, ctx){
 
   draw();
 
-  // Không có tiêu đề mới truyền sang (Pending*) — khôi phục bản đang làm dở lần trước, đỡ phải tải
-  // ảnh lên lại và chỉnh lại layout/màu/font từ đầu chỉ vì lỡ chuyển sang trang khác.
-  if(!pendingTitle){
+  // Không có tín hiệu Pending* nào truyền sang — khôi phục bản đang làm dở lần trước, đỡ phải tải
+  // ảnh lên lại và chỉnh lại layout/màu/font từ đầu chỉ vì lỡ chuyển sang trang khác. Có PendingImageBg
+  // thì PHẢI bỏ qua bản nháp cũ (không chỉ pendingTitle) — nếu không, ảnh nền cũ trong draft sẽ tải
+  // đè lên ngay sau ảnh mới vừa gán ở trên (2 lần img.onload chạy đua nhau), có lúc thắng có lúc thua.
+  if(!pendingTitle && !pendingImageBg){
     loadModuleDraft(ctx, DRAFT_KEY).then(draft => {
       if(!draft) return;
       Object.assign(state, {

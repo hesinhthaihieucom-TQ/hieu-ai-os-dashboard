@@ -218,6 +218,7 @@ async function initApp(){
       AppState.user = null;
       AppState.profile = null;
       AppState.route = 'trang-chu';
+      AppState.tcPushPromptAttempted = false; // cho phép hỏi lại nếu 1 người khác đăng nhập cùng phiên tải trang (vd máy dùng chung)
       location.hash = '';
       renderApp();
     }
@@ -263,7 +264,7 @@ async function loadTcReviewPromptEligibility(){
 
 function maybeShowTcReviewPrompt(){
   if(!AppState.tcReviewPromptEligible) return;
-  if(document.getElementById('onboarding-tour-overlay') || document.getElementById('tc-review-prompt-overlay')) return;
+  if(document.getElementById('onboarding-tour-overlay') || document.getElementById('tc-review-prompt-overlay') || document.getElementById('tc-push-prompt-overlay')) return;
   AppState.tcReviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang
 
   const overlay = document.createElement('div');
@@ -303,6 +304,80 @@ function maybeShowTcReviewPrompt(){
     } catch(e){
       errorEl.textContent = e.message; errorEl.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Gửi đánh giá';
+    }
+  };
+}
+
+function markTcPushPromptSeen(){
+  if(AppState.profile) AppState.profile.tc_push_prompt_seen = true;
+  supabaseClient.rpc('mark_tc_push_prompt_seen').catch(()=>{});
+}
+
+// Popup mời bật thông báo đẩy NGAY TỪ ĐẦU (2026-09-03, góp ý Quỳnh: "pop up thông báo cho ngta ngay
+// từ đầu để bảo ng ta bật thông báo ở app để nhận thông báo, và pop up thông báo nhắc lịch còn bao
+// nhiêu ngày là hết hạn khuyến mại") — lý do mời bật thông báo CHÍNH là để không lỡ mốc giá tăng dần
+// 299k→599k→999k (xem TC_PRICE_TIER_1/2/3 + checkTcPriceTierDeadline() ở api/cron/send-reminders.js,
+// nơi gửi thông báo THẬT), nên chỉ hỏi người CHƯA trả phí — người đã mua thì lý do này hết ý nghĩa.
+// Hỏi ĐÚNG 1 lần/tài khoản (tc_push_prompt_seen) — bấm "Bật thông báo" hay "Để sau" đều đánh dấu đã
+// hỏi, không hỏi lại mỗi lần vào app. KHÔNG tự hỏi nếu trình duyệt không hỗ trợ Web Push, đã từng bị
+// từ chối quyền (Notification.permission==='denied' — hỏi lại chỉ gây khó chịu, phải tự vào cài đặt
+// trình duyệt mới bật lại được), hoặc đã đăng ký sẵn rồi (vd bật ở Ghi Chép Hàng Ngày trước khi thấy
+// popup này). AppState.tcPushPromptAttempted chặn gọi lại nhiều lần trong lúc đang chờ async bên dưới
+// (renderApp() gọi hàm này ở MỌI lần render, không chỉ lần đầu).
+async function maybeShowTcPushPrompt(){
+  if(AppState.tcPushPromptAttempted) return;
+  if(!AppState.user || !AppState.profile) return;
+  if(AppState.profile.tc_push_prompt_seen || AppState.profile.tc_has_paid || AppState.profile.role === 'admin') return;
+  if(!(window.PushManager && navigator.serviceWorker && window.Notification)) return;
+  if(Notification.permission === 'denied') return;
+  if(document.getElementById('onboarding-tour-overlay') || document.getElementById('tc-review-prompt-overlay')) return;
+  AppState.tcPushPromptAttempted = true;
+
+  let sub;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    sub = await reg.pushManager.getSubscription();
+  } catch(e){ return; } // service worker chưa sẵn sàng — thử lại ở phiên tải trang sau
+  if(sub){ markTcPushPromptSeen(); return; } // đã bật sẵn rồi — không cần hỏi
+  // Overlay khác có thể vừa mở trong lúc đang chờ await ở trên — kiểm tra lại lần nữa trước khi vẽ.
+  if(document.getElementById('onboarding-tour-overlay') || document.getElementById('tc-review-prompt-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tc-push-prompt-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🔔 Bật thông báo để không lỡ giá ưu đãi</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Giá mở khoá TRỌN ĐỜI tăng dần theo thời gian dùng thử — 299.000đ trong 15 ngày đầu, sau đó tự động lên 599.000đ rồi 999.000đ. Bật thông báo để được nhắc trước 3 ngày mỗi lần giá sắp tăng, không cần tự nhớ ngày.</div>
+      <div id="tcpp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
+        <span id="tcpp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="tcpp-enable" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Bật thông báo</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close(){ overlay.remove(); }
+  overlay.querySelector('#tcpp-skip').onclick = ()=>{ close(); markTcPushPromptSeen(); };
+  overlay.querySelector('#tcpp-enable').onclick = async ()=>{
+    const btn = overlay.querySelector('#tcpp-enable');
+    const errorEl = overlay.querySelector('#tcpp-error');
+    btn.disabled = true; btn.textContent = 'Đang bật…';
+    try{
+      const permission = await Notification.requestPermission();
+      if(permission !== 'granted') throw new Error('Bạn chưa cấp quyền thông báo — vào cài đặt trình duyệt/điện thoại để bật lại nếu muốn thử lại.');
+      const reg = await navigator.serviceWorker.ready;
+      const newSub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      await callApi('/api/push-subscribe', newSub.toJSON());
+      close(); markTcPushPromptSeen();
+    } catch(e){
+      errorEl.textContent = e.message || 'Không bật được thông báo — thử lại giúp mình.';
+      errorEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Bật thông báo';
     }
   };
 }
@@ -523,7 +598,10 @@ function renderApp(){
   }
 
   maybeShowFeatureAnnouncement();
-  maybeShowTcReviewPrompt();
+  // Chờ maybeShowTcPushPrompt() TỰ QUYẾT XONG (có vẽ overlay hay không) rồi mới xét review prompt —
+  // tránh 2 popup cùng bật đè lên nhau (push prompt có await bên trong, không đồng bộ như review
+  // prompt cũ, nên phải nối chuỗi thay vì gọi song song).
+  maybeShowTcPushPrompt().then(maybeShowTcReviewPrompt);
 
   const content = root.querySelector('#main-content');
   const mod = window.Modules && window.Modules[AppState.route];

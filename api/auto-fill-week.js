@@ -17,8 +17,9 @@ const MAX_FILL_PER_CLICK = 9;
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
 const { supabaseAdmin } = require('./_lib/supabase-admin');
-const { contextBlockOf } = require('./_lib/post-schema');
+const { contextBlockOf, stripDiacritics } = require('./_lib/post-schema');
 const { TEXT_CLASSIFY_SYSTEM_PROMPT, TOOL_PHAN_LOAI_TRUC } = require('./_lib/pillars');
+const { autoPickAndRenderImage } = require('./_lib/image-gen');
 const {
   loadCandidatePool, pickUnusedCandidate, findEmptySlots, fillOneSlot, PERSONAL_SLOTS, DEFAULT_SLOT_TIME,
   pickMatchingProduct,
@@ -75,6 +76,26 @@ module.exports = async (req, res) => {
     const assets = assetsResp.ok ? await assetsResp.json() : [];
     const products = assets.filter((a) => a.kind !== 'cong_dong');
     const groups = assets.filter((a) => a.kind === 'cong_dong');
+
+    // Ảnh tự động cho mọi khách (2026-09-03, chị Quỳnh chốt "có, mở luôn cho mọi khách" — trước đây
+    // CHỈ admin có ảnh tự tạo, khách thường bấm nút này bài không hề có ảnh nào) — dùng chung đúng
+    // autoPickAndRenderImage() đã có cho lane Cá nhân của admin (tâm linh → ảnh cá nhân thật đã tải
+    // lên → ảnh AI chung), không tính thêm lượt riêng cho ảnh — gộp chung vào chi phí bài viết đã trừ
+    // ở trên (3-4 lượt/bài), giống hệt cách admin đang được miễn phí hoàn toàn cho phần ảnh.
+    const personalPhotosResp = await supabaseAdmin(`personal_photos?user_id=eq.${user.id}&select=id,image,card_corner`);
+    const personalPhotos = personalPhotosResp.ok ? await personalPhotosResp.json() : [];
+    const rawHandle = profile.brand_name || profile.channel_handle || '';
+    const handle = rawHandle ? `@${stripDiacritics(rawHandle).toLowerCase()}` : '';
+    async function attachAutoImage(result, tags) {
+      try {
+        const image = await autoPickAndRenderImage({ title: result.title, handle, tags, personalPhotos });
+        if (image) {
+          await supabaseAdmin(`posts?id=eq.${result.post_id}`, {
+            method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify({ image_data: image.toString('base64') }),
+          });
+        }
+      } catch (e) { /* không ghép được ảnh — bài vẫn đã lưu, chỉ thiếu ảnh */ }
+    }
 
     const dateStrs = Array.from({ length: 7 }, (_, i) => dateStrFromWeekStart(week_start, i));
     const emptySlots = await findEmptySlots(user.id, dateStrs, 'ca_nhan', PERSONAL_SLOTS);
@@ -175,6 +196,7 @@ module.exports = async (req, res) => {
         filled.push(result);
         recentTitles.push(result.title);
         luotUsed += 3;
+        await attachAutoImage(result, candidate.tags || (truc ? [truc] : null));
       } catch (e) {
         await refundTrialQuota(user.id, 'viet-tu-kho-goc');
         skippedNoCandidate.push({ ...slotInfo, error: e.message });

@@ -544,3 +544,18 @@ alter table tc_finance_entries add column if not exists tich_luy_category text;
 -- ngược với vài dòng cũ (nếu có) còn mang type='expense'.
 alter table tc_finance_entries drop constraint if exists tc_finance_entries_type_check;
 alter table tc_finance_entries add constraint tc_finance_entries_type_check check (type in ('income','expense','tich_luy'));
+
+-- Popup mời bật thông báo đẩy NGAY TỪ ĐẦU (2026-09-03, góp ý Quỳnh: "pop up thông báo cho ngta ngay
+-- từ đầu để bảo ng ta bật thông báo... nhắc lịch còn bao nhiêu ngày là hết hạn khuyến mại") — khác
+-- "Nhắc ghi chép" ở Ghi Chép Hàng Ngày (nút bấm chủ động, đã có sẵn), đây là 1 popup TỰ HIỆN 1 lần
+-- (xem maybeShowTcPushPrompt() ở app-shell.js) để mời bật thông báo — chỉ hỏi 1 lần/tài khoản, dù bấm
+-- "Bật thông báo" hay "Để sau" cũng đều đánh dấu đã hỏi (không hỏi lại mỗi lần vào app). Cờ RIÊNG,
+-- không dùng chung tc_review_prompt_dismissed — 2 popup khác mục đích, có thể độc lập bật/tắt.
+alter table profiles add column if not exists tc_push_prompt_seen boolean not null default false;
+create or replace function public.mark_tc_push_prompt_seen()
+returns void as $$
+begin
+  update public.profiles set tc_push_prompt_seen = true where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_tc_push_prompt_seen() to authenticated;

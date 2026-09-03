@@ -375,6 +375,40 @@ async function checkTaiChinhLogReminder() {
   return count;
 }
 
+// Nhắc TRƯỚC khi mốc giá Sổ Dòng Tiền Tâm Thức tăng (299k ngày 0-15 → 599k ngày 15-30 → 999k sau đó
+// — xem TC_PRICE_TIER_1/2/3 ở tai-chinh/js/app-shell.js, SỬA CẢ 2 NƠI nếu đổi mốc ngày/giá). 2026-09-03,
+// góp ý Quỳnh: "nhấn mạnh thật rõ" giá tăng theo thời gian — riêng hiện rõ trên màn hình (tcPriceAnchorHtml)
+// vẫn có thể bị lướt qua nếu người dùng không quay lại app, nên cần thêm đúng 1 thông báo đẩy TRƯỚC mỗi
+// mốc tăng giá. Chỉ người CHƯA trả phí mới cần biết (đã mua thì giá không còn ý nghĩa gì với họ nữa).
+// Quét theo tc_trial_started_at (mốc ngày CỦA RIÊNG từng người, không phải lịch chung) — cửa sổ trượt
+// giống mọi loại nhắc "theo mốc thời gian tương đối" khác trong file này (vd checkAutoFillNudge).
+const TC_PRICE_DEADLINE_REMIND_DAYS_BEFORE = 3;
+const TC_PRICE_TIER_DEADLINES = [
+  { atDay: 15, eventKey: 'tc-price-tier1-ending', nextPrice: 599000 },
+  { atDay: 30, eventKey: 'tc-price-tier2-ending', nextPrice: 999000 },
+];
+async function checkTcPriceTierDeadline() {
+  let count = 0;
+  for (const tier of TC_PRICE_TIER_DEADLINES) {
+    const reminderAtDays = tier.atDay - TC_PRICE_DEADLINE_REMIND_DAYS_BEFORE;
+    const upperTs = Date.now() - reminderAtDays * 86400000;
+    const lowerTs = upperTs - WINDOW_MINUTES * 60000;
+    const resp = await supabaseAdmin(
+      `profiles?tc_has_paid=eq.false&role=neq.admin&tc_trial_started_at=gte.${encodeURIComponent(new Date(lowerTs).toISOString())}&tc_trial_started_at=lt.${encodeURIComponent(new Date(upperTs).toISOString())}&select=id`
+    );
+    const rows = resp.ok ? await resp.json() : [];
+    for (const row of rows) {
+      const result = await notifyOnce(row.id, tier.eventKey, {
+        title: `⏰ Còn ${TC_PRICE_DEADLINE_REMIND_DAYS_BEFORE} ngày là hết giá ưu đãi`,
+        body: `Giá Sổ Dòng Tiền Tâm Thức sẽ tự động tăng lên ${tier.nextPrice.toLocaleString('vi-VN')}đ — mở khoá TRỌN ĐỜI ngay để giữ giá đang có.`,
+        url: './#nang-cap',
+      });
+      if (result.sent) count++;
+    }
+  }
+  return count;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron tự thêm header này khi biến môi trường CRON_SECRET được cấu hình — chặn người
   // ngoài gọi thẳng URL này để spam thông báo.
@@ -386,7 +420,7 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder, tcPriceTierDeadline] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
@@ -397,8 +431,9 @@ module.exports = async (req, res) => {
       checkCrmFollowReminders(),
       checkSucKhoeDailyTip(),
       checkTaiChinhLogReminder(),
+      checkTcPriceTierDeadline(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder, tc_price_tier_deadline: tcPriceTierDeadline } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

@@ -59,6 +59,7 @@ function openTextModal(title, body, imageDataUrl){
         <button class="btn btn-sm" data-copy-text-modal="1">Copy nội dung</button>
         ${title?`<span class="btn-ghost btn btn-sm" data-copy-title-modal="1">Copy tiêu đề</span>`:''}
         ${imageDataUrl?`<span class="btn-ghost btn btn-sm" data-download-img-modal="1">Tải ảnh xuống</span>`:''}
+        ${imageDataUrl?`<span class="btn-ghost btn btn-sm" data-edit-img-modal="1">Sửa ảnh này →</span>`:''}
       </div>
     </div>
   `;
@@ -96,6 +97,16 @@ function openTextModal(title, body, imageDataUrl){
       a.download = filename; a.href = imageDataUrl;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
+  };
+  // "Sửa ảnh này" (2026-09-03, chị Quỳnh) — ảnh AI đã in sẵn chữ lên nền, không tách được lớp riêng
+  // để sửa tại chỗ, nên hướng đã chốt là mở sang Tạo Ảnh Thương Hiệu, dùng thẳng ảnh này làm ẢNH NỀN
+  // để tự gõ/chỉnh chữ mới đè lên (coi như làm lại từ ảnh cũ). Xem window.PendingImageBg ở tao-anh.js.
+  const editImgBtn = overlay.querySelector('[data-edit-img-modal]');
+  if(editImgBtn) editImgBtn.onclick = () => {
+    window.PendingImageBg = imageDataUrl;
+    if(title) window.PendingImageTitle = title;
+    location.hash = 'tao-anh';
+    close();
   };
   document.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
