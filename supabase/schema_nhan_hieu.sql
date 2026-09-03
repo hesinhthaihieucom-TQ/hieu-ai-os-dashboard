@@ -629,6 +629,19 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_push_prompt_seen() to authenticated;
 
+-- Popup báo riêng về ưu đãi "mua sớm trong 3 ngày đầu dùng thử" (2026-09-03, góp ý Quỳnh: "làm cái
+-- pop up y hệt như app sổ dòng tiền về cái này" — khác popup mời bật thông báo ở trên, đây là popup
+-- RIÊNG cho ưu đãi tặng tháng, xem maybeShowEarlyBirdPrompt() ở app-shell.js + isInEarlyBirdWindow()/
+-- EARLY_BIRD_BONUS_MONTHS cùng file). Cờ riêng vì 2 popup độc lập, có thể bật/tắt khác nhau.
+alter table profiles add column if not exists early_bird_prompt_seen boolean not null default false;
+create or replace function public.mark_early_bird_prompt_seen()
+returns void as $$
+begin
+  update public.profiles set early_bird_prompt_seen = true where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_early_bird_prompt_seen() to authenticated;
+
 -- Kết quả thật (view/like/cmt/share) lưu THÊM ở posts (2026-08-26, theo yêu cầu chị Quỳnh: "mục
 -- view khi điền ở lịch thì cũng auto cập nhật ở kho luôn, sau này muốn sửa view cũng sửa được, mục
 -- đích để theo dõi hiệu quả bài đăng" — chuẩn bị cho mục phân tích hiệu quả bài đăng sắp tới). Trước

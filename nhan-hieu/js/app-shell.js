@@ -206,6 +206,23 @@ function isInEarlyBirdWindow(profile){
   if(!profile || !profile.created_at) return false;
   return (Date.now() - new Date(profile.created_at).getTime()) <= EARLY_BIRD_WINDOW_DAYS * 86400000;
 }
+// Đếm ngược theo GIỜ (không phải ngày, khác tcPriceTierDaysLeft() bên tai-chinh) — cửa sổ chỉ vỏn
+// vẹn 3 ngày nên tính theo ngày sẽ hầu như luôn hiện "1 ngày" suốt gần cả cửa sổ, không đủ khẩn cấp.
+// null = đã hết ưu đãi hoặc chưa có profile — không hiện khối cảnh báo.
+function earlyBirdHoursLeft(profile){
+  if(!profile || !profile.created_at) return null;
+  const elapsedMs = Date.now() - new Date(profile.created_at).getTime();
+  const totalMs = EARLY_BIRD_WINDOW_DAYS * 86400000;
+  if(elapsedMs >= totalMs) return null;
+  return Math.max(0, Math.ceil((totalMs - elapsedMs) / 3600000));
+}
+function earlyBirdTimeLeftLabel(profile){
+  const h = earlyBirdHoursLeft(profile);
+  if(h == null) return null;
+  const days = Math.floor(h / 24);
+  const hours = h % 24;
+  return days > 0 ? `${days} ngày ${hours} giờ` : `${hours} giờ`;
+}
 function decorateEarlyBird(plans, profile){
   if(!isInEarlyBirdWindow(profile)) return plans;
   return plans.map(pl=>{
@@ -426,7 +443,7 @@ async function loadReviewPromptEligibility(){
 // thông báo tính năng luôn được ưu tiên hiện trước nếu cả 2 cùng đủ điều kiện.
 function maybeShowReviewPrompt(){
   if(!AppState.reviewPromptEligible) return;
-  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('push-prompt-overlay')) return;
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('push-prompt-overlay') || document.getElementById('early-bird-prompt-overlay')) return;
   AppState.reviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang, không hiện lại nếu re-render
 
   const overlay = document.createElement('div');
@@ -476,6 +493,47 @@ function markPushPromptSeen(){
   supabaseClient.rpc('mark_push_prompt_seen').catch(()=>{});
 }
 
+function markEarlyBirdPromptSeen(){
+  if(AppState.profile) AppState.profile.early_bird_prompt_seen = true;
+  supabaseClient.rpc('mark_early_bird_prompt_seen').catch(()=>{});
+}
+
+// Popup báo riêng về ưu đãi "mua sớm trong 3 ngày đầu dùng thử" (2026-09-03, góp ý Quỳnh: "làm cái
+// pop up y hệt như app sổ dòng tiền về cái này" — cùng khung overlay/2-nút với maybeShowPushPrompt(),
+// khác NỘI DUNG và MỤC ĐÍCH: đây là mời MUA ngay để nhận thêm 1-2 tháng, không phải mời bật thông
+// báo). Chạy TRƯỚC maybeShowPushPrompt() trong chuỗi gọi — ưu đãi có hạn 3 ngày nên ưu tiên cao hơn,
+// đủ điều kiện cho MỌI người còn trong cửa sổ + CHƯA trả phí + KHÔNG phải học viên (ưu đãi này không
+// áp cho học viên, xem decorateEarlyBird()) + chưa từng thấy popup này. Đồng bộ (không có await nào
+// thật sự cần chờ như push prompt) nên không cần AppState.*Attempted chặn gọi lại — reviewPromptEligible-
+// style tắt ngay sau khi hiện là đủ.
+function maybeShowEarlyBirdPrompt(){
+  const p = AppState.profile;
+  if(!AppState.user || !p) return;
+  if(p.early_bird_prompt_seen || p.has_paid || p.role === 'admin' || p.is_student) return;
+  if(!isInEarlyBirdWindow(p)) return;
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('push-prompt-overlay')) return;
+
+  const label = earlyBirdTimeLeftLabel(p);
+  const overlay = document.createElement('div');
+  overlay.id = 'early-bird-prompt-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🎁 Ưu đãi chỉ dành cho 3 ngày đầu dùng thử</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Mua gói <b>6 tháng</b> được TẶNG THÊM <b>1 tháng</b>, mua gói <b>12 tháng</b> được TẶNG THÊM <b>2 tháng</b> — cùng 1 mức giá, chỉ áp dụng nếu chuyển khoản trong 3 ngày đầu kể từ lúc đăng ký. ${label ? `Còn <b style="color:var(--danger,#A6462E);">${esc(label)}</b> là hết ưu đãi này.` : ''}</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
+        <span id="ebp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="ebp-view" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Xem gói ngay</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close(){ overlay.remove(); }
+  overlay.querySelector('#ebp-skip').onclick = ()=>{ close(); markEarlyBirdPromptSeen(); };
+  overlay.querySelector('#ebp-view').onclick = ()=>{ close(); markEarlyBirdPromptSeen(); location.hash = 'nang-cap'; };
+}
+
 // Popup mời bật thông báo đẩy NGAY TỪ ĐẦU (2026-09-03, mượn lại ý tưởng vừa làm cho tai-chinh — xem
 // maybeShowTcPushPrompt() ở tai-chinh/js/app-shell.js) — lý do mời bật ở ĐÂY là để không lỡ hạn dùng
 // thử: cron đã gửi sẵn 'trial-ending-24h'/'trial-expired' (api/cron/send-reminders.js
@@ -492,7 +550,7 @@ async function maybeShowPushPrompt(){
   if(AppState.profile.push_prompt_seen || AppState.profile.has_paid || AppState.profile.role === 'admin') return;
   if(!(window.PushManager && navigator.serviceWorker && window.Notification)) return;
   if(Notification.permission === 'denied') return;
-  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay')) return;
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('early-bird-prompt-overlay')) return;
   AppState.pushPromptAttempted = true;
 
   let sub;
@@ -502,7 +560,7 @@ async function maybeShowPushPrompt(){
   } catch(e){ return; } // service worker chưa sẵn sàng — thử lại ở phiên tải trang sau
   if(sub){ markPushPromptSeen(); return; } // đã bật sẵn rồi — không cần hỏi
   // Overlay khác có thể vừa mở trong lúc đang chờ await ở trên — kiểm tra lại lần nữa trước khi vẽ.
-  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay')) return;
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('early-bird-prompt-overlay')) return;
 
   const overlay = document.createElement('div');
   overlay.id = 'push-prompt-overlay';
@@ -592,8 +650,16 @@ function paymentCardHtml(){
     ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
 
+  // Khối cảnh báo đếm ngược ưu đãi "mua sớm trong 3 ngày đầu" — nhấn mạnh RÕ như cách vừa làm bên
+  // tai-chinh (tcPriceAnchorHtml, 2026-09-03, góp ý Quỳnh: "làm cái hạn sẽ hết y hệt luôn") — trước
+  // đây chỉ có 1 dòng ghi chú nhỏ (plan.note) gắn theo TỪNG gói đang chọn, dễ bị lướt qua và chỉ hiện
+  // khi đã chọn đúng gói 6/12 tháng. Khối này hiện NGAY TỪ ĐẦU, không phụ thuộc gói đang chọn — không
+  // áp cho học viên (đã loại ở decorateEarlyBird()/isInEarlyBirdWindow() phía server, giữ nhất quán).
+  const earlyBirdLabel = !isStudent ? earlyBirdTimeLeftLabel(p) : null;
+
   return `
     <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
+    ${earlyBirdLabel ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdLabel)} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
     <div class="hint-box" style="margin-bottom:12px;line-height:1.7;">
       💡 <b>Đặc biệt Kho Content và Kho Hook viral</b> — nơi giúp bạn viết content dễ dàng từ các content đang có tín hiệu tốt trên thị trường.<br><br>
       Kho này được <b>cập nhật liên tục</b> và <b>mở rộng vô hạn theo từng tuần</b> — càng dùng lâu càng có nhiều để khai thác.<br><br>
@@ -965,9 +1031,11 @@ function renderApp(){
   }
 
   maybeShowFeatureAnnouncement();
-  // Chờ maybeShowPushPrompt() TỰ QUYẾT XONG (có vẽ overlay hay không) rồi mới xét review prompt —
-  // tránh 2 popup cùng bật đè lên nhau (push prompt có await bên trong, không đồng bộ như review
-  // prompt cũ, nên phải nối chuỗi thay vì gọi song song).
+  // Thứ tự ưu tiên: thông báo tính năng → ưu đãi 3 ngày đầu (có hạn, giá trị doanh thu rõ nhất) →
+  // mời bật thông báo → xin đánh giá. Nối chuỗi bằng .then() (không gọi song song) để không có 2
+  // overlay cùng bật đè lên nhau — maybeShowPushPrompt() có await bên trong nên không đồng bộ như
+  // 2 cái còn lại, phải chờ nó tự quyết xong (có vẽ overlay hay không) rồi mới xét review prompt.
+  maybeShowEarlyBirdPrompt();
   maybeShowPushPrompt().then(maybeShowReviewPrompt);
 
   const content = root.querySelector('#main-content');
