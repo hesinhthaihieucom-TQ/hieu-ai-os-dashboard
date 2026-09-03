@@ -21,6 +21,20 @@ function aiUsageLabel(p){
   return `${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt AI (dùng thử, trọn đời)`;
 }
 
+// Bản RÚT GỌN của aiUsageLabel() — hiện ngay ở thẻ THU GỌN (không cần bấm "Xem chi tiết" mới thấy),
+// theo yêu cầu chị Quỳnh 2026-09-03: "mình cũng thấy được cái lượt AI đó của người dùng ở trang
+// quản trị" — trước đây số lượt bị giấu hẳn sau "Xem chi tiết", phải bấm từng người một mới thấy,
+// không liếc qua cả danh sách để phát hiện ai dùng bất thường/gần hết lượt được.
+function aiUsageShortLabel(p){
+  if(p.has_paid){
+    const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
+    const used = sameMonth ? (p.paid_ai_uses||0) : 0;
+    const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
+    return `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI/tháng`;
+  }
+  return `${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt AI dùng thử`;
+}
+
 // Cảnh báo dữ liệu lệch: admin đã gắn "Gói" (last_plan_days) bằng tay hoặc hạn dùng còn rất dài —
 // rõ ràng coi là khách đã trả phí — nhưng lại QUÊN bấm "💰 Đánh dấu đã trả phí" nên has_paid vẫn
 // false, khiến trang hiện sai "Chưa trả phí (trần 100 lượt)" thay vì đúng 200 lượt/tháng (sự cố
@@ -242,6 +256,7 @@ function render(container, ctx){
             <div>
               <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}</h3>
               <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
+              ${p.role!=='admin' ? `<div style="margin-top:4px;font-size:12px;color:var(--ink-soft);">⚡ ${esc(aiUsageShortLabel(p))}</div>` : ''}
               ${p.role!=='admin' && !p.has_paid ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">${journeyBadgesHtml(p)}</div>` : ''}
             </div>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;
