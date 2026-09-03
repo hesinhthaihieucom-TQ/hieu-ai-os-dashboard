@@ -1,5 +1,13 @@
 (function(){
 const SLOTS = [ {key:'sang', label:'Sáng'}, {key:'trua', label:'Trưa'}, {key:'toi', label:'Tối'} ];
+// Y HỆT FORMAT_NAMES ở api/_lib/formats.js — dùng để cho chọn "dạng bài" gợi ý theo từng buổi khi
+// dùng "AI viết luôn" (2026-09-03, theo yêu cầu chị Quỳnh). Đây chỉ là bản HIỂN THỊ cho người dùng
+// chọn, server vẫn là nơi thật sự áp dụng — nếu đổi danh sách format ở formats.js thì sửa luôn ở đây.
+const FORMAT_NAMES = [
+  'Text trên ảnh AI', 'Text trên ảnh thật', 'Text trên Video AI + Caption', 'Text trên Video thật + Caption',
+  'Video Ngồi Nói', 'POV (First Person View)', 'Vlog (kể chuyện bằng cuộc sống)', 'Take note viết bằng AI',
+  'Ghi chú viết tay AI', 'Case Study (chứng minh)', 'Livestream / Mini Q&A', 'Meme / Bắt Trend',
+];
 // Giờ mặc định nếu profile chưa có (chưa chạy migrate/tài khoản cũ) — PHẢI khớp tay với default ở
 // cột profiles.slot_time_* trong schema_full.sql.
 const DEFAULT_SLOT_TIME = { sang:'08:00', trua:'12:00', toi:'19:00' };
@@ -40,6 +48,12 @@ function render(container, ctx){
     choosingKhoFor:null,
     regenWeekLoading:false, regenWeekError:null,
     autoFillMode:'kho', autoFillBusy:false, autoFillError:null, autoFillResult:null, autoFillCustomInstructions:'',
+    // 2026-09-03, theo yêu cầu chị Quỳnh: (1) tạo ảnh AI giờ là TUỲ CHỌN (tốn thêm chi phí ảnh thật,
+    // không phải ai cũng muốn), mặc định TẮT — người dùng tự tích nếu muốn; (2) cho chọn "dạng bài"
+    // gợi ý riêng từng buổi, có sẵn gợi ý buổi Tối là "Video Ngồi Nói" (giữ nguyên tinh thần quy tắc
+    // đã áp cho lane Cá nhân của admin, giờ để MỌI người tự chọn thay vì khoá cứng).
+    autoFillGenerateImage:false,
+    autoFillFormatBySlot: { sang:'', trua:'', toi:'Video Ngồi Nói' },
     // aiCardMode (2026-09-03, theo phản hồi chị Quỳnh "gộp lại làm 1 ... có mục chọn xem thích ai
     // viết luôn hay chỉ gợi ý") — 'goi-y' = hiện y hệt nội dung khối "AI gợi ý lịch tuần" cũ (chỉ
     // ra chủ đề), 'viet-luon' = hiện y hệt nội dung khối "AI tự viết + xếp cả tuần" cũ (viết bài
@@ -303,7 +317,12 @@ function render(container, ctx){
     // "Giảm nỗ lực khởi động mỗi lần vào app" (2026-08-29, theo yêu cầu chị Quỳnh) — số ô trống
     // TUẦN ĐANG XEM của lane hiện tại, dùng để hiện trước chi phí lượt AI thật sự sẽ tốn nếu bấm nút
     // "AI tự viết + xếp cả tuần" (api/auto-fill-week.js), KHÔNG phải cron nền miễn phí của admin.
-    const emptySlotCount = days.reduce((sum,d)=> sum + SLOTS.filter(s => !entryFor(isoDate(d), s.key)).length, 0);
+    // "ai gợi ý lịch và viết sẵn bài vẫn cho chọn 1 bài 1 ngày hay 2 hay 3" (chị Quỳnh 2026-09-03) —
+    // trước đây "AI viết luôn" LUÔN lấp đủ 3 buổi/ngày, không nhìn state.postsPerDay — giờ cả 2 chế
+    // độ dùng CHUNG đúng 1 lựa chọn (xem chip dùng chung ở aiCardBody bên dưới). 1 bài/ngày → chỉ
+    // buổi Sáng; 2 bài/ngày → Sáng+Tối (bỏ Trưa, rải đều trong ngày); 3 → cả 3 buổi như cũ.
+    const autoFillActiveSlotKeys = state.postsPerDay===1 ? ['sang'] : state.postsPerDay===2 ? ['sang','toi'] : ['sang','trua','toi'];
+    const emptySlotCount = days.reduce((sum,d)=> sum + SLOTS.filter(s => autoFillActiveSlotKeys.includes(s.key) && !entryFor(isoDate(d), s.key)).length, 0);
     const autoFillPerPostCost = state.autoFillMode==='new_hook' ? 4 : 3; // new_hook = 1 (sinh hook) + 3 (viết) lượt/bài
     const autoFillToFillCount = Math.min(emptySlotCount, 9); // MAX_FILL_PER_CLICK ở api/auto-fill-week.js
 
@@ -329,9 +348,6 @@ function render(container, ctx){
     const goalCardBody = `
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tuần này bạn muốn đẩy mục tiêu gì nhất?</label>
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mỗi ngày muốn đăng mấy bài?</label>
-        <div class="chips">${[1,2,3].map(n=>`<div class="chip ${state.postsPerDay===n?'selected':''}" data-posts-per-day="${n}">${n} bài/ngày</div>`).join('')}</div>
-        ${state.postsPerDay > 1 ? `<div class="hint-box" style="margin-top:8px;background:var(--accent-soft);">Chọn ${state.postsPerDay} bài/ngày thì nút bên dưới chỉ gợi ý CHỦ ĐỀ cho từng ô, bạn vẫn phải tự vào Kho Content chọn bài cho từng ô. Muốn AI viết SẴN toàn bộ bài cho mọi ô trống, chuyển sang <span style="text-decoration:underline;cursor:pointer;font-weight:600;" data-action="jump-autofill">"Để AI viết luôn"</span> ở trên thay vì nút này.</div>` : ''}
         ${!state.positioning ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
@@ -357,6 +373,23 @@ function render(container, ctx){
         </div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Yêu cầu thêm (không bắt buộc)</label>
         <textarea id="autofill-custom-instructions" style="min-height:auto;height:52px;margin-bottom:12px;" placeholder="Ví dụ: viết ngắn gọn hơn, nhấn mạnh sản phẩm X, giọng hài hước hơn, không dùng từ &quot;chắc chắn&quot;...">${esc(state.autoFillCustomInstructions)}</textarea>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Muốn AI ưu tiên dạng bài nào cho từng buổi? (không bắt buộc)</label>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:6px;">
+          ${autoFillActiveSlotKeys.map(slotKey => `
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:12.5px;color:var(--ink-soft);width:40px;flex-shrink:0;">${SLOTS.find(s=>s.key===slotKey).label}</span>
+              <select data-autofill-format-slot="${slotKey}" style="flex:1;min-width:180px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+                <option value="">— AI tự chọn —</option>
+                ${FORMAT_NAMES.map(f=>`<option value="${esc(f)}" ${state.autoFillFormatBySlot[slotKey]===f?'selected':''}>${esc(f)}</option>`).join('')}
+              </select>
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:12px;">Gợi ý: buổi Tối hợp với "Video Ngồi Nói" (chia sẻ trực diện, chuyển đổi mạnh) — đã chọn sẵn, đổi lại nếu muốn.</div>
+        <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
+          <input type="checkbox" id="autofill-generate-image" ${state.autoFillGenerateImage?'checked':''} style="margin-top:3px;">
+          <span style="font-size:13px;">🖼️ Tự động tạo ảnh cho từng bài — nếu chưa có ảnh cá nhân tải sẵn ở Kho Content, AI sẽ tự vẽ 1 ảnh nền (tốn thêm chi phí ảnh thật, không tính thêm lượt riêng). Bỏ tick nếu chỉ cần bài viết, tự thêm ảnh sau.</span>
+        </label>
         ${emptySlotCount===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
         <div class="btn-row">
           <button class="btn" data-action="auto-fill-week" ${state.autoFillBusy?'disabled':''}>${state.autoFillBusy?'Đang viết…':'Bắt đầu viết'}</button>
@@ -379,6 +412,8 @@ function render(container, ctx){
           <div class="chip ${state.aiCardMode==='goi-y'?'selected':''}" data-ai-card-mode="goi-y">Chỉ gợi ý chủ đề (2 lượt)</div>
           <div class="chip ${state.aiCardMode==='viet-luon'?'selected':''}" data-ai-card-mode="viet-luon">Để AI viết luôn (${autoFillPerPostCost} lượt/bài)</div>
         </div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mỗi ngày muốn đăng mấy bài? (áp dụng cho cả 2 chế độ trên)</label>
+        <div class="chips" style="margin-bottom:16px;">${[1,2,3].map(n=>`<div class="chip ${state.postsPerDay===n?'selected':''}" data-posts-per-day="${n}">${n} bài/ngày</div>`).join('')}</div>
         ${state.aiCardMode==='goi-y' ? goalCardBody : autoFillCardBody}
     `;
     const aiCardHint = state.aiCardMode==='goi-y' ? goalCardHint : autoFillCardHint;
@@ -699,6 +734,11 @@ function render(container, ctx){
     });
     const autoFillCustomInstructionsInput = container.querySelector('#autofill-custom-instructions');
     if(autoFillCustomInstructionsInput) autoFillCustomInstructionsInput.oninput = ()=>{ state.autoFillCustomInstructions = autoFillCustomInstructionsInput.value; };
+    container.querySelectorAll('[data-autofill-format-slot]').forEach(el=>{
+      el.onchange = ()=>{ state.autoFillFormatBySlot[el.getAttribute('data-autofill-format-slot')] = el.value; };
+    });
+    const generateImageCheckbox = container.querySelector('#autofill-generate-image');
+    if(generateImageCheckbox) generateImageCheckbox.onchange = ()=>{ state.autoFillGenerateImage = generateImageCheckbox.checked; };
     const autoFillBtn = container.querySelector('[data-action="auto-fill-week"]');
     if(autoFillBtn) autoFillBtn.onclick = autoFillWeek;
     const regenBtn = container.querySelector('[data-action="regen-week"]');
@@ -1015,7 +1055,10 @@ function render(container, ctx){
       // gatedWeight: endpoint này tốn lượt biến thiên (1-9 bài x 3, hoặc x4 nếu Cách 2) — không có
       // trọng số cố định trong GATED_API_WEIGHTS, phải đọc đúng số lượt THẬT server vừa trừ
       // (data.luot_used) để sidebar cộng đúng ngay, không đợi tải lại trang.
-      const data = await callApi('/api/auto-fill-week', { week_start: isoDate(state.weekStart), mode: state.autoFillMode, custom_instructions: state.autoFillCustomInstructions }, 280000, { gatedWeight: (d)=>d.luot_used });
+      const data = await callApi('/api/auto-fill-week', {
+        week_start: isoDate(state.weekStart), mode: state.autoFillMode, custom_instructions: state.autoFillCustomInstructions,
+        posts_per_day: state.postsPerDay, generate_image: state.autoFillGenerateImage, format_by_slot: state.autoFillFormatBySlot,
+      }, 280000, { gatedWeight: (d)=>d.luot_used });
       const filledCount = (data.filled||[]).length;
       const parts = [];
       if(filledCount) parts.push(`✓ Đã viết và xếp ${filledCount} bài mới vào lịch`);

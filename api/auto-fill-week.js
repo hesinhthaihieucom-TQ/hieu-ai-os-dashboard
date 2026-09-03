@@ -59,9 +59,27 @@ module.exports = async (req, res) => {
     // chị Quỳnh) — y hệt "Yêu cầu riêng" đã có ở Viết Content/Viết từ Kho Gốc (customInstructionsBlock,
     // xem api/_lib/post-schema.js), trước đây "AI tự viết + xếp cả tuần" KHÔNG có chỗ nào cho người
     // dùng gõ yêu cầu tuỳ chỉnh — bấm là AI viết theo mặc định, không có cách can thiệp.
-    const { week_start, mode, custom_instructions } = req.body || {};
+    const { week_start, mode, custom_instructions, posts_per_day, generate_image, format_by_slot } = req.body || {};
     if (!/^\d{4}-\d{2}-\d{2}$/.test(week_start || '')) { res.status(400).json({ error: 'Thiếu hoặc sai định dạng tuần cần điền.' }); return; }
     const finalMode = mode === 'new_hook' ? 'new_hook' : 'kho';
+    // "ai gợi ý lịch và viết sẵn bài vẫn cho chọn 1 bài 1 ngày hay 2 hay 3" (chị Quỳnh 2026-09-03) —
+    // trước đây LUÔN lấp cả 3 buổi (PERSONAL_SLOTS), không nhìn lựa chọn của người dùng. PHẢI khớp
+    // Y HỆT logic ở nhan-hieu/js/lich-dang.js (autoFillActiveSlotKeys) — lệch 2 nơi sẽ khiến số ô
+    // trống ước tính ở frontend khác số ô THẬT SỰ được lấp ở đây.
+    const ppd = [1, 2, 3].includes(posts_per_day) ? posts_per_day : 3;
+    const activeSlots = ppd === 1 ? ['sang'] : ppd === 2 ? ['sang', 'toi'] : PERSONAL_SLOTS;
+    // Tự tạo ảnh giờ là TUỲ CHỌN (2026-09-03, "có mục tích cho chọn trước khi bấm" — tốn thêm chi phí
+    // ảnh thật, không phải ai cũng muốn) — mặc định TẮT nếu client không gửi rõ true.
+    const shouldGenerateImage = generate_image === true;
+    // "cho khách tự chọn xem muốn làm dạng bài nào... tối nên là dạng ngồi nói" — format_by_slot là
+    // object { sang, trua, toi } do client gửi, mỗi giá trị là 1 trong FORMAT_NAMES hoặc rỗng ("AI tự
+    // chọn"). Chuyển thành đúng câu lệnh ràng buộc format tự nhiên để nhét vào prompt viết bài, y hệt
+    // cách FORCE_NGOI_NOI/EXCLUDE_NGOI_NOI đã làm cho lane Cá nhân của admin (auto-fill-schedule.js).
+    function formatConstraintFor(slotKey) {
+      const chosen = format_by_slot && typeof format_by_slot === 'object' ? format_by_slot[slotKey] : null;
+      if (!chosen || typeof chosen !== 'string') return null;
+      return `BẮT BUỘC: chọn dinh_dang_de_xuat = "${chosen}" cho bài này (người dùng đã tự chọn dạng này cho khung giờ ${slotKey}) — viết ly_do_dinh_dang và goi_y_caption khớp đúng dạng này.`;
+    }
 
     const posResp = await supabaseAdmin(`positioning_results?user_id=eq.${user.id}&select=luot1,luot2&limit=1`);
     const posRows = posResp.ok ? await posResp.json() : [];
@@ -98,7 +116,7 @@ module.exports = async (req, res) => {
     }
 
     const dateStrs = Array.from({ length: 7 }, (_, i) => dateStrFromWeekStart(week_start, i));
-    const emptySlots = await findEmptySlots(user.id, dateStrs, 'ca_nhan', PERSONAL_SLOTS);
+    const emptySlots = await findEmptySlots(user.id, dateStrs, 'ca_nhan', activeSlots);
     if (!emptySlots.length) { res.status(200).json({ filled: [], skipped_cap: 0, message: 'Tuần này đã kín lịch — không còn ô trống nào để điền.' }); return; }
     const toFill = emptySlots.slice(0, MAX_FILL_PER_CLICK);
     const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_CLICK);
@@ -191,12 +209,12 @@ module.exports = async (req, res) => {
         const result = await fillOneSlot({
           userId: user.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
           channelHandle: profile.channel_handle, brandName: profile.brand_name,
-          channel: 'ca_nhan', formatConstraint: null, recentTitles, customInstructions: custom_instructions,
+          channel: 'ca_nhan', formatConstraint: formatConstraintFor(slotInfo.slot), recentTitles, customInstructions: custom_instructions,
         });
         filled.push(result);
         recentTitles.push(result.title);
         luotUsed += 3;
-        await attachAutoImage(result, candidate.tags || (truc ? [truc] : null));
+        if (shouldGenerateImage) await attachAutoImage(result, candidate.tags || (truc ? [truc] : null));
       } catch (e) {
         await refundTrialQuota(user.id, 'viet-tu-kho-goc');
         skippedNoCandidate.push({ ...slotInfo, error: e.message });
