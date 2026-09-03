@@ -52,6 +52,84 @@ function normalizeTemplate(t) {
 }
 const BANNER_TEMPLATES = new Set(['video', 'sach']);
 
+// Nhãn "NGÀY N"/"PHẦN N" phía trên mỗi mục chương trình — khác nhau theo mẫu, đúng cách các trang
+// tham khảo gọi tên từng phần (thanhnguyen.vn dùng "NGÀY", aichuyengia dùng "PHẦN").
+function programLabel(template, i) {
+  if (template === 'video') return `NGÀY ${i + 1}`;
+  if (template === 'chuyengia') return `PHẦN ${i + 1}`;
+  return String(i + 1);
+}
+
+// Thanh điều hướng dính đầu trang (chỉ mẫu "video", đúng đặc trưng thanhnguyen.vn/7ngaylamvideo) —
+// neo tới các mục thật đã có id, không phải trang trí suông.
+function stickyNavHtml(template) {
+  if (template !== 'video') return '';
+  return `
+    <nav class="lp-sticky-nav">
+      <a href="#lp-sec-problem">Vấn đề</a>
+      <a href="#lp-sec-program">Lộ trình</a>
+      <a href="#lp-sec-faq">Hỏi đáp</a>
+      <a href="#buy-area-anchor" class="lp-nav-cta">Đăng ký</a>
+    </nav>
+  `;
+}
+
+// Dải chữ chạy ngang (chỉ mẫu "video") — DỰNG TỪ DỮ LIỆU THẬT (kết quả đạt được/ưu đãi đã có), không
+// phải số liệu/khẩu hiệu tự bịa như "chỉ còn 50 suất" ở trang tham khảo.
+function tickerHtml(product, lp, template) {
+  if (template !== 'video') return '';
+  const items = [...(lp.ket_qua_dat_duoc || []), ...(product.bonus_items || [])].filter(Boolean);
+  if (!items.length) return '';
+  const strip = items.map(x => `<span>✓ ${esc(x)}</span>`).join('<span class="lp-ticker-dot">•</span>');
+  return `<div class="lp-ticker"><div class="lp-ticker-track">${strip}<span class="lp-ticker-dot">•</span>${strip}</div></div>`;
+}
+
+// Bảng so sánh "chưa có hệ thống / có hệ thống" (chỉ mẫu "video", đúng kiểu bảng "Tự mò vs Tham gia"
+// ở thanhnguyen.vn) — ghép TỪ DỮ LIỆU THẬT đã có (van_de_chi_tiet làm cột trái, ket_qua_dat_duoc làm
+// cột phải, theo đúng thứ tự đã viết), không tự bịa thêm hàng/số liệu nào khác.
+function comparisonTableHtml(lp, template) {
+  if (template !== 'video') return '';
+  const left = lp.van_de_chi_tiet || [];
+  const right = lp.ket_qua_dat_duoc || [];
+  const rows = Math.min(left.length, right.length);
+  if (rows < 2) return '';
+  let out = `<div class="lp-section"><h2 class="lp-h2">Tự loay hoay hay có hệ thống?</h2><div class="lp-compare">
+    <div class="lp-compare-head lp-compare-bad">Chưa có hệ thống</div>
+    <div class="lp-compare-head lp-compare-good">Sau khi hoàn thành</div>`;
+  for (let i = 0; i < rows; i++) {
+    out += `<div class="lp-compare-cell lp-compare-bad">✗ ${esc(left[i].ten || '')}</div><div class="lp-compare-cell lp-compare-good">✓ ${esc(right[i])}</div>`;
+  }
+  out += `</div></div>`;
+  return out;
+}
+
+// Khối "trước / sau" (chỉ mẫu "chuyengia", đúng kiểu "5 năm trước / bây giờ" ở aichuyengia.topexpert.vn)
+// — ghép TỪ DỮ LIỆU THẬT đã có (van_de_intro làm "trước", 2 ý đầu của ket_qua_dat_duoc làm "bây giờ").
+function beforeAfterHtml(lp, template) {
+  if (template !== 'chuyengia') return '';
+  if (!lp.van_de_intro || !Array.isArray(lp.ket_qua_dat_duoc) || lp.ket_qua_dat_duoc.length < 2) return '';
+  return `
+    <div class="lp-section"><div class="lp-before-after">
+      <div class="lp-ba-col lp-ba-before"><div class="lp-ba-label">Trước</div><p>${esc(lp.van_de_intro)}</p></div>
+      <div class="lp-ba-col lp-ba-after"><div class="lp-ba-label">Bây giờ</div><ul>${lp.ket_qua_dat_duoc.slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    </div></div>
+  `;
+}
+
+// Dải "cách đăng ký" 3 bước (chỉ mẫu "quynh", đúng kiểu "CÁCH ĐĂNG KÝ" ở trang gốc) — mô tả ĐÚNG luồng
+// mua thật của app này (bấm mua → chuyển khoản đúng nội dung → tự động mở khoá), không phải quy trình
+// thủ công cần nhắn Zalo như trang tham khảo (app này không cần bước đó, tự động 100%).
+function threeStepHtml(template) {
+  if (template !== 'quynh') return '';
+  return `
+    <div class="lp-3step">
+      <div class="lp-3step-item"><div class="lp-3step-num">1</div>Bấm mua</div>
+      <div class="lp-3step-item"><div class="lp-3step-num">2</div>Chuyển khoản đúng nội dung</div>
+      <div class="lp-3step-item"><div class="lp-3step-num">3</div>Nhận ngay, tự động</div>
+    </div>
+  `;
+}
+
 const app = document.getElementById('app');
 const params = new URLSearchParams(location.search);
 const slug = params.get('slug');
@@ -163,11 +241,16 @@ function landingPageIntroHtml(product, lp, template) {
       `).join('')}</div>` : '';
   const chuongTrinhHtml = Array.isArray(lp.chuong_trinh) && lp.chuong_trinh.length
     ? `<div class="lp-program-list">${lp.chuong_trinh.map((c, i) => `
-        <div class="lp-program-item"><div class="lp-program-num">${i + 1}</div><div><div class="lp-program-ten">${esc(c.ten || '')}</div><div class="lp-program-mota">${esc(c.mo_ta || '')}</div></div></div>
+        <div class="lp-program-item"><div class="lp-program-num">${esc(programLabel(template, i))}</div><div><div class="lp-program-ten">${esc(c.ten || '')}</div><div class="lp-program-mota">${esc(c.mo_ta || '')}</div></div></div>
       `).join('')}</div>` : '';
-  const ketQuaHtml = Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
+  const ketQuaListHtml = Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
     ? `<ul class="lp-list">${lp.ket_qua_dat_duoc.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
     : (Array.isArray(lp.loi_ich) && lp.loi_ich.length ? `<ul class="lp-list">${lp.loi_ich.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '');
+  // "chuyengia" hiện kết quả dạng LƯỚI THẺ (giống 4 thẻ kết quả ở aichuyengia.topexpert.vn) thay vì
+  // danh sách gạch đầu dòng — cùng dữ liệu thật, khác cách trình bày.
+  const ketQuaGridHtml = template === 'chuyengia' && Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
+    ? `<div class="lp-result-grid">${lp.ket_qua_dat_duoc.map(x => `<div class="lp-result-card">✓ ${esc(x)}</div>`).join('')}</div>` : '';
+  const ketQuaHtml = ketQuaGridHtml || ketQuaListHtml;
   const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
     ? `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
   const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
@@ -177,11 +260,18 @@ function landingPageIntroHtml(product, lp, template) {
           ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
         </div>
       `).join('')}</div></div>` : '';
+  // "sach" hiện ưu đãi dạng HỘP CÓ VIỀN kèm icon (giống khối "Bạn sẽ nhận được gì" ở teedoo.io) thay
+  // vì danh sách gạch đầu dòng đơn giản.
+  const bonusListHtml = template === 'sach'
+    ? `<div class="lp-bonus-box">${(product.bonus_items || []).map(b => `<div class="lp-bonus-row">🎁 ${esc(b)}</div>`).join('')}</div>`
+    : `<ul class="lp-list">${(product.bonus_items || []).map(b => `<li>${esc(b)}</li>`).join('')}</ul>`;
   const bonusHtml = Array.isArray(product.bonus_items) && product.bonus_items.length
-    ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2><ul class="lp-list">${product.bonus_items.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>` : '';
+    ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2>${bonusListHtml}</div>` : '';
   return `
-    ${lp.van_de_intro || lp.van_de ? `<div class="lp-section">${eyebrow('Bóc trần sự thật')}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : ''}
-    ${chuongTrinhHtml ? `<div class="lp-section">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '')}
+    ${beforeAfterHtml(lp, template)}
+    ${lp.van_de_intro || lp.van_de ? `<div class="lp-section" id="lp-sec-problem">${eyebrow('Bóc trần sự thật')}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : ''}
+    ${comparisonTableHtml(lp, template)}
+    ${chuongTrinhHtml ? `<div class="lp-section" id="lp-sec-program">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section" id="lp-sec-program"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '')}
     ${ketQuaHtml ? `<div class="lp-section">${eyebrow('Sau khi hoàn thành')}<h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : ''}
     ${caseStudyHtml}
     ${bonusHtml}
@@ -193,7 +283,7 @@ function landingPageIntroHtml(product, lp, template) {
 function landingPageFaqHtml(lp) {
   if (!Array.isArray(lp.faq) || !lp.faq.length) return '';
   return `
-    <div class="lp-section">
+    <div class="lp-section" id="lp-sec-faq">
       <h2 class="lp-h2">Câu hỏi thường gặp</h2>
       <div class="lp-faq">
         ${lp.faq.map(f => `
@@ -305,16 +395,24 @@ function renderProduct(product, order) {
   const guaranteeHtml = product.guarantee_text
     ? `<div class="hint-box" style="margin-top:12px;text-align:center;">🔒 ${esc(product.guarantee_text)}</div>` : '';
 
+  // "chuyengia" đẩy giá lên ngay trong hero (đúng kiểu khối giá nổi bật đầu trang ở
+  // aichuyengia.topexpert.vn) — chỉ là 1 ô hiện giá, KHÔNG lặp nút mua thật (tránh 2 nơi có thể tạo
+  // đơn khác nhau) — bấm vào cuộn xuống đúng nút mua thật duy nhất.
+  const heroPriceTeaserHtml = lp && lpTemplate === 'chuyengia'
+    ? `<div class="lp-hero-price-box" data-lp-scroll-buy>${referencePriceHtml}<span class="lp-hero-price-num">${Number(product.price).toLocaleString('vi-VN')}đ</span><span class="lp-hero-price-cta">Xem ưu đãi ↓</span></div>` : '';
+
   app.innerHTML = `
     <div class="wrap" data-lp-template="${esc(lpTemplate)}">
-      ${isBanner ? `<div class="lp-hero-banner">${coverHtml}${titleBlockHtml}</div>` : ''}
+      ${stickyNavHtml(lpTemplate)}
+      ${isBanner ? `<div class="lp-hero-banner"><div class="lp-hero-inner">${coverHtml}${titleBlockHtml}</div></div>${lp ? tickerHtml(product, lp, lpTemplate) : ''}` : ''}
       <div class="card">
-      ${isBanner ? '' : `${coverHtml}${titleBlockHtml}`}
+      ${isBanner ? '' : `${coverHtml}${titleBlockHtml}${heroPriceTeaserHtml}`}
       ${webinarPreHtml}
       ${lp ? landingPageIntroHtml(product, lp, lpTemplate) : ''}
       <div id="buy-area-anchor">
         <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
         ${soldCountHtml}
+        ${threeStepHtml(lpTemplate)}
         ${buyHtml}
         ${guaranteeHtml}
       </div>
@@ -335,6 +433,10 @@ function renderProduct(product, order) {
     obs.observe(anchorEl);
     document.getElementById('sticky-buy-btn').onclick = () => anchorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
+  // Ô giá nổi bật trong hero (chỉ mẫu "chuyengia") + link "Đăng ký" trên thanh nav dính (chỉ mẫu
+  // "video") — cùng 1 hành vi: cuộn về đúng nút mua thật, không tạo logic mua riêng.
+  const heroPriceBox = document.querySelector('[data-lp-scroll-buy]');
+  if (heroPriceBox && anchorEl) heroPriceBox.onclick = () => anchorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   const buyBtn = document.getElementById('buy-btn');
   if (buyBtn && isDemo) {
