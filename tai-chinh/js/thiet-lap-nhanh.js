@@ -761,6 +761,12 @@ function render(container, ctx){
 
   function resultHtml(){
     const r = state.result;
+    // Chỉ TRẢ PHÍ mới xem được phần giải thích Ý NGHĨA từng Trụ + "Cách nâng điểm" + Bản Giải Phẫu
+    // Chi Tiết (2026-09-01, góp ý Quỳnh: "cho xem 1 ít thông tin xong có câu bảo xem chi tiết/hiểu
+    // phương thức chuyển hoá thì phải nâng cấp" — vì bản trước hiện ĐỦ hết miễn phí nên không ai thấy
+    // cần nâng cấp). Điểm số từng Trụ (không kèm giải thích) vẫn hiện FREE cho tất cả — đủ để tạo tò
+    // mò/thấy vấn đề, đúng nguyên tắc "cho xem vấn đề, bán giải pháp".
+    const canSeeFullAnalysis = !isGuest && hasActiveAccess();
     return `
       <div class="section">
         <h3>🧭 Bức tranh tài chính của bạn</h3>
@@ -810,13 +816,15 @@ function render(container, ctx){
                     <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:var(--accent);">${score}<span style="font-size:11px;font-weight:600;color:var(--ink-soft);">/100</span></span>
                     <span style="font-weight:700;font-size:13.5px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
                   </div>
-                  <div style="font-size:13px;line-height:1.65;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
-                  <div style="font-size:12.5px;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);"><b>💡 Cách nâng điểm:</b> ${esc(PILLAR_IMPROVE_TIPS[h.key])}</div>
+                  ${canSeeFullAnalysis ? `
+                    <div style="font-size:13px;line-height:1.65;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
+                    <div style="font-size:12.5px;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);"><b>💡 Cách nâng điểm:</b> ${esc(PILLAR_IMPROVE_TIPS[h.key])}</div>
+                  ` : ''}
                 </div>
               `;
             }).join('')}
           </div>
-          ${(()=>{
+          ${canSeeFullAnalysis ? (()=>{
             // Bản giải phẫu đầy đủ CHỈ hiện cho ĐÚNG 1 trụ thấp điểm nhất theo state.karmaAxes (cùng
             // nguồn số liệu với khối ở trên và với radar) — xem comment ở PILLAR_DEEP_ANALYSIS phía
             // trên vì sao chỉ chọn 1 trụ (khớp hành vi tài liệu gốc, tránh dàn trải 5 bài dài như nhau).
@@ -824,15 +832,17 @@ function render(container, ctx){
             const weakest = state.karmaAxes.reduce((worst,cur)=> cur.value < worst.value ? cur : worst);
             const weakestHouse = HOUSES.find(h=>h.key===weakest.key);
             return deepAnalysisHtml(weakest.key, weakestHouse.label);
-          })()}
+          })() : ''}
         </div>
 
-        ${isGuest ? `
-          <div class="card" style="margin-bottom:20px;background:var(--accent-soft);border-color:var(--accent);">
-            <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">💾 Lưu lại kết quả này</div>
-            <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">Đăng ký miễn phí (30 giây, không cần thẻ) để lưu lại đúng bức tranh + phân tích ở trên ↑, và theo dõi Điểm Nghiệp thay đổi theo thời gian.</div>
-            <button class="btn btn-full" id="tc-guest-save-cta">Lưu kết quả — Đăng ký miễn phí →</button>
-          </div>
+        ${!canSeeFullAnalysis ? `
+        <div class="card" style="margin-bottom:20px;background:var(--accent-soft);border-color:var(--accent);">
+          <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">🔒 Hiểu rõ vì sao và cách chuyển hoá</div>
+          <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">Bạn vừa thấy ĐIỂM — nhưng chưa thấy VÌ SAO mỗi Trụ Cột lại ở mức đó và cách nâng lên thế nào.${isGuest?' Đăng ký miễn phí (30 giây) để lưu lại kết quả này':' Mở khoá TRỌN ĐỜI'} để xem đủ ý nghĩa từng Trụ, Bản Giải Phẫu Chi Tiết cho khâu yếu nhất, cùng Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật.</div>
+          ${isGuest
+            ? `<button class="btn btn-full" id="tc-guest-save-cta">Lưu kết quả — Đăng ký miễn phí →</button>`
+            : `${tcPriceAnchorHtml(ctx.profile)}<button class="btn btn-full" style="margin-top:14px;" data-goto="nang-cap">Nâng Cấp Ngay →</button>`}
+        </div>
         ` : `
         <div class="section">
           <div class="btn-row" style="justify-content:flex-start;">
@@ -843,20 +853,6 @@ function render(container, ctx){
           <div class="hint-box" style="margin-top:10px;">Bấm "💾 Lưu kết quả này" để ghi lại đúng bức tranh + toàn bộ phân tích 5 Trụ Cột ở trên ↑ thành 1 mốc — xem lại theo thời gian ở tab <span data-tc-tab="theo-doi" style="color:var(--accent);font-weight:600;cursor:pointer;">📈 Theo Dõi Kết Quả →</span>.</div>
         </div>
         `}
-      ` : ''}
-
-      ${(!isGuest && !(ctx.profile && ctx.profile.tc_has_paid)) ? `
-        <div class="card" style="margin-top:20px;background:var(--accent-soft);border-color:var(--accent);">
-          <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">🔓 Đây chỉ là bức tranh khởi đầu</div>
-          <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">
-            ${r.weakestArea
-              ? `Bạn đang yếu nhất ở khâu <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b>. Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp (chữa lành gốc rễ), Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật, không chỉ dừng ở việc nhìn thấy vấn đề.`
-              : `Mở khoá TRỌN ĐỜI Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để đi tiếp từ bức tranh này.`}
-            Trả 1 lần, dùng mãi mãi.
-          </div>
-          ${tcPriceAnchorHtml(ctx.profile)}
-          <button class="btn btn-full" style="margin-top:14px;" data-goto="nang-cap">Nâng Cấp Ngay →</button>
-        </div>
       ` : ''}
 
       <div class="section">
@@ -954,6 +950,26 @@ function render(container, ctx){
     const scored = HOUSES.map(h=>({ h, score: row[h.key] })).filter(x=>x.score!=null);
     if(scored.length === 0) return `<div class="hint-box">Lần này chưa có đủ điểm 5 Trụ Cột để xem lại phân tích.</div>`;
     const weakest = scored.reduce((worst,cur)=> cur.score < worst.score ? cur : worst);
+    // Cùng khoá phân tích chi tiết như resultHtml() (2026-09-01, góp ý Quỳnh) — không thì unpaid user
+    // vẫn lách được bằng cách lưu kết quả rồi đọc lại ở đây.
+    if(!hasActiveAccess()){
+      return `
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+          ${scored.map(({h,score})=>{
+            const tier = pillarTier(score);
+            return `
+              <div class="hint-box" style="text-align:left;">
+                <div style="display:flex;align-items:baseline;gap:8px;">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:16px;color:var(--accent);">${score}<span style="font-size:10px;font-weight:600;color:var(--ink-soft);">/100</span></span>
+                  <span style="font-weight:700;font-size:13px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="hint-box">🔒 Mở khoá TRỌN ĐỜI để xem ý nghĩa từng Trụ + Bản Giải Phẫu Chi Tiết — <a href="#nang-cap" style="color:var(--accent);font-weight:600;">Nâng Cấp Ngay →</a></div>
+      `;
+    }
     return `
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
         ${scored.map(({h,score})=>{
