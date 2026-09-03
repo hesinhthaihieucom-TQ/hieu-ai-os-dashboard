@@ -1,0 +1,99 @@
+:root{
+  --bg: #F7F4EC;
+  --panel: #FFFFFF;
+  --ink: #1E2420;
+  --ink-soft: #5B5F55;
+  --line: #E4DFCF;
+  --accent: #2F6F62;
+  --accent-soft: #E7F0EC;
+  --gold: #B8862E;
+  --gold-soft: #F5EBD8;
+  --danger: #A6462E;
+  --radius: 16px;
+}
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Be Vietnam Pro',sans-serif; line-height:1.6; }
+h1,h2,h3{ font-family:'Playfair Display',serif; margin:0; text-wrap:balance; }
+a{ color:var(--accent); }
+.wrap{ max-width:640px; margin:0 auto; padding:0 20px; }
+
+/* ===== Header ===== */
+.lp-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px; max-width:680px; margin:0 auto; }
+.lp-brand{ display:flex; align-items:center; gap:10px; }
+.lp-brand img{ width:32px; height:32px; border-radius:50%; object-fit:cover; }
+.lp-brand span{ font-family:'Playfair Display',serif; font-weight:700; font-size:15.5px; line-height:1.25; }
+.lp-header a{ font-size:13.5px; font-weight:600; text-decoration:none; color:var(--accent); white-space:nowrap; }
+
+/* ===== Hero ===== */
+.lp-hero{ text-align:center; padding:28px 0 8px; }
+.lp-hero .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; }
+.lp-hero h1{ font-size:clamp(26px,5vw,36px); font-weight:900; line-height:1.28; margin-bottom:16px; }
+.lp-hero .sub{ font-size:15px; color:var(--ink-soft); line-height:1.75; max-width:520px; margin:0 auto 26px; }
+.lp-hero .tagline{ font-style:italic; color:var(--ink); }
+
+.lp-cta{
+  display:inline-block; appearance:none; border:none; cursor:pointer; text-decoration:none;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:15.5px; padding:16px 30px;
+  border-radius:999px; background:var(--accent); color:#fff; transition:opacity .12s ease;
+}
+.lp-cta:hover{ opacity:.92; }
+.lp-cta-note{ margin-top:12px; font-size:12.5px; color:var(--ink-soft); }
+.lp-cta-wrap{ margin:26px 0; }
+
+/* ===== Sections ===== */
+.lp-section{ padding:34px 0; border-top:1px solid var(--line); }
+.lp-section:first-of-type{ border-top:none; }
+.lp-h2{ font-size:22px; text-align:center; margin-bottom:8px; }
+.lp-h2-sub{ text-align:center; color:var(--ink-soft); font-size:13.5px; margin-bottom:24px; }
+
+/* Vấn đề — Nút Chặn */
+.lp-problem-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.lp-problem-item{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+.lp-problem-ten{ font-weight:700; color:var(--accent); font-size:13.5px; margin-bottom:6px; line-height:1.4; }
+.lp-problem-mota{ color:var(--ink-soft); font-size:13px; line-height:1.6; }
+
+/* Kết quả */
+.lp-list{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
+.lp-list li{ display:flex; gap:10px; font-size:14.5px; line-height:1.6; color:var(--ink); }
+.lp-list li::before{ content:'✓'; flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+
+/* Chương trình */
+.lp-program-list{ display:flex; flex-direction:column; gap:16px; }
+.lp-program-item{ display:flex; gap:14px; align-items:flex-start; }
+.lp-program-num{ flex:0 0 auto; width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; }
+.lp-program-ten{ font-weight:700; font-size:15px; margin-bottom:3px; }
+.lp-program-mota{ color:var(--ink-soft); font-size:13.5px; line-height:1.6; }
+
+/* Lời nhắn */
+.lp-letter{ background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 14px 14px 0; padding:22px 24px; font-size:15px; line-height:1.75; font-style:italic; }
+
+/* Phù hợp */
+.lp-fit-grid{ display:flex; flex-direction:column; gap:10px; }
+.lp-fit-item{ display:flex; gap:10px; align-items:flex-start; font-size:14.5px; line-height:1.6; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+.lp-fit-item .ic{ flex:0 0 auto; font-size:17px; }
+
+/* Giá */
+.lp-price-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:28px 24px; text-align:center; box-shadow:0 1px 2px rgba(30,36,32,.04); }
+.lp-price-old{ font-size:16px; color:var(--ink-soft); text-decoration:line-through; }
+.lp-price-new{ font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:700; color:var(--accent); margin:6px 0 4px; }
+.lp-price-roadmap{ font-size:12.5px; color:var(--ink-soft); margin-bottom:18px; }
+.lp-price-guarantee{ background:var(--gold-soft); color:#7A5A1E; border-radius:10px; padding:12px 16px; font-size:13px; line-height:1.6; margin-top:18px; }
+
+/* FAQ */
+.lp-faq{ display:flex; flex-direction:column; gap:8px; }
+.lp-faq-item{ border:1px solid var(--line); border-radius:12px; padding:14px 18px; background:var(--panel); }
+.lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:14.5px; list-style:none; }
+.lp-faq-item summary::-webkit-details-marker{ display:none; }
+.lp-faq-item summary::after{ content:'+'; float:right; font-size:18px; color:var(--accent); }
+.lp-faq-item[open] summary::after{ content:'−'; }
+.lp-faq-item[open] summary{ margin-bottom:10px; }
+.lp-faq-answer{ color:var(--ink-soft); font-size:13.5px; line-height:1.65; }
+
+/* Final CTA + footer */
+.lp-final{ text-align:center; padding:36px 0 8px; }
+.lp-footer{ text-align:center; padding:26px 20px 50px; font-size:12px; color:var(--ink-soft); }
+
+@media (max-width:520px){
+  .lp-problem-grid{ grid-template-columns:1fr; }
+}
