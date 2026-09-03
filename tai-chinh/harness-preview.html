@@ -253,8 +253,11 @@ function makeChain(table){
 // Mô phỏng thật đăng nhập/đăng ký + onAuthStateChange — để test được luồng khách làm bài Chấm Điểm
 // Nghiệp Tiền không cần đăng nhập rồi đăng ký lúc muốn lưu (2026-08-26, góp ý Quỳnh). Mặc định vẫn
 // đăng nhập sẵn admin-1 (giữ nguyên hành vi cũ cho mọi test khác) — set window.MOCK_SESSION = null
-// TRƯỚC khi initApp() chạy để test ở trạng thái khách.
-window.MOCK_SESSION = /[?&]guest=1/.test(location.search) ? null : { user: { id:'admin-1' } };
+// TRƯỚC khi initApp() chạy để test ở trạng thái khách. ?uid=member-1 (2026-09-03) — đăng nhập sẵn
+// bằng 1 profile CHƯA trả phí (member-1, không role admin/tc_has_paid) để test riêng các màn khoá
+// theo tc_has_paid (vd giới thiệu bạn bè) mà không phải đóng giả khách rồi đăng ký lại từ đầu.
+window.MOCK_SESSION = /[?&]guest=1/.test(location.search) ? null
+  : { user: { id: (location.search.match(/[?&]uid=([^&]+)/)||[])[1] || 'admin-1' } };
 let authChangeCb = null;
 window.supabaseClient = {
   auth: {

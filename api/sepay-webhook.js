@@ -261,10 +261,14 @@ async function creditReferralReward(refereeProfile, transferAmount) {
 async function creditTcReferralReward(refereeProfile, transferAmount) {
   if (!refereeProfile.referred_by_ref_code || refereeProfile.tc_referral_reward_given) return;
 
-  const referrerResp = await supabaseAdmin(`profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,is_vip_partner`);
+  const referrerResp = await supabaseAdmin(`profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,is_vip_partner,tc_has_paid`);
   const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
   const referrer = referrerRows[0];
   if (!referrer) return; // mã giới thiệu không còn khớp ai (vd tài khoản đã bị xoá) — bỏ qua, không lỗi
+  // Chỉ người ĐÃ mua TRỌN ĐỜI mới được thưởng khi giới thiệu (2026-09-03, góp ý Quỳnh) — không set
+  // tc_referral_reward_given ở đây, để nếu referrer trả phí sau đó và webhook có lỡ chạy lại
+  // (SePay retry) thì vẫn còn cơ hội ghi thưởng, không mất hẳn.
+  if (!referrer.tc_has_paid) return;
 
   // VIP Partner (xem VIP_PARTNER_AMOUNT ở trên) cộng thêm +10 điểm % — 20% thành 30%.
   const rewardPercent = TC_REFERRAL_REWARD_PERCENT + (referrer.is_vip_partner ? VIP_PARTNER_BONUS_PERCENT : 0);

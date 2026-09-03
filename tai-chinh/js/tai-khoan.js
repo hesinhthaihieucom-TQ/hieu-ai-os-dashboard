@@ -105,6 +105,19 @@ function render(container, ctx){
       <div class="hint-box" style="margin-top:8px;">Cài đặt "Nhắc ghi chép" (bật thông báo đẩy, chọn tần suất) giờ ở ngay <a href="#ghi-chep" style="color:var(--accent);font-weight:600;">Ghi Chép Hàng Ngày →</a>.</div>
 
       ${(()=>{
+        // Chỉ người ĐÃ mua TRỌN ĐỜI mới được giới thiệu (2026-09-03, góp ý Quỳnh: "phải đăng ký bản
+        // 299k mới được giới thiệu") — dùng hasActiveAccess() có sẵn (admin/tc_has_paid, TC_TRIAL_DAYS=0
+        // nên trial không tính) thay vì tự viết lại điều kiện, khớp đúng gate đang dùng ở paywall
+        // Chấm Điểm Nghiệp Tiền. Link/thưởng thật vẫn chỉ ghi sổ khi referrer.tc_has_paid ở
+        // api/sepay-webhook.js — chặn ở đây chỉ là ẩn UI, chặn thật nằm ở đó.
+        if(!hasActiveAccess()){
+          return `
+            <div class="section">
+              <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
+              <div class="hint-box">🔒 Mở khoá TRỌN ĐỜI để bắt đầu giới thiệu bạn bè và nhận hoa hồng <b>${TC_REFERRAL_REWARD_PERCENT}%</b> mỗi đơn — <a href="#nang-cap" style="color:var(--accent);font-weight:600;">Nâng Cấp Ngay →</a></div>
+            </div>
+          `;
+        }
         const totalCount = state.referrals.length;
         const totalEarned = state.referrals.reduce((s,r)=>s+Number(r.reward_amount),0);
         const totalPaid = state.referrals.filter(r=>r.paid).reduce((s,r)=>s+Number(r.reward_amount),0);
