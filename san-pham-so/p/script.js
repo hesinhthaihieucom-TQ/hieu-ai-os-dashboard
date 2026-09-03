@@ -51,7 +51,8 @@ function placeholderImg(label, bg, fg) {
 function demoProduct(tpl) {
   return {
     slug: 'demo', title: 'Ebook: 21 Ngày Giải Nghiệp Tiền Bạc', description: 'Hành trình 21 ngày giúp bạn thoát khỏi vòng lặp chi tiêu mất kiểm soát, xây thói quen tài chính lành mạnh.',
-    price: 299000, cover_image_url: placeholderImg('Ảnh bìa sản phẩm', '#D7CDBA', '#5B5F55'),
+    price: 299000, reference_price: 590000, paid_count: 12, guarantee_text: 'Hoàn tiền 100% nếu không hài lòng trong 7 ngày',
+    cover_image_url: placeholderImg('Ảnh bìa sản phẩm', '#D7CDBA', '#5B5F55'),
     dinh_dang: 'ebook', webinar_datetime: null, landing_page_template: tpl,
     seller_photo_url: placeholderImg('Ảnh người bán', '#C9D6CF', '#2F6F62'),
     case_study_images: [
@@ -265,6 +266,18 @@ function renderProduct(product, order) {
     `;
   }
 
+  // Giá trị tham khảo + số người đã mua thật (2026-09-03, Quỳnh: rà lại độ hiệu quả landing page) —
+  // CẢ 2 đều là dữ liệu THẬT (giá tham khảo do người bán tự nhập, số người mua đếm thẳng từ đơn đã
+  // thanh toán của đúng sản phẩm này qua digital_products_public), không phải AI/hệ thống tự bịa.
+  const referencePriceHtml = product.reference_price && Number(product.reference_price) > Number(product.price)
+    ? `<span style="text-decoration:line-through;color:var(--ink-soft);font-size:15px;margin-right:8px;">${Number(product.reference_price).toLocaleString('vi-VN')}đ</span>` : '';
+  const soldCountHtml = product.paid_count > 0
+    ? `<div style="font-size:12.5px;color:var(--ink-soft);margin:-10px 0 16px;">🎉 Đã có ${product.paid_count} người mua sản phẩm này</div>` : '';
+  // Cam kết — TRƯỚC ĐÂY hardcode cho mọi sản phẩm (rủi ro hứa hộ người bán điều họ không đồng ý),
+  // giờ CHỈ hiện khi người bán tự viết (guarantee_text null = không hiện gì, không phải lỗi).
+  const guaranteeHtml = product.guarantee_text
+    ? `<div class="hint-box" style="margin-top:12px;text-align:center;">🔒 ${esc(product.guarantee_text)}</div>` : '';
+
   app.innerHTML = `
     <div class="wrap" data-lp-template="${esc(lpTemplate)}"><div class="card">
       ${coverHtml}
@@ -274,12 +287,29 @@ function renderProduct(product, order) {
       ${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}
       ${webinarPreHtml}
       ${lp ? landingPageIntroHtml(product, lp) : ''}
-      <div class="price">${Number(product.price).toLocaleString('vi-VN')}đ</div>
-      ${buyHtml}
-      <div class="hint-box" style="margin-top:12px;text-align:center;">🔒 Cam kết hoàn tiền 100% nếu không hài lòng trong 7 ngày</div>
+      <div id="buy-area-anchor">
+        <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
+        ${soldCountHtml}
+        ${buyHtml}
+        ${guaranteeHtml}
+      </div>
       ${lp ? landingPageFaqHtml(lp) : ''}
     </div></div>
+    <div id="sticky-buy-bar" class="sticky-buy-bar" data-lp-template="${esc(lpTemplate)}" hidden>
+      <div class="sticky-buy-price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
+      <span class="btn" id="sticky-buy-btn">${(order && order.status === 'paid') ? 'Xem sản phẩm ↓' : ((lp && lp.cta_text) ? esc(lp.cta_text) : 'Mua ngay')}</span>
+    </div>
   `;
+
+  // Thanh mua dính đáy — chỉ hiện khi khu vực giá/nút mua THẬT đã cuộn khỏi màn hình, bấm vào cuộn
+  // mượt về lại đúng chỗ đó (không nhân bản logic tạo đơn/nhập email — tránh 2 nơi có thể lệch nhau).
+  const anchorEl = document.getElementById('buy-area-anchor');
+  const stickyBar = document.getElementById('sticky-buy-bar');
+  if (anchorEl && stickyBar && 'IntersectionObserver' in window) {
+    const obs = new IntersectionObserver(([entry]) => { stickyBar.hidden = entry.isIntersecting; }, { threshold: 0 });
+    obs.observe(anchorEl);
+    document.getElementById('sticky-buy-btn').onclick = () => anchorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   const buyBtn = document.getElementById('buy-btn');
   if (buyBtn && isDemo) {

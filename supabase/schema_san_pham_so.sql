@@ -403,3 +403,29 @@ create view digital_products_public as
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 22. RÀ SOÁT ĐỘ HIỆU QUẢ LANDING PAGE (2026-09-03, Quỳnh: "check lại bố cục... thừa thiếu gì để tạo
+-- ra 1 landing page hiệu quả"). 3 chỗ sửa + 1 tuỳ chọn mới, tất cả đều là DỮ LIỆU THẬT do người bán tự
+-- quyết/tự nhập hoặc đếm thật từ đơn hàng — không phải AI viết thêm:
+-- - guarantee_text: cam kết hoàn tiền TRƯỚC ĐÂY hardcode cho MỌI sản phẩm dù người bán có đồng ý hay
+--   không (rủi ro hứa hộ) — giờ null = KHÔNG hiện gì, có giá trị = hiện đúng nội dung người bán tự viết.
+-- - reference_price: "giá trị tham khảo" hiện gạch ngang cạnh giá bán thật (kiểu mẫu tham khảo của
+--   Quỳnh có "giá trị thực tế 9tr" vs "giá bán 3.99tr") — người bán tự nhập, không phải AI suy đoán.
+-- - paid_count (không phải cột, tính trực tiếp trong view qua subquery): số đơn ĐÃ THANH TOÁN thật của
+--   ĐÚNG sản phẩm đó — khác hẳn kiểu "68 người đăng ký" ở mẫu tham khảo (số đó không kiểm chứng được).
+-- Thanh mua dính đáy khi cuộn (sticky CTA bar) là thay đổi UI/CSS thuần, không cần cột DB.
+-- ============================================================
+alter table digital_products add column if not exists guarantee_text text;
+alter table digital_products add column if not exists reference_price bigint;
+
+drop view if exists digital_products_public;
+create view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, dp.bonus_items, dp.guarantee_text, dp.reference_price,
+         (select count(*)::int from digital_product_orders o where o.product_id = dp.id and o.status = 'paid') as paid_count
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;

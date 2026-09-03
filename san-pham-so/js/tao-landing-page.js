@@ -33,7 +33,7 @@ function newProductForm() {
 function render(container) {
   const state = {
     screen: 'list', products: [], loading: true, selected: null, content: null, template: 'classic',
-    caseStudies: [], bonusItems: [], caseStudyUploading: false, sellerPhotoUploading: false,
+    caseStudies: [], bonusItems: [], referencePrice: '', guaranteeText: '', caseStudyUploading: false, sellerPhotoUploading: false,
     generating: false, saving: false, error: null, showManualEdit: false,
     // Tạo nhanh 1 sản phẩm NGAY TẠI ĐÂY (2026-09-02, Quỳnh: "người dùng không cần làm bước 1-2-3
     // cũng có thể làm trực tiếp landing page, với người đã có sẵn 1 sản phẩm chỉ cần trang landing
@@ -206,6 +206,13 @@ function render(container) {
         <label style="margin-bottom:10px;display:block;">4. Ưu đãi tặng kèm (tuỳ chọn, mỗi dòng 1 ưu đãi — do bạn tự viết, không phải AI vì đây là cam kết thật của bạn)</label>
         <textarea id="lp-bonus" rows="3" placeholder="VD: Tặng kèm Sổ tay PDF&#10;VD: Vào nhóm Zalo hỗ trợ riêng">${esc(state.bonusItems.join('\n'))}</textarea>
       </div>
+      <div class="card" style="margin-top:10px;">
+        <label style="margin-bottom:10px;display:block;">5. Giá trị tham khảo + cam kết với khách (tuỳ chọn, do bạn tự nhập)</label>
+        <label style="font-size:12.5px;font-weight:400;">Giá trị tham khảo (hiện gạch ngang cạnh giá bán, VD giá gốc/giá trị quy đổi)</label>
+        <input id="lp-reference-price" type="number" value="${esc(state.referencePrice)}" placeholder="VD: 590000">
+        <label style="margin-top:10px;font-size:12.5px;font-weight:400;">Cam kết với khách (VD hoàn tiền) — để trống nếu không muốn hứa gì</label>
+        <input id="lp-guarantee" type="text" value="${esc(state.guaranteeText)}" placeholder="VD: Hoàn tiền 100% nếu không hài lòng trong 7 ngày">
+      </div>
     `;
   }
 
@@ -222,7 +229,7 @@ function render(container) {
       ${templatePickerHtml()}
       ${assetsHtml()}
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">5. AI viết landing page</label>
+        <label style="margin-bottom:10px;display:block;">6. AI viết landing page</label>
         <button class="btn" id="lp-generate-btn" ${state.generating ? 'disabled' : ''}>${state.generating ? 'Đang viết…' : (hasContent ? '🔄 Viết lại bằng AI (4 lượt)' : '✨ Tạo Landing Page bằng AI (4 lượt)')}</button>
         ${state.generating ? `<div id="lp-progress-el" style="margin-top:12px;">${progressBarHtml(0)}</div>` : ''}
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
@@ -308,6 +315,8 @@ function render(container) {
     state.template = p.landing_page_template || 'classic';
     state.caseStudies = Array.isArray(p.case_study_images) ? [...p.case_study_images] : [];
     state.bonusItems = Array.isArray(p.bonus_items) ? [...p.bonus_items] : [];
+    state.referencePrice = p.reference_price || '';
+    state.guaranteeText = p.guarantee_text || '';
     state.showManualEdit = false;
     state.screen = 'edit'; state.error = null;
   }
@@ -450,6 +459,10 @@ function render(container) {
 
     const bonusEl = container.querySelector('#lp-bonus');
     if (bonusEl) bonusEl.oninput = () => { state.bonusItems = bonusEl.value.split('\n').map(s => s.trim()).filter(Boolean); };
+    const referencePriceEl = container.querySelector('#lp-reference-price');
+    if (referencePriceEl) referencePriceEl.oninput = () => { state.referencePrice = referencePriceEl.value; };
+    const guaranteeEl = container.querySelector('#lp-guarantee');
+    if (guaranteeEl) guaranteeEl.oninput = () => { state.guaranteeText = guaranteeEl.value; };
 
     container.querySelector('#lp-generate-btn').onclick = async () => {
       state.generating = true; state.error = null; draw();
@@ -459,13 +472,15 @@ function render(container) {
         // AI viết chữ — AI viết xong tự PATCH landing_page_content luôn
         // (api/san-pham-so-tao-landing-page.js), không cần bấm "Lưu" riêng cho luồng chính (Quỳnh:
         // "90% chỉ là tải thông tin lên thôi").
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null });
         const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id }, 180000);
         state.content = { ...newContent(), ...data.result };
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
         state.selected.case_study_images = state.caseStudies;
         state.selected.bonus_items = state.bonusItems;
+        state.selected.guarantee_text = state.guaranteeText || null;
+        state.selected.reference_price = Number(state.referencePrice) || null;
       } catch (e) {
         state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       }
@@ -536,11 +551,13 @@ function render(container) {
     if (saveBtn) saveBtn.onclick = async () => {
       state.saving = true; state.error = null; draw();
       try {
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null });
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
         state.selected.case_study_images = state.caseStudies;
         state.selected.bonus_items = state.bonusItems;
+        state.selected.guarantee_text = state.guaranteeText || null;
+        state.selected.reference_price = Number(state.referencePrice) || null;
       } catch (e) {
         state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       }
