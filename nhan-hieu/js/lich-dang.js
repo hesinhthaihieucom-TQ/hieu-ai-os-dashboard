@@ -61,6 +61,10 @@ function render(container, ctx){
     // gọi bên dưới của từng chế độ.
     aiCardMode:'goi-y',
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
+    // Số ảnh cá nhân THẬT đã tải lên (2026-09-03, theo yêu cầu chị Quỳnh: "hiện thẳng số thật" thay
+    // vì nói chung chung "nếu chưa có ảnh cá nhân..." ở ô tick tạo ảnh tự động) — null = chưa tải
+    // xong, tránh hiện nhầm "chưa có ảnh nào" trong lúc đang chờ query.
+    personalPhotoCount:null,
     tab:'lich', weekLoadError:null, highlightAutoFill:false,
     // Bố cục mới (2026-08-29, theo phản hồi chị Quỳnh "khó nhìn quá, rối"): các khối công cụ thu gọn
     // mặc định, chỉ hiện 1 dòng tóm tắt — bấm mới bung ra. Luôn thu gọn lại từ đầu mỗi lần vào trang,
@@ -105,7 +109,7 @@ function render(container, ctx){
       );
       if(error) throw new Error(error.message);
       state.positioning = (pos && pos.luot1) ? pos : null;
-      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule()]);
+      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule(), loadPersonalPhotoCount()]);
       state.screen='main';
     } catch(e){
       state.screen='error';
@@ -221,6 +225,17 @@ function render(container, ctx){
       12000
     );
     state.recordingSchedule = data || [];
+  }
+
+  // Số ảnh cá nhân THẬT đã tải lên (Kho Content → tab Case Study) — chỉ cần đếm, không cần tải cả
+  // dữ liệu ảnh (nặng, base64) nên dùng count:'exact', head:true. Không throw khi lỗi/timeout, giữ
+  // personalPhotoCount=null để ô tick tạo ảnh tự hiện câu chung chung an toàn thay vì báo sai "0 ảnh".
+  async function loadPersonalPhotoCount(){
+    const { count } = await withTimeout(
+      ctx.supabase.from('personal_photos').select('id', { count:'exact', head:true }).eq('user_id', ctx.user.id),
+      8000
+    );
+    state.personalPhotoCount = count != null ? count : null;
   }
 
   async function markRecordingDone(id){
@@ -364,6 +379,14 @@ function render(container, ctx){
     `;
     const goalCardHint = state.weeklyGoal ? `Mục tiêu: "${esc(excerpt(state.weeklyGoal, 60))}"` : (state.aiSuggestions ? 'Đã có gợi ý AI cho tuần này.' : 'Chưa đặt mục tiêu cho tuần này.');
 
+    // "hiện thẳng số thật" thay vì nói chung chung "nếu chưa có ảnh cá nhân..." (chị Quỳnh 2026-09-03)
+    // — personalPhotoCount=null khi chưa tải xong (đang loading) thì vẫn giữ câu chung chung an toàn.
+    const personalPhotoHint = state.personalPhotoCount == null
+      ? `Chưa có ảnh cá nhân tải sẵn thì AI sẽ tự vẽ 1 ảnh nền (tốn thêm chi phí ảnh thật, không tính thêm lượt riêng). Có ảnh cá nhân thật sẽ đẹp/rẻ hơn hẳn — <span style="text-decoration:underline;font-weight:600;" data-action="jump-personal-photos">tải ảnh cá nhân lên đây →</span>.`
+      : state.personalPhotoCount > 0
+        ? `Bạn đã có <b>${state.personalPhotoCount} ảnh cá nhân</b> — sẽ ưu tiên dùng ảnh thật này, đẹp và không tốn chi phí AI vẽ ảnh. <span style="text-decoration:underline;font-weight:600;" data-action="jump-personal-photos">Quản lý ảnh cá nhân →</span>`
+        : `Chưa có ảnh cá nhân nào — AI sẽ tự vẽ 1 ảnh nền (tốn thêm chi phí ảnh thật, không tính thêm lượt riêng). <span style="text-decoration:underline;font-weight:600;" data-action="jump-personal-photos">Tải ảnh cá nhân lên đây →</span> để dùng ảnh thật, đẹp và rẻ hơn.`;
+
     const autoFillCardBody = `
         <div class="hint-box" style="margin-bottom:12px;">Khác với "AI gợi ý lịch tuần" ở trên (chỉ ra chủ đề, bạn vẫn phải tự viết) — cái này AI viết bài HOÀN CHỈNH và xếp thẳng vào ô trống luôn. Bấm "Xem chi tiết" trong lịch để đọc lại/sửa trước khi đăng.</div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chọn cách AI lấy nguồn để viết</label>
@@ -388,7 +411,7 @@ function render(container, ctx){
         <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:12px;">Gợi ý: buổi Tối hợp với "Video Ngồi Nói" (chia sẻ trực diện, chuyển đổi mạnh) — đã chọn sẵn, đổi lại nếu muốn.</div>
         <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
           <input type="checkbox" id="autofill-generate-image" ${state.autoFillGenerateImage?'checked':''} style="margin-top:3px;">
-          <span style="font-size:13px;">🖼️ Tự động tạo ảnh cho từng bài — nếu chưa có ảnh cá nhân tải sẵn, AI sẽ tự vẽ 1 ảnh nền (tốn thêm chi phí ảnh thật, không tính thêm lượt riêng). Có ảnh cá nhân thật sẽ đẹp/rẻ hơn hẳn — <span style="text-decoration:underline;font-weight:600;" data-action="jump-personal-photos">tải ảnh cá nhân lên đây →</span>. Bỏ tick nếu chỉ cần bài viết, tự thêm ảnh sau.</span>
+          <span style="font-size:13px;">🖼️ Tự động tạo ảnh cho từng bài — ${personalPhotoHint} Bỏ tick nếu chỉ cần bài viết, tự thêm ảnh sau.</span>
         </label>
         ${emptySlotCount===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
         <div class="btn-row">
