@@ -429,3 +429,27 @@ create view digital_products_public as
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 23. "ĐỘI NGŨ ĐỨNG SAU" + THỐNG KÊ THẬT (2026-09-03, Quỳnh: "link landing page em gửi có phần nào thì
+-- mẫu có phần đó... link aichuyengia có đội ngũ đứng sau khoá học thì mẫu cũng phải có" — ví dụ cụ thể
+-- của 1 phần đang thiếu hẳn, không có cách nào tái dùng dữ liệu cũ để dựng). Cả 2 đều do NGƯỜI BÁN TỰ
+-- NHẬP (không phải AI viết) — team_members: tên/vai trò/tiểu sử/ảnh THẬT của người đồng hành cùng
+-- khoá học (không phải chỉ 1 người bán như trước). stat_items: số liệu THẬT người bán tự cung cấp
+-- (kiểu "5 năm kinh nghiệm"/"200 học viên") — giải quyết đúng nhu cầu "thanh số liệu" ở nhiều trang
+-- tham khảo mà KHÔNG cần bịa, vì số này do chính người bán gõ vào, không phải hệ thống suy đoán.
+-- ============================================================
+alter table digital_products add column if not exists team_members jsonb;
+alter table digital_products add column if not exists stat_items jsonb;
+
+drop view if exists digital_products_public;
+create view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, dp.bonus_items, dp.guarantee_text, dp.reference_price,
+         (select count(*)::int from digital_product_orders o where o.product_id = dp.id and o.status = 'paid') as paid_count,
+         dp.team_members, dp.stat_items
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;

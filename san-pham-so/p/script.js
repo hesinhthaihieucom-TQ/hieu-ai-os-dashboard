@@ -160,6 +160,8 @@ function demoProduct(tpl) {
       { url: placeholderImg('Case study 2', '#EFE7D6', '#8A6A3C'), caption: 'Anh Khoa — tiết kiệm được 15% thu nhập mỗi tháng' },
     ],
     bonus_items: ['Sổ tay theo dõi chi tiêu 21 ngày (PDF)', 'Nhóm Zalo hỗ trợ riêng cho học viên'],
+    stat_items: [{ number: '5 năm', label: 'Kinh nghiệm' }, { number: '200+', label: 'Học viên' }, { number: '4.8/5', label: 'Đánh giá' }],
+    team_members: [{ name: 'Nguyễn Thu', role: 'Đồng hành nội dung', bio: 'Hỗ trợ xây dựng bài tập thực hành mỗi ngày.', photo_url: placeholderImg('Ảnh', '#D6D0EF', '#4A3D8F') }],
     landing_page_content: {
       hook: 'Không phải nhịn tiêu — mà là hiểu đúng tiền của mình đang đi đâu, chỉ trong 21 ngày',
       van_de_intro: 'Bạn kiếm ra tiền nhưng cuối tháng vẫn không biết tiền đi đâu hết. Muốn tiết kiệm nhưng không biết bắt đầu từ đâu, muốn thoát nợ nhưng cứ trả rồi lại vay.',
@@ -268,6 +270,21 @@ function landingPageIntroHtml(product, lp, template) {
     : `<ul class="lp-list">${(product.bonus_items || []).map(b => `<li>${esc(b)}</li>`).join('')}</ul>`;
   const bonusHtml = Array.isArray(product.bonus_items) && product.bonus_items.length
     ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2>${bonusListHtml}</div>` : '';
+  // Thanh số liệu THẬT (product.stat_items, người bán tự nhập — VD "5 năm kinh nghiệm") — giải quyết
+  // đúng kiểu "thanh thống kê" ở nhiều trang tham khảo mà KHÔNG bịa số, vì đây là số của chính họ.
+  const statBarHtml = Array.isArray(product.stat_items) && product.stat_items.length
+    ? `<div class="lp-stat-bar">${product.stat_items.map(s => `<div class="lp-stat-item"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div>` : '';
+  // "Đội ngũ đứng sau" (product.team_members, người bán tự nhập — VD aichuyengia.topexpert.vn có 2
+  // giảng viên) — trước đây app chỉ hỗ trợ ĐÚNG 1 người bán, giờ thêm được người đồng hành khác.
+  const teamHtml = Array.isArray(product.team_members) && product.team_members.length
+    ? `<div class="lp-section">${eyebrow('Đội ngũ')}<h2 class="lp-h2">Đội ngũ đứng sau</h2><div class="lp-team-grid">${product.team_members.map(m => `
+        <div class="lp-team-card">
+          ${m.photo_url ? `<img class="lp-team-photo" src="${esc(m.photo_url)}" alt="">` : ''}
+          <div class="lp-team-name">${esc(m.name || '')}</div>
+          ${m.role ? `<div class="lp-team-role">${esc(m.role)}</div>` : ''}
+          ${m.bio ? `<div class="lp-team-bio">${esc(m.bio)}</div>` : ''}
+        </div>
+      `).join('')}</div></div>` : '';
   return `
     ${beforeAfterHtml(lp, template)}
     ${lp.van_de_intro || lp.van_de ? `<div class="lp-section" id="lp-sec-problem">${eyebrow('Bóc trần sự thật')}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : ''}
@@ -278,7 +295,8 @@ function landingPageIntroHtml(product, lp, template) {
     ${bonusHtml}
     ${phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
     ${lp.loi_nhan_nguoi_ban ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : ''}
-    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller">${product.seller_photo_url ? `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">` : ''}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div></div>` : ''}
+    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller">${product.seller_photo_url ? `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">` : ''}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${statBarHtml}</div>` : (statBarHtml ? `<div class="lp-section">${statBarHtml}</div>` : '')}
+    ${teamHtml}
   `;
 }
 function landingPageFaqHtml(lp) {

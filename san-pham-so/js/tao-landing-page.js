@@ -29,6 +29,7 @@ const LP_TEMPLATES = [
   { value: 'chuyengia', label: 'Chuyên gia', desc: 'Nền trắng sạch, tím indigo, thẻ "Phần" viền rõ — kiểu khoá học cho coach/chuyên gia.' },
 ];
 const MAX_CASE_STUDIES = 6;
+const MAX_TEAM_MEMBERS = 6;
 // Tương thích sản phẩm đã lỡ chọn tên mẫu CŨ (classic/bold/minimal, trước 2026-09-03) — khớp đúng
 // hàm normalizeTemplate() ở san-pham-so/p/script.js.
 function normalizeTemplate(t) {
@@ -47,6 +48,7 @@ function render(container) {
   const state = {
     screen: 'list', products: [], loading: true, selected: null, content: null, template: 'quynh',
     caseStudies: [], bonusItems: [], referencePrice: '', guaranteeText: '', caseStudyUploading: false, sellerPhotoUploading: false,
+    teamMembers: [], statItems: [], teamPhotoUploadingIndex: null,
     generating: false, saving: false, error: null, showManualEdit: false,
     // Tạo nhanh 1 sản phẩm NGAY TẠI ĐÂY (2026-09-02, Quỳnh: "người dùng không cần làm bước 1-2-3
     // cũng có thể làm trực tiếp landing page, với người đã có sẵn 1 sản phẩm chỉ cần trang landing
@@ -226,6 +228,36 @@ function render(container) {
         <label style="margin-top:10px;font-size:12.5px;font-weight:400;">Cam kết với khách (VD hoàn tiền) — để trống nếu không muốn hứa gì</label>
         <input id="lp-guarantee" type="text" value="${esc(state.guaranteeText)}" placeholder="VD: Hoàn tiền 100% nếu không hài lòng trong 7 ngày">
       </div>
+      <div class="card" style="margin-top:10px;">
+        <label style="margin-bottom:10px;display:block;">6. Đội ngũ đứng sau (tuỳ chọn — nếu có ai khác cùng đồng hành/giảng dạy ngoài bạn, tối đa ${MAX_TEAM_MEMBERS} người)</label>
+        ${state.teamMembers.map((m, i) => `
+          <div style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;display:flex;gap:10px;">
+            ${m.photo_url ? `<img src="${esc(m.photo_url)}" style="width:56px;height:56px;border-radius:999px;object-fit:cover;flex:0 0 auto;">` : `<div style="width:56px;height:56px;border-radius:999px;background:var(--accent-soft);flex:0 0 auto;"></div>`}
+            <div style="flex:1;">
+              <input type="text" data-team-name="${i}" value="${esc(m.name || '')}" placeholder="Tên" style="margin-bottom:6px;">
+              <input type="text" data-team-role="${i}" value="${esc(m.role || '')}" placeholder="Vai trò (VD: Đồng giảng dạy)" style="margin-bottom:6px;">
+              <textarea data-team-bio="${i}" rows="2" placeholder="Vài dòng giới thiệu">${esc(m.bio || '')}</textarea>
+              <div class="btn-row" style="margin-top:6px;">
+                <input type="file" accept="image/*" data-team-photo-input="${i}" style="display:none;">
+                <span class="btn-ghost btn btn-sm" data-team-photo-btn="${i}">${state.teamPhotoUploadingIndex === i ? 'Đang tải…' : (m.photo_url ? 'Đổi ảnh' : 'Tải ảnh')}</span>
+                <span class="btn-ghost btn btn-sm" data-team-remove="${i}" style="color:var(--danger);">Xoá</span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+        ${state.teamMembers.length < MAX_TEAM_MEMBERS ? `<span class="btn-ghost btn btn-sm" id="lp-team-add">+ Thêm người</span>` : ''}
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <label style="margin-bottom:10px;display:block;">7. Thống kê thật (tuỳ chọn — số liệu do bạn tự nhập, VD "5 năm kinh nghiệm", "200 học viên")</label>
+        ${state.statItems.map((s, i) => `
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <input type="text" data-stat-number="${i}" value="${esc(s.number || '')}" placeholder="VD: 5 năm" style="flex:1;">
+            <input type="text" data-stat-label="${i}" value="${esc(s.label || '')}" placeholder="VD: Kinh nghiệm" style="flex:1;">
+            <span class="btn-ghost btn btn-sm" data-stat-remove="${i}" style="color:var(--danger);">Xoá</span>
+          </div>
+        `).join('')}
+        <span class="btn-ghost btn btn-sm" id="lp-stat-add">+ Thêm số liệu</span>
+      </div>
     `;
   }
 
@@ -242,7 +274,7 @@ function render(container) {
       ${templatePickerHtml()}
       ${assetsHtml()}
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">6. AI viết landing page</label>
+        <label style="margin-bottom:10px;display:block;">8. AI viết landing page</label>
         <button class="btn" id="lp-generate-btn" ${state.generating ? 'disabled' : ''}>${state.generating ? 'Đang viết…' : (hasContent ? '🔄 Viết lại bằng AI (4 lượt)' : '✨ Tạo Landing Page bằng AI (4 lượt)')}</button>
         ${state.generating ? `<div id="lp-progress-el" style="margin-top:12px;">${progressBarHtml(0)}</div>` : ''}
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
@@ -330,6 +362,8 @@ function render(container) {
     state.bonusItems = Array.isArray(p.bonus_items) ? [...p.bonus_items] : [];
     state.referencePrice = p.reference_price || '';
     state.guaranteeText = p.guarantee_text || '';
+    state.teamMembers = Array.isArray(p.team_members) ? [...p.team_members] : [];
+    state.statItems = Array.isArray(p.stat_items) ? [...p.stat_items] : [];
     state.showManualEdit = false;
     state.screen = 'edit'; state.error = null;
   }
@@ -477,6 +511,52 @@ function render(container) {
     const guaranteeEl = container.querySelector('#lp-guarantee');
     if (guaranteeEl) guaranteeEl.oninput = () => { state.guaranteeText = guaranteeEl.value; };
 
+    const teamAddBtn = container.querySelector('#lp-team-add');
+    if (teamAddBtn) teamAddBtn.onclick = () => { state.teamMembers.push({ name: '', role: '', bio: '', photo_url: null }); draw(); };
+    container.querySelectorAll('[data-team-name]').forEach(el => {
+      el.oninput = () => { state.teamMembers[Number(el.getAttribute('data-team-name'))].name = el.value; };
+    });
+    container.querySelectorAll('[data-team-role]').forEach(el => {
+      el.oninput = () => { state.teamMembers[Number(el.getAttribute('data-team-role'))].role = el.value; };
+    });
+    container.querySelectorAll('[data-team-bio]').forEach(el => {
+      el.oninput = () => { state.teamMembers[Number(el.getAttribute('data-team-bio'))].bio = el.value; };
+    });
+    container.querySelectorAll('[data-team-remove]').forEach(el => {
+      el.onclick = () => { state.teamMembers.splice(Number(el.getAttribute('data-team-remove')), 1); draw(); };
+    });
+    container.querySelectorAll('[data-team-photo-btn]').forEach(el => {
+      const i = Number(el.getAttribute('data-team-photo-btn'));
+      el.onclick = () => container.querySelector(`[data-team-photo-input="${i}"]`).click();
+    });
+    container.querySelectorAll('[data-team-photo-input]').forEach(el => {
+      const i = Number(el.getAttribute('data-team-photo-input'));
+      el.onchange = async () => {
+        const file = el.files[0];
+        if (!file) return;
+        state.teamPhotoUploadingIndex = i; state.error = null; draw();
+        try {
+          state.teamMembers[i].photo_url = await compressImageToDataUrl(file, 400, 0.8);
+        } catch (e) {
+          state.error = e.message || 'Tải ảnh thất bại — thử lại giúp mình.';
+        }
+        state.teamPhotoUploadingIndex = null;
+        draw();
+      };
+    });
+
+    const statAddBtn = container.querySelector('#lp-stat-add');
+    if (statAddBtn) statAddBtn.onclick = () => { state.statItems.push({ number: '', label: '' }); draw(); };
+    container.querySelectorAll('[data-stat-number]').forEach(el => {
+      el.oninput = () => { state.statItems[Number(el.getAttribute('data-stat-number'))].number = el.value; };
+    });
+    container.querySelectorAll('[data-stat-label]').forEach(el => {
+      el.oninput = () => { state.statItems[Number(el.getAttribute('data-stat-label'))].label = el.value; };
+    });
+    container.querySelectorAll('[data-stat-remove]').forEach(el => {
+      el.onclick = () => { state.statItems.splice(Number(el.getAttribute('data-stat-remove')), 1); draw(); };
+    });
+
     container.querySelector('#lp-generate-btn').onclick = async () => {
       state.generating = true; state.error = null; draw();
       const stopProgress = animateProgressBar(container.querySelector('#lp-progress-el'), 25);
@@ -485,7 +565,7 @@ function render(container) {
         // AI viết chữ — AI viết xong tự PATCH landing_page_content luôn
         // (api/san-pham-so-tao-landing-page.js), không cần bấm "Lưu" riêng cho luồng chính (Quỳnh:
         // "90% chỉ là tải thông tin lên thôi").
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems });
         const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id, template: state.template }, 180000);
         state.content = { ...newContent(), ...data.result };
         state.selected.landing_page_content = state.content;
@@ -494,6 +574,8 @@ function render(container) {
         state.selected.bonus_items = state.bonusItems;
         state.selected.guarantee_text = state.guaranteeText || null;
         state.selected.reference_price = Number(state.referencePrice) || null;
+        state.selected.team_members = state.teamMembers;
+        state.selected.stat_items = state.statItems;
       } catch (e) {
         state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       }
@@ -564,13 +646,15 @@ function render(container) {
     if (saveBtn) saveBtn.onclick = async () => {
       state.saving = true; state.error = null; draw();
       try {
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems });
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
         state.selected.case_study_images = state.caseStudies;
         state.selected.bonus_items = state.bonusItems;
         state.selected.guarantee_text = state.guaranteeText || null;
         state.selected.reference_price = Number(state.referencePrice) || null;
+        state.selected.team_members = state.teamMembers;
+        state.selected.stat_items = state.statItems;
       } catch (e) {
         state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       }
