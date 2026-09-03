@@ -116,12 +116,25 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .wrap[data-lp-template="bold"] .lp-program-mota{ color:#C7C9BE; }
 .wrap[data-lp-template="bold"] .lp-letter{ background:#232B25; border-left-color:#F2A93B; color:#F4F1E8; }
 
-/* "Tối giản" — nền trắng, nhiều khoảng trắng, ít trang trí, cảm giác cao cấp. */
+/* "Tối giản" — nền TRẮNG THUẦN (khác hẳn nền kem #F7F5EC của "Cổ điển", đổi ngay ở .wrap để thấy khác
+   biệt từ pixel đầu tiên, kể cả trong khung xem trước bị cắt nhỏ), không khung thẻ/không bóng đổ,
+   không có khối màu nào (mọi chỗ "Cổ điển" tô nền accent-soft xanh nhạt đều đổi thành viền/gạch chân
+   mảnh) — 2026-09-03, Quỳnh: "cổ điển với tối giản đang y hệt nhau, 3 mẫu đang na ná nhau luôn". */
+.wrap[data-lp-template="minimal"]{ background:#FFFFFF; }
 .wrap[data-lp-template="minimal"] .card{ background:transparent; border:none; box-shadow:none; padding:10px 4px; }
-.wrap[data-lp-template="minimal"] h1{ font-family:'Be Vietnam Pro',sans-serif; font-weight:700; }
-.wrap[data-lp-template="minimal"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:var(--ink-soft); font-weight:600; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
-.wrap[data-lp-template="minimal"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; font-size:15px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); }
-.wrap[data-lp-template="minimal"] .lp-section{ border-top:none; margin:30px 0; padding-top:0; }
-.wrap[data-lp-template="minimal"] .btn{ background:transparent; border:1.5px solid var(--ink); color:var(--ink); font-weight:600; }
-.wrap[data-lp-template="minimal"] .hint-box{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); }
+.wrap[data-lp-template="minimal"] .cover{ border-radius:0; }
+.wrap[data-lp-template="minimal"] .mono{ background:transparent; color:var(--ink-soft); padding:0; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:600; }
+.wrap[data-lp-template="minimal"] h1{ font-family:'Be Vietnam Pro',sans-serif; font-weight:600; color:var(--ink); }
+.wrap[data-lp-template="minimal"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:var(--ink); font-weight:600; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
+.wrap[data-lp-template="minimal"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:600; }
+.wrap[data-lp-template="minimal"] .lp-section{ border-top:1px solid var(--line); margin:30px 0; padding-top:24px; }
+.wrap[data-lp-template="minimal"] .price{ color:var(--ink); font-weight:500; }
+.wrap[data-lp-template="minimal"] .btn{ background:transparent; border:1.5px solid var(--ink); color:var(--ink); font-weight:600; border-radius:0; }
+.wrap[data-lp-template="minimal"] .hint-box{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); border-radius:0; }
 .wrap[data-lp-template="minimal"] .lp-faq-item{ background:transparent; border:none; border-bottom:1px solid var(--line); border-radius:0; padding:12px 0; }
+.wrap[data-lp-template="minimal"] .lp-problem-item{ background:transparent; border-left:2px solid var(--ink); border-radius:0; padding:4px 0 4px 14px; }
+.wrap[data-lp-template="minimal"] .lp-problem-ten{ color:var(--ink); }
+.wrap[data-lp-template="minimal"] .lp-program-num{ background:transparent; color:var(--ink); border:1px solid var(--ink); border-radius:0; }
+.wrap[data-lp-template="minimal"] .lp-letter{ background:transparent; border-left:2px solid var(--ink); border-radius:0; color:var(--ink); }
+.wrap[data-lp-template="minimal"] .lp-case-study-item img{ border-radius:0; }
+.wrap[data-lp-template="minimal"] .buy-area input[type="email"]{ border-radius:0; }
