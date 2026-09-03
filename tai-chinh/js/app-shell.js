@@ -98,18 +98,35 @@ function tcPriceAnchorHtml(profile){
   }
   const savings = TC_PRICE_TIER_3 - price;
   // Giá GỐC to hơn giá phải trả (2026-08-26, góp ý Quỳnh: "để giá gốc to hơn... mới tạo hiệu ứng giá
-  // phải trả ít hơn, bé hơn") — đảo lại so với bản trước (giá phải trả to, giá gốc bé). Mỗi phần XUỐNG
-  // DÒNG riêng (trước đây 2 số nằm cùng 1 dòng, dễ dính chữ ở màn hẹp — đây là lỗi che chữ Quỳnh báo).
-  // Roadmap 1 dòng hiện ĐỦ CẢ 3 mức (không chỉ mức kế tiếp) nhưng gọn — mốc mức 2 diễn đạt tương đối
-  // ("15 ngày tiếp") thay vì số ngày tuyệt đối, để không phải nhồi 2 con số ngày khác gốc vào 1 dòng.
-  const roadmap = price === TC_PRICE_TIER_1
-    ? `${TC_PRICE_TIER_1.toLocaleString('vi-VN')}đ (còn ${tierDaysLeft} ngày) → ${TC_PRICE_TIER_2.toLocaleString('vi-VN')}đ (15 ngày tiếp) → ${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ`
-    : `${TC_PRICE_TIER_2.toLocaleString('vi-VN')}đ (còn ${tierDaysLeft} ngày) → ${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ`;
+  // phải trả ít hơn, bé hơn") — giữ nguyên đảo ngược này.
+  //
+  // 2026-09-03, góp ý Quỳnh: "làm sao để nhấn mạnh thật rõ" việc giá tăng theo thời gian — bản cũ
+  // roadmap chỉ là 1 DÒNG CHỮ NHỎ 11px màu mờ, dễ bị lướt qua/không hiểu đúng cơ chế (mốc mức 2 còn
+  // viết tương đối "15 ngày tiếp" thay vì mốc ngày thật, càng khó hiểu). Đổi hẳn sang: (1) 1 khối cảnh
+  // báo màu đỏ nói THẲNG bằng câu, không phải số suông — "còn X ngày... sau đó TỰ ĐỘNG tăng lên Yđ";
+  // (2) 1 hàng 3 Ô hiển thị ĐỦ cả 3 mốc giá cùng lúc, mốc ĐANG áp dụng tô đậm màu accent, 2 mốc còn
+  // lại làm mờ — nhìn là hiểu ngay "mình đang ở bước nào trên đường giá tăng dần" không cần đọc chữ.
+  const currentStep = price === TC_PRICE_TIER_1 ? 0 : 1;
+  const STEPS = [
+    { price: TC_PRICE_TIER_1, label:'0–15 ngày đầu' },
+    { price: TC_PRICE_TIER_2, label:'Ngày 15–30' },
+    { price: TC_PRICE_TIER_3, label:'Sau 30 ngày' },
+  ];
+  const stepsHtml = STEPS.map((s,i)=>{
+    const active = i === currentStep;
+    return `
+      <div style="flex:1;text-align:center;padding:7px 4px;border-radius:8px;${active ? 'background:var(--accent-soft);border:1.5px solid var(--accent);' : 'border:1.5px dashed var(--line);opacity:.55;'}">
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:${active?'13px':'11.5px'};color:${active?'var(--accent)':'var(--ink-soft)'};">${s.price.toLocaleString('vi-VN')}đ</div>
+        <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">${s.label}</div>
+      </div>
+    `;
+  }).join(`<div style="display:flex;align-items:center;color:var(--ink-soft);font-size:12px;padding:0 1px;">→</div>`);
   return `
     <div style="text-align:center;font-size:20px;color:var(--ink-soft);text-decoration:line-through;line-height:1.3;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</div>
     <div style="text-align:center;font-size:17px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${price.toLocaleString('vi-VN')}đ</div>
     <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Tiết kiệm ${savings.toLocaleString('vi-VN')}đ nếu bắt đầu ngay</div>
-    <div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-top:3px;line-height:1.5;">${roadmap}</div>
+    <div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:9px 12px;margin-top:10px;text-align:center;font-size:12.5px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${tierDaysLeft} ngày ở mức giá này — hết hạn TỰ ĐỘNG tăng lên ${nextPrice.toLocaleString('vi-VN')}đ, không cần chờ ai bấm nút</div>
+    <div style="display:flex;align-items:stretch;gap:0;margin-top:12px;">${stepsHtml}</div>
   `;
 }
 // Cùng 1 tài khoản ngân hàng thật với nhan-hieu (chị Quỳnh chỉ có 1 tài khoản) — VietQR/ref_code
