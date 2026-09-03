@@ -40,13 +40,19 @@ function render(container, ctx){
     choosingKhoFor:null,
     regenWeekLoading:false, regenWeekError:null,
     autoFillMode:'kho', autoFillBusy:false, autoFillError:null, autoFillResult:null, autoFillCustomInstructions:'',
+    // aiCardMode (2026-09-03, theo phản hồi chị Quỳnh "gộp lại làm 1 ... có mục chọn xem thích ai
+    // viết luôn hay chỉ gợi ý") — 'goi-y' = hiện y hệt nội dung khối "AI gợi ý lịch tuần" cũ (chỉ
+    // ra chủ đề), 'viet-luon' = hiện y hệt nội dung khối "AI tự viết + xếp cả tuần" cũ (viết bài
+    // hoàn chỉnh) — gộp CHUNG 1 thẻ, chỉ đổi nội dung hiện ra theo lựa chọn, không đổi logic/API
+    // gọi bên dưới của từng chế độ.
+    aiCardMode:'goi-y',
     recordingSchedule:[], newRecordingTitle:'', newRecordingDate:'', newRecordingTime:'', recordingSaving:false, recordingError:null,
     tab:'lich', weekLoadError:null, highlightAutoFill:false,
-    // Bố cục mới (2026-08-29, theo phản hồi chị Quỳnh "khó nhìn quá, rối"): 3 khối công cụ (mục tiêu
-    // tuần, AI tự viết cả tuần, lịch công việc content) thu gọn mặc định, chỉ hiện 1 dòng tóm tắt —
-    // bấm mới bung ra. Luôn thu gọn lại từ đầu mỗi lần vào trang, không nhớ qua lần sau — đơn giản
-    // hơn thêm 1 tầng lưu trữ chỉ để nhớ trạng thái mở/đóng của UI.
-    toolsExpanded: { goal:false, autofill:false, recording:false },
+    // Bố cục mới (2026-08-29, theo phản hồi chị Quỳnh "khó nhìn quá, rối"): các khối công cụ thu gọn
+    // mặc định, chỉ hiện 1 dòng tóm tắt — bấm mới bung ra. Luôn thu gọn lại từ đầu mỗi lần vào trang,
+    // không nhớ qua lần sau — đơn giản hơn thêm 1 tầng lưu trữ chỉ để nhớ trạng thái mở/đóng của UI.
+    // 'goal'/'autofill' gộp chung thành 1 key 'ai-lich' (2026-09-03, xem aiCardMode ở trên).
+    toolsExpanded: { 'ai-lich':false, recording:false },
     // 2 lane độc lập trong cùng calendar_entries (cột channel) — 'ca_nhan' mặc định cho MỌI user
     // (kế hoạch FB cá nhân, tự đăng tay, cách dùng gốc); 'fanpage' chỉ admin chuyển sang được, dùng
     // cho lane auto-đăng Fanpage (xem toggle ở calendarTabHtml). Không lưu draft — luôn mở lại về
@@ -99,9 +105,9 @@ function render(container, ctx){
   // "AI gợi ý lịch tuần" khi khách chọn 2-3 bài/ngày (2026-08-30, theo phản hồi khách Thu Oanh: chọn
   // 2-3 bài/ngày ở nút KIA chỉ ra chủ đề, vẫn phải tự chọn bài — nhiều khách không biết có nút này).
   function revealAutoFillCard(){
-    state.tab='lich'; state.highlightAutoFill = true; state.toolsExpanded.autofill = true;
+    state.tab='lich'; state.highlightAutoFill = true; state.toolsExpanded['ai-lich'] = true; state.aiCardMode = 'viet-luon';
     draw();
-    const card = document.getElementById('autofill-card');
+    const card = document.getElementById('ai-lich-card');
     if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
     setTimeout(()=>{ state.highlightAutoFill = false; draw(); }, 4000);
   }
@@ -325,7 +331,7 @@ function render(container, ctx){
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mỗi ngày muốn đăng mấy bài?</label>
         <div class="chips">${[1,2,3].map(n=>`<div class="chip ${state.postsPerDay===n?'selected':''}" data-posts-per-day="${n}">${n} bài/ngày</div>`).join('')}</div>
-        ${state.postsPerDay > 1 ? `<div class="hint-box" style="margin-top:8px;background:var(--accent-soft);">Chọn ${state.postsPerDay} bài/ngày thì nút bên dưới chỉ gợi ý CHỦ ĐỀ cho từng ô, bạn vẫn phải tự vào Kho Content chọn bài cho từng ô. Muốn AI viết SẴN toàn bộ bài cho mọi ô trống, dùng <span style="text-decoration:underline;cursor:pointer;font-weight:600;" data-action="jump-autofill">"AI tự viết + xếp cả tuần"</span> bên dưới thay vì nút này.</div>` : ''}
+        ${state.postsPerDay > 1 ? `<div class="hint-box" style="margin-top:8px;background:var(--accent-soft);">Chọn ${state.postsPerDay} bài/ngày thì nút bên dưới chỉ gợi ý CHỦ ĐỀ cho từng ô, bạn vẫn phải tự vào Kho Content chọn bài cho từng ô. Muốn AI viết SẴN toàn bộ bài cho mọi ô trống, chuyển sang <span style="text-decoration:underline;cursor:pointer;font-weight:600;" data-action="jump-autofill">"Để AI viết luôn"</span> ở trên thay vì nút này.</div>` : ''}
         ${!state.positioning ? `
           <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
@@ -363,6 +369,19 @@ function render(container, ctx){
         ${state.autoFillResult?`<div class="hint-box" style="margin-top:10px;">${esc(state.autoFillResult)}</div>`:''}
     `;
     const autoFillCardHint = emptySlotCount===0 ? 'Tuần này đã kín lịch.' : `Còn ${emptySlotCount} ô trống — bấm để AI viết luôn.`;
+
+    // Gộp "AI gợi ý lịch tuần" + "AI tự viết + xếp cả tuần" thành 1 thẻ duy nhất (2026-09-03, theo
+    // phản hồi chị Quỳnh "gộp lại làm 1 ... có mục chọn xem thích ai viết luôn hay chỉ gợi ý, mỗi
+    // cái sẽ ra số lượt khác nhau") — chỉ đổi CÁCH HIỂN THỊ (1 thẻ, 1 bộ chip chọn chế độ ở đầu),
+    // KHÔNG đổi logic/API gọi bên dưới của từng chế độ (goalCardBody/autoFillCardBody giữ nguyên).
+    const aiCardBody = `
+        <div class="chips" style="margin-bottom:16px;">
+          <div class="chip ${state.aiCardMode==='goi-y'?'selected':''}" data-ai-card-mode="goi-y">Chỉ gợi ý chủ đề (2 lượt)</div>
+          <div class="chip ${state.aiCardMode==='viet-luon'?'selected':''}" data-ai-card-mode="viet-luon">Để AI viết luôn (${autoFillPerPostCost} lượt/bài)</div>
+        </div>
+        ${state.aiCardMode==='goi-y' ? goalCardBody : autoFillCardBody}
+    `;
+    const aiCardHint = state.aiCardMode==='goi-y' ? goalCardHint : autoFillCardHint;
 
     const recordingCardBody = `
         <div class="hint-box" style="margin-bottom:12px;">Đặt lịch cho việc content sắp tới — quay video, lên kịch bản, họp nhóm, deadline bất kỳ... không chỉ riêng buổi quay. Nếu đã <span style="text-decoration:underline;cursor:pointer;" data-tab="thong-bao">bật thông báo</span>, bạn sẽ được nhắc ngay khi đến giờ.</div>
@@ -553,9 +572,9 @@ function render(container, ctx){
       </div>
 
       <div style="margin:26px 0 10px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">🛠️ Công cụ lên lịch</div>
+      ${toolCardHtml('recording', '🎬', 'Lịch công việc content', recordingCardBody, recordingCardHint, { id:'recording-card' })}
       ${state.channel==='ca_nhan' ? `
-        ${toolCardHtml('goal', '🎯', 'AI gợi ý lịch tuần', goalCardBody, goalCardHint, { id:'goal-card' })}
-        ${toolCardHtml('autofill', '🪄', 'AI tự viết + xếp cả tuần', autoFillCardBody, autoFillCardHint, { id:'autofill-card', bg:'var(--accent-soft)', pulse: state.highlightAutoFill })}
+        ${toolCardHtml('ai-lich', '🤖', 'AI lên lịch tuần', aiCardBody, aiCardHint, { id:'ai-lich-card', bg: state.aiCardMode==='viet-luon' ? 'var(--accent-soft)' : null, pulse: state.highlightAutoFill })}
       ` : `
         <div class="hint-box" style="margin-bottom:14px;">
           <div style="margin-bottom:10px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
@@ -567,7 +586,6 @@ function render(container, ctx){
           ${state.regenWeekError?`<div class="error-box" style="margin-top:10px;">${esc(state.regenWeekError)}</div>`:''}
         </div>
       `}
-      ${toolCardHtml('recording', '🎬', 'Lịch công việc content', recordingCardBody, recordingCardHint, { id:'recording-card' })}
     `;
   }
 
@@ -673,6 +691,9 @@ function render(container, ctx){
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
     const jumpAutoFillEl = container.querySelector('[data-action="jump-autofill"]');
     if(jumpAutoFillEl) jumpAutoFillEl.onclick = revealAutoFillCard;
+    container.querySelectorAll('[data-ai-card-mode]').forEach(el=>{
+      el.onclick = ()=>{ state.aiCardMode = el.getAttribute('data-ai-card-mode'); draw(); };
+    });
     container.querySelectorAll('[data-autofill-mode]').forEach(el=>{
       el.onclick = ()=>{ state.autoFillMode = el.getAttribute('data-autofill-mode'); draw(); };
     });
