@@ -324,6 +324,7 @@ async function initApp(){
       AppState.user = null;
       AppState.profile = null;
       AppState.profileLoadError = null;
+      AppState.pushPromptAttempted = false; // cho phép hỏi lại nếu 1 người khác đăng nhập cùng phiên tải trang (vd máy dùng chung)
       // Reset route/hash ngay lúc đăng xuất — để nếu có đăng nhập/đăng ký tài khoản khác tiếp theo
       // trong cùng tab (không tải lại trang), route không bị kẹt lại ở trang của tài khoản cũ.
       AppState.route = 'trang-chu';
@@ -425,7 +426,7 @@ async function loadReviewPromptEligibility(){
 // thông báo tính năng luôn được ưu tiên hiện trước nếu cả 2 cùng đủ điều kiện.
 function maybeShowReviewPrompt(){
   if(!AppState.reviewPromptEligible) return;
-  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay')) return;
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('push-prompt-overlay')) return;
   AppState.reviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang, không hiện lại nếu re-render
 
   const overlay = document.createElement('div');
@@ -466,6 +467,79 @@ function maybeShowReviewPrompt(){
     } catch(e){
       errorEl.textContent = e.message; errorEl.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Gửi đánh giá';
+    }
+  };
+}
+
+function markPushPromptSeen(){
+  if(AppState.profile) AppState.profile.push_prompt_seen = true;
+  supabaseClient.rpc('mark_push_prompt_seen').catch(()=>{});
+}
+
+// Popup mời bật thông báo đẩy NGAY TỪ ĐẦU (2026-09-03, mượn lại ý tưởng vừa làm cho tai-chinh — xem
+// maybeShowTcPushPrompt() ở tai-chinh/js/app-shell.js) — lý do mời bật ở ĐÂY là để không lỡ hạn dùng
+// thử: cron đã gửi sẵn 'trial-ending-24h'/'trial-expired' (api/cron/send-reminders.js
+// checkTrialEnding()) từ lâu, nhưng chưa từng ai chủ động mời bật thông báo, chỉ có nút im lìm trong
+// Lịch Đăng Bài (lich-dang.js) — rất nhiều người chưa từng bật nên nhắc đó gửi ra mà chẳng ai thấy.
+// Chỉ hỏi người CHƯA trả phí (đã mua thì không còn hạn dùng thử để lo mất). Hỏi ĐÚNG 1 lần/tài khoản
+// (push_prompt_seen) — bấm "Bật thông báo" hay "Để sau" đều đánh dấu đã hỏi. KHÔNG tự hỏi nếu trình
+// duyệt không hỗ trợ Web Push, đã từng bị từ chối quyền, hoặc đã đăng ký sẵn rồi.
+// AppState.pushPromptAttempted chặn gọi lại nhiều lần trong lúc đang chờ async bên dưới (renderApp()
+// gọi hàm này ở MỌI lần render, không chỉ lần đầu).
+async function maybeShowPushPrompt(){
+  if(AppState.pushPromptAttempted) return;
+  if(!AppState.user || !AppState.profile) return;
+  if(AppState.profile.push_prompt_seen || AppState.profile.has_paid || AppState.profile.role === 'admin') return;
+  if(!(window.PushManager && navigator.serviceWorker && window.Notification)) return;
+  if(Notification.permission === 'denied') return;
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay')) return;
+  AppState.pushPromptAttempted = true;
+
+  let sub;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    sub = await reg.pushManager.getSubscription();
+  } catch(e){ return; } // service worker chưa sẵn sàng — thử lại ở phiên tải trang sau
+  if(sub){ markPushPromptSeen(); return; } // đã bật sẵn rồi — không cần hỏi
+  // Overlay khác có thể vừa mở trong lúc đang chờ await ở trên — kiểm tra lại lần nữa trước khi vẽ.
+  if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'push-prompt-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🔔 Bật thông báo để không bị khoá app</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Bạn đang dùng thử miễn phí — bật thông báo để được nhắc trước 24 giờ khi sắp hết hạn, không cần tự nhớ ngày rồi bất ngờ bị khoá app giữa chừng.</div>
+      <div id="pp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
+        <span id="pp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="pp-enable" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Bật thông báo</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close(){ overlay.remove(); }
+  overlay.querySelector('#pp-skip').onclick = ()=>{ close(); markPushPromptSeen(); };
+  overlay.querySelector('#pp-enable').onclick = async ()=>{
+    const btn = overlay.querySelector('#pp-enable');
+    const errorEl = overlay.querySelector('#pp-error');
+    btn.disabled = true; btn.textContent = 'Đang bật…';
+    try{
+      const permission = await Notification.requestPermission();
+      if(permission !== 'granted') throw new Error('Bạn chưa cấp quyền thông báo — vào cài đặt trình duyệt/điện thoại để bật lại nếu muốn thử lại.');
+      const reg = await navigator.serviceWorker.ready;
+      const newSub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      await callApi('/api/push-subscribe', newSub.toJSON());
+      close(); markPushPromptSeen();
+    } catch(e){
+      errorEl.textContent = e.message || 'Không bật được thông báo — thử lại giúp mình.';
+      errorEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Bật thông báo';
     }
   };
 }
@@ -891,7 +965,10 @@ function renderApp(){
   }
 
   maybeShowFeatureAnnouncement();
-  maybeShowReviewPrompt();
+  // Chờ maybeShowPushPrompt() TỰ QUYẾT XONG (có vẽ overlay hay không) rồi mới xét review prompt —
+  // tránh 2 popup cùng bật đè lên nhau (push prompt có await bên trong, không đồng bộ như review
+  // prompt cũ, nên phải nối chuỗi thay vì gọi song song).
+  maybeShowPushPrompt().then(maybeShowReviewPrompt);
 
   const content = root.querySelector('#main-content');
   const mod = window.Modules && window.Modules[AppState.route];

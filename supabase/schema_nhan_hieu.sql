@@ -615,6 +615,20 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_review_prompt_dismissed() to authenticated;
 
+-- Popup mời bật thông báo đẩy NGAY TỪ ĐẦU (2026-09-03, mượn lại đúng ý tưởng vừa làm cho tai-chinh
+-- — xem tc_push_prompt_seen ở schema_tai_chinh.sql) — lý do mời bật ở ĐÂY là để không lỡ hạn dùng
+-- thử (đã có sẵn nhắc 'trial-ending-24h'/'trial-expired' ở api/cron/send-reminders.js
+-- checkTrialEnding(), nhưng trước giờ chưa ai chủ động mời bật, chỉ có nút im lìm trong Lịch Đăng
+-- Bài). Hỏi ĐÚNG 1 lần/tài khoản, dù bật hay "Để sau" đều đánh dấu đã hỏi.
+alter table profiles add column if not exists push_prompt_seen boolean not null default false;
+create or replace function public.mark_push_prompt_seen()
+returns void as $$
+begin
+  update public.profiles set push_prompt_seen = true where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.mark_push_prompt_seen() to authenticated;
+
 -- Kết quả thật (view/like/cmt/share) lưu THÊM ở posts (2026-08-26, theo yêu cầu chị Quỳnh: "mục
 -- view khi điền ở lịch thì cũng auto cập nhật ở kho luôn, sau này muốn sửa view cũng sửa được, mục
 -- đích để theo dõi hiệu quả bài đăng" — chuẩn bị cho mục phân tích hiệu quả bài đăng sắp tới). Trước
