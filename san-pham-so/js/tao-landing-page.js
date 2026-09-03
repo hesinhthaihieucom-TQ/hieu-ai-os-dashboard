@@ -65,6 +65,10 @@ function render(container) {
   }
 
   function templateCellHtml(t, selected, selectable) {
+    // 2026-09-03 (Quỳnh: "muốn bấm vào thấy landing page như của em gửi chứ hiện nó chỉ là hình cho
+    // mình xem ở ngoài người ta không hiểu") — khung cắt nhỏ ở trên chỉ để liếc nhanh, KHÔNG đủ để
+    // hiểu hết 1 mẫu; thêm link "Xem đầy đủ →" mở NGUYÊN trang mẫu thật (cuộn được, đúng như xem 1
+    // landing page thật) ở tab mới — data-lp-view-full để bind() chặn click này lan lên chọn mẫu.
     return `
       <div ${selectable ? `data-lp-pick-template="${t.value}"` : ''} style="${selectable ? 'cursor:pointer;' : ''}flex:1;min-width:190px;border:2px solid ${selected ? 'var(--accent)' : 'var(--line)'};border-radius:12px;overflow:hidden;">
         <div style="height:210px;overflow:hidden;position:relative;background:#eee;">
@@ -73,6 +77,7 @@ function render(container) {
         <div style="padding:10px 12px;">
           <div style="font-size:13.5px;font-weight:600;">${selected ? '✓ ' : ''}${esc(t.label)}</div>
           <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${esc(t.desc)}</div>
+          <a data-lp-view-full href="p/?demo=1&tpl=${t.value}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12.5px;color:var(--accent);text-decoration:underline;">🔍 Xem đầy đủ →</a>
         </div>
       </div>
     `;
@@ -394,6 +399,11 @@ function render(container) {
 
     container.querySelectorAll('[data-lp-pick-template]').forEach(el => {
       el.onclick = () => { state.template = el.getAttribute('data-lp-pick-template'); draw(); };
+    });
+    // Chặn click "Xem đầy đủ →" lan lên div cha (data-lp-pick-template) — mở tab mới xong không nên
+    // tự động đổi luôn mẫu đang chọn, đây chỉ là xem thử.
+    container.querySelectorAll('[data-lp-view-full]').forEach(el => {
+      el.onclick = (e) => { e.stopPropagation(); };
     });
 
     const sellerPhotoBtn = container.querySelector('#lp-seller-photo-btn');
