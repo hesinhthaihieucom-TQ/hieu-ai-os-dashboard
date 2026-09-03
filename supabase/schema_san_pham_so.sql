@@ -453,3 +453,24 @@ create view digital_products_public as
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 24. "CHỈ SỐ TRƯỚC/SAU" (2026-09-03, tiếp tục soát trực tiếp link aichuyengia.topexpert.vn theo yêu
+-- cầu "a ko tự xem để áp vào đc à" — trang đó có bảng so sánh nhiều chỉ số kinh doanh trước/sau khoá
+-- học, ví dụ "Số bài viết/tháng: 3 bài → 20 bài"). metric_items: mảng jsonb [{label, before, after}] —
+-- NGƯỜI BÁN TỰ NHẬP từng cặp số liệu thật của HỌ (không phải AI suy đoán/bịa %), để trống = không hiện
+-- phần này. Khác beforeAfterHtml (đoạn văn vấn đề vs kết quả, do AI viết) — đây là DÃY SỐ LIỆU CỤ THỂ.
+-- ============================================================
+alter table digital_products add column if not exists metric_items jsonb;
+
+drop view if exists digital_products_public;
+create view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, dp.bonus_items, dp.guarantee_text, dp.reference_price,
+         (select count(*)::int from digital_product_orders o where o.product_id = dp.id and o.status = 'paid') as paid_count,
+         dp.team_members, dp.stat_items, dp.metric_items
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;

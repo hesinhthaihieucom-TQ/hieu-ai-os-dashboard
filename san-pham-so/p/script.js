@@ -162,6 +162,7 @@ function demoProduct(tpl) {
     bonus_items: ['Sổ tay theo dõi chi tiêu 21 ngày (PDF)', 'Nhóm Zalo hỗ trợ riêng cho học viên'],
     stat_items: [{ number: '5 năm', label: 'Kinh nghiệm' }, { number: '200+', label: 'Học viên' }, { number: '4.8/5', label: 'Đánh giá' }],
     team_members: [{ name: 'Nguyễn Thu', role: 'Đồng hành nội dung', bio: 'Hỗ trợ xây dựng bài tập thực hành mỗi ngày.', photo_url: placeholderImg('Ảnh', '#D6D0EF', '#4A3D8F') }],
+    metric_items: [{ label: 'Tiết kiệm được mỗi tháng', before: '0đ', after: '3.500.000đ' }, { label: 'Số ngày theo dõi chi tiêu đều đặn', before: '2 ngày', after: '21 ngày' }],
     landing_page_content: {
       hook: 'Không phải nhịn tiêu — mà là hiểu đúng tiền của mình đang đi đâu, chỉ trong 21 ngày',
       van_de_intro: 'Bạn kiếm ra tiền nhưng cuối tháng vẫn không biết tiền đi đâu hết. Muốn tiết kiệm nhưng không biết bắt đầu từ đâu, muốn thoát nợ nhưng cứ trả rồi lại vay.',
@@ -256,6 +257,18 @@ function landingPageIntroHtml(product, lp, template) {
   const ketQuaHtml = ketQuaGridHtml || ketQuaListHtml;
   const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
     ? `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  // "Chỉ số trước/sau" (product.metric_items, người bán tự nhập — VD aichuyengia.topexpert.vn có bảng
+  // "Số bài viết/tháng: 3 bài → 20 bài") — số liệu CỤ THỂ do chính người bán gõ, khác beforeAfterHtml
+  // (đoạn văn AI viết về vấn đề/kết quả chung chung).
+  const metricHtml = Array.isArray(product.metric_items) && product.metric_items.length
+    ? `<div class="lp-section">${eyebrow('Hiệu quả thật')}<h2 class="lp-h2">Chỉ số trước/sau</h2><div class="lp-metric-list">${product.metric_items.map(m => `
+        <div class="lp-metric-row">
+          <div class="lp-metric-label">${esc(m.label || '')}</div>
+          <div class="lp-metric-before">${esc(m.before || '')}</div>
+          <div class="lp-metric-arrow">→</div>
+          <div class="lp-metric-after">${esc(m.after || '')}</div>
+        </div>
+      `).join('')}</div></div>` : '';
   const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
     ? `<div class="lp-section">${eyebrow('Người dùng nói gì')}<h2 class="lp-h2">Kết quả thực tế</h2><div class="lp-case-studies">${product.case_study_images.map(c => `
         <div class="lp-case-study-item">
@@ -291,6 +304,7 @@ function landingPageIntroHtml(product, lp, template) {
     ${comparisonTableHtml(lp, template)}
     ${chuongTrinhHtml ? `<div class="lp-section" id="lp-sec-program">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section" id="lp-sec-program"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '')}
     ${ketQuaHtml ? `<div class="lp-section">${eyebrow('Sau khi hoàn thành')}<h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : ''}
+    ${metricHtml}
     ${caseStudyHtml}
     ${bonusHtml}
     ${phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}

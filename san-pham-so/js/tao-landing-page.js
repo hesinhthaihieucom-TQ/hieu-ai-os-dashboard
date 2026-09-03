@@ -48,7 +48,7 @@ function render(container) {
   const state = {
     screen: 'list', products: [], loading: true, selected: null, content: null, template: 'quynh',
     caseStudies: [], bonusItems: [], referencePrice: '', guaranteeText: '', caseStudyUploading: false, sellerPhotoUploading: false,
-    teamMembers: [], statItems: [], teamPhotoUploadingIndex: null,
+    teamMembers: [], statItems: [], metricItems: [], teamPhotoUploadingIndex: null,
     generating: false, saving: false, error: null, showManualEdit: false,
     // Tạo nhanh 1 sản phẩm NGAY TẠI ĐÂY (2026-09-02, Quỳnh: "người dùng không cần làm bước 1-2-3
     // cũng có thể làm trực tiếp landing page, với người đã có sẵn 1 sản phẩm chỉ cần trang landing
@@ -258,6 +258,18 @@ function render(container) {
         `).join('')}
         <span class="btn-ghost btn btn-sm" id="lp-stat-add">+ Thêm số liệu</span>
       </div>
+      <div class="card" style="margin-top:10px;">
+        <label style="margin-bottom:10px;display:block;">8. Chỉ số trước/sau (tuỳ chọn — số liệu thật của khách/học viên bạn, VD "Số bài viết/tháng: 3 bài → 20 bài")</label>
+        ${state.metricItems.map((m, i) => `
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <input type="text" data-metric-label="${i}" value="${esc(m.label || '')}" placeholder="Tên chỉ số" style="flex:1.4;">
+            <input type="text" data-metric-before="${i}" value="${esc(m.before || '')}" placeholder="Trước" style="flex:1;">
+            <input type="text" data-metric-after="${i}" value="${esc(m.after || '')}" placeholder="Sau" style="flex:1;">
+            <span class="btn-ghost btn btn-sm" data-metric-remove="${i}" style="color:var(--danger);">Xoá</span>
+          </div>
+        `).join('')}
+        <span class="btn-ghost btn btn-sm" id="lp-metric-add">+ Thêm chỉ số</span>
+      </div>
     `;
   }
 
@@ -274,7 +286,7 @@ function render(container) {
       ${templatePickerHtml()}
       ${assetsHtml()}
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">8. AI viết landing page</label>
+        <label style="margin-bottom:10px;display:block;">9. AI viết landing page</label>
         <button class="btn" id="lp-generate-btn" ${state.generating ? 'disabled' : ''}>${state.generating ? 'Đang viết…' : (hasContent ? '🔄 Viết lại bằng AI (4 lượt)' : '✨ Tạo Landing Page bằng AI (4 lượt)')}</button>
         ${state.generating ? `<div id="lp-progress-el" style="margin-top:12px;">${progressBarHtml(0)}</div>` : ''}
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
@@ -364,6 +376,7 @@ function render(container) {
     state.guaranteeText = p.guarantee_text || '';
     state.teamMembers = Array.isArray(p.team_members) ? [...p.team_members] : [];
     state.statItems = Array.isArray(p.stat_items) ? [...p.stat_items] : [];
+    state.metricItems = Array.isArray(p.metric_items) ? [...p.metric_items] : [];
     state.showManualEdit = false;
     state.screen = 'edit'; state.error = null;
   }
@@ -557,6 +570,21 @@ function render(container) {
       el.onclick = () => { state.statItems.splice(Number(el.getAttribute('data-stat-remove')), 1); draw(); };
     });
 
+    const metricAddBtn = container.querySelector('#lp-metric-add');
+    if (metricAddBtn) metricAddBtn.onclick = () => { state.metricItems.push({ label: '', before: '', after: '' }); draw(); };
+    container.querySelectorAll('[data-metric-label]').forEach(el => {
+      el.oninput = () => { state.metricItems[Number(el.getAttribute('data-metric-label'))].label = el.value; };
+    });
+    container.querySelectorAll('[data-metric-before]').forEach(el => {
+      el.oninput = () => { state.metricItems[Number(el.getAttribute('data-metric-before'))].before = el.value; };
+    });
+    container.querySelectorAll('[data-metric-after]').forEach(el => {
+      el.oninput = () => { state.metricItems[Number(el.getAttribute('data-metric-after'))].after = el.value; };
+    });
+    container.querySelectorAll('[data-metric-remove]').forEach(el => {
+      el.onclick = () => { state.metricItems.splice(Number(el.getAttribute('data-metric-remove')), 1); draw(); };
+    });
+
     container.querySelector('#lp-generate-btn').onclick = async () => {
       state.generating = true; state.error = null; draw();
       const stopProgress = animateProgressBar(container.querySelector('#lp-progress-el'), 25);
@@ -565,7 +593,7 @@ function render(container) {
         // AI viết chữ — AI viết xong tự PATCH landing_page_content luôn
         // (api/san-pham-so-tao-landing-page.js), không cần bấm "Lưu" riêng cho luồng chính (Quỳnh:
         // "90% chỉ là tải thông tin lên thôi").
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems });
         const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id, template: state.template }, 180000);
         state.content = { ...newContent(), ...data.result };
         state.selected.landing_page_content = state.content;
@@ -576,6 +604,7 @@ function render(container) {
         state.selected.reference_price = Number(state.referencePrice) || null;
         state.selected.team_members = state.teamMembers;
         state.selected.stat_items = state.statItems;
+        state.selected.metric_items = state.metricItems;
       } catch (e) {
         state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       }
@@ -646,7 +675,7 @@ function render(container) {
     if (saveBtn) saveBtn.onclick = async () => {
       state.saving = true; state.error = null; draw();
       try {
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems });
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
         state.selected.case_study_images = state.caseStudies;
@@ -655,6 +684,7 @@ function render(container) {
         state.selected.reference_price = Number(state.referencePrice) || null;
         state.selected.team_members = state.teamMembers;
         state.selected.stat_items = state.statItems;
+        state.selected.metric_items = state.metricItems;
       } catch (e) {
         state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
       }
