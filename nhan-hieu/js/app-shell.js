@@ -192,7 +192,7 @@ const REFERRAL_REGULAR_PLANS = [
   { key:'6m_ref', label:'6 tháng (giá giới thiệu)', amount:2032000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 2.032.000đ so với giá thường 2.390.000đ.', recommended:true },
   { key:'12m_ref', label:'12 tháng (giá giới thiệu)', amount:3392000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 3.392.000đ so với giá thường 3.990.000đ.', recommended:true },
 ];
-// Ưu đãi "mua sớm trong 3 ngày đầu dùng thử" (2026-08-26, chính sách lâu dài — khớp
+// Ưu đãi "mua sớm trong ngày đầu tiên đăng ký" (2026-08-26, chính sách lâu dài — khớp
 // isWithinEarlyBirdWindow ở api/sepay-webhook.js, nơi thật sự cộng thêm ngày dùng) — PHẢI hiện rõ
 // ngay ở bảng giá thì mới có tác dụng thúc đẩy mua ngay trong lúc còn hào hứng dùng thử, không thì
 // khách chỉ vô tình "được tặng" mà không biết để tranh thủ mua sớm.
@@ -200,14 +200,16 @@ const REFERRAL_REGULAR_PLANS = [
 // riêng, mua sớm chỉ áp cho giá thường/giới thiệu) — currentPaymentPlans() bên dưới bỏ qua bước
 // decorateEarlyBird() hẳn khi isStudent, khớp đúng phía api/sepay-webhook.js (nơi thật sự cộng
 // thêm ngày dùng) đã loại 2 số tiền giá học viên khỏi EARLY_BIRD_EXCLUDED_AMOUNTS.
-const EARLY_BIRD_WINDOW_DAYS = 3;
+// RÚT NGẮN 3 ngày -> 1 ngày (chị Quỳnh 2026-09-01) — vẫn là cửa sổ ĐỘNG tính từ giờ phút đăng ký,
+// không phải hết ngày lịch đăng ký (xem isInEarlyBirdWindow bên dưới).
+const EARLY_BIRD_WINDOW_DAYS = 1;
 const EARLY_BIRD_BONUS_MONTHS = { '6m':1, '12m':2 }; // áp cho biến thể thường/giới thiệu (không áp cho học viên)
 function isInEarlyBirdWindow(profile){
   if(!profile || !profile.created_at) return false;
   return (Date.now() - new Date(profile.created_at).getTime()) <= EARLY_BIRD_WINDOW_DAYS * 86400000;
 }
 // Đếm ngược theo GIỜ (không phải ngày, khác tcPriceTierDaysLeft() bên tai-chinh) — cửa sổ chỉ vỏn
-// vẹn 3 ngày nên tính theo ngày sẽ hầu như luôn hiện "1 ngày" suốt gần cả cửa sổ, không đủ khẩn cấp.
+// vẹn 1 ngày nên càng cần hiện chính xác theo giờ mới đủ khẩn cấp, không nên làm tròn lên ngày.
 // null = đã hết ưu đãi hoặc chưa có profile — không hiện khối cảnh báo.
 function earlyBirdHoursLeft(profile){
   if(!profile || !profile.created_at) return null;
@@ -230,7 +232,7 @@ function decorateEarlyBird(plans, profile){
     const prefix = Object.keys(EARLY_BIRD_BONUS_MONTHS).find(k=>pl.key.startsWith(k));
     if(!prefix) return pl;
     const bonusMonths = EARLY_BIRD_BONUS_MONTHS[prefix];
-    return { ...pl, note: `🎁 Mua trong 3 ngày đầu dùng thử được TẶNG THÊM ${bonusMonths} tháng dùng! ${pl.note||''}`.trim() };
+    return { ...pl, note: `🎁 Mua trong ngày đầu tiên đăng ký được TẶNG THÊM ${bonusMonths} tháng dùng! ${pl.note||''}`.trim() };
   });
 }
 function currentPaymentPlans(){
@@ -505,10 +507,12 @@ function markEarlyBirdPromptSeen(){
   supabaseClient.rpc('mark_early_bird_prompt_seen').catch(()=>{});
 }
 
-// Popup báo riêng về ưu đãi "mua sớm trong 3 ngày đầu dùng thử" (2026-09-03, góp ý Quỳnh: "làm cái
+// Popup báo riêng về ưu đãi "mua sớm trong ngày đầu tiên đăng ký" (2026-09-03, góp ý Quỳnh: "làm cái
 // pop up y hệt như app sổ dòng tiền về cái này" — cùng khung overlay/2-nút với maybeShowPushPrompt(),
 // khác NỘI DUNG và MỤC ĐÍCH: đây là mời MUA ngay để nhận thêm 1-2 tháng, không phải mời bật thông
-// báo). Chạy TRƯỚC maybeShowPushPrompt() trong chuỗi gọi — ưu đãi có hạn 3 ngày nên ưu tiên cao hơn,
+// báo). Đã có sẵn đếm ngược giờ còn lại ngay trong nội dung popup (label, xem earlyBirdTimeLeftLabel()
+// ở trên — "e cần pop up tính giờ còn lại ưu đãi cho khách hàng", chị Quỳnh 2026-09-01, ĐÃ CÓ SẴN từ
+// trước, không phải làm mới). Chạy TRƯỚC maybeShowPushPrompt() trong chuỗi gọi — ưu đãi có hạn nên ưu tiên cao hơn,
 // đủ điều kiện cho MỌI người còn trong cửa sổ + CHƯA trả phí + KHÔNG phải học viên (ưu đãi này không
 // áp cho học viên, xem decorateEarlyBird()) + chưa từng thấy popup này. Đồng bộ (không có await nào
 // thật sự cần chờ như push prompt) nên không cần AppState.*Attempted chặn gọi lại — reviewPromptEligible-
@@ -526,8 +530,8 @@ function maybeShowEarlyBirdPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🎁 Ưu đãi chỉ dành cho 3 ngày đầu dùng thử</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Mua gói <b>6 tháng</b> được TẶNG THÊM <b>1 tháng</b>, mua gói <b>12 tháng</b> được TẶNG THÊM <b>2 tháng</b> — cùng 1 mức giá, chỉ áp dụng nếu chuyển khoản trong 3 ngày đầu kể từ lúc đăng ký. ${label ? `Còn <b style="color:var(--danger,#A6462E);">${esc(label)}</b> là hết ưu đãi này.` : ''}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🎁 Ưu đãi chỉ dành cho ngày đầu tiên đăng ký</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Mua gói <b>6 tháng</b> được TẶNG THÊM <b>1 tháng</b>, mua gói <b>12 tháng</b> được TẶNG THÊM <b>2 tháng</b> — cùng 1 mức giá, chỉ áp dụng nếu chuyển khoản trong 24 giờ đầu kể từ lúc đăng ký. ${label ? `Còn <b style="color:var(--danger,#A6462E);">${esc(label)}</b> là hết ưu đãi này.` : ''}</div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
         <span id="ebp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
         <button id="ebp-view" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Xem gói ngay</button>
@@ -657,7 +661,7 @@ function paymentCardHtml(){
     ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
     : null;
 
-  // Khối cảnh báo đếm ngược ưu đãi "mua sớm trong 3 ngày đầu" — nhấn mạnh RÕ như cách vừa làm bên
+  // Khối cảnh báo đếm ngược ưu đãi "mua sớm trong ngày đầu tiên đăng ký" — nhấn mạnh RÕ như cách vừa làm bên
   // tai-chinh (tcPriceAnchorHtml, 2026-09-03, góp ý Quỳnh: "làm cái hạn sẽ hết y hệt luôn") — trước
   // đây chỉ có 1 dòng ghi chú nhỏ (plan.note) gắn theo TỪNG gói đang chọn, dễ bị lướt qua và chỉ hiện
   // khi đã chọn đúng gói 6/12 tháng. Khối này hiện NGAY TỪ ĐẦU, không phụ thuộc gói đang chọn — không
@@ -1038,7 +1042,7 @@ function renderApp(){
   }
 
   maybeShowFeatureAnnouncement();
-  // Thứ tự ưu tiên: thông báo tính năng → ưu đãi 3 ngày đầu (có hạn, giá trị doanh thu rõ nhất) →
+  // Thứ tự ưu tiên: thông báo tính năng → ưu đãi ngày đầu tiên đăng ký (có hạn, giá trị doanh thu rõ nhất) →
   // mời bật thông báo → xin đánh giá. Nối chuỗi bằng .then() (không gọi song song) để không có 2
   // overlay cùng bật đè lên nhau — maybeShowPushPrompt() có await bên trong nên không đồng bộ như
   // 2 cái còn lại, phải chờ nó tự quyết xong (có vẽ overlay hay không) rồi mới xét review prompt.

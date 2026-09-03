@@ -19,16 +19,17 @@ const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 // Ưu đãi "mua sớm trong lúc dùng thử" — CHUẨN HOÁ THÀNH QUY TẮC LÂU DÀI (2026-08-26, theo quyết
 // định chị Quỳnh: "sẽ luôn có chế độ ưu đãi mua 6 tặng 1 và mua 12 tặng 2 trong 3 ngày đầu dùng
 // thử, sau 3 ngày thì giá về như cũ"), thay cho bản một-lần-duy-nhất "đúng ngày Zoom 26/8" trước đó
-// (ZOOM_BONUS_DATE cũ so 1 NGÀY LỊCH chung cho mọi người — giờ so ĐÚNG 3 NGÀY ĐẦU của TỪNG người kể
-// từ lúc HỌ đăng ký, không phụ thuộc ngày nào trên lịch). Hợp lý vì hạn dùng thử mới cũng chỉ còn 3
-// ngày (xem handle_new_user() ở schema_full.sql) — tạo lý do cụ thể để quyết định mua NGAY trong
-// lúc còn đang hào hứng dùng thử, thay vì để nguội rồi quên mất.
+// (ZOOM_BONUS_DATE cũ so 1 NGÀY LỊCH chung cho mọi người — giờ so ĐÚNG N NGÀY ĐẦU của TỪNG người kể
+// từ lúc HỌ đăng ký, không phụ thuộc ngày nào trên lịch).
+// RÚT NGẮN 3 ngày -> 1 ngày (chị Quỳnh 2026-09-01: "đổi sang chỉ ngày đầu tiên đăng ký được giá mua
+// 6 tặng 1 và mua 12 tặng 2 thôi") — vẫn cùng cơ chế cửa sổ ĐỘNG (rolling, tính từ giờ phút đăng ký
+// chính xác chứ không phải hết NGÀY LỊCH đăng ký), chỉ đổi số N.
 // KHÔNG tặng lượt AI (chị Quỳnh nhận định: người mới chưa dùng app thì chưa hiểu giá trị 1 lượt là
 // gì, tặng thêm THỜI GIAN dùng dễ hiểu/hấp dẫn hơn hẳn với người lần đầu quyết định mua). Chỉ áp
 // dụng gói 6/12 tháng (days=180/365) — gói 1 tháng không có. Không cộng vào last_plan_days (giữ
 // đúng số ngày GỐC của gói) để Quản trị vẫn lọc đúng "6 tháng"/"12 tháng" như bình thường — bonus
 // chỉ cộng thêm vào access_until thực tế.
-const EARLY_BIRD_WINDOW_DAYS = 3;
+const EARLY_BIRD_WINDOW_DAYS = 1;
 const EARLY_BIRD_BONUS_DAYS_BY_PLAN = { 180: 30, 365: 60 }; // 6 tháng +1 tháng, 12 tháng +2 tháng
 // 2026-08-26, chị Quỳnh chốt: học viên KHÔNG được cộng dồn ưu đãi mua sớm (giá học viên đã là mức
 // giảm riêng rồi) — loại 2 số tiền giá học viên 6/12 tháng khỏi bonus, dù cùng days=180/365 với giá
