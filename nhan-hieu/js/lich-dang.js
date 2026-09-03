@@ -354,7 +354,7 @@ function render(container, ctx){
         ` : ''}
         <div class="btn-row">
           <button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button>
-          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 2 lượt AI)</span>
+          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI/tuần — KHÁC "AI viết luôn" tính theo lượt/bài)</span>
           ${(state.aiSuggestions || state.weeklyGoal) ? `<span class="btn-ghost btn btn-sm" data-action="reset-week">Reset tuần</span>` : ''}
         </div>
         <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu theo tài khoản — xem lại được trên mọi thiết bị, không mất khi thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>
@@ -409,7 +409,7 @@ function render(container, ctx){
     // KHÔNG đổi logic/API gọi bên dưới của từng chế độ (goalCardBody/autoFillCardBody giữ nguyên).
     const aiCardBody = `
         <div class="chips" style="margin-bottom:16px;">
-          <div class="chip ${state.aiCardMode==='goi-y'?'selected':''}" data-ai-card-mode="goi-y">Chỉ gợi ý chủ đề (2 lượt)</div>
+          <div class="chip ${state.aiCardMode==='goi-y'?'selected':''}" data-ai-card-mode="goi-y">Chỉ gợi ý chủ đề (3 lượt/tuần)</div>
           <div class="chip ${state.aiCardMode==='viet-luon'?'selected':''}" data-ai-card-mode="viet-luon">Để AI viết luôn (${autoFillPerPostCost} lượt/bài)</div>
         </div>
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mỗi ngày muốn đăng mấy bài? (áp dụng cho cả 2 chế độ trên)</label>

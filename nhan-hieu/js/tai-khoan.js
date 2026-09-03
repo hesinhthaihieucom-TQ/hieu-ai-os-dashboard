@@ -9,7 +9,8 @@ const PARTNER_REFERRAL_THRESHOLD = 5;
 // giống quy ước đã có ở app-shell.js. Đây chỉ là bảng để NGƯỜI DÙNG xem, không phải nơi chặn thật.
 const ACTION_WEIGHTS_DISPLAY = [
   { label:'Cải thiện hook / Chấm điểm hook / Gợi ý hook theo chủ đề / Gợi ý đẩy bài / Gợi ý từ nguồn', weight:1 },
-  { label:'Chấm điểm Content / AI gợi ý lịch tuần', weight:2 },
+  { label:'Chấm điểm Content', weight:2 },
+  { label:'AI gợi ý lịch tuần (trọn tuần, không phải mỗi bài)', weight:3 },
   { label:'Viết Content (bài mới hoặc từ Kho gốc) / Tái Chế Content Viral', weight:3 },
   { label:'Sửa Kênh (audit kênh)', weight:4 },
   { label:'Định Vị (làm hoặc sửa lại 16 câu)', weight:8 },
@@ -24,7 +25,7 @@ const GOAL_ITEMS = [
   { key:'viet', label:'Viết Content (bài)', weight:3 },
   { key:'taicheviral', label:'Tái Chế Content Viral (lần)', weight:3 },
   { key:'chamdiemcontent', label:'Chấm điểm Content (lần)', weight:2 },
-  { key:'lich', label:'Gợi ý lịch đăng bài (lần/tuần)', weight:2 },
+  { key:'lich', label:'Gợi ý lịch đăng bài (lần/tuần)', weight:3 },
   { key:'chamdiemhook', label:'Chấm điểm Hook (lần)', weight:1 },
   { key:'hook', label:'Tạo/Cải thiện Hook (lần)', weight:1 },
   { key:'suakenh', label:'Sửa Kênh (lần)', weight:4 },

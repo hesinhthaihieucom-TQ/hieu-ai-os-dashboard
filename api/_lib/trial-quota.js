@@ -49,7 +49,9 @@ const AI_WEIGHTS = {
   // toàn bộ Lượt 1 (8 lượt), đúng tinh thần "sửa đúng đúng phần bị thiếu, không bắt làm lại từ đầu".
   'dinh-vi-cap-nhat-cau-chuyen': 1,
   'cham-diem-content': 2,
-  'goi-y-lich': 2,
+  // 2026-09-03, chị Quỳnh chốt tăng 2 -> 3 (đồng thời làm rõ đơn vị trong UI: "3 lượt/TUẦN" —
+  // khác hẳn "AI viết luôn" tính "lượt/BÀI", dễ gây hiểu lầm nếu chỉ ghi số suông).
+  'goi-y-lich': 3,
   'viet-content': 3,
   'viet-tu-kho-goc': 3,
   'tai-che-viral': 3,
