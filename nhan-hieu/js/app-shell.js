@@ -306,6 +306,13 @@ async function initApp(){
     renderAuthScreen();
   }
 
+  // Cảnh báo trình duyệt trong app (Facebook/Instagram/Zalo...) NGAY LẦN ĐẦU VÀO, kể cả CHƯA đăng
+  // nhập — đây chính là lúc khách bấm link chia sẻ từ Facebook/Zalo vào xem/đăng ký, rồi thoát ra là
+  // khó quay lại vì không cài được PWA/không nhận thông báo (2026-09-03, áp dụng lại từ tai-chinh
+  // theo góp ý Quỳnh "áp dụng cho tất cả các app về sau"). Gọi ĐỘC LẬP với maybeShowInstallPrompt()
+  // (cái đó chỉ chạy sau khi đăng nhập, xem onAuthStateChange bên dưới).
+  if(window.maybeShowInAppBrowserBanner) window.maybeShowInAppBrowserBanner();
+
   // Kiểm tra định kỳ thông báo tính năng mới — để người ĐANG MỞ SẴN app (không tải lại trang) cũng
   // thấy popup mà không cần tắt/mở lại app. 3 phút là đủ nhanh để cảm giác "gần như ngay", không quá
   // dày để tốn query liên tục trong lúc họ không rời khỏi app.

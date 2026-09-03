@@ -60,6 +60,10 @@ async function initApp(){
     renderAuthScreen();
   }
 
+  // Cảnh báo trình duyệt trong app (Facebook/Instagram/Zalo...) NGAY LẦN ĐẦU VÀO, kể cả CHƯA đăng
+  // nhập (2026-09-03, áp dụng từ tai-chinh theo góp ý Quỳnh "áp dụng cho tất cả các app về sau").
+  if(window.maybeShowInAppBrowserBanner) window.maybeShowInAppBrowserBanner();
+
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if(event === 'SIGNED_IN' && session){
       // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại — chỉ
