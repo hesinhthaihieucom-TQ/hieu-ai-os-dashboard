@@ -116,11 +116,12 @@ function beforeAfterHtml(lp, template) {
   `;
 }
 
-// Dải "cách đăng ký" 3 bước (chỉ mẫu "quynh", đúng kiểu "CÁCH ĐĂNG KÝ" ở trang gốc) — mô tả ĐÚNG luồng
-// mua thật của app này (bấm mua → chuyển khoản đúng nội dung → tự động mở khoá), không phải quy trình
-// thủ công cần nhắn Zalo như trang tham khảo (app này không cần bước đó, tự động 100%).
+// Dải "cách đăng ký" 3 bước — CẢ 4 trang tham khảo đều có khối này (mỗi trang gọi 1 kiểu: "CÁCH ĐĂNG
+// KÝ"/"Điền form → Chuyển khoản → Nhắn trợ lý"...), nên hiện ở CẢ 4 mẫu, chỉ đổi màu theo
+// [data-lp-template]. Mô tả ĐÚNG luồng mua thật của app này (bấm mua → chuyển khoản đúng nội dung →
+// tự động mở khoá) — KHÔNG phải quy trình thủ công cần nhắn Zalo như hầu hết trang tham khảo, vì app
+// này tự động 100%, không cần bước đó.
 function threeStepHtml(template) {
-  if (template !== 'quynh') return '';
   return `
     <div class="lp-3step">
       <div class="lp-3step-item"><div class="lp-3step-num">1</div>Bấm mua</div>

@@ -13,6 +13,17 @@ const DINH_DANG_LABEL = {
   mini_course: 'Mini-course', coaching_1_1: 'Coaching 1-1', cong_dong_tra_phi: 'Cộng đồng trả phí', webinar: 'Webinar',
 };
 
+// 2026-09-03 (Quỳnh: "muốn mẫu là làm y hệt, không tự làm theo bản nội dung cũ") — 4 mẫu giao diện
+// (xem san-pham-so/p/script.js) giờ cũng viết GIỌNG VĂN khác nhau đúng đặc trưng từng trang tham
+// khảo, không chỉ đổi cách trình bày trên CÙNG 1 văn phong nữa. Field/schema vẫn dùng chung (xem
+// api/_lib/landing-page-schema.js — không đổi để tránh 4 schema riêng phức tạp), chỉ đổi CÁCH VIẾT.
+const TEMPLATE_VOICE = {
+  quynh: 'Giọng ấm áp, cá nhân, hơi chiêm nghiệm/tâm linh — câu văn mượt, dùng hình ảnh ẩn dụ nhẹ nhàng (kiểu "khơi thông dòng chảy", "gỡ từng nút thắt"). Đây là giọng gốc quen thuộc của app này, giữ nguyên phong cách đó.',
+  video: 'Giọng NGẮN, MẠNH, THỰC CHIẾN — câu ngắn, nhiều động từ hành động, không vòng vo, không ẩn dụ dài dòng. Viết như đang huấn luyện trực tiếp 1-1, ưu tiên câu khẳng định dứt khoát kiểu "Không phải X. Là Y." Tránh câu phức nhiều mệnh đề.',
+  sach: 'Giọng KỂ CHUYỆN, TÂM SỰ THẬT LÒNG — như đang viết thư tay cho 1 người bạn thân, xưng "mình", câu văn dài hơi hơn, có đoạn tự sự/giãi bày cảm xúc thật, hạn chế liệt kê khô khan, ưu tiên đoạn văn liền mạch có cảm xúc.',
+  chuyengia: 'Giọng CHUYÊN NGHIỆP, RÕ RÀNG, TẬP TRUNG HIỆU QUẢ/KẾT QUẢ KINH DOANH — câu gọn, đi thẳng vào lợi ích thực tế, hạn chế cảm xúc hoá quá đà, phù hợp đối tượng coach/chuyên gia/chủ doanh nghiệp.',
+};
+
 const SYSTEM_PROMPT = `Bạn là chuyên gia viết landing page bán sản phẩm số — nhiệm vụ viết nội dung ĐẦY ĐỦ, CÓ CẤU TRÚC như 1 landing page bán hàng thật (không hời hợt, không viết chung chung qua loa), chạm đúng vấn đề/kết quả thật của sản phẩm đã có, theo đúng schema.
 
 NGUYÊN TẮC BẮT BUỘC:
@@ -68,8 +79,9 @@ module.exports = async (req, res) => {
   if (!apiKey) { res.status(500).json({ error: 'Server chưa được cấu hình ANTHROPIC_API_KEY.' }); return; }
 
   try {
-    const { product_id } = req.body || {};
+    const { product_id, template } = req.body || {};
     if (!product_id) { res.status(400).json({ error: 'Thiếu product_id.' }); return; }
+    const voiceGuide = TEMPLATE_VOICE[template] || TEMPLATE_VOICE.quynh;
 
     // profiles(full_name): dùng embed của PostgREST qua đúng FK owner_id->profiles(id) đã có sẵn —
     // lấy tên người bán thật để AI viết "về người bán" đúng, không bịa.
@@ -80,7 +92,7 @@ module.exports = async (req, res) => {
 
     const dinhDangLabel = DINH_DANG_LABEL[product.dinh_dang] || 'Sản phẩm số';
     const sellerName = (product.profiles && product.profiles.full_name) || null;
-    const userContent = `TÊN SẢN PHẨM: ${product.title}\nLOẠI: ${dinhDangLabel}\nGIÁ: ${product.price}đ\nMÔ TẢ ĐÃ CÓ: ${product.description || '(chưa có mô tả)'}\nTÊN NGƯỜI BÁN: ${sellerName || '(chưa đặt tên, viết chung chung không nêu tên)'}\n\nHãy viết nội dung landing page theo đúng schema.`;
+    const userContent = `TÊN SẢN PHẨM: ${product.title}\nLOẠI: ${dinhDangLabel}\nGIÁ: ${product.price}đ\nMÔ TẢ ĐÃ CÓ: ${product.description || '(chưa có mô tả)'}\nTÊN NGƯỜI BÁN: ${sellerName || '(chưa đặt tên, viết chung chung không nêu tên)'}\n\nGIỌNG VĂN BẮT BUỘC CHO TOÀN BỘ NỘI DUNG: ${voiceGuide}\n\nHãy viết nội dung landing page theo đúng schema, ĐÚNG giọng văn ở trên.`;
 
     const result = await callClaude({ apiKey, userContent });
 

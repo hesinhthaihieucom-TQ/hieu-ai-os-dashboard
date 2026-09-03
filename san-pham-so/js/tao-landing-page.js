@@ -486,7 +486,7 @@ function render(container) {
         // (api/san-pham-so-tao-landing-page.js), không cần bấm "Lưu" riêng cho luồng chính (Quỳnh:
         // "90% chỉ là tải thông tin lên thôi").
         await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null });
-        const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id }, 180000);
+        const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id, template: state.template }, 180000);
         state.content = { ...newContent(), ...data.result };
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
