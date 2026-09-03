@@ -118,6 +118,13 @@ function render(container, ctx){
       state.chungPillar = window.PendingPillar;
       window.PendingPillar = null;
     }
+    // Đi tới từ Lịch Đăng Bài — "→ Tải ảnh cá nhân lên" cạnh ô tick tạo ảnh tự động ở "AI viết luôn"
+    // (2026-09-03, chị Quỳnh: "phần tạo ảnh thì có nút trỏ sang chỗ để tự tải ảnh cá nhân lên") — mở
+    // thẳng đúng tab Case Study (nơi thật sự quản lý personal_photos), không bắt tự tìm.
+    if(window.PendingKhoContentTab){
+      state.tab = window.PendingKhoContentTab;
+      window.PendingKhoContentTab = null;
+    }
     draw();
   }
   async function loadPosts(){

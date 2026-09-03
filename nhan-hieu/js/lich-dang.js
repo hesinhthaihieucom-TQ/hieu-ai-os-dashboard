@@ -388,7 +388,7 @@ function render(container, ctx){
         <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:12px;">Gợi ý: buổi Tối hợp với "Video Ngồi Nói" (chia sẻ trực diện, chuyển đổi mạnh) — đã chọn sẵn, đổi lại nếu muốn.</div>
         <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
           <input type="checkbox" id="autofill-generate-image" ${state.autoFillGenerateImage?'checked':''} style="margin-top:3px;">
-          <span style="font-size:13px;">🖼️ Tự động tạo ảnh cho từng bài — nếu chưa có ảnh cá nhân tải sẵn ở Kho Content, AI sẽ tự vẽ 1 ảnh nền (tốn thêm chi phí ảnh thật, không tính thêm lượt riêng). Bỏ tick nếu chỉ cần bài viết, tự thêm ảnh sau.</span>
+          <span style="font-size:13px;">🖼️ Tự động tạo ảnh cho từng bài — nếu chưa có ảnh cá nhân tải sẵn, AI sẽ tự vẽ 1 ảnh nền (tốn thêm chi phí ảnh thật, không tính thêm lượt riêng). Có ảnh cá nhân thật sẽ đẹp/rẻ hơn hẳn — <span style="text-decoration:underline;font-weight:600;" data-action="jump-personal-photos">tải ảnh cá nhân lên đây →</span>. Bỏ tick nếu chỉ cần bài viết, tự thêm ảnh sau.</span>
         </label>
         ${emptySlotCount===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
         <div class="btn-row">
@@ -739,6 +739,15 @@ function render(container, ctx){
     });
     const generateImageCheckbox = container.querySelector('#autofill-generate-image');
     if(generateImageCheckbox) generateImageCheckbox.onchange = ()=>{ state.autoFillGenerateImage = generateImageCheckbox.checked; };
+    const jumpPersonalPhotosEl = container.querySelector('[data-action="jump-personal-photos"]');
+    if(jumpPersonalPhotosEl) jumpPersonalPhotosEl.onclick = (e)=>{
+      // Nằm lồng trong <label> của checkbox — PHẢI chặn nổi bọt, không thì bấm vào link này sẽ vô
+      // tình bật/tắt luôn ô tick "tạo ảnh tự động" (hành vi mặc định của <label> khi click con bên
+      // trong nó), không phải chỉ điều hướng như mong muốn.
+      e.preventDefault(); e.stopPropagation();
+      window.PendingKhoContentTab = 'case-study';
+      location.hash = 'kho-content';
+    };
     const autoFillBtn = container.querySelector('[data-action="auto-fill-week"]');
     if(autoFillBtn) autoFillBtn.onclick = autoFillWeek;
     const regenBtn = container.querySelector('[data-action="regen-week"]');
