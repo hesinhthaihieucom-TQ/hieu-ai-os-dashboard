@@ -264,6 +264,20 @@ $$ language plpgsql security definer set search_path = public, pg_temp;
 revoke all on function public.refund_ai_quota(uuid, int) from public, authenticated, anon;
 grant execute on function public.refund_ai_quota(uuid, int) to service_role;
 
+-- Migrate 1 lần: đổi paid_ai_month của các user đang Ở ĐÚNG THÁNG NÀY (theo công thức cũ 'YYYY-MM')
+-- sang đúng định dạng chu kỳ mới (số chu kỳ 30 ngày từ created_at) — để consume_ai_quota() ở trên
+-- (đã đổi sang so bằng định dạng mới) vẫn NHẬN RA họ đang giữa chu kỳ, giữ nguyên paid_ai_uses/
+-- paid_ai_bonus hiện có thay vì hiểu nhầm "sang chu kỳ mới" và xoá sạch lượt/bonus đang dùng dở
+-- (chị Quỳnh yêu cầu 2026-09-02, tránh mất lượt khách đang dùng dở khi đổi công thức).
+-- BỊ SÓT khỏi schema_core.sql lúc tách file (2026-09-01/02 chỉ sửa consume_ai_quota()/refund_ai_quota()
+-- ở đây nhưng đoạn migrate đi lạc vào schema_full.sql — file đó chỉ còn là tham khảo lịch sử, KHÔNG
+-- ai chạy lại nữa, nên đoạn migrate thật sự chưa từng có hiệu lực trên database thật cho tới bản này.
+-- AN TOÀN CHẠY LẠI: sau lần đầu, paid_ai_month không còn ở định dạng 'YYYY-MM' nữa nên điều kiện
+-- where bên dưới không khớp ai nữa — chạy lại chỉ là no-op, không ảnh hưởng gì thêm.
+update profiles
+set paid_ai_month = floor(extract(epoch from (now() - created_at)) / (30 * 86400))::text
+where paid_ai_month = to_char(now(), 'YYYY-MM');
+
 create or replace function public.is_admin()
 returns boolean as $$
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
