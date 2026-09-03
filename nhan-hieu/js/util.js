@@ -55,9 +55,10 @@ function openTextModal(title, body, imageDataUrl){
         ${imageDataUrl?`<img src="${imageDataUrl}" alt="Ảnh AI tạo cho bài này" style="width:100%;border-radius:10px;margin-bottom:14px;display:block;">`:''}
         <div style="white-space:pre-line;font-size:14.5px;line-height:1.7;">${esc(body||'')}</div>
       </div>
-      <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;">
+      <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-sm" data-copy-text-modal="1">Copy nội dung</button>
         ${title?`<span class="btn-ghost btn btn-sm" data-copy-title-modal="1">Copy tiêu đề</span>`:''}
+        ${imageDataUrl?`<span class="btn-ghost btn btn-sm" data-download-img-modal="1">Tải ảnh xuống</span>`:''}
       </div>
     </div>
   `;
@@ -72,6 +73,29 @@ function openTextModal(title, body, imageDataUrl){
   const copyTitleBtn = overlay.querySelector('[data-copy-title-modal]');
   if(copyTitleBtn) copyTitleBtn.onclick = async ()=>{
     try{ await navigator.clipboard.writeText(title||''); copyTitleBtn.textContent = 'Đã copy ✓'; setTimeout(()=>{ copyTitleBtn.textContent = 'Copy tiêu đề'; }, 1500); } catch(e){}
+  };
+  // Tải ảnh AI đã tạo cho bài này (2026-09-03, chị Quỳnh: "cho mình được sửa với tải về") — cùng
+  // khuôn Web Share/`<a download>` đã dùng ở tao-anh.js, chỉ khác imageDataUrl ở đây ĐÃ SẴN là data
+  // URL (lấy thẳng từ posts.image_data), không cần bước canvas.toDataURL() như bên đó.
+  const downloadImgBtn = overlay.querySelector('[data-download-img-modal]');
+  if(downloadImgBtn) downloadImgBtn.onclick = () => {
+    const filename = 'bai-viet-' + Date.now() + '.jpg';
+    if(navigator.canShare){
+      fetch(imageDataUrl).then(r=>r.blob()).then(async (blob)=>{
+        const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+        if(navigator.canShare({ files:[file] })){
+          try{ await navigator.share({ files:[file], title: title||'Ảnh bài viết' }); return; }
+          catch(e){ if(e && e.name==='AbortError') return; }
+        }
+        const a = document.createElement('a');
+        a.download = filename; a.href = imageDataUrl;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      });
+    } else {
+      const a = document.createElement('a');
+      a.download = filename; a.href = imageDataUrl;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
   };
   document.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
