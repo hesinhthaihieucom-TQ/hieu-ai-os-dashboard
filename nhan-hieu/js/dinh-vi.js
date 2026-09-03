@@ -89,7 +89,8 @@ function render(container, ctx){
     brands:[], newBrandName:'', editingBrandId:null, editBrandName:'', saveError:null,
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
     reconstructingAnswers:false, reconstructFailed:false,
-    storyBoSung:[], storyUpdating:false, storyUpdateError:null };
+    storyBoSung:[], storyUpdating:false, storyUpdateError:null,
+    editingStory:false, editStoryText:'', editStorySaving:false, editStoryError:null };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
 
   // Giữ lại câu trả lời đang làm dở (16 câu, dễ mất công gõ) khi chuyển trang rồi quay lại — khác
@@ -427,10 +428,25 @@ function render(container, ctx){
       ${(()=>{
         const cc = r.cau_chuyen_ca_nhan;
         if(!cc || !cc.cau_chuyen) return '';
-        return `<div class="section"><h3>Câu chuyện cá nhân</h3><div class="body">${escBold(breakSentences(cc.cau_chuyen))}</div>
-          ${cc.qua_so_sai && (cc.cau_hoi_lam_ro||[]).length ? `
+        return `<div class="section">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin-bottom:0;">Câu chuyện cá nhân</h3>
+            ${!state.editingStory ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-story">✏️ Sửa trực tiếp</span>` : ''}
+          </div>
+          ${state.editingStory ? `
+            <div style="margin-top:14px;">
+              <textarea id="edit-story-text" style="min-height:160px;">${esc(state.editStoryText)}</textarea>
+              ${state.editStoryError?`<div class="error-box" style="margin-top:10px;">${esc(state.editStoryError)}</div>`:''}
+              <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+                <button class="btn btn-sm" data-action="save-story-manual" ${state.editStorySaving?'disabled':''}>${state.editStorySaving?'Đang lưu…':'Lưu'}</button>
+                <span class="btn-ghost btn btn-sm" data-action="cancel-edit-story">Huỷ</span>
+                <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Sửa trực tiếp — miễn phí, không tốn lượt AI.</span>
+              </div>
+            </div>
+          ` : `<div class="body" style="margin-top:10px;">${escBold(breakSentences(cc.cau_chuyen))}</div>`}
+          ${!state.editingStory && cc.qua_so_sai && (cc.cau_hoi_lam_ro||[]).length ? `
             <div class="hint-box" style="margin-top:12px;">
-              <div style="margin-bottom:10px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu dưới đây rồi bấm <b>"Cập nhật câu chuyện"</b>, không cần làm lại cả Định Vị:</div>
+              <div style="margin-bottom:10px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu dưới đây rồi bấm <b>"Cập nhật câu chuyện"</b> để AI viết lại mượt hơn, hoặc bấm "Sửa trực tiếp" ở trên để tự gõ, không cần làm lại cả Định Vị:</div>
               ${cc.cau_hoi_lam_ro.map((q,i)=>`
                 <div style="margin-bottom:10px;">
                   <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">${esc(q)}</label>
@@ -591,6 +607,25 @@ function render(container, ctx){
     });
     const updateStoryBtn = container.querySelector('[data-action="update-story"]');
     if(updateStoryBtn) updateStoryBtn.onclick = updateStory;
+
+    // Sửa trực tiếp câu chuyện cá nhân — miễn phí, không gọi AI (2026-09-01, theo yêu cầu chị Quỳnh:
+    // "cho người dùng cập nhật thêm câu chuyện cá nhân mà ko cần phải làm lại định vị tốn lượt AI").
+    // Khác "Cập nhật câu chuyện" ở trên (AI viết lại, tốn 1 lượt, chỉ hiện khi AI tự thấy câu trả lời
+    // còn chung chung) — đây LUÔN có sẵn, cho tự gõ thêm/sửa thẳng bất cứ lúc nào.
+    const editStoryBtn = container.querySelector('[data-action="edit-story"]');
+    if(editStoryBtn) editStoryBtn.onclick = ()=>{
+      const cc = state.luot1 && state.luot1.cau_chuyen_ca_nhan;
+      state.editStoryText = (cc && cc.cau_chuyen) || '';
+      state.editStoryError = null;
+      state.editingStory = true;
+      draw();
+    };
+    const cancelEditStoryBtn = container.querySelector('[data-action="cancel-edit-story"]');
+    if(cancelEditStoryBtn) cancelEditStoryBtn.onclick = ()=>{ state.editingStory = false; draw(); };
+    const editStoryTextInput = container.querySelector('#edit-story-text');
+    if(editStoryTextInput) editStoryTextInput.oninput = ()=>{ state.editStoryText = editStoryTextInput.value; };
+    const saveStoryManualBtn = container.querySelector('[data-action="save-story-manual"]');
+    if(saveStoryManualBtn) saveStoryManualBtn.onclick = saveStoryManual;
 
     const editTrucBtn = container.querySelector('[data-action="edit-truc"]');
     if(editTrucBtn) editTrucBtn.onclick = ()=>{
@@ -864,6 +899,23 @@ function render(container, ctx){
       state.storyBoSung = [];
     } catch(e){ state.storyUpdateError = e.message; }
     state.storyUpdating = false; draw();
+  }
+
+  // Lưu thẳng câu chuyện cá nhân do người dùng tự gõ — chỉ ghi DB (persist(), không gọi AI nào cả),
+  // nên KHÔNG tốn lượt AI. Giữ nguyên cau_hoi_lam_ro/qua_so_sai cũ trong object (không xoá) — chỉ
+  // đổi mỗi câu chuyện; nếu sau này AI đánh giá lại (chạy lại Định Vị) sẽ tự cập nhật các cờ đó.
+  async function saveStoryManual(){
+    if(state.editStorySaving) return;
+    if(!state.editStoryText.trim()){ state.editStoryError = 'Chưa nhập câu chuyện.'; draw(); return; }
+    state.editStorySaving = true; state.editStoryError = null; draw();
+    try{
+      const cc = (state.luot1 && state.luot1.cau_chuyen_ca_nhan) || {};
+      const newLuot1 = { ...state.luot1, cau_chuyen_ca_nhan: { ...cc, cau_chuyen: state.editStoryText.trim() } };
+      await persist({ luot1: newLuot1, luot2: state.luot2 });
+      state.luot1 = newLuot1;
+      state.editingStory = false;
+    } catch(e){ state.editStoryError = e.message; }
+    state.editStorySaving = false; draw();
   }
 
   async function saveTruc(){
