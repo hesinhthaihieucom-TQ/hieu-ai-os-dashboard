@@ -47,7 +47,8 @@ async function callClaude({ apiKey, userContent }) {
   if (data.stop_reason === 'max_tokens') throw new Error('AI trả lời quá dài bị cắt giữa chừng — thử lại giúp mình.');
   const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
   if (!toolUse) throw new Error('Không nhận được kết quả có cấu trúc từ AI.');
-  if (!Array.isArray(toolUse.input.outline_cap_1)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
+  // .length: cùng lớp lỗi AI bỏ sót outline_cap_1 dù schema bắt buộc — Array.isArray([]) vẫn true.
+  if (!Array.isArray(toolUse.input.outline_cap_1) || !toolUse.input.outline_cap_1.length) throw new Error('AI trả về outline rỗng — thử lại giúp mình.');
   return toolUse.input;
 }
 

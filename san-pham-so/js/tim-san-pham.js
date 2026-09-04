@@ -113,9 +113,10 @@ function render(container, profile) {
     return `
       <h2>Bắt đầu tìm sản phẩm phù hợp</h2>
       <div class="hint-box">Dành cho người CHƯA rõ nên làm sản phẩm gì hoặc dạng nào. Nếu đã biết rõ chủ đề/đối tượng, chỉ cần chọn định dạng, dùng "🗂️ Chọn Loại Sản Phẩm Số" ở mục 2 sẽ nhanh hơn.</div>
+      <div class="hint-box">📦 File của bạn đã HOÀN CHỈNH, sẵn sàng bán ngay, không cần AI viết thêm gì? Khỏi cần qua bước này — vào thẳng <a href="#san-pham">"🛒 Sản phẩm của tôi"</a>, tải file lên là xong.</div>
       <div class="card" data-choose-path="material" style="cursor:pointer;">
         <h2 style="font-size:16px;margin-bottom:6px;">📚 Tôi đã có sẵn tài liệu/kiến thức</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);">Tải lên 1 file PDF (ghi chú, bài viết, tài liệu cũ...) — AI đọc thẳng nội dung để đề xuất sản phẩm, không cần trả lời 11 câu hỏi.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);">Tải lên 1 file PDF (ghi chú, bài viết, tài liệu cũ...) — AI đọc nội dung đó để đề xuất sản phẩm + VIẾT NỘI DUNG MỚI dựa theo, không cần trả lời 11 câu hỏi. (Tài liệu chỉ là nguồn tham khảo — sản phẩm cuối là nội dung AI viết ra, không phải đăng nguyên file này lên bán.)</div>
       </div>
       <div class="card" data-choose-path="wizard" style="cursor:pointer;">
         <h2 style="font-size:16px;margin-bottom:6px;">🧭 Chưa có, giúp tôi tìm ý tưởng</h2>
@@ -491,7 +492,7 @@ function render(container, profile) {
         materialPath: f.materialPath, nganh: f.nganh, doiTuong: f.doiTuong,
         dinhDangMongMuon: f.dinhDang || null, giaMongMuon: f.gia || null,
       }, 250000);
-      if (!data.result || !Array.isArray(data.result.phuong_an)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
+      if (!data.result || !Array.isArray(data.result.phuong_an) || (data.result.du_lieu_du_manh && !data.result.phuong_an.length)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
       state.result = data.result;
       state.resultSource = 'material';
       await clearDraft(MATERIAL_DRAFT_KEY);
@@ -522,7 +523,7 @@ function render(container, profile) {
     const stopProgress = animateProgressBar(container.querySelector('#tsp-progress-el'), 50);
     try {
       const data = await callApi('api/tim-san-pham-phu-hop', { answers: state.answers }, 250000);
-      if (!data.result || !Array.isArray(data.result.phuong_an)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
+      if (!data.result || !Array.isArray(data.result.phuong_an) || (data.result.du_lieu_du_manh && !data.result.phuong_an.length)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
       state.result = data.result;
       state.resultSource = 'wizard';
       await clearDraft(WIZARD_DRAFT_KEY);

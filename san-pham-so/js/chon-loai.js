@@ -318,10 +318,11 @@ function render(container, profile) {
         <label style="margin-top:14px;">Đối tượng cụ thể</label>
         <input id="cl-doituong" type="text" value="${esc(f.doiTuong)}" placeholder='VD: mẹ bỉm sữa mới sinh con đầu lòng'>
 
-        <label style="margin-top:14px;">Tài liệu (PDF, tuỳ chọn — nếu có sẵn, AI sẽ bám sát nội dung thật trong đó)</label>
+        <label style="margin-top:14px;">Tài liệu (PDF, tuỳ chọn — nếu có sẵn, AI sẽ bám sát nội dung thật trong đó để VIẾT NỘI DUNG MỚI, không phải đăng nguyên file này lên bán)</label>
         <input id="cl-file-input" type="file" accept="application/pdf">
         <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
         ${f.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(f.materialUploadError)}</div>` : ''}
+        <div class="hint-box" style="margin-top:10px;">📦 File này đã HOÀN CHỈNH, sẵn sàng bán ngay, không cần AI viết thêm? Khỏi cần tải lên đây — vào thẳng <a href="#san-pham">"🛒 Sản phẩm của tôi"</a>, tải file lên là xong.</div>
 
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
@@ -581,7 +582,11 @@ function render(container, profile) {
       const data = await callApi('api/san-pham-so-tao-tu-loai', {
         nganh: f.nganh, dinhDang: f.dinhDang, chuDe: f.chuDe, doiTuong: f.doiTuong, materialPath: f.materialPath,
       }, 200000);
-      if (!data.result || !Array.isArray(data.result.outline_cap_1)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
+      // .length: AI đôi khi bỏ sót outline_cap_1 dù schema bắt buộc (forced tool_choice không ép
+      // buộc tuyệt đối, cùng lớp lỗi đã gặp ở tim-san-pham.js) — Array.isArray([]) vẫn true nên chỉ
+      // check kiểu mảng không đủ, phải chặn NGAY ở đây, không để lọt xuống "Bắt đầu xây nội dung" rồi
+      // tốn oan 3 lượt AI ở outline2 mà không hiểu vì sao (lỗi thật, Quỳnh phát hiện 2026-09-04).
+      if (!data.result || !Array.isArray(data.result.outline_cap_1) || !data.result.outline_cap_1.length) throw new Error('AI trả về outline rỗng — thử lại giúp mình (bấm "Tạo outline" lần nữa).');
       state.result = data.result;
       // Lưu ngay khi vừa dựng xong (chosen_index vẫn null) để không mất outline nếu người dùng rời
       // trang trước khi bấm "Bắt đầu xây nội dung" — xem feedback_auto_save_state.
