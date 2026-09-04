@@ -136,7 +136,16 @@ function render(container) {
     });
     if (state.tab === 'danh-gia') {
       const searchEl = container.querySelector('#qt-review-search');
-      if (searchEl) searchEl.oninput = () => { state.reviewSearch = searchEl.value; draw(); };
+      // draw() vẽ lại toàn bộ innerHTML nên ô search cũ bị xoá khỏi DOM — phải lấy lại đúng ô MỚI rồi
+      // khôi phục vị trí con trỏ, không thì gõ tiếng Việt có dấu (Telex/VNI) bị nhảy con trỏ/vỡ chữ
+      // (lỗi thật Quỳnh phát hiện 2026-09-04 — cùng pattern đã sửa ở nhan-hieu/js/kho-content.js).
+      if (searchEl) searchEl.oninput = () => {
+        state.reviewSearch = searchEl.value;
+        const pos = searchEl.selectionStart;
+        draw();
+        const newEl = container.querySelector('#qt-review-search');
+        if (newEl) { newEl.focus(); newEl.setSelectionRange(pos, pos); }
+      };
       container.querySelectorAll('[data-qt-approve]').forEach(el => {
         el.onclick = async () => {
           const id = el.getAttribute('data-qt-approve');

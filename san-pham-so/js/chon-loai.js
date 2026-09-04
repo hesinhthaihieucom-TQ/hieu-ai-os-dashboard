@@ -322,8 +322,15 @@ function render(container, profile) {
   function bindFlipbook() {
     const f = state.flipbook;
     container.querySelector('#fb-back-btn').onclick = () => { state.screen = 'pick-type'; draw(); };
+    // KHÔNG gọi draw() ở đây — draw() vẽ lại toàn bộ innerHTML, xoá mất ô đang gõ dở khiến con trỏ bị
+    // đẩy về cuối/mất focus sau MỖI ký tự gõ (lỗi thật Quỳnh phát hiện 2026-09-04). Chỉ cần cập nhật
+    // đúng trạng thái disabled của nút, đúng pattern #cl-chude/#cl-doituong ở bindForm() cùng file này.
     const titleEl = container.querySelector('#fb-title');
-    if (titleEl) titleEl.oninput = () => { f.title = titleEl.value; draw(); };
+    if (titleEl) titleEl.oninput = () => {
+      f.title = titleEl.value;
+      const btn = container.querySelector('#fb-generate-btn');
+      if (btn) btn.disabled = !f.materialPath || !f.title.trim() || f.generating;
+    };
     const fileEl = container.querySelector('#fb-file');
     if (fileEl) fileEl.onchange = async () => {
       const file = fileEl.files[0];
