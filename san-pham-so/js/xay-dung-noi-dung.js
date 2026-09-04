@@ -392,19 +392,23 @@ function render(container, ideaRow) {
     `;
   }
 
-  // Chỉ cho xuất khi đã viết bản nháp cho TẤT CẢ các phần (2026-09-04, Quỳnh: "sao chưa gì đã auto
-  // cho xuất thành ebook vậy, đoạn này phải cho ng ta chọn chứ... làm nội dung full mới xuất được" —
-  // trước đó card "Xuất thành Ebook" hiện NGAY sau khi vừa xây xong outline, trước khi viết bất kỳ
-  // phần nào, dễ khiến người bán xuất nhầm 1 file toàn outline thô). Cùng logic "allStarted" đã có
-  // sẵn ở tongDuyetCardHtml() — CHỈ áp cho lần xuất ĐẦU TIÊN; đã xuất rồi (state.ebookResult tồn tại)
-  // thì vẫn cho xem lại/xuất lại bình thường dù sau đó có thêm phần mới chưa viết, không chặn ngược.
+  // Chỉ cho xuất khi TẤT CẢ các phần đã ở bản FINAL — status 'review-done', tức đã qua "Kiểm tra
+  // chất lượng", KHÔNG chỉ là bản nháp 'viet-done' (2026-09-04, Quỳnh: ban đầu "sao chưa gì đã auto
+  // cho xuất thành ebook vậy... làm nội dung full mới xuất được", rồi làm rõ thêm khi bị hỏi lại:
+  // "ko phải là viết bản nháp, mà là bản full chốt. sau khi làm thì ra bản pdf, xong từ pdf mới ra
+  // bản ebook... pdf là kết quả final" — PDF chỉ nên đóng gói nội dung đã thật sự chốt xong, không
+  // phải nháp còn có thể sai/thiếu). CHỈ áp cho lần xuất ĐẦU TIÊN; đã xuất rồi (state.ebookResult
+  // tồn tại) thì vẫn cho xem lại/xuất lại bình thường dù sau đó có thêm phần mới chưa final, không
+  // chặn ngược. Riêng mini_course (miniCourseExportCardHtml() bên dưới) KHÔNG áp quy tắc này — theo
+  // yêu cầu của Quỳnh ("trừ minicourse thui"), giữ nguyên cho xuất từng bài ngay khi có bản nháp,
+  // đúng lý do ban đầu của tính năng đó: người bán không bị kẹt chờ xong CẢ khoá mới bán được.
   function ebookExportCardHtml() {
     const connected = isHeyzineConnected();
     if (!state.ebookResult) {
       const sections = flattenSections(state.outline2);
-      const allStarted = sections.every((_, i) => !!state.sections[i]);
-      if (!allStarted) {
-        return `<div class="hint-box">📖 Viết xong bản nháp cho TẤT CẢ các phần bên dưới thì mới xuất được thành ebook — tránh xuất nhầm 1 file còn dở dang toàn outline thô.</div>`;
+      const allFinal = sections.every((_, i) => state.sections[i] && state.sections[i].status === 'review-done');
+      if (!allFinal) {
+        return `<div class="hint-box">📖 Cần TẤT CẢ các phần bên dưới đạt bản final (đã qua "Kiểm tra chất lượng", không chỉ bản nháp) thì mới xuất được thành ebook — PDF/sách lật phải là kết quả cuối cùng, không phải bản còn dở dang.</div>`;
       }
     }
     if (state.ebookResult) {
