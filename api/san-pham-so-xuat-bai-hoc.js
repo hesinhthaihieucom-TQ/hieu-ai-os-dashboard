@@ -25,10 +25,10 @@ module.exports = async (req, res) => {
   if (!serviceKey) { res.status(500).json({ error: 'Server chưa cấu hình SUPABASE_SERVICE_ROLE_KEY.' }); return; }
 
   try {
-    const { idea, outline2, sections, index } = req.body || {};
+    const { idea, outline2, sections, index, theme } = req.body || {};
     if (!idea || !outline2 || index == null) { res.status(400).json({ error: 'Thiếu thông tin bài học.' }); return; }
 
-    const pdfBuffer = await buildEbookPdf({ idea, outline2, sections: sections || {}, onlyIndex: index });
+    const pdfBuffer = await buildEbookPdf({ idea, outline2, sections: sections || {}, onlyIndex: index, lessonCover: true, theme });
 
     const path = `mini-course-lessons/${user.id}-${index}-${crypto.randomBytes(6).toString('hex')}.pdf`;
     const uploadResp = await fetch(`${SUPABASE_URL}/storage/v1/object/digital-products/${path}`, {

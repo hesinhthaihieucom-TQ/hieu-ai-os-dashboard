@@ -33,10 +33,23 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { idea, outline2, sections } = req.body || {};
+    const { idea, outline2, sections, theme } = req.body || {};
     if (!idea || !outline2) { res.status(400).json({ error: 'Thiếu thông tin sản phẩm/outline.' }); return; }
 
-    const pdfBuffer = await buildEbookPdf({ idea, outline2, sections: sections || {} });
+    // Bìa & màu (2026-09-04, xem san-pham-so/js/xay-dung-noi-dung.js + product_idea_results.ebook_theme):
+    // coverMode 'ai'/'upload' đều mang sẵn coverImageDataUrl (base64) — 'ai' đã có chữ đè sẵn từ
+    // api/_lib/ebook-cover.js (coverHasBakedText=true, không vẽ chữ đè lần 2), 'upload' là ảnh thô
+    // người bán tự tải lên (pdf-ebook.js tự vẽ chữ đè bằng pdfkit). 'solid' hoặc không đặt gì thì
+    // không có ảnh — pdf-ebook.js tự vẽ nền màu.
+    let coverImageBuffer = null;
+    if (theme && theme.coverImageDataUrl && theme.coverMode !== 'solid') {
+      const base64 = String(theme.coverImageDataUrl).split(',')[1] || '';
+      coverImageBuffer = Buffer.from(base64, 'base64');
+    }
+    const pdfBuffer = await buildEbookPdf({
+      idea, outline2, sections: sections || {}, theme,
+      coverImageBuffer, coverHasBakedText: !!(theme && theme.coverMode === 'ai'),
+    });
 
     const path = `ebook-exports/${user.id}-${crypto.randomBytes(6).toString('hex')}.pdf`;
     const uploadResp = await fetch(`${SUPABASE_URL}/storage/v1/object/digital-products/${path}`, {

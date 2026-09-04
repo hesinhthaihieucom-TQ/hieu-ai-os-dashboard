@@ -531,4 +531,8 @@ async function autoPickAndRenderImage({ title, handle, tags, personalPhotos }) {
 module.exports = {
   generatePostImage, compositeCaseStudyImage, applyTitleBar, renderPersonalTemplateImage, generateSpiritualBackground,
   safeLayoutsForCorner, autoPickAndRenderImage,
+  // callOpenAiImage/rasterizeSvg/wrapText/escapeXml: xuất thêm để api/_lib/ebook-cover.js
+  // (2026-09-04) dùng lại đúng pipeline gpt-image-1 + resvg đã chứng minh hoạt động ở đây, không
+  // copy code sang file khác.
+  callOpenAiImage, rasterizeSvg, wrapText, escapeXml,
 };

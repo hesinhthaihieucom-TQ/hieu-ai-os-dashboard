@@ -494,3 +494,20 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.update_sps_heyzine_credentials(text, text) to authenticated;
+
+-- ============================================================
+-- 26. BÌA + MÀU EBOOK (2026-09-04). Trước đây "Xuất thành Ebook" chỉ ra file PDF chữ trắng đen thuần
+-- (xem api/_lib/pdf-ebook.js) — Quỳnh gửi 1 file ebook mẫu (bìa ảnh AI chuyên nghiệp + bên trong có
+-- hệ khối màu: card viền, box nhấn mạnh nền đặc, box thực hành viền nhạt) làm chuẩn, hỏi có phải bảo
+-- người dùng tự đi ChatGPT làm ảnh bìa không. KHÔNG cần — api/_lib/image-gen.js đã có sẵn pipeline
+-- gọi OpenAI gpt-image-1 (đang chạy thật cho ảnh bài Fanpage bên nhan-hieu) + đè chữ bằng resvg (né
+-- lỗi dấu tiếng Việt khi AI tự vẽ chữ) — dùng lại đúng hạ tầng đó cho bìa ebook (api/_lib/ebook-cover.js,
+-- khổ dọc khác ảnh vuông Fanpage nên viết module riêng, không sửa image-gen.js ngoài việc export thêm
+-- 2 hàm dùng chung). ebook_theme thuộc về Ý TƯỞNG đang xây (product_idea_results), không phải
+-- digital_products — vì tới lúc chọn bìa/màu, sản phẩm CHƯA được "Dùng làm sản phẩm để bán" nên chưa
+-- có row digital_products nào, đúng chỗ ebook_result đã nằm sẵn.
+-- coverMode: 'ai' (gpt-image-1 theo mood preset) | 'upload' (dùng cover_image_url có sẵn của sản
+-- phẩm) | 'solid' (chỉ màu nền, miễn phí, không gọi AI). accent/bg: mã màu hex, áp dụng CẢ mood-prompt
+-- ảnh AI lẫn màu card/box bên trong PDF. coverImagePath: path Storage của ảnh bìa AI đã sinh (cache
+-- lại, không tự sinh lại mỗi lần xuất — chỉ sinh lại khi bấm "Tạo lại", tốn phí thật qua gpt-image-1).
+alter table product_idea_results add column if not exists ebook_theme jsonb;

@@ -42,6 +42,12 @@ function render(container, ideaRow) {
     editingOutlineIndex: null, // index (flattenSections) của phần outline cấp 2 đang sửa tay, null = không sửa
     editOutlineForm: null,
     tongDuyetLoading: false, tongDuyetResult: null, // KHÔNG lưu DB — tính lại mỗi lần bấm, xem plan
+    // Bìa & màu ebook (2026-09-04, xem product_idea_results.ebook_theme + api/_lib/pdf-ebook.js).
+    // coverMode: 'ai' (gpt-image-1 theo moodPreset) | 'upload' (ảnh tự tải lên) | 'solid' (chỉ màu).
+    ebookTheme: ideaRow.ebook_theme || { coverMode: 'solid', moodPreset: EBOOK_THEME_PRESETS[0].key, accent: EBOOK_THEME_PRESETS[0].accent, bg: EBOOK_THEME_PRESETS[0].bg, coverImageDataUrl: null },
+    themeUseCustomColor: !EBOOK_THEME_PRESETS.some(p => ideaRow.ebook_theme && p.accent === ideaRow.ebook_theme.accent && p.bg === ideaRow.ebook_theme.bg),
+    coverGenerating: false, coverUploading: false, themeError: null,
+    previewLoading: false, previewPdfBase64: null, previewTimer: null,
     error: null,
   };
 
@@ -123,6 +129,179 @@ function render(container, ideaRow) {
   // lại được).
   function getMaterialPath() {
     return materialPath || state.newMaterialPath;
+  }
+
+  // Bìa & màu (2026-09-04) — chọn 1 lần, áp dụng cho cả bìa lẫn nội dung khi xuất PDF (ebook thường
+  // lẫn từng bài mini_course, xem api/_lib/pdf-ebook.js). Đặt TRƯỚC card xuất — người bán cần thấy
+  // trước khi bấm xuất, không phải sau.
+  function themeCardHtml() {
+    const th = state.ebookTheme;
+    const isCustom = state.themeUseCustomColor;
+    return `
+      <div class="card">
+        <h2 style="font-size:16px;">🎨 Bìa & màu sắc</h2>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 phong cách màu — áp dụng cho cả bìa lẫn toàn bộ nội dung bên trong khi xuất PDF.</div>
+        <div class="chips">
+          ${EBOOK_THEME_PRESETS.map(p => `
+            <div class="chip ${!isCustom && th.accent === p.accent && th.bg === p.bg ? 'selected' : ''}" data-theme-preset="${p.key}" style="display:inline-flex;align-items:center;gap:6px;">
+              <span style="width:13px;height:13px;border-radius:50%;background:${p.accent};display:inline-block;border:1px solid rgba(0,0,0,.15);"></span>${esc(p.label)}
+            </div>
+          `).join('')}
+          <div class="chip ${isCustom ? 'selected' : ''}" data-theme-preset="_custom">🎨 Tự chọn màu</div>
+        </div>
+        ${isCustom ? `
+          <div style="display:flex;gap:18px;margin-top:10px;align-items:center;">
+            <label style="margin:0;display:flex;align-items:center;gap:6px;">Màu nhấn <input id="xdnd-theme-accent" type="color" value="${esc(th.accent)}" style="width:40px;height:26px;padding:0;border:none;"></label>
+            <label style="margin:0;display:flex;align-items:center;gap:6px;">Màu nền <input id="xdnd-theme-bg" type="color" value="${esc(th.bg)}" style="width:40px;height:26px;padding:0;border:none;"></label>
+          </div>
+        ` : ''}
+        <label style="margin-top:14px;">Bìa sách</label>
+        <div class="chips">
+          <div class="chip ${th.coverMode === 'ai' ? 'selected' : ''}" data-cover-mode="ai">✨ AI vẽ bìa</div>
+          <div class="chip ${th.coverMode === 'upload' ? 'selected' : ''}" data-cover-mode="upload">📷 Ảnh riêng</div>
+          <div class="chip ${th.coverMode === 'solid' ? 'selected' : ''}" data-cover-mode="solid">🎨 Chỉ màu (không ảnh)</div>
+        </div>
+        ${coverModeExtraHtml()}
+        ${state.themeError ? `<div class="error-box" style="margin-top:10px;">${esc(state.themeError)}</div>` : ''}
+        <div style="margin-top:14px;">
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Xem trước thật (bìa + 1 trang mẫu):</div>
+          ${previewFrameHtml()}
+        </div>
+      </div>
+    `;
+  }
+
+  function coverModeExtraHtml() {
+    const th = state.ebookTheme;
+    if (th.coverMode === 'ai') {
+      return `
+        <div style="margin-top:10px;">
+          ${th.coverImageDataUrl ? `<img src="${esc(th.coverImageDataUrl)}" style="max-width:140px;border-radius:8px;display:block;margin-bottom:8px;border:1px solid var(--line);">` : ''}
+          <span class="btn-ghost btn btn-sm" id="xdnd-gen-cover-btn" ${state.coverGenerating ? 'style="opacity:.5;pointer-events:none;"' : ''}>${state.coverGenerating ? 'Đang tạo…' : (th.coverImageDataUrl ? '🔄 Tạo lại (3 lượt AI)' : '✨ Tạo bìa bằng AI (3 lượt AI)')}</span>
+        </div>
+      `;
+    }
+    if (th.coverMode === 'upload') {
+      return `
+        <div style="margin-top:10px;">
+          ${th.coverImageDataUrl ? `<img src="${esc(th.coverImageDataUrl)}" style="max-width:140px;border-radius:8px;display:block;margin-bottom:8px;border:1px solid var(--line);">` : ''}
+          <input id="xdnd-cover-upload" type="file" accept="image/*">
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${state.coverUploading ? 'Đang xử lý ảnh…' : ''}</div>
+        </div>
+      `;
+    }
+    return '';
+  }
+
+  function previewFrameHtml() {
+    if (state.previewLoading) return `<div style="font-size:12.5px;color:var(--ink-soft);">Đang dựng bản xem trước…</div>`;
+    if (!state.previewPdfBase64) return `<span class="btn-ghost btn btn-sm" id="xdnd-preview-btn">🔍 Xem trước</span>`;
+    return `<iframe id="xdnd-preview-frame" src="about:blank" style="width:100%;max-width:280px;height:396px;border:1px solid var(--line);border-radius:8px;display:block;"></iframe>`;
+  }
+
+  async function saveTheme() {
+    await saveIdeaResult({ ebook_theme: state.ebookTheme }, ideaRow.id);
+  }
+
+  function scheduleThemeUpdate() {
+    if (state.previewTimer) clearTimeout(state.previewTimer);
+    state.previewTimer = setTimeout(async () => {
+      await saveTheme();
+      fetchPreview();
+    }, 500);
+  }
+
+  async function fetchPreview() {
+    state.previewLoading = true; draw();
+    try {
+      const data = await callApi('api/san-pham-so-xem-truoc-ebook', {
+        ten_san_pham: idea.ten_san_pham, doi_tuong: idea.doi_tuong,
+        theme: { accent: state.ebookTheme.accent, bg: state.ebookTheme.bg },
+        coverImageDataUrl: state.ebookTheme.coverMode !== 'solid' ? state.ebookTheme.coverImageDataUrl : null,
+        coverHasBakedText: state.ebookTheme.coverMode === 'ai',
+      }, 30000);
+      state.previewPdfBase64 = data.pdfBase64;
+    } catch (e) {
+      // Preview lỗi không chặn luồng chính (xuất ebook thật vẫn dùng được) — im lặng bỏ qua, không
+      // hiện error to giữa màn hình vì đây chỉ là tiện ích xem trước.
+    }
+    state.previewLoading = false;
+    draw();
+  }
+
+  async function generateAiCover() {
+    state.coverGenerating = true; state.themeError = null; draw();
+    try {
+      const data = await callApi('api/san-pham-so-tao-bia-ebook', {
+        ten_san_pham: idea.ten_san_pham, doi_tuong: idea.doi_tuong, moodPreset: state.ebookTheme.moodPreset,
+      }, 180000);
+      state.ebookTheme.coverImageDataUrl = data.coverImageDataUrl;
+      await saveTheme();
+      fetchPreview();
+    } catch (e) {
+      state.themeError = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
+    }
+    state.coverGenerating = false;
+    draw();
+  }
+
+  function bindThemeCard() {
+    container.querySelectorAll('[data-theme-preset]').forEach(el => {
+      el.onclick = () => {
+        const key = el.getAttribute('data-theme-preset');
+        if (key === '_custom') { state.themeUseCustomColor = true; draw(); return; }
+        const preset = EBOOK_THEME_PRESETS.find(p => p.key === key);
+        state.themeUseCustomColor = false;
+        state.ebookTheme.moodPreset = key;
+        state.ebookTheme.accent = preset.accent;
+        state.ebookTheme.bg = preset.bg;
+        draw();
+        saveTheme();
+        fetchPreview();
+      };
+    });
+    const accentInput = container.querySelector('#xdnd-theme-accent');
+    if (accentInput) accentInput.oninput = () => { state.ebookTheme.accent = accentInput.value; scheduleThemeUpdate(); };
+    const bgInput = container.querySelector('#xdnd-theme-bg');
+    if (bgInput) bgInput.oninput = () => { state.ebookTheme.bg = bgInput.value; scheduleThemeUpdate(); };
+    container.querySelectorAll('[data-cover-mode]').forEach(el => {
+      el.onclick = () => {
+        state.ebookTheme.coverMode = el.getAttribute('data-cover-mode');
+        draw();
+        saveTheme();
+        fetchPreview();
+      };
+    });
+    const genCoverBtn = container.querySelector('#xdnd-gen-cover-btn');
+    if (genCoverBtn) genCoverBtn.onclick = generateAiCover;
+    const coverUploadEl = container.querySelector('#xdnd-cover-upload');
+    if (coverUploadEl) coverUploadEl.onchange = async () => {
+      const file = coverUploadEl.files[0];
+      if (!file) return;
+      state.coverUploading = true; draw();
+      try {
+        state.ebookTheme.coverImageDataUrl = await compressImageToDataUrl(file, 900, 0.8);
+        await saveTheme();
+        fetchPreview();
+      } catch (e) {
+        state.themeError = e.message || 'Không đọc được ảnh.';
+      }
+      state.coverUploading = false;
+      draw();
+    };
+    const previewBtn = container.querySelector('#xdnd-preview-btn');
+    if (previewBtn) previewBtn.onclick = fetchPreview;
+    // Iframe xem trước dùng blob URL (không phải data: URI thẳng) — ổn định hơn cho PDF khá nặng,
+    // xem preview-iframe ghi chú ở previewFrameHtml(). Chạy lại mỗi lần draw() vì draw() luôn tạo lại
+    // phần tử iframe mới (innerHTML ghi đè toàn bộ), không có iframe cũ nào để tái dùng src.
+    const previewFrame = container.querySelector('#xdnd-preview-frame');
+    if (previewFrame && state.previewPdfBase64) {
+      const byteChars = atob(state.previewPdfBase64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+      previewFrame.src = URL.createObjectURL(blob);
+    }
   }
 
   function ebookExportCardHtml() {
@@ -226,6 +405,7 @@ function render(container, ideaRow) {
         <span class="btn-ghost btn btn-sm" id="xdnd-luu-tam-btn" style="white-space:nowrap;">💾 Lưu tạm, bắt đầu sản phẩm khác</span>
       </div>
       <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
+      ${themeCardHtml()}
       ${idea.dinh_dang === 'mini_course' ? miniCourseExportCardHtml() : ebookExportCardHtml()}
       ${tongDuyetCardHtml()}
       ${sections.map((s, i) => {
@@ -416,6 +596,7 @@ function render(container, ideaRow) {
       if (useLessonsBtn) useLessonsBtn.onclick = useLessonsAsProduct;
       const tongDuyetBtn = container.querySelector('#xdnd-tong-duyet-btn');
       if (tongDuyetBtn) tongDuyetBtn.onclick = runTongDuyet;
+      bindThemeCard();
     } else if (state.screen === 'section-start-choice') {
       container.querySelector('#xdnd-start-normal-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, false);
       container.querySelector('#xdnd-start-websearch-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, true);
@@ -475,7 +656,7 @@ function render(container, ideaRow) {
       // mất tới 200s, xem api/_lib/heyzine.js) — timeout phía client PHẢI cao hơn hẳn timeout của
       // riêng bước Heyzine, không được để bằng nhau (lỗi thật Quỳnh gặp 2026-09-01: "Có lỗi xảy ra"
       // do client bỏ cuộc trước khi chuỗi xử lý xong).
-      const data = await callApi('api/san-pham-so-xuat-ebook', { idea, outline2: state.outline2, sections: state.sections }, 260000);
+      const data = await callApi('api/san-pham-so-xuat-ebook', { idea, outline2: state.outline2, sections: state.sections, theme: state.ebookTheme }, 260000);
       state.ebookResult = { heyzineUrl: data.heyzineUrl, thumbnail: data.thumbnail, pdfStoragePath: data.pdfStoragePath };
       await saveIdeaResult({ ebook_result: state.ebookResult }, ideaRow.id);
       state.screen = 'outline2';
@@ -512,7 +693,7 @@ function render(container, ideaRow) {
   async function exportLesson(index) {
     state.exportingLessonIndex = index; state.error = null; draw();
     try {
-      const data = await callApi('api/san-pham-so-xuat-bai-hoc', { idea, outline2: state.outline2, sections: state.sections, index }, 120000);
+      const data = await callApi('api/san-pham-so-xuat-bai-hoc', { idea, outline2: state.outline2, sections: state.sections, index, theme: state.ebookTheme }, 120000);
       const lessons = { ...((state.ebookResult && state.ebookResult.lessons) || {}) };
       lessons[index] = { link: data.link, storagePath: data.storagePath };
       state.ebookResult = { lessons };

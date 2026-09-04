@@ -21,6 +21,17 @@ const DINH_DANG_OPTIONS = [
   { value: 'webinar', label: 'Webinar' },
 ];
 
+// Bìa & màu ebook (2026-09-04, xay-dung-noi-dung.js) — KHỚP ĐÚNG MOOD_PRESETS ở api/_lib/ebook-cover.js
+// (accent/bg giống hệt, không được lệch — preset dùng để hiện swatch chọn màu ở đây, VÀ để server
+// biết mô tả không khí ảnh AI ứng với preset đó khi gọi gpt-image-1).
+const EBOOK_THEME_PRESETS = [
+  { key: 'am_ap', label: 'Ấm áp & chiêm nghiệm', accent: '#8B6F3E', bg: '#F5F0E4' },
+  { key: 'thien_nhien', label: 'Thiên nhiên & chữa lành', accent: '#4E7A5E', bg: '#EEF3EB' },
+  { key: 'sang_trong', label: 'Sang trọng & tối giản', accent: '#C9A24B', bg: '#1A1D23' },
+  { key: 'nang_luong', label: 'Năng động & nhiệt huyết', accent: '#E0632B', bg: '#FFF3EA' },
+  { key: 'toi_gian', label: 'Tối giản & hiện đại', accent: '#5B6B7A', bg: '#F4F5F6' },
+];
+
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }

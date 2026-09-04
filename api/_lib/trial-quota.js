@@ -94,6 +94,12 @@ const AI_WEIGHTS = {
   // hơn hẳn mô tả/caption đơn — ngang mức san-pham-so-tao-tu-loai (cũng ra nhiều nội dung có cấu
   // trúc trong 1 lần gọi) — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
   'san-pham-so-tao-landing-page': 4,
+  // Tạo bìa ebook bằng AI (2026-09-04) — KHÁC hẳn mọi mức khác ở trên: không gọi Claude, gọi OpenAI
+  // gpt-image-1 (xem api/_lib/ebook-cover.js), có phí thật ~vài cent/ảnh tính theo USD, không tính
+  // theo token. 3 lượt là ước lượng thô quy đổi sang "đơn vị lượt" chung của app — ĐỀ XUẤT, CHƯA xác
+  // nhận với Quỳnh, cần theo dõi chi phí thật gpt-image-1 sau khi có usage để chốt số cuối (giống
+  // xay-dung-noi-dung-nghien-cuu-web, cũng có phí thật ngoài token).
+  'san-pham-so-tao-bia-ebook': 3,
 };
 
 // Trước đây fetch() này KHÔNG có giới hạn thời gian chờ — nếu RPC bị kẹt (vd khoá dòng "for
