@@ -5,7 +5,16 @@
 // thật cho user thường; không lặp lại pattern đó ở đây (spawn_task riêng để rà lại bên nhan-hieu).
 (function () {
 function render(container) {
-  const state = { newPassword: '', confirmPassword: '', passwordSaving: false, passwordSaved: false, passwordError: null };
+  const p0 = currentProfile || {};
+  const state = {
+    newPassword: '', confirmPassword: '', passwordSaving: false, passwordSaved: false, passwordError: null,
+    // Kết nối Heyzine riêng (2026-09-04) — người bán tự đăng ký Heyzine free của họ, dán API
+    // key/client_id vào đây, flipbook xuất ra sẽ thuộc tài khoản của chính họ (tự vào Heyzine chỉnh
+    // nhạc nền/style được — thứ tài khoản CHUNG của Quỳnh không cho phép, xem schema_san_pham_so.sql
+    // mục 25). Không kết nối thì vẫn dùng tài khoản chung như trước, không bắt buộc.
+    heyzineApiKey: p0.sps_heyzine_api_key || '', heyzineClientId: p0.sps_heyzine_client_id || '',
+    heyzineSaving: false, heyzineSaved: false, heyzineError: null,
+  };
   draw();
 
   function draw() { container.innerHTML = html(); bind(); }
@@ -30,6 +39,22 @@ function render(container) {
       </div>
 
       <div class="card">
+        <h2 style="font-size:16px;margin-bottom:6px;">📖 Kết nối Heyzine riêng (tuỳ chọn)</h2>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Mặc định ebook xuất ra dùng chung tài khoản Heyzine của hệ thống — bạn không tự chỉnh nhạc nền/tiếng lật trang được. Đăng ký 1 tài khoản Heyzine miễn phí của riêng bạn tại <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, lấy API Key + Client ID (mục Cài đặt → API trong Heyzine) rồi dán vào đây — ebook xuất ra sau đó sẽ thuộc tài khoản của chính bạn, tự vào Heyzine chỉnh sửa được.</div>
+        ${p.sps_heyzine_api_key && p.sps_heyzine_client_id ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.</div>` : ''}
+        <label>API Key</label>
+        <input id="tk-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
+        <label style="margin-top:10px;">Client ID</label>
+        <input id="tk-heyzine-client" type="text" value="${esc(state.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
+        ${state.heyzineError ? `<div class="error-box" style="margin-top:10px;">${esc(state.heyzineError)}</div>` : ''}
+        ${state.heyzineSaved ? `<div class="hint-box" style="margin-top:10px;">✓ Đã lưu.</div>` : ''}
+        <div class="btn-row">
+          <button class="btn" id="tk-save-heyzine" ${state.heyzineSaving ? 'disabled' : ''}>${state.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
+          ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<span class="btn-ghost btn" id="tk-disconnect-heyzine">Ngắt kết nối, dùng lại tài khoản chung</span>` : ''}
+        </div>
+      </div>
+
+      <div class="card">
         <h2 style="font-size:16px;margin-bottom:10px;">Đổi mật khẩu</h2>
         <label>Mật khẩu mới</label>
         <input id="tk-pass" type="password" value="${esc(state.newPassword)}" placeholder="Ít nhất 6 ký tự">
@@ -44,6 +69,35 @@ function render(container) {
 
   function bind() {
     container.querySelector('#tk-go-nangcap').onclick = () => { location.hash = 'nang-cap'; };
+    const keyEl = container.querySelector('#tk-heyzine-key');
+    keyEl.oninput = () => { state.heyzineApiKey = keyEl.value; };
+    const clientEl = container.querySelector('#tk-heyzine-client');
+    clientEl.oninput = () => { state.heyzineClientId = clientEl.value; };
+    container.querySelector('#tk-save-heyzine').onclick = async () => {
+      state.heyzineSaved = false; state.heyzineError = null;
+      if (!state.heyzineApiKey.trim() || !state.heyzineClientId.trim()) { state.heyzineError = 'Cần nhập đủ cả API Key và Client ID.'; draw(); return; }
+      state.heyzineSaving = true; draw();
+      const { error } = await supabaseClient.rpc('update_sps_heyzine_credentials', { p_api_key: state.heyzineApiKey.trim(), p_client_id: state.heyzineClientId.trim() });
+      state.heyzineSaving = false;
+      if (error) { state.heyzineError = error.message; }
+      else {
+        if (currentProfile) { currentProfile.sps_heyzine_api_key = state.heyzineApiKey.trim(); currentProfile.sps_heyzine_client_id = state.heyzineClientId.trim(); }
+        state.heyzineSaved = true;
+      }
+      draw();
+    };
+    const disconnectBtn = container.querySelector('#tk-disconnect-heyzine');
+    if (disconnectBtn) disconnectBtn.onclick = async () => {
+      state.heyzineSaving = true; draw();
+      const { error } = await supabaseClient.rpc('update_sps_heyzine_credentials', { p_api_key: null, p_client_id: null });
+      state.heyzineSaving = false;
+      if (error) { state.heyzineError = error.message; }
+      else {
+        if (currentProfile) { currentProfile.sps_heyzine_api_key = null; currentProfile.sps_heyzine_client_id = null; }
+        state.heyzineApiKey = ''; state.heyzineClientId = ''; state.heyzineSaved = false;
+      }
+      draw();
+    };
     const passEl = container.querySelector('#tk-pass');
     passEl.oninput = () => { state.newPassword = passEl.value; };
     const passConfirmEl = container.querySelector('#tk-pass-confirm');

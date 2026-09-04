@@ -308,7 +308,7 @@ async function boot() {
   // Cần thêm role/created_at/sps_* so với bản trước (chỉ id,full_name) — role để nhận diện admin
   // (không giới hạn lượt), created_at để tính đúng chu kỳ 30 ngày (currentCycleKey), sps_* để hiện
   // đúng số lượt còn lại + trạng thái gói riêng của Sản Phẩm Số (xem spsQuotaHint()).
-  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,role,created_at,sps_has_paid,sps_access_until,sps_trial_ai_uses,sps_trial_ai_limit,sps_paid_ai_uses,sps_paid_ai_month,sps_paid_ai_bonus,sps_ref_code,sps_review_prompt_dismissed,sps_seller_photo_url').eq('id', currentUser.id).maybeSingle();
+  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,role,created_at,sps_has_paid,sps_access_until,sps_trial_ai_uses,sps_trial_ai_limit,sps_paid_ai_uses,sps_paid_ai_month,sps_paid_ai_bonus,sps_ref_code,sps_review_prompt_dismissed,sps_seller_photo_url,sps_heyzine_api_key,sps_heyzine_client_id').eq('id', currentUser.id).maybeSingle();
   currentProfile = profile;
   renderShell(profile);
   await loadSpsReviewPromptEligibility();

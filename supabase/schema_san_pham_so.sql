@@ -474,3 +474,23 @@ create view digital_products_public as
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 25. NGƯỜI BÁN TỰ KẾT NỐI HEYZINE RIÊNG (2026-09-04). Trước đây mọi flipbook xuất qua "Xuất thành
+-- Ebook" đều tạo bằng 1 tài khoản Heyzine CHUNG của Quỳnh (HEYZINE_API_KEY/HEYZINE_CLIENT_ID ở biến
+-- môi trường) — người bán không có cách nào tự vào Heyzine chỉnh nhạc nền/tiếng lật trang cho sản
+-- phẩm của họ (Heyzine không có "link chỉnh sửa riêng" chia sẻ được, chỉ chủ tài khoản mới sửa được
+-- qua dashboard/API key của chính họ — đã xác nhận qua tài liệu Heyzine, xem project memory). Quỳnh
+-- chọn hướng: người bán tự đăng ký Heyzine free của HỌ, dán API key/client_id vào đây — flipbook khi
+-- đó thuộc tài khoản của chính họ, tự vào Heyzine chỉnh sau. Không set gì thì vẫn dùng tài khoản chung
+-- của Quỳnh như cũ (không bắt buộc, không đổi hành vi mặc định).
+alter table profiles add column if not exists sps_heyzine_api_key text;
+alter table profiles add column if not exists sps_heyzine_client_id text;
+
+create or replace function public.update_sps_heyzine_credentials(p_api_key text, p_client_id text)
+returns void as $$
+begin
+  update public.profiles set sps_heyzine_api_key = p_api_key, sps_heyzine_client_id = p_client_id where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.update_sps_heyzine_credentials(text, text) to authenticated;
