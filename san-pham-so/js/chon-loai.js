@@ -361,10 +361,10 @@ function render(container, profile) {
             <li>Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây tạo sách lật luôn không cần mở tab khác.</li>
           </ol>
         </div>
-        <label style="font-size:12.5px;">API Key</label>
-        <input id="fb-heyzine-key" type="password" value="${esc(f.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
-        <label style="margin-top:8px;font-size:12.5px;">Client ID</label>
+        <label style="font-size:12.5px;">Client ID</label>
         <input id="fb-heyzine-client" type="text" value="${esc(f.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
+        <label style="margin-top:8px;font-size:12.5px;">API Key</label>
+        <input id="fb-heyzine-key" type="password" value="${esc(f.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
         ${f.heyzineError ? `<div class="error-box" style="margin-top:8px;">${esc(f.heyzineError)}</div>` : ''}
         <div class="btn-row">
           <button class="btn btn-sm" id="fb-heyzine-save" ${f.heyzineSaving ? 'disabled' : ''}>${f.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>

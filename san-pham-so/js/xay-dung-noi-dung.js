@@ -363,10 +363,10 @@ function render(container, ideaRow) {
             <li>Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây xuất ebook luôn không cần mở tab khác.</li>
           </ol>
         </div>
-        <label style="font-size:12.5px;">API Key</label>
-        <input id="xdnd-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
-        <label style="margin-top:8px;font-size:12.5px;">Client ID</label>
+        <label style="font-size:12.5px;">Client ID</label>
         <input id="xdnd-heyzine-client" type="text" value="${esc(state.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
+        <label style="margin-top:8px;font-size:12.5px;">API Key</label>
+        <input id="xdnd-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
         ${state.heyzineError ? `<div class="error-box" style="margin-top:8px;">${esc(state.heyzineError)}</div>` : ''}
         <div class="btn-row">
           <button class="btn btn-sm" id="xdnd-heyzine-save" ${state.heyzineSaving ? 'disabled' : ''}>${state.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>

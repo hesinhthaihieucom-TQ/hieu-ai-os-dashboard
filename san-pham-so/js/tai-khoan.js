@@ -51,10 +51,10 @@ function render(container) {
             <li>Quay lại đây, dán vào 2 ô bên dưới rồi bấm "Lưu kết nối".</li>
           </ol>
         </div>
-        <label>API Key</label>
-        <input id="tk-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
-        <label style="margin-top:10px;">Client ID</label>
+        <label>Client ID</label>
         <input id="tk-heyzine-client" type="text" value="${esc(state.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
+        <label style="margin-top:10px;">API Key</label>
+        <input id="tk-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
         ${state.heyzineError ? `<div class="error-box" style="margin-top:10px;">${esc(state.heyzineError)}</div>` : ''}
         ${state.heyzineSaved ? `<div class="hint-box" style="margin-top:10px;">✓ Đã lưu.</div>` : ''}
         <div class="btn-row">
