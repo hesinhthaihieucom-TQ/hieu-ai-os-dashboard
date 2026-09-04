@@ -1,13 +1,13 @@
 // Sản Phẩm Số — "Quản trị" (route ẩn khỏi NAV chính vì adminOnly, xem app-shell.js). Khác nhan-hieu's
-// quan-tri-hub (6 tab tách 6 file riêng) — ở đây gộp 2 tab liên quan trực tiếp tới dữ liệu RIÊNG của
-// Sản Phẩm Số (sản phẩm đã đăng bán + đánh giá app) vào 1 file, vì quy mô nhỏ hơn hẳn. "Thành viên"/
-// "Tài chính" tổng quát KHÔNG lặp lại ở đây — dùng Quản trị bên Xây Nhân Hiệu cho việc đó (cùng 1
-// bảng profiles/thanh toán, không cần xây lại). Doanh thu bán lẻ (digital_product_orders) CHƯA có
-// tab riêng — bảng đó không có policy admin đọc trực tiếp (chỉ service_role qua api/), cần 1 API
-// riêng nếu Quỳnh cần xem, để sau.
+// quan-tri-hub (6 tab tách 6 file riêng) — ở đây gộp 3 tab liên quan trực tiếp tới dữ liệu RIÊNG của
+// Sản Phẩm Số (sản phẩm đã đăng bán + doanh thu bán lẻ + đánh giá app) vào 1 file, vì quy mô nhỏ hơn
+// hẳn. "Thành viên"/"Tài chính" tổng quát KHÔNG lặp lại ở đây — dùng Quản trị bên Xây Nhân Hiệu cho
+// việc đó (cùng 1 bảng profiles/thanh toán, không cần xây lại). Tab "Doanh thu" (2026-09-04) đọc qua
+// api/san-pham-so-admin-orders.js — digital_product_orders không có policy admin đọc trực tiếp (chỉ
+// service_role), nên phải qua API riêng thay vì query thẳng như 2 tab kia.
 (function () {
 function render(container) {
-  const state = { tab: 'san-pham', products: null, reviews: null, reviewSearch: '', loading: true };
+  const state = { tab: 'san-pham', products: null, reviews: null, reviewSearch: '', orders: null, ordersSummary: null, loading: true };
   boot();
 
   async function boot() {
@@ -26,9 +26,36 @@ function render(container) {
       <h2>Quản trị Sản Phẩm Số</h2>
       <div class="chips" style="margin-bottom:16px;">
         <div class="chip ${state.tab === 'san-pham' ? 'selected' : ''}" data-qt-tab="san-pham">Sản phẩm</div>
+        <div class="chip ${state.tab === 'doanh-thu' ? 'selected' : ''}" data-qt-tab="doanh-thu">Doanh thu</div>
         <div class="chip ${state.tab === 'danh-gia' ? 'selected' : ''}" data-qt-tab="danh-gia">Đánh giá app${state.reviews ? ` (${state.reviews.filter(r => !r.approved).length} chờ duyệt)` : ''}</div>
       </div>
-      ${state.tab === 'san-pham' ? sanPhamTabHtml() : danhGiaTabHtml()}
+      ${state.tab === 'san-pham' ? sanPhamTabHtml() : state.tab === 'doanh-thu' ? doanhThuTabHtml() : danhGiaTabHtml()}
+    `;
+  }
+
+  function doanhThuTabHtml() {
+    if (state.loading && !state.orders) return `<div class="loading"><div class="spinner"></div></div>`;
+    const orders = state.orders || [];
+    const s = state.ordersSummary || { totalRevenue: 0, paidCount: 0, totalCount: 0 };
+    return `
+      <div class="card" style="margin-bottom:14px;">
+        <div style="font-size:22px;font-weight:700;color:var(--accent);">${s.totalRevenue.toLocaleString('vi-VN')}đ</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">Tổng doanh thu đã thanh toán · ${s.paidCount}/${s.totalCount} đơn đã thanh toán · mọi người bán.</div>
+      </div>
+      ${orders.length === 0 ? `<div class="hint-box">Chưa có đơn hàng nào.</div>` : orders.map(o => `
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <b>${esc(o.productTitle || 'Sản phẩm đã xoá')}</b>
+            <span style="font-size:12.5px;white-space:nowrap;">${o.status === 'paid' ? '✅ Đã thanh toán' : '⏳ Chờ thanh toán'}</span>
+          </div>
+          <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">
+            ${Number(o.amount).toLocaleString('vi-VN')}đ · Người bán: ${esc(o.sellerName || '(không rõ)')} · ${o.buyerEmail ? esc(o.buyerEmail) : 'Không để lại email'}
+          </div>
+          <div style="color:var(--ink-soft);font-size:12px;margin-top:2px;">
+            Đặt lúc: ${new Date(o.createdAt).toLocaleString('vi-VN')}${o.paidAt ? ` · Thanh toán lúc: ${new Date(o.paidAt).toLocaleString('vi-VN')}` : ''}
+          </div>
+        </div>
+      `).join('')}
     `;
   }
 
@@ -84,6 +111,16 @@ function render(container) {
         namesById = Object.fromEntries((owners || []).map(o => [o.id, o.full_name]));
       }
       state.products = (products || []).map(p => ({ ...p, ownerName: namesById[p.owner_id] }));
+    }
+    if (state.tab === 'doanh-thu' && !state.orders) {
+      try {
+        const data = await callApi('api/san-pham-so-admin-orders', {});
+        state.orders = data.orders || [];
+        state.ordersSummary = { totalRevenue: data.totalRevenue || 0, paidCount: data.paidCount || 0, totalCount: data.totalCount || 0 };
+      } catch (e) {
+        state.orders = [];
+        state.ordersSummary = { totalRevenue: 0, paidCount: 0, totalCount: 0 };
+      }
     }
     if (state.tab === 'danh-gia' && !state.reviews) {
       const { data: reviews } = await supabaseClient.from('app_reviews').select('*').eq('app', 'san-pham-so').order('created_at', { ascending: false }).limit(200);
