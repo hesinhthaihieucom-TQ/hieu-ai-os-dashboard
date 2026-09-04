@@ -330,7 +330,7 @@ function render(container, ideaRow) {
       <div class="hint-box" style="margin-top:10px;">🎵 Muốn thêm nhạc nền/tiếng lật trang cho cuốn này?
       <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
         <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa xuất → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
-        <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền) → tải file nhạc miễn phí bản quyền (Bensound.com/Pixabay) lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại.</li>
+        <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền) → tải file nhạc lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại. Gợi ý có sẵn: <a href="https://www.bensound.com/royalty-free-music/track/hearty-touching-soft" target="_blank" rel="noopener">"Hearty" (Bensound)</a> — piano nhẹ nhàng, ấm áp. Miễn phí nhưng <b>cần ghi nguồn</b> (VD "Music: Hearty by Bensound.com" ở mô tả sản phẩm) — muốn khỏi ghi nguồn thì mua license riêng ngay trên trang đó. Xem thêm bài khác ở <a href="https://www.bensound.com/free-music-for-videos" target="_blank" rel="noopener">Free Music for Videos</a> (Bensound) hoặc Pixabay.</li>
         <li>Bật tiếng lật trang: cũng cột STYLE → bấm <b style="color:var(--accent);">"Page Effect"</b> (Hiệu ứng lật trang) → bật công tắc <b style="color:var(--accent);">"Sound on page turn"</b> (Bật âm thanh khi lật trang).</li>
       </ol>
       </div>
