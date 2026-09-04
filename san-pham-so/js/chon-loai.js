@@ -174,6 +174,7 @@ function render(container, profile) {
     if (state.screen === 'form') return formHtml();
     if (state.screen === 'result') return resultHtml();
     if (state.screen === 'flipbook') return flipbookHtml();
+    if (state.screen === 'ebook-fork') return ebookForkHtml();
     return pickTypeHtml();
   }
 
@@ -216,10 +217,6 @@ function render(container, profile) {
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
         <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>
       </div>
-      <div class="card" style="margin-bottom:14px;">
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Đã có sẵn 1 file PDF HOÀN CHỈNH, chỉ cần đóng gói đẹp để bán ngay? Không cần chọn loại/tạo outline gì cả, không qua AI, không tốn lượt.</div>
-        <button class="btn-ghost btn" id="pt-flipbook-btn">📖 Đã có PDF hoàn chỉnh, biến thành sách lật</button>
-      </div>
       ${DINH_DANG_OPTIONS.map(o => {
         const expanded = !!state.expandedTypes[o.value];
         return `
@@ -239,6 +236,52 @@ function render(container, profile) {
       `;
       }).join('')}
     `;
+  }
+
+  // Ebook LUÔN giao hàng dạng sách lật (Heyzine) — theo đúng chỉ đạo Quỳnh 2026-09-04: "nó phải ở mục
+  // Ebook chứ không phải 1 mục riêng". Chọn "Ebook" xong rẽ 2 nhánh RA SÁCH LẬT cả 2: AI viết nội dung
+  // mới (→ form → outline → Giai đoạn 2 → tự xuất sách lật, xem xay-dung-noi-dung.js) hoặc đã có sẵn
+  // PDF (→ flipbook, biến thẳng thành sách lật, không qua AI). Dùng CHUNG 1 hàm chooseDinhDang() cho
+  // cả 2 chỗ chọn loại (tự chọn tay VÀ AI gợi ý) để hành vi nhất quán, không lệch nhau.
+  function chooseDinhDang(value) {
+    state.form.dinhDang = value;
+    if (value === 'ebook') {
+      state.screen = 'ebook-fork';
+      state.form.screen = 'ebook-fork';
+    } else {
+      state.screen = 'form';
+      state.form.screen = 'form';
+    }
+    persistFormDraft();
+    draw();
+  }
+
+  function ebookForkHtml() {
+    return `
+      <h2>📘 Ebook</h2>
+      <div class="hint-box">Ebook trong app này luôn giao hàng dạng sách lật (Heyzine) — khách xem trực tiếp trên trình duyệt, không phải tải file thô về.</div>
+      <div class="card" style="margin-bottom:10px;">
+        <h2 style="font-size:16px;">✨ AI viết nội dung mới</h2>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa có sẵn nội dung — để AI giúp dựng outline rồi viết từng phần, sau đó tự xuất thành sách lật.</div>
+        <button class="btn" id="ef-ai-btn">Tiếp tục với AI →</button>
+      </div>
+      <div class="card">
+        <h2 style="font-size:16px;">📖 Đã có sẵn file PDF hoàn chỉnh</h2>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Đã viết xong nội dung — chỉ cần biến ngay thành sách lật, không qua AI, không tốn lượt.</div>
+        <button class="btn-ghost btn" id="ef-flipbook-btn">Tải PDF lên, tạo sách lật →</button>
+      </div>
+      <div class="btn-row"><span class="btn-ghost btn btn-sm" id="ef-back-btn">← Chọn loại khác</span></div>
+    `;
+  }
+
+  function bindEbookFork() {
+    container.querySelector('#ef-ai-btn').onclick = () => {
+      state.screen = 'form'; state.form.screen = 'form'; persistFormDraft(); draw();
+    };
+    container.querySelector('#ef-flipbook-btn').onclick = () => { state.screen = 'flipbook'; draw(); };
+    container.querySelector('#ef-back-btn').onclick = () => {
+      state.screen = 'pick-type'; state.form.screen = 'pick-type'; persistFormDraft(); draw();
+    };
   }
 
   // "📖 Đã có PDF hoàn chỉnh, biến thành sách lật" — không đi qua outline/AI/Giai đoạn 2, KHÔNG lưu gì
@@ -477,6 +520,7 @@ function render(container, profile) {
     if (state.screen === 'ai-suggest-result') { bindAiSuggestResult(); return; }
     if (state.screen === 'form') { bindForm(); return; }
     if (state.screen === 'flipbook') { bindFlipbook(); return; }
+    if (state.screen === 'ebook-fork') { bindEbookFork(); return; }
     bindPickType();
   }
 
@@ -484,7 +528,6 @@ function render(container, profile) {
     container.querySelector('#pt-ai-btn').onclick = () => {
       state.form.screen = 'ai-suggest-input'; state.screen = 'ai-suggest-input'; persistFormDraft(); draw();
     };
-    container.querySelector('#pt-flipbook-btn').onclick = () => { state.screen = 'flipbook'; draw(); };
     container.querySelectorAll('[data-pt-toggle]').forEach(el => {
       el.onclick = () => {
         const v = el.getAttribute('data-pt-toggle');
@@ -493,11 +536,7 @@ function render(container, profile) {
       };
     });
     container.querySelectorAll('[data-pt-choose]').forEach(el => {
-      el.onclick = () => {
-        state.form.dinhDang = el.getAttribute('data-pt-choose');
-        state.form.screen = 'form'; state.screen = 'form';
-        persistFormDraft(); draw();
-      };
+      el.onclick = () => chooseDinhDang(el.getAttribute('data-pt-choose'));
     });
   }
 
@@ -544,11 +583,7 @@ function render(container, profile) {
       };
     });
     container.querySelectorAll('[data-ai-choose]').forEach(el => {
-      el.onclick = () => {
-        state.form.dinhDang = el.getAttribute('data-ai-choose');
-        state.form.screen = 'form'; state.screen = 'form';
-        persistFormDraft(); draw();
-      };
+      el.onclick = () => chooseDinhDang(el.getAttribute('data-ai-choose'));
     });
     container.querySelector('#ai-switch-manual-btn').onclick = () => {
       state.form.screen = 'pick-type'; state.screen = 'pick-type'; persistFormDraft(); draw();
