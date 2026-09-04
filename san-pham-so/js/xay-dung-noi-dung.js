@@ -392,8 +392,21 @@ function render(container, ideaRow) {
     `;
   }
 
+  // Chỉ cho xuất khi đã viết bản nháp cho TẤT CẢ các phần (2026-09-04, Quỳnh: "sao chưa gì đã auto
+  // cho xuất thành ebook vậy, đoạn này phải cho ng ta chọn chứ... làm nội dung full mới xuất được" —
+  // trước đó card "Xuất thành Ebook" hiện NGAY sau khi vừa xây xong outline, trước khi viết bất kỳ
+  // phần nào, dễ khiến người bán xuất nhầm 1 file toàn outline thô). Cùng logic "allStarted" đã có
+  // sẵn ở tongDuyetCardHtml() — CHỈ áp cho lần xuất ĐẦU TIÊN; đã xuất rồi (state.ebookResult tồn tại)
+  // thì vẫn cho xem lại/xuất lại bình thường dù sau đó có thêm phần mới chưa viết, không chặn ngược.
   function ebookExportCardHtml() {
     const connected = isHeyzineConnected();
+    if (!state.ebookResult) {
+      const sections = flattenSections(state.outline2);
+      const allStarted = sections.every((_, i) => !!state.sections[i]);
+      if (!allStarted) {
+        return `<div class="hint-box">📖 Viết xong bản nháp cho TẤT CẢ các phần bên dưới thì mới xuất được thành ebook — tránh xuất nhầm 1 file còn dở dang toàn outline thô.</div>`;
+      }
+    }
     if (state.ebookResult) {
       return `
         <div class="card">
@@ -413,7 +426,7 @@ function render(container, ideaRow) {
     return `
       <div class="card">
         <h2 style="font-size:16px;">📖 Xuất thành Ebook</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Đóng gói nội dung đã viết thành file PDF, tự động biến thành sách lật đẹp (Heyzine) — phần nào chưa viết xong sẽ hiện dạng outline, vẫn xuất được ngay, không cần viết xong hết.</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Đóng gói toàn bộ nội dung đã viết thành file PDF, tự động biến thành sách lật đẹp (Heyzine).</div>
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         ${heyzineInlineHtml()}
         ${!connected ? `<div style="font-size:12px;color:var(--ink-soft);margin:8px 0;">⬆️ Kết nối Heyzine ở trên trước đã, nút bên dưới mới bấm được.</div>` : ''}
@@ -434,11 +447,12 @@ function render(container, ideaRow) {
     return `
       <div class="card">
         <h2 style="font-size:16px;">🎓 Xuất từng bài học (PDF)</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Khoá học nhiều bài — mỗi phần trong outline xuất thành 1 file PDF riêng, có link tải riêng cho từng bài. Phần nào chưa viết xong vẫn xuất được (hiện dạng outline thô).</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Khoá học nhiều bài — mỗi phần trong outline xuất thành 1 file PDF riêng, có link tải riêng cho từng bài. Bài nào viết xong bản nháp mới xuất được bài đó (tránh xuất nhầm outline thô).</div>
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         ${sections.map((s, i) => {
           const l = lessons[i];
           const isExporting = exporting === i;
+          const written = !!state.sections[i];
           return `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
               <div style="font-size:13.5px;">${esc(s.kind)} · ${esc(s.tieu_de)}</div>
@@ -446,7 +460,9 @@ function render(container, ideaRow) {
                 ${l ? `<a class="btn-ghost btn btn-sm" href="${esc(l.link)}" target="_blank" rel="noopener">Xem file</a>` : ''}
                 ${isExporting
                   ? `<span class="btn-ghost btn btn-sm" style="opacity:.6;">Đang xuất…</span>`
-                  : `<span class="btn-ghost btn btn-sm" ${exporting != null ? 'style="opacity:.4;pointer-events:none;"' : ''} data-export-lesson="${i}">${l ? 'Xuất lại' : 'Xuất PDF'}</span>`}
+                  : written
+                    ? `<span class="btn-ghost btn btn-sm" ${exporting != null ? 'style="opacity:.4;pointer-events:none;"' : ''} data-export-lesson="${i}">${l ? 'Xuất lại' : 'Xuất PDF'}</span>`
+                    : `<span style="font-size:12px;color:var(--ink-soft);">Viết bài này trước đã</span>`}
               </div>
             </div>
           `;
