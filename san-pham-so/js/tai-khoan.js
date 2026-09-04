@@ -40,8 +40,17 @@ function render(container) {
 
       <div class="card">
         <h2 style="font-size:16px;margin-bottom:6px;">📖 Kết nối Heyzine riêng (tuỳ chọn)</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Mặc định ebook xuất ra dùng chung tài khoản Heyzine của hệ thống — bạn không tự chỉnh nhạc nền/tiếng lật trang được. Đăng ký 1 tài khoản Heyzine miễn phí của riêng bạn tại <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, lấy API Key + Client ID (mục Cài đặt → API trong Heyzine) rồi dán vào đây — ebook xuất ra sau đó sẽ thuộc tài khoản của chính bạn, tự vào Heyzine chỉnh sửa được.</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Mặc định ebook xuất ra dùng chung tài khoản Heyzine của hệ thống — bạn không tự chỉnh nhạc nền/tiếng lật trang được. Kết nối tài khoản Heyzine riêng của bạn để tự chỉnh được.</div>
         ${p.sps_heyzine_api_key && p.sps_heyzine_client_id ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.</div>` : ''}
+        <div class="hint-box" style="margin-bottom:12px;">
+          <b>Cách lấy API Key + Client ID (miễn phí, khoảng 1 phút):</b>
+          <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.6;">
+            <li>Bấm vào đây → <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a></li>
+            <li>Chưa có tài khoản thì bấm <b>"register"</b> để đăng ký (miễn phí); có rồi thì bấm <b>"Login"</b>.</li>
+            <li>Đăng nhập xong, NGAY TRÊN CÙNG TRANG ĐÓ sẽ hiện <b>Client ID</b> và <b>API Key</b> của bạn — copy 2 giá trị này.</li>
+            <li>Quay lại đây, dán vào 2 ô bên dưới rồi bấm "Lưu kết nối".</li>
+          </ol>
+        </div>
         <label>API Key</label>
         <input id="tk-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
         <label style="margin-top:10px;">Client ID</label>
@@ -51,6 +60,9 @@ function render(container) {
         <div class="btn-row">
           <button class="btn" id="tk-save-heyzine" ${state.heyzineSaving ? 'disabled' : ''}>${state.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
           ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<span class="btn-ghost btn" id="tk-disconnect-heyzine">Ngắt kết nối, dùng lại tài khoản chung</span>` : ''}
+        </div>
+        <div class="hint-box" style="margin-top:12px;">
+          <b>Sau khi kết nối, xuất ebook thế nào?</b> Không cần tự tay tải/upload gì lên Heyzine cả — vào <b>"Viết Nội Dung"</b>, chọn sản phẩm, bấm <b>"Xuất thành Ebook"</b> như bình thường, app sẽ TỰ ĐỘNG tạo sách lật NGAY TRONG tài khoản Heyzine của bạn. Muốn thêm nhạc nền/đổi kiểu lật trang: vào lại <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com</a>, tìm đúng cuốn sách vừa xuất trong danh sách của bạn để chỉnh.
         </div>
       </div>
 
