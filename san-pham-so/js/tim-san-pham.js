@@ -60,7 +60,7 @@ function isAnswered(q, val) {
 function render(container, profile) {
   const state = {
     screen: 'loading', qIndex: 0, answers: {}, result: null, chosenIndex: null, error: null,
-    suggestLoading: false, suggestions: null, suggestForQ: null, suggestCounts: {}, suggestError: null,
+    suggestLoading: false, suggestionsByQ: {}, suggestCounts: {}, suggestError: null,
     editing: false, editForm: null, editSaving: false,
     // Tài liệu tuỳ chọn — tải 1 lần ở màn "wizard-intro" (đầu wizard), mang theo suốt tới lúc tổng
     // hợp kết quả (runGenerate() gửi kèm materialPath), KHÔNG phải 1 nhánh tách biệt bỏ qua 11 câu
@@ -159,15 +159,21 @@ function render(container, profile) {
     let inputHtml = '';
     if (q.type === 'textarea') {
       const suggestUsed = (state.suggestCounts[q.id] || 0) >= SUGGEST_LIMIT_PER_QUESTION;
+      // Gợi ý đã fetch lưu theo ĐÚNG q.id (không phải 1 ô nhớ tạm chung, xem state.suggestionsByQ) —
+      // 2026-09-04, Quỳnh: "khi ngta quay lại câu cũ xong trở lại câu trước đó thì ko xem đc gợi ý
+      // nữa" — trước đây suggestions/suggestForQ bị XOÁ mỗi lần đổi qIndex (cả lùi lẫn tiến), trong khi
+      // suggestCounts (giới hạn 1 lần/câu) thì KHÔNG bị xoá — quay lại 1 câu đã xem gợi ý sẽ thấy nút
+      // bị khoá (đã dùng hết lượt) NHƯNG gợi ý cũ cũng không còn hiển thị, mất hẳn không xem lại được.
+      const savedSuggestion = state.suggestionsByQ[q.id];
       inputHtml = `
         <textarea id="tsp-input" rows="4" placeholder="${esc(q.placeholder || '')}">${esc(val || '')}</textarea>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">💡 Bí ý tưởng hoặc chưa biết trả lời cụ thể thế nào? Bấm "Xem gợi ý" để AI đưa 3 ví dụ đúng mức độ chi tiết cần có — không phải để copy nguyên văn, chỉ để dễ hình dung rồi viết câu trả lời thật của riêng bạn.</div>
         <div class="btn-row" style="margin-top:6px;">
           <span class="btn-ghost btn btn-sm" id="tsp-suggest-btn" ${(state.suggestLoading || suggestUsed) ? 'style="opacity:.5;pointer-events:none;"' : ''}>${state.suggestLoading ? 'Đang tạo gợi ý…' : '💡 Xem gợi ý'}</span>
         </div>
-        ${state.suggestForQ === state.qIndex && state.suggestions ? `
+        ${savedSuggestion ? `
           <div class="hint-box" style="margin-top:8px;">
-            ${state.suggestions.map((s, i) => `<div style="margin-bottom:10px;">${esc(s)}<br><span class="btn-ghost btn btn-sm" data-use-suggestion="${i}" style="margin-top:4px;">Dùng làm gợi ý →</span></div>`).join('')}
+            ${savedSuggestion.map((s, i) => `<div style="margin-bottom:10px;">${esc(s)}<br><span class="btn-ghost btn btn-sm" data-use-suggestion="${i}" style="margin-top:4px;">Dùng làm gợi ý →</span></div>`).join('')}
           </div>
         ` : ''}
         ${state.suggestError ? `<div class="error-box" style="margin-top:8px;">${esc(state.suggestError)}</div>` : ''}
@@ -309,7 +315,7 @@ function render(container, profile) {
       container.querySelectorAll('[data-use-suggestion]').forEach(el => {
         el.onclick = () => {
           const i = Number(el.getAttribute('data-use-suggestion'));
-          state.answers[q.id] = state.suggestions[i];
+          state.answers[q.id] = state.suggestionsByQ[q.id][i];
           persistWizardDraft();
           draw();
         };
@@ -334,10 +340,10 @@ function render(container, profile) {
       };
     }
     const backBtn = container.querySelector('#tsp-back-btn');
-    if (backBtn) backBtn.onclick = () => { state.qIndex--; state.suggestions = null; state.suggestForQ = null; state.suggestError = null; draw(); };
+    if (backBtn) backBtn.onclick = () => { state.qIndex--; state.suggestError = null; draw(); };
     container.querySelector('#tsp-next-btn').onclick = () => {
       if (state.qIndex < QUESTIONS.length - 1) {
-        state.qIndex++; state.suggestions = null; state.suggestForQ = null; state.suggestError = null;
+        state.qIndex++; state.suggestError = null;
         draw(); persistWizardDraft();
       } else {
         runGenerate();
@@ -415,7 +421,7 @@ function render(container, profile) {
       const data = await callApi('api/tim-san-pham-goi-y', { question: q.q, previousAnswers: state.answers }, 150000);
       const viDu = data && data.result && data.result.vi_du;
       if (!viDu || !viDu.length) throw new Error('AI không trả về gợi ý — thử bấm lại giúp mình.');
-      state.suggestions = viDu; state.suggestForQ = state.qIndex;
+      state.suggestionsByQ[q.id] = viDu;
     } catch (e) {
       state.suggestError = e.message;
     } finally {
