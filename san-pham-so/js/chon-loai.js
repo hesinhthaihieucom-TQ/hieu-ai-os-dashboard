@@ -12,6 +12,20 @@
 (function () {
 const FORM_DRAFT_KEY = 'chon-loai-form';
 
+// 5 bài nhạc nền gợi ý cho Heyzine Background Audio (2026-09-04, Quỳnh: "cho list 5 bài đi cho ngta
+// chọn" — sau khi đã đổi từ Bensound (cần ghi nguồn) sang Pixabay (không cần)). Mỗi bài đã tự vào
+// trang Pixabay xác nhận THẬT có nhãn "Free for use under the Pixabay Content License" (miễn phí,
+// không bắt buộc ghi nguồn) trước khi đưa vào đây, không đoán.
+const PIXABAY_MUSIC_LIST_HTML = `
+  <ul style="margin:6px 0 0;padding-left:18px;">
+    <li><a href="https://pixabay.com/music/modern-classical-piano-waltz-elegant-and-graceful-instrumental-music-285601/" target="_blank" rel="noopener">Piano Waltz – Elegant and Graceful</a> — piano nhẹ nhàng, ấm áp</li>
+    <li><a href="https://pixabay.com/music/modern-classical-calm-classical-piano-melody-293695/" target="_blank" rel="noopener">Calm Classical Piano Melody</a> — piano cổ điển, êm dịu</li>
+    <li><a href="https://pixabay.com/music/acoustic-group-warm-acoustic-guitar-232912/" target="_blank" rel="noopener">Warm Acoustic Guitar</a> — guitar mộc, ấm áp</li>
+    <li><a href="https://pixabay.com/music/beautiful-plays-ambient-piano-and-strings-10711/" target="_blank" rel="noopener">Ambient Piano and Strings</a> — piano + dây, sâu lắng</li>
+    <li><a href="https://pixabay.com/music/modern-classical-bookshop-afternoon-cozy-reading-573881/" target="_blank" rel="noopener">Bookshop Afternoon Cozy Reading</a> — đúng không khí đọc sách, ấm cúng</li>
+  </ul>
+`;
+
 // Thông tin tham khảo cho từng định dạng — hiện NGAY trên màn chọn loại (đây chính là nội dung
 // chính của trang, không phải phụ) VÀ như phần bổ sung dưới mỗi gợi ý của AI, để người dùng thật sự
 // hiểu mình đang chọn gì: không chỉ "khi nào nên dùng", mà cả CẦN CHUẨN BỊ GÌ và NGƯỜI MUA NHẬN ĐƯỢC
@@ -328,7 +342,10 @@ function render(container, profile) {
       <div class="hint-box" style="margin-top:10px;">🎵 Muốn thêm nhạc nền/tiếng lật trang cho cuốn này?
       <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
         <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa tạo → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
-        <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền). Gợi ý có sẵn (MIỄN PHÍ, KHÔNG cần mua, KHÔNG cần ghi nguồn): mở <a href="https://pixabay.com/music/modern-classical-piano-waltz-elegant-and-graceful-instrumental-music-285601/" target="_blank" rel="noopener">"Piano Waltz – Elegant and Graceful" (Pixabay)</a> — piano nhẹ nhàng, ấm áp — bấm nút <b style="color:var(--accent);">"Download"</b> màu xanh trên trang đó để tải file MP3 về máy, rồi tải chính file đó lên "Background Audio". Chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại.</li>
+        <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền). 5 bài gợi ý có sẵn (Pixabay, MIỄN PHÍ, KHÔNG cần mua, KHÔNG cần ghi nguồn) — bấm 1 bài, bấm nút <b style="color:var(--accent);">"Download"</b> màu xanh trên trang đó để tải MP3 về máy, rồi tải chính file đó lên "Background Audio":
+          ${PIXABAY_MUSIC_LIST_HTML}
+          Chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại.
+        </li>
         <li>Bật tiếng lật trang: cũng cột STYLE → bấm <b style="color:var(--accent);">"Page Effect"</b> (Hiệu ứng lật trang) → bật công tắc <b style="color:var(--accent);">"Sound on page turn"</b> (Bật âm thanh khi lật trang).</li>
       </ol>
       </div>
@@ -357,7 +374,7 @@ function render(container, profile) {
           <ol style="margin:0;padding-left:20px;font-size:12.5px;line-height:1.7;">
             <li>Mở <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a> — hoặc vào heyzine.com, bấm icon <b style="color:var(--accent);">☰</b> (menu) góc trên bên trái → chọn <b style="color:var(--accent);">API</b>.</li>
             <li>Chưa có tài khoản: bấm <b style="color:var(--accent);">"register"</b> (Đăng ký). Đã có: bấm <b style="color:var(--accent);">"Login"</b> (Đăng nhập) — miễn phí.</li>
-            <li>Đăng nhập xong, trang hiện 2 ô <b style="color:var(--accent);">"This is your Client Id:"</b> (Client ID của bạn) và <b style="color:var(--accent);">"This is your API key:"</b> (API Key của bạn) — bấm icon con mắt 👁 để hiện, bấm nút <b style="color:var(--accent);">"Copy"</b> (Sao chép) từng ô.</li>
+            <li>Đăng nhập xong, trang hiện 2 ô <b style="color:var(--accent);">"This is your Client Id:"</b> (Client ID của bạn) và <b style="color:var(--accent);">"This is your API key:"</b> (API Key của bạn) — không cần bấm icon con mắt để xem, bấm thẳng nút <b style="color:var(--accent);">"Copy"</b> (Sao chép) từng ô là được.</li>
             <li>Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây tạo sách lật luôn không cần mở tab khác.</li>
           </ol>
         </div>
