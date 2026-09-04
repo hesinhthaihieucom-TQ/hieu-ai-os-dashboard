@@ -214,6 +214,12 @@ function render(container, profile) {
       <h2>Chọn loại sản phẩm số</h2>
       <div class="hint-box">Dành cho người ĐÃ biết chủ đề/đối tượng muốn nhắm tới, chỉ cần chốt định dạng. Nếu chưa có ý tưởng gì cả, dùng "🧭 Tìm Sản Phẩm Phù Hợp" ở mục 1 sẽ hợp hơn.</div>
       <div class="card" style="margin-bottom:14px;">
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">📎 Đã có sẵn file PDF (tài liệu, hoặc sản phẩm đã viết xong)? Tải lên đây trước — dù chọn loại nào ở dưới hoặc để AI gợi ý, file này sẽ được dùng luôn, không cần tải lại.</div>
+        <input id="pt-file-input" type="file" accept="application/pdf">
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${state.form.materialUploading ? 'Đang tải lên…' : (state.form.materialFileName ? `📎 ${esc(state.form.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file — không bắt buộc.')}</div>
+        ${state.form.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(state.form.materialUploadError)}</div>` : ''}
+      </div>
+      <div class="card" style="margin-bottom:14px;">
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
         <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>
       </div>
@@ -257,18 +263,19 @@ function render(container, profile) {
   }
 
   function ebookForkHtml() {
+    const hasUploaded = !!state.form.materialPath;
     return `
       <h2>📘 Ebook</h2>
       <div class="hint-box">Ebook trong app này luôn giao hàng dạng sách lật (Heyzine) — khách xem trực tiếp trên trình duyệt, không phải tải file thô về.</div>
       <div class="card" style="margin-bottom:10px;">
         <h2 style="font-size:16px;">✨ AI viết nội dung mới</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa có sẵn nội dung — để AI giúp dựng outline rồi viết từng phần, sau đó tự xuất thành sách lật.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">${hasUploaded ? `Sẽ dùng file <b>${esc(state.form.materialFileName)}</b> đã tải làm nguồn tham khảo để AI viết nội dung mới bám sát nó.` : 'Chưa có sẵn nội dung — để AI giúp dựng outline rồi viết từng phần, sau đó tự xuất thành sách lật.'}</div>
         <button class="btn" id="ef-ai-btn">Tiếp tục với AI →</button>
       </div>
       <div class="card">
         <h2 style="font-size:16px;">📖 Đã có sẵn file PDF hoàn chỉnh</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Đã viết xong nội dung — chỉ cần biến ngay thành sách lật, không qua AI, không tốn lượt.</div>
-        <button class="btn-ghost btn" id="ef-flipbook-btn">Tải PDF lên, tạo sách lật →</button>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">${hasUploaded ? `Dùng thẳng file <b>${esc(state.form.materialFileName)}</b> đã tải — biến ngay thành sách lật, không qua AI, không tốn lượt.` : 'Đã viết xong nội dung — chỉ cần biến ngay thành sách lật, không qua AI, không tốn lượt.'}</div>
+        <button class="btn-ghost btn" id="ef-flipbook-btn">${hasUploaded ? 'Dùng file này, tạo sách lật →' : 'Tải PDF lên, tạo sách lật →'}</button>
       </div>
       <div class="btn-row"><span class="btn-ghost btn btn-sm" id="ef-back-btn">← Chọn loại khác</span></div>
     `;
@@ -278,7 +285,15 @@ function render(container, profile) {
     container.querySelector('#ef-ai-btn').onclick = () => {
       state.screen = 'form'; state.form.screen = 'form'; persistFormDraft(); draw();
     };
-    container.querySelector('#ef-flipbook-btn').onclick = () => { state.screen = 'flipbook'; draw(); };
+    container.querySelector('#ef-flipbook-btn').onclick = () => {
+      // Đã tải PDF sẵn từ đầu trang Chọn Loại (state.form.materialPath) → mang thẳng sang, khỏi bắt
+      // tải lại lần 2 (2026-09-04, theo đúng yêu cầu Quỳnh: tải 1 lần ở đầu, dùng lại dù đi đường nào).
+      if (state.form.materialPath) {
+        state.flipbook.materialPath = state.form.materialPath;
+        state.flipbook.materialFileName = state.form.materialFileName;
+      }
+      state.screen = 'flipbook'; draw();
+    };
     container.querySelector('#ef-back-btn').onclick = () => {
       state.screen = 'pick-type'; state.form.screen = 'pick-type'; persistFormDraft(); draw();
     };
@@ -532,6 +547,29 @@ function render(container, profile) {
   }
 
   function bindPickType() {
+    // Tải PDF NGAY từ đầu trang (2026-09-04, theo yêu cầu Quỳnh — dùng chung field materialPath/
+    // materialFileName với bước form phía sau, KHÔNG tách state riêng, để dù chọn loại tay hay để AI
+    // gợi ý, file đã tải vẫn còn nguyên khi tới bước sau, không phải tải lại lần 2). Dùng ĐÚNG pattern
+    // upload đã có sẵn ở #cl-file-input (bindForm()).
+    const f = state.form;
+    const fileEl = container.querySelector('#pt-file-input');
+    if (fileEl) fileEl.onchange = async () => {
+      const file = fileEl.files[0];
+      if (!file) return;
+      if (file.type !== 'application/pdf') { f.materialUploadError = 'Chỉ nhận file PDF.'; draw(); return; }
+      f.materialUploading = true; f.materialUploadError = null; draw();
+      try {
+        const { uploadUrl, path } = await callApi('api/san-pham-so-upload-material-url', { file_name: file.name });
+        const putResp = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': 'application/pdf' }, body: file });
+        if (!putResp.ok) throw new Error('Upload file thất bại — thử lại giúp mình.');
+        f.materialPath = path; f.materialFileName = file.name;
+        persistFormDraft();
+      } catch (e) {
+        f.materialUploadError = e.message;
+      }
+      f.materialUploading = false;
+      draw();
+    };
     container.querySelector('#pt-ai-btn').onclick = () => {
       state.form.screen = 'ai-suggest-input'; state.screen = 'ai-suggest-input'; persistFormDraft(); draw();
     };
