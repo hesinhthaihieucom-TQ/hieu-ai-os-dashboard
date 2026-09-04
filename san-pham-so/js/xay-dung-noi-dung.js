@@ -787,12 +787,16 @@ function render(container, ideaRow) {
       container.querySelector('#xdnd-review-btn').onclick = runReview;
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
       container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-draft-textarea', (s, val) => { s.viet.noi_dung = val; });
-      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, state.sections[state.activeIndex].used_web_search);
+      // "🔄 Viết lại bằng AI" trước đây gọi thẳng lại runNghienCuuAndViet() với ĐÚNG used_web_search cũ
+      // — không cho đổi ý (VD muốn bật "Tìm thêm từ web" cho lần viết lại nếu bản đầu quá hời hợt).
+      // Quay lại đúng màn chọn nguồn kiến thức (2026-09-04, Quỳnh: "phải có phần quay lại mục dùng ai
+      // để tìm kiến thức để viết lại chứ, nút viết lại bằng ai thì ko quay lại mục đó được").
+      container.querySelector('#xdnd-rewrite-btn').onclick = () => { state.screen = 'section-start-choice'; draw(); };
       bindIllustrationBlock();
     } else if (state.screen === 'section-final') {
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
       container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-final-textarea', (s, val) => { s.review.ban_da_chinh = val; });
-      container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, state.sections[state.activeIndex].used_web_search);
+      container.querySelector('#xdnd-rewrite-btn').onclick = () => { state.screen = 'section-start-choice'; draw(); };
       bindIllustrationBlock();
     }
   }
