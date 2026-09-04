@@ -54,7 +54,11 @@ function addSectionPage(doc, titleLabel, item, body, baiTap, section) {
 // [mo_dau, ...phan, ket] (0 = mo_dau, 1..n = phan, cuối cùng = ket) — Mở đầu/Kết CŨNG đi qua đúng
 // luồng nghiên cứu→viết→review như mọi phần khác trong san-pham-so/js/xay-dung-noi-dung.js
 // (flattenSections()), không phải chỉ có outline suông — phải dùng chung 1 cách đánh index.
-function buildEbookPdf({ idea, outline2, sections }) {
+//
+// onlyIndex (tuỳ chọn): chỉ dựng PDF cho ĐÚNG 1 phần (dùng cho xuất từng bài học của mini_course,
+// xem api/san-pham-so-xuat-bai-hoc.js) — trang bìa đổi thành tiêu đề của riêng phần đó thay vì tên
+// cả sản phẩm.
+function buildEbookPdf({ idea, outline2, sections, onlyIndex }) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margins: { top: 70, bottom: 70, left: 60, right: 60 } });
     const chunks = [];
@@ -62,21 +66,28 @@ function buildEbookPdf({ idea, outline2, sections }) {
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    // Trang bìa
-    doc.font(FONT_BOLD).fontSize(30).fillColor('#1E2420').text(idea.ten_san_pham || '', { align: 'center' });
-    doc.moveDown(1);
-    if (idea.doi_tuong) {
-      doc.font(FONT_REGULAR).fontSize(13).fillColor('#5B5F55').text(`Dành cho: ${idea.doi_tuong}`, { align: 'center' });
-    }
-
     const flat = [
       { kind: 'Mở đầu', item: outline2.mo_dau },
       ...(outline2.phan || []).map((p) => ({ kind: 'Phần', item: p })),
       { kind: 'Kết', item: outline2.ket },
     ];
 
-    flat.forEach((entry, index) => {
-      if (!entry.item) return;
+    // Trang bìa
+    if (onlyIndex != null && flat[onlyIndex] && flat[onlyIndex].item) {
+      doc.font(FONT_BOLD).fontSize(26).fillColor('#1E2420').text(flat[onlyIndex].item.tieu_de || '', { align: 'center' });
+      doc.moveDown(0.8);
+      doc.font(FONT_REGULAR).fontSize(13).fillColor('#5B5F55').text(`Bài học trong khoá: ${idea.ten_san_pham || ''}`, { align: 'center' });
+    } else {
+      doc.font(FONT_BOLD).fontSize(30).fillColor('#1E2420').text(idea.ten_san_pham || '', { align: 'center' });
+      doc.moveDown(1);
+      if (idea.doi_tuong) {
+        doc.font(FONT_REGULAR).fontSize(13).fillColor('#5B5F55').text(`Dành cho: ${idea.doi_tuong}`, { align: 'center' });
+      }
+    }
+
+    const entries = onlyIndex != null ? [[onlyIndex, flat[onlyIndex]]] : flat.map((e, i) => [i, e]);
+    entries.forEach(([index, entry]) => {
+      if (!entry || !entry.item) return;
       const body = sectionBody(sections[index], entry.item);
       const baiTap = sectionBaiTap(sections[index], entry.item);
       addSectionPage(doc, entry.kind, entry.item, body, baiTap, sections[index]);

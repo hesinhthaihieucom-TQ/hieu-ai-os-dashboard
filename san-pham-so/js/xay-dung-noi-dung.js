@@ -35,7 +35,10 @@ function render(container, ideaRow) {
     newMaterialPath: null, materialUploading: false, materialUploadError: null, materialFileName: null,
     activeIndex: null,
     workingStep: null, // 'nghien-cuu' | 'viet' | 'review' — hiện text tiến trình khi đang chạy chuỗi
-    ebookResult: ideaRow.ebook_result || null, // {heyzineUrl, thumbnail, pdfStoragePath} — giữ qua reload
+    // {heyzineUrl, thumbnail, pdfStoragePath} cho mọi dinh_dang khác, HOẶC {lessons:{[index]:{link,
+    // storagePath}}} khi dinh_dang='mini_course' (xem miniCourseExportCardHtml) — giữ qua reload.
+    ebookResult: ideaRow.ebook_result || null,
+    exportingLessonIndex: null, // index (flattenSections) đang xuất PDF bài học dở, null = không có
     editingOutlineIndex: null, // index (flattenSections) của phần outline cấp 2 đang sửa tay, null = không sửa
     editOutlineForm: null,
     tongDuyetLoading: false, tongDuyetResult: null, // KHÔNG lưu DB — tính lại mỗi lần bấm, xem plan
@@ -147,6 +150,40 @@ function render(container, ideaRow) {
     `;
   }
 
+  // Mini_course: "nhiều bài học, mỗi bài link riêng" (đúng định nghĩa của loại này ở chon-loai.js)
+  // — khác ebookExportCardHtml() ở chỗ xuất RIÊNG từng phần trong outline thành 1 file PDF/1 link,
+  // không gộp chung 1 file. KHÔNG dùng Heyzine (xem api/san-pham-so-xuat-bai-hoc.js) — chỉ ký link
+  // Storage hạn rất dài, không tốn quota flipbook (Heyzine free chỉ có 5 flipbook cho CẢ app).
+  function miniCourseExportCardHtml() {
+    const sections = flattenSections(state.outline2);
+    const lessons = (state.ebookResult && state.ebookResult.lessons) || {};
+    const exporting = state.exportingLessonIndex;
+    const doneCount = sections.filter((_, i) => lessons[i]).length;
+    return `
+      <div class="card">
+        <h2 style="font-size:16px;">🎓 Xuất từng bài học (PDF)</h2>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Khoá học nhiều bài — mỗi phần trong outline xuất thành 1 file PDF riêng, có link tải riêng cho từng bài. Phần nào chưa viết xong vẫn xuất được (hiện dạng outline thô).</div>
+        ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
+        ${sections.map((s, i) => {
+          const l = lessons[i];
+          const isExporting = exporting === i;
+          return `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
+              <div style="font-size:13.5px;">${esc(s.kind)} · ${esc(s.tieu_de)}</div>
+              <div class="btn-row" style="margin:0;">
+                ${l ? `<a class="btn-ghost btn btn-sm" href="${esc(l.link)}" target="_blank" rel="noopener">Xem file</a>` : ''}
+                ${isExporting
+                  ? `<span class="btn-ghost btn btn-sm" style="opacity:.6;">Đang xuất…</span>`
+                  : `<span class="btn-ghost btn btn-sm" ${exporting != null ? 'style="opacity:.4;pointer-events:none;"' : ''} data-export-lesson="${i}">${l ? 'Xuất lại' : 'Xuất PDF'}</span>`}
+              </div>
+            </div>
+          `;
+        }).join('')}
+        ${doneCount ? `<div class="btn-row" style="margin-top:14px;"><span class="btn" id="xdnd-use-lessons-as-product-btn">✅ Dùng làm sản phẩm để bán (${doneCount}/${sections.length} bài đã xuất)</span></div>` : ''}
+      </div>
+    `;
+  }
+
   function tongDuyetCardHtml() {
     const sections = flattenSections(state.outline2);
     const allStarted = sections.every((_, i) => !!state.sections[i]);
@@ -189,7 +226,7 @@ function render(container, ideaRow) {
         <span class="btn-ghost btn btn-sm" id="xdnd-luu-tam-btn" style="white-space:nowrap;">💾 Lưu tạm, bắt đầu sản phẩm khác</span>
       </div>
       <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
-      ${ebookExportCardHtml()}
+      ${idea.dinh_dang === 'mini_course' ? miniCourseExportCardHtml() : ebookExportCardHtml()}
       ${tongDuyetCardHtml()}
       ${sections.map((s, i) => {
         const st = state.sections[i];
@@ -372,6 +409,11 @@ function render(container, ideaRow) {
       if (exportBtn) exportBtn.onclick = exportEbook;
       const useBtn = container.querySelector('#xdnd-use-as-product-btn');
       if (useBtn) useBtn.onclick = useEbookAsProduct;
+      container.querySelectorAll('[data-export-lesson]').forEach(el => {
+        el.onclick = () => exportLesson(Number(el.getAttribute('data-export-lesson')));
+      });
+      const useLessonsBtn = container.querySelector('#xdnd-use-lessons-as-product-btn');
+      if (useLessonsBtn) useLessonsBtn.onclick = useLessonsAsProduct;
       const tongDuyetBtn = container.querySelector('#xdnd-tong-duyet-btn');
       if (tongDuyetBtn) tongDuyetBtn.onclick = runTongDuyet;
     } else if (state.screen === 'section-start-choice') {
@@ -459,6 +501,50 @@ function render(container, ideaRow) {
       file_name: null,
       external_link: state.ebookResult.heyzineUrl,
       published: false,
+      // 3 field này thiếu trước 2026-09-04 (thêm ở batch #21 nhưng chưa cập nhật handoff này) — vô
+      // hại vì danh-sach-san-pham.js đọc draft nguyên vẹn (state.form = draft, không merge newForm()),
+      // nhưng thêm cho đủ khớp newForm() để tránh field undefined lặng lẽ.
+      dinh_dang: '', mini_course_lessons: [], webinar_datetime: '',
+    });
+    location.hash = 'san-pham';
+  }
+
+  async function exportLesson(index) {
+    state.exportingLessonIndex = index; state.error = null; draw();
+    try {
+      const data = await callApi('api/san-pham-so-xuat-bai-hoc', { idea, outline2: state.outline2, sections: state.sections, index }, 120000);
+      const lessons = { ...((state.ebookResult && state.ebookResult.lessons) || {}) };
+      lessons[index] = { link: data.link, storagePath: data.storagePath };
+      state.ebookResult = { lessons };
+      await saveIdeaResult({ ebook_result: state.ebookResult }, ideaRow.id);
+    } catch (e) {
+      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
+    }
+    state.exportingLessonIndex = null;
+    safeDraw('outline2');
+  }
+
+  // Hand-off giống useEbookAsProduct() nhưng cho mini_course — mỗi bài đã xuất thành 1 mục trong
+  // mini_course_lessons (đúng shape {title,link} mà san-pham-so/js/danh-sach-san-pham.js đã hỗ trợ
+  // sẵn từ batch #21). Chỉ đưa những bài ĐÃ xuất — bài chưa xuất bỏ qua, người bán tự xuất bổ sung
+  // sau ở đây rồi sửa lại sản phẩm nếu muốn.
+  async function useLessonsAsProduct() {
+    const sections = flattenSections(state.outline2);
+    const lessons = (state.ebookResult && state.ebookResult.lessons) || {};
+    const lessonList = sections.map((s, i) => (lessons[i] ? { title: s.tieu_de, link: lessons[i].link } : null)).filter(Boolean);
+    await saveDraft('san-pham-so', {
+      id: null,
+      title: idea.ten_san_pham || '',
+      description: idea.ly_do || '',
+      price: '',
+      cover_image_url: null,
+      file_storage_path: null,
+      file_name: null,
+      external_link: null,
+      published: false,
+      dinh_dang: 'mini_course',
+      mini_course_lessons: lessonList,
+      webinar_datetime: '',
     });
     location.hash = 'san-pham';
   }
