@@ -1,6 +1,6 @@
 // Mục "Chọn Loại Sản Phẩm Số" — người dùng ĐÃ TỰ QUYẾT ĐỊNH ngành/loại sản phẩm/chủ đề/đối tượng,
-// không cần qua wizard 11 câu hỏi hay nhánh tài liệu của "Tìm Sản Phẩm Phù Hợp" (api/tim-san-pham-phu-hop.js,
-// api/tim-san-pham-tu-tai-lieu.js) — chỉ cần AI dựng outline cấp 1 tốt nhất cho đúng lựa chọn đó rồi
+// không cần qua wizard 11 câu hỏi của "Tìm Sản Phẩm Phù Hợp" (api/tim-san-pham-phu-hop.js) — chỉ
+// cần AI dựng outline cấp 1 tốt nhất cho đúng lựa chọn đó rồi
 // vào thẳng Giai đoạn 2. Có thể kèm materialPath (PDF tuỳ chọn, cùng luồng upload đã có ở
 // api/san-pham-so-upload-material-url.js) để outline bám sát tài liệu nếu người dùng có sẵn.
 

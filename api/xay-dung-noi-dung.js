@@ -4,8 +4,8 @@
 // sẵn có của Claude — KHÔNG tích hợp web-search, theo quyết định của Quỳnh 2026-08-25: tính năng đó
 // chưa từng dùng trong repo này, để tránh rủi ro kỹ thuật chưa kiểm chứng), 'review' (chấm chất
 // lượng), 'tong-duyet' (đọc lại TOÀN BỘ sau khi viết xong hết, kiểm tra mạch lạc/trùng lặp — thêm
-// 2026-09-01). 'outline2' và 'viet' có thể nhận kèm `materialPath` — tài liệu PDF người dùng đã tải
-// lên ở nhánh A của Giai đoạn 1 (xem api/tim-san-pham-tu-tai-lieu.js) — để nội dung viết ra BÁM SÁT
+// 2026-09-01). 'outline2' và 'viet' có thể nhận kèm `materialPath` — tài liệu PDF tuỳ chọn người
+// dùng đã tải lên ở đầu wizard Giai đoạn 1 (xem api/tim-san-pham-phu-hop.js) — để nội dung viết ra BÁM SÁT
 // tài liệu gốc thay vì chỉ dùng 1 lần ở bước tìm ý tưởng rồi bỏ; 'nghien-cuu' CỐ Ý không nhận tài
 // liệu vì đó là bước tổng hợp kiến thức nền CHUNG, không phải nội dung riêng của user. 'nghien-cuu'
 // có thể nhận `useWebSearch: true` (tùy chọn, thêm 2026-09-01) — thay quy trình thủ công cũ của

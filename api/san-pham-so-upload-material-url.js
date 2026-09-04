@@ -1,5 +1,5 @@
-// Sản Phẩm Số — sinh signed upload URL để tải lên 1 file PDF "tài liệu/kiến thức đã có" (nhánh A của
-// Tìm Sản Phẩm Phù Hợp, xem api/tim-san-pham-tu-tai-lieu.js) THẲNG từ trình duyệt lên Supabase
+// Sản Phẩm Số — sinh signed upload URL để tải lên 1 file PDF "tài liệu/kiến thức đã có" (bước tuỳ
+// chọn ở đầu wizard "Tìm Sản Phẩm Phù Hợp", xem api/tim-san-pham-phu-hop.js) THẲNG từ trình duyệt lên Supabase
 // Storage — cùng lý do giới hạn payload như api/san-pham-so-upload-url.js. Dùng CHUNG bucket
 // digital-products (private) nhưng path riêng "materials/" — file này chỉ để AI đọc 1 lần khi tìm ý
 // tưởng, không phải file bán cho khách, và chưa có product_id nào để kiểm tra chủ sở hữu (khác với

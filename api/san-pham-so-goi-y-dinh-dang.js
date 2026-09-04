@@ -6,7 +6,7 @@
 // 2 nguồn dữ liệu đầu vào (2026-09-04, Quỳnh phát hiện bug thật: đã tải PDF sẵn ở đầu trang Chọn
 // Loại mà bấm "AI gợi ý" vẫn bắt gõ lại ngành/chủ đề/đối tượng bằng tay — file tải lên bị bỏ phí
 // hoàn toàn): (1) có materialPath (đã tải PDF ở đầu trang) → AI ĐỌC THẲNG tài liệu, không bắt nhập
-// gì thêm, đúng pattern "document" content block đã dùng ở api/tim-san-pham-tu-tai-lieu.js; (2)
+// gì thêm, đúng pattern "document" content block đã dùng ở api/tim-san-pham-phu-hop.js; (2)
 // không có materialPath → giữ nguyên luồng cũ, bắt buộc nhập ngành/chủ đề/đối tượng bằng tay.
 
 const { requireUser } = require('./_lib/auth');

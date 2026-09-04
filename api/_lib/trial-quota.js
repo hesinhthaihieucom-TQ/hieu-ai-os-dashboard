@@ -83,9 +83,6 @@ const AI_WEIGHTS = {
   // Bước "AI gợi ý định dạng" đứng TRƯỚC san-pham-so-tao-tu-loai ở trên — output rất nhỏ (1-2 định
   // dạng + lý do ngắn, không có outline) nên rẻ hơn hẳn — ĐỀ XUẤT, chưa xác nhận với Quỳnh.
   'san-pham-so-goi-y-dinh-dang': 1,
-  // Nhánh "đã có sẵn tài liệu" (mục A, 2026-09-01) — đọc thẳng 1 file PDF qua Claude thay vì suy từ
-  // 12 câu trả lời ngắn, ngang mức tim-san-pham-phu-hop vì cùng vai trò (ra 2-3 phương án + outline).
-  'tim-san-pham-tu-tai-lieu': 8,
   // Viết mô tả bán hàng / caption quảng cáo (mục D, H) — 1 lượt gọi ngắn, rẻ, không phải bước chính
   // của luồng tạo sản phẩm mà chỉ là tiện ích phụ trợ.
   'san-pham-so-viet-mo-ta': 1,

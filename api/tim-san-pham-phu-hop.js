@@ -1,10 +1,18 @@
 // Giai đoạn 1 của "Tạo Sản Phẩm Bằng AI" (san-pham-so/) — tổng hợp 12 câu trả lời (mô hình Ikigai
 // rút gọn) thành 2-3 phương án tên sản phẩm + outline cấp 1, hoặc cảnh báo nếu dữ liệu quá yếu để
 // chốt. Cùng pattern callClaude/forced-tool-use với api/dinh-vi.js — xem file đó để đối chiếu.
+//
+// 2026-09-04: nhận thêm materialPath TUỲ CHỌN (Quỳnh: "tải tài liệu thì cho vào mục tìm ý tưởng
+// luôn... chứ 11 câu hỏi cũng cần thiết khi làm sản phẩm mà" — xác nhận qua AskUserQuestion: tài
+// liệu là input BỔ SUNG cho 11 câu trả lời, không thay thế). Khi có materialPath, đọc thẳng tài liệu
+// qua content block "document" (cùng pattern api/san-pham-so-goi-y-dinh-dang.js) CỘNG với text 11 câu
+// trả lời trong CÙNG 1 message — thay hẳn cho api/tim-san-pham-tu-tai-lieu.js (đã xoá, endpoint đó
+// trước đây chỉ đọc tài liệu, bỏ qua 11 câu hỏi).
 
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeSpsQuota, refundSpsQuota } = require('./_lib/sps-ai-quota');
 const { TOOL_TIM_SAN_PHAM } = require('./_lib/tim-san-pham-schema');
+const { SUPABASE_URL } = require('./_lib/supabase-admin');
 
 const QUESTION_LABELS = {
   nganh: 'Ngành/lĩnh vực sản phẩm',
@@ -28,6 +36,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Trước khi đề xuất phương án, tự đánh giá dữ liệu có đủ mạnh không (xem quy tắc du_lieu_du_manh trong schema) — thà báo cảnh báo còn hơn ép ra 1 sản phẩm không có cơ sở.
 - Tên sản phẩm phải áp đúng 1 trong 4 công thức đặt tên đã định nghĩa trong schema, chọn công thức khớp với định dạng đề xuất.
 - Mỗi phương án phải khác nhau THẬT SỰ (khác định dạng hoặc khác góc tiếp cận), không phải 3 cách diễn đạt của cùng 1 ý.
+- Nếu có tài liệu đính kèm: đọc kỹ, dựa sát vào nội dung THẬT trong đó (không bịa thêm kiến thức/số liệu không có trong tài liệu) — kết hợp với 12 câu trả lời để đề xuất, tài liệu là NGUỒN THAM KHẢO bổ sung cho câu trả lời, không thay thế.
 - Output tiếng Việt, gọi người dùng là "bạn".`;
 
 function buildUserBlock(answers) {
@@ -93,8 +102,29 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { answers } = req.body || {};
-    const userContent = `${buildUserBlock(answers)}\n\nHãy đánh giá và đề xuất kết quả theo đúng schema.`;
+    const { answers, materialPath } = req.body || {};
+
+    let userContent;
+    if (materialPath) {
+      if (!materialPath.startsWith(`materials/${user.id}-`)) { res.status(403).json({ error: 'Tài liệu không hợp lệ.' }); return; }
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!serviceKey) { res.status(500).json({ error: 'Server chưa cấu hình SUPABASE_SERVICE_ROLE_KEY.' }); return; }
+      const signResp = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/digital-products/${materialPath}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+        body: JSON.stringify({ expiresIn: 600 }),
+      });
+      if (!signResp.ok) { res.status(400).json({ error: 'Không đọc được tài liệu đã tải lên — thử tải lại file.' }); return; }
+      const signData = await signResp.json();
+      const materialUrl = `${SUPABASE_URL}/storage/v1${signData.signedURL}`;
+      userContent = [
+        { type: 'document', source: { type: 'url', url: materialUrl } },
+        { type: 'text', text: `${buildUserBlock(answers)}\n\nHãy đọc kỹ tài liệu đính kèm, kết hợp với dữ liệu trên, rồi đánh giá và đề xuất kết quả theo đúng schema.` },
+      ];
+    } else {
+      userContent = `${buildUserBlock(answers)}\n\nHãy đánh giá và đề xuất kết quả theo đúng schema.`;
+    }
+
     const result = await callClaude({ apiKey, system: SYSTEM_PROMPT, userContent, tool: TOOL_TIM_SAN_PHAM });
     res.status(200).json({ result });
   } catch (err) {

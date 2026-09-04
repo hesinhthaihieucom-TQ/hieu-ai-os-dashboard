@@ -1,6 +1,6 @@
 // Ký URL tạm (10 phút) để đọc 1 file "tài liệu/kiến thức" (materials/) mà user đã tải lên qua
-// api/san-pham-so-upload-material-url.js — dùng chung giữa nhánh A của Giai đoạn 1
-// (api/tim-san-pham-tu-tai-lieu.js có logic tương tự inline, giữ nguyên không đổi) và Giai đoạn 2
+// api/san-pham-so-upload-material-url.js — dùng chung giữa đầu wizard Giai đoạn 1
+// (api/tim-san-pham-phu-hop.js có logic tương tự inline, giữ nguyên không đổi) và Giai đoạn 2
 // (api/xay-dung-noi-dung.js, để nội dung viết ra bám sát tài liệu gốc thay vì chỉ dùng 1 lần ở bước
 // tìm ý tưởng rồi bỏ). Trả về null (không throw) nếu thiếu/lỗi — tài liệu là phần BỔ SUNG, không có
 // vẫn phải viết được bình thường.

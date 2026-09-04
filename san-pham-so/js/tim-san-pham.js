@@ -3,21 +3,20 @@
 // AI miễn phí/câu (1 lần), 1 lượt AI tổng hợp cuối ra kết quả có thể sửa tay. Khi đã chọn 1 phương
 // án, giao thẳng cho Giai đoạn 2 (window.renderXayDungNoiDung, xem xay-dung-noi-dung.js) — không
 // cần rời màn hình, không cần copy-paste tay.
+//
+// 2026-09-04: gộp nhánh "đã có tài liệu" vào THẲNG luồng 11 câu hỏi, không còn là 1 lựa chọn tách
+// biệt bỏ qua wizard nữa (Quỳnh: "cái mục tải tài liệu kiến thức lên thì cho vào mục tìm ý tưởng
+// luôn vì như thế cũng là tìm ý tưởng, chứ 11 câu hỏi cũng cần thiết khi làm sản phẩm mà" — xác nhận
+// qua AskUserQuestion: thêm bước tải tài liệu TUỲ CHỌN ngay đầu wizard, vẫn trả lời đủ 11 câu, AI
+// dùng CẢ tài liệu (nếu có) LẪN câu trả lời để tổng hợp). Bỏ hẳn màn "choose-path" + màn form riêng
+// cho tài liệu + endpoint api/tim-san-pham-tu-tai-lieu.js (đã xoá) — chỉ còn 1 endpoint
+// api/tim-san-pham-phu-hop.js nhận thêm materialPath tuỳ chọn.
 (function () {
 const WIZARD_DRAFT_KEY = 'tim-san-pham-wizard';
-const MATERIAL_DRAFT_KEY = 'tim-san-pham-material';
 const SUGGEST_LIMIT_PER_QUESTION = 1;
 
 // NGANH_OPTIONS/DINH_DANG_OPTIONS chuyển sang san-pham-so/js/util.js (2026-09-01) — dùng chung với
 // màn "Chọn Loại Sản Phẩm Số" (san-pham-so/js/chon-loai.js), tránh 2 danh sách lệch nhau về sau.
-
-function newMaterialForm() {
-  return {
-    nganh: '',
-    materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
-    doiTuong: '', dinhDang: '', gia: '',
-  };
-}
 
 const GROUPS = [
   { key: 'N', title: 'Ngành' },
@@ -57,18 +56,20 @@ function render(container, profile) {
     screen: 'loading', qIndex: 0, answers: {}, result: null, chosenIndex: null, error: null,
     suggestLoading: false, suggestions: null, suggestForQ: null, suggestCounts: {}, suggestError: null,
     editing: false, editForm: null, editSaving: false,
-    materialForm: newMaterialForm(), resultSource: null,
+    // Tài liệu tuỳ chọn — tải 1 lần ở màn "wizard-intro" (đầu wizard), mang theo suốt tới lúc tổng
+    // hợp kết quả (runGenerate() gửi kèm materialPath), KHÔNG phải 1 nhánh tách biệt bỏ qua 11 câu
+    // hỏi nữa (xem comment đầu file, 2026-09-04).
+    materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
     // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
     // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
     pendingId: null,
   };
 
   function persistWizardDraft() {
-    saveDraft(WIZARD_DRAFT_KEY, { qIndex: state.qIndex, answers: state.answers });
-  }
-
-  function persistMaterialDraft() {
-    saveDraft(MATERIAL_DRAFT_KEY, state.materialForm);
+    saveDraft(WIZARD_DRAFT_KEY, {
+      qIndex: state.qIndex, answers: state.answers,
+      materialPath: state.materialPath, materialFileName: state.materialFileName,
+    });
   }
 
   function draw() { container.innerHTML = html(); bind(); }
@@ -82,19 +83,15 @@ function render(container, profile) {
     if (pending && pending.result) {
       state.result = pending.result;
       state.pendingId = pending.id;
-      state.resultSource = (pending.answers && pending.answers.nguon === 'tai_lieu') ? 'material' : 'wizard';
       state.screen = 'result';
     } else {
       const wizardDraft = await loadDraft(WIZARD_DRAFT_KEY);
-      const materialDraft = await loadDraft(MATERIAL_DRAFT_KEY);
       if (wizardDraft) {
         state.qIndex = wizardDraft.qIndex || 0; state.answers = wizardDraft.answers || {};
+        state.materialPath = wizardDraft.materialPath || null; state.materialFileName = wizardDraft.materialFileName || null;
         state.screen = 'wizard';
-      } else if (materialDraft) {
-        state.materialForm = { ...state.materialForm, ...materialDraft };
-        state.screen = 'material-form';
       } else {
-        state.screen = 'choose-path';
+        state.screen = 'wizard-intro';
       }
     }
     draw();
@@ -104,65 +101,29 @@ function render(container, profile) {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
     if (state.screen === 'generating') return `<div class="loading"><div id="tsp-progress-el">${progressBarHtml(0)}</div><p>Đang tổng hợp kết quả…</p></div>`;
     if (state.screen === 'result') return resultHtml();
-    if (state.screen === 'choose-path') return choosePathHtml();
-    if (state.screen === 'material-form') return materialFormHtml();
+    if (state.screen === 'wizard-intro') return wizardIntroHtml();
     return wizardHtml();
   }
 
-  function choosePathHtml() {
+  // Màn mở đầu — tài liệu (nếu có) là TUỲ CHỌN, không thay thế 11 câu hỏi (2026-09-04, xem comment
+  // đầu file). Bấm "Bắt đầu" chuyển sang wizard ở câu 1 dù có tải tài liệu hay không.
+  function wizardIntroHtml() {
     return `
-      <h2>Bắt đầu tìm sản phẩm phù hợp</h2>
+      <h2>Tìm sản phẩm phù hợp</h2>
       <div class="hint-box">Dành cho người CHƯA rõ nên làm sản phẩm gì hoặc dạng nào. Nếu đã biết rõ chủ đề/đối tượng, chỉ cần chọn định dạng, dùng "🗂️ Chọn Loại Sản Phẩm Số" ở mục 2 sẽ nhanh hơn.</div>
       <div class="hint-box">📦 File của bạn đã HOÀN CHỈNH, sẵn sàng bán ngay, không cần AI viết thêm gì? Khỏi cần qua bước này — vào thẳng <a href="#san-pham">"🛒 Sản phẩm của tôi"</a>, tải file lên là xong.</div>
-      <div class="card" data-choose-path="material" style="cursor:pointer;">
-        <h2 style="font-size:16px;margin-bottom:6px;">📚 Tôi đã có sẵn tài liệu/kiến thức</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);">Tải lên 1 file PDF (ghi chú, bài viết, tài liệu cũ...) — AI đọc nội dung đó để đề xuất sản phẩm + VIẾT NỘI DUNG MỚI dựa theo, không cần trả lời 11 câu hỏi. (Tài liệu chỉ là nguồn tham khảo — sản phẩm cuối là nội dung AI viết ra, không phải đăng nguyên file này lên bán.)</div>
-      </div>
-      <div class="card" data-choose-path="wizard" style="cursor:pointer;">
-        <h2 style="font-size:16px;margin-bottom:6px;">🧭 Chưa có, giúp tôi tìm ý tưởng</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);">Trả lời 11 câu hỏi ngắn để AI gợi ý sản phẩm phù hợp với bạn.</div>
-      </div>
-    `;
-  }
-
-  function materialFormHtml() {
-    const f = state.materialForm;
-    const isOther = f.nganh && !NGANH_OPTIONS.includes(f.nganh);
-    return `
       <div class="card">
-        <h2 style="font-size:18px;">Tài liệu/kiến thức đã có</h2>
-        <label>Ngành/lĩnh vực</label>
-        <div class="chips">
-          ${NGANH_OPTIONS.map(o => `<div class="chip ${f.nganh === o ? 'selected' : ''}" data-mat-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
-        </div>
-        <input id="mat-nganh-other-input" type="text" placeholder="Hoặc tự nhập ngành/lĩnh vực khác" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">
-
-        <label style="margin-top:14px;">Tài liệu (PDF)</label>
-        <input id="mat-file-input" type="file" accept="application/pdf">
-        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
-        ${f.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(f.materialUploadError)}</div>` : ''}
-
-        <label style="margin-top:14px;">Đối tượng cụ thể bạn nhắm tới</label>
-        <input id="mat-doituong" type="text" value="${esc(f.doiTuong)}" placeholder='VD: mẹ bỉm sữa mới sinh con đầu lòng'>
-
-        <label style="margin-top:14px;">Định dạng mong muốn (tuỳ chọn)</label>
-        <div class="chips">${DINH_DANG_OPTIONS.map(o => `<div class="chip ${f.dinhDang === o.value ? 'selected' : ''}" data-mat-dinhdang="${esc(o.value)}">${esc(o.label)}</div>`).join('')}</div>
-
-        <label style="margin-top:14px;">Giá mong muốn (tuỳ chọn)</label>
-        <input id="mat-gia" type="text" value="${esc(f.gia)}" placeholder="VD: 149.000đ">
-
-        ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Trả lời 11 câu hỏi ngắn để AI gợi ý sản phẩm phù hợp với bạn.</div>
+        <label>📚 Đã có sẵn tài liệu/kiến thức? Tải lên đây (tuỳ chọn)</label>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:6px;">AI sẽ đọc tài liệu này CÙNG VỚI câu trả lời của bạn để đề xuất sát hơn — không bắt buộc, không có vẫn trả lời 11 câu bình thường.</div>
+        <input id="tsp-intro-file-input" type="file" accept="application/pdf">
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+        ${state.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(state.materialUploadError)}</div>` : ''}
         <div class="btn-row">
-          <span class="btn-ghost btn" id="mat-back-btn">← Quay lại</span>
-          <button class="btn" id="mat-submit-btn" ${!canSubmitMaterial() ? 'disabled' : ''}>Tìm sản phẩm phù hợp (8 lượt AI)</button>
+          <button class="btn" id="tsp-intro-start-btn" ${state.materialUploading ? 'disabled' : ''}>Bắt đầu →</button>
         </div>
       </div>
     `;
-  }
-
-  function canSubmitMaterial() {
-    const f = state.materialForm;
-    return !!(f.materialPath && f.nganh && f.doiTuong.trim() && !f.materialUploading);
   }
 
   function progressHtml() {
@@ -285,74 +246,33 @@ function render(container, profile) {
 
   function bind() {
     if (state.screen === 'result') { bindResult(); return; }
-    if (state.screen === 'choose-path') { bindChoosePath(); return; }
-    if (state.screen === 'material-form') { bindMaterialForm(); return; }
+    if (state.screen === 'wizard-intro') { bindWizardIntro(); return; }
     if (state.screen !== 'wizard') return;
     bindWizard();
   }
 
-  function bindChoosePath() {
-    container.querySelectorAll('[data-choose-path]').forEach(el => {
-      el.onclick = () => {
-        const v = el.getAttribute('data-choose-path');
-        state.screen = v === 'material' ? 'material-form' : 'wizard';
-        draw();
-      };
-    });
-  }
-
-  function bindMaterialForm() {
-    const f = state.materialForm;
-    container.querySelectorAll('[data-mat-nganh]').forEach(el => {
-      el.onclick = () => { f.nganh = el.getAttribute('data-mat-nganh'); persistMaterialDraft(); draw(); };
-    });
-    const otherInput = container.querySelector('#mat-nganh-other-input');
-    if (otherInput) otherInput.oninput = () => {
-      f.nganh = otherInput.value;
-      persistMaterialDraft();
-      const btn = container.querySelector('#mat-submit-btn');
-      if (btn) btn.disabled = !canSubmitMaterial();
-    };
-
-    container.querySelectorAll('[data-mat-dinhdang]').forEach(el => {
-      el.onclick = () => {
-        const v = el.getAttribute('data-mat-dinhdang');
-        f.dinhDang = (f.dinhDang === v) ? '' : v;
-        persistMaterialDraft(); draw();
-      };
-    });
-
-    const doiTuongEl = container.querySelector('#mat-doituong');
-    doiTuongEl.oninput = () => {
-      f.doiTuong = doiTuongEl.value;
-      persistMaterialDraft();
-      const btn = container.querySelector('#mat-submit-btn');
-      if (btn) btn.disabled = !canSubmitMaterial();
-    };
-    const giaEl = container.querySelector('#mat-gia');
-    giaEl.oninput = () => { f.gia = giaEl.value; persistMaterialDraft(); };
-
-    const fileEl = container.querySelector('#mat-file-input');
+  function bindWizardIntro() {
+    const fileEl = container.querySelector('#tsp-intro-file-input');
     fileEl.onchange = async () => {
       const file = fileEl.files[0];
       if (!file) return;
-      if (file.type !== 'application/pdf') { f.materialUploadError = 'Chỉ nhận file PDF.'; draw(); return; }
-      f.materialUploading = true; f.materialUploadError = null; draw();
+      if (file.type !== 'application/pdf') { state.materialUploadError = 'Chỉ nhận file PDF.'; draw(); return; }
+      state.materialUploading = true; state.materialUploadError = null; draw();
       try {
         const { uploadUrl, path } = await callApi('api/san-pham-so-upload-material-url', { file_name: file.name });
         const putResp = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': 'application/pdf' }, body: file });
         if (!putResp.ok) throw new Error('Upload file thất bại — thử lại giúp mình.');
-        f.materialPath = path; f.materialFileName = file.name;
-        persistMaterialDraft();
+        state.materialPath = path; state.materialFileName = file.name;
+        persistWizardDraft();
       } catch (e) {
-        f.materialUploadError = e.message;
+        state.materialUploadError = e.message;
       }
-      f.materialUploading = false;
+      state.materialUploading = false;
       draw();
     };
-
-    container.querySelector('#mat-back-btn').onclick = () => { state.screen = 'choose-path'; draw(); };
-    container.querySelector('#mat-submit-btn').onclick = runGenerateFromMaterial;
+    container.querySelector('#tsp-intro-start-btn').onclick = () => {
+      state.screen = 'wizard'; persistWizardDraft(); draw();
+    };
   }
 
   function bindWizard() {
@@ -407,12 +327,13 @@ function render(container, profile) {
     if (typeof state.editing === 'number') { bindEditForm(); return; }
     const redoBtn = container.querySelector('#tsp-redo-btn');
     if (redoBtn) redoBtn.onclick = async () => {
-      const backScreen = state.resultSource === 'material' ? 'material-form' : 'wizard';
-      if (!state.result.du_lieu_du_manh) { state.screen = backScreen; draw(); return; }
+      if (!state.result.du_lieu_du_manh) { state.screen = 'wizard'; draw(); return; }
       if (!confirm('Làm lại từ đầu? Kết quả hiện tại sẽ bị xoá.')) return;
       await clearIdeaResultById(state.pendingId);
       state.pendingId = null;
-      state.result = null; state.answers = {}; state.qIndex = 0; state.materialForm = newMaterialForm(); state.screen = 'choose-path';
+      state.result = null; state.answers = {}; state.qIndex = 0;
+      state.materialPath = null; state.materialFileName = null;
+      state.screen = 'wizard-intro';
       draw();
     };
     container.querySelectorAll('[data-edit-phuong-an]').forEach(el => {
@@ -480,52 +401,23 @@ function render(container, profile) {
     }
   }
 
-  async function runGenerateFromMaterial() {
-    state.screen = 'generating'; state.error = null; draw();
-    const stopProgress = animateProgressBar(container.querySelector('#tsp-progress-el'), 50);
-    try {
-      const f = state.materialForm;
-      // max_tokens=8000 ở server có thể cần hơn 90s để sinh xong — nâng timeout khớp server (180s).
-      const data = await callApi('api/tim-san-pham-tu-tai-lieu', {
-        materialPath: f.materialPath, nganh: f.nganh, doiTuong: f.doiTuong,
-        dinhDangMongMuon: f.dinhDang || null, giaMongMuon: f.gia || null,
-      }, 250000);
-      if (!data.result || !Array.isArray(data.result.phuong_an) || (data.result.du_lieu_du_manh && !data.result.phuong_an.length)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
-      state.result = data.result;
-      state.resultSource = 'material';
-      await clearDraft(MATERIAL_DRAFT_KEY);
-      const saved = await saveIdeaResult({
-        nganh: f.nganh || null,
-        // tai_lieu_path lưu lại để Giai đoạn 2 (xay-dung-noi-dung.js) dùng lại đúng tài liệu này khi
-        // viết nội dung thật, không chỉ dùng 1 lần ở bước tìm ý tưởng rồi bỏ (xem CLAUDE.md/plan).
-        answers: { nguon: 'tai_lieu', nganh: f.nganh, doi_tuong: f.doiTuong, dinh_dang_mong_muon: f.dinhDang || null, gia_mong_muon: f.gia || null, tai_lieu_path: f.materialPath },
-        result: state.result, chosen_index: null,
-      }, state.pendingId);
-      if (saved) state.pendingId = saved.id;
-      state.screen = 'result';
-    } catch (e) {
-      state.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
-      state.screen = 'material-form';
-    }
-    stopProgress();
-    try {
-      draw();
-    } catch (e) {
-      state.result = null; state.screen = 'material-form'; state.error = 'Có lỗi khi hiển thị kết quả — thử lại giúp mình.';
-      draw();
-    }
-  }
-
   async function runGenerate() {
     state.screen = 'generating'; state.error = null; draw();
     const stopProgress = animateProgressBar(container.querySelector('#tsp-progress-el'), 50);
     try {
-      const data = await callApi('api/tim-san-pham-phu-hop', { answers: state.answers }, 250000);
+      // materialPath tuỳ chọn (tải ở màn "wizard-intro") gửi kèm 11 câu trả lời — server (xem
+      // api/tim-san-pham-phu-hop.js) đọc THÊM tài liệu này nếu có, không thay thế câu trả lời.
+      const data = await callApi('api/tim-san-pham-phu-hop', { answers: state.answers, materialPath: state.materialPath || null }, 250000);
       if (!data.result || !Array.isArray(data.result.phuong_an) || (data.result.du_lieu_du_manh && !data.result.phuong_an.length)) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
       state.result = data.result;
-      state.resultSource = 'wizard';
       await clearDraft(WIZARD_DRAFT_KEY);
-      const saved = await saveIdeaResult({ nganh: state.answers.nganh || null, answers: state.answers, result: state.result, chosen_index: null }, state.pendingId);
+      const saved = await saveIdeaResult({
+        nganh: state.answers.nganh || null,
+        // tai_lieu_path lưu lại (nếu có tải) để Giai đoạn 2 (xay-dung-noi-dung.js) dùng lại đúng tài
+        // liệu này khi viết nội dung thật, không chỉ dùng 1 lần ở bước tìm ý tưởng rồi bỏ.
+        answers: { ...state.answers, tai_lieu_path: state.materialPath || null },
+        result: state.result, chosen_index: null,
+      }, state.pendingId);
       if (saved) state.pendingId = saved.id;
       state.screen = 'result';
     } catch (e) {
