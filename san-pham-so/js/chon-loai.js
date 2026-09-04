@@ -325,12 +325,13 @@ function render(container, profile) {
   // quan trọng, theo đúng yêu cầu "làm nổi các từ quan trọng... có thể màu chữ khác".
   function heyzineSoundGuideHtml() {
     return `
-      <div style="margin-top:8px;">Sau khi tạo sách lật, thêm nhạc nền/tiếng lật trang trong Heyzine:</div>
+      <div class="hint-box" style="margin-top:10px;">🎵 Muốn thêm nhạc nền/tiếng lật trang cho cuốn này?
       <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
         <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa tạo → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
         <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền) → tải file nhạc miễn phí bản quyền (Bensound.com/Pixabay) lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại.</li>
         <li>Bật tiếng lật trang: cũng cột STYLE → bấm <b style="color:var(--accent);">"Page Effect"</b> (Hiệu ứng lật trang) → bật công tắc <b style="color:var(--accent);">"Sound on page turn"</b> (Bật âm thanh khi lật trang).</li>
       </ol>
+      </div>
     `;
   }
 
@@ -342,8 +343,12 @@ function render(container, profile) {
   // mới làm được. Vì bắt buộc nên KHÔNG có nút "Để sau" nữa, form luôn mở sẵn khi chưa kết nối — không
   // thu gọn như bản trước. Cùng RPC `update_sps_heyzine_credentials`/field profile với tai-khoan.js.
   function heyzineInlineHtml(f) {
+    // Hướng dẫn thêm nhạc nền/tiếng lật trang KHÔNG hiện ở đây nữa — chỉ hiện SAU KHI đã tạo sách lật
+    // xong (trong khối "✅ Sách lật đã tạo xong" bên dưới), theo đúng yêu cầu Quỳnh 2026-09-04: "phần
+    // hướng dẫn thêm nhạc nền phải để sau khi đã tạo sách lật xong rồi mới hướng dẫn" — trước đó hiện
+    // ngay khi vừa kết nối xong, sớm hơn lúc người dùng thực sự cần tới nó.
     if (isHeyzineConnected()) {
-      return `<div class="hint-box" style="margin-top:12px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.${heyzineSoundGuideHtml()}</div>`;
+      return `<div class="hint-box" style="margin-top:12px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.</div>`;
     }
     return `
       <div class="card" style="margin-top:12px;">
@@ -397,6 +402,7 @@ function render(container, profile) {
             <a class="btn-ghost btn" href="${esc(f.result.heyzineUrl)}" target="_blank" rel="noopener">Xem thử sách lật →</a>
             <span class="btn" id="fb-use-btn">✅ Dùng làm sản phẩm để bán</span>
           </div>
+          ${heyzineSoundGuideHtml()}
         </div>
       ` : ''}
     `;

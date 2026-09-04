@@ -327,12 +327,13 @@ function render(container, ideaRow) {
   // màu accent cho từ khoá quan trọng, theo đúng yêu cầu "làm nổi các từ quan trọng".
   function heyzineSoundGuideHtml() {
     return `
-      <div style="margin-top:8px;">Sau khi xuất, thêm nhạc nền/tiếng lật trang trong Heyzine:</div>
+      <div class="hint-box" style="margin-top:10px;">🎵 Muốn thêm nhạc nền/tiếng lật trang cho cuốn này?
       <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
         <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa xuất → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
         <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền) → tải file nhạc miễn phí bản quyền (Bensound.com/Pixabay) lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại.</li>
         <li>Bật tiếng lật trang: cũng cột STYLE → bấm <b style="color:var(--accent);">"Page Effect"</b> (Hiệu ứng lật trang) → bật công tắc <b style="color:var(--accent);">"Sound on page turn"</b> (Bật âm thanh khi lật trang).</li>
       </ol>
+      </div>
     `;
   }
 
@@ -345,8 +346,11 @@ function render(container, ideaRow) {
   // phiên màn hình — nếu tính sẵn 1 lần, kết nối xong ngay tại đây sẽ không cập nhật được dòng "✓ đã
   // kết nối".
   function heyzineInlineHtml() {
+    // Hướng dẫn thêm nhạc nền/tiếng lật trang KHÔNG hiện ở đây — chỉ hiện SAU KHI đã xuất xong (trong
+    // khối "📖 Ebook đã xuất" bên dưới), theo đúng yêu cầu Quỳnh 2026-09-04: "phần hướng dẫn thêm nhạc
+    // nền phải để sau khi đã tạo sách lật xong rồi mới hướng dẫn".
     if (isHeyzineConnected()) {
-      return `<div class="hint-box" style="margin-top:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.${heyzineSoundGuideHtml()}</div>`;
+      return `<div class="hint-box" style="margin-top:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.</div>`;
     }
     return `
       <div class="card" style="margin-top:10px;">
@@ -385,6 +389,7 @@ function render(container, ideaRow) {
             <span class="btn-ghost btn" id="xdnd-export-ebook-btn" ${connected ? '' : 'disabled'}>Xuất lại</span>
           </div>
           ${heyzineInlineHtml()}
+          ${connected ? heyzineSoundGuideHtml() : ''}
         </div>
       `;
     }
