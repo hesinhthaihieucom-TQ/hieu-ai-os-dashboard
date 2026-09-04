@@ -15,3 +15,11 @@ thư mục này là tài liệu THAM CHIẾU lâu dài, không có hạn dùng.
   Sức Khỏe, Mục Đích Sống, Tâm Thức. Dùng làm khung tham chiếu (giọng văn, độ sâu, cấu trúc 4 phần:
   vết thương gốc → 5 vị trí rút cạn sinh khí → hệ quả 5 năm → bí mật đập tan vòng nghiệp) khi cần viết
   nội dung phân tích sâu tương tự cho các sản phẩm khác.
+
+- [triet-ly-tinh-khi-than-app-suc-khoe.md](triet-ly-tinh-khi-than-app-suc-khoe.md) — Khung triết lý
+  Đông phương Tinh - Khí - Thần (Jing-Qi-Shen) + đặc tả kỹ thuật đề xuất cho app Hiểu Để Khoẻ Mạnh
+  (Energy-Meter, Nhịp dừng, Insight Overlay "Xanh trong Đỏ", chốt chặn thương mại Unicity khi Tỳ Vị
+  tắc nghẽn...). Có phần đối chiếu cụ thể với `suc-khoe/` hiện tại ở cuối file — cái gì đã khớp sẵn,
+  cái gì là việc mới cần chốt phạm vi với chị Quỳnh trước khi code, vì khung này đổi tông giọng app
+  khá nhiều (từ "sức khỏe thể chất" sang "tâm thức/tâm linh"). Dùng lại được cho sản phẩm khác nếu
+  đụng chủ đề sức khỏe/năng lượng/tâm thức.
