@@ -166,6 +166,40 @@ Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 
     `;
   }
 
+  // Tab "Tinh · Khí · Thần" (2026-08-31, xem kho-tai-lieu/triet-ly-tinh-khi-than-app-suc-khoe.md,
+  // chị Quỳnh: "áp dụng chung với nhau" — SONG SONG với 3 tab thực hành đã có, KHÔNG thay thế) — 3
+  // tab kia đã phủ Bế Tinh (Sản Phẩm: sản phẩm+giờ dùng) và Dưỡng Khí (Ăn Uống+Tập Luyện), còn thiếu
+  // đúng mảnh An Thần — tab này bù đúng phần còn thiếu, tĩnh (không lưu DB) giống anUongTab/tapLuyenTab.
+  function tinhKhiThanTab(){
+    return `
+      <div class="card" style="margin-bottom:18px;">
+        ${skSectionHeaderHtml('Bế Tinh — bảo tồn tài nguyên', '#c0392b', '🕯️')}
+        ${skRichBodyHtml(`- Ngủ đều nhịp sinh học: lên giường trước 23h để cơ thể khôi phục lại niềm tin và tự sửa chữa tế bào sâu.
+- Giữ ấm lưng và chân trước khi ngủ: ngâm chân nước ấm 10 phút, đi vớ mỏng để kéo nhiệt lượng xuống đan điền, xoa dịu hệ thần kinh.
+- Nói câu "Hôm nay đủ rồi" trước khi ngủ: nghi thức đóng lại một ngày, buông bảng việc cần làm để không bị đốt lén năng lượng trong đêm.
+- Quả Dục: chọn đúng 1 thói quen đang vượt ngưỡng (thức khuya lướt điện thoại, làm việc quá sức...) và giảm 20-30% áp lực đó.`)}
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
+        ${skSectionHeaderHtml('Dưỡng Khí — khai thông năng lượng', '#2f7fc4', '🌬️')}
+        ${skRichBodyHtml(`- Hơi thở bụng: 3 phút vào sáng và tối để sạc lại khí lực.
+- Đi bộ hiền: 20-30 phút/ngày, nhịp nhẹ, vừa đi vừa nói chuyện được — tránh đi nhanh đến mức thở dốc, tim đập nhanh (đó là "tiêu khí", đốt cháy sinh lực dự trữ).
+- Ăn no 7 phần, nhai kỹ, ăn chậm, tắt màn hình khi ăn — Tỳ Vị là gốc của khí, ăn quá tải khiến khí bị nghẽn thay vì sinh ra.
+⚠️ Lưu ý an toàn: tuyệt đối không tắm nước lạnh ngay sau khi tập (5 Thức Suối Nguồn Tây Tạng hoặc bất kỳ bài tập nào) — để cơ thể nghỉ tự nhiên 30 phút rồi mới tắm nước ấm.`)}
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
+        ${skSectionHeaderHtml('An Thần — làm sạch tâm trí', '#7c6bd4', '✨')}
+        ${skRichBodyHtml(`- Nghi thức "Tắt Tâm" 10 phút mỗi ngày: ngồi thẳng lưng nhẹ nhàng (không gồng), thở chậm 12 nhịp, thở ra dài hơn hít vào.
+- Tháo 3 nút thắt: thả lỏng Hàm (hàm căng thì đầu căng) — thả lỏng Vai (đặt xuống gánh nặng đang gồng gánh) — thả lỏng Bụng (thôi gồng lên để tỏ ra mạnh mẽ, để bụng phồng xẹp tự nhiên theo hơi thở).
+- Tồn Thần Thanh Tâm: tắt toàn bộ màn hình điện thoại trước khi ngủ 30 phút để thần không bị dắt đi.
+- Nước ấm buổi sáng: uống ngay khi thức dậy, nghi thức kết nối cơ thể vật lý và thiên nhiên trước khi bắt đầu ngày mới.`)}
+      </div>
+
+      <div class="hint-box">Theo dõi điểm Tinh/Khí/Thần hằng tuần ở mục "Theo Dõi Sức Khỏe Theo Tuần" (phần Siêu Âm Năng Lượng) để biết trụ nào đang cần chăm nhiều hơn.</div>
+    `;
+  }
+
   function tapLuyenTab(){
     return `
       <div class="card">
@@ -208,8 +242,9 @@ Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 
         <div class="chip ${state.tab==='sanpham'?'selected':''}" data-tab="sanpham">🧪 Sản Phẩm</div>
         <div class="chip ${state.tab==='anuong'?'selected':''}" data-tab="anuong">🥗 Ăn Uống</div>
         <div class="chip ${state.tab==='tapluyen'?'selected':''}" data-tab="tapluyen">🏃 Tập Luyện</div>
+        <div class="chip ${state.tab==='tinhkhithan'?'selected':''}" data-tab="tinhkhithan">🕯️ Tinh · Khí · Thần</div>
       </div>
-      ${state.tab==='sanpham' ? sanPhamTab() : state.tab==='anuong' ? anUongTab() : tapLuyenTab()}
+      ${state.tab==='sanpham' ? sanPhamTab() : state.tab==='anuong' ? anUongTab() : state.tab==='tinhkhithan' ? tinhKhiThanTab() : tapLuyenTab()}
     `;
   }
 

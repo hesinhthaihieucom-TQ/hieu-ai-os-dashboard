@@ -20,22 +20,47 @@ const SK_METRIC_GROUPS = [
     ['vandong','Khả năng vận động','/10'], ['damongtoc','Da, móng, tóc','/10'], ['anuong','Chất lượng ăn uống','/10'],
     ['sucben','Sức bền','/10'], ['giaotiep','Giao tiếp, tự tin','/10'], ['chatluongcs','Chất lượng cuộc sống','/10'],
   ]},
+  // Siêu Âm Năng Lượng — Tinh/Khí/Thần (2026-08-31, xem kho-tai-lieu/triet-ly-tinh-khi-than-app-suc-khoe.md,
+  // chị Quỳnh: "áp dụng chung với nhau" — SONG SONG với khung y học ở trên, không thay thế). Câu hỏi
+  // viết lại theo hướng TÍCH CỰC (cao = khoẻ/mạnh) để cùng chiều "càng cao càng tốt" với nhóm "Yếu tố
+  // cuộc sống" phía trên — tài liệu gốc hỏi theo hướng triệu chứng (cao = càng hao mòn/uất/tán loạn),
+  // nhưng để 2 hướng ngược nhau trong cùng 1 màn hình rất dễ gây nhầm khi nhập liệu.
+  { title:'Siêu Âm Năng Lượng — Tinh · Khí · Thần (tự đánh giá 1–10)', color:'#7c6bd4', items:[
+    ['tinh_ben','Tinh — sức bền lưng gối/tóc/móng, tỉnh táo dù ngủ đủ','/10'],
+    ['tinh_khonggong','Tinh — cho phép bản thân nghỉ khi mệt, không cố gồng giữ hình ảnh','/10'],
+    ['khi_thongsuot','Khí — hơi thở sâu, ngực nhẹ nhõm, vai gáy thư giãn','/10'],
+    ['khi_dammuon','Khí — dám nhìn thẳng vào tiền bạc, nói thật trong các mối quan hệ','/10'],
+    ['than_yen','Thần — tâm trí yên, ít độc thoại nội tâm/bồn chồn','/10'],
+    ['than_chapnhan','Thần — chấp nhận bản thân, ít phán xét/mâu thuẫn nội tại','/10'],
+  ]},
+];
+
+// Nhóm 2 câu tự đánh giá ở trên thành điểm trung bình 3 trụ Tinh/Khí/Thần (Energy-Meter) — trả về
+// null cho trụ nào chưa nhập đủ cả 2 câu ở mốc đang xem, không tự suy diễn từ 1 câu.
+const SK_TKT_PILLARS = [
+  { key:'tinh', label:'Tinh', color:'#c0392b', icon:'🕯️', items:['tinh_ben','tinh_khonggong'] },
+  { key:'khi', label:'Khí', color:'#2f7fc4', icon:'🌬️', items:['khi_thongsuot','khi_dammuon'] },
+  { key:'than', label:'Thần', color:'#7c6bd4', icon:'✨', items:['than_yen','than_chapnhan'] },
 ];
 
 // Chiều "tốt hơn" của mỗi chỉ số — dùng để tô màu chênh lệch trong bảng so sánh (giống betterFor của
 // bản gốc, kể cả 2 chỗ họ không gán chiều nào — baptay/ct34 — nên bảng so sánh sẽ để màu trung tính).
 const SK_BETTER_LOW = { eo1:1, eo2:1, nguc:1, bung_ron:1, bung_duoi:1, mong:1, dui:1, bapchan:1, cannang:1, mo:1, monoitang:1, glucose:1, tg:1, hba1c:1, ldl:1, uric:1, chol:1 };
-const SK_BETTER_HIGH = { kgco:1, hdl:1, nangluong:1, cl_ngu:1, macdo:1, vandong:1, damongtoc:1, anuong:1, sucben:1, giaotiep:1, chatluongcs:1 };
+const SK_BETTER_HIGH = { kgco:1, hdl:1, nangluong:1, cl_ngu:1, macdo:1, vandong:1, damongtoc:1, anuong:1, sucben:1, giaotiep:1, chatluongcs:1, tinh_ben:1, tinh_khonggong:1, khi_thongsuot:1, khi_dammuon:1, than_yen:1, than_chapnhan:1 };
 
 // Liên kết sang Sản Phẩm (2026-08-30, chị Quỳnh yêu cầu "cần có sự liên hệ giữa các mục để bán được
 // thêm sản phẩm", giống cơ chế vừa thêm ở Kiểm Tra Sức Khỏe) — mỗi chỉ số gán 1 nhánh sản phẩm liên
 // quan nhất (null = không có nhánh nào phù hợp, bỏ qua). Ngưỡng tuyệt đối dùng đúng mốc y khoa đã
 // dùng ở Kiểm Tra Sức Khỏe (glucose/tg/hba1c) để có gợi ý ngay từ mốc "Bắt đầu", không cần đợi có dữ
 // liệu 2 mốc để so sánh xu hướng.
+// tinh_*/khi_* gán 'thai_doc' đúng theo bảng "Chốt chặn vật lý" trong tài liệu triết lý (Tinh<4→Thải
+// độc ruột, Khí<4→Thải độc ký sinh trùng — cả 2 đều thuộc nhánh Thải độc trong sk_products.category).
+// than_* không gán nhánh nào — tài liệu gốc không đề xuất SKU cụ thể cho Thần, để null.
 const SK_METRIC_CATEGORY = {
   eo1:'giam_mo', eo2:'giam_mo', bung_ron:'giam_mo', bung_duoi:'giam_mo', cannang:'giam_mo', mo:'giam_mo', monoitang:'giam_mo', kgco:'tang_de_khang',
   glucose:'giam_mo', tg:'giam_mo', hba1c:'giam_mo', ldl:'giam_mo', chol:'giam_mo', uric:'thai_doc',
   nangluong:'tang_de_khang', cl_ngu:'thai_doc', vandong:'xuong_khop', damongtoc:'lam_dep_da', anuong:'thai_doc', sucben:'tang_de_khang',
+  tinh_ben:'thai_doc', tinh_khonggong:'thai_doc', khi_thongsuot:'thai_doc', khi_dammuon:'thai_doc',
 };
 const SK_ABSOLUTE_CONCERN = {
   glucose: v => v >= 5.6,
@@ -76,6 +101,15 @@ function render(container, ctx){
     if(val==='') delete state.metrics[key][week]; else state.metrics[key][week] = val;
   }
 
+  // Energy-Meter: điểm trung bình mỗi trụ Tinh/Khí/Thần ở mốc đang xem — null nếu chưa nhập đủ 2 câu.
+  function tktScores(week){
+    return SK_TKT_PILLARS.map(p=>{
+      const vals = p.items.map(k=>parseFloat(getVal(k, week))).filter(isFinite);
+      const score = vals.length===p.items.length ? Math.round((vals[0]+vals[1])/2*10)/10 : null;
+      return { ...p, score };
+    });
+  }
+
   async function save(){
     state.saving = true; draw();
     const { error } = await ctx.supabase.from('sk_weekly_logs').upsert({
@@ -83,6 +117,13 @@ function render(container, ctx){
     }, { onConflict:'user_id' });
     state.saving = false;
     state.justSaved = !error;
+    if(!error){
+      // Nhịp dừng (Stop-Point Trigger) — Khí hoặc Thần tuần này ≤4/10 (xem util.js skStopPointOverlay
+      // để biết vì sao đơn giản hoá ngưỡng "3 ngày liên tiếp" trong tài liệu gốc thành theo tuần).
+      const scores = tktScores(state.week);
+      const low = scores.find(s=>(s.key==='khi'||s.key==='than') && s.score!=null && s.score<=4);
+      if(low) skStopPointOverlay();
+    }
     if(error) alert('Lỗi khi lưu: ' + error.message);
     draw();
   }
@@ -118,7 +159,7 @@ function render(container, ctx){
       if(!isFinite(v)) return;
       let concern = false;
       if(SK_ABSOLUTE_CONCERN[key]) concern = SK_ABSOLUTE_CONCERN[key](v);
-      else if(g.title.startsWith('Yếu tố')) concern = v <= 4;
+      else if(g.title.startsWith('Yếu tố') || g.title.startsWith('Siêu Âm Năng Lượng')) concern = v <= 4;
       else if(state.week>0){
         const base = parseFloat(getVal(key,0));
         if(isFinite(base) && base!==v){
@@ -155,6 +196,25 @@ function render(container, ctx){
         ${SK_WEEK_NAMES.map((w,i)=>`<div class="chip ${state.week===i?'selected':''}" data-week="${i}" style="position:relative;">${esc(w)}${i===autoWeek?' <span style="opacity:.7;">●</span>':''}</div>`).join('')}
       </div>
       <div style="font-size:12px;color:var(--ink-soft);margin-bottom:20px;">● Mốc hiện tại theo ngày bắt đầu gói của bạn</div>
+
+      ${(() => {
+        const scores = tktScores(state.week);
+        if(scores.every(s=>s.score==null)) return '';
+        return `
+        <div class="card" style="margin-bottom:18px;background:linear-gradient(135deg,#14201B,#1f2e26);color:#F7F4EC;">
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;opacity:.75;margin-bottom:14px;">🔮 Siêu Âm Năng Lượng — ${esc(SK_WEEK_NAMES[state.week])}</h3>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;">
+            ${scores.map(s=>`
+              <div style="flex:1;min-width:100px;text-align:center;">
+                <div style="font-size:20px;">${s.icon}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;margin:4px 0;color:${s.score==null?'rgba(247,244,236,.4)':(s.score<=4?'#e8643c':'#F7F4EC')};">${s.score==null?'—':s.score}</div>
+                <div style="font-size:12px;opacity:.75;">${esc(s.label)}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="font-size:11.5px;opacity:.6;margin-top:12px;">Điền đủ 2 câu mỗi trụ ở nhóm "Siêu Âm Năng Lượng" bên dưới để ra điểm — điểm càng cao càng khoẻ.</div>
+        </div>
+      `;})()}
 
       ${SK_METRIC_GROUPS.map(g=>`
         <div class="card" style="margin-bottom:18px;">

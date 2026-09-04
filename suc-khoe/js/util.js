@@ -17,6 +17,26 @@ function openImageLightbox(src, alt){
   document.body.appendChild(overlay);
 }
 
+// "Nhịp dừng" (Stop-Point Trigger, 2026-08-31 — theo tài liệu triết lý Tinh-Khí-Thần chị Quỳnh gửi,
+// xem kho-tai-lieu/triet-ly-tinh-khi-than-app-suc-khoe.md) — màn hình đen ngắn nhắc dừng lại thở khi
+// điểm Khí/Thần ở mức thấp lúc lưu Theo Dõi Tuần. Bản gốc tài liệu đề xuất trigger "3 ngày liên tiếp"
+// nhưng app hiện chỉ có check-in theo TUẦN (chưa có check-in hàng ngày) nên đơn giản hoá thành: hiện
+// ngay khi điểm Khí hoặc Thần của tuần vừa lưu ≤4/10. Tự đóng sau 5 giây hoặc bấm ra ngoài đóng sớm.
+function skStopPointOverlay(){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#14201B;display:flex;align-items:center;justify-content:center;padding:24px;cursor:pointer;';
+  overlay.innerHTML = `
+    <div style="text-align:center;color:#F7F4EC;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.12em;opacity:.7;margin-bottom:14px;">NHỊP DỪNG</div>
+      <div style="font-size:22px;font-weight:700;line-height:1.6;">DỪNG LẠI<br>THỞ 3 NHỊP<br>CHỌN LẠI</div>
+    </div>
+  `;
+  function close(){ overlay.remove(); clearTimeout(timer); }
+  overlay.onclick = close;
+  document.body.appendChild(overlay);
+  const timer = setTimeout(close, 5000);
+}
+
 // Popup xác nhận trước khi xoá dữ liệu — Promise<boolean>, true nếu người dùng bấm xác nhận.
 function confirmModal(message, confirmLabel){
   return new Promise((resolve)=>{
