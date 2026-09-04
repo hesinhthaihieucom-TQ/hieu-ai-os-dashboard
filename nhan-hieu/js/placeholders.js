@@ -43,9 +43,30 @@ const HELP_SECTIONS = [
 // có sẵn từ feature-tour.js, không viết lại UI hướng dẫn) — onDone truyền vào rỗng vì đây là XEM LẠI
 // chủ động, không phải popup tự động lần đầu, không được đụng vào profiles.last_seen_announcement_at
 // (đụng vào sẽ vô tình đẩy mốc "đã xem" qua 1 thông báo MỚI HƠN mà người này thực ra chưa xem).
+// Rút gọn danh sách "Thông báo đã đăng" + thêm ô tìm câu hỏi (2026-09-04, theo yêu cầu chị Quỳnh:
+// "cho cái thanh tìm kiếm câu hỏi... đỡ phải kéo xuống tìm" + "mục thông báo cho rút gọn lại... mục
+// nào mà dài quá cũng cho rút gọn xong bấm hiện mới hiện" — chốt thành quy tắc chung toàn app).
+const ANNOUNCEMENTS_COLLAPSED_COUNT = 3;
 function renderHelp(container, ctx){
-  const state = { question:'', asking:false, answer:null, error:null, freeQuestionUsed:false, announcements:[], loadingAnnouncements:true };
+  const state = {
+    question:'', asking:false, answer:null, error:null, freeQuestionUsed:false, announcements:[], loadingAnnouncements:true,
+    showAllAnnouncements:false, faqSearch:'',
+  };
   function draw(){ container.innerHTML = html(); bind(); }
+
+  // Tìm câu hỏi trong TOÀN BỘ HELP_SECTIONS (gõ vào là ra ngay, không phải kéo xuống dò từng nhóm) —
+  // khớp cả câu hỏi lẫn câu trả lời, trả về danh sách PHẲNG (không còn nhóm) khi có từ khoá.
+  function faqMatches(){
+    const q = state.faqSearch.trim().toLowerCase();
+    if(!q) return null;
+    const out = [];
+    HELP_SECTIONS.forEach(sec=>{
+      sec.items.forEach(item=>{
+        if(item.q.toLowerCase().includes(q) || item.a.toLowerCase().includes(q)) out.push(item);
+      });
+    });
+    return out;
+  }
 
   async function loadAnnouncements(){
     if(!ctx || !ctx.supabase) { state.loadingAnnouncements = false; return; }
@@ -74,7 +95,7 @@ function renderHelp(container, ctx){
     <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">📋 Thông báo &amp; hướng dẫn đã đăng</div>
     ${state.loadingAnnouncements ? `<div class="section" style="color:var(--ink-soft);">Đang tải…</div>`
       : state.announcements.length===0 ? `<div class="section" style="color:var(--ink-soft);">Chưa có thông báo nào.</div>`
-      : state.announcements.map(a=>`
+      : (state.showAllAnnouncements ? state.announcements : state.announcements.slice(0, ANNOUNCEMENTS_COLLAPSED_COUNT)).map(a=>`
         <div class="section">
           <h3>${esc(a.emoji||'🎉')} ${esc(a.title)}</h3>
           <div class="body" style="white-space:pre-wrap;">${esc(a.body)}</div>
@@ -82,11 +103,24 @@ function renderHelp(container, ctx){
           ${Array.isArray(a.steps) && a.steps.length ? `<div class="btn-row" style="margin-top:10px;"><span class="btn-ghost btn btn-sm" data-replay-announcement="${a.id}">▶ Xem lại hướng dẫn từng bước</span></div>` : ''}
         </div>
       `).join('')}
+    ${!state.showAllAnnouncements && state.announcements.length > ANNOUNCEMENTS_COLLAPSED_COUNT ? `
+      <div class="btn-row" style="justify-content:flex-start;"><span class="btn-ghost btn btn-sm" data-action="show-all-announcements">Xem thêm ${state.announcements.length - ANNOUNCEMENTS_COLLAPSED_COUNT} thông báo cũ hơn →</span></div>
+    ` : ''}
 
-    ${HELP_SECTIONS.map(sec=>`
-      <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">${esc(sec.group)}</div>
-      ${sec.items.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('')}
-    `).join('')}
+    <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">Câu hỏi thường gặp</div>
+    <input type="text" id="hd-faq-search" value="${esc(state.faqSearch)}" placeholder="Tìm câu hỏi... (vd: giọng văn, lịch đăng, kho content)" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:14px;background:#FDFCF8;">
+    ${(()=>{
+      const matches = faqMatches();
+      if(matches){
+        return matches.length===0
+          ? `<div class="section" style="color:var(--ink-soft);">Không tìm thấy câu hỏi khớp — thử từ khoá khác, hoặc gõ hẳn câu hỏi ở ô "Hỏi AI trực tiếp" phía trên.</div>`
+          : matches.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('');
+      }
+      return HELP_SECTIONS.map(sec=>`
+        <div style="margin-top:18px;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;">${esc(sec.group)}</div>
+        ${sec.items.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('')}
+      `).join('');
+    })()}
     <div class="section highlight" style="margin-top:28px;">
       <h3>Liên hệ</h3>
       <div class="body">Cần hỗ trợ thêm hoặc muốn tìm hiểu các sản phẩm khác trong hệ sinh thái HIỂU? Truy cập <a href="https://hesinhthaihieu.com" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline;">hesinhthaihieu.com</a>.</div>
@@ -105,6 +139,16 @@ function renderHelp(container, ctx){
         if(ann && window.startFeatureAnnouncement) window.startFeatureAnnouncement(ann, ()=>{});
       };
     });
+    const showAllAnnBtn = container.querySelector('[data-action="show-all-announcements"]');
+    if(showAllAnnBtn) showAllAnnBtn.onclick = ()=>{ state.showAllAnnouncements = true; draw(); };
+    const faqSearchInput = container.querySelector('#hd-faq-search');
+    if(faqSearchInput) faqSearchInput.oninput = ()=>{
+      state.faqSearch = faqSearchInput.value;
+      const pos = faqSearchInput.selectionStart;
+      draw();
+      const newEl = container.querySelector('#hd-faq-search');
+      if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
+    };
   }
 
   async function ask(){

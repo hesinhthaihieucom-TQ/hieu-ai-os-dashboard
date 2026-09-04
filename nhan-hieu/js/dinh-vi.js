@@ -90,7 +90,11 @@ function render(container, ctx){
     editingTruc:false, editTrucChinh:'', editTruPhu:[], editTrucSaving:false, editTrucError:null,
     reconstructingAnswers:false, reconstructFailed:false,
     storyBoSung:[], storyUpdating:false, storyUpdateError:null,
-    editingStory:false, editStoryText:'', editStorySaving:false, editStoryError:null };
+    editingStory:false, editStoryText:'', editStorySaving:false, editStoryError:null,
+    // "cái định vị này cũng thế, cho đầu mục thôi, muốn đọc hết thì bấm ra cho đỡ dài" (chị Quỳnh
+    // 2026-09-04) — mỗi section dài (sectionHtml()) mặc định rút gọn, key nào có trong Set này mới
+    // xổ hết ra (xem collapsibleTextHtml() ở util.js).
+    expandedIds:new Set() };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
 
   // Giữ lại câu trả lời đang làm dở (16 câu, dễ mất công gõ) khi chuyển trang rồi quay lại — khác
@@ -323,7 +327,9 @@ function render(container, ctx){
   // vì thực tế AI không chèn xuống dòng đều đặn dù đã yêu cầu trong schema.
   function sectionHtml(title, body){
     if(!body || !String(body).trim()) return '';
-    return `<div class="section"><h3>${esc(title)}</h3><div class="body">${escBold(breakSentences(body))}</div></div>`;
+    const key = 'sec:'+title;
+    const inner = collapsibleTextHtml(key, body, state.expandedIds, t=>`<div class="body">${escBold(breakSentences(t))}</div>`);
+    return `<div class="section"><h3>${esc(title)}</h3>${inner}</div>`;
   }
 
   // Danh sách (mảng chuỗi) — bỏ qua hẳn cả section nếu mảng rỗng, thay vì hiện tiêu đề với danh sách trống.
@@ -443,7 +449,7 @@ function render(container, ctx){
                 <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Sửa trực tiếp — miễn phí, không tốn lượt AI.</span>
               </div>
             </div>
-          ` : `<div class="body" style="margin-top:10px;">${escBold(breakSentences(cc.cau_chuyen))}</div>`}
+          ` : `<div style="margin-top:10px;">${collapsibleTextHtml('cau-chuyen-ca-nhan', cc.cau_chuyen, state.expandedIds, t=>`<div class="body">${escBold(breakSentences(t))}</div>`)}</div>`}
           ${!state.editingStory && cc.qua_so_sai && (cc.cau_hoi_lam_ro||[]).length ? `
             <div class="hint-box" style="margin-top:12px;">
               <div style="margin-bottom:10px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu dưới đây rồi bấm <b>"Cập nhật câu chuyện"</b> để AI viết lại mượt hơn, hoặc bấm "Sửa trực tiếp" ở trên để tự gõ, không cần làm lại cả Định Vị:</div>
@@ -573,6 +579,16 @@ function render(container, ctx){
 
     const tourBtn = container.querySelector('#dv-start-tour');
     if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
+    // "Đọc thêm/Thu gọn" cho mọi section dài (collapsibleTextHtml ở util.js) — quy tắc chung
+    // (chị Quỳnh 2026-09-04), dùng chung 1 Set duy nhất cho toàn trang.
+    container.querySelectorAll('[data-toggle-full]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-toggle-full');
+        if(state.expandedIds.has(key)) state.expandedIds.delete(key); else state.expandedIds.add(key);
+        draw();
+      };
+    });
 
     const startBtn = container.querySelector('[data-action="start"]');
     // Giữ nguyên state.answers khi bấm lại — người dùng đang SỬA câu trả lời cũ, không phải xoá

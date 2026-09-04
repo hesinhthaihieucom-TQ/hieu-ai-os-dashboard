@@ -165,6 +165,28 @@ function isoDate(d){
   return new Date(dt - tzOffset).toISOString().slice(0,10);
 }
 
+// "chỗ nào cũng làm theo quy tắc đó... quy tắc chung cho toàn bộ các app làm sau này" (chị Quỳnh
+// 2026-09-04) — RÚT GỌN mặc định + "Đọc thêm" mới xổ hết, dùng CHUNG cho MỌI khối nội dung dài trong
+// TOÀN BỘ app (không riêng 1 trang) — cùng cơ chế excerpt()+toggle đã chứng minh ổn ở kho-content.js/
+// kho-hook.js (contentBodyHtml/data-toggle-full/expandedIds Set), viết thành 1 hàm DÙNG CHUNG ở đây
+// (util.js, global, không module-scoped) để module khác gọi được thay vì tự viết lại logic riêng.
+// rawText: text THÔ (không HTML) — quyết định có cần cắt hay không (>maxLen) VÀ dùng để cắt khi thu
+// gọn. renderFn(text): nơi gọi tự quyết định render đoạn text đó ra HTML thế nào (escBold+breakSentences
+// cho đoạn văn dài, esc() thường cho text đơn giản...) — hàm này không tự áp 1 kiểu render cố định.
+// expandedIds: 1 Set do module gọi tự giữ trong state riêng của nó (mỗi module 1 Set độc lập) — bấm
+// "Đọc thêm"/"Thu gọn" chỉ cần add/delete đúng key rồi vẽ lại, xem ví dụ bind() ở dinh-vi.js.
+function collapsibleTextHtml(key, rawText, expandedIds, renderFn, maxLen){
+  const text = String(rawText||'');
+  const isExpanded = expandedIds.has(key);
+  const preview = excerpt(text, maxLen || 220);
+  const needsToggle = text.length > preview.length;
+  const shown = isExpanded ? text : preview;
+  const toggle = needsToggle
+    ? `<span data-toggle-full="${esc(key)}" style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;">${isExpanded?'Thu gọn ↑':'Đọc thêm →'}</span>`
+    : '';
+  return `${renderFn(shown)}${toggle}`;
+}
+
 // Y HỆT currentCycleKey() ở api/_lib/quota-cycle.js (server) — PHẢI giữ đúng công thức giống nhau,
 // xem giải thích đầy đủ ở file đó. "tính theo tháng kể từ ngày người dùng đăng ký chứ không phải
 // theo tháng trên lịch" (chị Quỳnh 2026-09-01) — paid_ai_month đổi từ chuỗi tháng lịch 'YYYY-MM'

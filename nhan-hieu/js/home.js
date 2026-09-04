@@ -60,8 +60,10 @@ function render(container, ctx){
   const state = {
     loading:true, done:{},
     reviews:[], reviewsLoading:true, reviewComment:'', reviewSubmitting:false, reviewError:null, reviewJustSubmitted:false,
+    showAllReviews:false,
     statsLoading:true, streak:0, thisWeekHasPost:false, monthlyViews:0, viewsByDay:{}, daysInMonth:30,
   };
+  const REVIEWS_COLLAPSED_COUNT = 3; // "mục nào mà dài quá cũng cho rút gọn" (chị Quỳnh 2026-09-04)
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
 
@@ -269,12 +271,15 @@ function render(container, ctx){
         </div>
         ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải…</div>`
           : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào được duyệt.</div>`
-          : state.reviews.map(r=>`
+          : (state.showAllReviews ? state.reviews : state.reviews.slice(0, REVIEWS_COLLAPSED_COUNT)).map(r=>`
             <div class="section">
               <div class="body" style="white-space:pre-wrap;">${esc(r.comment)}</div>
               <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
             </div>
           `).join('')}
+        ${!state.showAllReviews && state.reviews.length > REVIEWS_COLLAPSED_COUNT ? `
+          <div class="btn-row" style="justify-content:flex-start;"><span class="btn-ghost btn btn-sm" data-action="show-all-reviews">Xem thêm ${state.reviews.length - REVIEWS_COLLAPSED_COUNT} đánh giá →</span></div>
+        ` : ''}
       </div>
     `;
   }
@@ -287,6 +292,8 @@ function render(container, ctx){
     if(rvComment) rvComment.oninput = ()=>{ state.reviewComment = rvComment.value; };
     const rvSubmit = container.querySelector('[data-action="submit-review"]');
     if(rvSubmit) rvSubmit.onclick = submitReview;
+    const showAllRvBtn = container.querySelector('[data-action="show-all-reviews"]');
+    if(showAllRvBtn) showAllRvBtn.onclick = ()=>{ state.showAllReviews = true; draw(); };
   }
 
   boot();
