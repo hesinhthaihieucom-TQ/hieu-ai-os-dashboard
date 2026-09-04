@@ -26,6 +26,13 @@ function render(container, ideaRow) {
   // kể cả sau khi rời trang quay lại (trước 2026-09-01, taiLieu bị xoá draft mà KHÔNG lưu lại đâu cả,
   // nên không bao giờ tới được bước viết nội dung thật — bug đã sửa).
   const materialPath = (ideaRow.answers && ideaRow.answers.tai_lieu_path) || null;
+  // Bìa & màu ebook (2026-09-04) — tính TRƯỚC object state vì themeUseCustomColor cần so khớp với
+  // giá trị ebookTheme ĐÃ ÁP DỤNG FALLBACK (không phải ideaRow.ebook_theme thô, thường null với sản
+  // phẩm mới — so trực tiếp với null luôn ra "không khớp preset nào" nên mặc định hiện lầm "Tự chọn
+  // màu" thay vì đúng preset đầu tiên, bug thật phát hiện khi tự chụp ảnh màn hình demo soát lại).
+  const initialEbookTheme = ideaRow.ebook_theme || { coverMode: 'solid', moodPreset: EBOOK_THEME_PRESETS[0].key, accent: EBOOK_THEME_PRESETS[0].accent, bg: EBOOK_THEME_PRESETS[0].bg, coverImageDataUrl: null };
+  const initialIsCustomColor = !EBOOK_THEME_PRESETS.some(p => p.accent === initialEbookTheme.accent && p.bg === initialEbookTheme.bg);
+
   const state = {
     screen: ideaRow.outline_cap_2 ? 'outline2' : 'intro',
     outline2: ideaRow.outline_cap_2 || null,
@@ -42,11 +49,11 @@ function render(container, ideaRow) {
     editingOutlineIndex: null, // index (flattenSections) của phần outline cấp 2 đang sửa tay, null = không sửa
     editOutlineForm: null,
     tongDuyetLoading: false, tongDuyetResult: null, // KHÔNG lưu DB — tính lại mỗi lần bấm, xem plan
-    // Bìa & màu ebook (2026-09-04, xem product_idea_results.ebook_theme + api/_lib/pdf-ebook.js).
     // coverMode: 'ai' (gpt-image-1 theo moodPreset) | 'upload' (ảnh tự tải lên) | 'solid' (chỉ màu).
-    ebookTheme: ideaRow.ebook_theme || { coverMode: 'solid', moodPreset: EBOOK_THEME_PRESETS[0].key, accent: EBOOK_THEME_PRESETS[0].accent, bg: EBOOK_THEME_PRESETS[0].bg, coverImageDataUrl: null },
-    themeUseCustomColor: !EBOOK_THEME_PRESETS.some(p => ideaRow.ebook_theme && p.accent === ideaRow.ebook_theme.accent && p.bg === ideaRow.ebook_theme.bg),
+    ebookTheme: initialEbookTheme,
+    themeUseCustomColor: initialIsCustomColor,
     coverGenerating: false, coverUploading: false, themeError: null,
+    illustrationUploading: false, // ảnh minh hoạ TỪNG PHẦN (khác ảnh bìa) — xem illustrationBlockHtml
     previewLoading: false, previewPdfBase64: null, previewTimer: null,
     error: null,
   };
@@ -471,6 +478,58 @@ function render(container, ideaRow) {
   // Nhắc mạnh hơn khi sản phẩm KHÔNG có tài liệu gốc nào — theo đúng nguyên tắc "bổ sung góc nhìn cá
   // nhân là bắt buộc" của quy trình cũ. Nhẹ nhàng hơn khi đã có tài liệu, vì nội dung khi đó đã ít
   // nhiều bám sát thực tế của người dùng rồi.
+  // Ảnh minh hoạ (2026-09-04) — KHÁC hẳn bìa ebook (không gọi AI vẽ ảnh trực tiếp, tốn phí thật nhân
+  // theo số phần). Thay vào đó dùng lại đúng mẫu đã có sẵn ở nhan-hieu/js/sua-kenh.js (mục ảnh bìa
+  // kênh): AI viết SẴN 1 prompt trong chính lệnh gọi "viết nội dung" (không tốn lượt AI thêm, chỉ là
+  // 1 field nữa trong cùng 1 lần gọi) — người bán tự copy, dán vào ChatGPT, tải ảnh kết quả lên lại.
+  function illustrationBlockHtml(s) {
+    const prompt = s.viet && s.viet.goi_y_anh_minh_hoa;
+    if (!prompt) return '';
+    const imageUrl = s.viet.anh_minh_hoa_url;
+    return `
+      <div class="hint-box">
+        <b>🖼️ Ảnh minh hoạ gợi ý</b>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--panel);padding:10px;border-radius:6px;margin:8px 0;white-space:pre-wrap;border:1px solid var(--line);">${esc(prompt)}</div>
+        <div class="btn-row" style="margin:0 0 8px;">
+          <span class="btn-ghost btn btn-sm" data-copy-illustration-prompt="${esc(prompt)}">Copy prompt</span>
+          <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Mở ChatGPT →</a>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;">Dán prompt vào ChatGPT để tạo ảnh, rồi tải ảnh kết quả lên đây — ảnh sẽ tự chèn vào đúng phần này khi xuất PDF.</div>
+        ${imageUrl ? `<img src="${esc(imageUrl)}" style="max-width:160px;border-radius:8px;display:block;margin-bottom:8px;border:1px solid var(--line);">` : ''}
+        <input id="xdnd-illustration-upload" type="file" accept="image/*">
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${state.illustrationUploading ? 'Đang xử lý ảnh…' : ''}</div>
+      </div>
+    `;
+  }
+
+  function bindIllustrationBlock() {
+    container.querySelectorAll('[data-copy-illustration-prompt]').forEach(el => {
+      el.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(el.getAttribute('data-copy-illustration-prompt'));
+          const old = el.textContent;
+          el.textContent = 'Đã copy ✓';
+          setTimeout(() => { el.textContent = old; }, 1500);
+        } catch (e) {}
+      };
+    });
+    const uploadEl = container.querySelector('#xdnd-illustration-upload');
+    if (uploadEl) uploadEl.onchange = async () => {
+      const file = uploadEl.files[0];
+      if (!file) return;
+      const s = state.sections[state.activeIndex];
+      state.illustrationUploading = true; draw();
+      try {
+        s.viet.anh_minh_hoa_url = await compressImageToDataUrl(file, 900, 0.8);
+        await saveIdeaResult({ sections: state.sections }, ideaRow.id);
+      } catch (e) {
+        state.error = e.message || 'Không đọc được ảnh.';
+      }
+      state.illustrationUploading = false;
+      draw();
+    };
+  }
+
   function personalPerspectiveHintHtml() {
     if (getMaterialPath()) {
       return `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>`;
@@ -490,6 +549,7 @@ function render(container, ideaRow) {
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.nguon_tham_khao && s.nghien_cuu.nguon_tham_khao.length) ? `<div class="hint-box"><b>🔍 Nguồn tham khảo:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.nguon_tham_khao.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.khoang_trong_thi_truong && s.nghien_cuu.khoang_trong_thi_truong.length) ? `<div class="hint-box"><b>📊 Khoảng trống thị trường:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.khoang_trong_thi_truong.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${illustrationBlockHtml(s)}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -523,6 +583,7 @@ function render(container, ideaRow) {
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.nguon_tham_khao && s.nghien_cuu.nguon_tham_khao.length) ? `<div class="hint-box"><b>🔍 Nguồn tham khảo:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.nguon_tham_khao.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.khoang_trong_thi_truong && s.nghien_cuu.khoang_trong_thi_truong.length) ? `<div class="hint-box"><b>📊 Khoảng trống thị trường:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.khoang_trong_thi_truong.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${illustrationBlockHtml(s)}
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn btn-sm" id="xdnd-save-edit-btn">💾 Lưu chỉnh sửa</span>
@@ -606,10 +667,12 @@ function render(container, ideaRow) {
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
       container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-draft-textarea', (s, val) => { s.viet.noi_dung = val; });
       container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, state.sections[state.activeIndex].used_web_search);
+      bindIllustrationBlock();
     } else if (state.screen === 'section-final') {
       container.querySelector('#xdnd-back-outline-btn').onclick = () => { state.screen = 'outline2'; draw(); };
       container.querySelector('#xdnd-save-edit-btn').onclick = () => saveManualEdit('#xdnd-final-textarea', (s, val) => { s.review.ban_da_chinh = val; });
       container.querySelector('#xdnd-rewrite-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, state.sections[state.activeIndex].used_web_search);
+      bindIllustrationBlock();
     }
   }
 

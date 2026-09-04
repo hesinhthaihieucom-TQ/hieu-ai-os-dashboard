@@ -102,10 +102,15 @@ function buildEbookPdf({ idea, outline2, sections, onlyIndex, lessonCover, theme
       const baiTap = sectionBaiTap(sections[index], entry.item);
       const viDu = sectionViDu(sections[index]);
       const tomTat = sections[index] && sections[index].viet && sections[index].viet.tom_tat_3_y;
+      // Ảnh minh hoạ TỪNG PHẦN (2026-09-04) — người bán tự dán prompt AI gợi ý sẵn vào ChatGPT rồi tải
+      // ảnh kết quả lên (xem san-pham-so/js/xay-dung-noi-dung.js illustrationBlockHtml), KHÁC bìa ebook
+      // (không gọi AI vẽ ảnh ở đây, không tốn phí thật nhân theo số phần).
+      const illustrationUrl = sections[index] && sections[index].viet && sections[index].viet.anh_minh_hoa_url;
 
       y = drawSectionHeading(doc, th, entry.kind, entry.item.tieu_de, y, pageW);
       y = drawParagraph(doc, body, y, pageW);
 
+      if (illustrationUrl) { y = ensureSpace(doc, th, y, pageH); y = drawIllustrationImage(doc, illustrationUrl, y, pageW); }
       if (viDu) { y = ensureSpace(doc, th, y, pageH); y = drawExampleCard(doc, th, viDu, y, pageW); }
       if (baiTap) { y = ensureSpace(doc, th, y, pageH); y = drawActionBox(doc, th, baiTap, y, pageW); }
       if (tomTat && tomTat.length) { y = ensureSpace(doc, th, y, pageH); y = drawTakeawaysBox(doc, th, tomTat, y, pageW); }
@@ -221,6 +226,27 @@ function drawTakeawaysBox(doc, th, items, y, pageW) {
     iy += heights[i] + 8;
   });
   return y + boxH + 18;
+}
+
+// Ảnh minh hoạ TỪNG PHẦN (data URL base64 người bán tự tải lên sau khi dùng prompt AI gợi ý ở ChatGPT
+// — xem illustrationUrl ở buildEbookPdf). Bọc try/catch riêng — 1 ảnh lỗi/hỏng không được làm hỏng cả
+// PDF, chỉ đơn giản bỏ qua khối này. openImage() đọc kích thước thật để tự tính đúng chiều cao sau khi
+// scale-fit (doc.image({fit}) không trả lại kích thước đã dùng, phải tự tính để cộng dồn y).
+function drawIllustrationImage(doc, dataUrl, y, pageW) {
+  try {
+    const base64 = String(dataUrl).split(',')[1] || '';
+    const buf = Buffer.from(base64, 'base64');
+    const img = doc.openImage(buf);
+    const maxW = pageW - MARGIN * 2;
+    const maxH = 260;
+    const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+    const w = img.width * scale;
+    const h = img.height * scale;
+    doc.image(buf, MARGIN + (maxW - w) / 2, y, { width: w, height: h });
+    return y + h + 16;
+  } catch (e) {
+    return y;
+  }
 }
 
 // ===== Bìa =====

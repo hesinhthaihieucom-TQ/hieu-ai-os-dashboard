@@ -114,8 +114,15 @@ const TOOL_VIET = {
         type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 3,
         description: 'Đúng 3 ý quan trọng nhất người đọc cần nhớ sau phần này — ngắn gọn (1 câu/ý), để hiện thành khối tóm tắt cuối phần, giúp người đọc không phải đọc lại cả phần để nắm ý chính.',
       },
+      // 2026-09-04: KHÁC hẳn goi_y_anh_bia bên nhan-hieu/api/sua-kenh.js (ảnh CHÂN DUNG người dùng,
+      // bắt buộc dùng ảnh thật họ tải lên làm gốc) — đây là ảnh MINH HOẠ KHÁI NIỆM cho nội dung phần,
+      // không liên quan tới người bán, nên KHÔNG được yêu cầu dùng ảnh tải lên làm gốc.
+      goi_y_anh_minh_hoa: {
+        type: 'string',
+        description: 'Prompt tạo 1 ảnh minh hoạ cho ĐÚNG nội dung phần này, sẵn sàng dán thẳng vào ChatGPT/công cụ tạo ảnh AI để tạo ngay — viết bằng tiếng Anh (tương thích tốt nhất với công cụ tạo ảnh). Mô tả 1 ảnh minh hoạ khái niệm/biểu tượng/tình huống phù hợp đúng ý chính của phần này, phong cách biên tập/tạp chí chuyên nghiệp, ánh sáng đẹp. TUYỆT ĐỐI KHÔNG yêu cầu vẽ chữ/text nào trong ảnh (chữ tiếng Việt AI vẽ trực tiếp hay lỗi dấu, người dùng không cần chữ trong ảnh minh hoạ này). Sẵn sàng copy-paste dùng ngay, không cần chỉnh sửa thêm.',
+      },
     },
-    required: ['noi_dung', 'vi_du', 'bai_tap', 'tom_tat_3_y'],
+    required: ['noi_dung', 'vi_du', 'bai_tap', 'tom_tat_3_y', 'goi_y_anh_minh_hoa'],
   },
 };
 
