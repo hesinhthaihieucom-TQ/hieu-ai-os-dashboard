@@ -274,6 +274,7 @@ function render(container, profile) {
     }
     return `
       <h2>Chọn 1 phương án phù hợp nhất</h2>
+      ${state.error ? `<div class="error-box" style="margin-bottom:12px;">${esc(state.error)}</div>` : ''}
       ${(r.phuong_an || []).map((p, i) => phuongAnCardHtml(p, i)).join('')}
       <div class="btn-row"><span class="btn-ghost btn" id="tsp-redo-btn">Làm lại từ đầu</span></div>
     `;
@@ -448,6 +449,16 @@ function render(container, profile) {
   }
 
   async function chooseAndProceed(i) {
+    // AI đôi khi bỏ sót field required dù schema đánh dấu bắt buộc (forced tool_choice không ép
+    // buộc tuyệt đối) — nếu để lọt, Giai đoạn 2 sẽ chặn với lỗi kỹ thuật khó hiểu ("Thiếu thông tin
+    // sản phẩm/outline cấp 1") ngay khi bấm "Xây outline chi tiết", muộn hơn nhiều và khó hiểu hơn so
+    // với chặn NGAY tại đây, đúng lúc còn nút "✏️ Tự sửa" ngay trước mắt để bổ sung outline tay.
+    const p = state.result.phuong_an[i];
+    if (!Array.isArray(p.outline_cap_1) || !p.outline_cap_1.length) {
+      state.error = 'Phương án này chưa có outline cấp 1 (AI bỏ sót) — bấm "✏️ Tự sửa" bên dưới để tự thêm outline trước khi chọn.';
+      draw();
+      return;
+    }
     state.chosenIndex = i;
     const saved = await saveIdeaResult({ result: state.result, chosen_index: i }, state.pendingId);
     window.renderXayDungNoiDung(container, saved);
