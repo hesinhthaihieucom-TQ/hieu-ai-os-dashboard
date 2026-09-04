@@ -94,7 +94,13 @@ function render(container, ctx){
     // "cái định vị này cũng thế, cho đầu mục thôi, muốn đọc hết thì bấm ra cho đỡ dài" (chị Quỳnh
     // 2026-09-04) — mỗi section dài (sectionHtml()) mặc định rút gọn, key nào có trong Set này mới
     // xổ hết ra (xem collapsibleTextHtml() ở util.js).
-    expandedIds:new Set() };
+    expandedIds:new Set(),
+    // "cho tất cả các phần ở định vị đều đc ng dùng tự sửa lại đi" (chị Quỳnh 2026-09-04) — dùng
+    // CHUNG 1 bộ state cho MỌI section đơn-đoạn-văn (EDITABLE_SECTIONS), riêng 2 section ghép nhiều
+    // field nhỏ (Dấu ấn hình ảnh thương hiệu/Nỗi đau & rào cản) có state riêng vì shape khác hẳn.
+    editingSectionKey:null, editSectionText:'', editSectionSaving:false, editSectionError:null,
+    editingDauAn:false, editDauAn:null, editDauAnSaving:false, editDauAnError:null,
+    editingNoiDau:false, editNoiDau:null, editNoiDauSaving:false, editNoiDauError:null };
   let stopHeavyProgress = null; // dừng vòng tròn % + nhả wake lock khi tác vụ AI nặng xong (thành công hoặc lỗi)
 
   // Giữ lại câu trả lời đang làm dở (16 câu, dễ mất công gõ) khi chuyển trang rồi quay lại — khác
@@ -332,6 +338,102 @@ function render(container, ctx){
     return `<div class="section"><h3>${esc(title)}</h3>${inner}</div>`;
   }
 
+  // "cho tất cả các phần ở định vị đều đc ng dùng tự sửa lại đi" (chị Quỳnh 2026-09-04) — mọi mục
+  // văn bản đơn (1 đoạn dài) trong kết quả Định Vị đều tự sửa được trực tiếp, KHÔNG gọi AI (giống hệt
+  // cơ chế "Sửa trực tiếp" đã làm cho Câu chuyện cá nhân trước đó) — get/set đóng gói sẵn field nào
+  // thuộc luot1 hay luot2, dùng CHUNG 1 bộ state.editingSectionKey/editSectionText/... cho MỌI mục,
+  // không cần thêm state riêng cho từng mục một (đỡ lặp lại y hệt 9 lần).
+  const EDITABLE_SECTIONS = {
+    ket_luan: { title:'Kết luận định vị', get:()=>state.luot1.ket_luan_dinh_vi, set:v=>{ state.luot1 = { ...state.luot1, ket_luan_dinh_vi:v }; } },
+    tong_quan: { title:'Tổng quan thương hiệu', get:()=>state.luot1.tong_quan_thuong_hieu, set:v=>{ state.luot1 = { ...state.luot1, tong_quan_thuong_hieu:v }; } },
+    ho_so: { title:'Hồ sơ chuyên môn', get:()=>state.luot1.ho_so_chuyen_mon, set:v=>{ state.luot1 = { ...state.luot1, ho_so_chuyen_mon:v }; } },
+    loi_the: { title:'Lợi thế cạnh tranh', get:()=>state.luot1.loi_the_canh_tranh, set:v=>{ state.luot1 = { ...state.luot1, loi_the_canh_tranh:v }; } },
+    hinh_anh: { title:'Hình ảnh nên xây', get:()=>state.luot1.hinh_anh_nen_xay, set:v=>{ state.luot1 = { ...state.luot1, hinh_anh_nen_xay:v }; } },
+    ban_sac: { title:'Bản sắc & Triết lý thương hiệu', get:()=>state.luot1.ban_sac_triet_ly_thuong_hieu, set:v=>{ state.luot1 = { ...state.luot1, ban_sac_triet_ly_thuong_hieu:v }; } },
+    giong_dieu: { title:'Giọng điệu & ngôn ngữ', get:()=>state.luot1.giong_dieu_ngon_ngu, set:v=>{ state.luot1 = { ...state.luot1, giong_dieu_ngon_ngu:v }; } },
+    khong_theo_duoi: { title:'Không theo đuổi', get:()=>state.luot1.khong_theo_duoi, set:v=>{ state.luot1 = { ...state.luot1, khong_theo_duoi:v }; } },
+    chan_dung: { title:'Chân dung khách hàng', get:()=>state.luot2 && state.luot2.chan_dung_khach_hang, set:v=>{ state.luot2 = { ...state.luot2, chan_dung_khach_hang:v }; } },
+    khao_khat: { title:'Khao khát & mục tiêu', get:()=>state.luot2 && state.luot2.khao_khat_muc_tieu, set:v=>{ state.luot2 = { ...state.luot2, khao_khat_muc_tieu:v }; } },
+    insight: { title:'Insight cốt lõi', get:()=>state.luot2 && state.luot2.insight_cot_loi, set:v=>{ state.luot2 = { ...state.luot2, insight_cot_loi:v }; } },
+  };
+  function editableSectionHtml(fieldKey, opts){
+    const field = EDITABLE_SECTIONS[fieldKey];
+    const body = field.get();
+    if(!body || !String(body).trim()) return '';
+    const isEditing = state.editingSectionKey === fieldKey;
+    const highlight = opts && opts.highlight;
+    // Chỉ "Kết luận định vị" có kiểu chữ quote-serif đặc biệt (giữ y hệt style gốc trước khi sửa) —
+    // "Insight cốt lõi" cũng nằm trong khung highlight nhưng body vẫn kiểu chữ thường như trước đây.
+    const serif = opts && opts.serif;
+    return `<div class="section${highlight?' highlight':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin-bottom:0;">${esc(field.title)}</h3>
+        ${!isEditing ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-edit-section="${fieldKey}">✏️ Sửa</span>` : ''}
+      </div>
+      ${isEditing ? `
+        <div style="margin-top:14px;">
+          <textarea id="edit-section-text" style="min-height:140px;">${esc(state.editSectionText)}</textarea>
+          ${state.editSectionError?`<div class="error-box" style="margin-top:10px;">${esc(state.editSectionError)}</div>`:''}
+          <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+            <button class="btn btn-sm" data-action="save-section" ${state.editSectionSaving?'disabled':''}>${state.editSectionSaving?'Đang lưu…':'Lưu'}</button>
+            <span class="btn-ghost btn btn-sm" data-action="cancel-edit-section">Huỷ</span>
+            <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Miễn phí, không tốn lượt AI.</span>
+          </div>
+        </div>
+      ` : `<div style="margin-top:${highlight?'6':'10'}px;">${collapsibleTextHtml('sec:'+fieldKey, body, state.expandedIds, t=>`<div class="body"${serif?` style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;line-height:1.6;"`:''}>${escBold(breakSentences(t))}</div>`)}</div>`}
+    </div>`;
+  }
+  async function saveSection(){
+    if(state.editSectionSaving || !state.editingSectionKey) return;
+    const field = EDITABLE_SECTIONS[state.editingSectionKey];
+    if(!state.editSectionText.trim()){ state.editSectionError = 'Không được để trống.'; draw(); return; }
+    state.editSectionSaving = true; state.editSectionError = null; draw();
+    try{
+      field.set(state.editSectionText.trim());
+      await persist({ luot1: state.luot1, luot2: state.luot2 });
+      state.editingSectionKey = null;
+    } catch(e){ state.editSectionError = e.message; }
+    state.editSectionSaving = false; draw();
+  }
+
+  // "Dấu ấn hình ảnh thương hiệu" và "Nỗi đau & rào cản" là section GHÉP TỪ NHIỀU FIELD nhỏ (khác
+  // các mục trên chỉ 1 đoạn văn) — sửa trực tiếp bằng 1 form nhiều ô nhỏ, cùng khuôn với "Trục phụ"
+  // ở Hệ trục nội dung (mảng input text), không dùng chung EDITABLE_SECTIONS ở trên vì shape khác hẳn.
+  function dauAnSnapshot(){
+    const d = (state.luot1 && state.luot1.dau_an_hinh_anh) || {};
+    return {
+      hanh_dong_dac_trung: d.hanh_dong_dac_trung||'', do_vat_prop: d.do_vat_prop||'',
+      khong_gian_signature: d.khong_gian_signature||'', phong_cach_xuat_hien: d.phong_cach_xuat_hien||'',
+      goc_quay_pov: d.goc_quay_pov||'', canh_mo_dau: (d.canh_mo_dau||[]).filter(Boolean),
+    };
+  }
+  function noiDauSnapshot(){
+    const n = (state.luot2 && state.luot2.noi_dau_rao_can) || {};
+    return { be_mat:n.be_mat||'', sau_ben_trong:n.sau_ben_trong||'', noi_so:n.noi_so||'', rao_can_chua_hanh_dong:n.rao_can_chua_hanh_dong||'' };
+  }
+  async function saveDauAn(){
+    if(state.editDauAnSaving) return;
+    state.editDauAnSaving = true; draw();
+    try{
+      const d = state.editDauAn;
+      const cleanCanh = d.canh_mo_dau.map(c=>c.trim()).filter(Boolean);
+      state.luot1 = { ...state.luot1, dau_an_hinh_anh: { ...d, canh_mo_dau: cleanCanh } };
+      await persist({ luot1: state.luot1, luot2: state.luot2 });
+      state.editingDauAn = false;
+    } catch(e){ state.editDauAnError = e.message; }
+    state.editDauAnSaving = false; draw();
+  }
+  async function saveNoiDau(){
+    if(state.editNoiDauSaving) return;
+    state.editNoiDauSaving = true; draw();
+    try{
+      state.luot2 = { ...state.luot2, noi_dau_rao_can: { ...state.editNoiDau } };
+      await persist({ luot1: state.luot1, luot2: state.luot2 });
+      state.editingNoiDau = false;
+    } catch(e){ state.editNoiDauError = e.message; }
+    state.editNoiDauSaving = false; draw();
+  }
+
   // Danh sách (mảng chuỗi) — bỏ qua hẳn cả section nếu mảng rỗng, thay vì hiện tiêu đề với danh sách trống.
   function listSectionHtml(title, items, highlight){
     const list = (items||[]).filter(x=>x && String(x).trim());
@@ -423,14 +525,14 @@ function render(container, ctx){
           <div class="btn-row" style="margin-top:2px;"><button class="btn btn-sm" data-action="add-asset">Thêm tài sản</button></div>
         </div>
       </div>
-      <div class="section highlight"><h3>Kết luận định vị</h3><div class="body" style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;line-height:1.6;">${escBold(breakSentences(r.ket_luan_dinh_vi))}</div></div>
-      ${sectionHtml('Tổng quan thương hiệu', r.tong_quan_thuong_hieu)}
-      ${sectionHtml('Hồ sơ chuyên môn', r.ho_so_chuyen_mon)}
-      ${sectionHtml('Lợi thế cạnh tranh', r.loi_the_canh_tranh)}
-      ${sectionHtml('Hình ảnh nên xây', r.hinh_anh_nen_xay)}
-      ${sectionHtml('Bản sắc & Triết lý thương hiệu', r.ban_sac_triet_ly_thuong_hieu)}
-      ${sectionHtml('Giọng điệu & ngôn ngữ', r.giong_dieu_ngon_ngu)}
-      ${sectionHtml('Không theo đuổi', r.khong_theo_duoi)}
+      ${editableSectionHtml('ket_luan', { highlight:true, serif:true })}
+      ${editableSectionHtml('tong_quan')}
+      ${editableSectionHtml('ho_so')}
+      ${editableSectionHtml('loi_the')}
+      ${editableSectionHtml('hinh_anh')}
+      ${editableSectionHtml('ban_sac')}
+      ${editableSectionHtml('giong_dieu')}
+      ${editableSectionHtml('khong_theo_duoi')}
       ${(()=>{
         const cc = r.cau_chuyen_ca_nhan;
         if(!cc || !cc.cau_chuyen) return '';
@@ -475,26 +577,74 @@ function render(container, ctx){
           ['Không gian', d.khong_gian_signature], ['Phong cách', d.phong_cach_xuat_hien], ['Góc quay POV', d.goc_quay_pov],
         ]);
         const canh = (d.canh_mo_dau||[]).filter(Boolean);
-        if(!body && canh.length===0) return '';
-        return `<div class="section"><h3>Dấu ấn hình ảnh thương hiệu</h3>
-          ${body?`<div class="body">${body}</div>`:''}
-          ${canh.length?`<ul>${canh.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
+        if(!body && canh.length===0 && !state.editingDauAn) return '';
+        return `<div class="section">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin-bottom:0;">Dấu ấn hình ảnh thương hiệu</h3>
+            ${!state.editingDauAn ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-dau-an">✏️ Sửa</span>` : ''}
+          </div>
+          ${state.editingDauAn ? `
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Hành động đặc trưng</label><textarea data-dauan-field="hanh_dong_dac_trung" style="min-height:auto;height:40px;">${esc(state.editDauAn.hanh_dong_dac_trung)}</textarea></div>
+              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Đồ vật/prop</label><textarea data-dauan-field="do_vat_prop" style="min-height:auto;height:40px;">${esc(state.editDauAn.do_vat_prop)}</textarea></div>
+              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Không gian</label><textarea data-dauan-field="khong_gian_signature" style="min-height:auto;height:40px;">${esc(state.editDauAn.khong_gian_signature)}</textarea></div>
+              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Phong cách</label><textarea data-dauan-field="phong_cach_xuat_hien" style="min-height:auto;height:40px;">${esc(state.editDauAn.phong_cach_xuat_hien)}</textarea></div>
+              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Góc quay POV</label><textarea data-dauan-field="goc_quay_pov" style="min-height:auto;height:40px;">${esc(state.editDauAn.goc_quay_pov)}</textarea></div>
+              <div>
+                <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Cảnh mở đầu (mỗi dòng 1 ý)</label>
+                ${state.editDauAn.canh_mo_dau.map((c,i)=>`
+                  <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+                    <input data-dauan-canh="${i}" value="${esc(c)}" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+                    <span data-dauan-canh-remove="${i}" style="color:var(--danger);cursor:pointer;font-size:12px;">Xoá</span>
+                  </div>
+                `).join('')}
+                <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="add-dauan-canh">+ Thêm cảnh</span>
+              </div>
+              ${state.editDauAnError?`<div class="error-box">${esc(state.editDauAnError)}</div>`:''}
+              <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
+                <button class="btn btn-sm" data-action="save-dau-an" ${state.editDauAnSaving?'disabled':''}>${state.editDauAnSaving?'Đang lưu…':'Lưu'}</button>
+                <span class="btn-ghost btn btn-sm" data-action="cancel-edit-dau-an">Huỷ</span>
+              </div>
+            </div>
+          ` : `
+            ${body?`<div class="body" style="margin-top:10px;">${body}</div>`:''}
+            ${canh.length?`<ul>${canh.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
+          `}
         </div>`;
       })()}
       ${r2 ? `
         <div style="text-align:center;margin:34px 0 18px;">
           <div class="tag">Chiến Lược &amp; Dòng Tiền</div>
         </div>
-        ${sectionHtml('Chân dung khách hàng', r2.chan_dung_khach_hang)}
+        ${editableSectionHtml('chan_dung')}
         ${(()=>{
           const n = r2.noi_dau_rao_can || {};
           const body = pairsBodyHtml([
             ['Bề mặt', n.be_mat], ['Sâu bên trong', n.sau_ben_trong], ['Nỗi sợ', n.noi_so], ['Rào cản', n.rao_can_chua_hanh_dong],
           ]);
-          return body ? `<div class="section"><h3>Nỗi đau & rào cản (4 tầng)</h3><div class="body">${body}</div></div>` : '';
+          if(!body && !state.editingNoiDau) return '';
+          return `<div class="section">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <h3 style="margin-bottom:0;">Nỗi đau &amp; rào cản (4 tầng)</h3>
+              ${!state.editingNoiDau ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-noi-dau">✏️ Sửa</span>` : ''}
+            </div>
+            ${state.editingNoiDau ? `
+              <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Bề mặt</label><textarea data-noidau-field="be_mat" style="min-height:auto;height:48px;">${esc(state.editNoiDau.be_mat)}</textarea></div>
+                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Sâu bên trong</label><textarea data-noidau-field="sau_ben_trong" style="min-height:auto;height:48px;">${esc(state.editNoiDau.sau_ben_trong)}</textarea></div>
+                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Nỗi sợ</label><textarea data-noidau-field="noi_so" style="min-height:auto;height:48px;">${esc(state.editNoiDau.noi_so)}</textarea></div>
+                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Rào cản</label><textarea data-noidau-field="rao_can_chua_hanh_dong" style="min-height:auto;height:48px;">${esc(state.editNoiDau.rao_can_chua_hanh_dong)}</textarea></div>
+                ${state.editNoiDauError?`<div class="error-box">${esc(state.editNoiDauError)}</div>`:''}
+                <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
+                  <button class="btn btn-sm" data-action="save-noi-dau" ${state.editNoiDauSaving?'disabled':''}>${state.editNoiDauSaving?'Đang lưu…':'Lưu'}</button>
+                  <span class="btn-ghost btn btn-sm" data-action="cancel-edit-noi-dau">Huỷ</span>
+                </div>
+              </div>
+            ` : `<div class="body" style="margin-top:10px;">${body}</div>`}
+          </div>`;
         })()}
-        ${sectionHtml('Khao khát & mục tiêu', r2.khao_khat_muc_tieu)}
-        <div class="section highlight"><h3>Insight cốt lõi</h3><div class="body">${escBold(r2.insight_cot_loi)}</div></div>
+        ${editableSectionHtml('khao_khat')}
+        ${editableSectionHtml('insight', { highlight:true })}
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin-bottom:0;">Hệ trục nội dung</h3>
@@ -669,6 +819,63 @@ function render(container, ctx){
     });
     const saveTrucBtn = container.querySelector('[data-action="save-truc"]');
     if(saveTrucBtn) saveTrucBtn.onclick = saveTruc;
+
+    // Sửa trực tiếp mọi section đơn-đoạn-văn ở Định Vị (EDITABLE_SECTIONS) — miễn phí, không gọi AI.
+    container.querySelectorAll('[data-edit-section]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-edit-section');
+        state.editingSectionKey = key;
+        state.editSectionText = EDITABLE_SECTIONS[key].get() || '';
+        state.editSectionError = null;
+        draw();
+      };
+    });
+    const cancelEditSectionBtn = container.querySelector('[data-action="cancel-edit-section"]');
+    if(cancelEditSectionBtn) cancelEditSectionBtn.onclick = ()=>{ state.editingSectionKey = null; draw(); };
+    const editSectionTextInput = container.querySelector('#edit-section-text');
+    if(editSectionTextInput) editSectionTextInput.oninput = ()=>{ state.editSectionText = editSectionTextInput.value; };
+    const saveSectionBtn = container.querySelector('[data-action="save-section"]');
+    if(saveSectionBtn) saveSectionBtn.onclick = saveSection;
+
+    // Sửa trực tiếp "Dấu ấn hình ảnh thương hiệu" (nhiều field nhỏ + mảng cảnh mở đầu).
+    const editDauAnBtn = container.querySelector('[data-action="edit-dau-an"]');
+    if(editDauAnBtn) editDauAnBtn.onclick = ()=>{
+      state.editDauAn = dauAnSnapshot();
+      state.editDauAnError = null;
+      state.editingDauAn = true;
+      draw();
+    };
+    const cancelEditDauAnBtn = container.querySelector('[data-action="cancel-edit-dau-an"]');
+    if(cancelEditDauAnBtn) cancelEditDauAnBtn.onclick = ()=>{ state.editingDauAn = false; draw(); };
+    container.querySelectorAll('[data-dauan-field]').forEach(el=>{
+      el.oninput = ()=>{ state.editDauAn[el.getAttribute('data-dauan-field')] = el.value; };
+    });
+    container.querySelectorAll('[data-dauan-canh]').forEach(el=>{
+      el.oninput = ()=>{ state.editDauAn.canh_mo_dau[Number(el.getAttribute('data-dauan-canh'))] = el.value; };
+    });
+    container.querySelectorAll('[data-dauan-canh-remove]').forEach(el=>{
+      el.onclick = ()=>{ state.editDauAn.canh_mo_dau.splice(Number(el.getAttribute('data-dauan-canh-remove')), 1); draw(); };
+    });
+    const addDauAnCanhBtn = container.querySelector('[data-action="add-dauan-canh"]');
+    if(addDauAnCanhBtn) addDauAnCanhBtn.onclick = ()=>{ state.editDauAn.canh_mo_dau.push(''); draw(); };
+    const saveDauAnBtn = container.querySelector('[data-action="save-dau-an"]');
+    if(saveDauAnBtn) saveDauAnBtn.onclick = saveDauAn;
+
+    // Sửa trực tiếp "Nỗi đau & rào cản (4 tầng)".
+    const editNoiDauBtn = container.querySelector('[data-action="edit-noi-dau"]');
+    if(editNoiDauBtn) editNoiDauBtn.onclick = ()=>{
+      state.editNoiDau = noiDauSnapshot();
+      state.editNoiDauError = null;
+      state.editingNoiDau = true;
+      draw();
+    };
+    const cancelEditNoiDauBtn = container.querySelector('[data-action="cancel-edit-noi-dau"]');
+    if(cancelEditNoiDauBtn) cancelEditNoiDauBtn.onclick = ()=>{ state.editingNoiDau = false; draw(); };
+    container.querySelectorAll('[data-noidau-field]').forEach(el=>{
+      el.oninput = ()=>{ state.editNoiDau[el.getAttribute('data-noidau-field')] = el.value; };
+    });
+    const saveNoiDauBtn = container.querySelector('[data-action="save-noi-dau"]');
+    if(saveNoiDauBtn) saveNoiDauBtn.onclick = saveNoiDau;
 
     const pasteInput = container.querySelector('#paste-input');
     if(pasteInput) pasteInput.oninput = ()=>{ state.pasteText = pasteInput.value; };
