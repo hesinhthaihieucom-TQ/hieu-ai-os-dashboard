@@ -321,7 +321,9 @@ function render(container, profile) {
           <span class="btn-ghost btn" id="fb-back-btn">← Quay lại</span>
           <button class="btn" id="fb-generate-btn" ${(!f.materialPath || !f.title.trim() || f.generating) ? 'disabled' : ''}>${f.generating ? 'Đang tạo sách lật…' : '📖 Tạo sách lật'}</button>
         </div>
-        <div class="hint-box" style="margin-top:12px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi tạo? Cần <b>kết nối Heyzine riêng của bạn</b> ở mục "Tài khoản" TRƯỚC khi bấm "Tạo sách lật" — dùng chung tài khoản Heyzine mặc định sẽ KHÔNG tự chỉnh được sau đó.</div>
+        ${(profile && profile.sps_heyzine_api_key && profile.sps_heyzine_client_id)
+          ? `<div class="hint-box" style="margin-top:12px;">✓ Đang dùng tài khoản Heyzine riêng của bạn — sau khi tạo, tự vào Heyzine để thêm nhạc nền/tiếng lật trang nếu muốn.</div>`
+          : `<div class="hint-box" style="margin-top:12px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi tạo? Cần <b>kết nối Heyzine riêng của bạn</b> ở mục "Tài khoản" TRƯỚC khi bấm "Tạo sách lật" — dùng chung tài khoản Heyzine mặc định sẽ KHÔNG tự chỉnh được sau đó.</div>`}
       </div>
       ${f.result ? `
         <div class="card">

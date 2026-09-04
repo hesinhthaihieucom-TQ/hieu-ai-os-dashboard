@@ -315,7 +315,9 @@ function render(container, ideaRow) {
   // KHÔNG tự vào Heyzine chỉnh nhạc nền/tiếng lật trang sau khi xuất được (đã xác nhận qua tài liệu
   // Heyzine — không có link "chỉnh sửa riêng" chia sẻ được, chỉ chủ tài khoản mới sửa). 2026-09-04,
   // theo yêu cầu trực tiếp Quỳnh sau khi hỏi "người ta có tự thêm nhạc/tiếng lật trang được không".
-  const HEYZINE_OWN_ACCOUNT_HINT = `<div class="hint-box" style="margin-top:10px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi xuất? Cần <b>kết nối Heyzine riêng của bạn</b> ở mục "Tài khoản" TRƯỚC khi xuất — dùng chung tài khoản Heyzine mặc định sẽ KHÔNG tự chỉnh được sau đó.</div>`;
+  const HEYZINE_OWN_ACCOUNT_HINT = (currentProfile && currentProfile.sps_heyzine_api_key && currentProfile.sps_heyzine_client_id)
+    ? `<div class="hint-box" style="margin-top:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn — sau khi xuất, tự vào Heyzine để thêm nhạc nền/tiếng lật trang nếu muốn.</div>`
+    : `<div class="hint-box" style="margin-top:10px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi xuất? Cần <b>kết nối Heyzine riêng của bạn</b> ở mục "Tài khoản" TRƯỚC khi xuất — dùng chung tài khoản Heyzine mặc định sẽ KHÔNG tự chỉnh được sau đó.</div>`;
 
   function ebookExportCardHtml() {
     if (state.ebookResult) {
