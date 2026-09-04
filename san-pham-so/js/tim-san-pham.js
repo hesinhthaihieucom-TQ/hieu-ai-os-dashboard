@@ -39,6 +39,11 @@ const QUESTIONS = [
   { id: 'b2', group: 'B', type: 'textarea', q: 'Bạn biết ai đang bán sản phẩm/dịch vụ gần giống chưa? Họ làm chưa tốt ở đâu mà bạn nghĩ mình có thể làm khác/tốt hơn?' },
   { id: 'b3', group: 'B', type: 'textarea', q: 'Dạy người mới điều này trong 7-21 ngày, có chia được thành các bước nhỏ rõ ràng không? Thử liệt kê 3 bước.' },
   { id: 'c1', group: 'C', type: 'textarea', q: 'Có ai từng trả tiền cho thứ gần giống chưa? Khoảng bao nhiêu?' },
+  // 2026-09-04, Quỳnh: "thêm câu giá mong muốn đi" — có ở form tài liệu cũ (đã gộp/xoá, xem batch
+  // merge cùng ngày) nhưng chưa từng có trong wizard 11 câu — AI không biết định giá tầm nào để canh
+  // độ dài/độ sâu outline (ebook 99k khác hẳn mini-course 999k). TUỲ CHỌN — không chặn "Tiếp tục" nếu
+  // để trống, dùng type riêng 'textarea_optional' (xem isAnswered/wizardHtml/bindWizard).
+  { id: 'gia', group: 'C', type: 'textarea_optional', q: 'Bạn dự định bán sản phẩm này giá khoảng bao nhiêu? (không bắt buộc)', placeholder: 'VD: 149.000đ — để trống nếu chưa chắc' },
   { id: 'd1', group: 'C', type: 'textarea', q: 'Đối tượng cụ thể bạn nhắm tới là ai? (không viết "mọi người" — mô tả rõ độ tuổi/hoàn cảnh, VD "mẹ bỉm sữa mới sinh con đầu lòng")' },
   { id: 'c2', group: 'C', type: 'radio', q: 'Nếu hỏi thẳng 3 người trong nhóm đối tượng đó, họ sẽ...', options: ['Gật đầu ngay', 'Có thể, còn đắn đo', 'Chưa chắc'] },
   { id: 'd2', group: 'D', type: 'textarea', q: 'Trong những gì vừa kể, phần nào bạn thấy HÀO HỨNG nhất, làm không thấy mệt?' },
@@ -46,6 +51,7 @@ const QUESTIONS = [
 
 function isAnswered(q, val) {
   if (q.type === 'textarea') return !!(val && val.trim().length > 0);
+  if (q.type === 'textarea_optional') return true; // tuỳ chọn — không chặn "Tiếp tục" dù để trống
   if (q.type === 'radio') return !!val;
   if (q.type === 'nganh') return !!val;
   return false;
@@ -105,23 +111,33 @@ function render(container, profile) {
     return wizardHtml();
   }
 
-  // Màn mở đầu — tài liệu (nếu có) là TUỲ CHỌN, không thay thế 11 câu hỏi (2026-09-04, xem comment
-  // đầu file). Bấm "Bắt đầu" chuyển sang wizard ở câu 1 dù có tải tài liệu hay không.
+  // Màn mở đầu — thiết kế lại 2026-09-04 (Quỳnh: "phần đầu đang bị không đẹp lắm, thiết kế cho hợp
+  // mắt hơn"). Trước đó là 2 hint-box cùng màu xếp chồng + input file trần trụi — dồn hết vào 1 card
+  // chính có phân cấp rõ (tiêu đề lớn → mô tả → khung tải tài liệu riêng biệt có viền đứt → nút CTA
+  // to rõ ràng), 2 dòng chuyển hướng (đã biết loại/đã có file hoàn chỉnh) hạ xuống thành ghi chú nhỏ
+  // bên dưới card thay vì cạnh tranh sự chú ý với nội dung chính. Tài liệu vẫn TUỲ CHỌN, không thay
+  // thế 11 câu hỏi (xem comment đầu file) — bấm "Bắt đầu" luôn vào câu 1 dù có tải hay không.
   function wizardIntroHtml() {
     return `
-      <h2>Tìm sản phẩm phù hợp</h2>
-      <div class="hint-box">Dành cho người CHƯA rõ nên làm sản phẩm gì hoặc dạng nào. Nếu đã biết rõ chủ đề/đối tượng, chỉ cần chọn định dạng, dùng "🗂️ Chọn Loại Sản Phẩm Số" ở mục 2 sẽ nhanh hơn.</div>
-      <div class="hint-box">📦 File của bạn đã HOÀN CHỈNH, sẵn sàng bán ngay, không cần AI viết thêm gì? Khỏi cần qua bước này — vào thẳng <a href="#san-pham">"🛒 Sản phẩm của tôi"</a>, tải file lên là xong.</div>
       <div class="card">
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Trả lời 11 câu hỏi ngắn để AI gợi ý sản phẩm phù hợp với bạn.</div>
-        <label>📚 Đã có sẵn tài liệu/kiến thức? Tải lên đây (tuỳ chọn)</label>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:6px;">AI sẽ đọc tài liệu này CÙNG VỚI câu trả lời của bạn để đề xuất sát hơn — không bắt buộc, không có vẫn trả lời 11 câu bình thường.</div>
-        <input id="tsp-intro-file-input" type="file" accept="application/pdf">
-        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
-        ${state.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(state.materialUploadError)}</div>` : ''}
-        <div class="btn-row">
-          <button class="btn" id="tsp-intro-start-btn" ${state.materialUploading ? 'disabled' : ''}>Bắt đầu →</button>
+        <h2 style="font-size:22px;margin-bottom:6px;">🧭 Tìm sản phẩm phù hợp</h2>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:18px;">Trả lời 11 câu hỏi ngắn, AI sẽ gợi ý 2-3 sản phẩm số phù hợp với bạn kèm outline sẵn.</div>
+
+        <div style="border:1px dashed var(--line);border-radius:10px;padding:16px;background:var(--accent-soft);">
+          <label style="margin-top:0;font-size:13.5px;">📚 Đã có sẵn tài liệu/kiến thức? Tải lên đây</label>
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — AI sẽ đọc tài liệu CÙNG VỚI câu trả lời của bạn để đề xuất sát hơn.</div>
+          <input id="tsp-intro-file-input" type="file" accept="application/pdf">
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+          ${state.materialUploadError ? `<div class="error-box" style="margin-top:6px;margin-bottom:0;">${esc(state.materialUploadError)}</div>` : ''}
         </div>
+
+        <div class="btn-row">
+          <button class="btn btn-full" id="tsp-intro-start-btn" ${state.materialUploading ? 'disabled' : ''}>Bắt đầu →</button>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:var(--ink-soft);text-align:center;line-height:1.7;margin-top:2px;">
+        Đã biết rõ chủ đề/đối tượng, chỉ cần chọn định dạng? <a href="#chon-loai">🗂️ Chọn Loại Sản Phẩm Số</a> sẽ nhanh hơn.<br>
+        File đã HOÀN CHỈNH, sẵn sàng bán ngay? Vào thẳng <a href="#san-pham">🛒 Sản phẩm của tôi</a>, không cần qua bước này.
       </div>
     `;
   }
@@ -156,6 +172,9 @@ function render(container, profile) {
         ` : ''}
         ${state.suggestError ? `<div class="error-box" style="margin-top:8px;">${esc(state.suggestError)}</div>` : ''}
       `;
+    } else if (q.type === 'textarea_optional') {
+      // Câu ngắn, tuỳ chọn (VD giá mong muốn) — 1 dòng, không cần "Xem gợi ý" AI như các câu bắt buộc.
+      inputHtml = `<input id="tsp-input" type="text" placeholder="${esc(q.placeholder || '')}" value="${esc(val || '')}">`;
     } else if (q.type === 'radio') {
       inputHtml = `<div class="chips">${q.options.map(o => `<div class="chip ${val === o ? 'selected' : ''}" data-radio="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
     } else if (q.type === 'nganh') {
@@ -295,6 +314,9 @@ function render(container, profile) {
           draw();
         };
       });
+    } else if (q.type === 'textarea_optional') {
+      const input = container.querySelector('#tsp-input');
+      input.oninput = () => { state.answers[q.id] = input.value; persistWizardDraft(); };
     } else if (q.type === 'radio') {
       container.querySelectorAll('[data-radio]').forEach(el => {
         el.onclick = () => { state.answers[q.id] = el.getAttribute('data-radio'); persistWizardDraft(); draw(); };

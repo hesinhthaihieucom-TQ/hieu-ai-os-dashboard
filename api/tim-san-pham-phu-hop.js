@@ -23,6 +23,9 @@ const QUESTION_LABELS = {
   b2: 'Ai đang bán thứ gần giống, họ chưa tốt ở đâu mà mình khác/tốt hơn',
   b3: 'Dạy trong 7-21 ngày có chia được 3 bước nhỏ không',
   c1: 'Có ai từng trả tiền cho thứ gần giống chưa, khoảng bao nhiêu',
+  // Tuỳ chọn, có thể "(không trả lời)" (2026-09-04, xem buildUserBlock — vẫn hiện dòng này trong
+  // block dù trống, để AI biết rõ là "không có" chứ không phải quên hỏi).
+  gia: 'Giá mong muốn bán sản phẩm này (nếu có, có thể bỏ trống)',
   c2: 'Nếu hỏi thẳng 3 người mục tiêu, họ sẽ phản ứng thế nào',
   d1: 'Đối tượng cụ thể nhắm tới (không phải "mọi người")',
   d2: 'Phần nào hào hứng nhất, làm không thấy mệt',
@@ -37,6 +40,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - Tên sản phẩm phải áp đúng 1 trong 4 công thức đặt tên đã định nghĩa trong schema, chọn công thức khớp với định dạng đề xuất.
 - Mỗi phương án phải khác nhau THẬT SỰ (khác định dạng hoặc khác góc tiếp cận), không phải 3 cách diễn đạt của cùng 1 ý.
 - Nếu có tài liệu đính kèm: đọc kỹ, dựa sát vào nội dung THẬT trong đó (không bịa thêm kiến thức/số liệu không có trong tài liệu) — kết hợp với 12 câu trả lời để đề xuất, tài liệu là NGUỒN THAM KHẢO bổ sung cho câu trả lời, không thay thế.
+- Nếu người dùng cho biết giá mong muốn: canh độ dài/độ sâu outline và định dạng đề xuất cho phù hợp mức giá đó (giá thấp → sản phẩm gọn nhẹ như ebook/checklist ngắn; giá cao hơn → nội dung đủ sâu để xứng đáng, VD mini-course/coaching). Không có thông tin này thì bỏ qua, không tự giả định.
 - Output tiếng Việt, gọi người dùng là "bạn".`;
 
 function buildUserBlock(answers) {
