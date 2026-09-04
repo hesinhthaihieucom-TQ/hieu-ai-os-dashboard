@@ -22,16 +22,17 @@ module.exports = async (req, res) => {
   const { materialPath, title } = req.body || {};
   if (!materialPath) { res.status(400).json({ error: 'Thiếu file PDF.' }); return; }
 
-  // Người bán tự kết nối Heyzine riêng (xem san-pham-so/js/tai-khoan.js) → dùng đúng tài khoản của
-  // họ; không có thì rơi về tài khoản chung của Quỳnh — cùng logic api/san-pham-so-xuat-ebook.js.
+  // Người bán BẮT BUỘC tự kết nối Heyzine riêng trước (2026-09-04, Quỳnh: "cho tất cả mng đều bắt
+  // buộc kết nối heyzine đi" — bỏ hẳn fallback tài khoản chung: (1) tài khoản chung free chỉ có hạn 5
+  // flipbook TOÀN APP; (2) mỗi người bán cần tự chỉnh nhạc nền/tiếng lật trang được, chỉ chủ tài
+  // khoản mới làm được — xem san-pham-so/js/tai-khoan.js.
   const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=sps_heyzine_api_key,sps_heyzine_client_id`);
   const profRows = profResp.ok ? await profResp.json() : [];
   const ownCreds = profRows[0] || {};
-  const usingOwnAccount = !!(ownCreds.sps_heyzine_api_key && ownCreds.sps_heyzine_client_id);
-  const heyzineApiKey = usingOwnAccount ? ownCreds.sps_heyzine_api_key : process.env.HEYZINE_API_KEY;
-  const heyzineClientId = usingOwnAccount ? ownCreds.sps_heyzine_client_id : process.env.HEYZINE_CLIENT_ID;
+  const heyzineApiKey = ownCreds.sps_heyzine_api_key;
+  const heyzineClientId = ownCreds.sps_heyzine_client_id;
   if (!heyzineApiKey || !heyzineClientId) {
-    res.status(500).json({ error: 'Server chưa cấu hình HEYZINE_API_KEY/HEYZINE_CLIENT_ID.' });
+    res.status(400).json({ error: 'Cần kết nối Heyzine riêng của bạn trước khi tạo sách lật — dán API Key/Client ID vào ô ở trên rồi bấm "Lưu kết nối".' });
     return;
   }
 
@@ -44,9 +45,6 @@ module.exports = async (req, res) => {
       clientId: heyzineClientId,
       pdfUrl: pdfSignedUrl,
       title: title || undefined,
-      // Mẫu flipbook chung của Quỳnh CHỈ áp dụng khi dùng tài khoản chung — mẫu đó nằm trong tài
-      // khoản của chị, không tồn tại ở tài khoản Heyzine riêng của từng người bán.
-      template: usingOwnAccount ? undefined : (process.env.HEYZINE_TEMPLATE_ID || '63e3352a94'),
     });
 
     res.status(200).json({ heyzineUrl: flipbook.url, thumbnail: flipbook.thumbnail });

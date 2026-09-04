@@ -121,10 +121,10 @@ function render(container, profile) {
     flipbook: {
       title: '', materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
       generating: false, error: null, result: null,
-      // Kết nối Heyzine riêng NGAY TẠI ĐÂY (2026-09-04, theo yêu cầu Quỳnh: "kết nối heyzine tại đó
-      // luôn, ko phải đến mục nào hết" — trước đó chỉ có 1 dòng chữ trỏ sang mục "Tài khoản", không
-      // cho kết nối tại chỗ). Cùng RPC/field với tai-khoan.js, chỉ là bản rút gọn nhúng vào màn này.
-      heyzineFormOpen: false, heyzineApiKey: '', heyzineClientId: '', heyzineSaving: false, heyzineError: null,
+      // Kết nối Heyzine riêng NGAY TẠI ĐÂY, BẮT BUỘC (2026-09-04, Quỳnh: "kết nối heyzine tại đó luôn,
+      // ko phải đến mục nào hết" + "cho tất cả mng đều bắt buộc kết nối heyzine đi"). Cùng RPC/field
+      // với tai-khoan.js, chỉ là bản rút gọn nhúng vào màn này.
+      heyzineApiKey: '', heyzineClientId: '', heyzineSaving: false, heyzineError: null,
     },
   };
 
@@ -308,25 +308,37 @@ function render(container, profile) {
   // vào product_idea_results (không phải 1 "ý tưởng" cần Giai đoạn 2 viết tiếp) — chỉ ký URL file đã
   // tải lên rồi gọi thẳng Heyzine (api/san-pham-so-pdf-thanh-sach-lat.js), xong hand-off thẳng sang
   // "Sản phẩm của tôi" như 1 sản phẩm ebook đã có link giao hàng sẵn.
+  function isHeyzineConnected() {
+    return !!(profile && profile.sps_heyzine_api_key && profile.sps_heyzine_client_id);
+  }
+
+  // Hướng dẫn thêm nhạc nền/tiếng lật trang SAU KHI đã tạo sách lật — bước này làm trong Heyzine, app
+  // không có nút riêng cho việc này (Heyzine không cho set qua API, chỉ set tay trong trình chỉnh sửa
+  // của họ). Phần "Background Audio" đã XÁC NHẬN THẬT qua hướng dẫn chính thức của Heyzine
+  // (heyzine.com/how-to/make-an-interactive-pdf, 2026-09-04) — không phải đoán. Phần "tiếng lật trang"
+  // CHƯA xác nhận được tên mục chính xác (cần đăng nhập tài khoản Heyzine thật mới thấy, ngoài tầm
+  // trình duyệt tự động không có tài khoản) — cố ý nói rõ "chưa chắc tên mục" thay vì bịa cho chắc.
+  function heyzineSoundGuideHtml() {
+    return ` Sau khi tạo sách lật: vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, mở đúng cuốn vừa tạo → bấm <b>"Customize"</b> để vào trình chỉnh sửa → tìm mục <b>"Background Audio"</b> để thêm nhạc nền (tải file nhạc miễn phí bản quyền từ Bensound.com/Pixabay lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại). Riêng mục bật tiếng động khi lật trang, mình chưa vào được tài khoản Heyzine thật để xác nhận tên chính xác — thử tìm mục có chữ "Sound" gần khu vực chọn kiểu lật trang (Page Effect), thấy tên khác báo lại để cập nhật hướng dẫn cho đúng.`;
+  }
+
   // Widget kết nối Heyzine riêng NHÚNG THẲNG vào màn tạo sách lật — không trỏ người dùng sang mục
   // "Tài khoản" nữa (2026-09-04, Quỳnh: "workflow là sẽ kết nối heyzine tại đó luôn, ko phải đến mục
-  // nào hết"). Cùng RPC `update_sps_heyzine_credentials` và các field profile với tai-khoan.js — bản
-  // rút gọn, mặc định thu gọn (chỉ 1 dòng + nút) để không choán màn với người không cần tự chỉnh nhạc.
+  // nào hết"). BẮT BUỘC với mọi người (Quỳnh: "cho tất cả mng đều bắt buộc kết nối heyzine đi") — 2 lý
+  // do: (1) tài khoản chung free của Quỳnh chỉ có hạn 5 flipbook TOÀN APP, không chịu được traffic
+  // thật; (2) mỗi người bán cần tự vào Heyzine chỉnh nhạc nền/tiếng lật trang được, chỉ chủ tài khoản
+  // mới làm được. Vì bắt buộc nên KHÔNG có nút "Để sau" nữa, form luôn mở sẵn khi chưa kết nối — không
+  // thu gọn như bản trước. Cùng RPC `update_sps_heyzine_credentials`/field profile với tai-khoan.js.
   function heyzineInlineHtml(f) {
-    if (profile && profile.sps_heyzine_api_key && profile.sps_heyzine_client_id) {
-      return `<div class="hint-box" style="margin-top:12px;">✓ Đang dùng tài khoản Heyzine riêng của bạn — sau khi tạo, tự vào <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com</a> để thêm nhạc nền/tiếng lật trang nếu muốn.</div>`;
-    }
-    if (!f.heyzineFormOpen) {
-      return `
-        <div class="hint-box" style="margin-top:12px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau này? <span class="btn-ghost btn btn-sm" id="fb-heyzine-toggle" style="margin-left:4px;">🔗 Kết nối Heyzine ngay</span><br><span style="font-size:12px;">Không bắt buộc — không kết nối vẫn tạo sách lật bình thường, chỉ là dùng chung tài khoản Heyzine mặc định nên không tự chỉnh nhạc/kiểu lật trang được sau đó.</span></div>
-      `;
+    if (isHeyzineConnected()) {
+      return `<div class="hint-box" style="margin-top:12px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.${heyzineSoundGuideHtml()}</div>`;
     }
     return `
       <div class="card" style="margin-top:12px;">
-        <h2 style="font-size:14px;margin-bottom:6px;">🔗 Kết nối Heyzine riêng</h2>
+        <h2 style="font-size:14px;margin-bottom:6px;">🔗 Bắt buộc kết nối Heyzine riêng trước khi tạo</h2>
         <div class="hint-box" style="margin-bottom:10px;font-size:12.5px;">
           1. Vào <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a>, bấm "register" (chưa có tài khoản) hoặc "Login" (đã có) — miễn phí.<br>
-          2. Đăng nhập xong, NGAY TRÊN CÙNG TRANG hiện <b>Client ID</b> + <b>API Key</b> — copy 2 giá trị đó.<br>
+          2. Đăng nhập xong, mục "Getting started" hiện sẵn 2 ô <b>"This is your Client Id:"</b> và <b>"This is your API key:"</b> — bấm icon con mắt để hiện, bấm "Copy" từng ô.<br>
           3. Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây tạo sách lật luôn không cần mở tab khác.
         </div>
         <label style="font-size:12.5px;">API Key</label>
@@ -336,7 +348,6 @@ function render(container, profile) {
         ${f.heyzineError ? `<div class="error-box" style="margin-top:8px;">${esc(f.heyzineError)}</div>` : ''}
         <div class="btn-row">
           <button class="btn btn-sm" id="fb-heyzine-save" ${f.heyzineSaving ? 'disabled' : ''}>${f.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
-          <span class="btn-ghost btn btn-sm" id="fb-heyzine-cancel">Để sau</span>
         </div>
       </div>
     `;
@@ -344,9 +355,11 @@ function render(container, profile) {
 
   function flipbookHtml() {
     const f = state.flipbook;
+    const connected = isHeyzineConnected();
     return `
       <h2>📖 Đã có PDF hoàn chỉnh</h2>
       <div class="hint-box">Không cần chọn loại hay tạo outline gì cả — tải file PDF đã hoàn chỉnh lên, app tự biến thành sách lật đẹp (Heyzine), sẵn sàng bán ngay. Không qua AI, không tốn lượt.</div>
+      ${heyzineInlineHtml(f)}
       <div class="card">
         <label>Tên sản phẩm</label>
         <input id="fb-title" type="text" value="${esc(f.title)}" placeholder="VD: 21 Ngày Chuyển Nghiệp Tài Chính">
@@ -355,11 +368,11 @@ function render(container, profile) {
         <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
         ${f.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(f.materialUploadError)}</div>` : ''}
         ${f.error ? `<div class="error-box" style="margin-top:10px;">${esc(f.error)}</div>` : ''}
+        ${!connected ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:10px;">⬆️ Kết nối Heyzine ở trên trước đã, nút bên dưới mới bấm được.</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn" id="fb-back-btn">← Quay lại</span>
-          <button class="btn" id="fb-generate-btn" ${(!f.materialPath || !f.title.trim() || f.generating) ? 'disabled' : ''}>${f.generating ? 'Đang tạo sách lật…' : '📖 Tạo sách lật'}</button>
+          <button class="btn" id="fb-generate-btn" ${(!connected || !f.materialPath || !f.title.trim() || f.generating) ? 'disabled' : ''}>${f.generating ? 'Đang tạo sách lật…' : '📖 Tạo sách lật'}</button>
         </div>
-        ${heyzineInlineHtml(f)}
       </div>
       ${f.result ? `
         <div class="card">
@@ -403,10 +416,6 @@ function render(container, profile) {
       f.materialUploading = false;
       draw();
     };
-    const heyzineToggle = container.querySelector('#fb-heyzine-toggle');
-    if (heyzineToggle) heyzineToggle.onclick = () => { f.heyzineFormOpen = true; draw(); };
-    const heyzineCancel = container.querySelector('#fb-heyzine-cancel');
-    if (heyzineCancel) heyzineCancel.onclick = () => { f.heyzineFormOpen = false; draw(); };
     const heyzineKeyEl = container.querySelector('#fb-heyzine-key');
     if (heyzineKeyEl) heyzineKeyEl.oninput = () => { f.heyzineApiKey = heyzineKeyEl.value; };
     const heyzineClientEl = container.querySelector('#fb-heyzine-client');
@@ -419,10 +428,7 @@ function render(container, profile) {
       const { error } = await supabaseClient.rpc('update_sps_heyzine_credentials', { p_api_key: f.heyzineApiKey.trim(), p_client_id: f.heyzineClientId.trim() });
       f.heyzineSaving = false;
       if (error) { f.heyzineError = error.message; }
-      else {
-        if (profile) { profile.sps_heyzine_api_key = f.heyzineApiKey.trim(); profile.sps_heyzine_client_id = f.heyzineClientId.trim(); }
-        f.heyzineFormOpen = false;
-      }
+      else if (profile) { profile.sps_heyzine_api_key = f.heyzineApiKey.trim(); profile.sps_heyzine_client_id = f.heyzineClientId.trim(); }
       draw();
     };
     const genBtn = container.querySelector('#fb-generate-btn');

@@ -39,15 +39,15 @@ function render(container) {
       </div>
 
       <div class="card">
-        <h2 style="font-size:16px;margin-bottom:6px;">📖 Kết nối Heyzine riêng (tuỳ chọn)</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Mặc định ebook xuất ra dùng chung tài khoản Heyzine của hệ thống — bạn không tự chỉnh nhạc nền/tiếng lật trang được. Kết nối tài khoản Heyzine riêng của bạn để tự chỉnh được.</div>
+        <h2 style="font-size:16px;margin-bottom:6px;">📖 Kết nối Heyzine riêng (bắt buộc)</h2>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Cần kết nối tài khoản Heyzine của riêng bạn (miễn phí) mới tạo được sách lật — mỗi người bán 1 tài khoản riêng để tự chỉnh nhạc nền/tiếng lật trang được sau này. Cũng kết nối được ngay tại màn "Chọn Loại Sản Phẩm Số" hoặc "Viết Nội Dung" lúc tạo sách lật, không nhất thiết phải vào đây trước.</div>
         ${p.sps_heyzine_api_key && p.sps_heyzine_client_id ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.</div>` : ''}
         <div class="hint-box" style="margin-bottom:12px;">
           <b>Cách lấy API Key + Client ID (miễn phí, khoảng 1 phút):</b>
           <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.6;">
             <li>Bấm vào đây → <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a></li>
             <li>Chưa có tài khoản thì bấm <b>"register"</b> để đăng ký (miễn phí); có rồi thì bấm <b>"Login"</b>.</li>
-            <li>Đăng nhập xong, NGAY TRÊN CÙNG TRANG ĐÓ sẽ hiện <b>Client ID</b> và <b>API Key</b> của bạn — copy 2 giá trị này.</li>
+            <li>Đăng nhập xong, mục "Getting started" hiện sẵn 2 ô <b>"This is your Client Id:"</b> và <b>"This is your API key:"</b> — bấm icon con mắt để hiện, bấm "Copy" từng ô.</li>
             <li>Quay lại đây, dán vào 2 ô bên dưới rồi bấm "Lưu kết nối".</li>
           </ol>
         </div>
@@ -59,10 +59,14 @@ function render(container) {
         ${state.heyzineSaved ? `<div class="hint-box" style="margin-top:10px;">✓ Đã lưu.</div>` : ''}
         <div class="btn-row">
           <button class="btn" id="tk-save-heyzine" ${state.heyzineSaving ? 'disabled' : ''}>${state.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
-          ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<span class="btn-ghost btn" id="tk-disconnect-heyzine">Ngắt kết nối, dùng lại tài khoản chung</span>` : ''}
+          ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<span class="btn-ghost btn" id="tk-disconnect-heyzine">Ngắt kết nối</span>` : ''}
         </div>
+        ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Ngắt kết nối sẽ khiến bạn KHÔNG tạo/xuất sách lật được nữa cho tới khi kết nối lại (đã bắt buộc với mọi người bán) — chỉ dùng khi muốn đổi sang tài khoản Heyzine khác.</div>` : ''}
         <div class="hint-box" style="margin-top:12px;">
-          <b>Sau khi kết nối, xuất ebook thế nào?</b> Không cần tự tay tải/upload gì lên Heyzine cả — vào <b>"Viết Nội Dung"</b>, chọn sản phẩm, bấm <b>"Xuất thành Ebook"</b> như bình thường, app sẽ TỰ ĐỘNG tạo sách lật NGAY TRONG tài khoản Heyzine của bạn. Muốn thêm nhạc nền/đổi kiểu lật trang: vào lại <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com</a>, tìm đúng cuốn sách vừa xuất trong danh sách của bạn để chỉnh.
+          <b>Sau khi kết nối, xuất ebook thế nào?</b> Không cần tự tay tải/upload gì lên Heyzine cả — vào <b>"Viết Nội Dung"</b>, chọn sản phẩm, bấm <b>"Xuất thành Ebook"</b> như bình thường, app sẽ TỰ ĐỘNG tạo sách lật NGAY TRONG tài khoản Heyzine của bạn.
+        </div>
+        <div class="hint-box" style="margin-top:10px;">
+          <b>Thêm nhạc nền:</b> vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, mở đúng cuốn sách vừa tạo → bấm <b>"Customize"</b> → tìm mục <b>"Background Audio"</b> → tải file nhạc miễn phí bản quyền (Bensound.com/Pixabay) lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại. Riêng mục bật tiếng động khi lật trang, chưa xác nhận được tên chính xác (cần đăng nhập thật mới thấy) — thử tìm mục có chữ "Sound" gần khu vực chọn kiểu lật trang (Page Effect).
         </div>
       </div>
 
