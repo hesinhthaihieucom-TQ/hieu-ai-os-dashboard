@@ -44,10 +44,10 @@ function render(container) {
         ${p.sps_heyzine_api_key && p.sps_heyzine_client_id ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.</div>` : ''}
         <div class="hint-box" style="margin-bottom:12px;">
           <b>Cách lấy API Key + Client ID (miễn phí, khoảng 1 phút):</b>
-          <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.6;">
-            <li>Bấm vào đây → <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a></li>
-            <li>Chưa có tài khoản thì bấm <b>"register"</b> để đăng ký (miễn phí); có rồi thì bấm <b>"Login"</b>.</li>
-            <li>Đăng nhập xong, mục "Getting started" hiện sẵn 2 ô <b>"This is your Client Id:"</b> và <b>"This is your API key:"</b> — bấm icon con mắt để hiện, bấm "Copy" từng ô.</li>
+          <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+            <li>Mở <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a> — hoặc vào heyzine.com, bấm icon <b style="color:var(--accent);">☰</b> (menu) góc trên bên trái → chọn <b style="color:var(--accent);">API</b>.</li>
+            <li>Chưa có tài khoản: bấm <b style="color:var(--accent);">"register"</b> (Đăng ký). Đã có: bấm <b style="color:var(--accent);">"Login"</b> (Đăng nhập) — miễn phí.</li>
+            <li>Đăng nhập xong, trang hiện 2 ô <b style="color:var(--accent);">"This is your Client Id:"</b> (Client ID của bạn) và <b style="color:var(--accent);">"This is your API key:"</b> (API Key của bạn) — bấm icon con mắt 👁 để hiện, bấm nút <b style="color:var(--accent);">"Copy"</b> (Sao chép) từng ô.</li>
             <li>Quay lại đây, dán vào 2 ô bên dưới rồi bấm "Lưu kết nối".</li>
           </ol>
         </div>
@@ -66,7 +66,12 @@ function render(container) {
           <b>Sau khi kết nối, xuất ebook thế nào?</b> Không cần tự tay tải/upload gì lên Heyzine cả — vào <b>"Viết Nội Dung"</b>, chọn sản phẩm, bấm <b>"Xuất thành Ebook"</b> như bình thường, app sẽ TỰ ĐỘNG tạo sách lật NGAY TRONG tài khoản Heyzine của bạn.
         </div>
         <div class="hint-box" style="margin-top:10px;">
-          <b>Thêm nhạc nền:</b> vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, mở đúng cuốn sách vừa tạo → bấm <b>"Customize"</b> → tìm mục <b>"Background Audio"</b> → tải file nhạc miễn phí bản quyền (Bensound.com/Pixabay) lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại. Riêng mục bật tiếng động khi lật trang, chưa xác nhận được tên chính xác (cần đăng nhập thật mới thấy) — thử tìm mục có chữ "Sound" gần khu vực chọn kiểu lật trang (Page Effect).
+          <b>Thêm nhạc nền + tiếng lật trang:</b>
+          <ol style="margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+            <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa tạo → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
+            <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền) → tải file nhạc miễn phí bản quyền (Bensound.com/Pixabay) lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại.</li>
+            <li>Bật tiếng lật trang: cũng cột STYLE → bấm <b style="color:var(--accent);">"Page Effect"</b> (Hiệu ứng lật trang) → bật công tắc <b style="color:var(--accent);">"Sound on page turn"</b> (Bật âm thanh khi lật trang).</li>
+          </ol>
         </div>
       </div>
 

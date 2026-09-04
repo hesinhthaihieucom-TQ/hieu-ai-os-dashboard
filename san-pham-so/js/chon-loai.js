@@ -173,6 +173,7 @@ function render(container, profile) {
   function html() {
     if (state.screen === 'loading') return `<div class="loading"><div class="spinner"></div></div>`;
     if (state.screen === 'generating') return `<div class="loading"><div id="cl-progress-el">${progressBarHtml(0)}</div><p>Đang dựng outline…</p></div>`;
+    if (state.screen === 'ai-suggest-loading') return `<div class="loading"><div id="ai-material-progress-el">${progressBarHtml(0)}</div><p>Đang đọc file PDF và gợi ý loại phù hợp…</p></div>`;
     if (state.screen === 'ai-suggest-input') return aiSuggestInputHtml();
     if (state.screen === 'ai-suggest-result') return aiSuggestResultHtml();
     if (state.screen === 'form') return formHtml();
@@ -225,7 +226,8 @@ function render(container, profile) {
         ${state.form.materialFileName ? `<div class="hint-box" style="margin-top:10px;">👇 Xong rồi — giờ cuộn xuống <b>chọn 1 loại sản phẩm</b> ở danh sách bên dưới (hoặc bấm "AI gợi ý loại phù hợp"), file này sẽ tự động được dùng.</div>` : ''}
       </div>
       <div class="card" style="margin-bottom:14px;">
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">${state.form.materialFileName ? `Đã có file <b>${esc(state.form.materialFileName)}</b> — AI sẽ đọc thẳng file này để gợi ý, không cần nhập gì thêm.` : 'Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.'}</div>
+        ${state.aiSuggestError ? `<div class="error-box" style="margin-bottom:10px;">${esc(state.aiSuggestError)}</div>` : ''}
         <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>
       </div>
       ${DINH_DANG_OPTIONS.map(o => {
@@ -313,13 +315,23 @@ function render(container, profile) {
   }
 
   // Hướng dẫn thêm nhạc nền/tiếng lật trang SAU KHI đã tạo sách lật — bước này làm trong Heyzine, app
-  // không có nút riêng cho việc này (Heyzine không cho set qua API, chỉ set tay trong trình chỉnh sửa
-  // của họ). Phần "Background Audio" đã XÁC NHẬN THẬT qua hướng dẫn chính thức của Heyzine
-  // (heyzine.com/how-to/make-an-interactive-pdf, 2026-09-04) — không phải đoán. Phần "tiếng lật trang"
-  // CHƯA xác nhận được tên mục chính xác (cần đăng nhập tài khoản Heyzine thật mới thấy, ngoài tầm
-  // trình duyệt tự động không có tài khoản) — cố ý nói rõ "chưa chắc tên mục" thay vì bịa cho chắc.
+  // không có nút riêng (Heyzine không cho set qua API, chỉ set tay trong trình chỉnh sửa của họ). Cả
+  // 2 mục "Background Audio" và "Sound on page turn" (trong "Page Effect") đã XÁC NHẬN THẬT qua ảnh
+  // chụp màn hình trình chỉnh sửa Heyzine thật Quỳnh gửi 2026-09-04 — không phải đoán (trước đó có
+  // hedge "chưa xác nhận được tên mục" vì tự tay không đăng nhập được, giờ đã có ảnh thật nên viết rõ
+  // luôn). Có cả tiếng Anh gốc lẫn nghĩa tiếng Việt cho từng nút/nhãn — phòng khi trình duyệt/Heyzine
+  // của người dùng đang hiển thị ngôn ngữ khác (Quỳnh 2026-09-04: "nhỡ ngta dùng trình duyệt tiếng
+  // Việt"). Định dạng <ol><li> thật (không phải "1. 2. 3." nối bằng <br>) + tô màu accent cho từ khoá
+  // quan trọng, theo đúng yêu cầu "làm nổi các từ quan trọng... có thể màu chữ khác".
   function heyzineSoundGuideHtml() {
-    return ` Sau khi tạo sách lật: vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, mở đúng cuốn vừa tạo → bấm <b>"Customize"</b> để vào trình chỉnh sửa → tìm mục <b>"Background Audio"</b> để thêm nhạc nền (tải file nhạc miễn phí bản quyền từ Bensound.com/Pixabay lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại). Riêng mục bật tiếng động khi lật trang, mình chưa vào được tài khoản Heyzine thật để xác nhận tên chính xác — thử tìm mục có chữ "Sound" gần khu vực chọn kiểu lật trang (Page Effect), thấy tên khác báo lại để cập nhật hướng dẫn cho đúng.`;
+    return `
+      <div style="margin-top:8px;">Sau khi tạo sách lật, thêm nhạc nền/tiếng lật trang trong Heyzine:</div>
+      <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+        <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa tạo → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
+        <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền) → tải file nhạc miễn phí bản quyền (Bensound.com/Pixabay) lên, chọn trang bắt đầu/kết thúc phát, chỉnh âm lượng/lặp lại.</li>
+        <li>Bật tiếng lật trang: cũng cột STYLE → bấm <b style="color:var(--accent);">"Page Effect"</b> (Hiệu ứng lật trang) → bật công tắc <b style="color:var(--accent);">"Sound on page turn"</b> (Bật âm thanh khi lật trang).</li>
+      </ol>
+    `;
   }
 
   // Widget kết nối Heyzine riêng NHÚNG THẲNG vào màn tạo sách lật — không trỏ người dùng sang mục
@@ -336,10 +348,13 @@ function render(container, profile) {
     return `
       <div class="card" style="margin-top:12px;">
         <h2 style="font-size:14px;margin-bottom:6px;">🔗 Bắt buộc kết nối Heyzine riêng trước khi tạo</h2>
-        <div class="hint-box" style="margin-bottom:10px;font-size:12.5px;">
-          1. Vào <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a>, bấm "register" (chưa có tài khoản) hoặc "Login" (đã có) — miễn phí.<br>
-          2. Đăng nhập xong, mục "Getting started" hiện sẵn 2 ô <b>"This is your Client Id:"</b> và <b>"This is your API key:"</b> — bấm icon con mắt để hiện, bấm "Copy" từng ô.<br>
-          3. Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây tạo sách lật luôn không cần mở tab khác.
+        <div class="hint-box" style="margin-bottom:10px;">
+          <ol style="margin:0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+            <li>Mở <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a> — hoặc vào heyzine.com, bấm icon <b style="color:var(--accent);">☰</b> (menu) góc trên bên trái → chọn <b style="color:var(--accent);">API</b>.</li>
+            <li>Chưa có tài khoản: bấm <b style="color:var(--accent);">"register"</b> (Đăng ký). Đã có: bấm <b style="color:var(--accent);">"Login"</b> (Đăng nhập) — miễn phí.</li>
+            <li>Đăng nhập xong, trang hiện 2 ô <b style="color:var(--accent);">"This is your Client Id:"</b> (Client ID của bạn) và <b style="color:var(--accent);">"This is your API key:"</b> (API Key của bạn) — bấm icon con mắt 👁 để hiện, bấm nút <b style="color:var(--accent);">"Copy"</b> (Sao chép) từng ô.</li>
+            <li>Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây tạo sách lật luôn không cần mở tab khác.</li>
+          </ol>
         </div>
         <label style="font-size:12.5px;">API Key</label>
         <input id="fb-heyzine-key" type="password" value="${esc(f.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
@@ -493,7 +508,7 @@ function render(container, profile) {
     const f = state.form;
     return `
       <h2>Gợi ý cho bạn</h2>
-      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b></div>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${(f.chuDe || f.doiTuong) ? `Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b>` : `Dựa trên file <b>${esc(f.materialFileName)}</b> đã tải lên.`}</div>
       ${(f.aiSuggestions || []).map(s => {
         const opt = DINH_DANG_OPTIONS.find(o => o.value === s.dinh_dang);
         const expanded = !!state.expandedTypes[s.dinh_dang];
@@ -604,7 +619,7 @@ function render(container, profile) {
   }
 
   function bind() {
-    if (state.screen === 'loading' || state.screen === 'generating') return;
+    if (state.screen === 'loading' || state.screen === 'generating' || state.screen === 'ai-suggest-loading') return;
     if (state.screen === 'result') { bindResult(); return; }
     if (state.screen === 'ai-suggest-input') { bindAiSuggestInput(); return; }
     if (state.screen === 'ai-suggest-result') { bindAiSuggestResult(); return; }
@@ -639,6 +654,9 @@ function render(container, profile) {
       draw();
     };
     container.querySelector('#pt-ai-btn').onclick = () => {
+      // Đã tải PDF sẵn ở đầu trang → đọc thẳng file, khỏi bắt gõ lại ngành/chủ đề/đối tượng bằng tay
+      // (2026-09-04, bug thật Quỳnh phát hiện: file tải lên bị bỏ phí, vẫn bắt nhập lại từ đầu).
+      if (f.materialPath) { runSuggestFormatFromMaterial(); return; }
       state.form.screen = 'ai-suggest-input'; state.screen = 'ai-suggest-input'; persistFormDraft(); draw();
     };
     container.querySelectorAll('[data-pt-toggle]').forEach(el => {
@@ -798,6 +816,28 @@ function render(container, profile) {
       chosen_index: 0,
     }, state.pendingId);
     window.renderXayDungNoiDung(container, saved);
+  }
+
+  // Đã tải PDF sẵn ở đầu trang Chọn Loại → AI đọc THẲNG file đó để gợi ý loại, bỏ qua hẳn màn nhập
+  // ngành/chủ đề/đối tượng bằng tay (2026-09-04, bug thật Quỳnh phát hiện — trước đó file tải lên bị
+  // bỏ phí hoàn toàn ở bước này, vẫn bắt gõ lại từ đầu). Không có #ai-progress-el sẵn trên màn (khác
+  // runSuggestFormat) vì đi thẳng từ pick-type — chuyển screen sang loading rồi mới animate progress.
+  async function runSuggestFormatFromMaterial() {
+    const f = state.form;
+    state.screen = 'ai-suggest-loading'; state.aiSuggestError = null; draw();
+    const stopProgress = animateProgressBar(container.querySelector('#ai-material-progress-el'), 15);
+    try {
+      const data = await callApi('api/san-pham-so-goi-y-dinh-dang', { materialPath: f.materialPath, nganh: f.nganh || null, chuDe: f.chuDe || null, doiTuong: f.doiTuong || null }, 180000);
+      if (!data.result || !Array.isArray(data.result.goi_y) || !data.result.goi_y.length) throw new Error('AI trả về kết quả không đúng định dạng — thử lại giúp mình.');
+      f.aiSuggestions = data.result.goi_y;
+      f.screen = 'ai-suggest-result'; state.screen = 'ai-suggest-result';
+      persistFormDraft();
+    } catch (e) {
+      state.aiSuggestError = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
+      state.screen = 'pick-type';
+    }
+    stopProgress();
+    draw();
   }
 
   async function runSuggestFormat() {
