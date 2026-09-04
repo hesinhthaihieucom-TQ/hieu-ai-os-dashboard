@@ -114,6 +114,14 @@ function render(container, profile) {
     // { [dinh_dang]: true } — loại nào đang mở "Tìm hiểu thêm" ở màn pick-type, chỉ là UI tạm, không
     // cần lưu draft.
     expandedTypes: {},
+    // "📖 Đã có PDF hoàn chỉnh, biến thành sách lật" (2026-09-04) — nhánh RIÊNG, không qua
+    // outline/AI/Giai đoạn 2 gì cả, hand-off thẳng sang "Sản phẩm của tôi" khi xong (xem
+    // useAsProductFlipbook). materialPath ở đây là file CHÍNH (toàn bộ sản phẩm), khác hẳn
+    // state.form.materialPath (chỉ là tài liệu THAM KHẢO tuỳ chọn cho bước tạo outline AI).
+    flipbook: {
+      title: '', materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
+      generating: false, error: null, result: null,
+    },
   };
 
   function persistFormDraft() {
@@ -165,6 +173,7 @@ function render(container, profile) {
     if (state.screen === 'ai-suggest-result') return aiSuggestResultHtml();
     if (state.screen === 'form') return formHtml();
     if (state.screen === 'result') return resultHtml();
+    if (state.screen === 'flipbook') return flipbookHtml();
     return pickTypeHtml();
   }
 
@@ -207,6 +216,10 @@ function render(container, profile) {
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
         <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>
       </div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Đã có sẵn 1 file PDF HOÀN CHỈNH, chỉ cần đóng gói đẹp để bán ngay? Không cần chọn loại/tạo outline gì cả, không qua AI, không tốn lượt.</div>
+        <button class="btn-ghost btn" id="pt-flipbook-btn">📖 Đã có PDF hoàn chỉnh, biến thành sách lật</button>
+      </div>
       ${DINH_DANG_OPTIONS.map(o => {
         const expanded = !!state.expandedTypes[o.value];
         return `
@@ -226,6 +239,87 @@ function render(container, profile) {
       `;
       }).join('')}
     `;
+  }
+
+  // "📖 Đã có PDF hoàn chỉnh, biến thành sách lật" — không đi qua outline/AI/Giai đoạn 2, KHÔNG lưu gì
+  // vào product_idea_results (không phải 1 "ý tưởng" cần Giai đoạn 2 viết tiếp) — chỉ ký URL file đã
+  // tải lên rồi gọi thẳng Heyzine (api/san-pham-so-pdf-thanh-sach-lat.js), xong hand-off thẳng sang
+  // "Sản phẩm của tôi" như 1 sản phẩm ebook đã có link giao hàng sẵn.
+  function flipbookHtml() {
+    const f = state.flipbook;
+    return `
+      <h2>📖 Đã có PDF hoàn chỉnh</h2>
+      <div class="hint-box">Không cần chọn loại hay tạo outline gì cả — tải file PDF đã hoàn chỉnh lên, app tự biến thành sách lật đẹp (Heyzine), sẵn sàng bán ngay. Không qua AI, không tốn lượt.</div>
+      <div class="card">
+        <label>Tên sản phẩm</label>
+        <input id="fb-title" type="text" value="${esc(f.title)}" placeholder="VD: 21 Ngày Chuyển Nghiệp Tài Chính">
+        <label style="margin-top:14px;">File PDF</label>
+        <input id="fb-file" type="file" accept="application/pdf">
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+        ${f.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(f.materialUploadError)}</div>` : ''}
+        ${f.error ? `<div class="error-box" style="margin-top:10px;">${esc(f.error)}</div>` : ''}
+        <div class="btn-row">
+          <span class="btn-ghost btn" id="fb-back-btn">← Quay lại</span>
+          <button class="btn" id="fb-generate-btn" ${(!f.materialPath || !f.title.trim() || f.generating) ? 'disabled' : ''}>${f.generating ? 'Đang tạo sách lật…' : '📖 Tạo sách lật'}</button>
+        </div>
+      </div>
+      ${f.result ? `
+        <div class="card">
+          <h2 style="font-size:16px;">✅ Sách lật đã tạo xong</h2>
+          ${f.result.thumbnail ? `<img src="${esc(f.result.thumbnail)}" style="max-width:140px;border-radius:8px;margin-bottom:10px;display:block;border:1px solid var(--line);">` : ''}
+          <div class="btn-row" style="margin-top:0;">
+            <a class="btn-ghost btn" href="${esc(f.result.heyzineUrl)}" target="_blank" rel="noopener">Xem thử sách lật →</a>
+            <span class="btn" id="fb-use-btn">✅ Dùng làm sản phẩm để bán</span>
+          </div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  function bindFlipbook() {
+    const f = state.flipbook;
+    container.querySelector('#fb-back-btn').onclick = () => { state.screen = 'pick-type'; draw(); };
+    const titleEl = container.querySelector('#fb-title');
+    if (titleEl) titleEl.oninput = () => { f.title = titleEl.value; draw(); };
+    const fileEl = container.querySelector('#fb-file');
+    if (fileEl) fileEl.onchange = async () => {
+      const file = fileEl.files[0];
+      if (!file) return;
+      if (file.type !== 'application/pdf') { f.materialUploadError = 'Chỉ nhận file PDF.'; draw(); return; }
+      f.materialUploading = true; f.materialUploadError = null; draw();
+      try {
+        const { uploadUrl, path } = await callApi('api/san-pham-so-upload-material-url', { file_name: file.name });
+        const putResp = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': 'application/pdf' }, body: file });
+        if (!putResp.ok) throw new Error('Upload file thất bại — thử lại giúp mình.');
+        f.materialPath = path; f.materialFileName = file.name;
+      } catch (e) {
+        f.materialUploadError = e.message;
+      }
+      f.materialUploading = false;
+      draw();
+    };
+    const genBtn = container.querySelector('#fb-generate-btn');
+    if (genBtn) genBtn.onclick = async () => {
+      f.generating = true; f.error = null; draw();
+      try {
+        const data = await callApi('api/san-pham-so-pdf-thanh-sach-lat', { materialPath: f.materialPath, title: f.title }, 200000);
+        f.result = { heyzineUrl: data.heyzineUrl, thumbnail: data.thumbnail };
+      } catch (e) {
+        f.error = e.message || 'Có lỗi xảy ra — thử lại giúp mình.';
+      }
+      f.generating = false;
+      draw();
+    };
+    const useBtn = container.querySelector('#fb-use-btn');
+    if (useBtn) useBtn.onclick = async () => {
+      await saveDraft('san-pham-so', {
+        id: null, title: f.title, description: '', price: '',
+        cover_image_url: null, file_storage_path: null, file_name: null,
+        external_link: f.result.heyzineUrl, published: false,
+        dinh_dang: 'ebook', mini_course_lessons: [], webinar_datetime: '',
+      });
+      location.hash = 'san-pham';
+    };
   }
 
   function canSubmitAiInput() {
@@ -382,6 +476,7 @@ function render(container, profile) {
     if (state.screen === 'ai-suggest-input') { bindAiSuggestInput(); return; }
     if (state.screen === 'ai-suggest-result') { bindAiSuggestResult(); return; }
     if (state.screen === 'form') { bindForm(); return; }
+    if (state.screen === 'flipbook') { bindFlipbook(); return; }
     bindPickType();
   }
 
@@ -389,6 +484,7 @@ function render(container, profile) {
     container.querySelector('#pt-ai-btn').onclick = () => {
       state.form.screen = 'ai-suggest-input'; state.screen = 'ai-suggest-input'; persistFormDraft(); draw();
     };
+    container.querySelector('#pt-flipbook-btn').onclick = () => { state.screen = 'flipbook'; draw(); };
     container.querySelectorAll('[data-pt-toggle]').forEach(el => {
       el.onclick = () => {
         const v = el.getAttribute('data-pt-toggle');
