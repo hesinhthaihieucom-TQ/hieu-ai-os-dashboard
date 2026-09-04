@@ -28,7 +28,7 @@ const DINH_DANG_ICON = {
 };
 const DINH_DANG_INFO = {
   ebook: {
-    khi_nao: 'Cần giải thích khái niệm/tư duy — người đọc chỉ cần đọc là hiểu, không cần thực hành theo tiến trình.',
+    khi_nao: 'Cần giải thích khái niệm/tư duy, hoặc 1 hành trình nhiều ngày/bước NHƯNG gộp chung 1 cuốn sách để tự đọc lần lượt (VD "21 ngày...") — khác mini_course ở chỗ không có video/buổi học riêng cho từng ngày, chỉ là chương mục trong cùng 1 file.',
     can_chuan_bi: 'AI tự viết (chọn "Tạo bằng AI"), hoặc tự upload file PDF sẵn có.',
     nguoi_mua_nhan: 'Link tải file PDF.',
     la_gi: '1 file PDF hoàn chỉnh, người mua đọc trên điện thoại hoặc máy tính — không cần cài thêm công cụ nào khác.',
@@ -55,13 +55,13 @@ const DINH_DANG_INFO = {
     phu_hop_neu: 'Bạn đã có sẵn 1 bảng tính/công cụ mình hay dùng, và thấy nhiều người khác cũng đang cần đúng thứ đó.',
   },
   mini_course: {
-    khi_nao: 'Cần học có tiến trình nhiều bài, đi từng bước theo thời gian.',
+    khi_nao: 'Mỗi bài/ngày cần giao hàng RIÊNG bằng video/buổi học/file RIÊNG — khác ebook/checklist_workbook ở chỗ KHÔNG gộp chung 1 file, mỗi bài có link mở riêng.',
     can_chuan_bi: 'Danh sách nhiều bài học (mỗi bài: tên + link video/Zoom hoặc file).',
     nguoi_mua_nhan: '1 trang riêng liệt kê từng bài học + link mở từng bài.',
-    la_gi: 'Nhiều bài học nhỏ có thứ tự, mỗi bài giải quyết 1 phần của vấn đề lớn hơn — người mua đi theo tiến trình chứ không đọc 1 lần là xong.',
+    la_gi: 'Nhiều bài học nhỏ có thứ tự, MỖI BÀI LÀ 1 FILE/LINK GIAO HÀNG RIÊNG (video bài giảng, buổi Zoom ghi hình, file riêng...) — khác hẳn 1 cuốn ebook/workbook có chia ngày nhưng vẫn là 1 file duy nhất.',
     uu_diem: 'Cảm giác "được đồng hành" rõ hơn hẳn 1 file đơn lẻ — khối lượng nội dung/công sức nhiều hơn nên thường được định giá cao hơn.',
-    thach_thuc: 'Cần chuẩn bị nội dung cho TỪNG bài học riêng (không chỉ 1 file) — tốn thời gian hơn ebook nhiều, và phải giữ chất lượng đều giữa các bài.',
-    phu_hop_neu: 'Chủ đề cần đi theo tiến trình thời gian (ngày 1 làm gì, ngày 2 làm gì...), không phải kiến thức đọc 1 lần là áp dụng được ngay.',
+    thach_thuc: 'Cần chuẩn bị nội dung RIÊNG cho TỪNG bài (video/buổi học/file riêng, không chỉ 1 file chung) — tốn công hơn ebook nhiều, và phải giữ chất lượng đều giữa các bài.',
+    phu_hop_neu: 'Bạn THỰC SỰ có nội dung riêng cho từng ngày/buổi (video quay riêng, buổi live riêng...) cần giao link riêng — nếu chỉ là 1 cuốn sách chia theo ngày để tự đọc, chọn Ebook/Checklist-Workbook sẽ đúng hơn.',
   },
   coaching_1_1: {
     khi_nao: 'Cần hướng dẫn riêng theo từng người, gặp trực tiếp.',

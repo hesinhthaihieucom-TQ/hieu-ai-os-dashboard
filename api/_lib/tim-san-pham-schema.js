@@ -36,7 +36,7 @@ const TOOL_TIM_SAN_PHAM = {
             dinh_dang: {
               type: 'string',
               enum: ['ebook', 'checklist_workbook', 'template_file_mau', 'mini_course', 'coaching_1_1', 'cong_dong_tra_phi', 'webinar'],
-              description: 'Định dạng phù hợp nhất: cần thực hành hàng ngày/có tiến trình → mini_course hoặc checklist_workbook; cần giải thích khái niệm/tư duy → ebook; cần công cụ tra cứu dùng lặp lại → template_file_mau; cần gặp trực tiếp → coaching_1_1/cong_dong_tra_phi/webinar.',
+              description: 'Định dạng phù hợp nhất — LƯU Ý QUAN TRỌNG phân biệt ebook/checklist_workbook vs mini_course: có tiến trình theo ngày/tuần/bước KHÔNG tự động nghĩa là mini_course — nếu toàn bộ nội dung đọc được gộp chung trong 1 cuốn sách/file duy nhất (dù có chia theo ngày/bước bên trong, người đọc tự đọc lần lượt, không có bài giảng/video/buổi học riêng cho từng ngày) thì vẫn là ebook (nội dung lý thuyết + ví dụ) hoặc checklist_workbook (thiên về form/bài tập điền tay) — CHỈ chọn mini_course khi mỗi ngày/buổi thực sự là 1 ĐƠN VỊ NỘI DUNG TÁCH RIÊNG cần giao hàng bằng link riêng (video bài giảng riêng, buổi live riêng...), không phải chỉ là 1 mục trong cùng 1 cuốn sách; cần công cụ tra cứu dùng lặp lại → template_file_mau; cần gặp trực tiếp → coaching_1_1/cong_dong_tra_phi/webinar.',
             },
             do_dai_uoc_luong: { type: 'string', description: 'Độ dài ước lượng cụ thể, vd "12-15 trang", "7 bài học ngắn", "1 file mẫu + hướng dẫn dùng".' },
             ly_do: {
@@ -122,6 +122,7 @@ const TOOL_GOI_Y_DINH_DANG = {
             dinh_dang: {
               type: 'string',
               enum: ['ebook', 'checklist_workbook', 'template_file_mau', 'mini_course', 'coaching_1_1', 'cong_dong_tra_phi', 'webinar'],
+              description: 'LƯU Ý phân biệt ebook/checklist_workbook vs mini_course: có tiến trình theo ngày/tuần/bước KHÔNG tự động nghĩa là mini_course — nội dung gộp chung 1 cuốn sách/file duy nhất (dù chia theo ngày bên trong, không có video/buổi học riêng cho từng ngày) vẫn là ebook/checklist_workbook. CHỈ chọn mini_course khi mỗi ngày/buổi thực sự cần giao hàng bằng link riêng (video bài giảng riêng, buổi live riêng...).',
             },
             ly_do: {
               type: 'string',
