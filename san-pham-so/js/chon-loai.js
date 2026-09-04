@@ -110,7 +110,7 @@ function newForm() {
   return {
     screen: 'pick-type',
     dinhDang: '',
-    nganh: '', showNganhOther: false,
+    nganh: '',
     chuDe: '', doiTuong: '',
     materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
     aiSuggestions: null,
@@ -507,9 +507,8 @@ function render(container, profile) {
         <label>Ngành/lĩnh vực</label>
         <div class="chips">
           ${NGANH_OPTIONS.map(o => `<div class="chip ${f.nganh === o ? 'selected' : ''}" data-ai-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
-          <div class="chip ${isOther || f.showNganhOther ? 'selected' : ''}" data-ai-nganh-other="1">Khác (tự nhập)</div>
         </div>
-        ${isOther || f.showNganhOther ? `<input id="ai-nganh-other-input" type="text" placeholder="Nhập đúng ngành/lĩnh vực của bạn" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">` : ''}
+        <input id="ai-nganh-other-input" type="text" placeholder="Hoặc tự nhập ngành/lĩnh vực khác" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">
 
         <label style="margin-top:14px;">Chủ đề/tên sản phẩm muốn làm</label>
         <input id="ai-chude" type="text" value="${esc(f.chuDe)}" placeholder='VD: Quản lý chi tiêu cho mẹ bỉm sữa'>
@@ -573,9 +572,8 @@ function render(container, profile) {
         <label>Ngành/lĩnh vực</label>
         <div class="chips">
           ${NGANH_OPTIONS.map(o => `<div class="chip ${f.nganh === o ? 'selected' : ''}" data-cl-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
-          <div class="chip ${isOther || f.showNganhOther ? 'selected' : ''}" data-cl-nganh-other="1">Khác (tự nhập)</div>
         </div>
-        ${isOther || f.showNganhOther ? `<input id="cl-nganh-other-input" type="text" placeholder="Nhập đúng ngành/lĩnh vực của bạn" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">` : ''}
+        <input id="cl-nganh-other-input" type="text" placeholder="Hoặc tự nhập ngành/lĩnh vực khác" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">
 
         <label style="margin-top:14px;">Chủ đề/tên sản phẩm muốn làm</label>
         <input id="cl-chude" type="text" value="${esc(f.chuDe)}" placeholder='VD: Quản lý chi tiêu cho mẹ bỉm sữa'>
@@ -697,10 +695,8 @@ function render(container, profile) {
   function bindAiSuggestInput() {
     const f = state.form;
     container.querySelectorAll('[data-ai-nganh]').forEach(el => {
-      el.onclick = () => { f.nganh = el.getAttribute('data-ai-nganh'); f.showNganhOther = false; persistFormDraft(); draw(); };
+      el.onclick = () => { f.nganh = el.getAttribute('data-ai-nganh'); persistFormDraft(); draw(); };
     });
-    const otherChip = container.querySelector('[data-ai-nganh-other]');
-    if (otherChip) otherChip.onclick = () => { f.showNganhOther = true; f.nganh = ''; draw(); };
     const otherInput = container.querySelector('#ai-nganh-other-input');
     if (otherInput) otherInput.oninput = () => {
       f.nganh = otherInput.value;
@@ -750,10 +746,8 @@ function render(container, profile) {
       f.screen = 'pick-type'; state.screen = 'pick-type'; persistFormDraft(); draw();
     };
     container.querySelectorAll('[data-cl-nganh]').forEach(el => {
-      el.onclick = () => { f.nganh = el.getAttribute('data-cl-nganh'); f.showNganhOther = false; persistFormDraft(); draw(); };
+      el.onclick = () => { f.nganh = el.getAttribute('data-cl-nganh'); persistFormDraft(); draw(); };
     });
-    const otherChip = container.querySelector('[data-cl-nganh-other]');
-    if (otherChip) otherChip.onclick = () => { f.showNganhOther = true; f.nganh = ''; draw(); };
     const otherInput = container.querySelector('#cl-nganh-other-input');
     if (otherInput) otherInput.oninput = () => {
       f.nganh = otherInput.value;

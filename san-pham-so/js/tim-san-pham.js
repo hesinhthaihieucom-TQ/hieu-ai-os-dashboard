@@ -13,7 +13,7 @@ const SUGGEST_LIMIT_PER_QUESTION = 1;
 
 function newMaterialForm() {
   return {
-    nganh: '', showNganhOther: false,
+    nganh: '',
     materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
     doiTuong: '', dinhDang: '', gia: '',
   };
@@ -56,7 +56,7 @@ function render(container, profile) {
   const state = {
     screen: 'loading', qIndex: 0, answers: {}, result: null, chosenIndex: null, error: null,
     suggestLoading: false, suggestions: null, suggestForQ: null, suggestCounts: {}, suggestError: null,
-    editing: false, editForm: null, editSaving: false, showNganhOther: false,
+    editing: false, editForm: null, editSaving: false,
     materialForm: newMaterialForm(), resultSource: null,
     // id dòng product_idea_results "đang cân nhắc" (chosen_index null) hiện tại — null nếu chưa tạo
     // dòng nào (xem util.js: nhiều sản phẩm/user, không còn upsert-by-user_id nữa).
@@ -134,9 +134,8 @@ function render(container, profile) {
         <label>Ngành/lĩnh vực</label>
         <div class="chips">
           ${NGANH_OPTIONS.map(o => `<div class="chip ${f.nganh === o ? 'selected' : ''}" data-mat-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
-          <div class="chip ${isOther || f.showNganhOther ? 'selected' : ''}" data-mat-nganh-other="1">Khác (tự nhập)</div>
         </div>
-        ${isOther || f.showNganhOther ? `<input id="mat-nganh-other-input" type="text" placeholder="Nhập đúng ngành/lĩnh vực của bạn" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">` : ''}
+        <input id="mat-nganh-other-input" type="text" placeholder="Hoặc tự nhập ngành/lĩnh vực khác" value="${esc(isOther ? f.nganh : '')}" style="margin-top:8px;">
 
         <label style="margin-top:14px;">Tài liệu (PDF)</label>
         <input id="mat-file-input" type="file" accept="application/pdf">
@@ -199,13 +198,16 @@ function render(container, profile) {
     } else if (q.type === 'radio') {
       inputHtml = `<div class="chips">${q.options.map(o => `<div class="chip ${val === o ? 'selected' : ''}" data-radio="${esc(o)}">${esc(o)}</div>`).join('')}</div>`;
     } else if (q.type === 'nganh') {
+      // Ô "tự nhập" LUÔN HIỆN SẴN, không phải chip "Khác" ẩn/hiện input nữa (2026-09-04, Quỳnh: "cho
+      // ngta tự điền nó là 1 ô để tự điền luôn ko là bị lẫn ở các phần" — chip-bấm-để-hiện-ô dễ bị bỏ
+      // sót/lẫn với các chip khác). Bấm 1 chip preset thì ô này tự trống lại (val khớp preset → isOther
+      // false → value="" khi re-render), không cần logic showNganhOther riêng nữa.
       const isOther = val && !NGANH_OPTIONS.includes(val);
       inputHtml = `
         <div class="chips">
           ${NGANH_OPTIONS.map(o => `<div class="chip ${val === o ? 'selected' : ''}" data-nganh="${esc(o)}">${esc(o)}</div>`).join('')}
-          <div class="chip ${isOther || state.showNganhOther ? 'selected' : ''}" data-nganh-other="1">Khác (tự nhập)</div>
         </div>
-        ${isOther || state.showNganhOther ? `<input id="tsp-nganh-other-input" type="text" placeholder="Nhập đúng ngành/lĩnh vực của bạn" value="${esc(isOther ? val : '')}" style="margin-top:8px;">` : ''}
+        <input id="tsp-nganh-other-input" type="text" placeholder="Hoặc tự nhập ngành/lĩnh vực khác" value="${esc(isOther ? val : '')}" style="margin-top:8px;">
       `;
     }
     return `
@@ -302,10 +304,8 @@ function render(container, profile) {
   function bindMaterialForm() {
     const f = state.materialForm;
     container.querySelectorAll('[data-mat-nganh]').forEach(el => {
-      el.onclick = () => { f.nganh = el.getAttribute('data-mat-nganh'); f.showNganhOther = false; persistMaterialDraft(); draw(); };
+      el.onclick = () => { f.nganh = el.getAttribute('data-mat-nganh'); persistMaterialDraft(); draw(); };
     });
-    const otherChip = container.querySelector('[data-mat-nganh-other]');
-    if (otherChip) otherChip.onclick = () => { f.showNganhOther = true; f.nganh = ''; draw(); };
     const otherInput = container.querySelector('#mat-nganh-other-input');
     if (otherInput) otherInput.oninput = () => {
       f.nganh = otherInput.value;
@@ -381,10 +381,8 @@ function render(container, profile) {
       });
     } else if (q.type === 'nganh') {
       container.querySelectorAll('[data-nganh]').forEach(el => {
-        el.onclick = () => { state.answers[q.id] = el.getAttribute('data-nganh'); state.showNganhOther = false; persistWizardDraft(); draw(); };
+        el.onclick = () => { state.answers[q.id] = el.getAttribute('data-nganh'); persistWizardDraft(); draw(); };
       });
-      const otherChip = container.querySelector('[data-nganh-other]');
-      if (otherChip) otherChip.onclick = () => { state.showNganhOther = true; state.answers[q.id] = ''; draw(); };
       const otherInput = container.querySelector('#tsp-nganh-other-input');
       if (otherInput) otherInput.oninput = () => {
         state.answers[q.id] = otherInput.value;
