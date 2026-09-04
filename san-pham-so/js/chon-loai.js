@@ -121,6 +121,10 @@ function render(container, profile) {
     flipbook: {
       title: '', materialPath: null, materialFileName: null, materialUploading: false, materialUploadError: null,
       generating: false, error: null, result: null,
+      // Kết nối Heyzine riêng NGAY TẠI ĐÂY (2026-09-04, theo yêu cầu Quỳnh: "kết nối heyzine tại đó
+      // luôn, ko phải đến mục nào hết" — trước đó chỉ có 1 dòng chữ trỏ sang mục "Tài khoản", không
+      // cho kết nối tại chỗ). Cùng RPC/field với tai-khoan.js, chỉ là bản rút gọn nhúng vào màn này.
+      heyzineFormOpen: false, heyzineApiKey: '', heyzineClientId: '', heyzineSaving: false, heyzineError: null,
     },
   };
 
@@ -304,6 +308,40 @@ function render(container, profile) {
   // vào product_idea_results (không phải 1 "ý tưởng" cần Giai đoạn 2 viết tiếp) — chỉ ký URL file đã
   // tải lên rồi gọi thẳng Heyzine (api/san-pham-so-pdf-thanh-sach-lat.js), xong hand-off thẳng sang
   // "Sản phẩm của tôi" như 1 sản phẩm ebook đã có link giao hàng sẵn.
+  // Widget kết nối Heyzine riêng NHÚNG THẲNG vào màn tạo sách lật — không trỏ người dùng sang mục
+  // "Tài khoản" nữa (2026-09-04, Quỳnh: "workflow là sẽ kết nối heyzine tại đó luôn, ko phải đến mục
+  // nào hết"). Cùng RPC `update_sps_heyzine_credentials` và các field profile với tai-khoan.js — bản
+  // rút gọn, mặc định thu gọn (chỉ 1 dòng + nút) để không choán màn với người không cần tự chỉnh nhạc.
+  function heyzineInlineHtml(f) {
+    if (profile && profile.sps_heyzine_api_key && profile.sps_heyzine_client_id) {
+      return `<div class="hint-box" style="margin-top:12px;">✓ Đang dùng tài khoản Heyzine riêng của bạn — sau khi tạo, tự vào <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com</a> để thêm nhạc nền/tiếng lật trang nếu muốn.</div>`;
+    }
+    if (!f.heyzineFormOpen) {
+      return `
+        <div class="hint-box" style="margin-top:12px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau này? <span class="btn-ghost btn btn-sm" id="fb-heyzine-toggle" style="margin-left:4px;">🔗 Kết nối Heyzine ngay</span><br><span style="font-size:12px;">Không bắt buộc — không kết nối vẫn tạo sách lật bình thường, chỉ là dùng chung tài khoản Heyzine mặc định nên không tự chỉnh nhạc/kiểu lật trang được sau đó.</span></div>
+      `;
+    }
+    return `
+      <div class="card" style="margin-top:12px;">
+        <h2 style="font-size:14px;margin-bottom:6px;">🔗 Kết nối Heyzine riêng</h2>
+        <div class="hint-box" style="margin-bottom:10px;font-size:12.5px;">
+          1. Vào <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a>, bấm "register" (chưa có tài khoản) hoặc "Login" (đã có) — miễn phí.<br>
+          2. Đăng nhập xong, NGAY TRÊN CÙNG TRANG hiện <b>Client ID</b> + <b>API Key</b> — copy 2 giá trị đó.<br>
+          3. Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây tạo sách lật luôn không cần mở tab khác.
+        </div>
+        <label style="font-size:12.5px;">API Key</label>
+        <input id="fb-heyzine-key" type="password" value="${esc(f.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
+        <label style="margin-top:8px;font-size:12.5px;">Client ID</label>
+        <input id="fb-heyzine-client" type="text" value="${esc(f.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
+        ${f.heyzineError ? `<div class="error-box" style="margin-top:8px;">${esc(f.heyzineError)}</div>` : ''}
+        <div class="btn-row">
+          <button class="btn btn-sm" id="fb-heyzine-save" ${f.heyzineSaving ? 'disabled' : ''}>${f.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
+          <span class="btn-ghost btn btn-sm" id="fb-heyzine-cancel">Để sau</span>
+        </div>
+      </div>
+    `;
+  }
+
   function flipbookHtml() {
     const f = state.flipbook;
     return `
@@ -321,9 +359,7 @@ function render(container, profile) {
           <span class="btn-ghost btn" id="fb-back-btn">← Quay lại</span>
           <button class="btn" id="fb-generate-btn" ${(!f.materialPath || !f.title.trim() || f.generating) ? 'disabled' : ''}>${f.generating ? 'Đang tạo sách lật…' : '📖 Tạo sách lật'}</button>
         </div>
-        ${(profile && profile.sps_heyzine_api_key && profile.sps_heyzine_client_id)
-          ? `<div class="hint-box" style="margin-top:12px;">✓ Đang dùng tài khoản Heyzine riêng của bạn — sau khi tạo, tự vào Heyzine để thêm nhạc nền/tiếng lật trang nếu muốn.</div>`
-          : `<div class="hint-box" style="margin-top:12px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi tạo? Cần <b>kết nối Heyzine riêng của bạn</b> ở mục "Tài khoản" TRƯỚC khi bấm "Tạo sách lật" — dùng chung tài khoản Heyzine mặc định sẽ KHÔNG tự chỉnh được sau đó.</div>`}
+        ${heyzineInlineHtml(f)}
       </div>
       ${f.result ? `
         <div class="card">
@@ -365,6 +401,28 @@ function render(container, profile) {
         f.materialUploadError = e.message;
       }
       f.materialUploading = false;
+      draw();
+    };
+    const heyzineToggle = container.querySelector('#fb-heyzine-toggle');
+    if (heyzineToggle) heyzineToggle.onclick = () => { f.heyzineFormOpen = true; draw(); };
+    const heyzineCancel = container.querySelector('#fb-heyzine-cancel');
+    if (heyzineCancel) heyzineCancel.onclick = () => { f.heyzineFormOpen = false; draw(); };
+    const heyzineKeyEl = container.querySelector('#fb-heyzine-key');
+    if (heyzineKeyEl) heyzineKeyEl.oninput = () => { f.heyzineApiKey = heyzineKeyEl.value; };
+    const heyzineClientEl = container.querySelector('#fb-heyzine-client');
+    if (heyzineClientEl) heyzineClientEl.oninput = () => { f.heyzineClientId = heyzineClientEl.value; };
+    const heyzineSaveBtn = container.querySelector('#fb-heyzine-save');
+    if (heyzineSaveBtn) heyzineSaveBtn.onclick = async () => {
+      f.heyzineError = null;
+      if (!f.heyzineApiKey.trim() || !f.heyzineClientId.trim()) { f.heyzineError = 'Cần nhập đủ cả API Key và Client ID.'; draw(); return; }
+      f.heyzineSaving = true; draw();
+      const { error } = await supabaseClient.rpc('update_sps_heyzine_credentials', { p_api_key: f.heyzineApiKey.trim(), p_client_id: f.heyzineClientId.trim() });
+      f.heyzineSaving = false;
+      if (error) { f.heyzineError = error.message; }
+      else {
+        if (profile) { profile.sps_heyzine_api_key = f.heyzineApiKey.trim(); profile.sps_heyzine_client_id = f.heyzineClientId.trim(); }
+        f.heyzineFormOpen = false;
+      }
       draw();
     };
     const genBtn = container.querySelector('#fb-generate-btn');

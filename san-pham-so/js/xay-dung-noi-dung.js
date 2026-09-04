@@ -55,6 +55,9 @@ function render(container, ideaRow) {
     coverGenerating: false, coverUploading: false, themeError: null,
     illustrationUploading: false, // ảnh minh hoạ TỪNG PHẦN (khác ảnh bìa) — xem illustrationBlockHtml
     previewLoading: false, previewPdfBase64: null, previewTimer: null,
+    // Kết nối Heyzine riêng NGAY TẠI ĐÂY (2026-09-04) — cùng field/RPC với chon-loai.js's flipbookHtml
+    // và tai-khoan.js, không trỏ người dùng sang mục "Tài khoản" nữa.
+    heyzineFormOpen: false, heyzineApiKey: '', heyzineClientId: '', heyzineSaving: false, heyzineError: null,
     error: null,
   };
 
@@ -311,13 +314,39 @@ function render(container, ideaRow) {
     }
   }
 
-  // Nhắc kết nối Heyzine riêng TRƯỚC khi xuất — không dùng tài khoản chung của Quỳnh được thì
-  // KHÔNG tự vào Heyzine chỉnh nhạc nền/tiếng lật trang sau khi xuất được (đã xác nhận qua tài liệu
-  // Heyzine — không có link "chỉnh sửa riêng" chia sẻ được, chỉ chủ tài khoản mới sửa). 2026-09-04,
-  // theo yêu cầu trực tiếp Quỳnh sau khi hỏi "người ta có tự thêm nhạc/tiếng lật trang được không".
-  const HEYZINE_OWN_ACCOUNT_HINT = (currentProfile && currentProfile.sps_heyzine_api_key && currentProfile.sps_heyzine_client_id)
-    ? `<div class="hint-box" style="margin-top:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn — sau khi xuất, tự vào Heyzine để thêm nhạc nền/tiếng lật trang nếu muốn.</div>`
-    : `<div class="hint-box" style="margin-top:10px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi xuất? Cần <b>kết nối Heyzine riêng của bạn</b> ở mục "Tài khoản" TRƯỚC khi xuất — dùng chung tài khoản Heyzine mặc định sẽ KHÔNG tự chỉnh được sau đó.</div>`;
+  // Widget kết nối Heyzine riêng NHÚNG THẲNG vào màn xuất ebook — không trỏ người dùng sang mục
+  // "Tài khoản" nữa (2026-09-04, Quỳnh: "workflow là sẽ kết nối heyzine tại đó luôn, ko phải đến mục
+  // nào hết"). Là 1 hàm (không phải const tính 1 lần) vì render() chỉ chạy 1 lần cho cả phiên màn
+  // hình — nếu tính sẵn 1 lần, kết nối xong ngay tại đây sẽ không cập nhật được dòng "✓ đã kết nối".
+  function heyzineInlineHtml() {
+    if (currentProfile && currentProfile.sps_heyzine_api_key && currentProfile.sps_heyzine_client_id) {
+      return `<div class="hint-box" style="margin-top:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn — sau khi xuất, tự vào <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com</a> để thêm nhạc nền/tiếng lật trang nếu muốn.</div>`;
+    }
+    if (!state.heyzineFormOpen) {
+      return `
+        <div class="hint-box" style="margin-top:10px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi xuất? <span class="btn-ghost btn btn-sm" id="xdnd-heyzine-toggle" style="margin-left:4px;">🔗 Kết nối Heyzine ngay</span><br><span style="font-size:12px;">Không bắt buộc — không kết nối vẫn xuất bình thường, chỉ là dùng chung tài khoản Heyzine mặc định nên không tự chỉnh nhạc/kiểu lật trang được sau đó.</span></div>
+      `;
+    }
+    return `
+      <div class="card" style="margin-top:10px;">
+        <h2 style="font-size:14px;margin-bottom:6px;">🔗 Kết nối Heyzine riêng</h2>
+        <div class="hint-box" style="margin-bottom:10px;font-size:12.5px;">
+          1. Vào <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a>, bấm "register" (chưa có tài khoản) hoặc "Login" (đã có) — miễn phí.<br>
+          2. Đăng nhập xong, NGAY TRÊN CÙNG TRANG hiện <b>Client ID</b> + <b>API Key</b> — copy 2 giá trị đó.<br>
+          3. Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây xuất ebook luôn không cần mở tab khác.
+        </div>
+        <label style="font-size:12.5px;">API Key</label>
+        <input id="xdnd-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
+        <label style="margin-top:8px;font-size:12.5px;">Client ID</label>
+        <input id="xdnd-heyzine-client" type="text" value="${esc(state.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
+        ${state.heyzineError ? `<div class="error-box" style="margin-top:8px;">${esc(state.heyzineError)}</div>` : ''}
+        <div class="btn-row">
+          <button class="btn btn-sm" id="xdnd-heyzine-save" ${state.heyzineSaving ? 'disabled' : ''}>${state.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
+          <span class="btn-ghost btn btn-sm" id="xdnd-heyzine-cancel">Để sau</span>
+        </div>
+      </div>
+    `;
+  }
 
   function ebookExportCardHtml() {
     if (state.ebookResult) {
@@ -331,7 +360,7 @@ function render(container, ideaRow) {
             <span class="btn" id="xdnd-use-as-product-btn">✅ Dùng làm sản phẩm để bán</span>
             <span class="btn-ghost btn" id="xdnd-export-ebook-btn">Xuất lại</span>
           </div>
-          ${HEYZINE_OWN_ACCOUNT_HINT}
+          ${heyzineInlineHtml()}
         </div>
       `;
     }
@@ -341,7 +370,7 @@ function render(container, ideaRow) {
         <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Đóng gói nội dung đã viết thành file PDF, tự động biến thành sách lật đẹp (Heyzine) — phần nào chưa viết xong sẽ hiện dạng outline, vẫn xuất được ngay, không cần viết xong hết.</div>
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         <button class="btn" id="xdnd-export-ebook-btn">📖 Xuất thành Ebook (PDF + sách lật)</button>
-        ${HEYZINE_OWN_ACCOUNT_HINT}
+        ${heyzineInlineHtml()}
       </div>
     `;
   }
@@ -668,6 +697,28 @@ function render(container, ideaRow) {
       const tongDuyetBtn = container.querySelector('#xdnd-tong-duyet-btn');
       if (tongDuyetBtn) tongDuyetBtn.onclick = runTongDuyet;
       bindThemeCard();
+      const heyzineToggle = container.querySelector('#xdnd-heyzine-toggle');
+      if (heyzineToggle) heyzineToggle.onclick = () => { state.heyzineFormOpen = true; draw(); };
+      const heyzineCancel = container.querySelector('#xdnd-heyzine-cancel');
+      if (heyzineCancel) heyzineCancel.onclick = () => { state.heyzineFormOpen = false; draw(); };
+      const heyzineKeyEl = container.querySelector('#xdnd-heyzine-key');
+      if (heyzineKeyEl) heyzineKeyEl.oninput = () => { state.heyzineApiKey = heyzineKeyEl.value; };
+      const heyzineClientEl = container.querySelector('#xdnd-heyzine-client');
+      if (heyzineClientEl) heyzineClientEl.oninput = () => { state.heyzineClientId = heyzineClientEl.value; };
+      const heyzineSaveBtn = container.querySelector('#xdnd-heyzine-save');
+      if (heyzineSaveBtn) heyzineSaveBtn.onclick = async () => {
+        state.heyzineError = null;
+        if (!state.heyzineApiKey.trim() || !state.heyzineClientId.trim()) { state.heyzineError = 'Cần nhập đủ cả API Key và Client ID.'; draw(); return; }
+        state.heyzineSaving = true; draw();
+        const { error } = await supabaseClient.rpc('update_sps_heyzine_credentials', { p_api_key: state.heyzineApiKey.trim(), p_client_id: state.heyzineClientId.trim() });
+        state.heyzineSaving = false;
+        if (error) { state.heyzineError = error.message; }
+        else {
+          if (currentProfile) { currentProfile.sps_heyzine_api_key = state.heyzineApiKey.trim(); currentProfile.sps_heyzine_client_id = state.heyzineClientId.trim(); }
+          state.heyzineFormOpen = false;
+        }
+        draw();
+      };
     } else if (state.screen === 'section-start-choice') {
       container.querySelector('#xdnd-start-normal-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, false);
       container.querySelector('#xdnd-start-websearch-btn').onclick = () => runNghienCuuAndViet(state.activeIndex, true);
