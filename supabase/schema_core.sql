@@ -309,6 +309,25 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_onboarding_seen() to authenticated;
 
+-- update_own_profile: user tự sửa ĐÚNG full_name/avatar_url của CHÍNH mình, không đụng được
+-- access_until/role/has_paid dù gọi thế nào. 2026-09-04: nhan-hieu/js/tai-khoan.js đã gọi
+-- .update({full_name}) / .update({avatar_url}) TRỰC TIẾP lên profiles từ khi nào không rõ — nhưng
+-- profiles_self_update đã bị khoá từ v3 (dòng dưới), nên 2 nút "Lưu tên"/upload ảnh đại diện đó
+-- silently no-op cho user thường (Supabase không báo lỗi, chỉ đơn giản không có dòng nào khớp RLS
+-- để sửa) — phát hiện khi build san-pham-so, chưa từng có ai báo lỗi vì không có thông báo lỗi nào
+-- cả. Tham số null = giữ nguyên giá trị cũ (không phải xoá) — 2 nút gọi RPC này ở 2 thời điểm khác
+-- nhau, không muốn 1 nút vô tình xoá field của nút kia.
+create or replace function public.update_own_profile(p_full_name text default null, p_avatar_url text default null)
+returns void as $$
+begin
+  update public.profiles set
+    full_name = coalesce(p_full_name, full_name),
+    avatar_url = coalesce(p_avatar_url, avatar_url)
+  where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.update_own_profile(text, text) to authenticated;
+
 -- ============================================================
 -- ROW LEVEL SECURITY — PROFILES
 -- ============================================================

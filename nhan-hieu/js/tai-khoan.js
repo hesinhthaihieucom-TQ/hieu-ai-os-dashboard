@@ -279,7 +279,10 @@ function render(container, ctx){
           const dataUrl = c.toDataURL('image/jpeg', 0.85);
           state.avatarPreview = dataUrl;
           state.avatarSaving = true; draw();
-          const { error } = await ctx.supabase.from('profiles').update({ avatar_url: dataUrl }).eq('id', ctx.user.id);
+          // profiles_self_update đã bị khoá từ v3 (xem schema_core.sql) — .update() trực tiếp trước
+          // đây silently no-op cho user thường, phải qua RPC self-write (2026-09-04, phát hiện khi
+          // build san-pham-so).
+          const { error } = await ctx.supabase.rpc('update_own_profile', { p_avatar_url: dataUrl });
           state.avatarSaving = false;
           // ctx.profile là CÙNG 1 tham chiếu object với AppState.profile (app-shell.js truyền thẳng
           // AppState.profile khi tạo ctx) — sửa ctx.profile ở đây tự động cập nhật AppState.profile
@@ -300,7 +303,7 @@ function render(container, ctx){
     const saveNameBtn = container.querySelector('[data-action="save-name"]');
     if(saveNameBtn) saveNameBtn.onclick = async ()=>{
       state.nameSaving = true; draw();
-      const { error } = await ctx.supabase.from('profiles').update({ full_name: state.fullName.trim() }).eq('id', ctx.user.id);
+      const { error } = await ctx.supabase.rpc('update_own_profile', { p_full_name: state.fullName.trim() });
       state.nameSaving = false;
       if(!error){
         state.nameSaved = true;
