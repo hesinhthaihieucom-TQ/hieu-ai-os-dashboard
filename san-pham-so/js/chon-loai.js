@@ -218,6 +218,7 @@ function render(container, profile) {
         <input id="pt-file-input" type="file" accept="application/pdf">
         <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${state.form.materialUploading ? 'Đang tải lên…' : (state.form.materialFileName ? `📎 ${esc(state.form.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file — không bắt buộc.')}</div>
         ${state.form.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(state.form.materialUploadError)}</div>` : ''}
+        ${state.form.materialFileName ? `<div class="hint-box" style="margin-top:10px;">👇 Xong rồi — giờ cuộn xuống <b>chọn 1 loại sản phẩm</b> ở danh sách bên dưới (hoặc bấm "AI gợi ý loại phù hợp"), file này sẽ tự động được dùng.</div>` : ''}
       </div>
       <div class="card" style="margin-bottom:14px;">
         <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.</div>
@@ -320,6 +321,7 @@ function render(container, profile) {
           <span class="btn-ghost btn" id="fb-back-btn">← Quay lại</span>
           <button class="btn" id="fb-generate-btn" ${(!f.materialPath || !f.title.trim() || f.generating) ? 'disabled' : ''}>${f.generating ? 'Đang tạo sách lật…' : '📖 Tạo sách lật'}</button>
         </div>
+        <div class="hint-box" style="margin-top:12px;">🎵 Muốn tự thêm nhạc nền/tiếng lật trang sau khi tạo? Cần <b>kết nối Heyzine riêng của bạn</b> ở mục "Tài khoản" TRƯỚC khi bấm "Tạo sách lật" — dùng chung tài khoản Heyzine mặc định sẽ KHÔNG tự chỉnh được sau đó.</div>
       </div>
       ${f.result ? `
         <div class="card">
