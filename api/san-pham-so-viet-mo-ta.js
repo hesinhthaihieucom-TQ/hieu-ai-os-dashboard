@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
         body: JSON.stringify({
           model: 'claude-sonnet-5',
           max_tokens: 1500,
-          system: SYSTEM_PROMPT,
+          system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
           messages: [{ role: 'user', content: userContent }],
           tools: [TOOL_VIET_MO_TA],
           tool_choice: { type: 'tool', name: TOOL_VIET_MO_TA.name },

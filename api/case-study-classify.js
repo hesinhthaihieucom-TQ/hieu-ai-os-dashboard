@@ -45,7 +45,7 @@ async function callClaude({ apiKey, noiDung }) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: 200,
-        system: SYSTEM_PROMPT,
+        system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: `NỘI DUNG CASE STUDY:\n${noiDung}` }],
         tools: [TOOL_PHAN_LOAI],
         tool_choice: { type: 'tool', name: TOOL_PHAN_LOAI.name },

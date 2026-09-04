@@ -29,7 +29,7 @@ async function callClaude({ apiKey, userContent }) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: 3000,
-        system: SYSTEM_PROMPT,
+        system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: userContent }],
         tools: [TOOL_TAO_Y_TUONG_TU_LOAI],
         tool_choice: { type: 'tool', name: TOOL_TAO_Y_TUONG_TU_LOAI.name },

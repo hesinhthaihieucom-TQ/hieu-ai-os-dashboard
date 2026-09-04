@@ -53,7 +53,7 @@ async function callClaude({ apiKey, system, userContent, tool, maxTokens, timeou
         // phần 3-5 nội dung con) từng có nguy cơ bị cắt giữa chừng ở mức thấp hơn, xem lưu ý tương
         // tự ở api/tim-san-pham-phu-hop.js.
         max_tokens: maxTokens || 6000,
-        system,
+        system: (typeof system === 'string' ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] : system),
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },

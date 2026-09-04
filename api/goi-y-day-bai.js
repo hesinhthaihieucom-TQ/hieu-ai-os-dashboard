@@ -83,7 +83,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
         // 5 mốc x schema đầy đủ (chiến lược + cmt + 3 gợi ý trả lời + tài sản) trong 1 lần — cần
         // nhiều hơn hẳn max_tokens=2000 cũ của bản 1-mốc/lần.
         max_tokens: 5000,
-        system,
+        system: (typeof system === 'string' ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] : system),
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },

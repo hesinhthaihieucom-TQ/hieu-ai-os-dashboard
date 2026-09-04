@@ -89,7 +89,7 @@ async function callClaude({ apiKey, system, userContent, tool, maxTokens }) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: maxTokens,
-        system,
+        system: (typeof system === 'string' ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] : system),
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },

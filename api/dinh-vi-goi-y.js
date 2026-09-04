@@ -42,7 +42,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
         // lúc đó Anthropic trả về tool_use với input rỗng/thiếu vi_du (không lỗi rõ ràng), UI chỉ
         // báo chung "AI không trả về gợi ý". Tăng trần lên rộng rãi để tránh bị cắt.
         max_tokens: 2200,
-        system,
+        system: (typeof system === 'string' ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] : system),
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },

@@ -54,7 +54,7 @@ async function callClaude({ apiKey, question }) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: 600,
-        system: SYSTEM_PROMPT,
+        system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: question }],
         tools: [TOOL_ANSWER],
         tool_choice: { type: 'tool', name: TOOL_ANSWER.name },

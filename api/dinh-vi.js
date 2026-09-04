@@ -77,7 +77,7 @@ async function callClaude({ apiKey, system, userContent, tool }) {
         // Sonnet 5 hỗ trợ tới 128.000 token output trên Messages API đồng bộ, 8000 không hề gần trần
         // thật. Nâng phòng ngừa lên 16000 (2026-09-01) — không tốn thêm phí nếu không dùng hết.
         max_tokens: 16000,
-        system,
+        system: (typeof system === 'string' ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] : system),
         messages: [{ role: 'user', content: userContent }],
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },
