@@ -10,9 +10,14 @@ const SK_PRODUCT_CATEGORIES = [
   { key:'xuong_khop', label:'Xương khớp' },
 ];
 
+// 2026-09-05, chị Quỳnh: "phần sản phẩm ở mục sản phẩm unicity cũng phải làm tương tự như phần sản
+// phẩm ở mục kiểm tra sức khỏe" — đổi từ dòng "+/✓" cũ + accordion riêng sang dùng CHUNG
+// skProductOrderRowHtml (checkbox, ảnh to, 2 dòng công dụng, "Xem đầy đủ công dụng →" mới mở full),
+// giống hệt kiem-tra-suc-khoe.js/thu-vien-suc-khoe.js. Mặc định TẤT CẢ đã chọn (deselected lưu
+// chiều "đã bỏ") — đúng quy ước chung đã chốt cho mọi trang có gợi ý/danh sách sản phẩm.
 (function(){
 function render(container, ctx){
-  const state = { loading:true, products:[], tab:'all', cart: new Set() };
+  const state = { loading:true, products:[], tab:'all', deselected:new Set() };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -31,10 +36,16 @@ function render(container, ctx){
   function html(){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
     const list = filtered();
+    // Tổng đơn hàng luôn tính trên TOÀN BỘ sản phẩm đã chọn (không chỉ tab đang xem) — đổi tab chỉ
+    // để duyệt/lọc, không làm mất lựa chọn đã chọn ở tab khác.
+    const cartChosen = state.products.filter(p=>!state.deselected.has(p.id));
+    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
+    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    const gift = skOrderGift(cartTotal, cartChosen.length);
     return `
       <div class="page-head">
         <h1>Sản Phẩm Unicity</h1>
-        <p>Bấm vào tên sản phẩm để xem đầy đủ thành phần, cơ chế tác động và cách dùng.</p>
+        <p>Bấm "Xem đầy đủ công dụng" để xem thành phần, cơ chế tác động và cách dùng.</p>
       </div>
       <div style="font-size:12.5px;color:var(--ink-soft);background:var(--surface-soft,#f5f5f5);border-radius:10px;padding:10px 14px;margin-bottom:16px;line-height:1.6;">
         Thông tin thành phần dưới đây chỉ mang tính tham khảo, không phải là công dụng đã được kiểm chứng của sản phẩm và không thay thế tư vấn y tế. Thực phẩm bảo vệ sức khỏe không phải là thuốc, không có tác dụng thay thế thuốc chữa bệnh.
@@ -46,35 +57,20 @@ function render(container, ctx){
       </div>
 
       ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">${state.products.length===0 ? 'Chưa có sản phẩm nào — chị Quỳnh sẽ thêm sớm.' : 'Chưa có sản phẩm nào ở nhánh này.'}</div>` : ''}
-      ${list.map(p=>{
-        const catLabel = (SK_PRODUCT_CATEGORIES.find(c=>c.key===p.category)||{}).label;
-        return `
-        <details class="kt-section">
-          <summary class="kt-summary" style="display:flex;align-items:center;gap:12px;">
-            ${p.retail_price!=null ? `<span data-cart-toggle="${esc(p.id)}" title="${state.cart.has(p.id)?'Bỏ khỏi đơn hàng':'Thêm vào đơn hàng'}" style="width:24px;height:24px;border-radius:7px;border:1px solid ${state.cart.has(p.id)?'var(--accent)':'var(--line)'};background:${state.cart.has(p.id)?'var(--accent)':'#fff'};color:${state.cart.has(p.id)?'#fff':'var(--ink-soft)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;cursor:pointer;">${state.cart.has(p.id)?'✓':'+'}</span>` : ''}
-            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:68px;height:68px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
-            <span style="flex:1;min-width:0;">
-              <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
-              ${catLabel ? `<div style="font-size:11.5px;font-weight:400;color:var(--ink-soft);margin-top:2px;">${esc(catLabel)}</div>` : ''}
-            </span>
-            ${p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}
-          </summary>
-          <div style="margin-top:14px;">
-            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" data-zoom="${esc(p.image_url)}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;float:right;margin:0 0 10px 14px;cursor:zoom-in;">` : ''}
-            ${skProductDetailHtml(p)}
-          </div>
-        </details>
-      `;}).join('')}
+      ${list.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
 
-      ${state.cart.size>0 ? (()=>{
-        const chosen = state.products.filter(p=>state.cart.has(p.id));
-        const total = chosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
-        return `
-        <div style="position:sticky;bottom:14px;margin-top:20px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(0,0,0,.12);">
-          <div style="font-size:13.5px;">Đã chọn <b>${state.cart.size}</b> sản phẩm · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${total.toLocaleString('vi-VN')}đ</span></div>
-          <button class="btn btn-sm" id="sk-cart-order">Đặt hàng</button>
-        </div>`;
-      })() : ''}
+      ${state.products.length>0 ? `
+        <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="display:flex;gap:8px;">
+              <span class="btn-ghost btn btn-sm" id="sp-toggle-all">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
+              <button class="btn btn-sm" id="sp-order" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
+            </div>
+          </div>
+          ${skGiftPreviewHtml(gift)}
+        </div>
+      ` : ''}
     `;
   }
 
@@ -82,19 +78,25 @@ function render(container, ctx){
     container.querySelectorAll('[data-tab]').forEach(el=>{
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
     });
-    container.querySelectorAll('[data-zoom]').forEach(el=>{
-      el.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); openImageLightbox(el.getAttribute('data-zoom'), ''); };
-    });
     container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
-      el.onclick = (e)=>{
-        e.preventDefault(); e.stopPropagation();
+      el.onchange = (e)=>{
         const id = el.getAttribute('data-cart-toggle');
-        if(state.cart.has(id)) state.cart.delete(id); else state.cart.add(id);
+        if(e.target.checked) state.deselected.delete(id); else state.deselected.add(id);
         draw();
       };
     });
-    const orderBtn = container.querySelector('#sk-cart-order');
-    if(orderBtn) orderBtn.onclick = ()=> openOrderModal(ctx, state.products.filter(p=>state.cart.has(p.id)));
+    const toggleAllBtn = container.querySelector('#sp-toggle-all');
+    if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
+      const ids = state.products.map(p=>p.id);
+      const anySelected = ids.some(id=>!state.deselected.has(id));
+      if(anySelected) ids.forEach(id=>state.deselected.add(id));
+      else state.deselected.clear();
+      draw();
+    };
+    const orderBtn = container.querySelector('#sp-order');
+    if(orderBtn) orderBtn.onclick = ()=>{
+      openOrderModal(ctx, state.products.filter(p=>!state.deselected.has(p.id)));
+    };
   }
 
   draw();

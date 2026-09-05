@@ -519,6 +519,9 @@ function renderThanhVien(container, ctx){
           ${state.customerProductIds===null ? `<div class="loading"><div class="spinner"></div></div>` : `
             <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Tick đúng sản phẩm khách đang dùng (không cần khớp Combo nào) — Lịch Trình Của Bạn của khách sẽ hiện đúng hướng dẫn sử dụng của các sản phẩm này. Khách tự đặt giờ nhắc riêng ở Lịch Trình Của Bạn, không đặt ở đây.</div>
             <div class="chips">${state.allProducts.map(p=>`<div class="chip ${state.customerProductIds.has(p.id)?'selected':''}" data-toggle-customer-product="${userId}|${p.id}">${esc(p.name)}</div>`).join('')}</div>
+            <div style="margin-top:10px;font-size:12.5px;font-weight:700;color:${state.customerProductIds.size>0?'var(--accent)':'var(--ink-soft)'};">
+              ${state.customerProductIds.size>0 ? `✓ Đã lưu ${state.customerProductIds.size} sản phẩm — đã cập nhật vào Lịch Trình của khách ngay khi bấm tick, không cần bấm gì thêm.` : 'Chưa chọn sản phẩm nào.'}
+            </div>
           `}
         </div>
       ` : ''}

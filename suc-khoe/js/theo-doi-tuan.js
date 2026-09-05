@@ -76,7 +76,7 @@ const SK_ABSOLUTE_CONCERN = {
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, week:0, weekAuto:true, metrics:{}, saving:false, products:[], justSaved:false };
+  const state = { loading:true, week:0, weekAuto:true, metrics:{}, saving:false, products:[], justSaved:false, deselected:new Set() };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -290,24 +290,30 @@ function render(container, ctx){
 
       <button class="btn" id="sk-save-week" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu ' + esc(SK_WEEK_NAMES[state.week])}</button>
 
-      ${products.length>0 ? `
-        <div class="hint-box" style="margin-top:16px;">
+      ${products.length>0 ? (()=>{
+        // Đồng bộ giao diện với Kiểm Tra Sức Khỏe/Thư Viện Sức Khỏe/Sản Phẩm Unicity (2026-09-05,
+        // chị Quỳnh: "các phần nào có sản phẩm cũng phải làm tương tự") — dùng chung
+        // skProductOrderRowHtml (checkbox, ảnh to, công dụng, mở full) + thanh tổng + quà tặng.
+        const cartChosen = products.filter(p=>!state.deselected.has(p.id));
+        const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
+        const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+        const gift = skOrderGift(cartTotal, cartChosen.length);
+        return `
+        <div class="hint-box" style="margin-top:16px;margin-bottom:10px;">
           Chỉ số ${flags.map(f=>esc(f.label)).join(', ')} đang ở mức cần chú ý — dưới đây là sản phẩm Unicity liên quan tới nhóm này.
         </div>
-        ${products.map(p=>`
-          <div class="section" data-open-product="1" style="cursor:pointer;margin-top:10px;display:flex;gap:14px;align-items:flex-start;">
-            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
-                ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
-              </div>
-              ${p.short_description ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(p.short_description)}</div>` : ''}
+        ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
+        <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="display:flex;gap:8px;">
+              <span class="btn-ghost btn btn-sm" id="sk-toggle-all-flagged">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
+              <button class="btn btn-sm" id="sk-order-flagged" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
             </div>
           </div>
-        `).join('')}
-        <button class="btn btn-sm" id="sk-order-flagged" style="margin-top:6px;">Đặt hàng</button>
-      ` : ''}
+          ${skGiftPreviewHtml(gift)}
+        </div>
+      `;})() : ''}
 
       ${summary.length>0 ? `
         <div class="page-head" style="margin:28px 0 12px;"><h2 style="font-size:17px;">So sánh Bắt đầu → Tuần 8</h2></div>
@@ -332,11 +338,26 @@ function render(container, ctx){
     });
     const saveBtn = container.querySelector('#sk-save-week');
     if(saveBtn) saveBtn.onclick = save;
-    container.querySelectorAll('[data-open-product]').forEach(el=>{
-      el.onclick = ()=>{ location.hash = 'san-pham'; };
+    container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
+      el.onchange = (e)=>{
+        const id = el.getAttribute('data-cart-toggle');
+        if(e.target.checked) state.deselected.delete(id); else state.deselected.add(id);
+        draw();
+      };
     });
+    const toggleAllBtn = container.querySelector('#sk-toggle-all-flagged');
+    if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
+      const ids = recommendedProducts().products.map(p=>p.id);
+      const anySelected = ids.some(id=>!state.deselected.has(id));
+      if(anySelected) ids.forEach(id=>state.deselected.add(id));
+      else ids.forEach(id=>state.deselected.delete(id));
+      draw();
+    };
     const orderBtn = container.querySelector('#sk-order-flagged');
-    if(orderBtn) orderBtn.onclick = (e)=>{ e.stopPropagation(); openOrderModal(ctx, recommendedProducts().products); };
+    if(orderBtn) orderBtn.onclick = ()=>{
+      const chosen = recommendedProducts().products.filter(p=>!state.deselected.has(p.id));
+      openOrderModal(ctx, chosen);
+    };
   }
 
   draw();
