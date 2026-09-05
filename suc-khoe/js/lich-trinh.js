@@ -15,7 +15,7 @@ const SK_GI_TABLES = [
 (function(){
 function render(container, ctx){
   const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
-    insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[] };
+    insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[], dailyReminderTime:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -26,20 +26,22 @@ function render(container, ctx){
   async function load(){
     const packageId = ctx.profile && ctx.profile.sk_package_id;
     const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }] = await Promise.all([
-      packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
+      packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections,daily_reminder_time').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
       packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
       ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
       ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
-      ctx.supabase.from('sk_customer_products').select('product_id').eq('user_id', ctx.user.id),
+      ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
     ]);
     state.packageName = pkg ? pkg.name : null;
+    state.dailyReminderTime = pkg ? pkg.daily_reminder_time : null;
     state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
     state.items = items || [];
     state.doneIds = new Set((progress||[]).map(p=>p.schedule_item_id));
     const allProducts = products || [];
     allProducts.forEach(p=>{ state.productByName[p.name] = p; });
-    const cpIds = new Set((customerProductRows||[]).map(r=>r.product_id));
-    state.customerProducts = allProducts.filter(p=>cpIds.has(p.id));
+    const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
+    state.customerProducts = allProducts.filter(p=>reminderByProductId[p.id]!==undefined)
+      .map(p=>({ ...p, _reminderTime: reminderByProductId[p.id] }));
     state.loading = false;
     draw();
   }
@@ -118,6 +120,7 @@ function render(container, ctx){
                 <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
                 ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
               </div>
+              ${p._reminderTime ? `<div style="font-size:12.5px;color:var(--accent);font-weight:700;margin-top:4px;">⏰ ${esc(p._reminderTime)} — sẽ có thông báo nhắc dùng đúng giờ này</div>` : ''}
               ${skProductUsageHtml(p)}
             </div>
           </div>
@@ -295,7 +298,7 @@ Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 
     return `
       <div class="page-head">
         <h1>Lịch Trình Của Bạn</h1>
-        <p>${state.packageName ? `Gói: <b>${esc(state.packageName)}</b> — giải pháp gồm 70% sản phẩm, 20% ăn uống, 10% tập luyện.` : 'Hướng dẫn sử dụng đúng các sản phẩm bạn đang dùng.'}</p>
+        <p>${state.packageName ? `Gói: <b>${esc(state.packageName)}</b> — giải pháp gồm 70% sản phẩm, 20% ăn uống, 10% tập luyện.${state.dailyReminderTime ? ` ⏰ Thông báo nhắc mỗi ngày lúc ${esc(state.dailyReminderTime)}.` : ''}` : 'Hướng dẫn sử dụng đúng các sản phẩm bạn đang dùng.'}</p>
       </div>
       <div class="chips" style="margin-bottom:20px;">
         <div class="chip ${state.tab==='sanpham'?'selected':''}" data-tab="sanpham">🧪 Sản Phẩm</div>

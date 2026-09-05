@@ -395,3 +395,12 @@ drop policy if exists "sk_customer_products_owner_read" on sk_customer_products;
 create policy "sk_customer_products_owner_read" on sk_customer_products for select using (auth.uid() = user_id);
 drop policy if exists "sk_customer_products_admin_all" on sk_customer_products;
 create policy "sk_customer_products_admin_all" on sk_customer_products for all using (is_admin()) with check (is_admin());
+
+-- Giờ nhắc dùng + thông báo đẩy (2026-09-05, chị Quỳnh: "lịch trình cần phải có thời gian và có
+-- thông báo để nhắc người ta dùng") — reminder_time riêng cho TỪNG sản phẩm lẻ (khách khác nhau có
+-- thể uống 1 sản phẩm vào giờ khác nhau); daily_reminder_time là 1 giờ nhắc CHUNG mỗi ngày cho khách
+-- đang theo 1 bộ Combo (đơn giản hoá — Combo có nhiều sản phẩm nhiều khung giờ khác nhau trong
+-- regimen_sections, nhắc riêng từng khung giờ đó cần dựng thêm UI sửa regimen_sections, chưa làm ở
+-- bản này — nhắc 1 lần/ngày dẫn vào Lịch Trình Của Bạn xem đủ chi tiết là đủ dùng trước mắt).
+alter table sk_customer_products add column if not exists reminder_time text;
+alter table sk_packages add column if not exists daily_reminder_time text;

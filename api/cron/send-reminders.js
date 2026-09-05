@@ -341,6 +341,54 @@ async function checkSucKhoeDailyTip() {
   return count;
 }
 
+// Giờ nhắc dùng sản phẩm lẻ + gói Combo (2026-09-05, chị Quỳnh: "lịch trình cần phải có thời gian và
+// có thông báo để nhắc người ta dùng") — 2 mảnh riêng vì 2 nguồn khác nhau:
+// (1) sản phẩm lẻ (sk_customer_products.reminder_time) — mỗi dòng 1 giờ riêng, admin đặt qua Quản
+//     Trị > Thành Viên > "Sản phẩm đang dùng".
+// (2) gói Combo (sk_packages.daily_reminder_time) — 1 giờ CHUNG/ngày cho cả gói (không phải riêng
+//     từng khung giờ trong regimen_sections — regimen_sections chưa có UI sửa, chỉ đổi được qua SQL,
+//     nhắc 1 lần/ngày dẫn vào Lịch Trình xem đủ chi tiết là đủ dùng trước mắt).
+async function checkSucKhoeProductReminders() {
+  const { dateStr, minutesOfDay } = vnNowParts();
+  const resp = await supabaseAdmin(`sk_customer_products?reminder_time=not.is.null&select=user_id,product_id,reminder_time,sk_products(name)`);
+  const rows = resp.ok ? await resp.json() : [];
+  let count = 0;
+  for (const row of rows) {
+    if (!withinWindow(parseHHMM(row.reminder_time), minutesOfDay)) continue;
+    const productName = (row.sk_products && row.sk_products.name) || 'sản phẩm';
+    const result = await notifyOnce(row.user_id, `sk-product-reminder:${row.product_id}:${dateStr}`, {
+      title: '⏰ Đến giờ dùng ' + productName,
+      body: `Đã đến giờ bạn đặt để dùng ${productName} — xem cách dùng trong Lịch Trình Của Bạn.`,
+      url: './#lich-trinh',
+    });
+    if (result.sent) count++;
+  }
+  return count;
+}
+
+async function checkSucKhoePackageDailyReminder() {
+  const { dateStr, minutesOfDay } = vnNowParts();
+  const packagesResp = await supabaseAdmin(`sk_packages?daily_reminder_time=not.is.null&select=id,name,daily_reminder_time`);
+  const packages = packagesResp.ok ? await packagesResp.json() : [];
+  const duePackages = packages.filter((p) => withinWindow(parseHHMM(p.daily_reminder_time), minutesOfDay));
+  if (!duePackages.length) return 0;
+
+  let count = 0;
+  for (const pkg of duePackages) {
+    const usersResp = await supabaseAdmin(`profiles?sk_package_id=eq.${pkg.id}&select=id`);
+    const users = usersResp.ok ? await usersResp.json() : [];
+    for (const u of users) {
+      const result = await notifyOnce(u.id, `sk-package-daily:${pkg.id}:${dateStr}`, {
+        title: '⏰ Đến giờ chăm sóc cơ thể hôm nay',
+        body: `Xem lịch trình sản phẩm hôm nay của gói "${pkg.name}".`,
+        url: './#lich-trinh',
+      });
+      if (result.sent) count++;
+    }
+  }
+  return count;
+}
+
 // Chỉ gửi cho user ĐÃ bật thông báo (có ít nhất 1 push_subscriptions) — join qua 2 bước vì
 // push_subscriptions dùng chung cho cả hệ sinh thái, không lọc được thẳng bằng 1 câu query profiles.
 // 'daily' nhắc mỗi tối, 'weekly' chỉ nhắc đúng tối Chủ Nhật (dayOfWeek=0, giờ VN) — cho người chỉ
@@ -428,7 +476,7 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder, tcPriceTierDeadline] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder, tcPriceTierDeadline, skProductReminders, skPackageDailyReminder] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
@@ -440,8 +488,10 @@ module.exports = async (req, res) => {
       checkSucKhoeDailyTip(),
       checkTaiChinhLogReminder(),
       checkTcPriceTierDeadline(),
+      checkSucKhoeProductReminders(),
+      checkSucKhoePackageDailyReminder(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder, tc_price_tier_deadline: tcPriceTierDeadline } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder, tc_price_tier_deadline: tcPriceTierDeadline, sk_product_reminders: skProductReminders, sk_package_daily_reminder: skPackageDailyReminder } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
