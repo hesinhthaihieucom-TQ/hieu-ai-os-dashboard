@@ -86,7 +86,14 @@ function render(container, profile) {
 
   async function bootFreshFlow() {
     const pending = await loadPendingIdeaResult();
-    if (pending && pending.result) {
+    // LƯU Ý: phải kiểm tra nguồn trước khi tự khôi phục — loadPendingIdeaResult() trả về đúng 1 dòng
+    // "đang cân nhắc" MỚI NHẤT của user, có thể đến từ Chọn Loại (answers.nguon === 'chon_loai') chứ
+    // không phải từ chính wizard này. Thiếu kiểm tra này (2026-09-04, phát hiện khi rà lại cùng lúc
+    // với việc gộp danh sách "đang dở" vào Viết Nội Dung) khiến 1 ý tưởng đang cân nhắc dở ở Chọn
+    // Loại có thể bị hiện NHẦM vào màn kết quả của Tìm Sản Phẩm Phù Hợp — chon-loai.js đã tự chặn
+    // đúng chiều ngược lại từ trước (dòng "pending.answers.nguon !== 'chon_loai'" ở đó), file này thì
+    // chưa.
+    if (pending && pending.result && pending.answers && pending.answers.nguon !== 'chon_loai') {
       state.result = pending.result;
       state.pendingId = pending.id;
       state.screen = 'result';
