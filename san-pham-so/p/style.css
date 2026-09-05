@@ -264,7 +264,14 @@ body{ overflow-x:hidden; }
    tiết bố cục (chữ serif, nhãn nhỏ .lp-eyebrow) nhưng vẫn dùng màu kem/xanh chung của app, CHƯA từng
    khớp đúng màu đen/vàng thật của trang gốc). Đa số class dùng var(--accent)/var(--accent-soft) sẵn
    nên chỉ cần redefine biến là tự đổi màu đúng khắp nơi, không cần sửa từng class riêng lẻ. */
-.wrap[data-lp-template="quynh"]{ --accent:#D9A441; --accent-soft:#241D10; --ink:#F3EEE0; --ink-soft:#A69C89; --line:#2E2A22; background:#0D0C0A; }
+/* color:var(--ink) BẮT BUỘC ngay ở đây, không chỉ redefine biến — 1 phần tử redefine
+   custom-property KHÔNG tự đổi màu chữ ngược lên các phần tử cha đã lỡ tính "color" trước đó (ở đây
+   là body{color:var(--ink)} tính theo --ink GỐC màu tối, dành cho nền sáng). Class nào tự có
+   color:var(--ink)/var(--accent) riêng thì luôn đúng, nhưng .lp-h2 (và có thể còn class khác) không
+   set color riêng, chỉ dựa vào kế thừa — nếu không có dòng color ở NGAY block này, chúng vẫn kế thừa
+   đúng màu ink TỐI từ body, chữ tối trên nền đen gần như không đọc được (2026-09-05, Quỳnh: "chữ chỉ
+   số trước sau bị mờ câm câm" — đúng lỗi này). */
+.wrap[data-lp-template="quynh"]{ --accent:#D9A441; --accent-soft:#241D10; --ink:#F3EEE0; --ink-soft:#A69C89; --line:#2E2A22; background:#0D0C0A; color:var(--ink); }
 .wrap[data-lp-template="quynh"] .card{ background:#17140F; border-color:#2E2A22; }
 .wrap[data-lp-template="quynh"] h1{ color:#fff; }
 .wrap[data-lp-template="quynh"] .desc{ color:#C7BFAE; }
