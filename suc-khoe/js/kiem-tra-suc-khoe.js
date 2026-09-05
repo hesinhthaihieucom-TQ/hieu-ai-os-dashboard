@@ -54,7 +54,7 @@ function render(container, ctx){
   async function load(){
     const [{ data: row }, { data: entries }, { data: products }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
-      ctx.supabase.from('sk_library_entries').select('id,issue_name,related_product_ids,product_notes').order('issue_name', { ascending:true }),
+      ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
       ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
     ]);
     state.products = products || [];
@@ -205,8 +205,17 @@ function render(container, ctx){
       ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
 
       ${libMatches.length>0 ? `
-        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Đọc thêm ở Thư Viện Sức Khỏe</h2></div>
-        ${libMatches.map(m=>`<div class="list-item" data-open-library="1" style="cursor:pointer;"><div class="txt">${esc(m.issue_name)}</div><span style="color:var(--accent);font-size:13px;">Xem chi tiết →</span></div>`).join('')}
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Tìm hiểu thêm các vấn đề bạn có thể mắc</h2></div>
+        ${libMatches.map(m=>`
+          <details class="kt-section">
+            <summary class="kt-summary">${esc(m.issue_name)}</summary>
+            <div style="margin-top:12px;font-size:13.5px;line-height:1.8;">
+              ${m.causes ? `<div style="margin-bottom:16px;border-left:3px solid #c0392b;padding-left:14px;">${skSectionHeaderHtml('Nguyên nhân', '#c0392b', '🔍')}${skRichBodyHtml(m.causes)}</div>` : ''}
+              ${m.symptoms ? `<div style="margin-bottom:16px;border-left:3px solid #e8643c;padding-left:14px;">${skSectionHeaderHtml('Biểu hiện', '#e8643c', '👁️')}${skRichBodyHtml(m.symptoms)}</div>` : ''}
+              ${m.remedies ? `<div style="border-left:3px solid #1f9d63;padding-left:14px;">${skSectionHeaderHtml('Cách xử lý', '#1f9d63', '✅')}${skRichBodyHtml(m.remedies)}</div>` : ''}
+            </div>
+          </details>
+        `).join('')}
       ` : ''}
 
       ${productMatches.length>0 ? `
@@ -222,7 +231,7 @@ function render(container, ctx){
               <button class="btn btn-sm" id="sk-order-matched" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
             </div>
           </div>
-          ${gift ? `<div style="margin-top:8px;font-size:13px;color:#e8643c;font-weight:700;">${esc(gift.label)}</div>` : ''}
+          ${skGiftPreviewHtml(gift)}
         </div>
       ` : ''}
     `;
@@ -231,9 +240,6 @@ function render(container, ctx){
   function bind(){
     container.querySelectorAll('[data-group]').forEach(el=>{
       el.onclick = ()=> toggle(el.getAttribute('data-group'), el.getAttribute('data-label'));
-    });
-    container.querySelectorAll('[data-open-library]').forEach(el=>{
-      el.onclick = ()=>{ location.hash = 'thu-vien-suc-khoe'; };
     });
     container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
       el.onchange = (e)=>{

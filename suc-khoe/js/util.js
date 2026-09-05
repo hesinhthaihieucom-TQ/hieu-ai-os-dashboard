@@ -78,6 +78,19 @@ function skOrderGift(total, itemCount){
   return null;
 }
 
+// Preview quà tặng dùng chung ở thanh tổng cuối trang (Kiểm Tra Sức Khỏe/Thư Viện Sức Khỏe) — 2026-09-05,
+// chị Quỳnh: "chưa có hình thỏi son và bình lắc" — trước đây thanh này chỉ hiện chữ (gift.label), giờ
+// hiện kèm ảnh thật giống hệt trong modal đặt hàng, để khách thấy ngay quà trông thế nào trước khi bấm Đặt hàng.
+function skGiftPreviewHtml(gift){
+  if(!gift) return '';
+  return `
+    <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      ${(gift.images||[]).map(src=>`<img src="${esc(src)}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:7px;flex-shrink:0;">`).join('')}
+      <span style="font-size:13px;color:#e8643c;font-weight:700;">${esc(gift.label)}</span>
+    </div>
+  `;
+}
+
 function openOrderModal(ctx, products){
   const selected = new Set(products.map(p=>p.id));
   const formValues = { name: (ctx.profile && ctx.profile.full_name) || '', phone:'', address:'' };
@@ -298,11 +311,21 @@ function skProductDetailHtml(p){
 // line-clamp — không phải toàn bộ công dụng), "Xem đầy đủ công dụng" mới mở ra skProductDetailHtml
 // (2026-08-31, chị Quỳnh chốt sau vài lần chỉnh: lý do ngắn hiện sẵn, công dụng ĐẦY ĐỦ mới cần bấm mở
 // — tránh dài dằng dặc). Dùng chung ở Kiểm Tra Sức Khỏe + Thư Viện Sức Khỏe cho đồng bộ tuyệt đối.
+// Fallback khi sản phẩm KHÔNG có ghi chú riêng theo vấn đề (p._note — xem sk_library_entries.
+// product_notes, seed_sk_library_product_notes_v1.sql) — 2026-09-05, chị Quỳnh phản hồi thấy sản
+// phẩm "chỉ có mỗi tên", đọc không hiểu. Trước đây ẩn hẳn dòng ghi chú nếu thiếu _note — giờ LUÔN
+// hiện ít nhất 2 dòng mô tả công dụng (rút từ short_description) để không bao giờ trống trơn, dù
+// data product_notes chưa phủ hết mọi sản phẩm/mọi vấn đề.
+function skProductNoteFallback(p){
+  return p._note || p.short_description || null;
+}
+
 function skProductOrderRowHtml(p, checked){
+  const note = skProductNoteFallback(p);
   return `
-    <div class="section" style="background:#fff;display:flex;gap:12px;align-items:flex-start;${checked?'':'opacity:.55;'}">
+    <div class="section" style="background:#fff;display:flex;gap:14px;align-items:flex-start;${checked?'':'opacity:.55;'}">
       <input type="checkbox" data-cart-toggle="${esc(p.id)}" ${checked?'checked':''} style="width:20px;height:20px;flex-shrink:0;margin-top:3px;cursor:pointer;accent-color:var(--accent);">
-      ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+      ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
       <div style="flex:1;min-width:0;">
         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
           <div style="font-weight:700;font-size:14px;">${esc(p.name)}${p._priority ? ` <span style="font-size:10.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}</div>
@@ -311,7 +334,7 @@ function skProductOrderRowHtml(p, checked){
             ${p.pv!=null ? `<div style="font-size:11px;color:var(--ink-soft);">${p.pv} PV</div>` : ''}
           </div>
         </div>
-        ${p._note ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(p._note)}</div>` : ''}
+        ${note ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
         <details style="margin-top:6px;">
           <summary style="cursor:pointer;font-size:12.5px;color:var(--accent);list-style:none;">Xem đầy đủ công dụng →</summary>
           <div style="margin-top:10px;">${skProductDetailHtml(p)}</div>

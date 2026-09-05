@@ -94,7 +94,7 @@ function render(container, ctx){
               <button class="btn btn-sm" id="tv-order" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
             </div>
           </div>
-          ${gift ? `<div style="margin-top:8px;font-size:13px;color:#e8643c;font-weight:700;">${esc(gift.label)}</div>` : ''}
+          ${skGiftPreviewHtml(gift)}
         </div>
       ` : ''}
     `;

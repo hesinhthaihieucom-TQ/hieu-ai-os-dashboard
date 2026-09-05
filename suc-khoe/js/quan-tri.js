@@ -551,6 +551,12 @@ function renderDonHang(container, ctx){
             ${o.gift ? ` · ${esc(SK_ORDER_GIFT_LABELS[o.gift]||o.gift)}` : ''}
             ${o.gift_color ? ` (màu son: ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||o.gift_color)})` : ''}
           </div>
+          ${o.gift ? `
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <img src="${esc(SK_GIFT_SHAKER_IMAGE)}" alt="Bình lắc" title="Bình lắc" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">
+              ${o.gift_color ? `<img src="${esc((SK_LIPSTICK_COLORS.find(c=>c.key===o.gift_color)||{}).image)}" alt="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" title="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">` : ''}
+            </div>
+          ` : ''}
           <div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">
             Giao tới: ${esc(o.shipping_name)} · ${esc(o.shipping_phone)}<br>${esc(o.shipping_address)}
             ${o.note ? `<br>Ghi chú: ${esc(o.note)}` : ''}
