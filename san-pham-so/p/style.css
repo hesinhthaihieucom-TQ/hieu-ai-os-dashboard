@@ -296,7 +296,12 @@ body{ overflow-x:hidden; }
 .lp-metricbar-list{ display:flex; flex-direction:column; gap:18px; }
 .lp-metricbar-label{ font-size:13.5px; font-weight:600; margin-bottom:8px; }
 .lp-metricbar-track{ background:var(--accent-soft); border-radius:999px; margin-bottom:6px; overflow:hidden; }
-.lp-metricbar-fill{ padding:6px 14px; font-size:12px; font-weight:700; white-space:nowrap; border-radius:999px; }
+/* display:block BẮT BUỘC — .lp-metricbar-fill là <span> (inline mặc định), width:% KHÔNG áp dụng
+   được trên phần tử inline (trình duyệt lặng lẽ bỏ qua, không báo lỗi gì) — đây chính là lỗi Quỳnh
+   thấy "chữ mờ mờ bên dưới bị ghi đè": track nền màu hiện full-width phía sau, còn fill (chưa có
+   width thật) chỉ ôm sát vừa đủ chữ ở bên trái, trông như 2 lớp chữ đè lên nhau thay vì 1 thanh dài
+   85%/38% như ý định. */
+.lp-metricbar-fill{ display:block; padding:6px 14px; font-size:12px; font-weight:700; white-space:nowrap; border-radius:999px; box-sizing:border-box; }
 .lp-metricbar-fill.lp-metricbar-before{ width:85%; background:#4A241C; color:#E3A594; }
 .lp-metricbar-fill.lp-metricbar-after{ width:38%; background:var(--accent); color:#0D0C0A; }
 
@@ -315,3 +320,17 @@ body{ overflow-x:hidden; }
 .lp-stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
 .lp-stat-box{ border:1px solid var(--line); border-radius:10px; padding:14px; text-align:center; }
 @media (min-width:720px){ .lp-founder-photo{ width:240px; } }
+
+/* Bố cục MÁY TÍNH riêng cho "quynh" (2026-09-05, Quỳnh: "xem trên máy tính thì là bố cục như e gửi,
+   xem trên điện thoại thì là bố cục kiểu điện thoại, chứ chưa có bố cục máy tính") — trước đó .wrap
+   chỉ rộng thêm chút ít (640px, xem media query 720px ở trên chung cho cả 4 mẫu), nhìn trên màn hình
+   máy tính thật vẫn như 1 cột hẹp kiểu điện thoại được phóng to, không giống độ rộng thoáng của trang
+   mẫu thật. Cỡ điện thoại (dưới 1024px) GIỮ NGUYÊN không đổi gì — đúng ý muốn giữ bố cục điện thoại. */
+@media (min-width:1024px){
+  .wrap[data-lp-template="quynh"]{ max-width:920px; }
+  .wrap[data-lp-template="quynh"] .card{ padding:44px 56px; }
+  .wrap[data-lp-template="quynh"] h1{ font-size:36px; }
+  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:22px; }
+  .wrap[data-lp-template="quynh"] .lp-stat-grid{ grid-template-columns:repeat(4,1fr); gap:14px; }
+  .wrap[data-lp-template="quynh"] .lp-case-studies{ grid-template-columns:repeat(4,1fr); }
+}
