@@ -890,10 +890,12 @@ function render(container, ideaRow) {
       file_name: null,
       external_link: state.ebookResult.heyzineUrl,
       published: false,
-      // 3 field này thiếu trước 2026-09-04 (thêm ở batch #21 nhưng chưa cập nhật handoff này) — vô
-      // hại vì danh-sach-san-pham.js đọc draft nguyên vẹn (state.form = draft, không merge newForm()),
-      // nhưng thêm cho đủ khớp newForm() để tránh field undefined lặng lẽ.
-      dinh_dang: '', mini_course_lessons: [], webinar_datetime: '',
+      // dinh_dang lấy đúng từ idea (2026-09-05, sửa cùng lúc rà lại màn "Sản phẩm của tôi" cho người
+      // dùng mới) — trước đó để trống, khiến chip "Loại sản phẩm" hiện KHÔNG chọn gì khi vừa hand-off
+      // sang đây dù định dạng đã biết rõ từ Giai đoạn 1 (ebook/checklist_workbook...), bắt người bán tự
+      // chọn lại thứ AI đã biết sẵn. mini_course_lessons/webinar_datetime giữ rỗng — ebook/checklist
+      // không dùng 2 field này (xem deliverableFieldsHtml).
+      dinh_dang: idea.dinh_dang || '', mini_course_lessons: [], webinar_datetime: '',
     });
     location.hash = 'san-pham';
   }

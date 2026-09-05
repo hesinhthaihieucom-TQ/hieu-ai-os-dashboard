@@ -58,13 +58,38 @@ function render(container) {
     return state.view === 'edit' ? editHtml() : listHtml();
   }
 
+  // Màn trống cho người dùng MỚI (chưa có sản phẩm nào) — thiết kế lại 2026-09-05 (Quỳnh: "demo giao
+  // diện mục sản phẩm của tôi với ng dùng mới và tối ưu lại cho dễ hiểu"). Trước đó chỉ có 1 dòng hint
+  // chung + nút "+ Tạo sản phẩm mới" + 1 dòng "Chưa có sản phẩm nào" — không nói rõ 2 lối vào khác
+  // nhau: (1) đã có file/link sẵn sàng bán ngay, điền tay ngay ở đây; (2) chưa có nội dung gì, cần AI
+  // giúp tạo từ đầu ở Giai đoạn 1 trước. Thêm link chéo sang Tìm Sản Phẩm Phù Hợp/Chọn Loại — khép kín
+  // đúng vòng lặp đã có sẵn CHIỀU NGƯỢC LẠI ở tim-san-pham.js's wizardIntroHtml() ("File đã HOÀN
+  // CHỈNH, sẵn sàng bán ngay? Vào thẳng Sản phẩm của tôi"). Cùng bố cục card-giữa-trang đã dùng ở màn
+  // trống của viet-noi-dung.js, cho nhất quán trong cùng 1 app.
+  function emptyStateHtml() {
+    return `
+      <div class="card" style="text-align:center;padding:36px 24px;">
+        <h2 style="font-size:17px;margin-bottom:8px;">Chưa có sản phẩm nào</h2>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:16px;">Đây là trang khách nhìn thấy để mua — quét mã VietQR chuyển khoản là khách tự động nhận link tải ngay, không cần bạn xác nhận tay, khách cũng không cần tạo tài khoản.</div>
+        <button class="btn" id="sps-new-btn" style="display:inline-block;width:auto;padding:12px 24px;">+ Tạo sản phẩm mới</button>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-top:18px;">Chưa có nội dung sẵn sàng để bán? Để AI giúp tạo từ đầu ở <a href="#tao-ai" style="color:var(--accent);">🧭 Tìm Sản Phẩm Phù Hợp</a> hoặc <a href="#chon-loai" style="color:var(--accent);">🗂️ Chọn Loại Sản Phẩm Số</a>.</div>
+      </div>
+    `;
+  }
+
   function listHtml() {
+    if (!state.products.length) {
+      return `
+        ${emptyStateHtml()}
+        ${state.error ? `<div class="error-box" style="margin-top:12px;">${esc(state.error)}</div>` : ''}
+      `;
+    }
     return `
       <div class="hint-box">Tạo trang giới thiệu bán file tải về (ebook, checklist, template...) — khách không cần tài khoản, quét mã VietQR chuyển khoản là tự động nhận link tải, không cần bạn xác nhận tay.</div>
       <button class="btn" id="sps-new-btn">+ Tạo sản phẩm mới</button>
       ${state.error ? `<div class="error-box" style="margin-top:12px;">${esc(state.error)}</div>` : ''}
       <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px;">
-        ${state.products.length === 0 ? `<div class="card">Chưa có sản phẩm nào.</div>` : state.products.map(p => `
+        ${state.products.map(p => `
           <div class="card" style="margin-bottom:0;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
               <div>
@@ -144,7 +169,7 @@ function render(container) {
       <div class="card" style="max-width:520px;">
         <label>Tên sản phẩm</label>
         <input id="sps-title" type="text" value="${esc(f.title)}" placeholder="VD: Ebook 30 ngày quản lý chi tiêu">
-        <label style="margin-top:14px;">Loại sản phẩm</label>
+        <label style="margin-top:14px;">Loại sản phẩm (tuỳ chọn — không chọn vẫn dùng được, mặc định coi như file/link tải về)</label>
         <div class="chips">
           ${DINH_DANG_OPTIONS.map(o => `<div class="chip ${f.dinh_dang === o.value ? 'selected' : ''}" data-sps-dinhdang="${esc(o.value)}">${esc(o.label)}</div>`).join('')}
         </div>
