@@ -411,7 +411,8 @@ function renderGoiLichTrinh(container, ctx){
 
 // ===== Tab "Thành Viên" — gán gói + nhập điểm/hoa hồng =====
 function renderThanhVien(container, ctx){
-  const state = { loading:true, rows:[], packages:[], search:'', busyId:null, pointsFormFor:null, pointsForm:{ month:new Date().toISOString().slice(0,7), points:'', purchase_amount:'', commission:'', note:'' } };
+  const state = { loading:true, rows:[], packages:[], search:'', busyId:null, pointsFormFor:null, pointsForm:{ month:new Date().toISOString().slice(0,7), points:'', purchase_amount:'', commission:'', note:'' },
+    anyQuery:'', anySearching:false, anySearched:false, anyResults:[] };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -432,6 +433,23 @@ function renderThanhVien(container, ctx){
 
   function packageName(id){ const p = state.packages.find(x=>x.id===id); return p ? p.name : null; }
 
+  // Tìm & gán gói cho khách MUA TRƯỚC ĐÓ, không qua app (2026-09-05, chị Quỳnh: "khách hàng nào đã
+  // mua sản phẩm từ trc chứ k phải mua qua app thì cần có nút gán gói sản phẩm riêng chứ") — danh
+  // sách chính ở dưới CHỈ lọc người đã từng mở app suc-khoe (sk_first_visited_at), nên khách chị bán
+  // trực tiếp mà chưa từng đăng nhập app sẽ không hiện ở đó. Ô tìm này tra CẢ profiles (không lọc
+  // sk_first_visited_at) theo email/tên — khách đó vẫn cần có TÀI KHOẢN sẵn (đã đăng ký, dù chưa mở
+  // app suc-khoe lần nào) mới gán được, vì gán gói chỉ là update 1 cột trên profiles có sẵn.
+  async function searchAnyProfile(){
+    const q = state.anyQuery.trim();
+    if(!q){ state.anySearched = true; state.anyResults = []; draw(); return; }
+    state.anySearching = true; state.anySearched = true; draw();
+    const { data } = await ctx.supabase.from('profiles').select('id,email,full_name,sk_package_id')
+      .or(`email.ilike.%${q}%,full_name.ilike.%${q}%`).limit(20);
+    state.anyResults = data || [];
+    state.anySearching = false;
+    draw();
+  }
+
   async function assignPackage(userId, packageId){
     state.busyId = userId; draw();
     await ctx.supabase.from('profiles').update({
@@ -439,6 +457,9 @@ function renderThanhVien(container, ctx){
       sk_package_started_at: packageId ? new Date().toISOString() : null,
     }).eq('id', userId);
     state.busyId = null;
+    // Cập nhật ngay dòng trong kết quả tìm "khách bất kỳ" (nếu có) — khỏi phải tìm lại mới thấy đổi.
+    const anyRow = state.anyResults.find(r=>r.id===userId);
+    if(anyRow) anyRow.sk_package_id = packageId || null;
     await load();
   }
 
@@ -461,6 +482,31 @@ function renderThanhVien(container, ctx){
       ? state.rows.filter(r => (r.email||'').toLowerCase().includes(state.search.toLowerCase()) || (r.full_name||'').toLowerCase().includes(state.search.toLowerCase()))
       : state.rows;
     return `
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:6px;">Gán gói cho khách mua trước đó (chưa từng vào app)</h3>
+        <div class="hint-box" style="margin-bottom:12px;">Danh sách bên dưới chỉ hiện người ĐÃ TỪNG mở app này. Khách chị bán trực tiếp (chưa đăng nhập app suc-khoe lần nào) sẽ không hiện ở đó — tìm theo email/tên ở đây để gán gói cho họ (khách cần đã có tài khoản trong hệ sinh thái Hiểu, dù chưa mở app này).</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="any-search" placeholder="Nhập email hoặc tên..." value="${esc(state.anyQuery)}" style="margin:0;flex:1;">
+          <button class="btn btn-sm" id="any-search-btn" ${state.anySearching?'disabled':''}>${state.anySearching?'Đang tìm…':'Tìm'}</button>
+        </div>
+        ${state.anySearched && !state.anySearching ? (
+          state.anyResults.length===0
+            ? `<div style="color:var(--ink-soft);font-size:13.5px;margin-top:10px;">Không tìm thấy tài khoản nào khớp — khách cần tự đăng ký tài khoản trước (ở bất kỳ app nào trong hệ sinh thái Hiểu) thì mới gán gói được.</div>`
+            : state.anyResults.map(r=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;margin-top:10px;">
+                <div>
+                  <div style="font-weight:600;font-size:13.5px;">${esc(r.full_name||'(chưa đặt tên)')}</div>
+                  <div style="font-size:12.5px;color:var(--ink-soft);">${esc(r.email||'')} · Gói hiện tại: ${esc(packageName(r.sk_package_id) || 'chưa có')}</div>
+                </div>
+                <select data-assign="${r.id}" ${state.busyId===r.id?'disabled':''} style="margin:0;width:auto;min-width:160px;">
+                  <option value="">— Chưa gán gói —</option>
+                  ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+                </select>
+              </div>
+            `).join('')
+        ) : ''}
+      </div>
+
       <input type="text" id="tv2-search" placeholder="Tìm theo email hoặc tên..." value="${esc(state.search)}" style="margin-bottom:16px;">
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : filtered.map(r=>`
         <div class="section">
@@ -503,6 +549,10 @@ function renderThanhVien(container, ctx){
   }
 
   function bind(){
+    const anySearchEl = container.querySelector('#any-search');
+    if(anySearchEl) anySearchEl.oninput = (e)=>{ state.anyQuery = e.target.value; };
+    const anySearchBtn = container.querySelector('#any-search-btn');
+    if(anySearchBtn) anySearchBtn.onclick = searchAnyProfile;
     const searchEl = container.querySelector('#tv2-search');
     if(searchEl) searchEl.oninput = (e)=>{
       state.search = e.target.value;

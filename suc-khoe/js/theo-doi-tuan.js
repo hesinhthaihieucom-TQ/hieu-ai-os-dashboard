@@ -25,8 +25,12 @@ const SK_METRIC_GROUPS = [
   // viết lại theo hướng TÍCH CỰC (cao = khoẻ/mạnh) để cùng chiều "càng cao càng tốt" với nhóm "Yếu tố
   // cuộc sống" phía trên — tài liệu gốc hỏi theo hướng triệu chứng (cao = càng hao mòn/uất/tán loạn),
   // nhưng để 2 hướng ngược nhau trong cùng 1 màn hình rất dễ gây nhầm khi nhập liệu.
+  //
+  // 2026-09-05, chị Quỳnh: "2 phần này đang có nhiều cái trùng lặp" — bỏ câu "Tinh — sức bền lưng
+  // gối/tóc/móng, tỉnh táo dù ngủ đủ" (trùng gần như y hệt 4 câu nangluong/cl_ngu/damongtoc/sucben ở
+  // "Yếu tố cuộc sống" phía trên) — Tinh giờ TÁI DÙNG 4 câu đó (xem SK_TKT_PILLARS) thay vì hỏi lại,
+  // chỉ còn 1 câu MỚI thật sự khác biệt (góc độ tâm thức, không đo được bằng câu nào ở trên).
   { title:'Siêu Âm Năng Lượng — Tinh · Khí · Thần (tự đánh giá 1–10)', color:'#7c6bd4', items:[
-    ['tinh_ben','Tinh — sức bền lưng gối/tóc/móng, tỉnh táo dù ngủ đủ','/10'],
     ['tinh_khonggong','Tinh — cho phép bản thân nghỉ khi mệt, không cố gồng giữ hình ảnh','/10'],
     ['khi_thongsuot','Khí — hơi thở sâu, ngực nhẹ nhõm, vai gáy thư giãn','/10'],
     ['khi_dammuon','Khí — dám nhìn thẳng vào tiền bạc, nói thật trong các mối quan hệ','/10'],
@@ -35,10 +39,12 @@ const SK_METRIC_GROUPS = [
   ]},
 ];
 
-// Nhóm 2 câu tự đánh giá ở trên thành điểm trung bình 3 trụ Tinh/Khí/Thần (Energy-Meter) — trả về
-// null cho trụ nào chưa nhập đủ cả 2 câu ở mốc đang xem, không tự suy diễn từ 1 câu.
+// Nhóm các câu tự đánh giá ở trên (kể cả tái dùng từ "Yếu tố cuộc sống") thành điểm trung bình 3 trụ
+// Tinh/Khí/Thần (Energy-Meter) — trả về null cho trụ nào chưa nhập đủ TẤT CẢ câu ở mốc đang xem,
+// không tự suy diễn từ 1 phần. Tinh dùng 4 câu đã có sẵn (nangluong/cl_ngu/damongtoc/sucben) + 1 câu
+// mới (tinh_khonggong) — không hỏi lại những gì đã hỏi ở "Yếu tố cuộc sống".
 const SK_TKT_PILLARS = [
-  { key:'tinh', label:'Tinh', color:'#c0392b', icon:'🕯️', items:['tinh_ben','tinh_khonggong'] },
+  { key:'tinh', label:'Tinh', color:'#c0392b', icon:'🕯️', items:['nangluong','cl_ngu','damongtoc','sucben','tinh_khonggong'] },
   { key:'khi', label:'Khí', color:'#2f7fc4', icon:'🌬️', items:['khi_thongsuot','khi_dammuon'] },
   { key:'than', label:'Thần', color:'#7c6bd4', icon:'✨', items:['than_yen','than_chapnhan'] },
 ];
@@ -46,7 +52,7 @@ const SK_TKT_PILLARS = [
 // Chiều "tốt hơn" của mỗi chỉ số — dùng để tô màu chênh lệch trong bảng so sánh (giống betterFor của
 // bản gốc, kể cả 2 chỗ họ không gán chiều nào — baptay/ct34 — nên bảng so sánh sẽ để màu trung tính).
 const SK_BETTER_LOW = { eo1:1, eo2:1, nguc:1, bung_ron:1, bung_duoi:1, mong:1, dui:1, bapchan:1, cannang:1, mo:1, monoitang:1, glucose:1, tg:1, hba1c:1, ldl:1, uric:1, chol:1 };
-const SK_BETTER_HIGH = { kgco:1, hdl:1, nangluong:1, cl_ngu:1, macdo:1, vandong:1, damongtoc:1, anuong:1, sucben:1, giaotiep:1, chatluongcs:1, tinh_ben:1, tinh_khonggong:1, khi_thongsuot:1, khi_dammuon:1, than_yen:1, than_chapnhan:1 };
+const SK_BETTER_HIGH = { kgco:1, hdl:1, nangluong:1, cl_ngu:1, macdo:1, vandong:1, damongtoc:1, anuong:1, sucben:1, giaotiep:1, chatluongcs:1, tinh_khonggong:1, khi_thongsuot:1, khi_dammuon:1, than_yen:1, than_chapnhan:1 };
 
 // Liên kết sang Sản Phẩm (2026-08-30, chị Quỳnh yêu cầu "cần có sự liên hệ giữa các mục để bán được
 // thêm sản phẩm", giống cơ chế vừa thêm ở Kiểm Tra Sức Khỏe) — mỗi chỉ số gán 1 nhánh sản phẩm liên
@@ -60,7 +66,7 @@ const SK_METRIC_CATEGORY = {
   eo1:'giam_mo', eo2:'giam_mo', bung_ron:'giam_mo', bung_duoi:'giam_mo', cannang:'giam_mo', mo:'giam_mo', monoitang:'giam_mo', kgco:'tang_de_khang',
   glucose:'giam_mo', tg:'giam_mo', hba1c:'giam_mo', ldl:'giam_mo', chol:'giam_mo', uric:'thai_doc',
   nangluong:'tang_de_khang', cl_ngu:'thai_doc', vandong:'xuong_khop', damongtoc:'lam_dep_da', anuong:'thai_doc', sucben:'tang_de_khang',
-  tinh_ben:'thai_doc', tinh_khonggong:'thai_doc', khi_thongsuot:'thai_doc', khi_dammuon:'thai_doc',
+  tinh_khonggong:'thai_doc', khi_thongsuot:'thai_doc', khi_dammuon:'thai_doc',
 };
 const SK_ABSOLUTE_CONCERN = {
   glucose: v => v >= 5.6,
@@ -105,7 +111,7 @@ function render(container, ctx){
   function tktScores(week){
     return SK_TKT_PILLARS.map(p=>{
       const vals = p.items.map(k=>parseFloat(getVal(k, week))).filter(isFinite);
-      const score = vals.length===p.items.length ? Math.round((vals[0]+vals[1])/2*10)/10 : null;
+      const score = vals.length===p.items.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length*10)/10 : null;
       return { ...p, score };
     });
   }
@@ -212,7 +218,7 @@ function render(container, ctx){
               </div>
             `).join('')}
           </div>
-          <div style="font-size:11.5px;opacity:.6;margin-top:12px;">Điền đủ 2 câu mỗi trụ ở nhóm "Siêu Âm Năng Lượng" bên dưới để ra điểm — điểm càng cao càng khoẻ.</div>
+          <div style="font-size:11.5px;opacity:.6;margin-top:12px;">Điền đủ các câu của mỗi trụ (Tinh dùng lại 4 câu ở "Yếu tố cuộc sống" phía dưới + 1 câu mới, Khí/Thần mỗi trụ 2 câu ở nhóm "Siêu Âm Năng Lượng") để ra điểm — điểm càng cao càng khoẻ.</div>
         </div>
       `;})()}
 
