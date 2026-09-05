@@ -16,7 +16,7 @@ const SK_GI_TABLES = [
 function render(container, ctx){
   const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
     insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[], dailyReminderTime:null,
-    calcWeight:'', calcGoal:'duy_tri' };
+    calcWeight:'', calcGoal:'duy_tri', healthLevel:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -26,18 +26,23 @@ function render(container, ctx){
   // đúng sản phẩm họ dùng, xem sanPhamTab().
   async function load(){
     const packageId = ctx.profile && ctx.profile.sk_package_id;
-    const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }] = await Promise.all([
+    const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }] = await Promise.all([
       packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections,daily_reminder_time').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
       packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
       ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
       ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
       ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
+      ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
     ]);
     state.packageName = pkg ? pkg.name : null;
     state.dailyReminderTime = pkg ? pkg.daily_reminder_time : null;
     state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
     state.items = items || [];
     state.doneIds = new Set((progress||[]).map(p=>p.schedule_item_id));
+    // Mức độ nguy cơ từ Kiểm Tra Sức Khỏe (2026-09-05, chị Quỳnh: "người bình thường thì theo phác
+    // đồ của em, người có vấn đề sức khỏe nặng theo nhãn") — null nếu khách CHƯA làm Kiểm Tra Sức
+    // Khỏe (không tự suy diễn "an toàn" hay "nặng" khi chưa có dữ liệu, mặc định dùng phác đồ như cũ).
+    state.healthLevel = checkin ? skComputeHealthLevel(checkin.survey_insulin, checkin.survey_toxin, checkin.survey_metabolic).level : null;
     const allProducts = products || [];
     allProducts.forEach(p=>{ state.productByName[p.name] = p; });
     const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
@@ -92,12 +97,20 @@ function render(container, ctx){
             ${(sec.steps||[]).map(step=>{
               const p = step.product_name ? state.productByName[step.product_name] : null;
               const isPriority = !!step.priority;
+              // Liều theo phác đồ combo (mặc định) hay theo đúng nhãn công bố (2026-09-05, chị Quỳnh:
+              // "người bình thường thì theo phác đồ của em, người có vấn đề sức khỏe nặng theo nhãn")
+              // — CHỈ áp dụng khi Kiểm Tra Sức Khỏe của khách ở mức "Cao" VÀ step này có ghi liều nhãn
+              // riêng (safe_instruction, xem seed_sk_packages_regimen_v1.sql — chỉ 3 sản phẩm có phác
+              // đồ combo khác nhãn: Bios Life Slim, Aloe Vera, Red Clover Plus).
+              const usingSafe = state.healthLevel==='Cao' && step.safe_instruction;
+              const shownInstruction = usingSafe ? step.safe_instruction : step.instruction;
               return `
               <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;margin:0 -14px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;border-radius:8px;':''}">
                 ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
                 <div style="flex:1;min-width:0;">
                   ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</span>${p && p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}</div>` : ''}
-                  <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(step.instruction||'')}</div>
+                  <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
+                  ${usingSafe ? `<div style="font-size:11.5px;color:#c0392b;margin-top:4px;">⚠️ Dùng đúng liều theo nhãn công bố — kết quả Kiểm Tra Sức Khỏe của bạn ở mức Cao nên ưu tiên an toàn hơn phác đồ thường.</div>` : ''}
                 </div>
               </div>
             `;}).join('')}

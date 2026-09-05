@@ -72,6 +72,22 @@ const SK_LIPSTICK_COLORS = [
   { key:'503', label:'#503 Hồng Seoul', image:'assets/gift-lipstick-503-hong-seoul.jpg' },
   { key:'505', label:'#505 Cam Cà Rốt', image:'assets/gift-lipstick-505-cam-ca-rot.jpg' },
 ];
+// Tính mức độ nguy cơ từ Kiểm Tra Sức Khỏe (survey_insulin/toxin/metabolic, sk_health_checkins) —
+// TÁCH RA dùng chung giữa kiem-tra-suc-khoe.js (hiện kết quả) và lich-trinh.js (2026-09-05, chị
+// Quỳnh: "người bình thường thì theo phác đồ của em, người có vấn đề sức khỏe nặng theo nhãn" — dùng
+// mức "Cao" ở đây để quyết định hiện liều theo phác đồ combo hay theo đúng nhãn an toàn). GIỮ NGUYÊN
+// công thức gốc khi tách ra — không đổi ngưỡng.
+function skComputeHealthLevel(insulin, toxin, metabolic){
+  const ci = (insulin||[]).length, ct = (toxin||[]).length, cm = (metabolic||[]).length;
+  const meta = cm >= 3;
+  const score = ci + ct + cm*2;
+  let level;
+  if(meta || score>=18) level = 'Cao';
+  else if(score>=7) level = 'Trung bình';
+  else level = 'Thấp';
+  return { level, score, meta, ci, ct, cm };
+}
+
 function skOrderGift(total, itemCount){
   if(total >= 5000000) return { key:'binh_lac_son', label:'🎁 Tặng 1 bình lắc + 1 thỏi son Hàn — chọn màu bên dưới', images:[SK_GIFT_SHAKER_IMAGE], needsColor:true };
   if(total >= 2000000 && itemCount >= 2) return { key:'binh_lac', label:'🎁 Tặng 1 bình lắc', images:[SK_GIFT_SHAKER_IMAGE], needsColor:false };

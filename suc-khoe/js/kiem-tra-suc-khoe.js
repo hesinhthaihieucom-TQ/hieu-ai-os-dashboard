@@ -88,13 +88,11 @@ function render(container, ctx){
   // Điểm & mức độ tính giống hệt surveyResult() của bản gốc — giữ nguyên ngưỡng và câu chữ vì đây là
   // nội dung tự đánh giá sức khỏe (không phải quảng cáo sản phẩm), chị Quỳnh đã dùng ổn định ở app kia.
   function computeResult(){
-    const ci = state.insulin.length, ct = state.toxin.length, cm = state.metabolic.length;
-    const meta = cm >= 3;
-    const score = ci + ct + cm*2;
-    let level, color, bg, bd;
-    if(meta || score>=18){ level='Cao'; color='#c0392b'; bg='#fdeee8'; bd='#f3b9a4'; }
-    else if(score>=7){ level='Trung bình'; color='#e8643c'; bg='#fff7f0'; bd='#f3d9bf'; }
-    else { level='Thấp'; color='#1f9d63'; bg='#eef6f0'; bd='#cfe6d8'; }
+    const { level, score, meta, ci, ct, cm } = skComputeHealthLevel(state.insulin, state.toxin, state.metabolic);
+    let color, bg, bd;
+    if(level==='Cao'){ color='#c0392b'; bg='#fdeee8'; bd='#f3b9a4'; }
+    else if(level==='Trung bình'){ color='#e8643c'; bg='#fff7f0'; bd='#f3d9bf'; }
+    else { color='#1f9d63'; bg='#eef6f0'; bd='#cfe6d8'; }
     const problems = [];
     if(ci>=5) problems.push('Dấu hiệu kháng insulin rõ rệt — cơ thể khó chuyển hóa đường, dễ tích mỡ và tăng cân.');
     else if(ci>=2) problems.push('Một vài dấu hiệu kháng insulin sớm — cần chú ý chế độ ăn và vận động.');
