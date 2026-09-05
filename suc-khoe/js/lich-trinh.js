@@ -15,26 +15,45 @@ const SK_GI_TABLES = [
 (function(){
 function render(container, ctx){
   const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
-    insightText:'', insightLoading:false, insightResult:'', insightError:'' };
+    insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[] };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
+  // Không còn bắt buộc có sk_package_id mới tải/hiện được trang (2026-09-05, chị Quỳnh: "gán gói ở
+  // đây là gán sản phẩm khách đang dùng á, chứ k phải mỗi combo") — khách mua lẻ/ngoài app không có
+  // Combo (sk_package_id null) nhưng có sk_customer_products vẫn cần thấy đúng hướng dẫn sử dụng của
+  // đúng sản phẩm họ dùng, xem sanPhamTab().
   async function load(){
     const packageId = ctx.profile && ctx.profile.sk_package_id;
-    if(!packageId){ state.loading = false; draw(); return; }
-    const [{ data: pkg }, { data: items }, { data: progress }, { data: products }] = await Promise.all([
-      ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle(),
-      ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }),
+    const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }] = await Promise.all([
+      packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
+      packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
       ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
-      ctx.supabase.from('sk_products').select('name,image_url,retail_price'),
+      ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
+      ctx.supabase.from('sk_customer_products').select('product_id').eq('user_id', ctx.user.id),
     ]);
     state.packageName = pkg ? pkg.name : null;
     state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
     state.items = items || [];
     state.doneIds = new Set((progress||[]).map(p=>p.schedule_item_id));
-    (products||[]).forEach(p=>{ state.productByName[p.name] = p; });
+    const allProducts = products || [];
+    allProducts.forEach(p=>{ state.productByName[p.name] = p; });
+    const cpIds = new Set((customerProductRows||[]).map(r=>r.product_id));
+    state.customerProducts = allProducts.filter(p=>cpIds.has(p.id));
     state.loading = false;
     draw();
+  }
+
+  // Lấy đúng mục "Đối tượng sử dụng"/"Cách dùng" đã có sẵn trong detail_sections (không cần viết lại
+  // hướng dẫn riêng cho từng khách) — fallback short_description nếu sản phẩm chưa có mục này.
+  function skProductUsageHtml(p){
+    const sections = Array.isArray(p.detail_sections) ? p.detail_sections : [];
+    const usage = sections.filter(s=>/đối tượng|cách dùng/i.test(s.title||''));
+    if(usage.length===0) return p.short_description ? `<div style="font-size:13px;color:var(--ink-soft);line-height:1.7;">${esc(p.short_description)}</div>` : '';
+    return usage.map(sec=>{
+      const meta = skSectionMeta(sec.title);
+      return `<div style="margin-top:8px;">${skSectionHeaderHtml(sec.title, meta.color, meta.icon)}<div style="font-size:13px;line-height:1.7;">${skRichBodyHtml(sec.body)}</div></div>`;
+    }).join('');
   }
 
   function targetDate(dayOffset){
@@ -89,6 +108,21 @@ function render(container, ctx){
   function sanPhamTab(){
     const doneCount = state.items.filter(i=>state.doneIds.has(i.id)).length;
     return `
+      ${state.customerProducts.length>0 ? `
+        <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Sản phẩm bạn đang dùng</h2></div>
+        ${state.customerProducts.map(p=>`
+          <div class="card" style="margin-bottom:16px;display:flex;gap:14px;align-items:flex-start;">
+            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:9px;flex-shrink:0;">` : ''}
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
+                ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
+              </div>
+              ${skProductUsageHtml(p)}
+            </div>
+          </div>
+        `).join('')}
+      ` : ''}
       ${regimenHtml()}
       ${state.items.length>0 ? `
         <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Mốc theo ngày (đã hoàn thành ${doneCount}/${state.items.length})</h2></div>
@@ -248,17 +282,20 @@ Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 
   }
 
   function html(){
-    if(!ctx.profile || !ctx.profile.sk_package_id){
+    if(!ctx.profile) return `<div class="loading"><div class="spinner"></div></div>`;
+    if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
+    // Không có Combo (sk_package_id) NHƯNG có sản phẩm lẻ được gán (sk_customer_products) vẫn hiện
+    // trang bình thường (2026-09-05) — chỉ chặn hẳn khi KHÔNG có cả 2.
+    if(!ctx.profile.sk_package_id && state.customerProducts.length===0){
       return `
         <div class="page-head"><h1>Lịch Trình Của Bạn</h1></div>
-        <div class="hint-box">Bạn chưa được gán gói sản phẩm/chương trình nào — liên hệ để được kích hoạt đúng gói bạn đã mua, lịch trình sẽ tự hiện ra ở đây.</div>
+        <div class="hint-box">Bạn chưa được gán gói sản phẩm/chương trình nào — liên hệ để được kích hoạt đúng gói/sản phẩm bạn đã mua, lịch trình sẽ tự hiện ra ở đây.</div>
       `;
     }
-    if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
     return `
       <div class="page-head">
         <h1>Lịch Trình Của Bạn</h1>
-        <p>Gói: <b>${esc(state.packageName || '—')}</b> — giải pháp gồm 70% sản phẩm, 20% ăn uống, 10% tập luyện.</p>
+        <p>${state.packageName ? `Gói: <b>${esc(state.packageName)}</b> — giải pháp gồm 70% sản phẩm, 20% ăn uống, 10% tập luyện.` : 'Hướng dẫn sử dụng đúng các sản phẩm bạn đang dùng.'}</p>
       </div>
       <div class="chips" style="margin-bottom:20px;">
         <div class="chip ${state.tab==='sanpham'?'selected':''}" data-tab="sanpham">🧪 Sản Phẩm</div>

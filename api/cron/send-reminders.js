@@ -299,17 +299,25 @@ async function checkCrmFollowReminders() {
 // sk_library_entries làm nội dung, XOAY VÒNG theo số ngày (không ngẫu nhiên — ngẫu nhiên thật dễ lặp
 // liên tiếp gây nhàm, xoay vòng đảm bảo dàn đều hết nội dung thư viện), dẫn thẳng vào Thư Viện Sức
 // Khỏe — vừa cho kiến thức vừa kéo khách quay lại xem sản phẩm liên quan, đúng tinh thần liên kết
-// Kiểm Tra/Thư Viện/Sản Phẩm chị Quỳnh đã yêu cầu trước đó. CHỈ gửi cho khách ĐÃ được gán gói
-// (profiles.sk_package_id, xem lich-trinh.js) — đây là App RIÊNG (suc-khoe/) nhưng push_subscriptions
-// dùng chung 1 bảng cho cả hệ sinh thái (không có cột phân biệt theo app), nên PHẢI lọc đúng đối
-// tượng suc-khoe trước khi gọi notifyOnce, không thì user app khác cũng nhận nhầm bản tin sức khỏe.
+// Kiểm Tra/Thư Viện/Sản Phẩm chị Quỳnh đã yêu cầu trước đó. CHỈ gửi cho khách ĐÃ được gán gói/sản
+// phẩm (profiles.sk_package_id HOẶC có dòng trong sk_customer_products — 2026-09-05, chị Quỳnh: "gán
+// gói ở đây là gán sản phẩm khách đang dùng á, chứ k phải mỗi combo", xem lich-trinh.js) — đây là App
+// RIÊNG (suc-khoe/) nhưng push_subscriptions dùng chung 1 bảng cho cả hệ sinh thái (không có cột phân
+// biệt theo app), nên PHẢI lọc đúng đối tượng suc-khoe trước khi gọi notifyOnce, không thì user app
+// khác cũng nhận nhầm bản tin sức khỏe.
 const SK_DAILY_TIP_TIME = '08:00';
 async function checkSucKhoeDailyTip() {
   const { dateStr, minutesOfDay } = vnNowParts();
   if (!withinWindow(parseHHMM(SK_DAILY_TIP_TIME), minutesOfDay)) return 0;
 
-  const usersResp = await supabaseAdmin(`profiles?sk_package_id=not.is.null&select=id`);
-  const users = usersResp.ok ? await usersResp.json() : [];
+  const [packageUsersResp, customerProductUsersResp] = await Promise.all([
+    supabaseAdmin(`profiles?sk_package_id=not.is.null&select=id`),
+    supabaseAdmin(`sk_customer_products?select=user_id`),
+  ]);
+  const packageUsers = packageUsersResp.ok ? await packageUsersResp.json() : [];
+  const customerProductUsers = customerProductUsersResp.ok ? await customerProductUsersResp.json() : [];
+  const userIds = new Set([...packageUsers.map((u) => u.id), ...customerProductUsers.map((r) => r.user_id)]);
+  const users = [...userIds].map((id) => ({ id }));
   if (!users.length) return 0;
 
   const entriesResp = await supabaseAdmin(`sk_library_entries?select=id,issue_name,symptoms,remedies&order=issue_name.asc`);

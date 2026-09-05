@@ -376,3 +376,22 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 revoke all on function public.refund_sk_ai_quota(uuid, int) from public, authenticated, anon;
 grant execute on function public.refund_sk_ai_quota(uuid, int) to service_role;
+
+-- Sản phẩm khách ĐANG DÙNG, riêng lẻ (2026-09-05, chị Quỳnh: "gán gói ở đây là gán sản phẩm khách
+-- đang dùng á, chứ k phải mỗi combo") — khác sk_package_id (1 trong 3 bộ Combo sẵn có, có lịch dùng
+-- theo khung giờ ở sk_packages.regimen_sections): khách mua lẻ/mua ngoài app không nhất thiết khớp
+-- đúng 1 combo nào, nhưng vẫn cần thấy ĐÚNG hướng dẫn sử dụng của ĐÚNG sản phẩm họ dùng ở Lịch Trình
+-- Của Bạn — xem lich-trinh.js, lấy nội dung từ sk_products.detail_sections (mục "Cách dùng"/"Đối
+-- tượng sử dụng" đã có sẵn), không cần viết lại nội dung riêng cho từng khách.
+create table if not exists sk_customer_products (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  product_id uuid not null references sk_products(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique(user_id, product_id)
+);
+alter table sk_customer_products enable row level security;
+drop policy if exists "sk_customer_products_owner_read" on sk_customer_products;
+create policy "sk_customer_products_owner_read" on sk_customer_products for select using (auth.uid() = user_id);
+drop policy if exists "sk_customer_products_admin_all" on sk_customer_products;
+create policy "sk_customer_products_admin_all" on sk_customer_products for all using (is_admin()) with check (is_admin());

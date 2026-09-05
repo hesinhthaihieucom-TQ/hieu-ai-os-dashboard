@@ -83,10 +83,15 @@ module.exports = async (req, res) => {
   const user = await requireUser(req);
   if (!user || !token) { res.status(401).json({ error: 'Bạn cần đăng nhập để dùng tính năng này.' }); return; }
 
-  const profResp = await supabaseAsUser(token, `profiles?id=eq.${user.id}&select=sk_package_id,role`);
+  const [profResp, customerProductsResp] = await Promise.all([
+    supabaseAsUser(token, `profiles?id=eq.${user.id}&select=sk_package_id,role`),
+    supabaseAsUser(token, `sk_customer_products?user_id=eq.${user.id}&select=id&limit=1`),
+  ]);
   const profRows = profResp.ok ? await profResp.json() : [];
   const profile = profRows[0];
-  const isActive = profile && (profile.role === 'admin' || profile.sk_package_id);
+  const hasCustomerProducts = customerProductsResp.ok ? (await customerProductsResp.json()).length > 0 : false;
+  // 2026-09-05: "gán gói" giờ bao gồm cả gán sản phẩm lẻ (sk_customer_products), không chỉ Combo.
+  const isActive = profile && (profile.role === 'admin' || profile.sk_package_id || hasCustomerProducts);
   if (!isActive) {
     res.status(402).json({ error: 'Bạn chưa được gán gói sản phẩm/chương trình — liên hệ để được kích hoạt trước khi dùng tính năng này.' });
     return;

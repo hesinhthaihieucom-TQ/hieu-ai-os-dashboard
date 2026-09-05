@@ -411,27 +411,53 @@ function renderGoiLichTrinh(container, ctx){
 
 // ===== Tab "Thành Viên" — gán gói + nhập điểm/hoa hồng =====
 function renderThanhVien(container, ctx){
-  const state = { loading:true, rows:[], packages:[], search:'', busyId:null, pointsFormFor:null, pointsForm:{ month:new Date().toISOString().slice(0,7), points:'', purchase_amount:'', commission:'', note:'' },
-    anyQuery:'', anySearching:false, anySearched:false, anyResults:[] };
+  const state = { loading:true, rows:[], packages:[], allProducts:[], search:'', busyId:null, pointsFormFor:null, pointsForm:{ month:new Date().toISOString().slice(0,7), points:'', purchase_amount:'', commission:'', note:'' },
+    anyQuery:'', anySearching:false, anySearched:false, anyResults:[],
+    customerProductsFor:null, customerProductIds:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function load(){
     state.loading = true; draw();
-    const [{ data: rows }, { data: packages }] = await Promise.all([
+    const [{ data: rows }, { data: packages }, { data: products }] = await Promise.all([
       // Chỉ lấy người ĐÃ TỪNG vào app suc-khoe (sk_first_visited_at chỉ set ở loadProfile() của
       // suc-khoe/js/app-shell.js) — profiles là bảng CHUNG giữa mọi app, không lọc sẽ lẫn người chỉ
       // dùng nhan-hieu/tai-chinh/san-pham-so.
       ctx.supabase.from('profiles').select('id,email,full_name,role,sk_package_id,sk_package_started_at,sk_first_visited_at').not('sk_first_visited_at', 'is', null).order('sk_first_visited_at', { ascending:false }).limit(200),
       ctx.supabase.from('sk_packages').select('id,name'),
+      ctx.supabase.from('sk_products').select('id,name').order('name', { ascending:true }),
     ]);
     state.rows = rows || [];
     state.packages = packages || [];
+    state.allProducts = products || [];
     state.loading = false;
     draw();
   }
 
   function packageName(id){ const p = state.packages.find(x=>x.id===id); return p ? p.name : null; }
+
+  // Gán ĐÚNG sản phẩm khách đang dùng, riêng lẻ (2026-09-05, chị Quỳnh: "gán gói ở đây là gán sản
+  // phẩm khách đang dùng á, chứ k phải mỗi combo") — độc lập với sk_package_id (1 trong 3 bộ Combo có
+  // lịch dùng sẵn): khách mua lẻ/ngoài app không nhất thiết khớp đúng 1 combo, nhưng Lịch Trình Của
+  // Bạn vẫn cần hiện đúng hướng dẫn sử dụng của đúng sản phẩm họ dùng (xem lich-trinh.js).
+  async function openCustomerProducts(userId){
+    if(state.customerProductsFor === userId){ state.customerProductsFor = null; draw(); return; }
+    state.customerProductsFor = userId; state.customerProductIds = null; draw();
+    const { data } = await ctx.supabase.from('sk_customer_products').select('product_id').eq('user_id', userId);
+    state.customerProductIds = new Set((data||[]).map(r=>r.product_id));
+    draw();
+  }
+
+  async function toggleCustomerProduct(userId, productId){
+    if(state.customerProductIds.has(productId)){
+      await ctx.supabase.from('sk_customer_products').delete().eq('user_id', userId).eq('product_id', productId);
+      state.customerProductIds.delete(productId);
+    } else {
+      await ctx.supabase.from('sk_customer_products').insert({ user_id:userId, product_id:productId });
+      state.customerProductIds.add(productId);
+    }
+    draw();
+  }
 
   // Tìm & gán gói cho khách MUA TRƯỚC ĐÓ, không qua app (2026-09-05, chị Quỳnh: "khách hàng nào đã
   // mua sản phẩm từ trc chứ k phải mua qua app thì cần có nút gán gói sản phẩm riêng chứ") — danh
@@ -477,6 +503,22 @@ function renderThanhVien(container, ctx){
     draw();
   }
 
+  // Nút + khung chọn sản phẩm đang dùng, dùng chung cho cả danh sách chính lẫn kết quả tìm "khách bất
+  // kỳ" — độc lập với select gán Combo, khách có thể vừa có Combo vừa có thêm sản phẩm lẻ.
+  function customerProductsPickerHtml(userId){
+    return `
+      <span class="btn-ghost btn btn-sm" data-open-customer-products="${userId}">Sản phẩm đang dùng</span>
+      ${state.customerProductsFor===userId ? `
+        <div class="card" style="margin-top:10px;width:100%;">
+          ${state.customerProductIds===null ? `<div class="loading"><div class="spinner"></div></div>` : `
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Tick đúng sản phẩm khách đang dùng (không cần khớp Combo nào) — Lịch Trình Của Bạn của khách sẽ hiện đúng hướng dẫn sử dụng của các sản phẩm này.</div>
+            <div class="chips">${state.allProducts.map(p=>`<div class="chip ${state.customerProductIds.has(p.id)?'selected':''}" data-toggle-customer-product="${userId}|${p.id}">${esc(p.name)}</div>`).join('')}</div>
+          `}
+        </div>
+      ` : ''}
+    `;
+  }
+
   function html(){
     const filtered = state.search.trim()
       ? state.rows.filter(r => (r.email||'').toLowerCase().includes(state.search.toLowerCase()) || (r.full_name||'').toLowerCase().includes(state.search.toLowerCase()))
@@ -502,6 +544,7 @@ function renderThanhVien(container, ctx){
                   <option value="">— Chưa gán gói —</option>
                   ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
                 </select>
+                ${customerProductsPickerHtml(r.id)}
               </div>
             `).join('')
         ) : ''}
@@ -523,6 +566,7 @@ function renderThanhVien(container, ctx){
               ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
             </select>
             <span class="btn-ghost btn btn-sm" data-add-points="${r.id}">+ Ghi điểm/hoa hồng</span>
+            ${customerProductsPickerHtml(r.id)}
           </div>
           ${state.pointsFormFor===r.id ? `
             <div class="card" style="margin-top:12px;">
@@ -566,6 +610,15 @@ function renderThanhVien(container, ctx){
     });
     container.querySelectorAll('[data-add-points]').forEach(el=>{
       el.onclick = ()=>{ state.pointsFormFor = el.getAttribute('data-add-points'); draw(); };
+    });
+    container.querySelectorAll('[data-open-customer-products]').forEach(el=>{
+      el.onclick = ()=>openCustomerProducts(el.getAttribute('data-open-customer-products'));
+    });
+    container.querySelectorAll('[data-toggle-customer-product]').forEach(el=>{
+      el.onclick = ()=>{
+        const [userId, productId] = el.getAttribute('data-toggle-customer-product').split('|');
+        toggleCustomerProduct(userId, productId);
+      };
     });
     const cancelBtn = container.querySelector('#pf-cancel'); if(cancelBtn) cancelBtn.onclick = ()=>{ state.pointsFormFor=null; draw(); };
     const monthEl = container.querySelector('#pf-month'); if(monthEl) monthEl.oninput = (e)=>{ state.pointsForm.month = e.target.value; };
