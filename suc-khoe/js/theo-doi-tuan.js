@@ -90,16 +90,18 @@ function render(container, ctx){
   }
 
   // Khoảng ngày của 1 mốc tuần (2026-09-05, chị Quỳnh: "cần có thời gian tính theo tuần từ ngày nào
-  // đến ngày nào") — "Bắt đầu" = đúng ngày bắt đầu gói; "Tuần N" = 7 ngày kết thúc đúng ngày N×7 kể
-  // từ lúc bắt đầu (khớp đúng cách currentWeekFromPackage() đang tính mốc hiện tại). null nếu chưa
-  // có ngày bắt đầu gói (chưa được gán gói).
+  // đến ngày nào" — VD chốt: "bắt đầu dùng từ hôm nay thứ 7 5/9 thì 1 tuần là tới thứ 7 tuần sau",
+  // tức tính theo ĐÚNG THỨ trong tuần (cùng thứ, 1 tuần sau), không phải "6 ngày sau" — mốc cuối của
+  // Tuần N trùng luôn mốc đầu của Tuần N+1 vì đây là các CHECKPOINT đo cùng 1 ngày mỗi tuần, không
+  // phải chia kỳ không chồng lấn). "Bắt đầu" = đúng ngày bắt đầu gói. null nếu chưa có ngày bắt đầu
+  // gói (chưa được gán gói).
   function weekDateRange(weekIndex){
     const started = ctx.profile && ctx.profile.sk_package_started_at;
     if(!started) return null;
     const startDate = new Date(started);
     if(weekIndex===0) return esc(fmtDate(startDate));
     const rangeStart = new Date(startDate); rangeStart.setDate(rangeStart.getDate() + (weekIndex-1)*7);
-    const rangeEnd = new Date(startDate); rangeEnd.setDate(rangeEnd.getDate() + weekIndex*7 - 1);
+    const rangeEnd = new Date(startDate); rangeEnd.setDate(rangeEnd.getDate() + weekIndex*7);
     return `${esc(fmtDate(rangeStart))} – ${esc(fmtDate(rangeEnd))}`;
   }
 
