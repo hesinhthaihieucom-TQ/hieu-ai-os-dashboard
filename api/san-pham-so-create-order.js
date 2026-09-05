@@ -13,8 +13,13 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   try {
-    const { slug, buyer_email } = req.body || {};
+    const { slug, buyer_email, buyer_name, buyer_phone } = req.body || {};
     if (!slug) { res.status(400).json({ error: 'Thiếu slug sản phẩm.' }); return; }
+    // Họ tên/SĐT BẮT BUỘC (2026-09-05, Quỳnh: "mục bấm đăng ký ở ladipage phải đủ chỗ điền thông tin
+    // như họ và tên, sđt, email chứ" — trước đó chỉ có email và để tuỳ chọn) — CHỈ để chị biết ai vừa
+    // mua/liên hệ lại, KHÔNG dùng để cấp quyền tải (vẫn luôn qua ref_code/status như cũ).
+    if (!buyer_name || !buyer_name.trim()) { res.status(400).json({ error: 'Vui lòng nhập họ và tên.' }); return; }
+    if (!buyer_phone || !buyer_phone.trim()) { res.status(400).json({ error: 'Vui lòng nhập số điện thoại.' }); return; }
 
     const prodResp = await supabaseAdmin(`digital_products?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=id,price`);
     const prodRows = prodResp.ok ? await prodResp.json() : [];
@@ -30,6 +35,8 @@ module.exports = async (req, res) => {
           product_id: product.id,
           ref_code: refCode,
           buyer_email: buyer_email || null,
+          buyer_name: buyer_name.trim(),
+          buyer_phone: buyer_phone.trim(),
           amount: product.price,
         }),
       });

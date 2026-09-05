@@ -198,13 +198,13 @@ async function fetchProduct() {
   return rows[0] || null;
 }
 
-async function createOrder(productSlug, buyerEmail) {
+async function createOrder(productSlug, buyerName, buyerPhone, buyerEmail) {
   // Đường dẫn TƯƠNG ĐỐI (trang này nằm ở .../p/, "../api/..." trỏ lên .../api/...) — không hard-code
   // "/san-pham-so/api/..." vì domain thật sau này sẽ là hesinhthaihieu.com/apptaosanphamso/p/, path
   // tương đối tự khớp đúng dù đang chạy dưới tiền tố nào (xem app.js đầu file để biết thêm).
   const resp = await fetch('../api/san-pham-so-create-order', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ slug: productSlug, buyer_email: buyerEmail || null }),
+    body: JSON.stringify({ slug: productSlug, buyer_name: buyerName, buyer_phone: buyerPhone, buyer_email: buyerEmail || null }),
   });
   const data = await resp.json();
   if (!resp.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
@@ -401,8 +401,14 @@ function renderProduct(product, order) {
   let buyHtml;
 
   if (!order) {
+    // Họ tên/SĐT BẮT BUỘC (2026-09-05, Quỳnh: "mục bấm đăng ký ở ladipage phải đủ chỗ điền thông tin
+    // như họ và tên, sđt, email chứ" — trước đó chỉ có 1 ô email tuỳ chọn) — CHỈ để biết ai vừa mua,
+    // liên hệ lại được nếu cần. Email vẫn giữ tuỳ chọn như cũ (không cần để tải được — trang này tự
+    // hiện link ngay khi thanh toán khớp, không phải gửi qua email).
     const buyLabel = lp && lp.cta_text ? esc(lp.cta_text) : 'Mua ngay';
     buyHtml = `
+      <input id="buyer-name" type="text" placeholder="Họ và tên *">
+      <input id="buyer-phone" type="tel" placeholder="Số điện thoại *">
       <input id="buyer-email" type="email" placeholder="Email (không bắt buộc — để nhận lại link nếu mất)">
       <button class="btn" id="buy-btn">${buyLabel} — ${Number(product.price).toLocaleString('vi-VN')}đ</button>
     `;
@@ -506,10 +512,18 @@ function renderProduct(product, order) {
     buyBtn.disabled = true;
     buyBtn.title = 'Bản xem trước mẫu — không mua được ở đây.';
   } else if (buyBtn) buyBtn.onclick = async () => {
+    // Họ tên/SĐT bắt buộc (2026-09-05) — kiểm tra ngay ở client trước khi gọi API, tránh vòng gọi
+    // thừa cho lỗi hiển nhiên (server vẫn tự kiểm tra lại, xem api/san-pham-so-create-order.js).
+    const nameEl = document.getElementById('buyer-name');
+    const phoneEl = document.getElementById('buyer-phone');
+    const emailEl = document.getElementById('buyer-email');
+    const buyerName = nameEl ? nameEl.value.trim() : '';
+    const buyerPhone = phoneEl ? phoneEl.value.trim() : '';
+    if (!buyerName) { alert('Vui lòng nhập họ và tên.'); nameEl.focus(); return; }
+    if (!buyerPhone) { alert('Vui lòng nhập số điện thoại.'); phoneEl.focus(); return; }
     buyBtn.disabled = true; buyBtn.textContent = 'Đang xử lý…';
     try {
-      const emailEl = document.getElementById('buyer-email');
-      const data = await createOrder(product.slug, emailEl ? emailEl.value.trim() : '');
+      const data = await createOrder(product.slug, buyerName, buyerPhone, emailEl ? emailEl.value.trim() : '');
       try { localStorage.setItem(orderStorageKey, JSON.stringify({ ref_code: data.ref_code, amount: data.amount })); } catch (e) {}
       const newOrder = { ref_code: data.ref_code, amount: data.amount, status: 'pending' };
       renderProduct(product, newOrder);

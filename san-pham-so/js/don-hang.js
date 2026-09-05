@@ -37,7 +37,7 @@ function render(container) {
             <span style="font-size:12.5px;white-space:nowrap;">${statusLabel(o)}</span>
           </div>
           <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">
-            ${Number(o.amount).toLocaleString('vi-VN')}đ · ${o.buyer_email ? esc(o.buyer_email) : 'Không để lại email'}
+            ${Number(o.amount).toLocaleString('vi-VN')}đ · ${esc(o.buyer_name || '(chưa có tên)')}${o.buyer_phone ? ` · ${esc(o.buyer_phone)}` : ''}${o.buyer_email ? ` · ${esc(o.buyer_email)}` : ''}
           </div>
           <div style="color:var(--ink-soft);font-size:12px;margin-top:2px;">
             Đặt lúc: ${new Date(o.created_at).toLocaleString('vi-VN')}${o.paid_at ? ` · Thanh toán lúc: ${new Date(o.paid_at).toLocaleString('vi-VN')}` : ''}

@@ -66,6 +66,11 @@ create table if not exists digital_product_orders (
   download_token uuid,
   created_at timestamptz not null default now()
 );
+-- 2026-09-05, Quỳnh: form đăng ký ở trang mua phải đủ họ tên/SĐT (không chỉ email) để chị biết ai
+-- vừa mua, liên hệ lại được nếu cần — KHÔNG dùng để cấp quyền tải (vẫn luôn qua ref_code/status như
+-- cũ), chỉ lưu thêm thông tin liên hệ thật của khách.
+alter table digital_product_orders add column if not exists buyer_name text;
+alter table digital_product_orders add column if not exists buyer_phone text;
 
 -- Ghi lại đơn sản phẩm số nào vừa được webhook khớp thành công (bên cạnh matched_profile_id đã có
 -- sẵn cho nhan-hieu/tai-chinh) — phục vụ đối soát, không dùng để cấp quyền (webhook luôn PATCH thẳng

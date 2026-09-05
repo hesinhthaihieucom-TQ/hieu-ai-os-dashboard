@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
     if (!products.length) { res.status(200).json({ orders: [] }); return; }
 
     const ids = products.map(p => p.id).join(',');
-    const ordersResp = await supabaseAdmin(`digital_product_orders?product_id=in.(${ids})&select=id,buyer_email,amount,status,paid_at,created_at,digital_products(title)&order=created_at.desc`);
+    const ordersResp = await supabaseAdmin(`digital_product_orders?product_id=in.(${ids})&select=id,buyer_name,buyer_phone,buyer_email,amount,status,paid_at,created_at,digital_products(title)&order=created_at.desc`);
     const orders = ordersResp.ok ? await ordersResp.json() : [];
     res.status(200).json({ orders });
   } catch (e) {

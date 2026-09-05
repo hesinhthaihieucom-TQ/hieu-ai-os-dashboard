@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
     }
 
     const ordersResp = await supabaseAdmin(
-      `digital_product_orders?select=id,buyer_email,amount,status,paid_at,created_at,product_id,digital_products(title,owner_id)&order=created_at.desc&limit=500`
+      `digital_product_orders?select=id,buyer_name,buyer_phone,buyer_email,amount,status,paid_at,created_at,product_id,digital_products(title,owner_id)&order=created_at.desc&limit=500`
     );
     const orders = ordersResp.ok ? await ordersResp.json() : [];
 
@@ -35,6 +35,8 @@ module.exports = async (req, res) => {
 
     const enriched = orders.map(o => ({
       id: o.id,
+      buyerName: o.buyer_name,
+      buyerPhone: o.buyer_phone,
       buyerEmail: o.buyer_email,
       amount: o.amount,
       status: o.status,

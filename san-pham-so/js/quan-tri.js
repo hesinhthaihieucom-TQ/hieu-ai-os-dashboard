@@ -49,7 +49,7 @@ function render(container) {
             <span style="font-size:12.5px;white-space:nowrap;">${o.status === 'paid' ? '✅ Đã thanh toán' : '⏳ Chờ thanh toán'}</span>
           </div>
           <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">
-            ${Number(o.amount).toLocaleString('vi-VN')}đ · Người bán: ${esc(o.sellerName || '(không rõ)')} · ${o.buyerEmail ? esc(o.buyerEmail) : 'Không để lại email'}
+            ${Number(o.amount).toLocaleString('vi-VN')}đ · Người bán: ${esc(o.sellerName || '(không rõ)')} · ${esc(o.buyerName || '(chưa có tên)')}${o.buyerPhone ? ` · ${esc(o.buyerPhone)}` : ''}${o.buyerEmail ? ` · ${esc(o.buyerEmail)}` : ''}
           </div>
           <div style="color:var(--ink-soft);font-size:12px;margin-top:2px;">
             Đặt lúc: ${new Date(o.createdAt).toLocaleString('vi-VN')}${o.paidAt ? ` · Thanh toán lúc: ${new Date(o.paidAt).toLocaleString('vi-VN')}` : ''}
