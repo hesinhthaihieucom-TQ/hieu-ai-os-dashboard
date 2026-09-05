@@ -89,6 +89,20 @@ function render(container, ctx){
     return Math.max(0, Math.min(8, Math.floor(days/7)));
   }
 
+  // Khoảng ngày của 1 mốc tuần (2026-09-05, chị Quỳnh: "cần có thời gian tính theo tuần từ ngày nào
+  // đến ngày nào") — "Bắt đầu" = đúng ngày bắt đầu gói; "Tuần N" = 7 ngày kết thúc đúng ngày N×7 kể
+  // từ lúc bắt đầu (khớp đúng cách currentWeekFromPackage() đang tính mốc hiện tại). null nếu chưa
+  // có ngày bắt đầu gói (chưa được gán gói).
+  function weekDateRange(weekIndex){
+    const started = ctx.profile && ctx.profile.sk_package_started_at;
+    if(!started) return null;
+    const startDate = new Date(started);
+    if(weekIndex===0) return esc(fmtDate(startDate));
+    const rangeStart = new Date(startDate); rangeStart.setDate(rangeStart.getDate() + (weekIndex-1)*7);
+    const rangeEnd = new Date(startDate); rangeEnd.setDate(rangeEnd.getDate() + weekIndex*7 - 1);
+    return `${esc(fmtDate(rangeStart))} – ${esc(fmtDate(rangeEnd))}`;
+  }
+
   async function load(){
     const [{ data: row }, { data: products }] = await Promise.all([
       ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
@@ -177,6 +191,31 @@ function render(container, ctx){
     return flags;
   }
 
+  // Có nhập ít nhất 1 chỉ số nào ở mốc này chưa — để biết có nên hiện "kết quả chẩn đoán" hay
+  // nhắc trống trơn (2026-09-05, chị Quỳnh: "cần có kết quả chuẩn đoán của app cho người dùng").
+  function weekHasData(week){
+    return SK_METRIC_GROUPS.some(g=>g.items.some(([key])=>getVal(key, week)!==''));
+  }
+
+  // Kết quả chẩn đoán tổng quan của mốc đang xem — dựa trên số chỉ số đáng chú ý (flaggedMetrics) và
+  // điểm Tinh/Khí/Thần trung bình (tktScores), cùng phong cách với "Mức độ nguy cơ" ở Kiểm Tra Sức
+  // Khỏe cho quen mắt. KHÔNG tính điểm y khoa mới — chỉ tổng hợp lại dữ liệu đã có ở trang này.
+  function weeklyDiagnosis(){
+    const flags = flaggedMetrics();
+    const n = flags.length;
+    const scores = tktScores(state.week).filter(s=>s.score!=null);
+    const avgTkt = scores.length ? scores.reduce((s,x)=>s+x.score,0)/scores.length : null;
+    let level, color, bg, bd;
+    if(n>=5 || (avgTkt!=null && avgTkt<=4)){ level='Cần chú ý nhiều'; color='#c0392b'; bg='#fdeee8'; bd='#f3b9a4'; }
+    else if(n>=2 || (avgTkt!=null && avgTkt<7)){ level='Cần theo dõi'; color='#e8643c'; bg='#fff7f0'; bd='#f3d9bf'; }
+    else { level='Đang ổn định'; color='#1f9d63'; bg='#eef6f0'; bd='#cfe6d8'; }
+    let summary = n>0
+      ? `Có ${n} chỉ số đang ở mức cần chú ý (${flags.map(f=>f.label).join(', ')}).`
+      : 'Chưa có chỉ số nào ở mức đáng lo trong các chỉ số đã nhập.';
+    if(avgTkt!=null) summary += ` Năng lượng Tinh/Khí/Thần trung bình: ${avgTkt.toFixed(1)}/10.`;
+    return { level, color, bg, bd, summary, n };
+  }
+
   function recommendedProducts(){
     const flags = flaggedMetrics();
     if(flags.length===0) return { flags, products:[] };
@@ -201,7 +240,18 @@ function render(container, ctx){
       <div class="chips" style="margin-bottom:8px;">
         ${SK_WEEK_NAMES.map((w,i)=>`<div class="chip ${state.week===i?'selected':''}" data-week="${i}" style="position:relative;">${esc(w)}${i===autoWeek?' <span style="opacity:.7;">●</span>':''}</div>`).join('')}
       </div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:20px;">● Mốc hiện tại theo ngày bắt đầu gói của bạn</div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:${weekDateRange(state.week)?'4px':'20px'};">● Mốc hiện tại theo ngày bắt đầu gói của bạn</div>
+      ${weekDateRange(state.week) ? `<div style="font-size:12.5px;color:var(--accent);font-weight:600;margin-bottom:20px;">📅 ${esc(SK_WEEK_NAMES[state.week])}: ${weekDateRange(state.week)}</div>` : ''}
+
+      ${weekHasData(state.week) ? (()=>{
+        const d = weeklyDiagnosis();
+        return `
+        <div class="card" style="margin-bottom:18px;border:1px solid ${d.bd};background:${d.bg};">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:${d.color};margin-bottom:6px;">Kết quả chẩn đoán — ${esc(SK_WEEK_NAMES[state.week])}</div>
+          <div style="font-size:19px;font-weight:700;color:${d.color};margin-bottom:8px;">${esc(d.level)}</div>
+          <div style="font-size:13.5px;line-height:1.8;">${esc(d.summary)}</div>
+        </div>
+      `;})() : `<div class="hint-box" style="margin-bottom:18px;">Chưa có dữ liệu cho mốc "${esc(SK_WEEK_NAMES[state.week])}" — nhập ít nhất 1 chỉ số bên dưới để xem kết quả chẩn đoán.</div>`}
 
       ${(() => {
         const scores = tktScores(state.week);

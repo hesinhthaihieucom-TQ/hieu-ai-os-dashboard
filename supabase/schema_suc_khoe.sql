@@ -416,3 +416,26 @@ alter table profiles add column if not exists sk_reminder_time text;
 drop policy if exists "sk_customer_products_owner_update" on sk_customer_products;
 create policy "sk_customer_products_owner_update" on sk_customer_products for update
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Lịch sử kết quả Kiểm Tra Sức Khỏe theo mốc thời gian (2026-09-05, chị Quỳnh: "nên có mục lưu lại
+-- kết quả để theo dõi theo các mốc thời gian") — sk_health_checkins vẫn là dòng "hiện tại" (auto lưu
+-- mỗi lần tick, dùng để tính kết quả/gợi ý sản phẩm sống), bảng NÀY là các mốc snapshot khách chủ
+-- động lưu lại (bấm "Lưu mốc này vào lịch sử" ở kiem-tra-suc-khoe.js) để xem lại tiến triển qua thời
+-- gian — không tự động log mỗi lần tick (sẽ tạo quá nhiều dòng rác nếu tick từng ô 1).
+create table if not exists sk_health_checkin_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  survey_insulin text[] not null default '{}',
+  survey_toxin text[] not null default '{}',
+  survey_metabolic text[] not null default '{}',
+  level text not null,
+  score int not null,
+  created_at timestamptz not null default now()
+);
+alter table sk_health_checkin_history enable row level security;
+drop policy if exists "sk_health_checkin_history_owner_read" on sk_health_checkin_history;
+create policy "sk_health_checkin_history_owner_read" on sk_health_checkin_history for select using (auth.uid() = user_id);
+drop policy if exists "sk_health_checkin_history_owner_insert" on sk_health_checkin_history;
+create policy "sk_health_checkin_history_owner_insert" on sk_health_checkin_history for insert with check (auth.uid() = user_id);
+drop policy if exists "sk_health_checkin_history_admin_all" on sk_health_checkin_history;
+create policy "sk_health_checkin_history_admin_all" on sk_health_checkin_history for all using (is_admin()) with check (is_admin());

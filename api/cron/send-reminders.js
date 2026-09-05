@@ -392,6 +392,41 @@ async function checkSucKhoePackageDailyReminder() {
   return count;
 }
 
+// Nhắc lịch cân đo hằng tuần (2026-09-05, chị Quỳnh: "cần có thông báo nhắc lịch cân đo cho người
+// dùng") — nhắc khách ĐÃ được gán gói (có sk_package_started_at) mà đã ≥7 ngày kể từ mốc "Tuần" gần
+// nhất (weekNumber tăng lên) VÀ ≥7 ngày kể từ lần cập nhật sk_weekly_logs gần nhất (không nhắc nếu
+// mới đo gần đây, dù đúng chu kỳ) — dedupe theo weekNumber nên chỉ nhắc đúng 1 lần/tuần/người.
+const SK_WEIGH_REMINDER_TIME = '09:00';
+async function checkSucKhoeWeighInReminder() {
+  const { minutesOfDay } = vnNowParts();
+  if (!withinWindow(parseHHMM(SK_WEIGH_REMINDER_TIME), minutesOfDay)) return 0;
+
+  const usersResp = await supabaseAdmin(`profiles?sk_package_id=not.is.null&sk_package_started_at=not.is.null&select=id,sk_package_started_at`);
+  const users = usersResp.ok ? await usersResp.json() : [];
+  if (!users.length) return 0;
+
+  const logsResp = await supabaseAdmin(`sk_weekly_logs?select=user_id,updated_at`);
+  const logs = logsResp.ok ? await logsResp.json() : [];
+  const lastUpdateByUser = Object.fromEntries(logs.map((l) => [l.user_id, l.updated_at]));
+
+  let count = 0;
+  for (const u of users) {
+    const daysSinceStart = Math.floor((Date.now() - new Date(u.sk_package_started_at).getTime()) / 86400000);
+    const weekNumber = Math.floor(daysSinceStart / 7);
+    if (weekNumber < 1) continue;
+    const lastUpdate = lastUpdateByUser[u.id];
+    const daysSinceUpdate = lastUpdate ? Math.floor((Date.now() - new Date(lastUpdate).getTime()) / 86400000) : Infinity;
+    if (daysSinceUpdate < 7) continue;
+    const result = await notifyOnce(u.id, `sk-weigh-reminder:${weekNumber}`, {
+      title: '📏 Đến lịch cân đo tuần này',
+      body: 'Đã 1 tuần rồi — vào Theo Dõi Sức Khỏe Theo Tuần cập nhật số đo mới nhất của bạn.',
+      url: './#theo-doi-tuan',
+    });
+    if (result.sent) count++;
+  }
+  return count;
+}
+
 // Chỉ gửi cho user ĐÃ bật thông báo (có ít nhất 1 push_subscriptions) — join qua 2 bước vì
 // push_subscriptions dùng chung cho cả hệ sinh thái, không lọc được thẳng bằng 1 câu query profiles.
 // 'daily' nhắc mỗi tối, 'weekly' chỉ nhắc đúng tối Chủ Nhật (dayOfWeek=0, giờ VN) — cho người chỉ
@@ -479,7 +514,7 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder, tcPriceTierDeadline, skProductReminders, skPackageDailyReminder] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder, tcPriceTierDeadline, skProductReminders, skPackageDailyReminder, skWeighInReminder] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
@@ -493,8 +528,9 @@ module.exports = async (req, res) => {
       checkTcPriceTierDeadline(),
       checkSucKhoeProductReminders(),
       checkSucKhoePackageDailyReminder(),
+      checkSucKhoeWeighInReminder(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder, tc_price_tier_deadline: tcPriceTierDeadline, sk_product_reminders: skProductReminders, sk_package_daily_reminder: skPackageDailyReminder } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder, tc_price_tier_deadline: tcPriceTierDeadline, sk_product_reminders: skProductReminders, sk_package_daily_reminder: skPackageDailyReminder, sk_weigh_in_reminder: skWeighInReminder } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

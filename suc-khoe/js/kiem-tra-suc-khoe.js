@@ -47,15 +47,16 @@ function render(container, ctx){
   // phẩm gợi ý, người dùng tự bỏ bớt nếu không muốn mua. Lưu chiều "đã bỏ" thay vì "đã chọn" để sản
   // phẩm MỚI xuất hiện (khi tick thêm triệu chứng khác) cũng tự động ở trạng thái được chọn luôn,
   // không cần logic đồng bộ riêng.
-  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set() };
+  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set(), history:[], savingHistory:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function load(){
-    const [{ data: row }, { data: entries }, { data: products }] = await Promise.all([
+    const [{ data: row }, { data: entries }, { data: products }, { data: history }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
       ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
+      ctx.supabase.from('sk_health_checkin_history').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(20),
     ]);
     state.products = products || [];
     if(row){
@@ -64,7 +65,25 @@ function render(container, ctx){
       state.metabolic = row.survey_metabolic || [];
     }
     state.libraryEntries = entries || [];
+    state.history = history || [];
     state.loading = false;
+    draw();
+  }
+
+  // Lưu 1 mốc kết quả vào lịch sử theo thời gian (2026-09-05, chị Quỳnh: "nên có mục lưu lại kết quả
+  // để theo dõi theo các mốc thời gian") — CHỦ ĐỘNG bấm lưu (không tự log mỗi lần tick, sẽ tạo quá
+  // nhiều dòng rác), dùng lại đúng logic tính điểm hiện có (skComputeHealthLevel).
+  async function saveHistorySnapshot(){
+    state.savingHistory = true; draw();
+    const { level, score } = skComputeHealthLevel(state.insulin, state.toxin, state.metabolic);
+    const { error } = await ctx.supabase.from('sk_health_checkin_history').insert({
+      user_id: ctx.user.id, survey_insulin: state.insulin, survey_toxin: state.toxin, survey_metabolic: state.metabolic,
+      level, score,
+    });
+    state.savingHistory = false;
+    if(error){ alert('Không lưu được: ' + error.message); return; }
+    const { data: history } = await ctx.supabase.from('sk_health_checkin_history').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(20);
+    state.history = history || [];
     draw();
   }
 
@@ -209,9 +228,22 @@ function render(container, ctx){
             ${r.problems.map(p=>`<li style="margin-bottom:8px;">${esc(p)}</li>`).join('')}
           </ul>
           <div style="margin-bottom:12px;">${skSectionHeaderHtml('Ảnh hưởng hiện tại', '#e8643c', '⚡')}<div style="font-size:14px;line-height:1.8;">${esc(r.impact)}</div></div>
-          <div>${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:14px;line-height:1.8;">${esc(r.future)}</div></div>
+          <div style="margin-bottom:16px;">${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:14px;line-height:1.8;">${esc(r.future)}</div></div>
+          <button class="btn btn-sm" id="sk-save-history" ${state.savingHistory?'disabled':''}>${state.savingHistory?'Đang lưu…':'📌 Lưu mốc này vào lịch sử'}</button>
         </div>
       ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
+
+      ${state.history.length>0 ? `
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Lịch sử theo mốc thời gian</h2></div>
+        <div class="card">
+          ${state.history.map(h=>`
+            <div class="list-item">
+              <div class="txt">${esc(new Date(h.created_at).toLocaleDateString('vi-VN'))} — <b>${esc(h.level)}</b></div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);">điểm ${h.score}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
 
       ${libMatches.length>0 ? `
         <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Tìm hiểu thêm các vấn đề bạn có thể mắc</h2></div>
@@ -253,6 +285,8 @@ function render(container, ctx){
     container.querySelectorAll('[data-zoom]').forEach(el=>{
       el.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); openImageLightbox(el.getAttribute('data-zoom'), ''); };
     });
+    const saveHistoryBtn = container.querySelector('#sk-save-history');
+    if(saveHistoryBtn) saveHistoryBtn.onclick = saveHistorySnapshot;
     container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
       el.onchange = (e)=>{
         const id = el.getAttribute('data-cart-toggle');
