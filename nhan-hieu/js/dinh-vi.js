@@ -143,39 +143,64 @@ function render(container, ctx){
     `;
   }
 
-  function draw(){ container.innerHTML = screenHtml(); bind(); }
+  // "hiện app đã lỗi cứ quay quay" (chị Quỳnh 2026-09-05, khách Thu Oanh báo qua Zalo) — trước đây
+  // 1 lỗi render bất kỳ (vd trình duyệt cache lệch giữa util.js/dinh-vi.js, hay dữ liệu lạ) làm
+  // draw() ném lỗi CHƯA BẮT, khiến trang kẹt mãi ở màn hình "Đang tải…" ban đầu (state.screen bắt
+  // đầu là 'loading') — không có cách nào tự thoát ra, không hiện lỗi thật gì cả để debug. Giờ bọc
+  // try/catch quanh CHÍNH draw() — lỗi gì cũng hiện được lỗi thật + nút "Tải lại trang", không bao
+  // giờ để màn hình tải quay vô thời hạn nữa, dù nguyên nhân gốc là gì.
+  function draw(){
+    try {
+      container.innerHTML = screenHtml();
+      bind();
+    } catch(e){
+      container.innerHTML = `
+        <div class="page-head"><h1>Có lỗi khi hiển thị Định Vị</h1></div>
+        <div class="error-box">${esc((e && e.message) || 'Lỗi không rõ nguyên nhân.')}</div>
+        <div class="btn-row"><button class="btn" onclick="location.reload()">Tải lại trang</button></div>
+      `;
+    }
+  }
 
   async function boot(){
     draw();
-    state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
-    await Promise.all([loadAssets(), loadBrands()]);
-    const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
-    if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
-    const isComplete = data && data.luot1 && data.luot1.ket_luan_dinh_vi;
-    if(data){
-      state.savedId = data.id;
-      state.answers = normalizeAnswers(data.answers);
-      state.luot1 = isComplete ? data.luot1 : null;
-      state.luot2 = isComplete ? data.luot2 : null;
-      // Vào thẳng trang kết quả (không qua màn hình trung gian "done" nữa) — trước đây mỗi lần quay
-      // lại Định Vị đều phải bấm thêm 1 lần "Xem kết quả" mới tới được nơi Sửa/Xoá tài sản quảng bá,
-      // khiến người dùng tưởng nhầm là phải làm lại cả Định Vị mới sửa được tài sản. Nút "Làm lại
-      // định vị" vẫn có sẵn ngay trên trang kết quả (data-action="redo") cho ai thực sự muốn làm lại.
-      state.screen = isComplete ? 'results' : 'intro';
-    } else {
-      state.screen = 'intro';
-    }
-    // Chưa hoàn thành Định Vị (đang ở intro, chưa có luot1) — thử khôi phục câu trả lời đang làm dở
-    // từ lần trước, để không bắt trả lời lại từ câu 1 chỉ vì lỡ chuyển sang trang khác.
-    if(state.screen === 'intro'){
-      const draft = await loadModuleDraft(ctx, WIZARD_DRAFT_KEY);
-      if(draft && draft.answers && Object.keys(draft.answers).length){
-        state.answers = { ...state.answers, ...normalizeAnswers(draft.answers) };
-        state.qIndex = Math.min(draft.qIndex || 0, QUESTIONS.length - 1);
-        state.screen = 'wizard';
+    try {
+      state.channelHandle = (ctx.profile && ctx.profile.channel_handle) || '';
+      await Promise.all([loadAssets(), loadBrands()]);
+      const { data, error } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
+      if(error){ state.error = error.message; state.screen='intro'; draw(); return; }
+      const isComplete = data && data.luot1 && data.luot1.ket_luan_dinh_vi;
+      if(data){
+        state.savedId = data.id;
+        state.answers = normalizeAnswers(data.answers);
+        state.luot1 = isComplete ? data.luot1 : null;
+        state.luot2 = isComplete ? data.luot2 : null;
+        // Vào thẳng trang kết quả (không qua màn hình trung gian "done" nữa) — trước đây mỗi lần quay
+        // lại Định Vị đều phải bấm thêm 1 lần "Xem kết quả" mới tới được nơi Sửa/Xoá tài sản quảng bá,
+        // khiến người dùng tưởng nhầm là phải làm lại cả Định Vị mới sửa được tài sản. Nút "Làm lại
+        // định vị" vẫn có sẵn ngay trên trang kết quả (data-action="redo") cho ai thực sự muốn làm lại.
+        state.screen = isComplete ? 'results' : 'intro';
+      } else {
+        state.screen = 'intro';
       }
+      // Chưa hoàn thành Định Vị (đang ở intro, chưa có luot1) — thử khôi phục câu trả lời đang làm dở
+      // từ lần trước, để không bắt trả lời lại từ câu 1 chỉ vì lỡ chuyển sang trang khác.
+      if(state.screen === 'intro'){
+        const draft = await loadModuleDraft(ctx, WIZARD_DRAFT_KEY);
+        if(draft && draft.answers && Object.keys(draft.answers).length){
+          state.answers = { ...state.answers, ...normalizeAnswers(draft.answers) };
+          state.qIndex = Math.min(draft.qIndex || 0, QUESTIONS.length - 1);
+          state.screen = 'wizard';
+        }
+      }
+      draw();
+    } catch(e){
+      container.innerHTML = `
+        <div class="page-head"><h1>Không tải được Định Vị</h1></div>
+        <div class="error-box">${esc((e && e.message) || 'Lỗi mạng hoặc lỗi tải dữ liệu không rõ nguyên nhân.')}</div>
+        <div class="btn-row"><button class="btn" onclick="location.reload()">Tải lại trang</button></div>
+      `;
     }
-    draw();
   }
 
   function screenHtml(){
