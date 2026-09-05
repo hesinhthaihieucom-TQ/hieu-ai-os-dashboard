@@ -398,9 +398,21 @@ create policy "sk_customer_products_admin_all" on sk_customer_products for all u
 
 -- Giờ nhắc dùng + thông báo đẩy (2026-09-05, chị Quỳnh: "lịch trình cần phải có thời gian và có
 -- thông báo để nhắc người ta dùng") — reminder_time riêng cho TỪNG sản phẩm lẻ (khách khác nhau có
--- thể uống 1 sản phẩm vào giờ khác nhau); daily_reminder_time là 1 giờ nhắc CHUNG mỗi ngày cho khách
--- đang theo 1 bộ Combo (đơn giản hoá — Combo có nhiều sản phẩm nhiều khung giờ khác nhau trong
--- regimen_sections, nhắc riêng từng khung giờ đó cần dựng thêm UI sửa regimen_sections, chưa làm ở
--- bản này — nhắc 1 lần/ngày dẫn vào Lịch Trình Của Bạn xem đủ chi tiết là đủ dùng trước mắt).
+-- thể uống 1 sản phẩm vào giờ khác nhau).
 alter table sk_customer_products add column if not exists reminder_time text;
-alter table sk_packages add column if not exists daily_reminder_time text;
+-- sk_packages.daily_reminder_time (thêm lúc đầu) bị bỏ — cột đó là 1 giờ CHUNG cho CẢ GÓI, tức mọi
+-- khách theo cùng 1 Combo bị áp cùng 1 giờ, không đúng ý "mỗi người tự cài giờ riêng". Để cột cũ tồn
+-- tại (không xoá, tránh phá vỡ nếu ai đó đã lỡ set), nhưng KHÔNG dùng nữa — thay bằng
+-- profiles.sk_reminder_time (2026-09-05, chị Quỳnh: "cái nhắc lịch dùng sản phẩm... nên cho người
+-- dùng tự cài giờ nhắc chứ không phải mình") — mỗi user tự đặt 1 giờ nhắc/ngày cho gói Combo của
+-- CHÍNH HỌ, không ảnh hưởng người khác cùng gói. Sửa được ở Lịch Trình Của Bạn (khách tự sửa), không
+-- còn ở Quản Trị nữa.
+alter table profiles add column if not exists sk_reminder_time text;
+
+-- Khách (chủ sở hữu dòng) được tự SỬA giờ nhắc sản phẩm lẻ của chính mình — trước đây chỉ admin sửa
+-- được (is_admin() ở policy "..._admin_all" phía trên), giờ thêm quyền update cho chính chủ. Không
+-- cho khách tự INSERT/DELETE (chỉ admin mới được gán sản phẩm nào cho khách), chỉ được SỬA reminder_time
+-- trên dòng đã có sẵn.
+drop policy if exists "sk_customer_products_owner_update" on sk_customer_products;
+create policy "sk_customer_products_owner_update" on sk_customer_products for update
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);

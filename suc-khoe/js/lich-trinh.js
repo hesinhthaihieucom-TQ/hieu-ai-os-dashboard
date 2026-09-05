@@ -15,7 +15,7 @@ const SK_GI_TABLES = [
 (function(){
 function render(container, ctx){
   const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
-    insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[], dailyReminderTime:null,
+    insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[],
     calcWeight:'', calcGoal:'duy_tri', healthLevel:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -27,7 +27,7 @@ function render(container, ctx){
   async function load(){
     const packageId = ctx.profile && ctx.profile.sk_package_id;
     const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }] = await Promise.all([
-      packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections,daily_reminder_time').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
+      packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
       packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
       ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
       ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
@@ -35,7 +35,6 @@ function render(container, ctx){
       ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
     ]);
     state.packageName = pkg ? pkg.name : null;
-    state.dailyReminderTime = pkg ? pkg.daily_reminder_time : null;
     state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
     state.items = items || [];
     state.doneIds = new Set((progress||[]).map(p=>p.schedule_item_id));
@@ -85,6 +84,24 @@ function render(container, ctx){
     draw();
   }
 
+  // Khách TỰ đặt giờ nhắc của chính mình (2026-09-05, chị Quỳnh: "cái nhắc lịch dùng sản phẩm...
+  // nên cho người dùng tự cài giờ nhắc chứ không phải mình") — profiles.sk_reminder_time là giờ
+  // nhắc CHUNG/ngày cho gói Combo của riêng người này (không ảnh hưởng người khác cùng gói).
+  async function savePackageReminderTime(time){
+    const { error } = await ctx.supabase.from('profiles').update({ sk_reminder_time: time||null }).eq('id', ctx.user.id);
+    if(error){ alert('Không lưu được giờ nhắc: ' + error.message); return; }
+    if(ctx.profile) ctx.profile.sk_reminder_time = time||null;
+  }
+
+  // sk_customer_products cho phép chính chủ UPDATE reminder_time (RLS "sk_customer_products_owner_update",
+  // xem schema_suc_khoe.sql) — khách KHÔNG tự thêm/bớt sản phẩm được (chỉ admin gán), chỉ tự đặt giờ.
+  async function saveCustomerProductReminderTime(productId, time){
+    const { error } = await ctx.supabase.from('sk_customer_products').update({ reminder_time: time||null }).eq('user_id', ctx.user.id).eq('product_id', productId);
+    if(error){ alert('Không lưu được giờ nhắc: ' + error.message); return; }
+    const p = state.customerProducts.find(x=>x.id===productId);
+    if(p) p._reminderTime = time||null;
+  }
+
   function regimenHtml(){
     if(state.regimenSections.length===0) return '';
     return `
@@ -124,6 +141,13 @@ function render(container, ctx){
   function sanPhamTab(){
     const doneCount = state.items.filter(i=>state.doneIds.has(i.id)).length;
     return `
+      ${state.packageName ? `
+        <div class="card" style="margin-bottom:18px;">
+          ${skSectionHeaderHtml('Giờ nhắc mỗi ngày của bạn', '#7c6bd4', '⏰')}
+          <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 giờ trong ngày để nhận thông báo nhắc xem lịch trình gói "${esc(state.packageName)}" — tự chọn giờ phù hợp với bạn.</div>
+          <input type="time" id="lt-package-reminder" value="${esc((ctx.profile && ctx.profile.sk_reminder_time) || '')}" style="width:auto;margin:0;">
+        </div>
+      ` : ''}
       ${state.customerProducts.length>0 ? `
         <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Sản phẩm bạn đang dùng</h2></div>
         ${state.customerProducts.map(p=>`
@@ -134,7 +158,10 @@ function render(container, ctx){
                 <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
                 ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
               </div>
-              ${p._reminderTime ? `<div style="font-size:12.5px;color:var(--accent);font-weight:700;margin-top:4px;">⏰ ${esc(p._reminderTime)} — sẽ có thông báo nhắc dùng đúng giờ này</div>` : ''}
+              <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                <label style="font-size:12.5px;color:var(--ink-soft);margin:0;">⏰ Giờ nhắc dùng:</label>
+                <input type="time" data-customer-product-reminder="${p.id}" value="${esc(p._reminderTime||'')}" style="width:auto;margin:0;">
+              </div>
               ${skProductUsageHtml(p)}
             </div>
           </div>
@@ -362,7 +389,7 @@ function render(container, ctx){
     return `
       <div class="page-head">
         <h1>Lịch Trình Của Bạn</h1>
-        <p>${state.packageName ? `Gói: <b>${esc(state.packageName)}</b> — giải pháp gồm 70% sản phẩm, 20% ăn uống, 10% tập luyện.${state.dailyReminderTime ? ` ⏰ Thông báo nhắc mỗi ngày lúc ${esc(state.dailyReminderTime)}.` : ''}` : 'Hướng dẫn sử dụng đúng các sản phẩm bạn đang dùng.'}</p>
+        <p>${state.packageName ? `Gói: <b>${esc(state.packageName)}</b> — giải pháp gồm 70% sản phẩm, 20% ăn uống, 10% tập luyện.` : 'Hướng dẫn sử dụng đúng các sản phẩm bạn đang dùng.'}</p>
       </div>
       <div class="chips" style="margin-bottom:20px;">
         <div class="chip ${state.tab==='sanpham'?'selected':''}" data-tab="sanpham">🧪 Sản Phẩm</div>
@@ -377,6 +404,11 @@ function render(container, ctx){
   function bind(){
     container.querySelectorAll('[data-tab]').forEach(el=>{
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
+    });
+    const packageReminderEl = container.querySelector('#lt-package-reminder');
+    if(packageReminderEl) packageReminderEl.onchange = (e)=>savePackageReminderTime(e.target.value);
+    container.querySelectorAll('[data-customer-product-reminder]').forEach(el=>{
+      el.onchange = (e)=>saveCustomerProductReminderTime(el.getAttribute('data-customer-product-reminder'), e.target.value);
     });
     container.querySelectorAll('[data-toggle]').forEach(el=>{
       el.onclick = ()=>{

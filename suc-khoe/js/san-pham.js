@@ -50,11 +50,12 @@ function render(container, ctx){
         const catLabel = (SK_PRODUCT_CATEGORIES.find(c=>c.key===p.category)||{}).label;
         return `
         <details class="kt-section">
-          <summary class="kt-summary" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span style="display:flex;align-items:center;gap:10px;">
-              ${p.retail_price!=null ? `<span data-cart-toggle="${esc(p.id)}" title="${state.cart.has(p.id)?'Bỏ khỏi đơn hàng':'Thêm vào đơn hàng'}" style="width:24px;height:24px;border-radius:7px;border:1px solid ${state.cart.has(p.id)?'var(--accent)':'var(--line)'};background:${state.cart.has(p.id)?'var(--accent)':'#fff'};color:${state.cart.has(p.id)?'#fff':'var(--ink-soft)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;cursor:pointer;">${state.cart.has(p.id)?'✓':'+'}</span>` : ''}
-              ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
-              <span>${esc(p.name)}${catLabel ? ` <span style="font-size:11.5px;font-weight:400;color:var(--ink-soft);">· ${esc(catLabel)}</span>` : ''}</span>
+          <summary class="kt-summary" style="display:flex;align-items:center;gap:12px;">
+            ${p.retail_price!=null ? `<span data-cart-toggle="${esc(p.id)}" title="${state.cart.has(p.id)?'Bỏ khỏi đơn hàng':'Thêm vào đơn hàng'}" style="width:24px;height:24px;border-radius:7px;border:1px solid ${state.cart.has(p.id)?'var(--accent)':'var(--line)'};background:${state.cart.has(p.id)?'var(--accent)':'#fff'};color:${state.cart.has(p.id)?'#fff':'var(--ink-soft)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;cursor:pointer;">${state.cart.has(p.id)?'✓':'+'}</span>` : ''}
+            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:68px;height:68px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
+            <span style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
+              ${catLabel ? `<div style="font-size:11.5px;font-weight:400;color:var(--ink-soft);margin-top:2px;">${esc(catLabel)}</div>` : ''}
             </span>
             ${p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}
           </summary>

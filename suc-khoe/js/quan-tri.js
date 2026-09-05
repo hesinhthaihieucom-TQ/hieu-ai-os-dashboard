@@ -301,17 +301,6 @@ function renderGoiLichTrinh(container, ctx){
     await loadPackages();
   }
 
-  // Giờ nhắc mỗi ngày cho khách đang theo gói này (2026-09-05, chị Quỳnh: "lịch trình cần phải có
-  // thời gian và có thông báo để nhắc người ta dùng") — xem api/cron/send-reminders.js
-  // checkSucKhoePackageDailyReminder(). 1 giờ chung/ngày (không phải riêng từng khung giờ trong
-  // regimen_sections — regimen_sections chưa có UI sửa, chỉ sửa được qua SQL).
-  async function saveDailyReminderTime(packageId, time){
-    const pkg = state.packages.find(p=>p.id===packageId);
-    if(pkg) pkg.daily_reminder_time = time || null;
-    draw();
-    await ctx.supabase.from('sk_packages').update({ daily_reminder_time: time || null }).eq('id', packageId);
-  }
-
   function newItemForm(){ return { id:null, day_offset:0, title:'', description:'' }; }
   function openNewItem(){ state.itemForm = newItemForm(); draw(); }
   function openEditItem(item){ state.itemForm = { ...item }; draw(); }
@@ -357,10 +346,6 @@ function renderGoiLichTrinh(container, ctx){
           <h2 style="font-size:17px;">Lịch trình — ${esc(pkg ? pkg.name : '')}</h2>
           <span class="btn-ghost btn btn-sm" style="color:var(--danger);margin-top:8px;display:inline-block;" data-remove-package="${state.selectedPackageId}">Xoá gói này</span>
         </div>
-        <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <label style="font-size:13px;font-weight:600;color:var(--ink-soft);margin:0;">Giờ nhắc mỗi ngày (thông báo đẩy nhắc khách xem Lịch Trình)</label>
-          <input type="time" id="gt-daily-reminder" value="${esc((pkg && pkg.daily_reminder_time) || '')}" style="margin:0;width:auto;">
-        </div>
 
         ${state.itemForm ? `
           <div class="card" style="margin-bottom:16px;">
@@ -405,8 +390,6 @@ function renderGoiLichTrinh(container, ctx){
     });
     const removePkgBtn = container.querySelector('[data-remove-package]');
     if(removePkgBtn) removePkgBtn.onclick = ()=>removePackage(removePkgBtn.getAttribute('data-remove-package'));
-    const dailyReminderEl = container.querySelector('#gt-daily-reminder');
-    if(dailyReminderEl) dailyReminderEl.onchange = (e)=>saveDailyReminderTime(state.selectedPackageId, e.target.value);
 
     const newItemBtn = container.querySelector('#gt-item-new'); if(newItemBtn) newItemBtn.onclick = openNewItem;
     const cancelItemBtn = container.querySelector('#gt-item-cancel'); if(cancelItemBtn) cancelItemBtn.onclick = ()=>{ state.itemForm=null; draw(); };
@@ -430,7 +413,7 @@ function renderGoiLichTrinh(container, ctx){
 function renderThanhVien(container, ctx){
   const state = { loading:true, rows:[], packages:[], allProducts:[], search:'', busyId:null, pointsFormFor:null, pointsForm:{ month:new Date().toISOString().slice(0,7), points:'', purchase_amount:'', commission:'', note:'' },
     anyQuery:'', anySearching:false, anySearched:false, anyResults:[],
-    customerProductsFor:null, customerProductIds:null, customerProductTimes:{} };
+    customerProductsFor:null, customerProductIds:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -459,31 +442,26 @@ function renderThanhVien(container, ctx){
   // Bạn vẫn cần hiện đúng hướng dẫn sử dụng của đúng sản phẩm họ dùng (xem lich-trinh.js).
   async function openCustomerProducts(userId){
     if(state.customerProductsFor === userId){ state.customerProductsFor = null; draw(); return; }
-    state.customerProductsFor = userId; state.customerProductIds = null; state.customerProductTimes = {}; draw();
-    const { data } = await ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', userId);
+    state.customerProductsFor = userId; state.customerProductIds = null; draw();
+    const { data } = await ctx.supabase.from('sk_customer_products').select('product_id').eq('user_id', userId);
     state.customerProductIds = new Set((data||[]).map(r=>r.product_id));
-    state.customerProductTimes = Object.fromEntries((data||[]).map(r=>[r.product_id, r.reminder_time||'']));
     draw();
   }
 
   async function toggleCustomerProduct(userId, productId){
     if(state.customerProductIds.has(productId)){
-      await ctx.supabase.from('sk_customer_products').delete().eq('user_id', userId).eq('product_id', productId);
+      const { error } = await ctx.supabase.from('sk_customer_products').delete().eq('user_id', userId).eq('product_id', productId);
+      if(error){ alert('Không bỏ được sản phẩm: ' + error.message); return; }
       state.customerProductIds.delete(productId);
-      delete state.customerProductTimes[productId];
     } else {
-      await ctx.supabase.from('sk_customer_products').insert({ user_id:userId, product_id:productId });
+      const { error } = await ctx.supabase.from('sk_customer_products').insert({ user_id:userId, product_id:productId });
+      // Bảng sk_customer_products chưa tồn tại nếu chưa chạy schema_suc_khoe.sql mới nhất — báo rõ
+      // lý do thay vì im lặng "như chưa lưu gì" (2026-09-05, chị Quỳnh phản ánh gán sản phẩm bị mất
+      // sau khi tắt/mở lại app — khả năng cao là do lỗi này bị nuốt im lặng trước đây).
+      if(error){ alert('Không lưu được sản phẩm — có thể chưa chạy file schema_suc_khoe.sql mới nhất. Lỗi: ' + error.message); return; }
       state.customerProductIds.add(productId);
-      state.customerProductTimes[productId] = '';
     }
     draw();
-  }
-
-  // Giờ nhắc dùng (2026-09-05, chị Quỳnh: "lịch trình cần phải có thời gian và có thông báo để nhắc
-  // người ta dùng") — xem api/cron/send-reminders.js checkSucKhoeProductReminders().
-  async function setCustomerProductTime(userId, productId, time){
-    state.customerProductTimes[productId] = time;
-    await ctx.supabase.from('sk_customer_products').update({ reminder_time: time||null }).eq('user_id', userId).eq('product_id', productId);
   }
 
   // Tìm & gán gói cho khách MUA TRƯỚC ĐÓ, không qua app (2026-09-05, chị Quỳnh: "khách hàng nào đã
@@ -505,11 +483,12 @@ function renderThanhVien(container, ctx){
 
   async function assignPackage(userId, packageId){
     state.busyId = userId; draw();
-    await ctx.supabase.from('profiles').update({
+    const { error } = await ctx.supabase.from('profiles').update({
       sk_package_id: packageId || null,
       sk_package_started_at: packageId ? new Date().toISOString() : null,
     }).eq('id', userId);
     state.busyId = null;
+    if(error){ alert('Không gán được gói: ' + error.message); draw(); return; }
     // Cập nhật ngay dòng trong kết quả tìm "khách bất kỳ" (nếu có) — khỏi phải tìm lại mới thấy đổi.
     const anyRow = state.anyResults.find(r=>r.id===userId);
     if(anyRow) anyRow.sk_package_id = packageId || null;
@@ -538,21 +517,8 @@ function renderThanhVien(container, ctx){
       ${state.customerProductsFor===userId ? `
         <div class="card" style="margin-top:10px;width:100%;">
           ${state.customerProductIds===null ? `<div class="loading"><div class="spinner"></div></div>` : `
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Tick đúng sản phẩm khách đang dùng (không cần khớp Combo nào) — Lịch Trình Của Bạn của khách sẽ hiện đúng hướng dẫn sử dụng của các sản phẩm này. Chọn thêm giờ nhắc nếu muốn khách được thông báo đến giờ dùng.</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Tick đúng sản phẩm khách đang dùng (không cần khớp Combo nào) — Lịch Trình Của Bạn của khách sẽ hiện đúng hướng dẫn sử dụng của các sản phẩm này. Khách tự đặt giờ nhắc riêng ở Lịch Trình Của Bạn, không đặt ở đây.</div>
             <div class="chips">${state.allProducts.map(p=>`<div class="chip ${state.customerProductIds.has(p.id)?'selected':''}" data-toggle-customer-product="${userId}|${p.id}">${esc(p.name)}</div>`).join('')}</div>
-            ${[...state.customerProductIds].length>0 ? `
-              <div style="margin-top:12px;">
-                ${[...state.customerProductIds].map(pid=>{
-                  const p = state.allProducts.find(x=>x.id===pid);
-                  return `
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line);">
-                      <span style="font-size:13px;">${esc(p ? p.name : pid)}</span>
-                      <input type="time" data-product-reminder-time="${userId}|${pid}" value="${esc(state.customerProductTimes[pid]||'')}" style="margin:0;width:auto;">
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : ''}
           `}
         </div>
       ` : ''}
@@ -658,12 +624,6 @@ function renderThanhVien(container, ctx){
       el.onclick = ()=>{
         const [userId, productId] = el.getAttribute('data-toggle-customer-product').split('|');
         toggleCustomerProduct(userId, productId);
-      };
-    });
-    container.querySelectorAll('[data-product-reminder-time]').forEach(el=>{
-      el.onchange = (e)=>{
-        const [userId, productId] = el.getAttribute('data-product-reminder-time').split('|');
-        setCustomerProductTime(userId, productId, e.target.value);
       };
     });
     const cancelBtn = container.querySelector('#pf-cancel'); if(cancelBtn) cancelBtn.onclick = ()=>{ state.pointsFormFor=null; draw(); };

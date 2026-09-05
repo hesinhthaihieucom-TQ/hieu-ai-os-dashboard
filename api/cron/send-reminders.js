@@ -343,11 +343,12 @@ async function checkSucKhoeDailyTip() {
 
 // Giờ nhắc dùng sản phẩm lẻ + gói Combo (2026-09-05, chị Quỳnh: "lịch trình cần phải có thời gian và
 // có thông báo để nhắc người ta dùng") — 2 mảnh riêng vì 2 nguồn khác nhau:
-// (1) sản phẩm lẻ (sk_customer_products.reminder_time) — mỗi dòng 1 giờ riêng, admin đặt qua Quản
-//     Trị > Thành Viên > "Sản phẩm đang dùng".
-// (2) gói Combo (sk_packages.daily_reminder_time) — 1 giờ CHUNG/ngày cho cả gói (không phải riêng
-//     từng khung giờ trong regimen_sections — regimen_sections chưa có UI sửa, chỉ đổi được qua SQL,
-//     nhắc 1 lần/ngày dẫn vào Lịch Trình xem đủ chi tiết là đủ dùng trước mắt).
+// (1) sản phẩm lẻ (sk_customer_products.reminder_time) — mỗi dòng 1 giờ riêng, KHÁCH tự đặt ở Lịch
+//     Trình Của Bạn (admin chỉ gán SẢN PHẨM nào, không đặt giờ hộ khách).
+// (2) gói Combo (profiles.sk_reminder_time) — 1 giờ CHUNG/ngày CHO CHÍNH NGƯỜI ĐÓ (không phải chung
+//     cho cả gói — mỗi khách theo cùng 1 Combo có thể tự chọn giờ khác nhau), KHÁCH tự đặt ở Lịch
+//     Trình Của Bạn (2026-09-05, chị Quỳnh: "cái nhắc lịch dùng sản phẩm... nên cho người dùng tự
+//     cài giờ nhắc chứ không phải mình" — sửa từ bản đầu để giờ ở sk_packages, chung cho cả gói).
 async function checkSucKhoeProductReminders() {
   const { dateStr, minutesOfDay } = vnNowParts();
   const resp = await supabaseAdmin(`sk_customer_products?reminder_time=not.is.null&select=user_id,product_id,reminder_time,sk_products(name)`);
@@ -368,23 +369,25 @@ async function checkSucKhoeProductReminders() {
 
 async function checkSucKhoePackageDailyReminder() {
   const { dateStr, minutesOfDay } = vnNowParts();
-  const packagesResp = await supabaseAdmin(`sk_packages?daily_reminder_time=not.is.null&select=id,name,daily_reminder_time`);
+  const usersResp = await supabaseAdmin(`profiles?sk_package_id=not.is.null&sk_reminder_time=not.is.null&select=id,sk_package_id,sk_reminder_time`);
+  const users = usersResp.ok ? await usersResp.json() : [];
+  const dueUsers = users.filter((u) => withinWindow(parseHHMM(u.sk_reminder_time), minutesOfDay));
+  if (!dueUsers.length) return 0;
+
+  const packageIds = [...new Set(dueUsers.map((u) => u.sk_package_id))];
+  const packagesResp = await supabaseAdmin(`sk_packages?id=in.(${packageIds.join(',')})&select=id,name`);
   const packages = packagesResp.ok ? await packagesResp.json() : [];
-  const duePackages = packages.filter((p) => withinWindow(parseHHMM(p.daily_reminder_time), minutesOfDay));
-  if (!duePackages.length) return 0;
+  const packageNameById = Object.fromEntries(packages.map((p) => [p.id, p.name]));
 
   let count = 0;
-  for (const pkg of duePackages) {
-    const usersResp = await supabaseAdmin(`profiles?sk_package_id=eq.${pkg.id}&select=id`);
-    const users = usersResp.ok ? await usersResp.json() : [];
-    for (const u of users) {
-      const result = await notifyOnce(u.id, `sk-package-daily:${pkg.id}:${dateStr}`, {
-        title: '⏰ Đến giờ chăm sóc cơ thể hôm nay',
-        body: `Xem lịch trình sản phẩm hôm nay của gói "${pkg.name}".`,
-        url: './#lich-trinh',
-      });
-      if (result.sent) count++;
-    }
+  for (const u of dueUsers) {
+    const pkgName = packageNameById[u.sk_package_id] || 'gói của bạn';
+    const result = await notifyOnce(u.id, `sk-package-daily:${dateStr}`, {
+      title: '⏰ Đến giờ chăm sóc cơ thể hôm nay',
+      body: `Xem lịch trình sản phẩm hôm nay của gói "${pkgName}".`,
+      url: './#lich-trinh',
+    });
+    if (result.sent) count++;
   }
   return count;
 }
