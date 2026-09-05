@@ -141,15 +141,18 @@ function openOrderModal(ctx, products){
           </div>
           ${gift.needsColor ? `
             <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
-              ${SK_LIPSTICK_COLORS.map(c=>`
-                <div data-gift-color-card="${esc(c.key)}" style="display:flex;flex-direction:column;align-items:center;gap:6px;border:2px solid ${giftColor===c.key?'var(--accent)':'var(--line)'};border-radius:12px;padding:10px;cursor:pointer;background:#fff;width:96px;">
+              ${SK_LIPSTICK_COLORS.map(c=>{
+                const chosen = giftColor===c.key;
+                return `
+                <div data-gift-color-card="${esc(c.key)}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;border:2px solid ${chosen?'var(--accent)':'var(--line)'};border-radius:12px;padding:10px;cursor:pointer;background:${chosen?'#eef6f0':'#fff'};width:96px;">
+                  ${chosen ? `<div style="position:absolute;top:-9px;right:-9px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>` : ''}
                   <img src="${esc(c.image)}" alt="" data-zoom="${esc(c.image)}" style="width:76px;height:76px;object-fit:cover;border-radius:9px;cursor:zoom-in;">
                   <span style="font-size:12px;font-weight:600;text-align:center;">${esc(c.label)}</span>
-                  <input type="radio" name="order-gift-color" value="${esc(c.key)}" data-gift-color="1" ${giftColor===c.key?'checked':''} style="accent-color:var(--accent);width:18px;height:18px;">
+                  <span style="font-size:11px;font-weight:700;color:${chosen?'var(--accent)':'var(--ink-soft)'};">${chosen?'✓ Đã chọn':'Bấm để chọn'}</span>
                 </div>
-              `).join('')}
+              `;}).join('')}
             </div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;">Bấm vào ảnh để xem to hơn — bấm vào khung màu hoặc chấm tròn để chọn.</div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;">Bấm vào ảnh để xem to hơn — bấm vào khung màu để chọn.</div>
           ` : ''}
         </div>
       ` : `<div style="height:14px;"></div>`}
@@ -184,11 +187,9 @@ function openOrderModal(ctx, products){
         renderCard();
       };
     });
-    overlay.querySelectorAll('[data-gift-color]').forEach(el=>{
-      el.onchange = ()=>{ giftColor = el.value; renderCard(); };
-    });
-    // Bấm cả khung màu (không chỉ đúng chấm tròn nhỏ) cũng chọn được — dễ bấm hơn trên điện thoại.
-    // Ảnh bên trong khung có handler zoom riêng (stopPropagation) nên bấm ảnh chỉ phóng to, không chọn nhầm.
+    // Bấm cả khung màu (2026-09-05, chị Quỳnh: trước dùng chấm radio nhỏ khó thấy là bấm để CHỌN —
+    // bỏ hẳn radio, thay bằng dấu ✓ to + chữ "Đã chọn"/"Bấm để chọn" rõ ràng hơn). Ảnh bên trong khung
+    // có handler zoom riêng (stopPropagation) nên bấm ảnh chỉ phóng to, không chọn nhầm màu khác.
     overlay.querySelectorAll('[data-gift-color-card]').forEach(el=>{
       el.onclick = ()=>{ giftColor = el.getAttribute('data-gift-color-card'); renderCard(); };
     });
