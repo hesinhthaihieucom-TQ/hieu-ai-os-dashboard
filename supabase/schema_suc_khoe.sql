@@ -314,3 +314,65 @@ drop policy if exists "sk_success_stories_read" on sk_success_stories;
 create policy "sk_success_stories_read" on sk_success_stories for select using (auth.role() = 'authenticated');
 drop policy if exists "sk_success_stories_admin_write" on sk_success_stories;
 create policy "sk_success_stories_admin_write" on sk_success_stories for all using (is_admin()) with check (is_admin());
+
+-- Lượt AI RIÊNG cho suc-khoe (2026-09-05, Insight Overlay "Xanh trong Đỏ" — xem
+-- kho-tai-lieu/triet-ly-tinh-khi-than-app-suc-khoe.md + api/suc-khoe-insight.js) — ĐỘC LẬP với
+-- api/_lib/trial-quota.js (Xây Nhân Hiệu) và api/_lib/crm-ai-quota.js (Trợ Lý CRM), vì app này
+-- KHÔNG có khái niệm has_paid/access_until riêng (gói do admin gán tay qua Quản Trị > Thành viên,
+-- xem app-shell.js) — chỉ có 1 trần THÁNG chung cho mọi user đã được gán gói, admin không bị chặn.
+-- Cùng cơ chế khoá "select ... for update" + chu kỳ 30 ngày từ created_at như consume_crm_ai_quota
+-- (tránh bug reset theo lịch dương đã gặp 2 lần trước — xem lịch sử ở schema_tro_ly_crm.sql).
+alter table profiles add column if not exists sk_ai_uses int not null default 0;
+alter table profiles add column if not exists sk_ai_month text;
+
+drop function if exists public.consume_sk_ai_quota(uuid, int, int);
+create or replace function public.consume_sk_ai_quota(p_user_id uuid, p_monthly_limit int, p_weight int default 1)
+returns jsonb as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text;
+  v_current_uses int;
+  v_is_admin boolean;
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then
+    return jsonb_build_object('allowed', true);
+  end if;
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  v_is_admin := (v_profile.role = 'admin');
+  if v_profile.sk_ai_month = v_month then
+    v_current_uses := v_profile.sk_ai_uses;
+  else
+    v_current_uses := 0;
+  end if;
+  if (not v_is_admin) and v_current_uses + p_weight > p_monthly_limit then
+    return jsonb_build_object('allowed', false, 'effective_limit', p_monthly_limit, 'current_uses', v_current_uses);
+  end if;
+  if v_profile.sk_ai_month = v_month then
+    update profiles set sk_ai_uses = sk_ai_uses + p_weight where id = p_user_id;
+  else
+    update profiles set sk_ai_uses = p_weight, sk_ai_month = v_month where id = p_user_id;
+  end if;
+  return jsonb_build_object('allowed', true, 'current_uses', v_current_uses + p_weight);
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.consume_sk_ai_quota(uuid, int, int) from public, authenticated, anon;
+grant execute on function public.consume_sk_ai_quota(uuid, int, int) to service_role;
+
+drop function if exists public.refund_sk_ai_quota(uuid, int);
+create or replace function public.refund_sk_ai_quota(p_user_id uuid, p_weight int default 1)
+returns void as $$
+declare
+  v_profile profiles%rowtype;
+  v_month text;
+begin
+  select * into v_profile from profiles where id = p_user_id for update;
+  if not found then return; end if;
+  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  if v_profile.sk_ai_month = v_month then
+    update profiles set sk_ai_uses = greatest(0, sk_ai_uses - p_weight) where id = p_user_id;
+  end if;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.refund_sk_ai_quota(uuid, int) from public, authenticated, anon;
+grant execute on function public.refund_sk_ai_quota(uuid, int) to service_role;

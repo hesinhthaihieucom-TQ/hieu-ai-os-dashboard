@@ -14,7 +14,8 @@ const SK_GI_TABLES = [
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null };
+  const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
+    insightText:'', insightLoading:false, insightResult:'', insightError:'' };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -197,7 +198,28 @@ Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 
       </div>
 
       <div class="hint-box">Theo dõi điểm Tinh/Khí/Thần hằng tuần ở mục "Theo Dõi Sức Khỏe Theo Tuần" (phần Siêu Âm Năng Lượng) để biết trụ nào đang cần chăm nhiều hơn.</div>
+
+      <div class="card" style="margin-top:18px;">
+        ${skSectionHeaderHtml('Tìm năng lượng Xanh trong biến cố (Insight Overlay)', '#1f9d63', '🌱')}
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">Kể ngắn gọn 1 tình huống khó khăn bạn đang gặp — AI sẽ giúp bạn nhìn thấy điều đang được mở ra/dịch chuyển từ chính biến cố đó, không phải để thay thế tư vấn chuyên môn.</div>
+        <textarea id="tkt-insight-input" placeholder="VD: Con dâu tôi vừa dọn ra ở riêng sau mâu thuẫn với gia đình..." style="min-height:90px;" ${state.insightLoading?'disabled':''}>${esc(state.insightText)}</textarea>
+        <button class="btn btn-sm" id="tkt-insight-submit" style="margin-top:10px;" ${state.insightLoading?'disabled':''}>${state.insightLoading?'Đang tìm…':'Tìm năng lượng Xanh'}</button>
+        ${state.insightError ? `<div class="error-box" style="margin-top:10px;">${esc(state.insightError)}</div>` : ''}
+        ${state.insightResult ? `<div class="hint-box" style="margin-top:12px;line-height:1.8;">${esc(state.insightResult)}</div>` : ''}
+      </div>
     `;
+  }
+
+  async function submitInsight(){
+    if(state.insightLoading || !state.insightText.trim()) return;
+    state.insightLoading = true; state.insightError = ''; state.insightResult = ''; draw();
+    try{
+      const data = await callApi('/api/suc-khoe-insight', { bien_co: state.insightText.trim() });
+      state.insightResult = data.insight;
+    } catch(e){
+      state.insightError = e.message || 'Không tìm được insight — thử lại giúp mình.';
+    }
+    state.insightLoading = false; draw();
   }
 
   function tapLuyenTab(){
@@ -258,6 +280,10 @@ Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 
         toggleDone(id, doneFlag==='1');
       };
     });
+    const insightInput = container.querySelector('#tkt-insight-input');
+    if(insightInput) insightInput.oninput = (e)=>{ state.insightText = e.target.value; };
+    const insightSubmit = container.querySelector('#tkt-insight-submit');
+    if(insightSubmit) insightSubmit.onclick = submitInsight;
   }
 
   draw();
