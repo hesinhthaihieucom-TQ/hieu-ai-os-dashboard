@@ -518,6 +518,12 @@ function render(container, ideaRow) {
     `;
   }
 
+  // Thứ tự các thẻ: danh sách các phần TRƯỚC, "Duyệt tổng thể"/"Bìa & màu"/thẻ xuất SAU CÙNG
+  // (2026-09-04, Quỳnh: "cái đoạn chọn banner phông nền màu chữ để xuất thành ebook sách lật phải để
+  // đến cuối cùng chứ" — trước đây 3 thẻ này nằm NGAY ĐẦU trang, trước cả khi viết chữ nào, dù chức
+  // năng của chúng chỉ thật sự dùng được sau khi đã viết xong hết — cùng tinh thần với gate "phải
+  // viết xong hết mới xuất" đã thêm trước đó, giờ áp luôn cho THỨ TỰ hiển thị, không chỉ trạng thái
+  // khoá/mở của riêng thẻ xuất).
   function outline2Html() {
     if (state.editingOutlineIndex != null) return outlineEditHtml();
     const sections = flattenSections(state.outline2);
@@ -527,9 +533,6 @@ function render(container, ideaRow) {
         <span class="btn-ghost btn btn-sm" id="xdnd-luu-tam-btn" style="white-space:nowrap;">💾 Lưu tạm, bắt đầu sản phẩm khác</span>
       </div>
       <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
-      ${themeCardHtml()}
-      ${idea.dinh_dang === 'mini_course' ? miniCourseExportCardHtml() : ebookExportCardHtml()}
-      ${tongDuyetCardHtml()}
       ${sections.map((s, i) => {
         const st = state.sections[i];
         const status = st ? st.status : null;
@@ -552,6 +555,9 @@ function render(container, ideaRow) {
           </div>
         `;
       }).join('')}
+      ${tongDuyetCardHtml()}
+      ${themeCardHtml()}
+      ${idea.dinh_dang === 'mini_course' ? miniCourseExportCardHtml() : ebookExportCardHtml()}
     `;
   }
 
