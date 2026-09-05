@@ -15,7 +15,8 @@ const SK_GI_TABLES = [
 (function(){
 function render(container, ctx){
   const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
-    insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[], dailyReminderTime:null };
+    insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[], dailyReminderTime:null,
+    calcWeight:'', calcGoal:'duy_tri' };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -162,6 +163,62 @@ function render(container, ctx){
     `;
   }
 
+  // Tính nhu cầu Nước & Protein mỗi ngày, quy đổi ra thực phẩm (2026-09-05, chị Quỳnh: "có chỗ tính
+  // luôn lượng nước cần uống trong ngày, lượng protein cần ăn trong ngày luôn, tương đương vào bn
+  // lượng thực phẩm") — công thức Protein giữ NGUYÊN như bản tĩnh cũ (cân nặng × 1,5 hoặc × 2,0-2,2),
+  // Nước dùng công thức phổ biến 35ml/kg. Quy đổi thực phẩm dùng ĐÚNG các số liệu tham khảo protein
+  // đã có sẵn trong bản tĩnh cũ, không bịa số mới.
+  const SK_PROTEIN_FOOD_REF = [
+    { label:'Ức gà', per100g:23 },
+    { label:'Thăn bò', per100g:26 },
+    { label:'Cá hồi', per100g:21 },
+    { label:'Thăn heo nạc', per100g:21 },
+    { label:'Đậu phụ', per100g:8 },
+  ];
+  function nutritionCalcHtml(){
+    const w = parseFloat(state.calcWeight);
+    const validWeight = isFinite(w) && w > 0;
+    const proteinPerKg = state.calcGoal === 'tang_co_giam_mo' ? 2.1 : 1.5;
+    const proteinTarget = validWeight ? Math.round(w * proteinPerKg) : null;
+    const waterTargetMl = validWeight ? Math.round(w * 35) : null;
+    return `
+      <div class="card" style="margin-bottom:18px;">
+        ${skSectionHeaderHtml('Tính nhu cầu Nước & Protein mỗi ngày', '#7c6bd4', '🥩')}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Cân nặng hiện tại (kg)</label>
+            <input type="number" id="calc-weight" value="${esc(state.calcWeight)}" placeholder="VD: 60" style="width:110px;margin:0;">
+          </div>
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu</label>
+            <select id="calc-goal" style="width:auto;margin:0;">
+              <option value="duy_tri" ${state.calcGoal==='duy_tri'?'selected':''}>Duy trì (×1,5)</option>
+              <option value="tang_co_giam_mo" ${state.calcGoal==='tang_co_giam_mo'?'selected':''}>Tăng cơ/giảm mỡ (×2,0-2,2)</option>
+            </select>
+          </div>
+        </div>
+        ${validWeight ? `
+          <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:14px;">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);">${(waterTargetMl/1000).toFixed(1)} lít</div>
+              <div style="font-size:12px;color:var(--ink-soft);">Nước cần uống/ngày (~35ml × cân nặng)</div>
+            </div>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);">${proteinTarget}g</div>
+              <div style="font-size:12px;color:var(--ink-soft);">Protein cần/ngày</div>
+            </div>
+          </div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Tương đương khoảng (chọn 1 hoặc kết hợp nhiều loại):</div>
+          <div style="font-size:13px;color:var(--ink-soft);line-height:1.9;">
+            ${SK_PROTEIN_FOOD_REF.map(f=>`• ${Math.round(proteinTarget/f.per100g*100)}g ${esc(f.label)}`).join('<br>')}
+            <br>• hoặc thêm 1 quả trứng (≈7g) / 1 gói LC (≈12g protein) cho tiện khi ăn ngoài.
+          </div>
+        ` : `<div class="hint-box">Nhập cân nặng để tính nhu cầu nước & protein mỗi ngày cho riêng bạn.</div>`}
+        <div style="font-size:11.5px;color:var(--ink-soft);margin-top:12px;">Công thức tham khảo chung, không thay thế tư vấn dinh dưỡng chuyên sâu — điều chỉnh theo mức vận động và tình trạng sức khỏe thực tế.</div>
+      </div>
+    `;
+  }
+
   function anUongTab(){
     return `
       <div class="card" style="margin-bottom:18px;">
@@ -190,13 +247,7 @@ function render(container, ctx){
 👉 Chia đĩa ăn theo tỉ lệ 4-3-2-1: Rau xanh (nhiều nhất) — Đạm — Tinh bột — Chất béo.`)}
       </div>
 
-      <div class="card" style="margin-bottom:18px;">
-        ${skSectionHeaderHtml('Công thức tính Protein (chất đạm) mỗi ngày', '#7c6bd4', '🥩')}
-        ${skRichBodyHtml(`- Duy trì: số gam Protein/ngày = cân nặng (kg) × 1,5
-- Tăng cơ/giảm mỡ: số gam Protein/ngày = cân nặng (kg) × 2,0-2,2
-- Thiếu protein → dễ đói nhanh, dễ tích mỡ, mất cơ.
-Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 26g, cá hồi 100g ≈ 21g, thăn heo nạc 100g ≈ 21g, 1 quả trứng ≈ 7g, đậu phụ 100g ≈ 8g. 1 gói LC ≈ 12g protein.`)}
-      </div>
+      ${nutritionCalcHtml()}
 
       <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Bảng chỉ số đường huyết (GI) để chọn thực phẩm</h2></div>
       <div class="hint-box" style="margin-bottom:14px;">Ưu tiên nhóm GI THẤP — TRUNG BÌNH, dùng có kiểm soát; hạn chế nhóm GI CAO, nhất là buổi tối. Không cần kiêng tuyệt đối, chỉ cần giảm dần và thay thế thông minh.</div>
@@ -324,6 +375,18 @@ Tham khảo lượng protein: ức gà 100g ≈ 23g protein, thăn bò 100g ≈ 
     if(insightInput) insightInput.oninput = (e)=>{ state.insightText = e.target.value; };
     const insightSubmit = container.querySelector('#tkt-insight-submit');
     if(insightSubmit) insightSubmit.onclick = submitInsight;
+    const calcWeightEl = container.querySelector('#calc-weight');
+    // draw() thay toàn bộ innerHTML → input cũ bị huỷ, phải lưu vị trí con trỏ trước rồi khôi phục
+    // trên node MỚI sau khi vẽ lại, không thì mất focus giữa chừng khi đang gõ (theo đúng bài học đã
+    // gặp ở thu-vien-suc-khoe.js #tv-search).
+    if(calcWeightEl) calcWeightEl.oninput = (e)=>{
+      state.calcWeight = e.target.value;
+      draw();
+      const newEl = container.querySelector('#calc-weight');
+      if(newEl) newEl.focus();
+    };
+    const calcGoalEl = container.querySelector('#calc-goal');
+    if(calcGoalEl) calcGoalEl.onchange = (e)=>{ state.calcGoal = e.target.value; draw(); };
   }
 
   draw();
