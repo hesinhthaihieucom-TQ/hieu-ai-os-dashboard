@@ -252,6 +252,9 @@ function render(container, ctx){
     container.querySelectorAll('[data-group]').forEach(el=>{
       el.onclick = ()=> toggle(el.getAttribute('data-group'), el.getAttribute('data-label'));
     });
+    container.querySelectorAll('[data-zoom]').forEach(el=>{
+      el.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); openImageLightbox(el.getAttribute('data-zoom'), ''); };
+    });
     container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
       el.onchange = (e)=>{
         const id = el.getAttribute('data-cart-toggle');

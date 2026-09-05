@@ -79,13 +79,16 @@ function skOrderGift(total, itemCount){
 }
 
 // Preview quà tặng dùng chung ở thanh tổng cuối trang (Kiểm Tra Sức Khỏe/Thư Viện Sức Khỏe) — 2026-09-05,
-// chị Quỳnh: "chưa có hình thỏi son và bình lắc" — trước đây thanh này chỉ hiện chữ (gift.label), giờ
-// hiện kèm ảnh thật giống hệt trong modal đặt hàng, để khách thấy ngay quà trông thế nào trước khi bấm Đặt hàng.
+// chị Quỳnh phản hồi 2 lần: (1) "chưa có hình thỏi son và bình lắc" — trước đây thanh này chỉ hiện
+// chữ, giờ hiện kèm ảnh thật; (2) ảnh "rất bé" + nói "chọn màu" mà không thấy màu nào — giờ hiện
+// LUÔN cả 2 màu son ở đây (không chỉ bình lắc) để khách thấy trước có màu gì, màu thật chọn ở modal
+// Đặt hàng. Bấm vào ảnh xem phóng to (openImageLightbox) — chưa chọn được màu ở đây, chỉ xem trước.
 function skGiftPreviewHtml(gift){
   if(!gift) return '';
+  const previewImages = (gift.images||[]).concat(gift.needsColor ? SK_LIPSTICK_COLORS.map(c=>c.image) : []);
   return `
-    <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      ${(gift.images||[]).map(src=>`<img src="${esc(src)}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:7px;flex-shrink:0;">`).join('')}
+    <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      ${previewImages.map(src=>`<img src="${esc(src)}" alt="" data-zoom="${esc(src)}" style="width:60px;height:60px;object-fit:cover;border-radius:9px;flex-shrink:0;cursor:zoom-in;">`).join('')}
       <span style="font-size:13px;color:#e8643c;font-weight:700;">${esc(gift.label)}</span>
     </div>
   `;
@@ -133,19 +136,20 @@ function openOrderModal(ctx, products){
       ${gift ? `
         <div class="hint-box" style="margin-bottom:14px;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            ${(gift.images||[]).map(src=>`<img src="${esc(src)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">`).join('')}
+            ${(gift.images||[]).map(src=>`<img src="${esc(src)}" alt="" data-zoom="${esc(src)}" style="width:56px;height:56px;object-fit:cover;border-radius:9px;flex-shrink:0;cursor:zoom-in;">`).join('')}
             <span>${esc(gift.label)}</span>
           </div>
           ${gift.needsColor ? `
-            <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
+            <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
               ${SK_LIPSTICK_COLORS.map(c=>`
-                <label style="display:flex;align-items:center;gap:7px;border:2px solid ${giftColor===c.key?'var(--accent)':'var(--line)'};border-radius:10px;padding:6px 10px 6px 6px;cursor:pointer;background:#fff;">
-                  <input type="radio" name="order-gift-color" value="${esc(c.key)}" data-gift-color="1" ${giftColor===c.key?'checked':''} style="accent-color:var(--accent);">
-                  <img src="${esc(c.image)}" alt="" style="width:30px;height:30px;object-fit:cover;border-radius:7px;flex-shrink:0;">
-                  <span style="font-size:12.5px;font-weight:600;">${esc(c.label)}</span>
-                </label>
+                <div data-gift-color-card="${esc(c.key)}" style="display:flex;flex-direction:column;align-items:center;gap:6px;border:2px solid ${giftColor===c.key?'var(--accent)':'var(--line)'};border-radius:12px;padding:10px;cursor:pointer;background:#fff;width:96px;">
+                  <img src="${esc(c.image)}" alt="" data-zoom="${esc(c.image)}" style="width:76px;height:76px;object-fit:cover;border-radius:9px;cursor:zoom-in;">
+                  <span style="font-size:12px;font-weight:600;text-align:center;">${esc(c.label)}</span>
+                  <input type="radio" name="order-gift-color" value="${esc(c.key)}" data-gift-color="1" ${giftColor===c.key?'checked':''} style="accent-color:var(--accent);width:18px;height:18px;">
+                </div>
               `).join('')}
             </div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;">Bấm vào ảnh để xem to hơn — bấm vào khung màu hoặc chấm tròn để chọn.</div>
           ` : ''}
         </div>
       ` : `<div style="height:14px;"></div>`}
@@ -182,6 +186,14 @@ function openOrderModal(ctx, products){
     });
     overlay.querySelectorAll('[data-gift-color]').forEach(el=>{
       el.onchange = ()=>{ giftColor = el.value; renderCard(); };
+    });
+    // Bấm cả khung màu (không chỉ đúng chấm tròn nhỏ) cũng chọn được — dễ bấm hơn trên điện thoại.
+    // Ảnh bên trong khung có handler zoom riêng (stopPropagation) nên bấm ảnh chỉ phóng to, không chọn nhầm.
+    overlay.querySelectorAll('[data-gift-color-card]').forEach(el=>{
+      el.onclick = ()=>{ giftColor = el.getAttribute('data-gift-color-card'); renderCard(); };
+    });
+    overlay.querySelectorAll('[data-zoom]').forEach(el=>{
+      el.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); openImageLightbox(el.getAttribute('data-zoom'), ''); };
     });
     const nameEl = overlay.querySelector('#order-name');
     if(nameEl) nameEl.oninput = ()=>{ formValues.name = nameEl.value; };

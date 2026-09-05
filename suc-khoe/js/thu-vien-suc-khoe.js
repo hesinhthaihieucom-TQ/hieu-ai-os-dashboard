@@ -119,6 +119,9 @@ function render(container, ctx){
         draw();
       };
     });
+    container.querySelectorAll('[data-zoom]').forEach(el=>{
+      el.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); openImageLightbox(el.getAttribute('data-zoom'), ''); };
+    });
     const toggleAllBtn = container.querySelector('#tv-toggle-all');
     if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
       const ids = allVisibleProducts(filtered()).map(p=>p.id);
