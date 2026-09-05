@@ -136,6 +136,12 @@ function render(container, ctx){
   // Chỉ hiện ĐÚNG sản phẩm đã gắn sẵn theo từng mục Thư Viện khớp — kèm lý do riêng (product_notes)
   // và cờ ưu tiên, gộp từ TẤT CẢ mục Thư Viện đang khớp (1 sản phẩm có thể được nhắc tới ở nhiều mục
   // với lý do khác nhau — lấy lý do của mục đầu tiên có ghi). Sắp priority lên trước.
+  //
+  // Giới hạn TỐI ĐA 3 sản phẩm được gắn nhãn "⭐ Nên dùng trước" (2026-09-05, chị Quỳnh: "hiện đang
+  // có quá 3 sản phẩm được đề xuất rồi") — mỗi mục Thư Viện đã tự giới hạn 2-3 priority riêng, nhưng
+  // khi khách tick NHIỀU nhóm cùng lúc (VD cả insulin lẫn metabolic), priority từ nhiều mục gộp lại có
+  // thể vượt quá 3, mất đúng tác dụng "chỉ nên ưu tiên mua trước vài món nếu ngân sách hạn chế". Sản
+  // phẩm bị cắt priority vẫn hiện trong danh sách bình thường, chỉ mất ngôi sao.
   function matchedProducts(){
     const entries = matchedLibraryEntries();
     const noteByProductId = {};
@@ -145,10 +151,15 @@ function render(container, ctx){
     });
     const ids = new Set(entries.flatMap(e=>e.related_product_ids||[]));
     if(ids.size===0) return [];
-    return state.products
+    const list = state.products
       .filter(p=>ids.has(p.id))
       .map(p=>({ ...p, _note: (noteByProductId[p.id]||{}).note || null, _priority: !!(noteByProductId[p.id]||{}).priority }))
       .sort((a,b)=> (b._priority - a._priority));
+    let priorityCount = 0;
+    return list.map(p=>{
+      if(p._priority && priorityCount < 3){ priorityCount++; return p; }
+      return p._priority ? { ...p, _priority:false } : p;
+    });
   }
 
   function chipGroup(group, items){
