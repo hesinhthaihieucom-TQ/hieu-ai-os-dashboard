@@ -47,9 +47,9 @@ function renderThuVien(container, ctx){
     draw();
   }
 
-  function newForm(){ return { id:null, issue_name:'', causes:'', symptoms:'', remedies:'', related_product_ids:[] }; }
+  function newForm(){ return { id:null, issue_name:'', causes:'', symptoms:'', remedies:'', related_product_ids:[], product_notes:{} }; }
   function openNew(){ state.form = newForm(); draw(); }
-  function openEdit(entry){ state.form = { ...entry, related_product_ids: entry.related_product_ids||[] }; draw(); }
+  function openEdit(entry){ state.form = { ...entry, related_product_ids: entry.related_product_ids||[], product_notes: entry.product_notes||{} }; draw(); }
 
   async function save(){
     if(!state.form.issue_name.trim()) return;
@@ -58,6 +58,7 @@ function renderThuVien(container, ctx){
       issue_name: state.form.issue_name.trim(), causes: state.form.causes.trim()||null,
       symptoms: state.form.symptoms.trim()||null, remedies: state.form.remedies.trim()||null,
       related_product_ids: state.form.related_product_ids,
+      product_notes: state.form.product_notes,
     };
     const { error } = state.form.id
       ? await ctx.supabase.from('sk_library_entries').update(payload).eq('id', state.form.id)
@@ -74,9 +75,13 @@ function renderThuVien(container, ctx){
     await load();
   }
 
+  // toggleProduct thêm/bớt sản phẩm liên quan — gắn kèm KHỞI TẠO product_notes rỗng khi thêm (2026-09-05,
+  // chị Quỳnh: "cho e quyền admin để sửa công dụng nổi bật của sản phẩm" — trước đây product_notes chỉ
+  // sửa được qua SQL do Claude viết tay, giờ admin tự sửa ngay trong Quản Trị), xoá note khi bỏ chọn.
   function toggleProduct(id){
     const i = state.form.related_product_ids.indexOf(id);
-    if(i>=0) state.form.related_product_ids.splice(i,1); else state.form.related_product_ids.push(id);
+    if(i>=0){ state.form.related_product_ids.splice(i,1); delete state.form.product_notes[id]; }
+    else { state.form.related_product_ids.push(id); if(!state.form.product_notes[id]) state.form.product_notes[id] = { note:'', priority:false }; }
   }
 
   function html(){
@@ -91,6 +96,24 @@ function renderThuVien(container, ctx){
             <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Sản phẩm liên quan</label>
             <div class="chips">${state.products.map(p=>`<div class="chip ${state.form.related_product_ids.includes(p.id)?'selected':''}" data-toggle-product="${p.id}">${esc(p.name)}</div>`).join('')}</div>
           </div>
+          ${state.form.related_product_ids.length>0 ? `
+            <div class="field" style="margin-top:14px;">
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Công dụng nổi bật riêng cho từng sản phẩm (hiện ở Kiểm Tra Sức Khỏe/Thư Viện Sức Khỏe — nói về THÀNH PHẦN, không nói sản phẩm "chữa"). Đánh dấu tối đa 2-3 sản phẩm "Nên dùng trước" mỗi mục.</label>
+              ${state.form.related_product_ids.map(pid=>{
+                const p = state.products.find(x=>x.id===pid);
+                const pn = state.form.product_notes[pid] || { note:'', priority:false };
+                return `
+                  <div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;">
+                    <div style="font-weight:600;font-size:13.5px;margin-bottom:6px;">${esc(p ? p.name : pid)}</div>
+                    <textarea data-note-product="${pid}" placeholder="VD: Chlorophyll được biết đến với vai trò chống oxy hóa, hỗ trợ gan..." style="min-height:60px;">${esc(pn.note||'')}</textarea>
+                    <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;cursor:pointer;">
+                      <input type="checkbox" data-priority-product="${pid}" ${pn.priority?'checked':''}> ⭐ Nên dùng trước
+                    </label>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
           <div class="btn-row" style="justify-content:flex-start;margin-top:16px;">
             <button class="btn btn-sm" id="tv-save" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu'}</button>
             <span class="btn-ghost btn btn-sm" id="tv-cancel">Huỷ</span>
@@ -121,6 +144,20 @@ function renderThuVien(container, ctx){
     const remediesEl = container.querySelector('#tv-remedies'); if(remediesEl) remediesEl.oninput = (e)=>{ state.form.remedies = e.target.value; };
     container.querySelectorAll('[data-toggle-product]').forEach(el=>{
       el.onclick = ()=>{ toggleProduct(el.getAttribute('data-toggle-product')); draw(); };
+    });
+    container.querySelectorAll('[data-note-product]').forEach(el=>{
+      el.oninput = (e)=>{
+        const pid = el.getAttribute('data-note-product');
+        if(!state.form.product_notes[pid]) state.form.product_notes[pid] = { note:'', priority:false };
+        state.form.product_notes[pid].note = e.target.value;
+      };
+    });
+    container.querySelectorAll('[data-priority-product]').forEach(el=>{
+      el.onchange = (e)=>{
+        const pid = el.getAttribute('data-priority-product');
+        if(!state.form.product_notes[pid]) state.form.product_notes[pid] = { note:'', priority:false };
+        state.form.product_notes[pid].priority = e.target.checked;
+      };
     });
     container.querySelectorAll('[data-edit]').forEach(el=>{
       el.onclick = ()=>{ openEdit(state.list.find(e=>e.id===el.getAttribute('data-edit'))); };
