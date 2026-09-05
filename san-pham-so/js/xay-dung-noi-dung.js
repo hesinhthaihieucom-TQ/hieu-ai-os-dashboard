@@ -392,6 +392,16 @@ function render(container, ideaRow) {
     `;
   }
 
+  // Dùng chung để biết TẤT CẢ các phần đã ở bản FINAL chưa (status 'review-done') — cả để khoá thẻ
+  // xuất ebook (ebookExportCardHtml) lẫn để báo mừng ngay tại màn "section-final" của phần vừa hoàn
+  // tất cuối cùng (sectionFinalHtml, 2026-09-04, Quỳnh hỏi "viết xong các phần rồi thì sao, có nút gì
+  // tiếp tục k" — trước đó viết xong phần CUỐI vẫn chỉ thấy nút "← Quay lại outline" y hệt mọi phần
+  // khác, không có gì báo là ĐÃ XONG HẾT/được xuất rồi, phải tự đoán quay lại outline mới thấy).
+  function allSectionsFinal() {
+    const sections = flattenSections(state.outline2);
+    return sections.every((_, i) => state.sections[i] && state.sections[i].status === 'review-done');
+  }
+
   // Chỉ cho xuất khi TẤT CẢ các phần đã ở bản FINAL — status 'review-done', tức đã qua "Kiểm tra
   // chất lượng", KHÔNG chỉ là bản nháp 'viet-done' (2026-09-04, Quỳnh: ban đầu "sao chưa gì đã auto
   // cho xuất thành ebook vậy... làm nội dung full mới xuất được", rồi làm rõ thêm khi bị hỏi lại:
@@ -405,8 +415,7 @@ function render(container, ideaRow) {
   function ebookExportCardHtml() {
     const connected = isHeyzineConnected();
     if (!state.ebookResult) {
-      const sections = flattenSections(state.outline2);
-      const allFinal = sections.every((_, i) => state.sections[i] && state.sections[i].status === 'review-done');
+      const allFinal = allSectionsFinal();
       if (!allFinal) {
         return `<div class="hint-box">📖 Cần TẤT CẢ các phần bên dưới đạt bản final (đã qua "Kiểm tra chất lượng", không chỉ bản nháp) thì mới xuất được thành ebook — PDF/sách lật phải là kết quả cuối cùng, không phải bản còn dở dang.</div>`;
       }
@@ -677,8 +686,13 @@ function render(container, ideaRow) {
       ['giong_van_tu_nhien', 'Giọng văn tự nhiên'], ['khong_chung_chung', 'Không chung chung'],
       ['biet_buoc_tiep_theo', 'Biết bước tiếp theo'],
     ];
+    // Báo mừng ngay tại đây nếu đây là phần CUỐI vừa hoàn tất — không bắt phải tự quay lại outline
+    // mới biết đã xong hết/xuất được rồi (xem allSectionsFinal() ở trên). Ebook: nhắc thẳng đi xuất;
+    // mini_course không áp gate all-final (xem miniCourseExportCardHtml) nên không cần nhắc kiểu này.
+    const justFinishedAll = idea.dinh_dang !== 'mini_course' && allSectionsFinal();
     return `
       <div class="card">
+        ${justFinishedAll ? `<div class="hint-box">🎉 Đã viết xong bản final cho TẤT CẢ các phần! Quay lại outline để xuất thành Ebook.</div>` : ''}
         <h2 style="font-size:16px;">Kết quả kiểm tra chất lượng</h2>
         <ul style="margin:0 0 12px;padding-left:20px;font-size:13.5px;">
           ${items.map(([k, label]) => `<li>${c[k] ? '✅' : '⚠️'} ${label}</li>`).join('')}
@@ -696,7 +710,7 @@ function render(container, ideaRow) {
           <span class="btn-ghost btn btn-sm" id="xdnd-rewrite-btn">🔄 Viết lại bằng AI</span>
         </div>
         <div class="btn-row">
-          <span class="btn-ghost btn" id="xdnd-back-outline-btn">← Quay lại outline</span>
+          <span class="${justFinishedAll ? 'btn' : 'btn-ghost btn'}" id="xdnd-back-outline-btn">${justFinishedAll ? '📖 Quay lại outline để xuất Ebook →' : '← Quay lại outline'}</span>
         </div>
       </div>
     `;
