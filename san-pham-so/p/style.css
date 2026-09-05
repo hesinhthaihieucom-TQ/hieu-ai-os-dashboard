@@ -258,3 +258,60 @@ body{ overflow-x:hidden; }
 .lp-hero-price-box{ display:flex; align-items:center; gap:10px; background:#EEEAFB; border:1px solid #D9D2F5; border-radius:12px; padding:12px 16px; margin:14px 0; cursor:pointer; }
 .lp-hero-price-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:#6C4CE0; }
 .lp-hero-price-cta{ margin-left:auto; font-size:12.5px; font-weight:700; color:#6C4CE0; }
+
+/* "quynh" — làm lại ĐÚNG màu đen/vàng gold thật của 30ngaytamlinhtaichinh.netlify.app (2026-09-05,
+   Quỳnh gửi ảnh chụp trang thật + yêu cầu làm "y hệt cả bố cục" — trước đây mẫu này chỉ mượn vài chi
+   tiết bố cục (chữ serif, nhãn nhỏ .lp-eyebrow) nhưng vẫn dùng màu kem/xanh chung của app, CHƯA từng
+   khớp đúng màu đen/vàng thật của trang gốc). Đa số class dùng var(--accent)/var(--accent-soft) sẵn
+   nên chỉ cần redefine biến là tự đổi màu đúng khắp nơi, không cần sửa từng class riêng lẻ. */
+.wrap[data-lp-template="quynh"]{ --accent:#D9A441; --accent-soft:#241D10; --ink:#F3EEE0; --ink-soft:#A69C89; --line:#2E2A22; background:#0D0C0A; }
+.wrap[data-lp-template="quynh"] .card{ background:#17140F; border-color:#2E2A22; }
+.wrap[data-lp-template="quynh"] h1{ color:#fff; }
+.wrap[data-lp-template="quynh"] .desc{ color:#C7BFAE; }
+.wrap[data-lp-template="quynh"] .btn{ background:#D9A441; color:#0D0C0A; font-weight:700; }
+.wrap[data-lp-template="quynh"] .lp-faq-item{ background:#17140F; border-color:#2E2A22; }
+.wrap[data-lp-template="quynh"] .lp-faq-item summary{ color:#F3EEE0; }
+.wrap[data-lp-template="quynh"] .buy-area input[type="email"]{ background:#0D0C0A; border-color:#2E2A22; color:#F3EEE0; }
+.wrap[data-lp-template="quynh"] .qr-wrap img{ border-color:#2E2A22; }
+.wrap[data-lp-template="quynh"] .lp-program-num{ color:#0D0C0A; }
+.sticky-buy-bar[data-lp-template="quynh"]{ background:#17140F; border-top-color:#2E2A22; }
+.sticky-buy-bar[data-lp-template="quynh"] .sticky-buy-price{ color:#D9A441; }
+.sticky-buy-bar[data-lp-template="quynh"] .btn{ background:#D9A441; color:#0D0C0A; font-weight:700; }
+
+/* Vòng tròn bước đăng ký to hơn cho "quynh" (đúng cỡ trong ảnh chụp trang gốc) — nội dung chữ ở bước
+   3 GIỮ NGUYÊN "Nhận ngay, tự động" (xem threeStepHtml() ở script.js — Quỳnh xác nhận giữ tự động
+   100%, không thêm bước nhắn Zalo như trang tham khảo, chỉ đổi cỡ/màu cho khớp bố cục thật). */
+.wrap[data-lp-template="quynh"] .lp-3step-num{ width:34px; height:34px; font-size:14px; background:var(--accent); color:#0D0C0A; }
+
+/* "Trước & sau" dạng THANH MÀU (chỉ "quynh", xem metricBarHtml() ở script.js) — khác hẳn .lp-metric-row
+   (dạng chữ có mũi tên, dùng cho 3 mẫu kia): 2 thanh ngang mỗi chỉ số, thanh "trước" dài màu đỏ trầm,
+   thanh "sau" ngắn hơn màu vàng gold — ĐÚNG kiểu minh hoạ TRỰC QUAN ở trang gốc (before/after ở đó
+   cũng là tỉ lệ minh hoạ cố định, không phải biểu đồ số liệu chính xác — vì before/after là CHỮ tự do
+   người bán gõ, VD "Rất cao"/"Trung bình", không phải số để tính tỉ lệ thật). */
+.lp-metricbar-legend{ display:flex; gap:18px; margin:10px 0 14px; font-size:12px; color:var(--ink-soft); }
+.lp-metricbar-legend span{ display:flex; align-items:center; gap:6px; }
+.lp-metricbar-legend i{ width:10px; height:10px; border-radius:999px; display:inline-block; }
+.lp-metricbar-legend i.lp-dot-before{ background:#A6462E; }
+.lp-metricbar-legend i.lp-dot-after{ background:var(--accent); }
+.lp-metricbar-list{ display:flex; flex-direction:column; gap:18px; }
+.lp-metricbar-label{ font-size:13.5px; font-weight:600; margin-bottom:8px; }
+.lp-metricbar-track{ background:var(--accent-soft); border-radius:999px; margin-bottom:6px; overflow:hidden; }
+.lp-metricbar-fill{ padding:6px 14px; font-size:12px; font-weight:700; white-space:nowrap; border-radius:999px; }
+.lp-metricbar-fill.lp-metricbar-before{ width:85%; background:#4A241C; color:#E3A594; }
+.lp-metricbar-fill.lp-metricbar-after{ width:38%; background:var(--accent); color:#0D0C0A; }
+
+/* "Phù hợp với ai" dạng CHIP bo tròn (chỉ "quynh", xem phuHopHtml trong script.js) — thay cho danh
+   sách gạch đầu dòng dùng ở 3 mẫu kia, đúng dải chip ngang ở trang gốc. */
+.lp-fit-chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.lp-fit-chip{ border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-size:13px; color:var(--ink); }
+
+/* Ảnh người bán TO + khung riêng + thanh số liệu dạng LƯỚI Ô VUÔNG (chỉ "quynh", xem founderPhotoHtml/
+   statBarHtml trong script.js) — đúng khối "Hành trình của chính [Tên]" ở trang gốc (ảnh lớn căn giữa
+   phía trên, số liệu thật người bán tự nhập xếp lưới 2 cột có viền, không phải hàng ngang đơn giản
+   dùng ở 3 mẫu kia). */
+.lp-seller-quynh{ display:flex; flex-direction:column; align-items:center; text-align:center; }
+.lp-seller-quynh .lp-body{ text-align:left; }
+.lp-founder-photo{ display:block; width:200px; max-width:60%; aspect-ratio:3/4; object-fit:cover; border-radius:14px; border:1px solid var(--line); margin:0 auto 18px; }
+.lp-stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+.lp-stat-box{ border:1px solid var(--line); border-radius:10px; padding:14px; text-align:center; }
+@media (min-width:720px){ .lp-founder-photo{ width:240px; } }

@@ -255,20 +255,38 @@ function landingPageIntroHtml(product, lp, template) {
   const ketQuaGridHtml = template === 'chuyengia' && Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
     ? `<div class="lp-result-grid">${lp.ket_qua_dat_duoc.map(x => `<div class="lp-result-card">✓ ${esc(x)}</div>`).join('')}</div>` : '';
   const ketQuaHtml = ketQuaGridHtml || ketQuaListHtml;
+  // "quynh" hiện dạng CHIP bo tròn (đúng dải chip ngang ở trang gốc), 3 mẫu kia giữ nguyên list gạch
+  // đầu dòng như trước — cùng dữ liệu thật, khác cách trình bày (giống ketQuaGridHtml ở trên).
   const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
-    ? `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+    ? (template === 'quynh'
+        ? `<div class="lp-fit-chips">${lp.phu_hop_voi_ai.map(x => `<div class="lp-fit-chip">${esc(x)}</div>`).join('')}</div>`
+        : `<ul class="lp-list">${lp.phu_hop_voi_ai.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`)
+    : '';
   // "Chỉ số trước/sau" (product.metric_items, người bán tự nhập — VD aichuyengia.topexpert.vn có bảng
   // "Số bài viết/tháng: 3 bài → 20 bài") — số liệu CỤ THỂ do chính người bán gõ, khác beforeAfterHtml
-  // (đoạn văn AI viết về vấn đề/kết quả chung chung).
-  const metricHtml = Array.isArray(product.metric_items) && product.metric_items.length
-    ? `<div class="lp-section">${eyebrow('Hiệu quả thật')}<h2 class="lp-h2">Chỉ số trước/sau</h2><div class="lp-metric-list">${product.metric_items.map(m => `
+  // (đoạn văn AI viết về vấn đề/kết quả chung chung). "quynh" hiện dạng THANH MÀU (đúng trang gốc,
+  // xem .lp-metricbar-* ở style.css) — trước/sau vẫn là chữ tự do người bán gõ (không phải số để tính
+  // tỉ lệ thật), nên độ dài 2 thanh là tỉ lệ MINH HOẠ cố định, không phải biểu đồ số liệu chính xác.
+  const metricRowsHtml = product.metric_items.map(m => `
         <div class="lp-metric-row">
           <div class="lp-metric-label">${esc(m.label || '')}</div>
           <div class="lp-metric-before">${esc(m.before || '')}</div>
           <div class="lp-metric-arrow">→</div>
           <div class="lp-metric-after">${esc(m.after || '')}</div>
         </div>
-      `).join('')}</div></div>` : '';
+      `).join('');
+  const metricBarsHtml = `
+        <div class="lp-metricbar-legend"><span><i class="lp-dot-before"></i>Trước khi học</span><span><i class="lp-dot-after"></i>Sau khi học</span></div>
+        <div class="lp-metricbar-list">${product.metric_items.map(m => `
+          <div>
+            <div class="lp-metricbar-label">${esc(m.label || '')}</div>
+            <div class="lp-metricbar-track"><span class="lp-metricbar-fill lp-metricbar-before">${esc(m.before || '')}</span></div>
+            <div class="lp-metricbar-track"><span class="lp-metricbar-fill lp-metricbar-after">${esc(m.after || '')}</span></div>
+          </div>
+        `).join('')}</div>
+      `;
+  const metricHtml = Array.isArray(product.metric_items) && product.metric_items.length
+    ? `<div class="lp-section">${eyebrow('Hiệu quả thật')}<h2 class="lp-h2">Chỉ số trước/sau</h2>${template === 'quynh' ? metricBarsHtml : `<div class="lp-metric-list">${metricRowsHtml}</div>`}</div>` : '';
   const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
     ? `<div class="lp-section">${eyebrow('Người dùng nói gì')}<h2 class="lp-h2">Kết quả thực tế</h2><div class="lp-case-studies">${product.case_study_images.map(c => `
         <div class="lp-case-study-item">
@@ -285,8 +303,20 @@ function landingPageIntroHtml(product, lp, template) {
     ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2>${bonusListHtml}</div>` : '';
   // Thanh số liệu THẬT (product.stat_items, người bán tự nhập — VD "5 năm kinh nghiệm") — giải quyết
   // đúng kiểu "thanh thống kê" ở nhiều trang tham khảo mà KHÔNG bịa số, vì đây là số của chính họ.
+  // "quynh" hiện dạng LƯỚI Ô VUÔNG có viền (đúng khối "132K/X10/10K+/6 tháng" ở trang gốc), 3 mẫu kia
+  // giữ nguyên hàng ngang đơn giản như trước.
   const statBarHtml = Array.isArray(product.stat_items) && product.stat_items.length
-    ? `<div class="lp-stat-bar">${product.stat_items.map(s => `<div class="lp-stat-item"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div>` : '';
+    ? (template === 'quynh'
+        ? `<div class="lp-stat-grid">${product.stat_items.map(s => `<div class="lp-stat-box"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div>`
+        : `<div class="lp-stat-bar">${product.stat_items.map(s => `<div class="lp-stat-item"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div>`)
+    : '';
+  // Ảnh người bán TO + khung riêng, căn giữa phía TRÊN tiểu sử (đúng khối "Hành trình của chính [Tên]"
+  // ở trang gốc) — chỉ "quynh"; 3 mẫu kia giữ avatar tròn nhỏ nằm cạnh chữ như trước.
+  const founderPhotoHtml = product.seller_photo_url
+    ? (template === 'quynh'
+        ? `<img class="lp-founder-photo" src="${esc(product.seller_photo_url)}" alt="">`
+        : `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">`)
+    : '';
   // "Đội ngũ đứng sau" (product.team_members, người bán tự nhập — VD aichuyengia.topexpert.vn có 2
   // giảng viên) — trước đây app chỉ hỗ trợ ĐÚNG 1 người bán, giờ thêm được người đồng hành khác.
   const teamHtml = Array.isArray(product.team_members) && product.team_members.length
@@ -309,7 +339,7 @@ function landingPageIntroHtml(product, lp, template) {
     ${bonusHtml}
     ${phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
     ${lp.loi_nhan_nguoi_ban ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : ''}
-    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller">${product.seller_photo_url ? `<img class="lp-seller-photo" src="${esc(product.seller_photo_url)}" alt="">` : ''}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${statBarHtml}</div>` : (statBarHtml ? `<div class="lp-section">${statBarHtml}</div>` : '')}
+    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller${template === 'quynh' ? ' lp-seller-quynh' : ''}">${founderPhotoHtml}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${statBarHtml}</div>` : (statBarHtml ? `<div class="lp-section">${statBarHtml}</div>` : '')}
     ${teamHtml}
   `;
 }
