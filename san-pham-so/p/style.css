@@ -373,3 +373,15 @@ body{ overflow-x:hidden; }
   .wrap[data-lp-template="quynh"] .lp-stat-grid{ grid-template-columns:repeat(4,1fr); gap:14px; }
   .wrap[data-lp-template="quynh"] .lp-case-studies{ grid-template-columns:repeat(4,1fr); }
 }
+
+/* Bố cục MÁY TÍNH riêng cho "chuyengia" (2026-09-06, cùng lý do đã sửa cho "quynh" ở trên — Quỳnh:
+   "cỡ đang là cỡ của điện thoại, khi xem trên máy tính" — trước đó chỉ rộng tới 640px chung với 3 mẫu
+   kia ở @media 720px, nhìn bé hẳn giữa màn hình máy tính thật to). Cỡ điện thoại/tablet (dưới 1024px,
+   kể cả khối hero-top 2 cột đã bật từ 720px) GIỮ NGUYÊN, chỉ nới thêm ở ngưỡng máy tính thật. */
+@media (min-width:1024px){
+  .wrap[data-lp-template="chuyengia"]{ max-width:960px; }
+  .wrap[data-lp-template="chuyengia"] .card{ padding:40px 48px; }
+  .wrap[data-lp-template="chuyengia"] h1{ font-size:34px; }
+  .wrap[data-lp-template="chuyengia"] .lp-hook{ font-size:17px; }
+  .wrap[data-lp-template="chuyengia"] .lp-hero-top .cover{ height:300px; }
+}
