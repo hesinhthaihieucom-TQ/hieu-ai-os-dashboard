@@ -45,8 +45,18 @@ const TRUA_CASE_STUDY_RATIO = 2.5 / 7;
 // Phase 9 (2026-08-29) — lane Cá nhân cũng được tự động viết + xếp lịch như Fanpage, nhưng KHÔNG tự
 // đăng (Facebook không cho app đăng hộ trang cá nhân) — chị Quỳnh tự đăng tay. Chốt 3 bài/ngày, đúng
 // 3 buổi có sẵn, mỗi buổi khoá 1 kiểu dạng content cố định (xem autoFillPersonalForAdmin()).
-const PERSONAL_SLOTS = ['sang', 'trua', 'toi'];
+const PERSONAL_SLOTS = ['sang', 'trua', 'toi']; // DÙNG CHUNG với auto-fill-week.js (nút thủ công cho
+// MỌI khách) — KHÔNG được đổi mảng này để tạm dừng cron admin, xem 2 cờ TẠM DỪNG riêng bên dưới.
 const MAX_FILL_PER_RUN_PERSONAL = LOOKAHEAD_DAYS * PERSONAL_SLOTS.length; // 3 ngày × 3 buổi = 9
+
+// TẠM DỪNG (chị Quỳnh 2026-09-06, đang xem lại chi phí AI thật của cron — cron này không log lượt
+// nên không tính được số chính xác đã tốn) — Fanpage tạm dừng HẲN, lane Cá nhân chỉ còn giữ ĐÚNG
+// buổi Sáng (Trưa/Tối tạm dừng). Đổi 2 cờ này để bật lại đúng như cũ khi cần — KHÔNG xoá code Fanpage/
+// Trưa/Tối. Chỉ chặn ở CRON TỰ ĐỘNG này — không đụng các nút bấm TAY khác (regen-fanpage-week.js,
+// "AI viết luôn" ở lich-dang.js/auto-fill-week.js cho mọi khách) vì đó là hành động người dùng TỰ bấm,
+// không phải chi phí "tự động chạy nền" đang muốn tạm dừng.
+const FANPAGE_AUTOFILL_PAUSED = true;
+const PERSONAL_AUTOFILL_SLOTS_ENABLED = ['sang'];
 const NGOI_NOI_FORMAT = 'Video Ngồi Nói'; // phải khớp đúng tên trong FORMAT_NAMES (api/_lib/formats.js)
 const FORCE_NGOI_NOI = `BẮT BUỘC: chọn dinh_dang_de_xuat = "${NGOI_NOI_FORMAT}" cho bài này (khung giờ tối dành riêng cho dạng video ngồi nói chia sẻ trực diện) — viết ly_do_dinh_dang và goi_y_caption khớp đúng dạng này.`;
 const EXCLUDE_NGOI_NOI = `KHÔNG được chọn dinh_dang_de_xuat = "${NGOI_NOI_FORMAT}" cho bài này — dạng đó chỉ dành riêng cho khung giờ tối, chọn 1 trong các dạng còn lại phù hợp hơn.`;
@@ -681,7 +691,10 @@ async function autoFillPersonalForAdmin(admin, apiKey) {
     .map((p) => ({ table: p.source_table, id: p.source_id }));
 
   const dateStrs = Array.from({ length: isVnSunday() ? SUNDAY_LOOKAHEAD_DAYS : LOOKAHEAD_DAYS }, (_, i) => vnDateStr(i));
-  const emptySlots = await findEmptySlots(admin.id, dateStrs, 'ca_nhan', PERSONAL_SLOTS);
+  // PERSONAL_AUTOFILL_SLOTS_ENABLED (tạm dừng 2026-09-06, xem khai báo đầu file) thay cho PERSONAL_SLOTS
+  // đầy đủ — chỉ CRON này bị giới hạn, findEmptySlots() vẫn nhận thẳng danh sách buổi cần xét nên
+  // không cần sửa gì bên trong hàm đó.
+  const emptySlots = await findEmptySlots(admin.id, dateStrs, 'ca_nhan', PERSONAL_AUTOFILL_SLOTS_ENABLED);
   const toFill = emptySlots.slice(0, MAX_FILL_PER_RUN_PERSONAL);
   const skippedCap = Math.max(0, emptySlots.length - MAX_FILL_PER_RUN_PERSONAL);
 
@@ -820,7 +833,9 @@ module.exports = async (req, res) => {
     const results = {};
     for (const admin of admins) {
       results[admin.id] = {
-        fanpage: await autoFillForAdmin(admin, apiKey),
+        // FANPAGE_AUTOFILL_PAUSED (tạm dừng 2026-09-06, xem khai báo đầu file) — bỏ qua hẳn, không
+        // gọi callClaude() nào cho lane Fanpage của cron này nữa cho tới khi bật lại.
+        fanpage: FANPAGE_AUTOFILL_PAUSED ? { paused: true } : await autoFillForAdmin(admin, apiKey),
         ca_nhan: await autoFillPersonalForAdmin(admin, apiKey),
       };
     }
