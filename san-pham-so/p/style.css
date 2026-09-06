@@ -306,6 +306,17 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .lp-ba-col ul{ margin:0; padding-left:18px; font-size:13px; color:#4A3D8F; }
 .lp-result-grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:4px; }
 .lp-result-card{ border:1px solid #E4E1F5; border-radius:10px; padding:12px 14px; font-size:13.5px; color:var(--ink); background:#FAF9FE; }
+
+/* Lưới thẻ kết quả có icon (chỉ "quynh" — đúng khối "Điều bạn làm được" ở 30ngaytamlinhtaichinh.
+   netlify.app, xem ketQuaGridQuynhHtml ở script.js). Không set màu riêng — kế thừa đúng theme tối của
+   "quynh" (color:var(--ink) đã fix ở khối màu chính, --line/--accent-soft tự đổi theo). */
+.lp-result-grid-quynh{ grid-template-columns:1fr 1fr; gap:12px; }
+.lp-result-card-quynh{ border:1px solid var(--line); background:var(--accent-soft); border-radius:12px; padding:16px; text-align:center; }
+.lp-result-icon{ font-size:24px; margin-bottom:8px; }
+.lp-result-text{ font-size:13.5px; line-height:1.5; }
+@media (max-width:539px){ .lp-result-grid-quynh{ grid-template-columns:1fr; } }
+.lp-hero-price-box{ display:flex; align-items:center; gap:10px; background:#EEEAFB; border:1px solid #D9D2F5; border-radius:12px; padding:12px 16px; margin:14px 0; cursor:pointer; }
+.lp-hero-price-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:#6C4CE0; }
 .lp-hero-price-box{ display:flex; align-items:center; gap:10px; background:#EEEAFB; border:1px solid #D9D2F5; border-radius:12px; padding:12px 16px; margin:14px 0; cursor:pointer; }
 .lp-hero-price-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:#6C4CE0; }
 .lp-hero-price-cta{ margin-left:auto; font-size:12.5px; font-weight:700; color:#6C4CE0; }

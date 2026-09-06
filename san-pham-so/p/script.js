@@ -349,7 +349,13 @@ function landingPageIntroHtml(product, lp, template) {
   // danh sách gạch đầu dòng — cùng dữ liệu thật, khác cách trình bày.
   const ketQuaGridHtml = template === 'chuyengia' && Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
     ? `<div class="lp-result-grid">${lp.ket_qua_dat_duoc.map(x => `<div class="lp-result-card">✓ ${esc(x)}</div>`).join('')}</div>` : '';
-  const ketQuaHtml = ketQuaGridHtml || ketQuaListHtml;
+  // "quynh" hiện kết quả dạng LƯỚI THẺ CÓ ICON (đúng khối "Điều bạn làm được" 4 thẻ emoji ở
+  // 30ngaytamlinhtaichinh.netlify.app) — ket_qua_dat_duoc chỉ là mảng câu ngắn (không có icon riêng
+  // từng ý), nên xoay vòng 1 bộ icon trung tính thay vì bịa icon theo nội dung.
+  const KET_QUA_ICONS = ['✨', '🎯', '💡', '🌱', '🔑', '⚡'];
+  const ketQuaGridQuynhHtml = template === 'quynh' && Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
+    ? `<div class="lp-result-grid lp-result-grid-quynh">${lp.ket_qua_dat_duoc.map((x, i) => `<div class="lp-result-card lp-result-card-quynh"><div class="lp-result-icon">${KET_QUA_ICONS[i % KET_QUA_ICONS.length]}</div><div class="lp-result-text">${esc(x)}</div></div>`).join('')}</div>` : '';
+  const ketQuaHtml = ketQuaGridQuynhHtml || ketQuaGridHtml || ketQuaListHtml;
   // "quynh" hiện dạng CHIP bo tròn (đúng dải chip ngang ở trang gốc), 3 mẫu kia giữ nguyên list gạch
   // đầu dòng như trước — cùng dữ liệu thật, khác cách trình bày (giống ketQuaGridHtml ở trên).
   const phuHopHtml = Array.isArray(lp.phu_hop_voi_ai) && lp.phu_hop_voi_ai.length
@@ -432,18 +438,48 @@ function landingPageIntroHtml(product, lp, template) {
           ${m.bio ? `<div class="lp-team-bio">${esc(m.bio)}</div>` : ''}
         </div>
       `).join('')}</div></div>` : '';
+  // "quynh" có thêm tiêu đề lớn "Bạn đang mắc kẹt ở đâu?" giữa nhãn nhỏ và đoạn mở đầu (đúng bố cục
+  // trang gốc — trước đây thiếu hẳn dòng tiêu đề này, nhảy thẳng từ nhãn nhỏ xuống đoạn văn).
+  const problemHeadlineHtml = template === 'quynh' ? `<h2 class="lp-h2">Bạn đang mắc kẹt ở đâu?</h2>` : '';
+  const problemHtml = lp.van_de_intro || lp.van_de ? `<div class="lp-section" id="lp-sec-problem">${eyebrow('Bóc trần sự thật')}${problemHeadlineHtml}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : '';
+  const programHtml = chuongTrinhHtml ? `<div class="lp-section" id="lp-sec-program">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section" id="lp-sec-program"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '');
+  const resultsHtml = ketQuaHtml ? `<div class="lp-section">${eyebrow('Sau khi hoàn thành')}<h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : '';
+  const fitHtml = phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : '';
+  const letterHtml = lp.loi_nhan_nguoi_ban ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : '';
+  const sellerHtml = lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller${template === 'quynh' ? ' lp-seller-quynh' : ''}">${founderPhotoHtml}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${bottomStatBarHtml}</div>` : (bottomStatBarHtml ? `<div class="lp-section">${bottomStatBarHtml}</div>` : '');
+
+  if (template === 'quynh') {
+    // Thứ tự ĐÚNG THEO TRANG GỐC 30ngaytamlinhtaichinh.netlify.app (2026-09-06, Quỳnh soi trực tiếp
+    // từng mục: "bỏ qua hết quy tắc, cập nhật chuẩn 100%") — trang gốc đi: Vấn đề → Kết quả → Lộ
+    // trình → Lời nhắn → Về người bán (+đội ngũ) → Kết quả thực tế (testimonial) → Chỉ số trước/sau →
+    // Ưu đãi → Phù hợp với ai. KHÁC HẲN thứ tự cũ (vấn đề→lộ trình→kết quả→chỉ số→testimonial→ưu
+    // đãi→phù hợp→lời nhắn→người bán) — chỉ đổi thứ tự hiển thị, không đổi field/dữ liệu nào.
+    return `
+      ${problemHtml}
+      ${resultsHtml}
+      ${programHtml}
+      ${letterHtml}
+      ${sellerHtml}
+      ${teamHtml}
+      ${caseStudyHtml}
+      ${metricHtml}
+      ${bonusHtml}
+      ${fitHtml}
+    `;
+  }
+
   return `
     ${beforeAfterHtml(lp, template)}
-    ${lp.van_de_intro || lp.van_de ? `<div class="lp-section" id="lp-sec-problem">${eyebrow('Bóc trần sự thật')}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : ''}
+    ${problemHtml}
     ${comparisonTableHtml(lp, template)}
-    ${chuongTrinhHtml ? `<div class="lp-section" id="lp-sec-program">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section" id="lp-sec-program"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '')}
-    ${ketQuaHtml ? `<div class="lp-section">${eyebrow('Sau khi hoàn thành')}<h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : ''}
+    ${programHtml}
+    ${resultsHtml}
     ${metricHtml}
     ${caseStudyHtml}
     ${bonusHtml}
-    ${phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
-    ${lp.loi_nhan_nguoi_ban ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : ''}
-    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller${template === 'quynh' ? ' lp-seller-quynh' : ''}">${founderPhotoHtml}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${bottomStatBarHtml}</div>` : (bottomStatBarHtml ? `<div class="lp-section">${bottomStatBarHtml}</div>` : '')}
+    ${fitHtml}
+    ${letterHtml}
+    ${sellerHtml}
     ${teamHtml}
   `;
 }
