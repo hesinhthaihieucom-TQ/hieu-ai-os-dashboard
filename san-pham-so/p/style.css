@@ -293,6 +293,10 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .lp-radar{ width:100%; max-width:340px; display:block; margin:8px auto; }
 .lp-countdown{ background:#2A1A55; color:#fff; text-align:center; font-weight:700; font-size:13.5px; padding:11px 14px; border-radius:10px; margin-bottom:14px; }
 .lp-countdown .mono{ background:transparent; color:#F5C242; padding:0; }
+/* "sach" hiện đồng hồ TRONG hero đen/vàng (đúng teedoo.io) — đổi nền tím sang viền vàng gold khớp
+   theme, thay vì lặp lại đúng màu tím dùng cho "chuyengia". */
+.wrap[data-lp-template="sach"] .lp-countdown{ background:rgba(245,185,66,.12); border:1px solid #F5B942; color:#F5B942; margin:14px 0 0; }
+.wrap[data-lp-template="sach"] .lp-countdown .mono{ color:#F5B942; }
 
 /* Khối "trước/bây giờ" + lưới thẻ kết quả + ô giá nổi bật trong hero (chỉ "chuyengia" — xem
    beforeAfterHtml()/ketQuaGridHtml/heroPriceTeaserHtml ở script.js). */

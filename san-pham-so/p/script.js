@@ -131,12 +131,15 @@ function threeStepHtml(template) {
   `;
 }
 
-// Đồng hồ đếm ngược ưu đãi (chỉ mẫu "chuyengia", đúng khối "⏰ Ưu đãi kết thúc sau" ở
-// aichuyengia.topexpert.vn — 2026-09-05, Quỳnh chọn thêm cùng đợt hero/thống kê/radar, tự xác nhận đây
-// là đếm ngược GIẢ chỉ để tạo cảm giác gấp, không gắn với khuyến mãi thật nào có hạn cụ thể). Không
-// hiện lại sau khi đã thanh toán — lúc đó thúc giục mua không còn ý nghĩa gì.
-function countdownHtml(template, order) {
-  if (template !== 'chuyengia' || (order && order.status === 'paid')) return '';
+// Đồng hồ đếm ngược ưu đãi — "chuyengia" đúng khối "⏰ Ưu đãi kết thúc sau" ở aichuyengia.topexpert.vn
+// (2026-09-05), "sach" đúng khối y hệt ở teedoo.io nhưng nằm NGAY TRONG HERO thay vì cạnh khu mua
+// (2026-09-06, Quỳnh gửi 20 ảnh chụp toàn trang teedoo.io yêu cầu bám sát) — vị trí khác nhau nên cần
+// tham số `position` để mỗi mẫu chỉ render đúng 1 lần, không lặp lại ở cả 2 chỗ. GIẢ, chỉ tạo cảm
+// giác gấp (Quỳnh tự xác nhận), không gắn khuyến mãi thật nào có hạn cụ thể. Không hiện lại sau khi
+// đã thanh toán — lúc đó thúc giục mua không còn ý nghĩa gì.
+const COUNTDOWN_POSITION = { chuyengia: 'buy', sach: 'hero' };
+function countdownHtml(template, order, position) {
+  if (COUNTDOWN_POSITION[template] !== position || (order && order.status === 'paid')) return '';
   return `<div class="lp-countdown">⏰ Ưu đãi kết thúc sau: <span id="lp-countdown-time" class="mono">--:--:--</span></div>`;
 }
 
@@ -145,7 +148,7 @@ function countdownHtml(template, order) {
 let countdownTimer = null;
 function setupCountdown(template, slugKey, order) {
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-  if (template !== 'chuyengia' || (order && order.status === 'paid')) return;
+  if (!COUNTDOWN_POSITION[template] || (order && order.status === 'paid')) return;
   const storeKey = `sps_countdown_${slugKey || 'demo'}`;
   const DURATION_MS = 24 * 60 * 60 * 1000;
   function getEndTime() {
@@ -468,6 +471,25 @@ function landingPageIntroHtml(product, lp, template) {
     `;
   }
 
+  if (template === 'sach') {
+    // Thứ tự ĐÚNG THEO TRANG GỐC teedoo.io (2026-09-06, Quỳnh gửi 20 ảnh chụp toàn trang, yêu cầu bám
+    // sát 100%) — trang gốc đi: Vấn đề → Lời nhắn (Vanh nói thẳng, ngay SAU vấn đề, không phải cuối
+    // trang như bản cũ) → Kết quả ("AI bây giờ có thể") → Về người bán (Vanh là ai) → Đội ngũ → Kết
+    // quả thực tế (video feedback) → Lộ trình/mục lục → Ưu đãi → Chỉ số trước/sau (nếu có) → Phù hợp.
+    return `
+      ${problemHtml}
+      ${letterHtml}
+      ${resultsHtml}
+      ${sellerHtml}
+      ${teamHtml}
+      ${caseStudyHtml}
+      ${programHtml}
+      ${bonusHtml}
+      ${metricHtml}
+      ${fitHtml}
+    `;
+  }
+
   return `
     ${beforeAfterHtml(lp, template)}
     ${problemHtml}
@@ -648,11 +670,11 @@ function renderProduct(product, order) {
   app.innerHTML = `
     <div class="wrap" data-lp-template="${esc(lpTemplate)}">
       ${stickyNavHtml(lpTemplate)}
-      ${isBanner ? `<div class="lp-hero-banner"><div class="lp-hero-inner">${coverHtml}${titleBlockHtml}</div></div>${lp ? tickerHtml(product, lp, lpTemplate) : ''}` : ''}
+      ${isBanner ? `<div class="lp-hero-banner"><div class="lp-hero-inner">${coverHtml}${titleBlockHtml}${countdownHtml(lpTemplate, order, 'hero')}</div></div>${lp ? tickerHtml(product, lp, lpTemplate) : ''}` : ''}
       <div class="card">
       <div class="lp-main-col">${mainColHtml}</div>
       <div id="buy-area-anchor">
-        ${countdownHtml(lpTemplate, order)}
+        ${countdownHtml(lpTemplate, order, 'buy')}
         <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
         ${soldCountHtml}
         ${threeStepHtml(lpTemplate)}
