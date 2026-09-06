@@ -141,6 +141,18 @@ body{ overflow-x:hidden; }
 .lp-sticky-nav, .lp-hero-banner, .lp-ticker{ width:100vw; position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw; }
 .lp-sticky-nav{ position:sticky; top:0; z-index:40; }
 
+/* 2026-09-06 — GỐC RỄ THẬT của việc "vẫn thấy như bố cục điện thoại" trên máy tính dù .wrap đã đúng
+   max-width (920/960px, đã tự kiểm tra trực tiếp trên link thật, KHÔNG PHẢI do cache): .wrap chỉ tô
+   màu nền TRONG PHẠM VI max-width của chính nó, còn <body> đứng sau vẫn là màu kem mặc định — trên
+   màn hình rộng, phần kem lộ ra 2 bên biến khối nội dung tối thành 1 "tấm thẻ" nổi giữa khoảng trống,
+   nhìn giống bị bó hẹp dù con số max-width đã đúng. Bù lại bằng cách tô luôn nền <body> theo ĐÚNG màu
+   nền của mẫu đang chọn (dùng :has(), Chrome/Safari/Firefox đều đã hỗ trợ) — nền phủ kín toàn màn
+   hình, .wrap vẫn giữ nguyên max-width để chữ dễ đọc, không lộ viền kem 2 bên nữa. "chuyengia" (tím)
+   không cần vì mẫu này chủ đích giữ nền kem sáng, không phải nền tối full-bleed. */
+body:has(.wrap[data-lp-template="quynh"]){ background:#0D0C0A; }
+body:has(.wrap[data-lp-template="video"]){ background:#12121C; }
+body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
+
 /* Responsive — rộng rãi hơn trên máy tính/laptop, vẫn gọn đúng 1 cột trên điện thoại. */
 @media (min-width:720px){
   .wrap{ max-width:640px; }
