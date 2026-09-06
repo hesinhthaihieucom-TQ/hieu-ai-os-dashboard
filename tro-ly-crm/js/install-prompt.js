@@ -23,7 +23,7 @@ function maybeShowInstallPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.6);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:360px;width:100%;background:#fff;border-radius:16px;padding:26px 24px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
-      <img src="/icon-192.png" alt="" style="width:56px;height:56px;border-radius:14px;margin-bottom:14px;">
+      <img src="icon-192.png" alt="" style="width:56px;height:56px;border-radius:14px;margin-bottom:14px;">
       <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Cài Trợ Lý AI Tư Vấn &amp; CRM lên màn hình chính?</div>
       ${ios ? `
         <div style="font-size:13.5px;color:#5B5F55;line-height:1.7;margin-bottom:18px;">Mở nhanh như 1 app riêng, không cần mở trình duyệt trước — và bắt buộc phải cài kiểu này thì mới nhận được thông báo nhắc follow khách trên iPhone:<br>
