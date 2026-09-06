@@ -131,6 +131,101 @@ function threeStepHtml(template) {
   `;
 }
 
+// Đồng hồ đếm ngược ưu đãi (chỉ mẫu "chuyengia", đúng khối "⏰ Ưu đãi kết thúc sau" ở
+// aichuyengia.topexpert.vn — 2026-09-05, Quỳnh chọn thêm cùng đợt hero/thống kê/radar, tự xác nhận đây
+// là đếm ngược GIẢ chỉ để tạo cảm giác gấp, không gắn với khuyến mãi thật nào có hạn cụ thể). Không
+// hiện lại sau khi đã thanh toán — lúc đó thúc giục mua không còn ý nghĩa gì.
+function countdownHtml(template, order) {
+  if (template !== 'chuyengia' || (order && order.status === 'paid')) return '';
+  return `<div class="lp-countdown">⏰ Ưu đãi kết thúc sau: <span id="lp-countdown-time" class="mono">--:--:--</span></div>`;
+}
+
+// Đếm về 0 thì tự đặt lại 24h tiếp theo, lặp vô hạn — mốc kết thúc lưu ở localStorage theo slug nên 1
+// khách quay lại trong ngày thấy đồng hồ chạy tiếp đúng chỗ, không nhảy lại từ đầu mỗi lần tải trang.
+let countdownTimer = null;
+function setupCountdown(template, slugKey, order) {
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+  if (template !== 'chuyengia' || (order && order.status === 'paid')) return;
+  const storeKey = `sps_countdown_${slugKey || 'demo'}`;
+  const DURATION_MS = 24 * 60 * 60 * 1000;
+  function getEndTime() {
+    let end = Number(localStorage.getItem(storeKey) || 0);
+    if (!end || end <= Date.now()) {
+      end = Date.now() + DURATION_MS;
+      try { localStorage.setItem(storeKey, String(end)); } catch (e) { /* Safari riêng tư có thể chặn — đồng hồ vẫn chạy, chỉ không nhớ giữa các lần tải */ }
+    }
+    return end;
+  }
+  let endTime = getEndTime();
+  function tick() {
+    const el = document.getElementById('lp-countdown-time');
+    if (!el) { clearInterval(countdownTimer); countdownTimer = null; return; }
+    let remain = endTime - Date.now();
+    if (remain <= 0) { endTime = getEndTime(); remain = endTime - Date.now(); }
+    const h = String(Math.floor(remain / 3600000)).padStart(2, '0');
+    const m = String(Math.floor((remain % 3600000) / 60000)).padStart(2, '0');
+    const s = String(Math.floor((remain % 60000) / 1000)).padStart(2, '0');
+    el.textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  countdownTimer = setInterval(tick, 1000);
+}
+
+// Biểu đồ radar minh hoạ "chỉ số trước/sau" (chỉ mẫu "chuyengia", cần ≥3 chỉ số mới vẽ được đa giác có
+// nghĩa — ít hơn thì landingPageIntroHtml() tự rơi về dạng hàng ngang lp-metric-row như 2 mẫu kia).
+// CŨNG LÀ MINH HOẠ TỈ LỆ CỐ ĐỊNH (vòng "trước" luôn ở 35% bán kính, "sau" luôn ở 92%) — giống hệt
+// nguyên tắc lp-metricbar-fill ở mẫu "quynh": before/after là CHỮ tự do người bán gõ (VD "0đ"/"3
+// ngày"), không phải số cùng đơn vị để vẽ đúng tỉ lệ thật giữa các trục khác nhau.
+// Ngắt nhãn trục thành nhiều dòng ngắn (tối đa 3 dòng) — nhãn chỉ số do người bán tự gõ có thể dài
+// (VD "Tiết kiệm được mỗi tháng"), 1 dòng dài dễ tràn ra ngoài viewBox ở các trục gần mép trái/phải.
+function wrapRadarLabel(text, maxChars) {
+  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? `${cur} ${w}` : w;
+    if (cur && test.length > maxChars) { lines.push(cur); cur = w; } else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 3);
+}
+function radarChartSvg(items) {
+  const n = items.length;
+  if (n < 3) return '';
+  const cx = 220, cy = 220, R = 95;
+  const angle = i => -Math.PI / 2 + i * (2 * Math.PI / n);
+  const pt = (i, frac) => {
+    const a = angle(i);
+    const r = R * frac;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  };
+  const ring = frac => Array.from({ length: n }, (_, i) => pt(i, frac).map(v => v.toFixed(1)).join(',')).join(' ');
+  const gridRings = [0.25, 0.5, 0.75, 1].map(f => `<polygon points="${ring(f)}" fill="none" stroke="#E4E1F5" stroke-width="1"/>`).join('');
+  const axisLines = Array.from({ length: n }, (_, i) => {
+    const [x, y] = pt(i, 1);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E4E1F5" stroke-width="1"/>`;
+  }).join('');
+  const beforePoly = `<polygon points="${ring(0.35)}" fill="rgba(166,70,46,.15)" stroke="#A6462E" stroke-width="2"/>`;
+  const afterPoly = `<polygon points="${ring(0.92)}" fill="rgba(108,76,224,.2)" stroke="#6C4CE0" stroke-width="2"/>`;
+  const labels = items.map((it, i) => {
+    const a = angle(i);
+    const [lx, ly] = pt(i, 1.5);
+    const cos = Math.cos(a);
+    const anchor = cos > 0.3 ? 'start' : cos < -0.3 ? 'end' : 'middle';
+    const lines = wrapRadarLabel(it.label, 11);
+    const startDy = -((lines.length - 1) * 6);
+    const tspans = lines.map((line, li) => `<tspan x="${lx.toFixed(1)}" dy="${li === 0 ? startDy : 12}">${esc(line)}</tspan>`).join('');
+    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="600" fill="#4A3D8F">${tspans}</text>`;
+  }).join('');
+  return `
+    <svg class="lp-radar" viewBox="0 0 440 440">${gridRings}${axisLines}${beforePoly}${afterPoly}${labels}</svg>
+    <div class="lp-metricbar-legend" style="justify-content:center;">
+      <span><i class="lp-dot-before"></i>Trước</span>
+      <span><i class="lp-dot-after" style="background:#6C4CE0;"></i>Sau</span>
+    </div>
+  `;
+}
+
 const app = document.getElementById('app');
 const params = new URLSearchParams(location.search);
 const slug = params.get('slug');
@@ -285,12 +380,18 @@ function landingPageIntroHtml(product, lp, template) {
           </div>
         `).join('')}</div>
       `;
+  // "chuyengia" vẽ dạng RADAR khi có ≥3 chỉ số (đúng khối "Chỉ số năng lực kinh doanh" ở
+  // aichuyengia.topexpert.vn) — ít hơn 3 trục thì rơi về hàng ngang lp-metric-row như trước.
+  const radarHtml = template === 'chuyengia' ? radarChartSvg(product.metric_items) : '';
   const metricHtml = Array.isArray(product.metric_items) && product.metric_items.length
-    ? `<div class="lp-section">${eyebrow('Hiệu quả thật')}<h2 class="lp-h2">Chỉ số trước/sau</h2>${template === 'quynh' ? metricBarsHtml : `<div class="lp-metric-list">${metricRowsHtml}</div>`}</div>` : '';
+    ? `<div class="lp-section">${eyebrow('Hiệu quả thật')}<h2 class="lp-h2">Chỉ số trước/sau</h2>${template === 'quynh' ? metricBarsHtml : (radarHtml || `<div class="lp-metric-list">${metricRowsHtml}</div>`)}</div>` : '';
+  // "chuyengia" gắn thêm nhãn "KẾT QUẢ THỰC TẾ" trên mỗi ảnh (đúng khối lưới ảnh case study ở
+  // aichuyengia.topexpert.vn) — vẫn CÙNG DỮ LIỆU case_study_images đã có, không cần trường mới.
   const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
     ? `<div class="lp-section">${eyebrow('Người dùng nói gì')}<h2 class="lp-h2">Kết quả thực tế</h2><div class="lp-case-studies">${product.case_study_images.map(c => `
         <div class="lp-case-study-item">
           <img src="${esc(c.url)}" alt="">
+          ${template === 'chuyengia' ? `<div class="lp-case-badge">Kết quả thực tế</div>` : ''}
           ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
         </div>
       `).join('')}</div></div>` : '';
@@ -310,6 +411,9 @@ function landingPageIntroHtml(product, lp, template) {
         ? `<div class="lp-stat-grid">${product.stat_items.map(s => `<div class="lp-stat-box"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div>`
         : `<div class="lp-stat-bar">${product.stat_items.map(s => `<div class="lp-stat-item"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div>`)
     : '';
+  // "chuyengia" đã hiện thanh số liệu này ở NGAY DƯỚI HERO (xem topStatBarHtml ở renderProduct(), đúng
+  // vị trí "500+/4.9/5/92%" ở aichuyengia.topexpert.vn) — không lặp lại lần nữa trong "Về người bán".
+  const bottomStatBarHtml = template === 'chuyengia' ? '' : statBarHtml;
   // Ảnh người bán TO + khung riêng, căn giữa phía TRÊN tiểu sử (đúng khối "Hành trình của chính [Tên]"
   // ở trang gốc) — chỉ "quynh"; 3 mẫu kia giữ avatar tròn nhỏ nằm cạnh chữ như trước.
   const founderPhotoHtml = product.seller_photo_url
@@ -339,7 +443,7 @@ function landingPageIntroHtml(product, lp, template) {
     ${bonusHtml}
     ${phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : ''}
     ${lp.loi_nhan_nguoi_ban ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : ''}
-    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller${template === 'quynh' ? ' lp-seller-quynh' : ''}">${founderPhotoHtml}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${statBarHtml}</div>` : (statBarHtml ? `<div class="lp-section">${statBarHtml}</div>` : '')}
+    ${lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller${template === 'quynh' ? ' lp-seller-quynh' : ''}">${founderPhotoHtml}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${bottomStatBarHtml}</div>` : (bottomStatBarHtml ? `<div class="lp-section">${bottomStatBarHtml}</div>` : '')}
     ${teamHtml}
   `;
 }
@@ -469,16 +573,26 @@ function renderProduct(product, order) {
   // đơn khác nhau) — bấm vào cuộn xuống đúng nút mua thật duy nhất.
   const heroPriceTeaserHtml = lp && lpTemplate === 'chuyengia'
     ? `<div class="lp-hero-price-box" data-lp-scroll-buy>${referencePriceHtml}<span class="lp-hero-price-num">${Number(product.price).toLocaleString('vi-VN')}đ</span><span class="lp-hero-price-cta">Xem ưu đãi ↓</span></div>` : '';
+  // "chuyengia" hiện ảnh bìa CẠNH tiêu đề (thay vì xếp chồng lên nhau như "quynh") — đúng bố cục hero
+  // 2 cột ở aichuyengia.topexpert.vn (xem .lp-hero-top ở style.css, chỉ áp flex cho riêng mẫu này).
+  const heroTopHtml = isBanner ? '' : `<div class="lp-hero-top">${coverHtml}<div class="lp-hero-top-text">${titleBlockHtml}</div></div>`;
+  // Thanh số liệu thật (500+/4.9/5/92% kiểu) đẩy lên NGAY DƯỚI HERO cho "chuyengia" — đúng vị trí ở
+  // trang tham khảo, thay vì chỉ nằm cạnh "Về người bán" như 3 mẫu kia (xem bottomStatBarHtml ở
+  // landingPageIntroHtml() — đã tắt lặp lại bên dưới cho đúng mẫu này).
+  const topStatBarHtml = lpTemplate === 'chuyengia' && Array.isArray(product.stat_items) && product.stat_items.length
+    ? `<div class="lp-hero-stats"><div class="lp-stat-bar">${product.stat_items.map(s => `<div class="lp-stat-item"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div></div>`
+    : '';
 
   app.innerHTML = `
     <div class="wrap" data-lp-template="${esc(lpTemplate)}">
       ${stickyNavHtml(lpTemplate)}
       ${isBanner ? `<div class="lp-hero-banner"><div class="lp-hero-inner">${coverHtml}${titleBlockHtml}</div></div>${lp ? tickerHtml(product, lp, lpTemplate) : ''}` : ''}
       <div class="card">
-      ${isBanner ? '' : `${coverHtml}${titleBlockHtml}${heroPriceTeaserHtml}`}
+      ${isBanner ? '' : `${heroTopHtml}${heroPriceTeaserHtml}${topStatBarHtml}`}
       ${webinarPreHtml}
       ${lp ? landingPageIntroHtml(product, lp, lpTemplate) : ''}
       <div id="buy-area-anchor">
+        ${countdownHtml(lpTemplate, order)}
         <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
         ${soldCountHtml}
         ${threeStepHtml(lpTemplate)}
@@ -506,6 +620,8 @@ function renderProduct(product, order) {
   // "video") — cùng 1 hành vi: cuộn về đúng nút mua thật, không tạo logic mua riêng.
   const heroPriceBox = document.querySelector('[data-lp-scroll-buy]');
   if (heroPriceBox && anchorEl) heroPriceBox.onclick = () => anchorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  setupCountdown(lpTemplate, product.slug, order);
 
   const buyBtn = document.getElementById('buy-btn');
   if (buyBtn && isDemo) {

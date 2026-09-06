@@ -247,6 +247,34 @@ body{ overflow-x:hidden; }
 .wrap[data-lp-template="chuyengia"] .lp-letter{ background:#EEEAFB; border-left-color:#6C4CE0; font-style:normal; }
 .wrap[data-lp-template="chuyengia"] .lp-faq-item{ border-color:#E4E1F5; }
 
+/* Hero 2 cột (ảnh cạnh tiêu đề, chỉ "chuyengia" — .lp-hero-top dùng chung markup với "quynh" nhưng mặc
+   định vẫn xếp chồng dạng block, chỉ mẫu này bật flex) + thanh số liệu ngay dưới hero + lưới ảnh case
+   study có 1 ảnh đầu to hơn + radar "chỉ số trước/sau" + đồng hồ đếm ngược — thêm 2026-09-05 theo yêu
+   cầu Quỳnh làm tiếp mẫu này khớp đúng aichuyengia.topexpert.vn (stat bar/ảnh sản phẩm thực tế/biểu đồ
+   trước-sau/đồng hồ ưu đãi). */
+.wrap[data-lp-template="chuyengia"] .lp-hero-top{ display:flex; flex-direction:column; gap:16px; }
+.wrap[data-lp-template="chuyengia"] .lp-hero-top .cover{ margin-bottom:0; border-radius:14px; max-height:220px; }
+.wrap[data-lp-template="chuyengia"] .lp-hero-top-text{ min-width:0; }
+@media (min-width:720px){
+  .wrap[data-lp-template="chuyengia"] .lp-hero-top{ flex-direction:row; align-items:center; gap:30px; }
+  .wrap[data-lp-template="chuyengia"] .lp-hero-top .cover{ flex:0 0 40%; height:260px; max-height:none; }
+  .wrap[data-lp-template="chuyengia"] .lp-hero-top-text{ flex:1; }
+}
+.wrap[data-lp-template="chuyengia"] .lp-hero-stats{ border:1px solid #E4E1F5; border-radius:12px; padding:14px 16px 4px; margin:16px 0 4px; }
+.wrap[data-lp-template="chuyengia"] .lp-hero-stats .lp-stat-bar{ margin-top:0; }
+.wrap[data-lp-template="chuyengia"] .lp-case-studies{ display:grid; grid-template-columns:1fr; gap:14px; }
+.wrap[data-lp-template="chuyengia"] .lp-case-study-item{ width:auto; }
+.wrap[data-lp-template="chuyengia"] .lp-case-study-item img{ height:180px; }
+.lp-case-badge{ display:inline-block; margin-top:8px; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#6C4CE0; background:#EEEAFB; padding:3px 10px; border-radius:999px; }
+@media (min-width:640px){
+  .wrap[data-lp-template="chuyengia"] .lp-case-studies{ grid-template-columns:1fr 1fr; }
+  .wrap[data-lp-template="chuyengia"] .lp-case-study-item:first-child{ grid-column:1 / -1; }
+  .wrap[data-lp-template="chuyengia"] .lp-case-study-item:first-child img{ height:280px; }
+}
+.lp-radar{ width:100%; max-width:340px; display:block; margin:8px auto; }
+.lp-countdown{ background:#2A1A55; color:#fff; text-align:center; font-weight:700; font-size:13.5px; padding:11px 14px; border-radius:10px; margin-bottom:14px; }
+.lp-countdown .mono{ background:transparent; color:#F5C242; padding:0; }
+
 /* Khối "trước/bây giờ" + lưới thẻ kết quả + ô giá nổi bật trong hero (chỉ "chuyengia" — xem
    beforeAfterHtml()/ketQuaGridHtml/heroPriceTeaserHtml ở script.js). */
 .lp-before-after{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
