@@ -71,7 +71,8 @@ function renderThuVien(container, ctx){
 
   async function remove(id){
     if(!(await confirmModal('Xoá mục này khỏi Thư Viện?'))) return;
-    await ctx.supabase.from('sk_library_entries').delete().eq('id', id);
+    const { error } = await ctx.supabase.from('sk_library_entries').delete().eq('id', id);
+    if(error) alert('Không xoá được: ' + error.message);
     await load();
   }
 
@@ -207,7 +208,8 @@ function renderSanPham(container, ctx){
 
   async function remove(id){
     if(!(await confirmModal('Xoá sản phẩm này?'))) return;
-    await ctx.supabase.from('sk_products').delete().eq('id', id);
+    const { error } = await ctx.supabase.from('sk_products').delete().eq('id', id);
+    if(error) alert('Không xoá được: ' + error.message);
     await load();
   }
 
@@ -296,7 +298,8 @@ function renderGoiLichTrinh(container, ctx){
 
   async function removePackage(id){
     if(!(await confirmModal('Xoá gói này? Toàn bộ lịch trình của gói cũng bị xoá theo.'))) return;
-    await ctx.supabase.from('sk_packages').delete().eq('id', id);
+    const { error } = await ctx.supabase.from('sk_packages').delete().eq('id', id);
+    if(error){ alert('Không xoá được: ' + error.message); return; }
     if(state.selectedPackageId===id) state.selectedPackageId = null;
     await loadPackages();
   }
@@ -320,7 +323,8 @@ function renderGoiLichTrinh(container, ctx){
 
   async function removeItem(id){
     if(!(await confirmModal('Xoá mục lịch trình này?'))) return;
-    await ctx.supabase.from('sk_package_schedule_items').delete().eq('id', id);
+    const { error } = await ctx.supabase.from('sk_package_schedule_items').delete().eq('id', id);
+    if(error) alert('Không xoá được: ' + error.message);
     await loadItems();
   }
 
@@ -670,8 +674,9 @@ function renderDonHang(container, ctx){
 
   async function updateStatus(orderId, status){
     state.busyId = orderId; draw();
-    await ctx.supabase.from('sk_orders').update({ status }).eq('id', orderId);
+    const { error } = await ctx.supabase.from('sk_orders').update({ status }).eq('id', orderId);
     state.busyId = null;
+    if(error) alert('Không cập nhật được trạng thái: ' + error.message);
     await load();
   }
 
@@ -794,8 +799,9 @@ function renderCauChuyen(container, ctx){
   async function deleteItem(id){
     if(!(await confirmModal('Xoá câu chuyện này?'))) return;
     state.deletingId = id; draw();
-    await ctx.supabase.from('sk_success_stories').delete().eq('id', id);
+    const { error } = await ctx.supabase.from('sk_success_stories').delete().eq('id', id);
     state.deletingId = null;
+    if(error) alert('Không xoá được: ' + error.message);
     await load();
   }
 

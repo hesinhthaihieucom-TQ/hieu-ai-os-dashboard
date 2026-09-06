@@ -267,14 +267,15 @@ async function checkAutoFillNudge() {
 
 // Nhắc lịch follow khách CRM (Trợ Lý AI Tư Vấn & CRM, tro-ly-crm/, 2026-08-29) — ngay_follow_tiep
 // chỉ là NGÀY (không có giờ riêng như calendar_entries/recording_schedule), nên chỉ cần quét 1 LẦN/
-// NGÀY vào đúng 1 mốc giờ cố định (không dùng WINDOW_MINUTES theo kiểu "vừa tới giờ X" như các loại
-// nhắc khác — ở đây "vừa tới hôm nay" là đủ điều kiện rồi). Gửi GỘP 1 thông báo/ngày/user (không
-// phải 1 thông báo/khách) để tránh dồn dập nếu nhiều khách cùng đến hạn 1 ngày — event_key theo
-// (user_id, ngày hôm nay) nên notifyOnce tự chặn gửi lại nếu cron chạy nhiều lần trong cùng cửa sổ.
-const CRM_FOLLOW_REMINDER_TIME = '08:15';
+// NGÀY vào đúng giờ MỖI USER TỰ CHỌN (không dùng chung 1 mốc cho mọi người nữa — 2026-09-06, chị
+// Quỳnh: "thông báo nhắc follow cho khách tự set giờ"). profiles.crm_follow_reminder_time NULL =
+// chưa tự đặt, coi như vẫn dùng mặc định cũ (08:15) để không đổi hành vi của user chưa từng sửa gì.
+// Gửi GỘP 1 thông báo/ngày/user (không phải 1 thông báo/khách) để tránh dồn dập nếu nhiều khách cùng
+// đến hạn 1 ngày — event_key theo (user_id, ngày hôm nay) nên notifyOnce tự chặn gửi lại nếu cron
+// chạy nhiều lần trong cùng cửa sổ.
+const CRM_FOLLOW_REMINDER_DEFAULT_TIME = '08:15';
 async function checkCrmFollowReminders() {
   const { dateStr, minutesOfDay } = vnNowParts();
-  if (!withinWindow(parseHHMM(CRM_FOLLOW_REMINDER_TIME), minutesOfDay)) return 0;
 
   const dueResp = await supabaseAdmin(`crm_customers?ngay_follow_tiep=lte.${dateStr}&select=user_id`);
   const dueRows = dueResp.ok ? await dueResp.json() : [];
@@ -282,8 +283,15 @@ async function checkCrmFollowReminders() {
   const countByUser = {};
   for (const row of dueRows) countByUser[row.user_id] = (countByUser[row.user_id] || 0) + 1;
 
+  const userIds = Object.keys(countByUser);
+  const profilesResp = await supabaseAdmin(`profiles?id=in.(${userIds.join(',')})&select=id,crm_follow_reminder_time`);
+  const profiles = profilesResp.ok ? await profilesResp.json() : [];
+  const reminderTimeByUser = {};
+  for (const p of profiles) reminderTimeByUser[p.id] = p.crm_follow_reminder_time || CRM_FOLLOW_REMINDER_DEFAULT_TIME;
+
   let count = 0;
   for (const [userId, n] of Object.entries(countByUser)) {
+    if (!withinWindow(parseHHMM(reminderTimeByUser[userId] || CRM_FOLLOW_REMINDER_DEFAULT_TIME), minutesOfDay)) continue;
     const result = await notifyOnce(userId, `crm-follow:${dateStr}`, {
       title: n > 1 ? `Có ${n} khách cần follow hôm nay` : 'Có 1 khách cần follow hôm nay',
       body: 'Vào Trợ Lý AI Tư Vấn & CRM để xem và follow đúng lúc.',

@@ -73,14 +73,20 @@ function render(container, ctx){
 
   async function toggleDone(itemId, isDone){
     state.busyId = itemId; draw();
+    // 2026-09-06, chị Quỳnh: "kiểm tra tất cả các nút lưu của app" — trước đây cập nhật state.doneIds
+    // NGAY dù lỗi hay không, nên tick "đã xong" vẫn hiện đúng dù DB lưu thất bại (im lặng, giống hệt
+    // kiểu lỗi từng gây ra vụ "gán sản phẩm bị mất khi tắt/mở lại app"). Giờ chỉ đổi state khi thật sự
+    // lưu được, có lỗi thì báo rõ để không tưởng đã lưu.
+    let error;
     if(isDone){
-      await ctx.supabase.from('sk_schedule_progress').delete().eq('user_id', ctx.user.id).eq('schedule_item_id', itemId);
-      state.doneIds.delete(itemId);
+      ({ error } = await ctx.supabase.from('sk_schedule_progress').delete().eq('user_id', ctx.user.id).eq('schedule_item_id', itemId));
+      if(!error) state.doneIds.delete(itemId);
     } else {
-      await ctx.supabase.from('sk_schedule_progress').upsert({ user_id: ctx.user.id, schedule_item_id: itemId }, { onConflict:'user_id,schedule_item_id' });
-      state.doneIds.add(itemId);
+      ({ error } = await ctx.supabase.from('sk_schedule_progress').upsert({ user_id: ctx.user.id, schedule_item_id: itemId }, { onConflict:'user_id,schedule_item_id' }));
+      if(!error) state.doneIds.add(itemId);
     }
     state.busyId = null;
+    if(error) alert('Không lưu được: ' + error.message);
     draw();
   }
 

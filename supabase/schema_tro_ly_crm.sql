@@ -342,3 +342,22 @@ drop policy if exists "crm_referrals_admin_read" on crm_referrals;
 create policy "crm_referrals_admin_read" on crm_referrals for select using (is_admin());
 drop policy if exists "crm_referrals_own_read" on crm_referrals;
 create policy "crm_referrals_own_read" on crm_referrals for select using (auth.uid() = referrer_id);
+
+-- Giờ nhắc follow khách tự đặt (2026-09-06, chị Quỳnh: "thông báo nhắc follow cho khách tự set
+-- giờ") — trước đây cố định 1 mốc CHUNG cho MỌI người (08:15, xem CRM_FOLLOW_REMINDER_TIME ở
+-- api/cron/send-reminders.js), giờ mỗi user tự chọn giờ riêng của mình. NULL = chưa tự đặt, cron
+-- coi như vẫn dùng mặc định 08:15 (giữ nguyên hành vi cũ cho user chưa từng đổi gì).
+alter table profiles add column if not exists crm_follow_reminder_time text;
+
+-- profiles không cho user thường .update() thẳng (RLS đã khoá "profiles_self_update" từ v3, xem
+-- schema_core.sql) — PHẢI qua RPC hẹp này, không được gọi .update() thẳng từ client (sẽ bị RLS
+-- chặn ÂM THẦM — không báo lỗi nhưng cũng không ghi được gì, giờ nhắc hiện đổi trên UI nhưng thực
+-- ra chưa từng lưu; đúng bẫy đã gặp nhiều lần ở các app khác trong hệ sinh thái, xem
+-- update_my_full_name/mark_crm_announcement_seen ở trên).
+create or replace function public.set_crm_follow_reminder_time(new_time text)
+returns void as $$
+begin
+  update public.profiles set crm_follow_reminder_time = new_time where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.set_crm_follow_reminder_time(text) to authenticated;

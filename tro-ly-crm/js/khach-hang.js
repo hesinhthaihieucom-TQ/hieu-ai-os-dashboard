@@ -8,7 +8,7 @@ const MAX_IMAGES = 6; // "Cập nhật từ ảnh/ghi chú" — số hoá ghi ch
 
 // Hướng dẫn spotlight (2026-08-30) — chỉ trỏ tới phần tử LUÔN CÓ SẴN lúc mới vào trang.
 const TOUR_STEPS = [
-  { selector: '#kh-push-card', title: 'Thông báo nhắc follow', text: 'Bật để mỗi sáng ~8h15 tự báo nếu có khách/đối tác đến hạn follow — không cần mở app kiểm tra tay.' },
+  { selector: '#kh-push-card', title: 'Thông báo nhắc follow', text: 'Chọn giờ muốn được nhắc mỗi ngày rồi bật thông báo — tự báo nếu có khách/đối tác đến hạn follow, không cần mở app kiểm tra tay.' },
   { selector: '#kh-new', title: 'Thêm khách thủ công', text: 'Tự tạo hồ sơ khách mà không cần qua Tư Vấn AI — dùng khi muốn tạo trước rồi tư vấn sau, hoặc khách không có ảnh chat.' },
   { selector: '.tab-row', title: '5 tab lọc theo việc cần làm', text: '"Cần follow" là khách tới hạn/quá hạn hôm nay — nên xem tab này đầu tiên mỗi ngày.' },
   { selector: '#kh-search', title: 'Tìm khách', text: 'Tìm theo tên hoặc tỉnh/thành — hữu ích khi cần gom khách theo khu vực đi làm thị trường.' },
@@ -30,6 +30,10 @@ function render(container, ctx){
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushSubscribed: false, pushBusy: false, pushError: null,
     testPushBusy: false, testPushResult: null,
+    // Giờ nhắc tự đặt (2026-09-06, chị Quỳnh: "thông báo nhắc follow cho khách tự set giờ") — mặc
+    // định 08:15 nếu chưa từng đổi (khớp CRM_FOLLOW_REMINDER_DEFAULT_TIME ở api/cron/send-reminders.js).
+    reminderTime: (ctx.profile && ctx.profile.crm_follow_reminder_time) || '08:15',
+    savingReminderTime: false, reminderTimeSaved: false,
   };
 
   let searchDebounceTimer = null;
@@ -80,6 +84,22 @@ function render(container, ctx){
       state.pushError = e.message || 'Không tắt được thông báo — thử lại giúp mình.';
     }
     state.pushBusy = false; draw();
+  }
+
+  async function saveReminderTime(newTime){
+    if(state.savingReminderTime || !newTime) return;
+    state.savingReminderTime = true; state.reminderTimeSaved = false; draw();
+    try{
+      const { error } = await ctx.supabase.rpc('set_crm_follow_reminder_time', { new_time: newTime });
+      if(error) throw error;
+      state.reminderTime = newTime;
+      if(ctx.profile) ctx.profile.crm_follow_reminder_time = newTime;
+      state.reminderTimeSaved = true;
+    } catch(e){
+      state.pushError = e.message || 'Không lưu được giờ nhắc — thử lại giúp mình.';
+    }
+    state.savingReminderTime = false; draw();
+    setTimeout(()=>{ state.reminderTimeSaved = false; const el = container.querySelector('#kh-reminder-saved'); if(el) el.textContent=''; }, 1800);
   }
 
   async function testPush(){
@@ -740,17 +760,24 @@ function render(container, ctx){
       </div>
 
       <div id="kh-push-card" class="card" style="margin-bottom:18px;padding:16px 18px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-          <div>
-            <div style="font-weight:600;font-size:14px;">🔔 Thông báo nhắc follow</div>
-            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Mỗi sáng ~8h15 tự báo nếu có khách/đối tác đến hạn — không cần mở app kiểm tra tay. Trên iPhone cần "Thêm vào Màn hình chính" trước.</div>
-          </div>
+        <div style="font-weight:600;font-size:14px;">🔔 Thông báo nhắc follow</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Tự báo nếu có khách/đối tác đến hạn — không cần mở app kiểm tra tay. Trên iPhone cần "Thêm vào Màn hình chính" trước.</div>
+
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);white-space:nowrap;">
+            Nhắc lúc
+            <input type="time" id="kh-reminder-time" value="${esc(state.reminderTime)}" ${state.savingReminderTime?'disabled':''} style="width:auto;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;">
+          </label>
+          <span id="kh-reminder-saved" style="font-size:12px;color:var(--accent);font-weight:600;">${state.reminderTimeSaved?'Đã lưu ✓':''}</span>
+        </div>
+
+        <div style="margin-top:12px;">
           ${!state.pushSupported ? `
             <span style="font-size:12px;color:var(--ink-soft);">Không hỗ trợ trên thiết bị này</span>
           ` : state.pushSubscribed ? `
-            <span class="btn-ghost btn btn-sm" data-action="disable-push" style="flex-shrink:0;${state.pushBusy?'opacity:.6;pointer-events:none;':''}">${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</span>
+            <span class="btn-ghost btn btn-sm" data-action="disable-push" style="${state.pushBusy?'opacity:.6;pointer-events:none;':''}">${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</span>
           ` : `
-            <span class="btn btn-sm" data-action="enable-push" style="flex-shrink:0;${state.pushBusy?'opacity:.6;pointer-events:none;':''}">${state.pushBusy?'Đang bật…':'Bật thông báo'}</span>
+            <span class="btn btn-sm" data-action="enable-push" style="${state.pushBusy?'opacity:.6;pointer-events:none;':''}">${state.pushBusy?'Đang bật…':'Bật thông báo'}</span>
           `}
         </div>
         ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
@@ -795,6 +822,8 @@ function render(container, ctx){
     if(disablePushBtn) disablePushBtn.onclick = disablePush;
     const testPushBtn = container.querySelector('[data-action="test-push"]');
     if(testPushBtn) testPushBtn.onclick = testPush;
+    const reminderTimeInput = container.querySelector('#kh-reminder-time');
+    if(reminderTimeInput) reminderTimeInput.onchange = ()=>saveReminderTime(reminderTimeInput.value);
 
     const newBtn = container.querySelector('#kh-new');
     if(newBtn) newBtn.onclick = openNewForm;
