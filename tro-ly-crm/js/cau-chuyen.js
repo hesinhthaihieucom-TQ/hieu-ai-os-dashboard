@@ -59,6 +59,13 @@ const GROUPS = [
 
 const WIZARD_DRAFT_KEY = 'cau-chuyen-wizard';
 
+// Chỉ trỏ vào màn hình 'intro' (2 lựa chọn cách kể chuyện) — các màn khác (wizard/free-write/
+// existing/done) chỉ hiện tuỳ trạng thái, không phải màn hình cố định mọi người đều thấy.
+const TOUR_STEPS = [
+  { selector: '[data-action="start"]', title: 'Trả lời từng câu hỏi', text: 'AI hỏi từng câu 1 (20 câu, chia nhóm rõ ràng) — phù hợp nếu bạn chưa biết bắt đầu kể từ đâu, mục nào chưa có thì để trống.' },
+  { selector: '[data-action="start-free"]', title: 'Tự viết câu chuyện', text: 'Viết tự do 1 đoạn theo đúng cách bạn muốn kể — phù hợp nếu bạn đã quen kể câu chuyện này rồi. Dù chọn cách nào, Tư Vấn AI cũng sẽ dùng đúng câu chuyện thật này khi tư vấn khách.' },
+];
+
 function render(container, ctx){
   const state = {
     screen:'loading', qIndex:0, answers:{}, storyProfile:null, positioning:null,
@@ -178,6 +185,7 @@ function render(container, ctx){
 
   function introHtml(){
     return `
+      <span class="tour-trigger" id="cc-start-tour">❓ Hướng dẫn</span>
       <div class="page-head" style="text-align:center;">
         <div class="tag">Câu Chuyện Của Bạn</div>
         <h1>Kể câu chuyện thật của bạn</h1>
@@ -260,6 +268,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const tourBtn = container.querySelector('#cc-start-tour');
+    if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
+
     const useDinhViBtn = container.querySelector('[data-action="use-dinh-vi"]');
     if(useDinhViBtn) useDinhViBtn.onclick = ()=>{
       state.screen = 'existing';
