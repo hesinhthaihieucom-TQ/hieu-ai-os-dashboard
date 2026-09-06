@@ -69,8 +69,16 @@
       `;
       overlay.appendChild(card);
 
-      overlay.querySelector('#pt-skip').onclick = close;
-      overlay.querySelector('#pt-next').onclick = ()=>{
+      // "không bấm được vào các nút" (chị Quỳnh 2026-09-05) — overlay này phủ z-index:99999 CẢ TRANG
+      // trong lúc tour chạy, nên nếu 2 nút đóng (#pt-skip/#pt-next) LỠ không gán được onclick (vd 1
+      // lỗi JS bất ngờ chạy trước đó làm cả bind() này bị bỏ dở) thì người dùng bị "khoá" hoàn toàn
+      // sau lớp overlay này, không bấm được BẤT KỲ nút nào trên cả trang, không có cách nào tự thoát
+      // — trước đây 2 dòng dưới KHÔNG có null-guard. Giờ luôn null-guard MỌI nút, cộng thêm phím
+      // Escape làm lối thoát dự phòng không phụ thuộc DOM/element nào cả.
+      const skipBtn = overlay.querySelector('#pt-skip');
+      if(skipBtn) skipBtn.onclick = close;
+      const nextBtn = overlay.querySelector('#pt-next');
+      if(nextBtn) nextBtn.onclick = ()=>{
         if(idx === steps.length-1) close();
         else go(idx+1);
       };
@@ -81,7 +89,7 @@
     function close(){
       const el = document.getElementById('page-tour-overlay');
       if(el) el.remove();
-      if(onDone) onDone();
+      if(onDone) onDone(); // onDone truyền từ startPageTour() đã tự lo gỡ listener Escape, xem ở đó
     }
 
     if(target){
@@ -101,6 +109,22 @@
     if(!steps || !steps.length) return;
     const existing = document.getElementById('page-tour-overlay');
     if(existing) existing.remove(); // chỉ 1 tour chạy tại 1 thời điểm
-    renderStep(steps, 0, onDone);
+    // Phím Escape làm lối thoát dự phòng — không phụ thuộc bất kỳ element/onclick nào bên trong
+    // overlay (xem ghi chú ở renderStep về rủi ro "khoá" cả trang nếu 2 nút đóng lỡ không gán được
+    // onclick). Gắn Ở ĐÂY (1 lần duy nhất khi tour bắt đầu) thay vì trong renderStep (chạy lại mỗi
+    // bước) để không phải gỡ/gắn lại listener liên tục qua go(newIdx).
+    function onEscape(e){
+      if(e.key !== 'Escape') return;
+      const el = document.getElementById('page-tour-overlay');
+      if(el) el.remove();
+      document.removeEventListener('keydown', onEscape);
+      if(onDone) onDone();
+    }
+    document.addEventListener('keydown', onEscape);
+    function wrappedOnDone(){
+      document.removeEventListener('keydown', onEscape);
+      if(onDone) onDone();
+    }
+    renderStep(steps, 0, wrappedOnDone);
   };
 })();
