@@ -86,7 +86,23 @@ function render(container, ctx){
     slotTimeSaving: false, slotTimeSaved: false,
   };
 
-  function draw(){ container.innerHTML = html(); bind(); }
+  // "bấm tất cả các nút trong lịch đăng bài đều ko có phản ứng gì" (chị Quỳnh 2026-09-06) — nếu
+  // bind() ném lỗi giữa chừng (vd 1 nhánh render mới gặp dữ liệu lạ), container.innerHTML vẫn đã
+  // được gán XONG ở dòng trên (trang nhìn vẫn bình thường) nhưng bind() dừng nửa chừng khiến hàng
+  // loạt nút SAU điểm lỗi không có onclick nào cả — lỗi hoàn toàn âm thầm, không có gì để debug hay
+  // tự thoát. Bọc try/catch — có lỗi thì hiện thẳng thông báo + nút tải lại trang (dùng location.
+  // reload() trực tiếp, KHÔNG gọi lại boot()/draw() vì đó chính là chỗ vừa lỗi, gọi lại dễ lỗi y hệt).
+  function draw(){
+    try {
+      container.innerHTML = html();
+      bind();
+    } catch(e){
+      container.innerHTML = `<div class="loading">
+        <p style="color:var(--danger);padding:0 20px 18px;">${esc((e && e.message) || 'Có lỗi khi hiển thị trang, thử tải lại.')}</p>
+        <button class="btn" onclick="location.reload()">Tải lại trang</button>
+      </div>`;
+    }
+  }
 
   // Trước đây các truy vấn Supabase dưới đây KHÔNG có giới hạn thời gian chờ — mạng chập chờn (rất
   // hay gặp trên di động) khiến trang treo ở màn hình "Đang tải…" MÃI MÃI, không cách nào thoát hay
