@@ -47,7 +47,7 @@ function render(container, ctx){
   // phẩm gợi ý, người dùng tự bỏ bớt nếu không muốn mua. Lưu chiều "đã bỏ" thay vì "đã chọn" để sản
   // phẩm MỚI xuất hiện (khi tick thêm triệu chứng khác) cũng tự động ở trạng thái được chọn luôn,
   // không cần logic đồng bộ riêng.
-  const state = { loading:true, insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set(), history:[], savingHistory:false };
+  const state = { loading:true, tab:'check', insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set(), history:[], savingHistory:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -201,6 +201,45 @@ function render(container, ctx){
         <p>Tick chọn các dấu hiệu bạn đang gặp ở mỗi nhóm — kết quả cập nhật ngay theo từng lượt tick, không cần bấm nộp bài.</p>
       </div>
 
+      <div class="chips" style="margin-bottom:20px;">
+        <div class="chip ${state.tab==='check'?'selected':''}" data-tab="check">Kiểm tra</div>
+        <div class="chip ${state.tab==='history'?'selected':''}" data-tab="history">📌 Lịch sử đã lưu${state.history.length>0?` (${state.history.length})`:''}</div>
+      </div>
+
+      ${state.tab==='history' ? historyTabHtml() : checkTabHtml(r, libMatches, productMatches, cartChosen, cartTotal, cartPv, gift)}
+    `;
+  }
+
+  // 2026-09-06, chị Quỳnh: "cái mục lưu kết quả của phần kiểm tra sức khỏe phải lưu đầy đủ thông tin
+  // người dùng đã bấm kiểm tra chứ lưu sơ sài thế. tốt nhất nên có 1 phần riêng cho cái mục này" — dữ
+  // liệu ĐÃ được lưu đầy đủ từ trước (sk_health_checkin_history.survey_insulin/toxin/metabolic là
+  // toàn bộ mảng dấu hiệu đã tick, không chỉ điểm số), chỉ có phần HIỂN THỊ đang bỏ phí, chỉ in
+  // ngày+mức độ. Giờ tách thành tab riêng + hiện đủ từng dấu hiệu đã tick trong mỗi nhóm, gấp gọn
+  // trong "Đọc thêm" cho mỗi mốc.
+  function historyTabHtml(){
+    if(state.history.length===0) return `<div class="hint-box" style="margin-top:4px;">Chưa có mốc nào được lưu — sang tab "Kiểm tra", xem kết quả rồi bấm "📌 Lưu mốc này vào lịch sử".</div>`;
+    return `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${state.history.map(h=>{
+          const color = h.level==='Cao' ? '#c0392b' : h.level==='Trung bình' ? '#e8643c' : '#1f9d63';
+          const ins = h.survey_insulin||[], tox = h.survey_toxin||[], met = h.survey_metabolic||[];
+          return `
+          <details class="kt-section">
+            <summary class="kt-summary">${esc(new Date(h.created_at).toLocaleDateString('vi-VN'))} — <b style="color:${color};">${esc(h.level)}</b> <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);">(điểm ${h.score})</span></summary>
+            <div style="margin-top:10px;font-size:13px;line-height:1.9;">
+              ${ins.length>0 ? `<div style="margin-bottom:10px;"><b>Dấu hiệu kháng insulin (${ins.length}):</b> ${ins.map(esc).join(', ')}</div>` : ''}
+              ${tox.length>0 ? `<div style="margin-bottom:10px;"><b>Dấu hiệu tích tụ độc tố (${tox.length}):</b> ${tox.map(esc).join(', ')}</div>` : ''}
+              ${met.length>0 ? `<div><b>Tiêu chí rối loạn chuyển hóa (${met.length}):</b> ${met.map(esc).join(', ')}</div>` : ''}
+              ${(ins.length+tox.length+met.length)===0 ? '<div style="color:var(--ink-soft);">Không có dấu hiệu nào được tick ở mốc này.</div>' : ''}
+            </div>
+          </details>
+        `;}).join('')}
+      </div>
+    `;
+  }
+
+  function checkTabHtml(r, libMatches, productMatches, cartChosen, cartTotal, cartPv, gift){
+    return `
       <details class="kt-section" open>
         <summary class="kt-summary">Dấu hiệu kháng insulin (${state.insulin.length}/${SK_INSULIN_SYMPTOMS.length})</summary>
         <div style="margin-top:12px;">${chipGroup('insulin', SK_INSULIN_SYMPTOMS)}</div>
@@ -232,18 +271,6 @@ function render(container, ctx){
           <button class="btn btn-sm" id="sk-save-history" ${state.savingHistory?'disabled':''}>${state.savingHistory?'Đang lưu…':'📌 Lưu mốc này vào lịch sử'}</button>
         </div>
       ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
-
-      ${state.history.length>0 ? `
-        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Lịch sử theo mốc thời gian</h2></div>
-        <div class="card">
-          ${state.history.map(h=>`
-            <div class="list-item">
-              <div class="txt">${esc(new Date(h.created_at).toLocaleDateString('vi-VN'))} — <b>${esc(h.level)}</b></div>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);">điểm ${h.score}</span>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
 
       ${libMatches.length>0 ? `
         <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Tìm hiểu thêm các vấn đề bạn có thể mắc</h2></div>
@@ -279,6 +306,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-tab]').forEach(el=>{
+      el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
+    });
     container.querySelectorAll('[data-group]').forEach(el=>{
       el.onclick = ()=> toggle(el.getAttribute('data-group'), el.getAttribute('data-label'));
     });

@@ -121,6 +121,11 @@ create table if not exists sk_weekly_logs (
 );
 alter table sk_weekly_logs add column if not exists metrics jsonb not null default '{}'::jsonb;
 alter table sk_weekly_logs add column if not exists updated_at timestamptz not null default now();
+-- Ảnh tiến trình theo từng mốc tuần (2026-09-06, chị Quỳnh: "e cần có chỗ cho ng dùng tải lên cái hình
+-- bản thân họ") — {"0":[dataUrl,...], "1":[...]}, khoá là chỉ số tuần giống hệt cách metrics lưu theo
+-- tuần. Ảnh nén thành data URL ngay trên trình duyệt (giống sk_success_stories.images), không cần
+-- Supabase Storage riêng.
+alter table sk_weekly_logs add column if not exists photos jsonb not null default '{}'::jsonb;
 -- Cột cũ (week_start, weight, sleep_hours, energy_level, mood_level, note) không còn dùng nữa.
 do $$
 begin

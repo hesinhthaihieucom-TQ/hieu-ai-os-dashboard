@@ -10,10 +10,13 @@ const SK_METRIC_GROUPS = [
   // chuyển hoá" (metabolic age) cần thuật toán riêng của máy đo BIA (Omron/Tanita...) mà app không
   // có, nên để khách TỰ NHẬP số máy cân của họ hiện ra, không tự tính (tránh suy diễn sai số liệu y
   // khoa không có căn cứ).
+  // 2026-09-06, chị Quỳnh: "chỗ vòng eo phải gần với chỗ vòng bụng chứ" — gộp các số đo VÒNG (eo/bụng/
+  // mông/đùi/bắp chân) đứng liền nhau thay vì xen ngực/bắp tay ở giữa eo và bụng như trước.
   { title:'Thông số cơ thể (đo theo tuần)', color:'#e8643c', items:[
-    ['chieucao','Chiều cao','cm'], ['cannang','Cân nặng','kg'], ['eo1','Vòng eo','cm'], ['baptay','Bắp tay','cm'], ['nguc','Ngực','cm'],
-    ['bung_ron','Bụng (ngang rốn)','cm'], ['bung_duoi','Bụng (dưới rốn, to nhất)','cm'], ['mong','Mông','cm'],
-    ['dui','Đùi','cm'], ['bapchan','Bắp chân','cm'], ['mo','% Mỡ','%'],
+    ['chieucao','Chiều cao','cm'], ['cannang','Cân nặng','kg'],
+    ['eo1','Vòng eo','cm'], ['bung_ron','Bụng (ngang rốn)','cm'], ['bung_duoi','Bụng (dưới rốn, to nhất)','cm'],
+    ['mong','Mông','cm'], ['dui','Đùi','cm'], ['bapchan','Bắp chân','cm'],
+    ['nguc','Ngực','cm'], ['baptay','Bắp tay','cm'], ['mo','% Mỡ','%'],
     ['kgco','Kg cơ','kg'], ['monoitang','Mỡ nội tạng',''], ['tuoichuyenhoa','Tuổi chuyển hoá (theo máy cân của bạn)','tuổi'],
   ]},
   { title:'Chỉ số xét nghiệm máu (2 tháng / lần)', color:'#c0392b', items:[
@@ -87,7 +90,7 @@ const SK_ABSOLUTE_CONCERN = {
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, week:0, weekAuto:true, metrics:{}, saving:false, products:[], justSaved:false, deselected:new Set() };
+  const state = { loading:true, week:0, weekAuto:true, metrics:{}, photos:{}, saving:false, products:[], justSaved:false, deselected:new Set() };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -118,14 +121,91 @@ function render(container, ctx){
 
   async function load(){
     const [{ data: row }, { data: products }] = await Promise.all([
-      ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
+      ctx.supabase.from('sk_weekly_logs').select('metrics,photos').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url').not('category', 'is', null),
     ]);
     state.metrics = (row && row.metrics) || {};
+    state.photos = (row && row.photos) || {};
     state.products = products || [];
     state.week = currentWeekFromPackage();
     state.loading = false;
     draw();
+  }
+
+  // Ảnh tiến trình — nén giống hệt pattern sk_success_stories (xem quan-tri.js handleFiles) thay vì
+  // dùng Supabase Storage riêng. Tối đa 4 ảnh/mốc (đủ cho: toàn thân, mặt, số đo vòng, 1 ảnh tự do).
+  const SK_WEEK_MAX_PHOTOS = 4;
+  function handleWeekPhotoFiles(files){
+    const list = state.photos[state.week] || (state.photos[state.week] = []);
+    Array.from(files).slice(0, SK_WEEK_MAX_PHOTOS - list.length).forEach((file)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1000;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          state.photos[state.week] = [...(state.photos[state.week]||[]), c.toDataURL('image/jpeg', 0.82)].slice(0, SK_WEEK_MAX_PHOTOS);
+          draw();
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function removeWeekPhoto(idx){
+    state.photos[state.week] = (state.photos[state.week]||[]).filter((_,i)=>i!==idx);
+    draw();
+  }
+
+  // 2026-09-06, chị Quỳnh gửi mẫu slide "ĐẦU VÀO — Ảnh chụp" (toàn thân 3 mặt/mặt/số đo vòng) +
+  // "e cần có chỗ cho ng dùng tải lên cái hình bản thân họ giống như này. Chèn cái hình hướng dẫn cho
+  // họ chụp như nào luôn" — khu vực upload riêng + hướng dẫn tư thế/ánh sáng đúng tinh thần mẫu đó.
+  function skWeekPhotosHtml(week){
+    const photos = state.photos[week] || [];
+    return `
+      <div class="card" style="margin-bottom:18px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px;">📸 Ảnh tiến trình — ${esc(SK_WEEK_NAMES[week])}</h3>
+        <details style="margin-bottom:14px;">
+          <summary style="cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600;">🖼️ Xem hướng dẫn cách chụp</summary>
+          <div style="margin-top:10px;padding:14px;background:var(--surface-soft,#f5f5f5);border-radius:10px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+            <svg viewBox="0 0 180 90" style="width:160px;height:auto;flex-shrink:0;">
+              ${[20,90,160].map((cx,i)=>`
+                <g opacity=".7">
+                  <ellipse cx="${cx}" cy="14" rx="9" ry="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <path d="M${cx} 24 L${cx} 55 M${cx} 30 L${cx-14} 40 M${cx} 30 L${cx+14} 40 M${cx} 55 L${cx-10} 84 M${cx} 55 L${cx+10} 84" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </g>
+                <text x="${cx}" y="90" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">${['Trước','Nghiêng','Sau'][i]}</text>
+              `).join('')}
+            </svg>
+            <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.8;min-width:160px;flex:1;">
+              — Chụp đủ <b>3 mặt</b>: trước, nghiêng, sau<br>
+              — Phông nền sạch sẽ, ít đồ vật xung quanh<br>
+              — Mặc đồ tập hở bụng/tay/vai để nhìn rõ dáng<br>
+              — Đứng cùng 1 vị trí, cùng khoảng cách camera mỗi tuần để so sánh chuẩn<br>
+              — Có thể chụp thêm ảnh mặt hoặc ảnh đo vòng bằng thước dây nếu muốn theo dõi kỹ hơn
+            </div>
+          </div>
+        </details>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          ${photos.map((src,i)=>`
+            <div style="position:relative;width:84px;height:84px;">
+              <img src="${esc(src)}" data-zoom="${esc(src)}" style="width:84px;height:84px;object-fit:cover;border-radius:10px;cursor:zoom-in;">
+              <span data-remove-photo="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</span>
+            </div>
+          `).join('')}
+          ${photos.length<SK_WEEK_MAX_PHOTOS ? `
+            <label style="width:84px;height:84px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">
+              +<input type="file" accept="image/*" multiple id="sk-week-photo-file" style="display:none;">
+            </label>
+          ` : ''}
+        </div>
+        <div style="font-size:11px;opacity:.6;margin-top:8px;">Tối đa ${SK_WEEK_MAX_PHOTOS} ảnh/mốc. Ảnh được lưu cùng lúc bấm nút "Lưu ${esc(SK_WEEK_NAMES[week])}" bên dưới.</div>
+      </div>
+    `;
   }
 
   function getVal(key, week){ return (state.metrics[key] && state.metrics[key][week]) || ''; }
@@ -214,12 +294,12 @@ function render(container, ctx){
             <line x1="41" y1="215" x2="79" y2="215" stroke="var(--accent,#e8643c)" stroke-width="1.5" stroke-dasharray="3 2"/>
           </svg>
           <div style="display:flex;flex-direction:column;gap:14px;font-size:11.5px;color:var(--ink-soft);min-width:140px;">
-            <div>— <b>Ngực/Bắp tay</b>: ngang nách, qua điểm nhô nhất của ngực</div>
             <div>— <b>Vòng eo</b>: ngang rốn, thả lỏng bụng</div>
             <div>— <b>Bụng (dưới rốn)</b>: đo ở điểm to nhất, thường thấp hơn rốn 3-5cm</div>
             <div>— <b>Mông</b>: ngang điểm nhô nhất của mông</div>
             <div>— <b>Đùi</b>: ngang điểm to nhất, sát dưới mông</div>
             <div>— <b>Bắp chân</b>: ngang điểm to nhất của bắp chân</div>
+            <div>— <b>Ngực/Bắp tay</b>: ngang nách, qua điểm nhô nhất của ngực</div>
           </div>
         </div>
         <div style="font-size:11px;opacity:.6;margin-top:6px;">Đo cùng 1 thời điểm trong ngày (khuyên buổi sáng, chưa ăn) và cùng tư thế mỗi tuần để số liệu so sánh chính xác.</div>
@@ -239,7 +319,7 @@ function render(container, ctx){
   async function save(){
     state.saving = true; draw();
     const { error } = await ctx.supabase.from('sk_weekly_logs').upsert({
-      user_id: ctx.user.id, metrics: state.metrics, updated_at: new Date().toISOString(),
+      user_id: ctx.user.id, metrics: state.metrics, photos: state.photos, updated_at: new Date().toISOString(),
     }, { onConflict:'user_id' });
     state.saving = false;
     state.justSaved = !error;
@@ -360,6 +440,11 @@ function render(container, ctx){
 
   function html(){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
+    // 2026-09-06, chị Quỳnh: "phần theo dõi kết quả theo tuần vẫn chưa có ngày tháng năm" — weekDateRange
+    // chỉ hiện được khi đã gán gói (có sk_package_started_at); nhiều khách chưa/không có gói vẫn cần ghi
+    // rõ ngày đo THỰC TẾ của mốc đang xem. Seed sẵn hôm nay nếu ô này còn trống, để dù khách không đụng
+    // vào ô ngày, bấm "Lưu" vẫn lưu kèm ngày — không bắt buộc phải tự gõ mới lưu được.
+    if(!getVal('_ngaydo', state.week)) setVal('_ngaydo', state.week, isoDate(new Date()));
     const summary = summaryRows();
     const autoWeek = currentWeekFromPackage();
     const { flags, products } = state.justSaved ? recommendedProducts() : { flags:[], products:[] };
@@ -372,8 +457,11 @@ function render(container, ctx){
       <div class="chips" style="margin-bottom:8px;">
         ${SK_WEEK_NAMES.map((w,i)=>`<div class="chip ${state.week===i?'selected':''}" data-week="${i}" style="position:relative;">${esc(w)}${i===autoWeek?' <span style="opacity:.7;">●</span>':''}</div>`).join('')}
       </div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:${weekDateRange(state.week)?'4px':'20px'};">● Mốc hiện tại theo ngày bắt đầu gói của bạn</div>
-      ${weekDateRange(state.week) ? `<div style="font-size:12.5px;color:var(--accent);font-weight:600;margin-bottom:20px;">📅 ${esc(SK_WEEK_NAMES[state.week])}: ${weekDateRange(state.week)}</div>` : ''}
+      ${weekDateRange(state.week) ? `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">● Theo lịch gói: ${weekDateRange(state.week)}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+        <label style="font-size:12.5px;color:var(--ink-soft);">📅 Ngày đo thực tế:</label>
+        <input type="date" data-metric="_ngaydo" value="${esc(getVal('_ngaydo', state.week))}">
+      </div>
 
       ${weekHasData(state.week) ? (()=>{
         const d = weeklyDiagnosis();
@@ -408,6 +496,8 @@ function render(container, ctx){
           <div style="font-size:11.5px;opacity:.6;margin-top:12px;">Điền đủ các câu của mỗi trụ (Tinh dùng lại 4 câu ở "Yếu tố cuộc sống" phía dưới + 1 câu mới, Khí/Thần mỗi trụ 2 câu ở nhóm "Siêu Âm Năng Lượng") để ra điểm — điểm càng cao càng khoẻ.</div>
         </div>
       `;})()}
+
+      ${skWeekPhotosHtml(state.week)}
 
       ${SK_METRIC_GROUPS.map(g=>{
         const isBodyGroup = g.title.startsWith('Thông số cơ thể');
@@ -481,6 +571,14 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-metric]').forEach(el=>{
       el.onchange = (e)=>{ setVal(el.getAttribute('data-metric'), state.week, e.target.value); };
+    });
+    const photoFileEl = container.querySelector('#sk-week-photo-file');
+    if(photoFileEl) photoFileEl.onchange = (e)=>{ if(e.target.files.length) handleWeekPhotoFiles(e.target.files); };
+    container.querySelectorAll('[data-remove-photo]').forEach(el=>{
+      el.onclick = ()=> removeWeekPhoto(Number(el.getAttribute('data-remove-photo')));
+    });
+    container.querySelectorAll('[data-zoom]').forEach(el=>{
+      el.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); openImageLightbox(el.getAttribute('data-zoom'), ''); };
     });
     const saveBtn = container.querySelector('#sk-save-week');
     if(saveBtn) saveBtn.onclick = save;
