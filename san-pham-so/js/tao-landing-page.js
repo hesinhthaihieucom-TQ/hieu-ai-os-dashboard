@@ -26,7 +26,7 @@ const LP_TEMPLATES = [
   { value: 'quynh', label: 'Quỳnh gốc', desc: 'Kem/serif, có nhãn nhỏ trên mỗi mục — đúng mẫu 30 Ngày Tâm Linh Tài Chính.' },
   { value: 'video', label: 'Nổi bật', desc: 'Nền tối, hồng rực, hero riêng, vấn đề đánh số 01/02/03 — kiểu khoá học video viral.' },
   { value: 'sach', label: 'Sách/ebook', desc: 'Nền đen, vàng gold, chương trình dạng lưới mục lục — kiểu trang bán sách.' },
-  { value: 'chuyengia', label: 'Chuyên gia', desc: 'Nền đen, vàng gold, hero 2 cột, radar chỉ số + đếm ngược ưu đãi — kiểu khoá học AI cho coach/chuyên gia.' },
+  { value: 'chuyengia', label: 'Chuyên gia', desc: 'Nền trắng sạch, tím indigo, thẻ "Phần" viền rõ — kiểu khoá học cho coach/chuyên gia.' },
 ];
 const MAX_CASE_STUDIES = 6;
 const MAX_TEAM_MEMBERS = 6;
