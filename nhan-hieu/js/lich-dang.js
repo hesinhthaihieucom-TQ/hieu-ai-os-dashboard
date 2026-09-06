@@ -298,8 +298,15 @@ function render(container, ctx){
     return state.entries.find(e=> e.scheduled_date===dateStr && e.slot===slotKey && (e.channel||'ca_nhan')===state.channel);
   }
 
+  // BUG THẬT (chị Quỳnh 2026-09-06, khách Thu Oanh: "bấm tất cả các nút... đều ko có phản ứng gì",
+  // console báo "state.aiSuggestions.find is not a function") — state.aiSuggestions nạp THẲNG từ cột
+  // jsonb weekly_ai_drafts.ai_suggestions (applyDraftForCurrentWeek(), không qua kiểm tra shape gì cả)
+  // — nếu dòng đã lưu của 1 tài khoản nào đó KHÔNG phải mảng (dữ liệu cũ/lỗi lưu 1 lần nào đó trong
+  // quá khứ), .find() ném lỗi ngay trong html() mỗi lần vẽ lại có ô trống lane Cá nhân, khiến toàn bộ
+  // nút sau đó không gán được sự kiện (xem draw()). Coi giá trị không phải mảng như "chưa có gợi ý",
+  // không ném lỗi, thay vì tin tưởng tuyệt đối dữ liệu đã lưu luôn đúng hình dạng.
   function suggestionFor(dayIndex, slotKey){
-    if(!state.aiSuggestions) return null;
+    if(!Array.isArray(state.aiSuggestions)) return null;
     return state.aiSuggestions.find(s=> s.thu===dayIndex && s.slot===slotKey) || null;
   }
 
