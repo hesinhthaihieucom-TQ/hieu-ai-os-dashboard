@@ -55,8 +55,9 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .sticky-buy-bar[data-lp-template="sach"]{ background:#0B0B10; border-top-color:#2A2A24; }
 .sticky-buy-bar[data-lp-template="sach"] .sticky-buy-price{ color:#F5B942; }
 .sticky-buy-bar[data-lp-template="sach"] .btn{ background:#F5B942; color:#0B0B10; font-weight:700; }
-.sticky-buy-bar[data-lp-template="chuyengia"] .sticky-buy-price{ color:#6C4CE0; }
-.sticky-buy-bar[data-lp-template="chuyengia"] .btn{ background:#6C4CE0; color:#fff; font-weight:700; }
+.sticky-buy-bar[data-lp-template="chuyengia"]{ background:#141318; border-top-color:#2A2820; }
+.sticky-buy-bar[data-lp-template="chuyengia"] .sticky-buy-price{ color:#D4AF37; }
+.sticky-buy-bar[data-lp-template="chuyengia"] .btn{ background:#D4AF37; color:#0A0A0C; font-weight:700; }
 
 /* Landing page đầy đủ (AI viết, san-pham-so/js/tao-landing-page.js) — chỉ hiện khi có landing_page_content. */
 .lp-hook{ font-family:'Playfair Display',serif; font-size:19px; font-weight:700; color:var(--accent); margin-bottom:6px; line-height:1.35; }
@@ -162,14 +163,22 @@ body{ overflow-x:hidden; }
      KHÔNG cần khối riêng, chỉ có .lp-eyebrow là đặc trưng riêng (xem script.js).
    - "video": cảm hứng thanhnguyen.vn/7ngaylamvideo — nền tối, hồng rực, hero riêng, đánh số 01/02/03.
    - "sach": cảm hứng teedoo.io — nền đen, vàng/gold, hero riêng, chương trình dạng lưới mục lục.
-   - "chuyengia": cảm hứng aichuyengia.topexpert.vn — nền trắng sạch, tím/indigo, thẻ "PHẦN" viền rõ.
+   - "chuyengia": cảm hứng aichuyengia.topexpert.vn — nền đen, vàng gold (ĐỔI LẠI 2026-09-06 cho đúng
+     màu thật của trang mẫu, bản đầu lỡ để trắng/tím), thẻ "PHẦN" viền rõ, hero 2 cột + radar + đếm ngược.
    Áp qua [data-lp-template] trên .wrap để không đụng gì tới trang không có landing page. */
 
 /* --accent/--accent-soft redefine theo mẫu — nhãn loại sản phẩm (dinhDangBadgeHtml ở script.js) dùng
    inline style var(--accent-soft)/var(--accent) nên tự đổi màu đúng theo đây, không cần sửa riêng. */
 .wrap[data-lp-template="video"]{ --accent:#EC1E79; --accent-soft:#3A1029; }
 .wrap[data-lp-template="sach"]{ --accent:#F5B942; --accent-soft:#2A2410; }
-.wrap[data-lp-template="chuyengia"]{ --accent:#6C4CE0; --accent-soft:#EEEAFB; }
+/* 2026-09-06 — ĐỔI LẠI đúng màu đen/vàng gold thật của aichuyengia.topexpert.vn (Quỳnh phát hiện: "mẫu
+   chuyên gia trong app đang để màu tím" — bản trước chỉ mượn cấu trúc/bố cục từ trang tham khảo, LỠ
+   giữ nguyên màu trắng/tím chung của app thay vì đổi màu theo đúng trang mẫu, dù mọi phần cấu trúc
+   (hero 2 cột/PHẦN cards/radar/đếm ngược) đã đúng). color:var(--ink) BẮT BUỘC ngay ở đây — cùng lỗi kế
+   thừa custom-property đã sửa cho "quynh" (xem chú thích ở khối "quynh" bên dưới): không có dòng này,
+   .lp-h2/.lp-body... vẫn kế thừa màu ink TỐI tính từ body cho nền sáng, chữ tối trên nền đen không đọc
+   được. */
+.wrap[data-lp-template="chuyengia"]{ --accent:#D4AF37; --accent-soft:#241E0C; --ink:#F2F0E6; --ink-soft:#A79F8E; --line:#2A2820; background:#0A0A0C; color:var(--ink); }
 
 /* "video" — nền tối + hồng rực, hero riêng full-width trong .wrap, vấn đề đánh số lớn 01/02/03. */
 .wrap[data-lp-template="video"]{ background:#12121C; }
@@ -229,23 +238,28 @@ body{ overflow-x:hidden; }
 .lp-bonus-box{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
 .lp-bonus-row{ background:#FBF3DD; border:1px solid #F0DDA0; border-radius:8px; padding:10px 14px; font-size:13.5px; color:#5A4308; }
 
-/* "chuyengia" — nền trắng sạch + tím/indigo, không hero riêng (giữ trong .card như mẫu gốc), thẻ
+/* "chuyengia" — nền đen + vàng gold, không hero riêng full-bleed (giữ trong .card, chỉ ảnh bìa nằm
+   cạnh tiêu đề — xem .lp-hero-top bên dưới), thẻ
    "PHẦN" viền rõ cho chương trình, kiểu chuyên nghiệp/coach. */
-.wrap[data-lp-template="chuyengia"] .card{ border-color:#E4E1F5; }
-.wrap[data-lp-template="chuyengia"] .mono{ background:#EEEAFB; color:#6C4CE0; }
-.wrap[data-lp-template="chuyengia"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#6C4CE0; font-size:15px; font-weight:700; }
-.wrap[data-lp-template="chuyengia"] h1{ font-family:'Be Vietnam Pro',sans-serif; font-weight:800; }
-.wrap[data-lp-template="chuyengia"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; color:#6C4CE0; font-weight:800; font-size:18px; }
-.wrap[data-lp-template="chuyengia"] .price{ color:#6C4CE0; font-size:26px; }
-.wrap[data-lp-template="chuyengia"] .btn{ background:#6C4CE0; font-weight:700; }
-.wrap[data-lp-template="chuyengia"] .hint-box{ background:#EEEAFB; border-color:#D9D2F5; color:#6C4CE0; }
-.wrap[data-lp-template="chuyengia"] .lp-problem-item{ background:transparent; border:1px solid #E4E1F5; border-radius:10px; }
-.wrap[data-lp-template="chuyengia"] .lp-problem-ten{ color:#6C4CE0; }
+.wrap[data-lp-template="chuyengia"] .card{ background:#141318; border-color:#2A2820; }
+.wrap[data-lp-template="chuyengia"] h1{ color:#fff; font-family:'Be Vietnam Pro',sans-serif; font-weight:800; }
+.wrap[data-lp-template="chuyengia"] .desc{ color:#B8B2A2; }
+.wrap[data-lp-template="chuyengia"] .mono{ background:#241E0C; color:#D4AF37; }
+.wrap[data-lp-template="chuyengia"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#D4AF37; font-size:15px; font-weight:700; }
+.wrap[data-lp-template="chuyengia"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; color:#D4AF37; font-weight:800; font-size:18px; }
+.wrap[data-lp-template="chuyengia"] .price{ color:#D4AF37; font-size:26px; }
+.wrap[data-lp-template="chuyengia"] .btn{ background:#D4AF37; color:#0A0A0C; font-weight:700; }
+.wrap[data-lp-template="chuyengia"] .hint-box{ background:#241E0C; border-color:#3A3018; color:#D4AF37; }
+.wrap[data-lp-template="chuyengia"] .lp-problem-item{ background:transparent; border:1px solid #2A2820; border-radius:10px; }
+.wrap[data-lp-template="chuyengia"] .lp-problem-ten{ color:#D4AF37; }
 .wrap[data-lp-template="chuyengia"] .lp-program-list{ gap:14px; }
-.wrap[data-lp-template="chuyengia"] .lp-program-item{ border:1px solid #E4E1F5; border-radius:12px; padding:14px; }
-.wrap[data-lp-template="chuyengia"] .lp-program-num{ background:#6C4CE0; border-radius:6px; width:auto; height:auto; padding:4px 10px; font-size:11px; letter-spacing:.03em; }
-.wrap[data-lp-template="chuyengia"] .lp-letter{ background:#EEEAFB; border-left-color:#6C4CE0; font-style:normal; }
-.wrap[data-lp-template="chuyengia"] .lp-faq-item{ border-color:#E4E1F5; }
+.wrap[data-lp-template="chuyengia"] .lp-program-item{ border:1px solid #2A2820; border-radius:12px; padding:14px; }
+.wrap[data-lp-template="chuyengia"] .lp-program-num{ background:#D4AF37; color:#0A0A0C; border-radius:6px; width:auto; height:auto; padding:4px 10px; font-size:11px; letter-spacing:.03em; }
+.wrap[data-lp-template="chuyengia"] .lp-letter{ background:#241E0C; border-left-color:#D4AF37; font-style:normal; color:var(--ink); }
+.wrap[data-lp-template="chuyengia"] .lp-faq-item{ background:#141318; border-color:#2A2820; }
+.wrap[data-lp-template="chuyengia"] .lp-faq-item summary{ color:var(--ink); }
+.wrap[data-lp-template="chuyengia"] #buy-area-anchor input{ background:#0A0A0C; border-color:#2A2820; color:var(--ink); }
+.wrap[data-lp-template="chuyengia"] .qr-wrap img{ border-color:#2A2820; }
 
 /* Hero 2 cột (ảnh cạnh tiêu đề, chỉ "chuyengia" — .lp-hero-top dùng chung markup với "quynh" nhưng mặc
    định vẫn xếp chồng dạng block, chỉ mẫu này bật flex) + thanh số liệu ngay dưới hero + lưới ảnh case
@@ -260,12 +274,12 @@ body{ overflow-x:hidden; }
   .wrap[data-lp-template="chuyengia"] .lp-hero-top .cover{ flex:0 0 40%; height:260px; max-height:none; }
   .wrap[data-lp-template="chuyengia"] .lp-hero-top-text{ flex:1; }
 }
-.wrap[data-lp-template="chuyengia"] .lp-hero-stats{ border:1px solid #E4E1F5; border-radius:12px; padding:14px 16px 4px; margin:16px 0 4px; }
+.wrap[data-lp-template="chuyengia"] .lp-hero-stats{ border:1px solid #2A2820; border-radius:12px; padding:14px 16px 4px; margin:16px 0 4px; }
 .wrap[data-lp-template="chuyengia"] .lp-hero-stats .lp-stat-bar{ margin-top:0; }
 .wrap[data-lp-template="chuyengia"] .lp-case-studies{ display:grid; grid-template-columns:1fr; gap:14px; }
 .wrap[data-lp-template="chuyengia"] .lp-case-study-item{ width:auto; }
 .wrap[data-lp-template="chuyengia"] .lp-case-study-item img{ height:180px; }
-.lp-case-badge{ display:inline-block; margin-top:8px; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#6C4CE0; background:#EEEAFB; padding:3px 10px; border-radius:999px; }
+.lp-case-badge{ display:inline-block; margin-top:8px; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#0A0A0C; background:#D4AF37; padding:3px 10px; border-radius:999px; }
 @media (min-width:640px){
   .wrap[data-lp-template="chuyengia"] .lp-case-studies{ grid-template-columns:1fr 1fr; }
   .wrap[data-lp-template="chuyengia"] .lp-case-study-item:first-child{ grid-column:1 / -1; }
@@ -276,20 +290,21 @@ body{ overflow-x:hidden; }
 .lp-countdown .mono{ background:transparent; color:#F5C242; padding:0; }
 
 /* Khối "trước/bây giờ" + lưới thẻ kết quả + ô giá nổi bật trong hero (chỉ "chuyengia" — xem
-   beforeAfterHtml()/ketQuaGridHtml/heroPriceTeaserHtml ở script.js). */
+   beforeAfterHtml()/ketQuaGridHtml/heroPriceTeaserHtml ở script.js) — màu vàng gold trên nền tối
+   ĐÚNG theo palette đen/vàng thật của aichuyengia.topexpert.vn (xem khối màu chính ở trên, 2026-09-06). */
 .lp-before-after{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .lp-ba-col{ border-radius:10px; padding:14px; }
-.lp-ba-before{ background:#F7F5F5; }
-.lp-ba-after{ background:#EEEAFB; }
+.lp-ba-before{ background:#1C1A12; }
+.lp-ba-after{ background:#241E0C; }
 .lp-ba-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; color:var(--ink-soft); }
-.lp-ba-after .lp-ba-label{ color:#6C4CE0; }
+.lp-ba-after .lp-ba-label{ color:#D4AF37; }
 .lp-ba-col p{ font-size:13px; color:var(--ink-soft); line-height:1.5; margin:0; }
-.lp-ba-col ul{ margin:0; padding-left:18px; font-size:13px; color:#4A3D8F; }
+.lp-ba-col ul{ margin:0; padding-left:18px; font-size:13px; color:#D9CBA0; }
 .lp-result-grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:4px; }
-.lp-result-card{ border:1px solid #E4E1F5; border-radius:10px; padding:12px 14px; font-size:13.5px; color:var(--ink); background:#FAF9FE; }
-.lp-hero-price-box{ display:flex; align-items:center; gap:10px; background:#EEEAFB; border:1px solid #D9D2F5; border-radius:12px; padding:12px 16px; margin:14px 0; cursor:pointer; }
-.lp-hero-price-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:#6C4CE0; }
-.lp-hero-price-cta{ margin-left:auto; font-size:12.5px; font-weight:700; color:#6C4CE0; }
+.lp-result-card{ border:1px solid #2A2820; border-radius:10px; padding:12px 14px; font-size:13.5px; color:var(--ink); background:#1C1A12; }
+.lp-hero-price-box{ display:flex; align-items:center; gap:10px; background:#241E0C; border:1px solid #3A3018; border-radius:12px; padding:12px 16px; margin:14px 0; cursor:pointer; }
+.lp-hero-price-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:#D4AF37; }
+.lp-hero-price-cta{ margin-left:auto; font-size:12.5px; font-weight:700; color:#D4AF37; }
 
 /* "quynh" — làm lại ĐÚNG màu đen/vàng gold thật của 30ngaytamlinhtaichinh.netlify.app (2026-09-05,
    Quỳnh gửi ảnh chụp trang thật + yêu cầu làm "y hệt cả bố cục" — trước đây mẫu này chỉ mượn vài chi

@@ -200,13 +200,13 @@ function radarChartSvg(items) {
     return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
   };
   const ring = frac => Array.from({ length: n }, (_, i) => pt(i, frac).map(v => v.toFixed(1)).join(',')).join(' ');
-  const gridRings = [0.25, 0.5, 0.75, 1].map(f => `<polygon points="${ring(f)}" fill="none" stroke="#E4E1F5" stroke-width="1"/>`).join('');
+  const gridRings = [0.25, 0.5, 0.75, 1].map(f => `<polygon points="${ring(f)}" fill="none" stroke="#3A3018" stroke-width="1"/>`).join('');
   const axisLines = Array.from({ length: n }, (_, i) => {
     const [x, y] = pt(i, 1);
-    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E4E1F5" stroke-width="1"/>`;
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#3A3018" stroke-width="1"/>`;
   }).join('');
-  const beforePoly = `<polygon points="${ring(0.35)}" fill="rgba(166,70,46,.15)" stroke="#A6462E" stroke-width="2"/>`;
-  const afterPoly = `<polygon points="${ring(0.92)}" fill="rgba(108,76,224,.2)" stroke="#6C4CE0" stroke-width="2"/>`;
+  const beforePoly = `<polygon points="${ring(0.35)}" fill="rgba(166,70,46,.25)" stroke="#A6462E" stroke-width="2"/>`;
+  const afterPoly = `<polygon points="${ring(0.92)}" fill="rgba(212,175,55,.25)" stroke="#D4AF37" stroke-width="2"/>`;
   const labels = items.map((it, i) => {
     const a = angle(i);
     const [lx, ly] = pt(i, 1.5);
@@ -215,13 +215,13 @@ function radarChartSvg(items) {
     const lines = wrapRadarLabel(it.label, 11);
     const startDy = -((lines.length - 1) * 6);
     const tspans = lines.map((line, li) => `<tspan x="${lx.toFixed(1)}" dy="${li === 0 ? startDy : 12}">${esc(line)}</tspan>`).join('');
-    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="600" fill="#4A3D8F">${tspans}</text>`;
+    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="600" fill="#D9CBA0">${tspans}</text>`;
   }).join('');
   return `
     <svg class="lp-radar" viewBox="0 0 440 440">${gridRings}${axisLines}${beforePoly}${afterPoly}${labels}</svg>
     <div class="lp-metricbar-legend" style="justify-content:center;">
       <span><i class="lp-dot-before"></i>Trước</span>
-      <span><i class="lp-dot-after" style="background:#6C4CE0;"></i>Sau</span>
+      <span><i class="lp-dot-after" style="background:#D4AF37;"></i>Sau</span>
     </div>
   `;
 }
