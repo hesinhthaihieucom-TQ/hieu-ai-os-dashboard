@@ -264,6 +264,7 @@ function renderApp(){
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">
         <div class="sidebar-brand" id="sidebar-brand-home" style="cursor:pointer;">
+          <img src="assets/logo-tu-van-crm.png" class="brand-logo" alt="" onerror="this.style.display='none'">
           <div class="brand-text">TRỢ LÝ AI<br>&amp; CRM<small>Hệ sinh thái HIỂU</small></div>
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
