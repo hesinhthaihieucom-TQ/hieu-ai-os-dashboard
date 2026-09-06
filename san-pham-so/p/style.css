@@ -58,6 +58,13 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .sticky-buy-bar[data-lp-template="chuyengia"] .sticky-buy-price{ color:#6C4CE0; }
 .sticky-buy-bar[data-lp-template="chuyengia"] .btn{ background:#6C4CE0; color:#fff; font-weight:700; }
 
+/* Ảnh+tên người bán mở đầu hero (chỉ "quynh", 2026-09-06 — xem sellerIdentityHtml ở script.js). Không
+   set color riêng cho tên — kế thừa color:var(--ink) đã fix ở khối màu "quynh", tự đúng màu sáng trên
+   nền tối, không lặp lại lỗi kế thừa đã gặp trước đây. */
+.lp-hero-identity{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.lp-hero-avatar{ width:44px; height:44px; border-radius:999px; object-fit:cover; flex:0 0 auto; border:1px solid var(--line); }
+.lp-hero-identity-name{ font-weight:700; font-size:14.5px; }
+
 /* Landing page đầy đủ (AI viết, san-pham-so/js/tao-landing-page.js) — chỉ hiện khi có landing_page_content. */
 .lp-hook{ font-family:'Playfair Display',serif; font-size:19px; font-weight:700; color:var(--accent); margin-bottom:6px; line-height:1.35; }
 .lp-section{ margin:22px 0; padding-top:18px; border-top:1px solid var(--line); }
@@ -373,17 +380,27 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 @media (min-width:720px){ .lp-founder-photo{ width:240px; } }
 
 /* Bố cục MÁY TÍNH riêng cho "quynh" (2026-09-05, Quỳnh: "xem trên máy tính thì là bố cục như e gửi,
-   xem trên điện thoại thì là bố cục kiểu điện thoại, chứ chưa có bố cục máy tính") — trước đó .wrap
-   chỉ rộng thêm chút ít (640px, xem media query 720px ở trên chung cho cả 4 mẫu), nhìn trên màn hình
-   máy tính thật vẫn như 1 cột hẹp kiểu điện thoại được phóng to, không giống độ rộng thoáng của trang
-   mẫu thật. Cỡ điện thoại (dưới 1024px) GIỮ NGUYÊN không đổi gì — đúng ý muốn giữ bố cục điện thoại. */
+   xem trên điện thoại thì là bố cục kiểu điện thoại, chứ chưa có bố cục máy tính") — 2026-09-06 SỬA
+   LẠI LẦN 2 sau khi Quỳnh gửi ảnh so sánh trực tiếp với 30ngaytamlinhtaichinh.netlify.app: lần sửa đầu
+   (max-width 920px + nền full-bleed) mới xử lý ĐỘ RỘNG/MÀU, nội dung THẬT vẫn xếp 1 cột từ trên xuống
+   dưới như bản điện thoại phóng to — trang gốc để nội dung/tiêu đề bên TRÁI, khối giá+mua bên PHẢI
+   dính theo khi cuộn (bố cục 2 cột kiểu sales page thật), không phải xếp chồng. Dùng CSS Grid đặt lại
+   VỊ TRÍ HIỂN THỊ của đúng 2 khối đã có sẵn (.lp-main-col gộp hero+nội dung+FAQ, #buy-area-anchor giữ
+   nguyên) — không phải xáo trộn DOM, nên cỡ điện thoại/tablet (dưới 1024px) không đụng gì, vẫn xếp
+   chồng đúng thứ tự cũ y hệt trước giờ. */
 @media (min-width:1024px){
-  .wrap[data-lp-template="quynh"]{ max-width:920px; }
-  .wrap[data-lp-template="quynh"] .card{ padding:44px 56px; }
-  .wrap[data-lp-template="quynh"] h1{ font-size:36px; }
-  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:22px; }
-  .wrap[data-lp-template="quynh"] .lp-stat-grid{ grid-template-columns:repeat(4,1fr); gap:14px; }
-  .wrap[data-lp-template="quynh"] .lp-case-studies{ grid-template-columns:repeat(4,1fr); }
+  .wrap[data-lp-template="quynh"]{ max-width:1040px; }
+  .wrap[data-lp-template="quynh"] .card{
+    padding:44px 48px; display:grid; grid-template-columns:1fr 320px;
+    grid-template-areas:"main buy" "faq buy"; column-gap:40px;
+  }
+  .wrap[data-lp-template="quynh"] .lp-main-col{ grid-area:main; min-width:0; }
+  .wrap[data-lp-template="quynh"] #buy-area-anchor{ grid-area:buy; position:sticky; top:24px; align-self:start; }
+  .wrap[data-lp-template="quynh"] #lp-sec-faq{ grid-area:faq; margin-top:8px; }
+  .wrap[data-lp-template="quynh"] h1{ font-size:32px; }
+  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:19px; }
+  .wrap[data-lp-template="quynh"] .lp-stat-grid{ grid-template-columns:repeat(2,1fr); gap:14px; }
+  .wrap[data-lp-template="quynh"] .lp-case-studies{ grid-template-columns:repeat(2,1fr); }
 }
 
 /* Bố cục MÁY TÍNH riêng cho "chuyengia" (2026-09-06, cùng lý do đã sửa cho "quynh" ở trên — Quỳnh:

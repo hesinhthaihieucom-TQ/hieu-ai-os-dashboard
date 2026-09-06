@@ -249,7 +249,7 @@ function demoProduct(tpl) {
     price: 299000, reference_price: 590000, paid_count: 12, guarantee_text: 'Hoàn tiền 100% nếu không hài lòng trong 7 ngày',
     cover_image_url: placeholderImg('Ảnh bìa sản phẩm', '#D7CDBA', '#5B5F55'),
     dinh_dang: 'ebook', webinar_datetime: null, landing_page_template: tpl,
-    seller_photo_url: placeholderImg('Ảnh người bán', '#C9D6CF', '#2F6F62'),
+    seller_photo_url: placeholderImg('Ảnh người bán', '#C9D6CF', '#2F6F62'), seller_name: 'Nguyễn Thảo',
     case_study_images: [
       { url: placeholderImg('Case study 1', '#EFE7D6', '#8A6A3C'), caption: 'Chị Hạnh — hết nợ thẻ tín dụng sau 3 tháng' },
       { url: placeholderImg('Case study 2', '#EFE7D6', '#8A6A3C'), caption: 'Anh Khoa — tiết kiệm được 15% thu nhập mỗi tháng' },
@@ -502,6 +502,15 @@ function renderProduct(product, order) {
   const isBanner = BANNER_TEMPLATES.has(lpTemplate);
   const hookHtml = lp && lp.hook ? `<div class="lp-hook">${esc(lp.hook)}</div>` : '';
   const titleBlockHtml = `${dinhDangBadgeHtml}${hookHtml}<h1>${esc(product.title)}</h1>${product.description ? `<p class="desc">${esc(product.description)}</p>` : ''}`;
+  // "quynh" mở đầu bằng ẢNH+TÊN NGƯỜI BÁN (2026-09-06, Quỳnh so trực tiếp với 30ngaytamlinhtaichinh.
+  // netlify.app: "hình của e là có hình nhà đào tạo lên đầu" — trang mẫu KHÔNG hề có ảnh bìa sản phẩm
+  // ở hero, chỉ có ảnh+tên người hướng dẫn). Trước đây mọi mẫu đều cứng để cover_image_url lên đầu vì
+  // đó là dữ liệu chung sẵn có cho mọi loại sản phẩm — không phải 1 quy tắc cố tình chặn, chỉ là chưa
+  // từng đổi thứ tự này cho đúng đặc trưng riêng của "quynh". seller_name mới thêm vào
+  // digital_products_public (xem schema_san_pham_so.sql mục 27, cần chạy lại file mới có).
+  const sellerIdentityHtml = product.seller_photo_url
+    ? `<div class="lp-hero-identity"><img class="lp-hero-avatar" src="${esc(product.seller_photo_url)}" alt=""><div class="lp-hero-identity-name">${esc(product.seller_name || 'Người hướng dẫn')}</div></div>`
+    : '';
   let buyHtml;
 
   if (!order) {
@@ -575,7 +584,11 @@ function renderProduct(product, order) {
     ? `<div class="lp-hero-price-box" data-lp-scroll-buy>${referencePriceHtml}<span class="lp-hero-price-num">${Number(product.price).toLocaleString('vi-VN')}đ</span><span class="lp-hero-price-cta">Xem ưu đãi ↓</span></div>` : '';
   // "chuyengia" hiện ảnh bìa CẠNH tiêu đề (thay vì xếp chồng lên nhau như "quynh") — đúng bố cục hero
   // 2 cột ở aichuyengia.topexpert.vn (xem .lp-hero-top ở style.css, chỉ áp flex cho riêng mẫu này).
-  const heroTopHtml = isBanner ? '' : `<div class="lp-hero-top">${coverHtml}<div class="lp-hero-top-text">${titleBlockHtml}</div></div>`;
+  const heroTopHtml = isBanner
+    ? ''
+    : (lpTemplate === 'quynh'
+        ? `<div class="lp-hero-top"><div class="lp-hero-top-text">${sellerIdentityHtml}${titleBlockHtml}</div></div>${coverHtml}`
+        : `<div class="lp-hero-top">${coverHtml}<div class="lp-hero-top-text">${titleBlockHtml}</div></div>`);
   // Thanh số liệu thật (500+/4.9/5/92% kiểu) đẩy lên NGAY DƯỚI HERO cho "chuyengia" — đúng vị trí ở
   // trang tham khảo, thay vì chỉ nằm cạnh "Về người bán" như 3 mẫu kia (xem bottomStatBarHtml ở
   // landingPageIntroHtml() — đã tắt lặp lại bên dưới cho đúng mẫu này).
@@ -583,14 +596,25 @@ function renderProduct(product, order) {
     ? `<div class="lp-hero-stats"><div class="lp-stat-bar">${product.stat_items.map(s => `<div class="lp-stat-item"><div class="lp-stat-num">${esc(s.number || '')}</div><div class="lp-stat-label">${esc(s.label || '')}</div></div>`).join('')}</div></div>`
     : '';
 
+  // Bố cục 2 CỘT thật trên máy tính (chỉ "quynh", 2026-09-06 — Quỳnh gửi ảnh so sánh trực tiếp với
+  // 30ngaytamlinhtaichinh.netlify.app: trang gốc để nội dung/tiêu đề bên TRÁI, khối giá+mua bên PHẢI
+  // dính theo khi cuộn, không phải xếp chồng 1 cột như trước — dù max-width/nền đã đúng ở 2 lần sửa
+  // trước, bố cục THẬT vẫn là 1 cột nên nhìn vẫn "giống bản điện thoại phóng to" đúng như Quỳnh nói).
+  // .lp-main-col gộp hero+nội dung+FAQ thành 1 khối bên trái, #buy-area-anchor thành cột phải riêng —
+  // dùng CSS Grid (xem [data-lp-template="quynh"] .card ở style.css) để ĐẶT LẠI VỊ TRÍ hiển thị mà
+  // KHÔNG cần đổi thứ tự DOM, nên mobile/3 mẫu kia (không bật grid) vẫn xếp chồng đúng thứ tự cũ.
+  const mainColHtml = `
+    ${isBanner ? '' : `${heroTopHtml}${heroPriceTeaserHtml}${topStatBarHtml}`}
+    ${webinarPreHtml}
+    ${lp ? landingPageIntroHtml(product, lp, lpTemplate) : ''}
+  `;
+
   app.innerHTML = `
     <div class="wrap" data-lp-template="${esc(lpTemplate)}">
       ${stickyNavHtml(lpTemplate)}
       ${isBanner ? `<div class="lp-hero-banner"><div class="lp-hero-inner">${coverHtml}${titleBlockHtml}</div></div>${lp ? tickerHtml(product, lp, lpTemplate) : ''}` : ''}
       <div class="card">
-      ${isBanner ? '' : `${heroTopHtml}${heroPriceTeaserHtml}${topStatBarHtml}`}
-      ${webinarPreHtml}
-      ${lp ? landingPageIntroHtml(product, lp, lpTemplate) : ''}
+      <div class="lp-main-col">${mainColHtml}</div>
       <div id="buy-area-anchor">
         ${countdownHtml(lpTemplate, order)}
         <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>

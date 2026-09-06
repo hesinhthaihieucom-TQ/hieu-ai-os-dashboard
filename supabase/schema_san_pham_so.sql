@@ -516,3 +516,22 @@ grant execute on function public.update_sps_heyzine_credentials(text, text) to a
 -- ảnh AI lẫn màu card/box bên trong PDF. coverImagePath: path Storage của ảnh bìa AI đã sinh (cache
 -- lại, không tự sinh lại mỗi lần xuất — chỉ sinh lại khi bấm "Tạo lại", tốn phí thật qua gpt-image-1).
 alter table product_idea_results add column if not exists ebook_theme jsonb;
+
+-- ============================================================
+-- 27. TÊN NGƯỜI BÁN Ở HERO (2026-09-06). Quỳnh so ảnh chụp landing page thật (30ngaytamlinhtaichinh.
+-- netlify.app) với mẫu "quynh" trong app: trang thật mở đầu bằng ẢNH+TÊN NGƯỜI HƯỚNG DẪN (không phải
+-- ảnh bìa sản phẩm) — "e có hình nhà đào tạo lên đầu, mà của a nhất định cứ để hình sản phẩm lên đầu".
+-- digital_products_public đã có seller_photo_url (join profiles.sps_seller_photo_url) nhưng CHƯA có
+-- tên — thêm profiles.full_name vào view để hero hiện đúng "[Ảnh] + [Tên người bán]" như trang mẫu,
+-- không cần thêm cột mới (full_name đã có sẵn từ profiles, chỉ là chưa join sang view công khai này).
+drop view if exists digital_products_public;
+create view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, p.full_name as seller_name, dp.bonus_items, dp.guarantee_text, dp.reference_price,
+         (select count(*)::int from digital_product_orders o where o.product_id = dp.id and o.status = 'paid') as paid_count,
+         dp.team_members, dp.stat_items, dp.metric_items
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;
