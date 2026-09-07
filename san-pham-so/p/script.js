@@ -338,10 +338,10 @@ function qrUrl(amount, content) {
 function landingPageIntroHtml(product, lp, template) {
   // Nhãn nhỏ viết hoa phía trên tiêu đề (kiểu "BÓC TRẦN SỰ THẬT" ở mẫu gốc của Quỳnh) — CHỈ mẫu
   // "quynh" mới có, đúng đặc trưng riêng của trang tham khảo đó.
-  // "chuyengia" cũng có nhãn nhỏ trên mỗi mục (CÂU CHUYỆN THẬT/HỌC VIÊN NÓI GÌ/SẢN PHẨM THỰC TẾ... ở
-  // aichuyengia.topexpert.vn) — trước đó chỉ bật cho "quynh", 2026-09-07 mở rộng thêm sau khi đọc lại
-  // toàn bộ trang thật.
-  const eyebrow = (template === 'quynh' || template === 'chuyengia') ? (t => `<div class="lp-eyebrow">${esc(t)}</div>`) : (() => '');
+  // "chuyengia"/"sach" cũng có nhãn nhỏ trên mỗi mục (CÂU CHUYỆN THẬT/HỌC VIÊN NÓI GÌ... ở
+  // aichuyengia.topexpert.vn; HỖ TRỢ ĐỊNH KỲ/ĐỘC GIẢ THẬT... ở teedoo.io) — trước đó chỉ bật cho
+  // "quynh", 2026-09-07 mở rộng thêm sau khi đọc lại toàn bộ 2 trang thật.
+  const eyebrow = (template === 'quynh' || template === 'chuyengia' || template === 'sach') ? (t => `<div class="lp-eyebrow">${esc(t)}</div>`) : (() => '');
   const vanDeChiTietHtml = Array.isArray(lp.van_de_chi_tiet) && lp.van_de_chi_tiet.length
     ? `<div class="lp-problem-grid">${lp.van_de_chi_tiet.map(v => `
         <div class="lp-problem-item"><div class="lp-problem-ten">${esc(v.ten || '')}</div><div class="lp-problem-mota">${esc(v.mo_ta || '')}</div></div>
