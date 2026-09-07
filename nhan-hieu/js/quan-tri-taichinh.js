@@ -36,7 +36,7 @@ function render(container, ctx){
 
   async function load(){
     const [{ data: profiles }, { data: txRows }, usageResult] = await Promise.all([
-      ctx.supabase.from('profiles').select('id, role, has_paid, trial_ai_uses, paid_ai_uses, paid_ai_month, created_at, full_name, email'),
+      ctx.supabase.from('profiles').select('id, role, has_paid, trial_ai_uses, paid_ai_uses, paid_ai_month, created_at, first_paid_at, full_name, email'),
       ctx.supabase.from('sepay_transactions').select('transfer_amount, created_at, status, days_granted').eq('status', 'matched'),
       ctx.supabase.from('ai_usage_log').select('user_id, weight, created_at'),
     ]);
@@ -51,7 +51,7 @@ function render(container, ctx){
       .filter(p => p.role !== 'admin')
       .reduce((sum,p) => {
         if(p.has_paid){
-          return sum + (p.paid_ai_month === currentCycleKey(p.created_at) ? (p.paid_ai_uses||0) : 0);
+          return sum + (p.paid_ai_month === currentCycleKey(paidCycleAnchor(p)) ? (p.paid_ai_uses||0) : 0);
         }
         return sum + (p.trial_ai_uses||0);
       }, 0);

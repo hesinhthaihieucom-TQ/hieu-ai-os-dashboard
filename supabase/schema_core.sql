@@ -48,6 +48,14 @@ alter table profiles add column if not exists last_plan_days integer;
 -- Giới hạn lượt dùng AI trong thời gian DÙNG THỬ (chưa thanh toán lần nào) — xem api/_lib/trial-quota.js.
 -- has_paid được đánh dấu true bởi api/sepay-webhook.js ngay khi khớp được 1 giao dịch thành công.
 alter table profiles add column if not exists has_paid boolean not null default false;
+-- Mốc BẮT ĐẦU TRẢ PHÍ — CHỈ set 1 LẦN DUY NHẤT lúc has_paid chuyển false->true (sepay-webhook.js),
+-- không ghi đè ở các lần gia hạn sau. "tính cho họ từ thời điểm họ nâng cấp chứ không phải từ thời
+-- điểm đăng ký" (chị Quỳnh 2026-09-07) — chu kỳ lượt/tháng của người ĐÃ TRẢ PHÍ giờ neo vào cột này
+-- thay vì created_at (sai cho ai dùng thử 1 thời gian rồi mới nâng cấp — trước đây LUÔN dùng
+-- created_at bất kể trial hay đã trả phí, xem currentCycleKey() ở api/_lib/quota-cycle.js/util.js).
+-- Null với tài khoản chưa từng trả phí, và với tài khoản ĐÃ trả phí TỪ TRƯỚC KHI cột này tồn tại —
+-- coalesce(first_paid_at, created_at) ở mọi nơi dùng cột này để không vỡ với dữ liệu cũ.
+alter table profiles add column if not exists first_paid_at timestamptz;
 alter table profiles add column if not exists trial_ai_uses integer not null default 0;
 -- Giới hạn lượt dùng AI theo THÁNG cho khách ĐÃ TRẢ PHÍ (has_paid=true) — khác trial_ai_uses (đếm
 -- trọn đời, chỉ áp dụng lúc chưa trả phí). paid_ai_month lưu 'YYYY-MM' của tháng đang tính, tự
@@ -184,9 +192,11 @@ begin
   end if;
 
   -- "tính theo tháng kể từ ngày người dùng đăng ký chứ không phải theo tháng trên lịch" (chị Quỳnh
-  -- 2026-09-01) — chu kỳ 30 ngày RIÊNG cho từng user, tính từ created_at, không còn dồn chung về
-  -- ngày 1 mỗi tháng (xem giải thích đầy đủ ở api/_lib/quota-cycle.js — công thức PHẢI khớp y hệt).
-  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  -- 2026-09-01), sửa lại 2026-09-07: "tính cho họ từ thời điểm họ nâng cấp chứ không phải từ thời
+  -- điểm đăng ký" — chu kỳ 30 ngày RIÊNG cho từng user, neo vào first_paid_at (mốc BẮT ĐẦU TRẢ PHÍ,
+  -- null với ai chưa từng trả phí hoặc trả phí từ trước khi cột này tồn tại — coalesce về created_at
+  -- cho 2 trường hợp đó). Công thức PHẢI khớp y hệt api/_lib/quota-cycle.js.
+  v_month := floor(extract(epoch from (now() - coalesce(v_profile.first_paid_at, v_profile.created_at))) / (30 * 86400))::text;
 
   v_is_admin := (v_profile.role = 'admin');
 
@@ -250,8 +260,8 @@ declare
 begin
   select * into v_profile from profiles where id = p_user_id for update;
   if not found then return; end if;
-  -- Cùng công thức chu kỳ 30 ngày từ created_at như consume_ai_quota() ở trên — xem giải thích ở đó.
-  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  -- Cùng công thức chu kỳ 30 ngày (neo first_paid_at) như consume_ai_quota() ở trên — xem giải thích ở đó.
+  v_month := floor(extract(epoch from (now() - coalesce(v_profile.first_paid_at, v_profile.created_at))) / (30 * 86400))::text;
   if not v_profile.has_paid then
     update profiles set trial_ai_uses = greatest(0, trial_ai_uses - p_weight) where id = p_user_id;
     return;
@@ -282,6 +292,17 @@ grant execute on function public.refund_ai_quota(uuid, int) to service_role;
 update profiles
 set paid_ai_month = floor(extract(epoch from (now() - created_at)) / (30 * 86400))::text
 where paid_ai_month ~ '^\d{4}-\d{2}$';
+
+-- Migrate 1 lần THÊM (2026-09-07, đổi mốc neo từ created_at sang first_paid_at — xem cột first_paid_at
+-- ở trên, "tính cho họ từ thời điểm họ nâng cấp chứ không phải từ thời điểm đăng ký") — recompute lại
+-- paid_ai_month cho MỌI khách ĐÃ TRẢ PHÍ theo đúng mốc mới, GIỮ NGUYÊN paid_ai_uses/paid_ai_bonus hiện
+-- có (cùng lý do với migration ngay trên: đổi công thức mà không recompute lại paid_ai_month sẽ khiến
+-- consume_ai_quota() hiểu nhầm "sang chu kỳ mới", xoá sạch lượt/bonus đang dùng dở — bài học từ bug
+-- 2026-09-03). AN TOÀN CHẠY LẠI nhiều lần — chỉ tính lại đúng giá trị hiện tại theo công thức mới
+-- (không lọc theo định dạng cũ như migration trên, vì lần này KHÔNG đổi định dạng, chỉ đổi mốc neo).
+update profiles
+set paid_ai_month = floor(extract(epoch from (now() - coalesce(first_paid_at, created_at))) / (30 * 86400))::text
+where has_paid = true;
 
 create or replace function public.is_admin()
 returns boolean as $$

@@ -17,7 +17,7 @@ const { TRIAL_AI_LIMIT } = require('./_lib/trial-quota');
 const { SPS_TRIAL_AI_LIMIT } = require('./_lib/sps-ai-quota');
 const { supabaseAdmin } = require('./_lib/supabase-admin');
 const { sendPushToUser } = require('./_lib/push');
-const { currentCycleKey } = require('./_lib/quota-cycle');
+const { currentCycleKey, paidCycleAnchor } = require('./_lib/quota-cycle');
 
 const MIN_WORDS_FOR_REWARD = 50;
 const REWARD_LUOT = 20;
@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
     const trimmed = comment.trim();
     if (trimmed.length > 3000) { res.status(400).json({ error: 'Cảm nhận quá dài, rút gọn lại giúp mình.' }); return; }
 
-    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given,sps_has_paid,sps_paid_ai_month,sps_paid_ai_bonus,sps_trial_ai_limit,sps_review_reward_given,created_at`);
+    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given,sps_has_paid,sps_paid_ai_month,sps_paid_ai_bonus,sps_trial_ai_limit,sps_review_reward_given,created_at,first_paid_at`);
     const profRows = profResp.ok ? await profResp.json() : [];
     const profile = profRows[0];
 
@@ -125,8 +125,9 @@ module.exports = async (req, res) => {
       if (profile && !profile.review_reward_given) {
         const patch = { review_reward_given: true, review_prompt_dismissed: true };
         if (profile.has_paid) {
-          // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (xem api/_lib/quota-cycle.js).
-          const cycleKey = currentCycleKey(profile.created_at);
+          // Chu kỳ 30 ngày từ lúc NÂNG CẤP (first_paid_at), không phải ngày đăng ký/tháng lịch (xem
+          // paidCycleAnchor() ở api/_lib/quota-cycle.js).
+          const cycleKey = currentCycleKey(paidCycleAnchor(profile));
           if (profile.paid_ai_month === cycleKey) {
             patch.paid_ai_bonus = (profile.paid_ai_bonus || 0) + REWARD_LUOT;
           } else {

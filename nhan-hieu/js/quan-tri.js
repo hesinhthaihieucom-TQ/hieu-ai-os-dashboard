@@ -3,8 +3,9 @@
 // — chỉ để HIỂN THỊ cho admin theo dõi, không phải nơi chặn thật (chặn thật luôn ở server).
 function aiUsageLabel(p){
   if(p.has_paid){
-    // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
-    const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
+    // Chu kỳ 30 ngày từ lúc NÂNG CẤP (first_paid_at), không phải ngày đăng ký/tháng lịch (chị Quỳnh
+    // 2026-09-01, sửa lại 2026-09-07, xem paidCycleAnchor() ở util.js).
+    const sameMonth = p.paid_ai_month === currentCycleKey(paidCycleAnchor(p));
     const used = sameMonth ? (p.paid_ai_uses||0) : 0;
     const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
     // Chuyển sang trả phí là ĐỔI SANG bộ đếm khác (paid_ai_uses, theo tháng) chứ không xoá trial_ai_uses
@@ -13,7 +14,7 @@ function aiUsageLabel(p){
     // dùng đã đăng ký gói thì ngoài 200 lượt/tháng thì thông tin của họ cũng hiện luôn 100 lượt
     // free" — trước đây chỉ hiện dòng dùng thử NẾU trial_ai_uses>0, ẩn mất với khách chưa dùng thử
     // lượt nào trước khi mua, gây cảm giác thiếu thông tin.
-    const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (chu kỳ ${currentCycleRangeLabel(p.created_at)})`;
+    const paidLabel = `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (chu kỳ ${currentCycleRangeLabel(paidCycleAnchor(p))})`;
     return `${paidLabel} · ${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt dùng thử trọn đời đã dùng trước đó (không tính vào trần tháng)`;
   }
   // trial_ai_limit chốt riêng lúc đăng ký — người đăng ký trước/sau có thể khác nhau (xem
@@ -27,10 +28,10 @@ function aiUsageLabel(p){
 // không liếc qua cả danh sách để phát hiện ai dùng bất thường/gần hết lượt được.
 function aiUsageShortLabel(p){
   if(p.has_paid){
-    const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
+    const sameMonth = p.paid_ai_month === currentCycleKey(paidCycleAnchor(p));
     const used = sameMonth ? (p.paid_ai_uses||0) : 0;
     const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
-    return `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (${currentCycleRangeLabel(p.created_at)})`;
+    return `${used}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt AI (${currentCycleRangeLabel(paidCycleAnchor(p))})`;
   }
   return `${p.trial_ai_uses||0}/${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt AI dùng thử`;
 }
@@ -448,7 +449,13 @@ function render(container, ctx){
   // này, khách vẫn bị tính lượt AI theo trần dùng thử (100 lượt trọn đời) dù đã có hạn dùng dài hơn.
   async function toggleHasPaid(id, hasPaid){
     state.busyId = id; draw();
-    const { error } = await ctx.supabase.from('profiles').update({ has_paid: hasPaid }).eq('id', id);
+    // first_paid_at: mốc bắt đầu trả phí, neo chu kỳ lượt/tháng (chị Quỳnh 2026-09-07, xem cột này ở
+    // schema_core.sql) — CHỈ set khi bật has_paid VÀ chưa từng có mốc này (tránh bấm tắt/bật lại đè
+    // mất mốc gốc thật của khách).
+    const p = (state.profiles||[]).find(x=>x.id===id);
+    const patch = { has_paid: hasPaid };
+    if(hasPaid && p && !p.first_paid_at) patch.first_paid_at = new Date().toISOString();
+    const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();
     state.busyId = null;
@@ -502,7 +509,12 @@ function render(container, ctx){
     // "Đánh dấu đã trả phí" để tránh sự cố quên bấm 1 trong 2 (Gia hạn vốn chỉ dùng khi khách đã
     // thanh toán thật, xem page-head). "Hoàn tác" (days<0) KHÔNG đụng has_paid — không chắc trạng
     // thái trả phí trước đó, tắt oan có thể ảnh hưởng 1 giao dịch thật trước đó của cùng người.
-    if(days > 0) patch.has_paid = true;
+    if(days > 0){
+      patch.has_paid = true;
+      // first_paid_at: mốc bắt đầu trả phí, neo chu kỳ lượt/tháng (chị Quỳnh 2026-09-07) — CHỈ set
+      // nếu chưa từng có, tránh Gia hạn nhiều lần sau đó đè mất mốc gốc thật của khách.
+      if(!p.first_paid_at) patch.first_paid_at = new Date().toISOString();
+    }
     const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', id);
     if(error) state.error = error.message; else state.error = null;
     await load();

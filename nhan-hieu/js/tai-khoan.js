@@ -117,7 +117,7 @@ function render(container, ctx){
     if(!p) return { used:0, limit:TRIAL_AI_LIMIT, remaining:TRIAL_AI_LIMIT, isTrial:true };
     if(p.has_paid){
       // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
-      const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
+      const sameMonth = p.paid_ai_month === currentCycleKey(paidCycleAnchor(p));
       const used = sameMonth ? (p.paid_ai_uses||0) : 0;
       const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
       const limit = PAID_MONTHLY_AI_LIMIT + bonus;
@@ -140,7 +140,7 @@ function render(container, ctx){
     const totalNote = `<div style="margin-top:6px;font-size:12px;opacity:.85;">Tổng lượt bạn có thể dùng qua cả 2 giai đoạn: <b>${trialLimit} lượt dùng thử</b> (trọn đời) + <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi mua gói.</div>`;
     return (isTrial
       ? `Đã dùng <b>${used}/${limit}</b> lượt AI dùng thử (trọn đời) — còn <b>${Math.max(0,limit-used)}</b> lượt.`
-      : `Đã dùng <b>${used}/${limit}</b> lượt AI (chu kỳ ${currentCycleRangeLabel(ctx.profile.created_at)}) — còn <b>${Math.max(0,limit-used)}</b> lượt.`) + totalNote;
+      : `Đã dùng <b>${used}/${limit}</b> lượt AI (chu kỳ ${currentCycleRangeLabel(paidCycleAnchor(ctx.profile))}) — còn <b>${Math.max(0,limit-used)}</b> lượt.`) + totalNote;
   }
 
   function goalTotal(){
@@ -219,7 +219,7 @@ function render(container, ctx){
         `).join('')}
 
         <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--accent);margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line);">Đặt mục tiêu cho chu kỳ này — tự tính xem có đủ lượt không</label>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Ô bên dưới điền <b>số LẦN</b> bạn dự định làm (không phải số lượt) — hệ thống tự nhân theo trọng số để ra tổng lượt cần, rồi báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" hiện cả số lần đã thực sự làm và số lượt AI thật đã tiêu cho đúng nhóm đó${remainingInfo().isTrial?' (tính trọn đời dùng thử)':` (tính trong chu kỳ ${currentCycleRangeLabel(ctx.profile.created_at)})`}, để tự đối chiếu với kế hoạch.</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Ô bên dưới điền <b>số LẦN</b> bạn dự định làm (không phải số lượt) — hệ thống tự nhân theo trọng số để ra tổng lượt cần, rồi báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" hiện cả số lần đã thực sự làm và số lượt AI thật đã tiêu cho đúng nhóm đó${remainingInfo().isTrial?' (tính trọn đời dùng thử)':` (tính trong chu kỳ ${currentCycleRangeLabel(paidCycleAnchor(ctx.profile))})`}, để tự đối chiếu với kế hoạch.</div>
         ${GOAL_ITEMS.map(g=>`
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;flex-wrap:wrap;">
             <span style="font-size:13.5px;">${esc(g.label)} <span style="color:var(--ink-soft);font-size:12px;">(${g.weight} lượt/lần)</span></span>

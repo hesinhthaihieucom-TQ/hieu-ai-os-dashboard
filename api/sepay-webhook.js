@@ -12,7 +12,7 @@
 // (bỏ qua RLS) vì đây là thao tác hệ thống, không gắn với 1 phiên đăng nhập user nào.
 
 const crypto = require('crypto');
-const { currentCycleKey } = require('./_lib/quota-cycle');
+const { currentCycleKey, paidCycleAnchor } = require('./_lib/quota-cycle');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
@@ -209,7 +209,7 @@ async function creditReferralReward(refereeProfile, transferAmount) {
   if (!refereeProfile.referred_by_ref_code || refereeProfile.referral_reward_given) return;
 
   const referrerResp = await supabaseAdmin(
-    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,is_vip_partner,created_at`
+    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,is_vip_partner,created_at,first_paid_at`
   );
   const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
   const referrer = referrerRows[0];
@@ -223,7 +223,7 @@ async function creditReferralReward(refereeProfile, transferAmount) {
   const rewardPatch = referrer.has_paid
     ? (() => {
         // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (xem api/_lib/quota-cycle.js).
-        const cycleKey = currentCycleKey(referrer.created_at);
+        const cycleKey = currentCycleKey(paidCycleAnchor(referrer));
         const sameCycle = referrer.paid_ai_month === cycleKey;
         return sameCycle
           ? { paid_ai_bonus: (referrer.paid_ai_bonus || 0) + rewardLuot }
@@ -421,7 +421,7 @@ module.exports = async (req, res) => {
     let topupLuotGranted = null;
 
     if (refCode) {
-      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given,created_at`);
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given,created_at,first_paid_at`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
@@ -436,6 +436,11 @@ module.exports = async (req, res) => {
           // has_paid=true tắt hẳn giới hạn lượt AI dùng thử (xem api/_lib/trial-quota.js) — ngay
           // khi khớp được 1 giao dịch thật, không còn giới hạn nào áp dụng nữa.
           const patchBody = { access_until: next.toISOString(), has_paid: true, last_plan_days: days };
+          // first_paid_at: mốc BẮT ĐẦU TRẢ PHÍ — CHỈ set đúng 1 LẦN, lúc has_paid chuyển false->true
+          // (profile.has_paid ở đây là giá trị TRƯỚC patch này) — các lần gia hạn/nâng cấp gói SAU đó
+          // không ghi đè lại, giữ đúng mốc "nâng cấp lần đầu" làm neo chu kỳ lượt/tháng (chị Quỳnh
+          // 2026-09-07, xem cột first_paid_at ở schema_core.sql/paidCycleAnchor() ở quota-cycle.js).
+          if (!profile.has_paid) patchBody.first_paid_at = new Date().toISOString();
           // Ưu đãi tháng đầu chỉ áp dụng đúng 1 lần — đánh dấu đã dùng để lần mua gói 1 tháng sau
           // đó tự động về giá thường (gói 6/12 tháng học viên không bị ảnh hưởng bởi cờ này).
           if (transferAmount === FIRST_MONTH_DISCOUNT_AMOUNT) patchBody.first_month_discount_used = true;
@@ -457,7 +462,7 @@ module.exports = async (req, res) => {
           // Cộng thẳng vào lượt bonus của CHU KỲ HIỆN TẠI (30 ngày từ ngày đăng ký, không phải tháng
           // lịch — xem api/_lib/quota-cycle.js) — nếu profile đang ở chu kỳ cũ (paid_ai_month khác
           // chu kỳ hiện tại) thì coi bonus/uses hiện có là đã hết hạn, cộng lượt mới vào chu kỳ mới.
-          const cycleKey = currentCycleKey(profile.created_at);
+          const cycleKey = currentCycleKey(paidCycleAnchor(profile));
           const sameCycle = profile.paid_ai_month === cycleKey;
           const patchBody = sameCycle
             ? { paid_ai_bonus: (profile.paid_ai_bonus || 0) + topupLuot }

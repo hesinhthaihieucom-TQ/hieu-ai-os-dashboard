@@ -60,8 +60,9 @@ const REF_STORAGE_KEY = 'xnh_referred_by_ref_code';
   } catch(e){}
 })();
 function paidMonthlyUsage(p){
-  // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
-  const sameMonth = p.paid_ai_month === currentCycleKey(p.created_at);
+  // Chu kỳ 30 ngày từ lúc NÂNG CẤP (first_paid_at), không phải ngày đăng ký/tháng lịch (chị Quỳnh
+  // 2026-09-01, sửa lại 2026-09-07, xem paidCycleAnchor() ở util.js).
+  const sameMonth = p.paid_ai_month === currentCycleKey(paidCycleAnchor(p));
   const used = sameMonth ? (p.paid_ai_uses||0) : 0;
   const bonus = sameMonth ? (p.paid_ai_bonus||0) : 0;
   return { used, limit: PAID_MONTHLY_AI_LIMIT + bonus };
@@ -73,14 +74,14 @@ function trialQuotaHint(){
   // nhẹ nhàng (không cảnh báo đỏ) để chủ web tự theo dõi mức dùng thật của chính mình.
   if(p.role==='admin'){
     const used = p.has_paid ? paidMonthlyUsage(p).used : (p.trial_ai_uses||0);
-    const period = p.has_paid ? currentCycleRangeLabel(p.created_at) : 'trọn đời';
+    const period = p.has_paid ? currentCycleRangeLabel(paidCycleAnchor(p)) : 'trọn đời';
     return `<span style="color:#8A8F82;">🔥 Đã dùng ${used} lượt (${period}) — không giới hạn</span>`;
   }
   if(p.has_paid){
     const { used, limit } = paidMonthlyUsage(p);
     const remaining = Math.max(0, limit - used);
     const color = remaining<=10 ? 'var(--danger)' : '#9CA396';
-    return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt (${currentCycleRangeLabel(p.created_at)})</span>`;
+    return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt (${currentCycleRangeLabel(paidCycleAnchor(p))})</span>`;
   }
   // trial_ai_limit chốt riêng lúc đăng ký (xem schema_full.sql) — người đăng ký trước/sau có thể
   // khác nhau, KHÔNG dùng chung 1 số TRIAL_AI_LIMIT cho mọi người nữa. Cột null (tài khoản có từ
@@ -136,7 +137,7 @@ window.onGatedApiSuccess = function(relativePath, weightOverride){
     p.trial_ai_uses = (p.trial_ai_uses||0) + weight;
   } else {
     // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
-    const cycleKey = currentCycleKey(p.created_at);
+    const cycleKey = currentCycleKey(paidCycleAnchor(p));
     if(p.paid_ai_month !== cycleKey){ p.paid_ai_month = cycleKey; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
     p.paid_ai_uses = (p.paid_ai_uses||0) + weight;
   }
@@ -623,7 +624,7 @@ window.onReviewSubmitted = function(result){
   if(result && result.rewarded){
     if(p.has_paid){
       // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
-      const cycleKey = currentCycleKey(p.created_at);
+      const cycleKey = currentCycleKey(paidCycleAnchor(p));
       if(p.paid_ai_month !== cycleKey){ p.paid_ai_month = cycleKey; p.paid_ai_uses = 0; p.paid_ai_bonus = 0; }
       p.paid_ai_bonus = (p.paid_ai_bonus||0) + (result.rewardLuot || REVIEW_REWARD_LUOT);
     } else {

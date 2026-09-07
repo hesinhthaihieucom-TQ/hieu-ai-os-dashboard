@@ -24,4 +24,12 @@ function currentCycleKey(createdAtIso) {
   return String(Math.max(0, Math.floor(days / 30)));
 }
 
-module.exports = { currentCycleKey };
+// Mốc neo ĐÚNG cho chu kỳ trả phí — first_paid_at (mốc bắt đầu trả phí) nếu có, fallback created_at
+// cho ai chưa từng trả phí hoặc trả phí TỪ TRƯỚC KHI cột first_paid_at tồn tại. "tính cho họ từ thời
+// điểm họ nâng cấp chứ không phải từ thời điểm đăng ký" (chị Quỳnh 2026-09-07) — dùng hàm này thay vì
+// tự viết "profile.first_paid_at || profile.created_at" rải rác. Y HỆT paidCycleAnchor() ở util.js.
+function paidCycleAnchor(profile) {
+  return (profile && (profile.first_paid_at || profile.created_at)) || null;
+}
+
+module.exports = { currentCycleKey, paidCycleAnchor };

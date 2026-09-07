@@ -152,12 +152,13 @@ function render(container, ctx){
   const LUOT_THUONG_VIRAL = 5;
   async function creditViralBonus(userId){
     const { data: rows } = await ctx.supabase.from('profiles')
-      .select('has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,email,full_name,created_at').eq('id', userId);
+      .select('has_paid,trial_ai_uses,paid_ai_uses,paid_ai_month,paid_ai_bonus,email,full_name,created_at,first_paid_at').eq('id', userId);
     const p = rows && rows[0];
     if(!p) return null;
     if(p.has_paid){
-      // Chu kỳ 30 ngày từ ngày đăng ký, không phải tháng lịch (chị Quỳnh 2026-09-01, xem currentCycleKey ở util.js).
-      const cycleKey = currentCycleKey(p.created_at);
+      // Chu kỳ 30 ngày từ lúc NÂNG CẤP (first_paid_at), không phải ngày đăng ký/tháng lịch (chị Quỳnh
+      // 2026-09-01, sửa lại 2026-09-07, xem paidCycleAnchor() ở util.js).
+      const cycleKey = currentCycleKey(paidCycleAnchor(p));
       const sameMonth = p.paid_ai_month === cycleKey;
       const patch = sameMonth
         ? { paid_ai_bonus: (p.paid_ai_bonus||0) + LUOT_THUONG_VIRAL }

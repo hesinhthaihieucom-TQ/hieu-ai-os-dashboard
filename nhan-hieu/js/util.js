@@ -197,6 +197,16 @@ function currentCycleKey(createdAtIso){
   return String(Math.max(0, Math.floor(days / 30)));
 }
 
+// Mốc neo ĐÚNG cho chu kỳ trả phí của 1 profile — first_paid_at (mốc bắt đầu trả phí) nếu có, fallback
+// created_at cho ai chưa từng trả phí hoặc trả phí TỪ TRƯỚC KHI cột first_paid_at tồn tại (null trong
+// DB). "tính cho họ từ thời điểm họ nâng cấp chứ không phải từ thời điểm đăng ký" (chị Quỳnh
+// 2026-09-07) — dùng hàm này ở MỌI nơi gọi currentCycleKey()/currentCycleRangeLabel() thay vì tự viết
+// "p.first_paid_at || p.created_at" rải rác từng chỗ, đỡ sót nếu sau này còn sửa công thức lần nữa.
+// Y HỆT paidCycleAnchor() ở api/_lib/quota-cycle.js (server).
+function paidCycleAnchor(p){
+  return (p && (p.first_paid_at || p.created_at)) || null;
+}
+
 // Chuỗi "dd/mm - dd/mm" của đúng chu kỳ 30 ngày HIỆN TẠI (tính từ created_at) — thay cho nhãn
 // "tháng này" giờ không còn đúng nữa (chu kỳ không trùng tháng lịch, xem currentCycleKey() ở trên).
 // Chị Quỳnh 2026-09-03: "không nên ghi tháng này mà là ghi từ ngày bao nhiêu đến ngày bao nhiêu".
