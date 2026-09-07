@@ -44,6 +44,30 @@ function hasPaidMismatch(p){
   return p.role!=='admin' && !p.has_paid && !!p.last_plan_days;
 }
 
+// "cái chu kỳ AI rà soát lại 1 loạt khách xem ai bị lỗi ko" (chị Quỳnh 2026-09-07) — em không đọc
+// được database trực tiếp, nên thay vì đoán, kiểm tra NGAY TRONG APP này (chị mở trang là thấy số
+// thật) — cờ lên bất kỳ tài khoản trả phí nào có dữ liệu VÔ LÝ theo đúng logic consume_ai_quota()/
+// refund_ai_quota() (schema_core.sql):
+// 1. Vượt trần: paid_ai_uses (đúng chu kỳ hiện tại) > 200 + paid_ai_bonus — không nên xảy ra vì RPC
+//    luôn chặn trước khi cho vượt, có nghĩa là bug thật nếu thấy.
+// 2. Bonus âm — refund_ai_quota() dùng greatest(0,...) nên không nên bao giờ âm.
+// 3. first_paid_at ở TƯƠNG LAI hoặc TRƯỚC created_at — dữ liệu hỏng/nhập tay sai.
+function quotaAnomaly(p){
+  if(p.role==='admin' || !p.has_paid) return null;
+  const anchor = paidCycleAnchor(p);
+  const sameMonth = p.paid_ai_month === currentCycleKey(anchor);
+  const usedThisCycle = sameMonth ? (p.paid_ai_uses||0) : 0;
+  const bonus = p.paid_ai_bonus||0;
+  if(usedThisCycle > PAID_MONTHLY_AI_LIMIT + bonus) return `Vượt trần: đã dùng ${usedThisCycle}/${PAID_MONTHLY_AI_LIMIT+bonus} lượt trong chu kỳ hiện tại`;
+  if(bonus < 0) return `Lượt bonus âm (${bonus})`;
+  if(p.first_paid_at){
+    const fp = new Date(p.first_paid_at).getTime();
+    if(fp > Date.now()) return 'first_paid_at ở tương lai';
+    if(p.created_at && fp < new Date(p.created_at).getTime()) return 'first_paid_at trước cả ngày đăng ký';
+  }
+  return null;
+}
+
 function statusOf(p){
   if(p.role==='admin') return { label:'Admin', cls:'admin' };
   if(!p.access_until) return { label:'Chưa kích hoạt', cls:'none' };
@@ -55,7 +79,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{}, expandedMemberIds:new Set(), journeyDinhVi:new Set(), journeyPosted:new Set() };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', statusFilter:'all', studentOnly:false, error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{}, expandedMemberIds:new Set(), journeyDinhVi:new Set(), journeyPosted:new Set() };
 
   // Ai giới thiệu >= ngưỡng này được coi là "partner" — chị Quỳnh tự nhắn/chuyển khoản tay trả hoa
   // hồng tiền mặt cho họ (KHÔNG tự động chuyển tiền — SePay chỉ nhận tiền vào, không có API chuyển
@@ -70,6 +94,17 @@ function render(container, ctx){
     { key:'none', label:'Chưa rõ gói' },
   ];
   function planKeyOf(p){ return p.last_plan_days ? String(p.last_plan_days) : 'none'; }
+
+  // "k có bộ lọc chưa rõ gói, chỉ có đã hết hạn thôi" (chị Quỳnh 2026-09-07) — trước đây 4 ô số liệu
+  // (Đang hoạt động/Sắp hết hạn/Đã hết hạn/Chưa kích hoạt) chỉ để XEM, không bấm lọc được — dùng lại
+  // đúng statusOf(p).cls đã có sẵn (khớp 100% với 4 ô số liệu đó) làm bộ lọc thật.
+  const STATUS_TABS = [
+    { key:'all', label:'Tất cả' },
+    { key:'active', label:'Đang hoạt động' },
+    { key:'soon', label:'Sắp hết hạn' },
+    { key:'expired', label:'Đã hết hạn' },
+    { key:'none', label:'Chưa kích hoạt' },
+  ];
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -191,6 +226,8 @@ function render(container, ctx){
     const q = state.q.trim().toLowerCase();
     return state.profiles.filter(p => {
       if(state.planFilter !== 'all' && planKeyOf(p) !== state.planFilter) return false;
+      if(state.statusFilter !== 'all' && statusOf(p).cls !== state.statusFilter) return false;
+      if(state.studentOnly && !p.is_student) return false;
       if(!q) return true;
       return (p.email||'').toLowerCase().includes(q) ||
         (p.full_name||'').toLowerCase().includes(q) ||
@@ -205,6 +242,7 @@ function render(container, ctx){
     const list = filtered();
     const counts = state.profiles.reduce((acc,p)=>{ const s=statusOf(p).cls; acc[s]=(acc[s]||0)+1; return acc; }, {});
     const mismatchCount = state.profiles.filter(hasPaidMismatch).length;
+    const anomalies = state.profiles.map(p=>({ p, msg: quotaAnomaly(p) })).filter(x=>x.msg);
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán. Xem doanh thu/chi phí/lợi nhuận ở tab <b>Tài chính</b>.</p></div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt dùng thử (trọn đời) chốt riêng lúc mỗi người đăng ký, xem đúng số ở từng thẻ bên dưới (mục "Đã dùng") — hiện tại người đăng ký từ 24/8 là 50 lượt, người đăng ký trước đó là ${TRIAL_AI_LIMIT} lượt. Trả phí thì đổi sang <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> (bộ đếm khác, không cộng dồn với lượt dùng thử).</div>
@@ -217,6 +255,11 @@ function render(container, ctx){
       </div>
 
       ${mismatchCount>0 ? `<div class="error-box" style="margin-bottom:20px;">⚠️ Có <b>${mismatchCount} tài khoản</b> đã gắn "Gói" (chắc chắn đã kích hoạt tay) nhưng CHƯA bấm "💰 Đánh dấu đã trả phí" — họ đang bị hiện SAI trần lượt (trần dùng thử thay vì ${PAID_MONTHLY_AI_LIMIT} lượt/tháng). Tìm nhãn "⚠️ Chưa đánh dấu trả phí" trên từng thẻ bên dưới để sửa nhanh.</div>` : ''}
+      ${anomalies.length>0 ? `<div class="error-box" style="margin-bottom:20px;">⚠️ Rà soát chu kỳ lượt AI: <b>${anomalies.length} tài khoản</b> có dữ liệu bất thường —
+        <ul style="margin:6px 0 0;padding-left:18px;">
+          ${anomalies.map(x=>`<li>${esc(x.p.email||x.p.id.slice(0,8))}: ${esc(x.msg)}</li>`).join('')}
+        </ul>
+      </div>` : (state.profiles.some(p=>p.has_paid && p.role!=='admin') ? `<div class="hint-box" style="margin-bottom:20px;">✓ Đã rà soát chu kỳ lượt AI cho toàn bộ tài khoản trả phí — không thấy bất thường.</div>` : '')}
 
       ${state.referralPartners.length ? `
       <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
@@ -239,6 +282,18 @@ function render(container, ctx){
         }).join('')}
       </div>
 
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Lọc theo trạng thái hạn dùng</label>
+      <div class="chips" style="margin-bottom:20px;">
+        ${STATUS_TABS.map(t=>{
+          const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && statusOf(p).cls===t.key).length;
+          return `<div class="chip ${state.statusFilter===t.key?'selected':''}" data-status-filter="${t.key}">${esc(t.label)} (${n})</div>`;
+        }).join('')}
+      </div>
+
+      <div class="chips" style="margin-bottom:20px;">
+        <div class="chip ${state.studentOnly?'selected':''}" data-student-filter="1">🎓 Chỉ học viên (${state.profiles.filter(p=>p.role!=='admin' && p.is_student).length})</div>
+      </div>
+
       <div class="card" style="margin-bottom:20px;">
         <input id="q-search" type="text" placeholder="Tìm theo email, tên, hoặc mã tham chiếu chuyển khoản..." value="${esc(state.q)}"
           style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
@@ -255,7 +310,7 @@ function render(container, ctx){
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;cursor:pointer;" data-toggle-member="${p.id}">
             <div>
-              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}</h3>
+              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}${quotaAnomaly(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;" title="${esc(quotaAnomaly(p))}">⚠️ Lượt AI bất thường</span>` : ''}</h3>
               <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
               ${p.role!=='admin' ? `<div style="margin-top:4px;font-size:12px;color:var(--ink-soft);">⚡ ${esc(aiUsageShortLabel(p))}</div>` : ''}
               ${p.role!=='admin' && !p.has_paid ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">${journeyBadgesHtml(p)}</div>` : ''}
@@ -366,6 +421,11 @@ function render(container, ctx){
     container.querySelectorAll('[data-plan-filter]').forEach(el=>{
       el.onclick = ()=>{ state.planFilter = el.getAttribute('data-plan-filter'); draw(); };
     });
+    container.querySelectorAll('[data-status-filter]').forEach(el=>{
+      el.onclick = ()=>{ state.statusFilter = el.getAttribute('data-status-filter'); draw(); };
+    });
+    const studentFilterEl = container.querySelector('[data-student-filter]');
+    if(studentFilterEl) studentFilterEl.onclick = ()=>{ state.studentOnly = !state.studentOnly; draw(); };
     container.querySelectorAll('[data-set-plan]').forEach(el=>{
       el.onclick = ()=>{
         const [id, days] = el.getAttribute('data-set-plan').split('|');

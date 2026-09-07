@@ -242,7 +242,12 @@ function currentPaymentPlans(){
   const base = isStudent
     ? buildStudentPlans(p)
     : (p && p.referred_by_ref_code) ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS;
-  const withFlash = isFlashSaleActive() ? [...FLASH_SALE_PLANS, ...base] : base;
+  // "cái ưu đãi đều sẽ ko áp dụng cho học viên nha" (chị Quỳnh 2026-09-07) — flash-sale trước đây
+  // KHÔNG loại trừ học viên (chỉ referral/early-bird đã loại) — hiện tại vô hại vì FLASH_SALE_CUTOFF
+  // đã qua (isFlashSaleActive() luôn false), nhưng vẫn là lỗ hổng thật nếu sau này mở lại 1 đợt flash-
+  // sale khác bằng cách đổi lại cutoff. Loại hẳn học viên khỏi CẢ 3 loại ưu đãi (flash-sale/referral/
+  // early-bird) — giá học viên đã là mức giảm riêng, không cộng dồn thêm ưu đãi nào khác.
+  const withFlash = (!isStudent && isFlashSaleActive()) ? [...FLASH_SALE_PLANS, ...base] : base;
   return isStudent ? withFlash : decorateEarlyBird(withFlash, p);
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
