@@ -208,9 +208,16 @@ function render(container) {
 
   function assetsHtml() {
     const photoUrl = currentProfile && currentProfile.sps_seller_photo_url;
+    // Mỗi mẫu DÙNG KHÁC dữ liệu nhau (2026-09-07, Quỳnh: "có những mẫu cần người dùng cung cấp nhiều
+    // thông tin hơn thế thì mục thông tin cần cung cấp nó phải nhiều hơn chứ") — trước đó mọi mẫu hiện
+    // y hệt 1 danh sách 11 mục dù event_info_items/scarcity_text CHỈ "quynh" dùng, proof_images CHỈ
+    // "sach" dùng — người chọn "Chuyên gia"/"Nổi bật" vẫn thấy 2 mục vô dụng với mẫu họ chọn. Giờ chỉ
+    // hiện đúng mục mẫu đang chọn thật sự dùng tới (khớp đúng lpTemplate === '...' ở p/script.js).
+    const isQuynh = state.template === 'quynh';
+    const isSach = state.template === 'sach';
     return `
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">2. Ảnh cá nhân của bạn (dùng chung cho mọi sản phẩm)</label>
+        <label style="margin-bottom:10px;display:block;">2. Ảnh cá nhân của bạn (dùng chung cho mọi sản phẩm)${isQuynh ? ' — <b style="color:var(--danger);">bắt buộc cho mẫu Quỳnh gốc</b> (ảnh hiện ngay đầu trang, để trống sẽ trông thiếu)' : ' — không bắt buộc'}</label>
         <div style="display:flex;align-items:center;gap:14px;">
           ${photoUrl ? `<img src="${esc(photoUrl)}" style="width:64px;height:64px;border-radius:999px;object-fit:cover;border:1px solid var(--line);">` : `<div style="width:64px;height:64px;border-radius:999px;background:var(--accent-soft);flex:0 0 auto;"></div>`}
           <div>
@@ -288,8 +295,9 @@ function render(container) {
         `).join('')}
         <span class="btn-ghost btn btn-sm" id="lp-metric-add">+ Thêm chỉ số</span>
       </div>
+      ${isQuynh ? `
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">9. Thông tin lịch học/sự kiện (tuỳ chọn — chỉ dùng cho sản phẩm dạng khoá học/buổi học có lịch cụ thể, VD "📅 20:00 tối, ngày 18/08" hoặc "⏱ 30 ngày · 4 buổi Zoom")</label>
+        <label style="margin-bottom:10px;display:block;">9. Thông tin lịch học/sự kiện — <b>riêng cho mẫu Quỳnh gốc</b> (chỉ dùng cho sản phẩm dạng khoá học/buổi học có lịch cụ thể, VD "📅 20:00 tối, ngày 18/08" hoặc "⏱ 30 ngày · 4 buổi Zoom") — không bắt buộc, để trống thì khối này tự ẩn</label>
         ${state.eventInfoItems.map((e, i) => `
           <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
             <input type="text" data-event-icon="${i}" value="${esc(e.icon || '')}" placeholder="Icon (VD: 📅)" style="flex:0 0 90px;">
@@ -300,11 +308,13 @@ function render(container) {
         <span class="btn-ghost btn btn-sm" id="lp-event-add">+ Thêm dòng thông tin</span>
       </div>
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">10. Dòng cảnh báo số lượng có hạn (tuỳ chọn — VD "Chỉ 30 chỗ mỗi khóa · Ưu tiên người đăng ký sớm") — để trống nếu không muốn hứa hẹn giới hạn nào</label>
+        <label style="margin-bottom:10px;display:block;">10. Dòng cảnh báo số lượng có hạn — <b>riêng cho mẫu Quỳnh gốc</b> (VD "Chỉ 30 chỗ mỗi khóa · Ưu tiên người đăng ký sớm") — không bắt buộc, để trống thì khối này tự ẩn</label>
         <input id="lp-scarcity" type="text" value="${esc(state.scarcityText)}" placeholder="VD: Chỉ 30 chỗ mỗi khóa">
       </div>
+      ` : ''}
+      ${isSach ? `
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">11. Ảnh thực tế THẬT (lớp học/buổi đào tạo/hoạt động thật — tối đa ${MAX_PROOF_IMAGES} ảnh, khác ảnh case study ở mục 3) — không bắt buộc</label>
+        <label style="margin-bottom:10px;display:block;">9. Ảnh thực tế THẬT — <b>riêng cho mẫu Sách/ebook</b> (lớp học/buổi đào tạo/hoạt động thật — tối đa ${MAX_PROOF_IMAGES} ảnh, khác ảnh case study ở mục 3) — không bắt buộc, để trống thì khối này tự ẩn</label>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           ${state.proofImages.map((c, i) => `
             <div style="width:130px;">
@@ -319,6 +329,7 @@ function render(container) {
           <span class="btn-ghost btn btn-sm" id="lp-proof-btn">${state.proofUploading ? 'Đang tải…' : '+ Thêm ảnh thực tế'}</span>
         ` : ''}
       </div>
+      ` : ''}
     `;
   }
 
