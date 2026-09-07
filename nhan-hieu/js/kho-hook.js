@@ -376,7 +376,12 @@ function render(container, ctx){
         <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
           <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
-          ${h.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>':h.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>':''}
+          ${h.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
+            :h.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>'
+            // "bài trong kho của tôi cũng phải có nút bấm đóng góp vào kho viral chứ" (chị Quỳnh
+            // 2026-09-07) — cùng lý do đã sửa ở kho-content.js: trước đây chỉ mời đóng góp 1 LẦN DUY
+            // NHẤT ngay lúc thêm hook mới, bỏ lỡ là hết cách đóng góp lại.
+            :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${h.id}">Đóng góp vào Kho Viral</span>`}
         </div>
         ${writeActionHtml('personal:'+h.id)}
       </div>
@@ -523,6 +528,14 @@ function render(container, ctx){
         const id = el.getAttribute('data-del');
         if(!(await confirmModal('Xoá vĩnh viễn hook này khỏi Kho của tôi? Không khôi phục được.'))) return;
         await ctx.supabase.from('hooks_bank_personal').delete().eq('id', id);
+        await loadPersonal(); draw();
+      };
+    });
+    container.querySelectorAll('[data-contribute-personal]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-contribute-personal');
+        if(!(await confirmModal('Đề xuất hook này lên Kho Hook Viral để mọi người cùng dùng? Admin sẽ xem qua rồi mới duyệt hiển thị công khai.', 'Đề xuất'))) return;
+        await ctx.supabase.from('hooks_bank_personal').update({ share_status:'pending' }).eq('id', id);
         await loadPersonal(); draw();
       };
     });

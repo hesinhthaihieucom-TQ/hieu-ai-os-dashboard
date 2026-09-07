@@ -43,7 +43,7 @@ const TOUR_STEPS = [
 
 function render(container, ctx){
   const state = {
-    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
+    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], scheduledPostIds:new Set(), pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
     regenWeekLoading:false, regenWeekError:null,
@@ -125,7 +125,7 @@ function render(container, ctx){
       );
       if(error) throw new Error(error.message);
       state.positioning = (pos && pos.luot1) ? pos : null;
-      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule(), loadPersonalPhotoCount()]);
+      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule(), loadPersonalPhotoCount(), loadScheduledPostIds()]);
       state.screen='main';
     } catch(e){
       state.screen='error';
@@ -212,6 +212,16 @@ function render(container, ctx){
     );
     if(error) throw new Error(error.message);
     state.posts = data || [];
+  }
+
+  // "bài nào đã có trong lịch thì ko đề xuất hiện nữa" (chị Quỳnh 2026-09-07) — ô "Chọn bài đã viết"
+  // ở picker trước đây chỉ loại bài ĐÃ ĐĂNG (p.posted), không loại bài đã xếp vào 1 ô KHÁC trong lịch
+  // (kể cả tuần khác — state.entries chỉ tải đúng 7 ngày tuần đang xem, không đủ để biết), dễ chọn
+  // trùng 1 bài vào 2 ô. Tải TOÀN BỘ post_id đã dùng (mọi tuần, không lọc theo channel — 1 bài dùng ở
+  // lane này thì cũng không nên gợi ý lại ở lane kia), dùng chung logic đã có ở fetchAiSchedule().
+  async function loadScheduledPostIds(){
+    const { data } = await ctx.supabase.from('calendar_entries').select('post_id').eq('user_id', ctx.user.id).not('post_id', 'is', null);
+    state.scheduledPostIds = new Set((data||[]).map(e=>e.post_id));
   }
 
   // Giờ đăng bài do NGƯỜI DÙNG TỰ CHỌN (2026-08-21, theo phản hồi chị Quỳnh) — đọc từ profile, sửa
@@ -555,9 +565,9 @@ function render(container, ctx){
                   ${suggestion?`<div style="font-size:11px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
                   <select data-picker-select style="width:100%;margin-top:4px;font-size:12px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
-                    ${state.posts.filter(p=>!p.posted || (e && e.post_id===p.id)).map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}${p.posted?' (đã đăng)':''}</option>`).join('')}
+                    ${state.posts.filter(p=>(!p.posted && !state.scheduledPostIds.has(p.id)) || (e && e.post_id===p.id)).map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}${p.posted?' (đã đăng)':''}</option>`).join('')}
                   </select>
-                  <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng rồi không hiện ở đây nữa, đỡ chọn nhầm.</div>
+                  <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng hoặc đã có sẵn trong lịch rồi không hiện ở đây nữa, đỡ chọn trùng.</div>
                   <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
                   <input type="text" data-picker-custom placeholder="Tên bài tự điền..." value="${e && !e.post_id ? esc(e.title||'') : ''}" style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
                   <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">Giờ đăng bài này</div>
@@ -822,7 +832,7 @@ function render(container, ctx){
             cta: (state.pending.structure && state.pending.structure.cta) || null,
           });
           state.pending = null;
-          await loadEntries();
+          await Promise.all([loadEntries(), loadScheduledPostIds()]);
           draw();
         } else {
           state.pickerFor = { date:dateStr, slot:slotKey };
@@ -843,7 +853,7 @@ function render(container, ctx){
           channel: state.channel, auto_publish_fb: state.channel==='fanpage',
           title: matchedPost ? matchedPost.title : s.chu_de, format: s.dinh_dang, cta: s.cta,
         });
-        await loadEntries();
+        await Promise.all([loadEntries(), loadScheduledPostIds()]);
         draw();
       };
     });
@@ -910,7 +920,7 @@ function render(container, ctx){
         }
         state.pickerFor = null;
         state.editingEntryId = null;
-        await loadEntries();
+        await Promise.all([loadEntries(), loadScheduledPostIds()]);
         draw();
       };
     });
@@ -1011,7 +1021,7 @@ function render(container, ctx){
           await ctx.supabase.from('posts').update({ posted: true }).eq('id', entry.post_id);
           await loadPosts();
         }
-        await loadEntries();
+        await Promise.all([loadEntries(), loadScheduledPostIds()]);
         draw();
       };
     });
@@ -1049,7 +1059,7 @@ function render(container, ctx){
             await loadPosts();
           }
         }
-        await loadEntries();
+        await Promise.all([loadEntries(), loadScheduledPostIds()]);
         draw();
       };
     });
@@ -1127,7 +1137,7 @@ function render(container, ctx){
         parts.push(`⚠️ nguồn đúng trục "${data.truc||'—'}" hiện chỉ còn ${data.pool_unused_size} bài/hook chưa dùng (trong ${data.pool_matched_truc_size} bài khớp trục, ${data.pool_all_size} bài toàn kho) — dễ lặp lại chủ đề, cân nhắc bổ sung thêm nguồn cho trục này`);
       }
       state.autoFillResult = parts.length ? parts.join(' — ') : (data.message || 'Không có gì để điền.');
-      await loadEntries();
+      await Promise.all([loadEntries(), loadScheduledPostIds()]);
     } catch(e){ state.autoFillError = e.message; }
     stopProgress(); releaseWakeLock();
     state.autoFillBusy = false;
@@ -1154,7 +1164,7 @@ function render(container, ctx){
       while(dates.length){
         const data = await callApi('/api/regen-fanpage-week', { dates }, 280000);
         dates = data.remaining_dates || [];
-        await loadEntries(); draw();
+        await Promise.all([loadEntries(), loadScheduledPostIds()]); draw();
       }
     } catch(e){ state.regenWeekError = e.message; }
     stopProgress(); releaseWakeLock();

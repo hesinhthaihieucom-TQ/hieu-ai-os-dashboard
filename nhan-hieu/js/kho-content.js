@@ -614,7 +614,14 @@ function render(container, ctx){
         ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
           <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
-          ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>':b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>':''}
+          ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
+            :b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>'
+            // "bài trong kho của tôi cũng phải có nút bấm đóng góp vào kho viral chứ" (chị Quỳnh
+            // 2026-09-07) — trước đây CHỈ có 1 lần mời đóng góp NGAY LÚC THÊM mục mới (nếu tự đánh dấu
+            // "content viral tôi sưu tầm") — bấm "Không, giữ riêng" hoặc bỏ qua thì VĨNH VIỄN không còn
+            // cách nào đóng góp lại nữa. Giờ luôn có nút này cho MỌI mục chưa từng gửi (share_status
+            // rỗng), không cần đã đánh dấu viral từ đầu.
+            :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${b.id}">Đóng góp vào Kho Viral</span>`}
         </div>
         ${writeActionHtml('personal:'+b.id)}
       </div>
@@ -1052,6 +1059,14 @@ function render(container, ctx){
         const id = el.getAttribute('data-del-personal');
         if(!(await confirmModal('Xoá vĩnh viễn bài này khỏi Kho của tôi? Không khôi phục được.'))) return;
         await ctx.supabase.from('content_bank_personal').delete().eq('id', id);
+        await loadPersonal(); draw();
+      };
+    });
+    container.querySelectorAll('[data-contribute-personal]').forEach(el=>{
+      el.onclick = async ()=>{
+        const id = el.getAttribute('data-contribute-personal');
+        if(!(await confirmModal('Đề xuất mục này lên Kho Content Viral để mọi người cùng dùng? Admin sẽ xem qua rồi mới duyệt hiển thị công khai.', 'Đề xuất'))) return;
+        await ctx.supabase.from('content_bank_personal').update({ share_status:'pending' }).eq('id', id);
         await loadPersonal(); draw();
       };
     });
