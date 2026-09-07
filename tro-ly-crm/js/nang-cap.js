@@ -25,6 +25,22 @@ const PLANS_REFERRAL = [
 ];
 function currentPlans(ctx){ return (ctx.profile && ctx.profile.referred_by_ref_code) ? PLANS_REFERRAL : PLANS; }
 
+// Nhãn "rẻ hơn X đ (~Y%)" cho gói 6/12 tháng — so với mua LẺ THEO THÁNG (giá 1m) nhân lên đúng số
+// tháng, khớp cách nhan-hieu/js/app-shell.js's planSavingsLabel() tính (2026-09-07, "bên xây nhân
+// hiệu có gì bên này có đó"). Áp dụng chung cho cả PLANS và PLANS_REFERRAL — luôn so với giá 1m
+// THƯỜNG (không so giá 1m giới thiệu) để số "tiết kiệm" nhất quán dù đang xem bảng giá nào.
+function planSavingsLabel(pl){
+  const retailMonthly = PLANS.find(p=>p.key==='1m').amount;
+  const match = /^(\d+)m/.exec(pl.key);
+  const months = match ? parseInt(match[1], 10) : null;
+  if(!months || months <= 1) return '';
+  const retailTotal = retailMonthly * months;
+  if(pl.amount >= retailTotal) return '';
+  const saved = retailTotal - pl.amount;
+  const pct = Math.round((saved / retailTotal) * 100);
+  return `rẻ hơn ${saved.toLocaleString('vi-VN')}đ (~${pct}%)`;
+}
+
 // "Mua thêm lượt" (2026-08-30, chị Quỳnh chốt "tính tiền như web xây nhân hiệu") — CỐ Ý dùng lại
 // đúng giá của nhan-hieu (AMOUNT_TO_TOPUP_LUOT) vì webhook phân biệt qua tiền tố "CRM" trong nội
 // dung chuyển khoản, không phải qua số tiền — an toàn dùng chung giá dù trùng số tiền (xem
@@ -40,6 +56,11 @@ function render(container, ctx){
   const state = {
     loading:true, refCode:null, selectedPlanKey: (plans.find(p=>p.recommended)||plans[0]).key, checking:false, checkedOnce:false, error:'',
     selectedTopupKey: TOPUP_PACKS[1].key, topupChecking:false, topupCheckedOnce:false,
+    // 2 tab riêng (2026-09-07, "bên xây nhân hiệu có gì bên này có đó" — nhan-hieu vừa tách y hệt
+    // cùng ngày: "để ng dùng ko cần kéo xuống cũng nhìn thấy để bấm vào") — trước đây "Mua thêm lượt"
+    // nằm cuối trang dưới cả khối QR dài của "Mua gói", dễ bị bỏ sót. Chỉ hiện tab lượt khi ĐÃ trả
+    // phí (crm_has_paid) — khách chưa kích hoạt gói nào thì chưa có khái niệm "lượt/tháng" để mua thêm.
+    tab: 'goi',
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -112,6 +133,9 @@ function render(container, ctx){
       ? `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${plan.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`
       : null;
 
+    const p = ctx.profile || {};
+    const canTopup = !!p.crm_has_paid;
+
     return `
       <div class="page-head">
         <h1>Nâng Cấp</h1>
@@ -120,12 +144,23 @@ function render(container, ctx){
 
       ${statusHtml()}
 
+      ${canTopup ? `
+        <div class="tab-row">
+          <div class="tab-btn ${state.tab==='goi'?'active':''}" data-nc-tab="goi">Mua gói / Gia hạn</div>
+          <div class="tab-btn ${state.tab==='topup'?'active':''}" data-nc-tab="topup">Mua thêm lượt AI</div>
+        </div>
+      ` : ''}
+
       ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
 
+      ${(!canTopup || state.tab==='goi') ? `
       <div class="card" style="max-width:460px;margin-top:16px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
         <div class="chips" id="plan-chips">
-          ${plans.map(pl => `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${pl.recommended?` <span style="opacity:.72;font-size:11.5px;">(khuyên dùng)</span>`:''}</div>`).join('')}
+          ${plans.map(pl => {
+            const savings = planSavingsLabel(pl);
+            return `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${pl.recommended?` <span style="opacity:.72;font-size:11.5px;">(khuyên dùng)</span>`:''}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+          }).join('')}
         </div>
         ${plan.note ? `<div class="hint-box" style="margin-top:10px;">🎉 ${esc(plan.note)}</div>` : ''}
 
@@ -153,8 +188,9 @@ function render(container, ctx){
         </div>
         ${state.checkedOnce && !state.checking ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">Nếu chưa thấy cập nhật, đợi thêm 1-2 phút rồi bấm lại — nếu vẫn chưa thấy sau vài phút, báo lại để kích hoạt tay.</div>` : ''}
       </div>
+      ` : ''}
 
-      ${topupHtml()}
+      ${(canTopup && state.tab==='topup') ? topupHtml() : ''}
     `;
   }
 
@@ -208,6 +244,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-nc-tab]').forEach(el=>{
+      el.onclick = ()=>{ state.tab = el.getAttribute('data-nc-tab'); draw(); };
+    });
     container.querySelectorAll('[data-plan]').forEach(el=>{
       el.onclick = ()=>{ state.selectedPlanKey = el.getAttribute('data-plan'); draw(); };
     });
