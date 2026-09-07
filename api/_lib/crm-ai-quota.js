@@ -41,6 +41,35 @@ async function supabaseRpc(fn, args) {
   }
 }
 
+// Ghi lại TỪNG lần dùng — bảng ai_usage_log dùng CHUNG cho cả hệ sinh thái (tạo ở
+// schema_nhan_hieu.sql, action_key của mỗi sản phẩm đã tự phân biệt nhau vì tên khác hẳn — vd
+// 'crm-tuvan' không trùng bất kỳ action_key nào của Xây Nhân Hiệu/Sản Phẩm Số). Trước đây CRM
+// KHÔNG ghi log này (chỉ có tổng crm_ai_uses/crm_ai_month trên profiles), nên không có cách nào
+// dựng bảng "Tài chính" theo từng tháng/từng người như nhan-hieu — 2026-09-07, "quản trị bên xây
+// nhân hiệu có gì bên này có đó" cần bảng này để làm quan-tri-taichinh.js. Best-effort, lỗi ghi
+// KHÔNG chặn người dùng.
+async function logUsage(userId, actionKey, weight) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/ai_usage_log`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Prefer: 'return=minimal',
+      },
+      signal: controller.signal,
+      body: JSON.stringify({ user_id: userId, action_key: actionKey, weight }),
+    });
+  } catch (e) {
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Trả về null nếu được phép dùng (đã tự tăng đếm lên), hoặc 1 chuỗi thông báo nếu bị chặn vì hết
 // lượt tháng này. Lỗi đọc/ghi hạ tầng KHÔNG chặn người dùng (thà dùng thừa còn hơn chặn oan).
 async function checkAndConsumeCrmAiQuota(userId, actionKey) {
@@ -52,7 +81,7 @@ async function checkAndConsumeCrmAiQuota(userId, actionKey) {
     });
     if (!resp.ok) return null;
     const data = await resp.json();
-    if (data.allowed) return null;
+    if (data.allowed) { await logUsage(userId, actionKey, weight); return null; }
     return `Bạn đã dùng hết ${data.effective_limit} lượt AI trong tháng này — lượt sẽ tự làm mới vào đầu tháng sau.`;
   } catch (e) {
     return null;

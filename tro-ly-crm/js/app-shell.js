@@ -13,8 +13,7 @@ const NAV = [
   { key:'cau-chuyen', title:'Câu Chuyện Của Bạn' },
   { key:'nang-cap', title:'Nâng Cấp' },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm tên ở cuối sidebar
-  { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin'
-  { key:'quan-tri-thongbao', title:'Thông báo', adminOnly:true },
+  { key:'quan-tri-hub', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin' — gộp Thành viên/Tài chính/Thông báo, xem quan-tri-hub.js
 ];
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
