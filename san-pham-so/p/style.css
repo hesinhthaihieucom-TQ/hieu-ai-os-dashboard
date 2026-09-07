@@ -401,28 +401,38 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
    dưới như bản điện thoại phóng to — trang gốc để nội dung/tiêu đề bên TRÁI, khối giá+mua bên PHẢI
    dính theo khi cuộn (bố cục 2 cột kiểu sales page thật), không phải xếp chồng. Dùng CSS Grid đặt lại
    VỊ TRÍ HIỂN THỊ của đúng 2 khối đã có sẵn (.lp-main-col gộp hero+nội dung+FAQ, #buy-area-anchor giữ
-   nguyên) — không phải xáo trộn DOM, nên cỡ điện thoại/tablet (dưới 1024px) không đụng gì, vẫn xếp
-   chồng đúng thứ tự cũ y hệt trước giờ. */
-@media (min-width:1024px){
+   nguyên) — không phải xáo trộn DOM.
+   2026-09-07 — HẠ ngưỡng từ 1024px xuống 800px: Quỳnh vẫn thấy 1 cột trên máy tính thật (cửa sổ trình
+   duyệt rộng, đã loại trừ cache — kiểm tra trực tiếp server xác nhận code mới đã chạy đúng). 1024px là
+   ngưỡng khá cao, chỉ cần trình duyệt phóng to (zoom) nhẹ hoặc cửa sổ không full màn hình là độ rộng
+   CSS thật (window.innerWidth) tụt xuống dưới mốc đó dù cửa sổ nhìn "có vẻ" rộng — hạ xuống 800px để
+   chắc chắn kích hoạt trên hầu hết máy tính/laptop thật, chỉ còn loại trừ đúng điện thoại/tablet dọc. */
+@media (min-width:800px){
   .wrap[data-lp-template="quynh"]{ max-width:1040px; }
   .wrap[data-lp-template="quynh"] .card{
-    padding:44px 48px; display:grid; grid-template-columns:1fr 320px;
-    grid-template-areas:"main buy" "faq buy"; column-gap:40px;
+    padding:32px 36px; display:grid; grid-template-columns:1fr 300px;
+    grid-template-areas:"main buy" "faq buy"; column-gap:32px;
   }
   .wrap[data-lp-template="quynh"] .lp-main-col{ grid-area:main; min-width:0; }
   .wrap[data-lp-template="quynh"] #buy-area-anchor{ grid-area:buy; position:sticky; top:24px; align-self:start; }
   .wrap[data-lp-template="quynh"] #lp-sec-faq{ grid-area:faq; margin-top:8px; }
-  .wrap[data-lp-template="quynh"] h1{ font-size:32px; }
-  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:19px; }
+  .wrap[data-lp-template="quynh"] h1{ font-size:30px; }
+  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:18px; }
   .wrap[data-lp-template="quynh"] .lp-stat-grid{ grid-template-columns:repeat(2,1fr); gap:14px; }
   .wrap[data-lp-template="quynh"] .lp-case-studies{ grid-template-columns:repeat(2,1fr); }
+}
+@media (min-width:1100px){
+  .wrap[data-lp-template="quynh"] .card{ padding:44px 48px; grid-template-columns:1fr 320px; column-gap:40px; }
+  .wrap[data-lp-template="quynh"] h1{ font-size:32px; }
+  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:19px; }
 }
 
 /* Bố cục MÁY TÍNH riêng cho "chuyengia" (2026-09-06, cùng lý do đã sửa cho "quynh" ở trên — Quỳnh:
    "cỡ đang là cỡ của điện thoại, khi xem trên máy tính" — trước đó chỉ rộng tới 640px chung với 3 mẫu
-   kia ở @media 720px, nhìn bé hẳn giữa màn hình máy tính thật to). Cỡ điện thoại/tablet (dưới 1024px,
-   kể cả khối hero-top 2 cột đã bật từ 720px) GIỮ NGUYÊN, chỉ nới thêm ở ngưỡng máy tính thật. */
-@media (min-width:1024px){
+   kia ở @media 720px, nhìn bé hẳn giữa màn hình máy tính thật to). Cỡ điện thoại/tablet (dưới 800px,
+   kể cả khối hero-top 2 cột đã bật từ 720px) GIỮ NGUYÊN, chỉ nới thêm ở ngưỡng máy tính thật.
+   2026-09-07 — hạ ngưỡng 1024px→800px cùng lý do đã sửa ở "quynh" phía trên. */
+@media (min-width:800px){
   .wrap[data-lp-template="chuyengia"]{ max-width:960px; }
   .wrap[data-lp-template="chuyengia"] .card{ padding:40px 48px; }
   .wrap[data-lp-template="chuyengia"] h1{ font-size:34px; }
