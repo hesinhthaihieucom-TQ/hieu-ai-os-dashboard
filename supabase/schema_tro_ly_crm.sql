@@ -395,3 +395,27 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.set_crm_follow_reminder_time(text) to authenticated;
+
+-- ĐÁNH GIÁ cho tro-ly-crm (2026-09-07, "quản trị bên xây nhân hiệu có gì bên crm có đó") — dùng
+-- LẠI bảng app_reviews có sẵn (chung với nhan-hieu/tai-chinh/san-pham-so, xem schema_nhan_hieu.sql/
+-- schema_san_pham_so.sql), giống đúng cách san-pham-so đã mở rộng. QUAN TRỌNG: cột `app` có CHECK
+-- CONSTRAINT — phải nới trước, nếu không insert app='tro-ly-crm' sẽ lỗi ngay.
+-- crm_review_reward_given/crm_review_prompt_dismissed TÁCH RIÊNG khỏi review_reward_given (nhan-
+-- hieu)/sps_review_reward_given (Sản Phẩm Số) — 1 người có thể đã đánh giá Xây Nhân Hiệu nhưng chưa
+-- từng được hỏi đánh giá Trợ Lý CRM, không dùng chung cờ được.
+alter table app_reviews drop constraint if exists app_reviews_app_check;
+alter table app_reviews add constraint app_reviews_app_check check (app in ('nhan-hieu', 'tai-chinh', 'san-pham-so', 'tro-ly-crm'));
+
+alter table profiles add column if not exists crm_review_reward_given boolean not null default false;
+alter table profiles add column if not exists crm_review_prompt_dismissed boolean not null default false;
+
+-- profiles không cho user thường .update() thẳng — RPC hẹp để tự đánh dấu "đã bấm Để sau" (không
+-- gửi đánh giá), tách biệt khỏi bước thưởng (submit-review.js tự đặt cờ này qua service role khi
+-- có gửi đánh giá thật, xem api/submit-review.js).
+create or replace function public.set_crm_review_prompt_dismissed()
+returns void as $$
+begin
+  update public.profiles set crm_review_prompt_dismissed = true where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.set_crm_review_prompt_dismissed() to authenticated;

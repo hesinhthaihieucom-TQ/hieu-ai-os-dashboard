@@ -34,7 +34,7 @@ async function notifyAdminsOfNewReview(targetApp, comment) {
   try {
     const resp = await supabaseAdmin('profiles?role=eq.admin&select=id');
     const admins = resp.ok ? await resp.json() : [];
-    const appLabel = targetApp === 'tai-chinh' ? 'Sổ Dòng Tiền Tâm Thức' : targetApp === 'san-pham-so' ? 'Sản Phẩm Số' : 'Xây Nhân Hiệu';
+    const appLabel = targetApp === 'tai-chinh' ? 'Sổ Dòng Tiền Tâm Thức' : targetApp === 'san-pham-so' ? 'Sản Phẩm Số' : targetApp === 'tro-ly-crm' ? 'Trợ Lý AI Tư Vấn & CRM' : 'Xây Nhân Hiệu';
     const preview = comment.length > 100 ? comment.slice(0, 100) + '…' : comment;
     await Promise.all(admins.map(a => sendPushToUser(a.id, {
       title: `⭐ Đánh giá mới — ${appLabel}`,
@@ -55,12 +55,12 @@ module.exports = async (req, res) => {
 
   try {
     const { comment, app } = req.body || {};
-    const targetApp = app === 'tai-chinh' ? 'tai-chinh' : app === 'san-pham-so' ? 'san-pham-so' : 'nhan-hieu';
+    const targetApp = app === 'tai-chinh' ? 'tai-chinh' : app === 'san-pham-so' ? 'san-pham-so' : app === 'tro-ly-crm' ? 'tro-ly-crm' : 'nhan-hieu';
     if (!comment || !comment.trim()) { res.status(400).json({ error: 'Chưa nhập cảm nhận.' }); return; }
     const trimmed = comment.trim();
     if (trimmed.length > 3000) { res.status(400).json({ error: 'Cảm nhận quá dài, rút gọn lại giúp mình.' }); return; }
 
-    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given,sps_has_paid,sps_paid_ai_month,sps_paid_ai_bonus,sps_trial_ai_limit,sps_review_reward_given,created_at,first_paid_at`);
+    const profResp = await supabaseAdmin(`profiles?id=eq.${user.id}&select=full_name,has_paid,paid_ai_month,paid_ai_bonus,trial_ai_limit,review_reward_given,sps_has_paid,sps_paid_ai_month,sps_paid_ai_bonus,sps_trial_ai_limit,sps_review_reward_given,crm_ai_month,crm_ai_bonus,crm_review_reward_given,created_at,first_paid_at`);
     const profRows = profResp.ok ? await profResp.json() : [];
     const profile = profRows[0];
 
@@ -86,6 +86,37 @@ module.exports = async (req, res) => {
 
     const wordCount = countWords(trimmed);
     let rewarded = false;
+
+    // Trợ Lý CRM có hệ lượt AI RIÊNG (crm_*, tách biệt hoàn toàn khỏi nhan-hieu — xem
+    // api/_lib/crm-ai-quota.js). KHÔNG có khái niệm "dùng thử" (chỉ crm_has_paid true/false) nên
+    // luôn cộng thẳng vào crm_ai_bonus của THÁNG HIỆN TẠI bất kể đã trả phí hay chưa — giống hệt
+    // cách creditCrmReferralReward()/topupLuot ở api/sepay-webhook.js đã làm (thà cộng thừa còn hơn
+    // chặn oan; nếu chưa trả phí thì bonus này chỉ dùng được sau khi họ nâng cấp).
+    if (targetApp === 'tro-ly-crm') {
+      if (wordCount >= MIN_WORDS_FOR_REWARD) {
+        if (profile && !profile.crm_review_reward_given) {
+          const month = new Date().toISOString().slice(0, 7);
+          const patch = { crm_review_reward_given: true, crm_review_prompt_dismissed: true };
+          if (profile.crm_ai_month === month) {
+            patch.crm_ai_bonus = (profile.crm_ai_bonus || 0) + REWARD_LUOT;
+          } else {
+            patch.crm_ai_month = month;
+            patch.crm_ai_uses = 0;
+            patch.crm_ai_bonus = REWARD_LUOT;
+          }
+          const patchResp = await supabaseAdmin(`profiles?id=eq.${user.id}`, {
+            method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(patch),
+          });
+          rewarded = patchResp.ok;
+        }
+      } else {
+        await supabaseAdmin(`profiles?id=eq.${user.id}`, {
+          method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify({ crm_review_prompt_dismissed: true }),
+        });
+      }
+      res.status(200).json({ rewarded, wordCount, minWords: MIN_WORDS_FOR_REWARD, rewardLuot: REWARD_LUOT });
+      return;
+    }
 
     // Sản Phẩm Số có hệ lượt AI RIÊNG (sps_*, tách biệt hoàn toàn khỏi nhan-hieu — xem
     // api/_lib/sps-ai-quota.js) — thưởng vào đúng cột riêng đó, cờ "đã đánh giá/đã thưởng" cũng tách

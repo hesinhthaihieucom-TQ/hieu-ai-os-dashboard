@@ -1,7 +1,16 @@
 (function(){
+// Đánh giá app (2026-09-07, "quản trị bên xây nhân hiệu có gì bên crm có đó") — copy đúng pattern
+// nhan-hieu/js/home.js: viết cảm nhận thôi (không chấm sao), thưởng lượt AI nếu đủ dài, cần admin
+// duyệt mới hiện công khai (xem quan-tri-danhgia.js). Dùng chung /api/submit-review + bảng
+// app_reviews (app='tro-ly-crm', xem schema_tro_ly_crm.sql).
+const REVIEW_MIN_WORDS_FOR_REWARD = 50;
+const REVIEW_REWARD_LUOT = 20;
+const REVIEWS_COLLAPSED_COUNT = 3;
+
 function render(container, ctx){
   const state = {
     loading:true, dueCount:0, dueRows:[], totalCustomers:0,
+    reviews:[], reviewsLoading:true, reviewComment:'', reviewSubmitting:false, reviewError:null, reviewJustSubmitted:false, showAllReviews:false,
     // Đối tác cần huấn luyện (2026-08-30) — triage kiểu "Cần follow hôm nay" nhưng cho nhịp huấn
     // luyện đối tác: 1 leader bảo trợ nhiều người không rà tay từng hồ sơ được, cần 1 danh sách
     // "ai đang chậm/rớt nhịp" bật lên ngay ở Trang chủ để gọi hỗ trợ kịp thời.
@@ -36,6 +45,34 @@ function render(container, ctx){
   function isoDate(d){
     const tzOffset = d.getTimezoneOffset() * 60000;
     return new Date(d - tzOffset).toISOString().slice(0,10);
+  }
+
+  async function loadReviews(){
+    const { data } = await ctx.supabase.from('app_reviews').select('display_name,comment,created_at')
+      .eq('approved', true).eq('app', 'tro-ly-crm').order('created_at', { ascending:false }).limit(20);
+    state.reviews = data || [];
+    state.reviewsLoading = false;
+    draw();
+  }
+
+  async function submitReview(){
+    if(state.reviewSubmitting || !state.reviewComment.trim()) return;
+    state.reviewSubmitting = true; state.reviewError = null; draw();
+    try{
+      const data = await callApi('/api/submit-review', { comment: state.reviewComment.trim(), app: 'tro-ly-crm' });
+      if(data.rewarded && ctx.profile){
+        const month = new Date().toISOString().slice(0,7);
+        if(ctx.profile.crm_ai_month !== month){ ctx.profile.crm_ai_month = month; ctx.profile.crm_ai_uses = 0; ctx.profile.crm_ai_bonus = 0; }
+        ctx.profile.crm_ai_bonus = (ctx.profile.crm_ai_bonus||0) + (data.rewardLuot || REVIEW_REWARD_LUOT);
+        ctx.profile.crm_review_reward_given = true;
+        const footEl = document.getElementById('sidebar-foot-info');
+        if(footEl) footEl.innerHTML = sidebarFootHtml();
+      }
+      state.reviewComment = '';
+      state.reviewJustSubmitted = true;
+      loadReviews();
+    } catch(e){ state.reviewError = e.message; }
+    state.reviewSubmitting = false; draw();
   }
 
   const QUICK_LINKS = [
@@ -111,7 +148,43 @@ function render(container, ctx){
         `).join('')}
       </div>
 
+      ${reviewSectionHtml()}
+
       ${state.showGuide ? guideHtml() : ''}
+    `;
+  }
+
+  function reviewSectionHtml(){
+    const alreadyRewarded = !!(ctx.profile && ctx.profile.crm_review_reward_given);
+    return `
+      <div style="margin-top:28px;">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Đánh giá từ mọi người</h3>
+        <div class="card" style="margin-bottom:16px;background:var(--accent-soft);border:1px solid var(--accent);">
+          ${state.reviewJustSubmitted
+            ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
+            : `
+            ${!alreadyRewarded ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:10px;">🎁 Tặng ngay ${REVIEW_REWARD_LUOT} lượt AI miễn phí khi viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên!</div>` : ''}
+            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoe trải nghiệm của bạn — kể thoải mái 3-5 điều bạn thích nhất</label>
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">Tư vấn nhanh hơn bao nhiêu, khách hàng có bị bỏ sót follow không, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt.</div>
+            <textarea id="rv-comment" placeholder="Ví dụ: 1. Tư vấn nhanh hơn hẳn, không còn quên follow khách 2. AI đọc ảnh chat và tự lưu hồ sơ khách chính xác 3. Sổ tay tư vấn giúp mình biết nên hỏi gì tiếp theo..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
+            ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
+            <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
+              <button class="btn btn-sm" data-action="submit-review" ${state.reviewSubmitting?'disabled':''}>${state.reviewSubmitting?'Đang gửi…':'Gửi đánh giá'}</button>
+            </div>
+          `}
+        </div>
+        ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải…</div>`
+          : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào được duyệt.</div>`
+          : (state.showAllReviews ? state.reviews : state.reviews.slice(0, REVIEWS_COLLAPSED_COUNT)).map(r=>`
+            <div class="section">
+              <div class="body" style="white-space:pre-wrap;">${esc(r.comment)}</div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
+            </div>
+          `).join('')}
+        ${!state.showAllReviews && state.reviews.length > REVIEWS_COLLAPSED_COUNT ? `
+          <div class="btn-row" style="justify-content:flex-start;"><span class="btn-ghost btn btn-sm" data-action="show-all-reviews">Xem thêm ${state.reviews.length - REVIEWS_COLLAPSED_COUNT} đánh giá →</span></div>
+        ` : ''}
+      </div>
     `;
   }
 
@@ -206,10 +279,18 @@ function render(container, ctx){
     container.querySelectorAll('[data-goto-partner]').forEach(el=>{
       el.onclick = ()=>{ window.__crmOpenCustomerId = el.getAttribute('data-goto-partner'); location.hash = 'doi-tac'; };
     });
+
+    const rvComment = container.querySelector('#rv-comment');
+    if(rvComment) rvComment.oninput = ()=>{ state.reviewComment = rvComment.value; };
+    const rvSubmit = container.querySelector('[data-action="submit-review"]');
+    if(rvSubmit) rvSubmit.onclick = submitReview;
+    const showAllBtn = container.querySelector('[data-action="show-all-reviews"]');
+    if(showAllBtn) showAllBtn.onclick = ()=>{ state.showAllReviews = true; draw(); };
   }
 
   draw();
   load();
+  loadReviews();
 }
 
 window.Modules = window.Modules || {};

@@ -16,7 +16,14 @@ const NAV = [
   { key:'quan-tri-hub', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin' — gộp Thành viên/Tài chính/Thông báo, xem quan-tri-hub.js
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', reviewPromptEligible:false };
+// Điều kiện hiện popup xin đánh giá (2026-09-07, "quản trị bên xây nhân hiệu có gì bên crm có đó")
+// — đã dùng có kết quả thật (từ 3 khách đã lưu) HOẶC đã dùng app đủ lâu (từ 3 ngày), khớp đúng
+// ngưỡng nhan-hieu/js/app-shell.js đang dùng.
+const CRM_REVIEW_PROMPT_MIN_CUSTOMERS = 3;
+const CRM_REVIEW_PROMPT_MIN_DAYS = 3;
+const CRM_REVIEW_MIN_WORDS_FOR_REWARD = 50;
+const CRM_REVIEW_REWARD_LUOT = 20;
 
 // Chương trình giới thiệu (2026-09-01, "làm tương tự như web xây nhân hiệu") — bắt lấy ?ref=<mã>
 // ngay khi vào web (kể cả trước khi đăng ký/đăng nhập) và lưu tạm vào localStorage, tới lúc signUp()
@@ -121,6 +128,87 @@ function maybeCheckCrmAnnouncementsOnce(){
   }
 }
 
+// Tính điều kiện 1 LẦN lúc vào app (giống maybeCheckCrmAnnouncementsOnce) — nếu đã "dismissed" (đã
+// bấm Để sau HOẶC đã từng gửi đánh giá, xem submit-review.js) thì bỏ qua luôn, khỏi tốn thêm 1 truy
+// vấn đếm khách mỗi lần vào app cho người chắc chắn không cần hỏi lại nữa.
+async function loadReviewPromptEligibility(){
+  if(!AppState.user || !AppState.profile) { AppState.reviewPromptEligible = false; return; }
+  if(AppState.profile.crm_review_prompt_dismissed) { AppState.reviewPromptEligible = false; return; }
+  const daysSinceSignup = AppState.profile.created_at
+    ? (Date.now() - new Date(AppState.profile.created_at).getTime()) / 86400000 : 0;
+  let qualifies = daysSinceSignup >= CRM_REVIEW_PROMPT_MIN_DAYS;
+  if(!qualifies){
+    const { count } = await supabaseClient.from('crm_customers').select('id', { count:'exact', head:true }).eq('user_id', AppState.user.id);
+    qualifies = (count || 0) >= CRM_REVIEW_PROMPT_MIN_CUSTOMERS;
+  }
+  AppState.reviewPromptEligible = qualifies;
+}
+
+// Popup xin cảm nhận — CHỈ hiện nếu không có overlay nào khác đang mở (thông báo tính năng/cài app)
+// để tránh chồng 2 popup cùng lúc.
+function maybeShowReviewPrompt(){
+  if(!AppState.reviewPromptEligible) return;
+  if(document.getElementById('crm-announcement-overlay') || document.getElementById('install-prompt-overlay') || document.getElementById('review-prompt-overlay')) return;
+  AppState.reviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang, không hiện lại nếu re-render
+
+  const overlay = document.createElement('div');
+  overlay.id = 'review-prompt-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Trợ Lý AI Tư Vấn &amp; CRM 🎉</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${CRM_REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${CRM_REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái 3-5 điều bạn thích nhất — tư vấn nhanh hơn bao nhiêu, đỡ quên follow khách thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần...</div>
+      <textarea id="rp-comment" placeholder="Ví dụ: 1. Tư vấn nhanh hơn hẳn, không còn quên follow khách 2. AI đọc ảnh chat và tự lưu hồ sơ khách chính xác 3. Sổ tay tư vấn giúp mình biết nên hỏi gì tiếp theo..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+      <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
+        <span id="rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="rp-submit" class="btn btn-sm">Gửi đánh giá</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close(){ overlay.remove(); }
+  async function dismissServerSide(){
+    if(AppState.profile) AppState.profile.crm_review_prompt_dismissed = true;
+    try{ await supabaseClient.rpc('set_crm_review_prompt_dismissed'); } catch(e){}
+  }
+  overlay.querySelector('#rp-skip').onclick = async ()=>{ close(); await dismissServerSide(); };
+
+  overlay.querySelector('#rp-submit').onclick = async ()=>{
+    const textarea = overlay.querySelector('#rp-comment');
+    const errorEl = overlay.querySelector('#rp-error');
+    const comment = textarea.value.trim();
+    if(!comment){ errorEl.textContent = 'Chưa nhập cảm nhận.'; errorEl.style.display = 'block'; return; }
+    const btn = overlay.querySelector('#rp-submit');
+    btn.disabled = true; btn.textContent = 'Đang gửi…';
+    try{
+      const data = await callApi('/api/submit-review', { comment, app: 'tro-ly-crm' });
+      if(window.onCrmReviewSubmitted) window.onCrmReviewSubmitted(data);
+      close();
+    } catch(e){
+      errorEl.textContent = e.message || 'Không gửi được, thử lại giúp mình.';
+      errorEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Gửi đánh giá';
+    }
+  };
+}
+// Cập nhật ngay số lượt hiển thị ở sidebar sau khi gửi đánh giá được thưởng — gọi từ trang-chu.js's
+// submitReview() KHÔNG được vì popup này độc lập với route hiện tại (có thể hiện ở bất kỳ trang nào).
+window.onCrmReviewSubmitted = function(result){
+  const p = AppState.profile;
+  if(!p) return;
+  p.crm_review_prompt_dismissed = true;
+  if(result && result.rewarded){
+    const month = new Date().toISOString().slice(0,7);
+    if(p.crm_ai_month !== month){ p.crm_ai_month = month; p.crm_ai_uses = 0; p.crm_ai_bonus = 0; }
+    p.crm_ai_bonus = (p.crm_ai_bonus||0) + (result.rewardLuot || CRM_REVIEW_REWARD_LUOT);
+    p.crm_review_reward_given = true;
+  }
+  const el = document.getElementById('sidebar-foot-info');
+  if(el) el.innerHTML = sidebarFootHtml();
+};
+
 async function initApp(){
   const root = document.getElementById('app');
   root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
@@ -133,6 +221,7 @@ async function initApp(){
     renderApp();
     maybeCheckCrmAnnouncementsOnce();
     maybeTriggerInstallPromptOnce();
+    loadReviewPromptEligibility().then(()=> setTimeout(maybeShowReviewPrompt, 2000));
   } else {
     renderAuthScreen();
   }
@@ -154,6 +243,7 @@ async function initApp(){
         renderApp();
         maybeCheckCrmAnnouncementsOnce();
         maybeTriggerInstallPromptOnce();
+        loadReviewPromptEligibility().then(()=> setTimeout(maybeShowReviewPrompt, 2000));
       });
     } else if(event === 'SIGNED_OUT'){
       AppState.user = null;
