@@ -116,10 +116,19 @@ const NHANH_GUIDES = {
 // Bước kể chuyện cần DÙNG THẬT câu chuyện của người vận hành thay vì placeholder chung chung (chị
 // Quỳnh yêu cầu 2026-08-30) — ưu tiên free_story (tự viết) > trích các câu trả lời wizard liên quan
 // nhất (q1/q6/q20) > nếu chưa có gì thì trả về null để UI hiện lời mời đi điền "Câu Chuyện Của Bạn".
-function storyStepContent(cauChuyen){
+// 2026-09-07: câu chuyện giờ chia theo lĩnh vực (xem cau-chuyen.js) — lấy đúng câu chuyện khớp
+// nhánh A/D đang xem sổ tay (nhanhKey), rơi về 'chung' (dòng cũ trước khi có phân loại) rồi bất kỳ
+// câu chuyện nào có sẵn nếu không tìm được câu khớp đúng lĩnh vực.
+const NHANH_TO_STORY_CATEGORY = { A:'suc_khoe', D:'kinh_doanh' };
+function storyStepContent(cauChuyen, nhanhKey){
   if(!cauChuyen || cauChuyen.nguon !== 'cau-chuyen') return null;
-  if(cauChuyen.free_story && cauChuyen.free_story.trim()) return cauChuyen.free_story.trim();
-  const a = cauChuyen.answers || {};
+  const stories = cauChuyen.stories || [];
+  if(!stories.length) return null;
+  const wantCategory = NHANH_TO_STORY_CATEGORY[nhanhKey];
+  const story = stories.find(s=>s.category===wantCategory) || stories.find(s=>s.category==='chung') || stories[0];
+  if(!story) return null;
+  if(story.free_story && story.free_story.trim()) return story.free_story.trim();
+  const a = story.answers || {};
   const parts = [a.q1, a.q6, a.q20].map(v => (v||'').trim()).filter(Boolean);
   return parts.length ? parts.join('\n\n') : null;
 }
@@ -179,7 +188,7 @@ function render(container, ctx){
   }
 
   function stepExampleText(step, group){
-    if(step.dynamic === 'story') return storyStepContent(state.cauChuyen) || step.fallback;
+    if(step.dynamic === 'story') return storyStepContent(state.cauChuyen, state.guideNhanh) || step.fallback;
     if(step.dynamic === 'case'){
       const found = caseStepContent(state.caseStudies, group && group.caseNhom);
       return found ? found.text : step.fallback;
@@ -209,10 +218,14 @@ function render(container, ctx){
     // Ưu tiên hồ sơ "Câu Chuyện Của Bạn" riêng của app này (đúng bộ câu hỏi trên landing page) —
     // chỉ dùng lùi về Định Vị AI (positioning_results, dùng chung Xây Nhân Hiệu) nếu chưa điền hồ sơ
     // riêng (xem cau-chuyen.js — 2 nguồn không bắt buộc cùng lúc).
-    const [draft, sanPhamDraft, { data: story }, { data: positioning }, { data: caseStudies }] = await Promise.all([
+    const [draft, sanPhamDraft, { data: storyRows }, { data: positioning }, { data: caseStudies }] = await Promise.all([
       loadModuleDraft(ctx, DRAFT_KEY),
       loadModuleDraft(ctx, CONTEXT_DRAFT_KEY),
-      ctx.supabase.from('crm_story_profiles').select('*').eq('user_id', ctx.user.id).maybeSingle(),
+      // Tối đa 2 dòng (1 mỗi lĩnh vực Sức khỏe/Kinh doanh, xem cau-chuyen.js) — gửi CẢ 2 (nếu có nội
+      // dung) cho AI, để AI tự chọn đúng câu chuyện theo nhánh A/D đang tư vấn (xem buildContentBlocks
+      // ở api/crm-tuvan.js). Không lọc theo category cụ thể ở đây — 'chung' (dòng cũ trước khi có
+      // phân loại, nếu người dùng chưa từng vào cau-chuyen.js để phân loại lại) vẫn được gửi kèm.
+      ctx.supabase.from('crm_story_profiles').select('*').eq('user_id', ctx.user.id),
       ctx.supabase.from('positioning_results').select('luot1').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('crm_case_studies').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending: false }),
     ]);
@@ -223,9 +236,11 @@ function render(container, ctx){
     }
     if(sanPhamDraft && sanPhamDraft.text) state.sanPhamText = sanPhamDraft.text;
     state.caseStudies = caseStudies || [];
-    const hasFreeStory = story && story.free_story && String(story.free_story).trim();
-    const hasWizardStory = story && story.answers && Object.values(story.answers).some(v=>String(v||'').trim());
-    if(hasFreeStory || hasWizardStory) state.cauChuyen = { nguon:'cau-chuyen', ten: story.ten, zalo: story.zalo, links: story.links, answers: story.answers, free_story: story.free_story || '' };
+    function hasStoryContent(s){
+      return (s.free_story && String(s.free_story).trim()) || (s.answers && Object.values(s.answers).some(v=>String(v||'').trim()));
+    }
+    const filledStories = (storyRows || []).filter(hasStoryContent);
+    if(filledStories.length) state.cauChuyen = { nguon:'cau-chuyen', stories: filledStories.map(s=>({ category: s.category, ten: s.ten, zalo: s.zalo, links: s.links, answers: s.answers, free_story: s.free_story || '' })) };
     else if(positioning && positioning.luot1) state.cauChuyen = { nguon:'dinh-vi', luot1: positioning.luot1 };
     else state.cauChuyen = null;
     draw();
@@ -344,7 +359,7 @@ function render(container, ctx){
               ${currentGuideGroup().steps.map((s,i)=>{
                 const group = currentGuideGroup();
                 const exampleText = stepExampleText(s, group);
-                const isStoryEmpty = s.dynamic === 'story' && !storyStepContent(state.cauChuyen);
+                const isStoryEmpty = s.dynamic === 'story' && !storyStepContent(state.cauChuyen, state.guideNhanh);
                 const isCaseEmpty = s.dynamic === 'case' && !caseStepContent(state.caseStudies, group.caseNhom);
                 const isGiaEmpty = s.dynamic === 'gia' && !exampleText;
                 const caseImages = (s.dynamic === 'case' && !isCaseEmpty) ? caseStepContent(state.caseStudies, group.caseNhom).images : [];

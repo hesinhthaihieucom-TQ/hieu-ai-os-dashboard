@@ -5,7 +5,19 @@
 // trên landing page (chỉ thu thập, gửi thẳng). Nếu người dùng đã có positioning_results (Định Vị AI
 // bên Xây Nhân Hiệu, cùng Supabase project) thì vẫn cho họ CHỌN dùng luôn câu chuyện cá nhân trong đó
 // thay vì bắt điền lại — không bắt buộc.
+//
+// Phân loại Sức khỏe/Kinh doanh (2026-09-07, chị Quỳnh: "phải có mục phân loại... để khi AI tư vấn
+// còn chọn câu chuyện phù hợp để kể cho khách hay đối tác") — khớp ĐÚNG 2 nhánh A/D đã có sẵn trong
+// api/crm-tuvan.js (nhánh A = Sức khỏe, nhánh D = Kinh doanh/Đối tác). Mỗi user giờ có TỐI ĐA 2 hồ
+// sơ câu chuyện (1 mỗi category), xem crm_story_profiles.category ở schema_tro_ly_crm.sql — Tư Vấn
+// AI được gửi CẢ 2 (nếu có) kèm nhãn category, tự chọn đúng câu chuyện theo nhánh đang tư vấn (xem
+// buildContentBlocks ở api/crm-tuvan.js).
 (function(){
+
+const CATEGORIES = [
+  { key:'suc_khoe', label:'🏥 Sức khỏe', short:'Sức khỏe' },
+  { key:'kinh_doanh', label:'💼 Kinh doanh', short:'Kinh doanh' },
+];
 
 const QUESTIONS = [
   {id:'ten', group:'lien-he', label:'Tên bạn', type:'text', hint:'Để AI xưng hô đúng khi tư vấn thay bạn.'},
@@ -57,19 +69,18 @@ const GROUPS = [
   {key:'g10', title:'15. Cách AI nên kể câu chuyện của bạn'},
 ];
 
-const WIZARD_DRAFT_KEY = 'cau-chuyen-wizard';
-
 // Chỉ trỏ vào màn hình 'intro' (2 lựa chọn cách kể chuyện) — các màn khác (wizard/free-write/
 // existing/done) chỉ hiện tuỳ trạng thái, không phải màn hình cố định mọi người đều thấy.
 const TOUR_STEPS = [
-  { selector: '[data-action="start"]', title: 'Trả lời từng câu hỏi', text: 'AI hỏi từng câu 1 (20 câu, chia nhóm rõ ràng) — phù hợp nếu bạn chưa biết bắt đầu kể từ đâu, mục nào chưa có thì để trống.' },
-  { selector: '[data-action="start-free"]', title: 'Tự viết câu chuyện', text: 'Viết tự do 1 đoạn theo đúng cách bạn muốn kể — phù hợp nếu bạn đã quen kể câu chuyện này rồi. Dù chọn cách nào, Tư Vấn AI cũng sẽ dùng đúng câu chuyện thật này khi tư vấn khách.' },
+  { selector: '.tab-row', title: 'Phân loại câu chuyện', text: 'Mỗi câu chuyện thuộc 1 lĩnh vực — Sức khỏe hoặc Kinh doanh. Bạn có thể điền cả 2 nếu tư vấn cả 2 mảng, Tư Vấn AI sẽ tự chọn đúng câu chuyện theo đúng nhánh đang tư vấn với khách.' },
+  { selector: '[data-action="start"]', title: 'Trả lời từng câu hỏi', text: 'AI hỏi từng câu 1 (20 câu, chia nhóm rõ ràng) — phù hợp nếu bạn chưa biết bắt đầu kể từ đâu.' },
+  { selector: '[data-action="start-free"]', title: 'Tự viết câu chuyện', text: 'Viết tự do 1 đoạn theo đúng cách bạn muốn kể — phù hợp nếu bạn đã quen kể câu chuyện này rồi.' },
 ];
 
 function render(container, ctx){
   const state = {
-    screen:'loading', qIndex:0, answers:{}, storyProfile:null, positioning:null,
-    saving:false, error:null,
+    screen:'loading', category: CATEGORIES[0].key, qIndex:0, answers:{}, storyProfile:null, positioning:null,
+    saving:false, error:null, legacyStory:null,
     // Tự viết tự do (2026-08-30, chị Quỳnh chốt: "cho người dùng tự viết hoặc trả lời câu hỏi") —
     // free_story có dữ liệu thì ưu tiên dùng thẳng làm câu chuyện cá nhân, tách biệt với answers
     // (chế độ trả lời từng câu) — không bắt buộc dùng cùng lúc, xem schema_full.sql.
@@ -77,7 +88,8 @@ function render(container, ctx){
   };
 
   function draw(){ container.innerHTML = screenHtml(); bind(); }
-  function persistDraft(){ saveModuleDraft(ctx, WIZARD_DRAFT_KEY, { qIndex: state.qIndex, answers: state.answers }); }
+  function draftKey(){ return 'cau-chuyen-wizard-' + state.category; }
+  function persistDraft(){ saveModuleDraft(ctx, draftKey(), { qIndex: state.qIndex, answers: state.answers }); }
 
   function emptyAnswers(){
     const out = {};
@@ -86,10 +98,24 @@ function render(container, ctx){
     return out;
   }
 
+  function resetStateForNewCategory(){
+    state.qIndex = 0; state.answers = {}; state.storyProfile = null; state.error = null;
+    state.freeStory = ''; state.freeTen = ''; state.freeZalo = ''; state.freeLinks = ''; state.confirmMsg = null;
+  }
+
+  function switchCategory(newCat){
+    if(newCat === state.category) return;
+    state.category = newCat;
+    resetStateForNewCategory();
+    state.screen = 'loading';
+    boot();
+  }
+
   async function boot(){
     draw();
-    const [{ data: story }, { data: positioning }] = await Promise.all([
-      ctx.supabase.from('crm_story_profiles').select('*').eq('user_id', ctx.user.id).maybeSingle(),
+    const [{ data: story }, { data: legacyStory }, { data: positioning }] = await Promise.all([
+      ctx.supabase.from('crm_story_profiles').select('*').eq('user_id', ctx.user.id).eq('category', state.category).maybeSingle(),
+      ctx.supabase.from('crm_story_profiles').select('*').eq('user_id', ctx.user.id).eq('category', 'chung').maybeSingle(),
       ctx.supabase.from('positioning_results').select('luot1').eq('user_id', ctx.user.id).maybeSingle(),
     ]);
     state.positioning = (positioning && positioning.luot1) ? positioning : null;
@@ -106,13 +132,26 @@ function render(container, ctx){
       return;
     }
 
+    // Câu chuyện cũ lưu từ TRƯỚC khi có phân loại (category='chung', mặc định khi thêm cột) — hỏi 1
+    // LẦN xem thuộc lĩnh vực nào rồi chuyển hẳn category của đúng dòng đó, không tạo bản sao mới.
+    const legacyHasContent = legacyStory && (
+      (legacyStory.answers && Object.keys(legacyStory.answers).some(k=>String(legacyStory.answers[k]||'').trim())) ||
+      (legacyStory.free_story && legacyStory.free_story.trim())
+    );
+    if(legacyHasContent){
+      state.legacyStory = legacyStory;
+      state.screen = 'reclassify-legacy';
+      draw();
+      return;
+    }
+
     if(state.positioning){
       state.screen = 'offer-dinh-vi';
       draw();
       return;
     }
 
-    const draft = await loadModuleDraft(ctx, WIZARD_DRAFT_KEY);
+    const draft = await loadModuleDraft(ctx, draftKey());
     if(draft && draft.answers && Object.values(draft.answers).some(v=>String(v||'').trim())){
       state.answers = { ...emptyAnswers(), ...draft.answers };
       state.qIndex = Math.min(draft.qIndex||0, QUESTIONS.length-1);
@@ -124,6 +163,19 @@ function render(container, ctx){
     draw();
   }
 
+  async function reclassifyLegacy(newCat){
+    state.saving = true; draw();
+    const { error } = await ctx.supabase.from('crm_story_profiles')
+      .update({ category: newCat })
+      .eq('user_id', ctx.user.id).eq('category', 'chung');
+    state.saving = false;
+    if(error){ state.error = error.message; draw(); return; }
+    state.legacyStory = null;
+    state.category = newCat;
+    state.screen = 'loading';
+    boot();
+  }
+
   function startWizard(){
     if(!state.answers || !Object.keys(state.answers).length) state.answers = emptyAnswers();
     state.qIndex = 0;
@@ -131,15 +183,46 @@ function render(container, ctx){
     draw();
   }
 
+  function tabRowHtml(){
+    return `
+      <div class="tab-row">
+        ${CATEGORIES.map(c=>`<div class="tab-btn ${state.category===c.key?'active':''}" data-category-tab="${c.key}">${esc(c.label)}</div>`).join('')}
+      </div>
+    `;
+  }
+
   function screenHtml(){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div></div>`;
-    if(state.screen==='offer-dinh-vi') return offerDinhViHtml();
-    if(state.screen==='existing') return existingHtml();
-    if(state.screen==='intro') return introHtml();
-    if(state.screen==='wizard') return wizardHtml();
-    if(state.screen==='free-write') return freeWriteHtml();
-    if(state.screen==='done') return doneHtml();
+    if(state.screen==='reclassify-legacy') return reclassifyLegacyHtml();
+    if(state.screen==='offer-dinh-vi') return tabRowHtml() + offerDinhViHtml();
+    if(state.screen==='existing') return tabRowHtml() + existingHtml();
+    if(state.screen==='intro') return tabRowHtml() + introHtml();
+    if(state.screen==='wizard') return tabRowHtml() + wizardHtml();
+    if(state.screen==='free-write') return tabRowHtml() + freeWriteHtml();
+    if(state.screen==='done') return tabRowHtml() + doneHtml();
     return '';
+  }
+
+  function truncate(s, maxLen){
+    s = String(s||'').trim();
+    return s.length > maxLen ? s.slice(0, maxLen).trim() + '…' : s;
+  }
+
+  function reclassifyLegacyHtml(){
+    const isFree = !!(state.legacyStory.free_story && state.legacyStory.free_story.trim());
+    const preview = isFree ? state.legacyStory.free_story : (state.legacyStory.answers && state.legacyStory.answers.q1) || '';
+    return `
+      <div class="page-head" style="text-align:center;">
+        <div class="tag">Câu Chuyện Của Bạn</div>
+        <h1>Câu chuyện đã lưu trước đây là về lĩnh vực gì?</h1>
+        <p>Từ nay câu chuyện chia theo lĩnh vực (Sức khỏe / Kinh doanh) để Tư Vấn AI chọn đúng câu chuyện khi tư vấn khách — chọn đúng lĩnh vực của câu chuyện dưới đây, chỉ hỏi 1 lần.</p>
+      </div>
+      ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
+      <div class="section highlight"><h3>Câu chuyện đã lưu</h3><div class="body">${esc(truncate(preview, 300))}</div></div>
+      <div class="btn-row">
+        ${CATEGORIES.map(c=>`<button class="btn${c.key==='kinh_doanh'?'-ghost':''} btn" data-reclassify="${c.key}" ${state.saving?'disabled':''}>${esc(c.label)}</button>`).join('')}
+      </div>
+    `;
   }
 
   function offerDinhViHtml(){
@@ -147,9 +230,9 @@ function render(container, ctx){
     const cc = r.cau_chuyen_ca_nhan || {};
     return `
       <div class="page-head" style="text-align:center;">
-        <div class="tag">Câu Chuyện Của Bạn</div>
+        <div class="tag">Câu Chuyện Của Bạn — ${esc(CATEGORIES.find(c=>c.key===state.category).short)}</div>
         <h1>Bạn đã có hồ sơ Định Vị bên Xây Nhân Hiệu</h1>
-        <p>Trong đó đã có sẵn phần câu chuyện cá nhân. Bạn muốn dùng luôn, hay tự điền riêng 1 bản dành đúng cho việc tư vấn bán hàng ở đây?</p>
+        <p>Trong đó đã có sẵn phần câu chuyện cá nhân. Bạn muốn dùng luôn cho lĩnh vực ${esc(CATEGORIES.find(c=>c.key===state.category).short)}, hay tự điền riêng 1 bản?</p>
       </div>
       ${cc.cau_chuyen ? `<div class="section"><h3>Câu chuyện cá nhân (từ Định Vị AI)</h3><div class="body">${esc(cc.cau_chuyen)}</div></div>` : ''}
       <div class="btn-row">
@@ -164,9 +247,9 @@ function render(container, ctx){
     const isFree = !!(state.storyProfile && state.storyProfile.free_story && state.storyProfile.free_story.trim());
     return `
       <div class="page-head" style="text-align:center;">
-        <div class="tag">Câu Chuyện Của Bạn</div>
+        <div class="tag">Câu Chuyện Của Bạn — ${esc(CATEGORIES.find(c=>c.key===state.category).short)}</div>
         <h1>Hồ sơ của bạn đã có sẵn</h1>
-        <p>Tư Vấn AI sẽ tự dùng đúng câu chuyện thật này khi tư vấn khách — không cần làm gì thêm.</p>
+        <p>Tư Vấn AI sẽ tự dùng đúng câu chuyện này khi tư vấn khách/đối tác về ${esc(CATEGORIES.find(c=>c.key===state.category).short.toLowerCase())} — không cần làm gì thêm.</p>
       </div>
       ${state.confirmMsg?`<div class="hint-box">${esc(state.confirmMsg)}</div>`:''}
       ${isFree
@@ -187,9 +270,9 @@ function render(container, ctx){
     return `
       <span class="tour-trigger" id="cc-start-tour">❓ Hướng dẫn</span>
       <div class="page-head" style="text-align:center;">
-        <div class="tag">Câu Chuyện Của Bạn</div>
+        <div class="tag">Câu Chuyện Của Bạn — ${esc(CATEGORIES.find(c=>c.key===state.category).short)}</div>
         <h1>Kể câu chuyện thật của bạn</h1>
-        <p>Chọn 1 trong 2 cách — đều phục vụ cùng mục đích: cho Tư Vấn AI (và sổ tay tư vấn) dữ liệu thật để kể chuyện khi chốt khách.</p>
+        <p>Chọn 1 trong 2 cách — đều phục vụ cùng mục đích: cho Tư Vấn AI (và sổ tay tư vấn) dữ liệu thật để kể chuyện khi chốt khách/đối tác về ${esc(CATEGORIES.find(c=>c.key===state.category).short.toLowerCase())}.</p>
       </div>
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       <div class="section" style="cursor:pointer;" data-action="start">
@@ -206,7 +289,7 @@ function render(container, ctx){
   function freeWriteHtml(){
     return `
       <div class="page-head" style="text-align:center;">
-        <div class="tag">Câu Chuyện Của Bạn</div>
+        <div class="tag">Câu Chuyện Của Bạn — ${esc(CATEGORIES.find(c=>c.key===state.category).short)}</div>
         <h1>Tự viết câu chuyện của bạn</h1>
         <p>Viết tự do — nền tảng trước đây, giai đoạn khó khăn, điều gì khiến bạn bắt đầu, kết quả/sự thay đổi tới giờ... Không cần viết hay, chỉ cần đúng sự thật, càng chi tiết Tư Vấn AI càng kể thuyết phục hơn.</p>
       </div>
@@ -248,7 +331,7 @@ function render(container, ctx){
       : `<textarea id="qinput" placeholder="${esc(q.placeholder||'Mục này chưa có thì để trống...')}">${esc(val)}</textarea>`;
 
     return `
-      <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;">
+      <div style="display:flex;gap:4px;margin-bottom:10px;margin-top:16px;flex-wrap:wrap;">
         ${GROUPS.map((g,i)=>`<span style="flex:1;min-width:8px;height:5px;border-radius:3px;background:${i<groupIndex?'var(--accent)':i===groupIndex?'var(--gold)':'var(--line)'};"></span>`).join('')}
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
@@ -268,6 +351,13 @@ function render(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-category-tab]').forEach(el=>{
+      el.onclick = ()=>switchCategory(el.getAttribute('data-category-tab'));
+    });
+    container.querySelectorAll('[data-reclassify]').forEach(el=>{
+      el.onclick = ()=>reclassifyLegacy(el.getAttribute('data-reclassify'));
+    });
+
     const tourBtn = container.querySelector('#cc-start-tour');
     if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
 
@@ -327,12 +417,12 @@ function render(container, ctx){
     state.saving = true; draw();
     const { ten, zalo, links, ...answers } = state.answers;
     const { error } = await ctx.supabase.from('crm_story_profiles').upsert({
-      user_id: ctx.user.id, ten: ten||null, zalo: zalo||null, links: links||null,
+      user_id: ctx.user.id, category: state.category, ten: ten||null, zalo: zalo||null, links: links||null,
       answers, updated_at: new Date().toISOString(),
-    }, { onConflict:'user_id' });
+    }, { onConflict:'user_id,category' });
     state.saving = false;
     if(error){ state.error = error.message; state.screen = 'wizard'; draw(); return; }
-    await clearModuleDraft(ctx, WIZARD_DRAFT_KEY);
+    await clearModuleDraft(ctx, draftKey());
     state.screen = 'done';
     draw();
   }
@@ -341,9 +431,9 @@ function render(container, ctx){
     if(!state.freeStory.trim()){ state.error = 'Viết ít nhất vài dòng trước khi lưu.'; draw(); return; }
     state.saving = true; state.error = null; draw();
     const { error } = await ctx.supabase.from('crm_story_profiles').upsert({
-      user_id: ctx.user.id, ten: state.freeTen.trim()||null, zalo: state.freeZalo.trim()||null,
+      user_id: ctx.user.id, category: state.category, ten: state.freeTen.trim()||null, zalo: state.freeZalo.trim()||null,
       free_story: state.freeStory.trim(), updated_at: new Date().toISOString(),
-    }, { onConflict:'user_id' });
+    }, { onConflict:'user_id,category' });
     state.saving = false;
     if(error){ state.error = error.message; draw(); return; }
     state.screen = 'done';

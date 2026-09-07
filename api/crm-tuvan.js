@@ -179,17 +179,35 @@ function buildContentBlocks({ todayIso, profile, customer, sanPhamDichVu, cauChu
   if (sanPhamDichVu && String(sanPhamDichVu).trim()) {
     contextText += `\nTHÔNG TIN SẢN PHẨM/DỊCH VỤ (chỉ dùng đúng giá/gói trong này, không bịa thêm):\n${sanPhamDichVu.trim()}\n`;
   }
-  if (cauChuyen && cauChuyen.nguon === 'cau-chuyen' && cauChuyen.free_story && String(cauChuyen.free_story).trim()) {
-    // Chế độ "tự viết tự do" (2026-08-30) — ưu tiên dùng thẳng, không xen với bộ câu hỏi q1-q20 vì
-    // 2 chế độ không bắt buộc dùng cùng lúc (xem cau-chuyen.js).
-    contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (tự viết tự do — dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${String(cauChuyen.free_story).trim()}\n`;
-  } else if (cauChuyen && cauChuyen.nguon === 'cau-chuyen' && cauChuyen.answers) {
-    const lines = Object.keys(STORY_QUESTION_LABELS).map((id) => {
-      const val = cauChuyen.answers[id] ? String(cauChuyen.answers[id]).trim() : '';
-      return val ? `- ${STORY_QUESTION_LABELS[id]}: ${val}` : null;
+  // 2026-09-07, chị Quỳnh: "phải có mục phân loại... để khi AI tư vấn còn chọn câu chuyện phù hợp
+  // để kể cho khách hay đối tác" — câu chuyện giờ chia theo lĩnh vực (category 'suc_khoe'/
+  // 'kinh_doanh', khớp ĐÚNG nhánh A/D ở trên), có thể có CẢ 2 cùng lúc. Gửi hết cho AI kèm nhãn rõ
+  // lĩnh vực, để AI TỰ CHỌN đúng câu chuyện khớp nhánh đang tư vấn — không chọn hộ ở phía client vì
+  // nhánh A/D nhiều khi chỉ xác định rõ SAU khi đọc xong đoạn chat này.
+  const CATEGORY_LABEL = { suc_khoe: 'SỨC KHỎE (nhánh A)', kinh_doanh: 'KINH DOANH/ĐỐI TÁC (nhánh D)', chung: 'CHUNG (chưa phân loại lĩnh vực)' };
+  function storyTextFor(story) {
+    if (story.free_story && String(story.free_story).trim()) return String(story.free_story).trim();
+    if (story.answers) {
+      const lines = Object.keys(STORY_QUESTION_LABELS).map((id) => {
+        const val = story.answers[id] ? String(story.answers[id]).trim() : '';
+        return val ? `- ${STORY_QUESTION_LABELS[id]}: ${val}` : null;
+      }).filter(Boolean);
+      if (lines.length) return lines.join('\n');
+    }
+    return null;
+  }
+  if (cauChuyen && cauChuyen.nguon === 'cau-chuyen' && Array.isArray(cauChuyen.stories) && cauChuyen.stories.length) {
+    const blocks = cauChuyen.stories.map((story) => {
+      const text = storyTextFor(story);
+      if (!text) return null;
+      const label = CATEGORY_LABEL[story.category] || CATEGORY_LABEL.chung;
+      return `--- CÂU CHUYỆN LĨNH VỰC ${label} ---\n${text}`;
     }).filter(Boolean);
-    if (lines.length) {
-      contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần):\n${lines.join('\n')}\n`;
+    if (blocks.length) {
+      const chooseNote = blocks.length > 1
+        ? ' Người vận hành có NHIỀU câu chuyện theo từng lĩnh vực — đọc kỹ đoạn chat để xác định đang tư vấn nhánh nào (A=Sức khỏe/D=Kinh doanh), rồi CHỈ dùng đúng câu chuyện khớp lĩnh vực đó, không trộn 2 câu chuyện vào nhau.'
+        : '';
+      contextText += `\nCÂU CHUYỆN CÁ NHÂN CỦA NGƯỜI VẬN HÀNH (dùng để câu tư vấn gợi ý bám đúng giọng/câu chuyện thật nếu phù hợp, không bắt buộc nhắc mỗi lần).${chooseNote}\n${blocks.join('\n\n')}\n`;
     }
   } else if (cauChuyen && cauChuyen.nguon === 'dinh-vi' && cauChuyen.luot1) {
     const cc = cauChuyen.luot1.cau_chuyen_ca_nhan;
