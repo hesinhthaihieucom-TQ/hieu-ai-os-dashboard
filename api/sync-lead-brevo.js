@@ -5,15 +5,36 @@
 // Không yêu cầu đăng nhập (requireUser) vì lúc gọi có thể chưa có session thật (trường hợp bật xác
 // nhận email — signUp() chưa trả về session ngay) — endpoint chỉ nhận đúng email vừa đăng ký, không
 // có gì nhạy cảm nếu bị gọi lặp (Brevo tự cập nhật thay vì tạo trùng nhờ updateEnabled).
+const { supabaseAdmin } = require('./_lib/supabase-admin');
+const { sendPushToUser } = require('./_lib/push');
+
+// "khi ai đó đăng ký tài khoản mà chọn họ là học viên thì hãy có pop up thông báo cho tài khoản của
+// e để e duyệt" (chị Quỳnh 2026-09-07) — is_student hiện tự khai lúc đăng ký (giảm 20% gói 6/12
+// tháng), không có bước duyệt nào cả. Không CHẶN quyền lợi học viên áp dụng ngay (chị không yêu cầu
+// vậy), chỉ báo cho admin biết để tự kiểm tra/tắt is_student sau nếu thấy khai gian (đã có sẵn nút
+// "đổi" ở Quản trị, xem quan-tri.js). Best-effort — lỗi ở đây không được chặn luồng đăng ký thật.
+async function notifyAdminsOfNewStudent(email, fullName) {
+  try {
+    const resp = await supabaseAdmin('profiles?role=eq.admin&select=id');
+    const admins = resp.ok ? await resp.json() : [];
+    await Promise.all(admins.map(a => sendPushToUser(a.id, {
+      title: '🎓 Có người đăng ký chọn là học viên',
+      body: `${fullName || email} vừa đăng ký, tự khai là học viên (được giảm 20% gói 6/12 tháng) — vào Quản trị kiểm tra nếu cần.`,
+      url: './#quan-tri',
+    })));
+  } catch (e) { /* best-effort */ }
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) { res.status(200).json({ skipped: true, reason: 'BREVO_API_KEY chưa cấu hình' }); return; }
-
   const { email, full_name, is_student } = req.body || {};
   if (!email) { res.status(200).json({ skipped: true, reason: 'Thiếu email' }); return; }
+
+  if (is_student) await notifyAdminsOfNewStudent(email, full_name);
+
+  if (!apiKey) { res.status(200).json({ skipped: true, reason: 'BREVO_API_KEY chưa cấu hình' }); return; }
 
   try {
     const listIdEnv = process.env.BREVO_LIST_ID;
