@@ -481,9 +481,9 @@ function render(container, ctx){
       </div>
       ${state.saveError?`<div class="error-box" style="margin-bottom:14px;">${esc(state.saveError)}</div>`:''}
       <div class="card" style="margin-bottom:14px;background:var(--accent-soft);text-align:center;">
-        <h3 style="margin-bottom:6px;">🪄 Định vị xong rồi — để AI viết luôn cả tuần content</h3>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">AI viết bài HOÀN CHỈNH và xếp thẳng vào lịch tuần này, đúng trục/giọng văn bạn vừa định vị — cách nhanh nhất để thấy app làm được gì.</div>
-        <button class="btn" data-action="go-autofill-week">Xếp lịch cả tuần ngay</button>
+        <h3 style="margin-bottom:6px;">✅ Định vị xong rồi — bước tiếp theo</h3>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">Qua mục Lịch Đăng Bài để bắt đầu lên lịch — bấm "❓ Hướng dẫn" ở đó để xem cách dùng từng bước.</div>
+        <button class="btn" data-action="go-lich-dang">Sang Lịch Đăng Bài →</button>
       </div>
       <div class="card">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên kênh Facebook/TikTok</label>
@@ -776,11 +776,13 @@ function render(container, ctx){
     const viewResultsBtn = container.querySelector('[data-action="view-results"]');
     if(viewResultsBtn) viewResultsBtn.onclick = ()=>{ state.screen = 'results'; draw(); };
 
-    const goAutoFillBtn = container.querySelector('[data-action="go-autofill-week"]');
-    if(goAutoFillBtn) goAutoFillBtn.onclick = ()=>{
-      window.PendingAutoFillWeek = true;
-      location.hash = '#lich-dang';
-    };
+    // "đừng gợi ý họ dùng ai đẻ xếp lịch full tuần luôn, chỉ gợi ý họ sang mục lịch đăng bài và đọc
+    // hướng dẫn thui" (chị Quỳnh 2026-09-07) — trước đây bấm nút này TỰ ĐỘNG mở + nháy sáng khối "AI
+    // viết luôn" (window.PendingAutoFillWeek, xem revealAutoFillCard() ở lich-dang.js), đẩy người mới
+    // đi thẳng vào hành động tốn lượt thật ngay khi chưa kịp hiểu app. Giờ chỉ điều hướng SANG trang,
+    // để họ tự bấm "❓ Hướng dẫn" nếu cần — không tự mở/nháy sáng gì cả.
+    const goLichDangBtn = container.querySelector('[data-action="go-lich-dang"]');
+    if(goLichDangBtn) goLichDangBtn.onclick = ()=>{ location.hash = '#lich-dang'; };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
     if(redoFromDoneBtn) redoFromDoneBtn.onclick = async ()=>{
       await maybeReconstructAnswers();
