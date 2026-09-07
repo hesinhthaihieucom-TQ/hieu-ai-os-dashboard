@@ -68,6 +68,30 @@ function quotaAnomaly(p){
   return null;
 }
 
+// "có cách nào chặn được kiểu ng ta tự đăng ký 1 tài khoản xong lấy tài khoản đó giới thiệu để đc
+// giảm giá không" (chị Quỳnh 2026-09-07) — KHÔNG chặn cứng được (người cố tình gian có thể tự đặt
+// tên/email khác nhau, không có gì phân biệt tuyệt đối với 1 lượt giới thiệu thật) — chặn cứng theo
+// suy đoán còn dễ chặn NHẦM anh chị em/vợ chồng giới thiệu nhau thật. Thay vào đó CỜ NGHI VẤN cho
+// admin tự mắt kiểm tra, y hệt tinh thần "duyệt tay" đã dùng cho Kho Content/is_student — không tự
+// động thu hồi gì cả.
+function selfReferralSuspect(p, referrer){
+  if(!referrer) return null;
+  const nameA = (p.full_name||'').trim().toLowerCase();
+  const nameB = (referrer.full_name||'').trim().toLowerCase();
+  if(nameA && nameB && nameA === nameB) return 'Trùng họ tên với người giới thiệu';
+  // Phần trước @ (bỏ +alias kiểu ten+123@gmail.com) giống hệt nhau — dấu hiệu 1 người tạo nhiều địa chỉ.
+  const localOf = (email) => (email||'').split('@')[0].replace(/\+.*$/, '').toLowerCase();
+  const localA = localOf(p.email), localB = localOf(referrer.email);
+  if(localA && localB && localA === localB) return 'Email gần giống người giới thiệu (cùng tên trước @)';
+  // Người giới thiệu vừa tự tạo tài khoản ngay trước đó, CHƯA từng dùng gì (chưa trả phí, 0 lượt
+  // dùng thử) — dấu hiệu tài khoản chỉ tạo ra để giới thiệu chứ không dùng thật.
+  if(referrer.created_at && p.created_at && !referrer.has_paid && (referrer.trial_ai_uses||0)===0){
+    const gapMs = new Date(p.created_at).getTime() - new Date(referrer.created_at).getTime();
+    if(gapMs >= 0 && gapMs < 2*3600000) return 'Người giới thiệu vừa tạo tài khoản (chưa dùng gì) ngay trước khi giới thiệu';
+  }
+  return null;
+}
+
 function statusOf(p){
   if(p.role==='admin') return { label:'Admin', cls:'admin' };
   if(!p.access_until) return { label:'Chưa kích hoạt', cls:'none' };
@@ -243,6 +267,10 @@ function render(container, ctx){
     const counts = state.profiles.reduce((acc,p)=>{ const s=statusOf(p).cls; acc[s]=(acc[s]||0)+1; return acc; }, {});
     const mismatchCount = state.profiles.filter(hasPaidMismatch).length;
     const anomalies = state.profiles.map(p=>({ p, msg: quotaAnomaly(p) })).filter(x=>x.msg);
+    const referralSuspects = state.profiles
+      .map(p=>({ p, referrer: p.referred_by_ref_code ? state.profiles.find(x=>x.ref_code===p.referred_by_ref_code) : null }))
+      .map(x=>({ p:x.p, msg: x.referrer ? selfReferralSuspect(x.p, x.referrer) : null }))
+      .filter(x=>x.msg);
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán. Xem doanh thu/chi phí/lợi nhuận ở tab <b>Tài chính</b>.</p></div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt dùng thử (trọn đời) chốt riêng lúc mỗi người đăng ký, xem đúng số ở từng thẻ bên dưới (mục "Đã dùng") — hiện tại người đăng ký từ 24/8 là 50 lượt, người đăng ký trước đó là ${TRIAL_AI_LIMIT} lượt. Trả phí thì đổi sang <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> (bộ đếm khác, không cộng dồn với lượt dùng thử).</div>
@@ -260,6 +288,11 @@ function render(container, ctx){
           ${anomalies.map(x=>`<li>${esc(x.p.email||x.p.id.slice(0,8))}: ${esc(x.msg)}</li>`).join('')}
         </ul>
       </div>` : (state.profiles.some(p=>p.has_paid && p.role!=='admin') ? `<div class="hint-box" style="margin-bottom:20px;">✓ Đã rà soát chu kỳ lượt AI cho toàn bộ tài khoản trả phí — không thấy bất thường.</div>` : '')}
+      ${referralSuspects.length>0 ? `<div class="error-box" style="margin-bottom:20px;">⚠️ Nghi có <b>${referralSuspects.length} lượt giới thiệu</b> tự giới thiệu chính mình — chỉ là dấu hiệu, chị tự kiểm tra, không tự động chặn/thu hồi gì:
+        <ul style="margin:6px 0 0;padding-left:18px;">
+          ${referralSuspects.map(x=>`<li>${esc(x.p.email||x.p.id.slice(0,8))}: ${esc(x.msg)}</li>`).join('')}
+        </ul>
+      </div>` : ''}
 
       ${state.referralPartners.length ? `
       <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
@@ -344,7 +377,8 @@ function render(container, ctx){
                 const parts = [];
                 if(rc) parts.push(`đã giới thiệu <b>${rc.count}</b> người (tặng ${rc.luot} lượt)${rc.count>=PARTNER_REFERRAL_THRESHOLD?' 🌟 Hiểu Partner':''}`);
                 if(referrer) parts.push(`được giới thiệu bởi <b>${esc(referrer.email||referrer.ref_code)}</b>`);
-                return `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Giới thiệu: ${parts.join(' · ')}</div>`;
+                const suspect = referrer ? selfReferralSuspect(p, referrer) : null;
+                return `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Giới thiệu: ${parts.join(' · ')}${suspect?` <span style="color:var(--danger);font-weight:600;" title="Chỉ là nghi vấn, không tự động chặn/thu hồi gì — chị tự kiểm tra">⚠️ Nghi tự giới thiệu chính mình: ${esc(suspect)}</span>`:''}</div>`;
               })()}
             </div>
 
