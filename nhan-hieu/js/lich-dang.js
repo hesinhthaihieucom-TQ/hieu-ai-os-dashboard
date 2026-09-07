@@ -1138,7 +1138,17 @@ function render(container, ctx){
       }
       state.autoFillResult = parts.length ? parts.join(' — ') : (data.message || 'Không có gì để điền.');
       await Promise.all([loadEntries(), loadScheduledPostIds()]);
-    } catch(e){ state.autoFillError = e.message; }
+    } catch(e){
+      // "trừ lượt mà không thấy bài" (chị Dung báo qua Zalo, chị Quỳnh chuyển 2026-09-27) — hàm này
+      // gọi 1 chuỗi TỐI ĐA 9 lượt viết bài tuần tự, dễ vượt quá 280s (timeoutMs client) dù Vercel vẫn
+      // cho phép tới 300s (maxDuration ở vercel.json): client BỎ CUỘC và abort trước, nhưng function
+      // trên server KHÔNG bị huỷ theo — vẫn chạy tiếp, VẪN ghi bài + trừ lượt thật cho các ô đã kịp
+      // viết xong, chỉ là response không kịp về tới client nữa. Trước đây lỗi là dừng luôn, không tải
+      // lại lịch — lượt đã trừ THẬT nhưng người dùng không thấy bài đâu, tưởng lượt bị mất oan. Giờ dù
+      // lỗi (timeout hay bất kỳ lỗi nào khác) vẫn tải lại lịch để thấy đúng những gì server đã lưu được.
+      state.autoFillError = `${e.message} (nếu vừa chờ khá lâu — bài đã kịp viết xong trước khi lỗi vẫn được lưu vào lịch bên dưới, không mất lượt oan, chỉ là chưa viết hết được cả đợt, bấm "Bắt đầu viết" lại nếu còn ô trống)`;
+      await Promise.all([loadEntries(), loadScheduledPostIds()]).catch(()=>{});
+    }
     stopProgress(); releaseWakeLock();
     state.autoFillBusy = false;
     draw();
