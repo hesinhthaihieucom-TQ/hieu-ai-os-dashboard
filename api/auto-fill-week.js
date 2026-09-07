@@ -12,11 +12,13 @@
 // Giới hạn AN TOÀN mỗi lần bấm (không phải trần lượt, mà trần THỜI GIAN — đây là request đồng bộ,
 // người dùng đang chờ, viết hết nguyên 1 tuần 21 ô trong 1 lần gọi dễ vượt quá 300s Vercel cho
 // phép). Bấm nhiều lần nếu còn ô trống — trả về rõ số ô còn lại, không âm thầm bỏ sót.
-// 2026-09-07: hạ từ 9 xuống 1 — khách Dung báo trừ lượt thật (server vẫn viết tiếp sau khi client bỏ
-// cuộc vì quá 280s) nhưng bài không kịp hiện ra khi cả chuỗi 9 bài chưa xong đã bị coi là lỗi. Viết
-// ĐÚNG 1 bài/lần bấm thì luôn chạy xong nhanh (1 lượt gọi Claude), không bao giờ chạm ngưỡng timeout
-// nữa — đánh đổi là người dùng phải bấm nhiều lần hơn để lấp đầy cả tuần, đã báo rõ trong UI.
-const MAX_FILL_PER_CLICK = 1;
+// 2026-09-07: hạ từ 9 xuống 7 (chị Quỳnh chốt: "viết tầm 7 bài chứ, 3 lần là đủ" — khớp đúng 7 NGÀY
+// trong tuần, mỗi lần bấm lấp 1 bài/ngày, 3 bài/ngày thì bấm 3 lần là xong cả tuần) — khách Dung từng
+// báo trừ lượt thật (server vẫn viết tiếp sau khi client bỏ cuộc vì quá 280s) nhưng bài không kịp
+// hiện ra khi chuỗi 9 bài chưa xong đã bị coi là lỗi. 7 vẫn có thể chạm ngưỡng nếu mỗi bài viết chậm,
+// nhưng đã có lưới an toàn ở lich-dang.js (luôn tải lại lịch dù lỗi/timeout) nên dù có chạm ngưỡng thì
+// bài đã kịp viết vẫn hiện ra đúng, không còn "mất lượt mà không thấy bài" như trước.
+const MAX_FILL_PER_CLICK = 7;
 
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');

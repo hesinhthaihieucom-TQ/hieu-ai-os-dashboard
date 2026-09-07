@@ -307,24 +307,28 @@ function render(container, ctx){
       </div>
       ` : ''}
 
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Lọc theo gói đã mua gần nhất</label>
-      <div class="chips" style="margin-bottom:20px;">
-        ${PLAN_TABS.map(t=>{
-          const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && planKeyOf(p)===t.key).length;
-          return `<div class="chip ${state.planFilter===t.key?'selected':''}" data-plan-filter="${t.key}">${esc(t.label)} (${n})</div>`;
-        }).join('')}
-      </div>
-
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Lọc theo trạng thái hạn dùng</label>
-      <div class="chips" style="margin-bottom:20px;">
-        ${STATUS_TABS.map(t=>{
-          const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && statusOf(p).cls===t.key).length;
-          return `<div class="chip ${state.statusFilter===t.key?'selected':''}" data-status-filter="${t.key}">${esc(t.label)} (${n})</div>`;
-        }).join('')}
-      </div>
-
-      <div class="chips" style="margin-bottom:20px;">
-        <div class="chip ${state.studentOnly?'selected':''}" data-student-filter="1">🎓 Chỉ học viên (${state.profiles.filter(p=>p.role!=='admin' && p.is_student).length})</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;">
+        <div>
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Lọc theo gói đã mua gần nhất</label>
+          <select data-plan-filter-select style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:220px;">
+            ${PLAN_TABS.map(t=>{
+              const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && planKeyOf(p)===t.key).length;
+              return `<option value="${t.key}" ${state.planFilter===t.key?'selected':''}>${esc(t.label)} (${n})</option>`;
+            }).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Lọc theo trạng thái hạn dùng</label>
+          <select data-status-filter-select style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:220px;">
+            ${STATUS_TABS.map(t=>{
+              const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && statusOf(p).cls===t.key).length;
+              return `<option value="${t.key}" ${state.statusFilter===t.key?'selected':''}>${esc(t.label)} (${n})</option>`;
+            }).join('')}
+          </select>
+        </div>
+        <div class="chips" style="margin-bottom:0;">
+          <div class="chip ${state.studentOnly?'selected':''}" data-student-filter="1">🎓 Chỉ học viên (${state.profiles.filter(p=>p.role!=='admin' && p.is_student).length})</div>
+        </div>
       </div>
 
       <div class="card" style="margin-bottom:20px;">
@@ -459,12 +463,10 @@ function render(container, ctx){
       if(newEl){ newEl.focus(); newEl.setSelectionRange(pos, pos); }
     };
 
-    container.querySelectorAll('[data-plan-filter]').forEach(el=>{
-      el.onclick = ()=>{ state.planFilter = el.getAttribute('data-plan-filter'); draw(); };
-    });
-    container.querySelectorAll('[data-status-filter]').forEach(el=>{
-      el.onclick = ()=>{ state.statusFilter = el.getAttribute('data-status-filter'); draw(); };
-    });
+    const planFilterEl = container.querySelector('[data-plan-filter-select]');
+    if(planFilterEl) planFilterEl.onchange = ()=>{ state.planFilter = planFilterEl.value; draw(); };
+    const statusFilterEl = container.querySelector('[data-status-filter-select]');
+    if(statusFilterEl) statusFilterEl.onchange = ()=>{ state.statusFilter = statusFilterEl.value; draw(); };
     const studentFilterEl = container.querySelector('[data-student-filter]');
     if(studentFilterEl) studentFilterEl.onclick = ()=>{ state.studentOnly = !state.studentOnly; draw(); };
     container.querySelectorAll('[data-set-plan]').forEach(el=>{
