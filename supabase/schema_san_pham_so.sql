@@ -535,3 +535,27 @@ create view digital_products_public as
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 28. KHỐI GIÁ "ĐẬM ĐẶC" Ở CỘT PHẢI CHO MẪU "QUYNH" (2026-09-07). Quỳnh: "e muốn làm y hệt như
+-- ladipage e gửi cơ mà, a tự làm cái kiểu này à" — bố cục 2 cột đã đúng, nhưng cột phải ở
+-- 30ngaytamlinhtaichinh.netlify.app không phải 1 khung giá đơn giản: có thêm khung LỊCH HỌC (icon +
+-- ngày giờ/thời lượng/chủ đề/hình thức) và 1 dòng CẢNH BÁO SỐ CHỖ CÓ HẠN ("Chỉ 30 chỗ mỗi khóa...")
+-- ngay dưới nút mua. Cả 2 đều là dữ liệu THẬT do người bán tự nhập (không phải AI bịa), để trống thì
+-- không hiện — đúng quy ước mọi trường tuỳ chọn khác trong app này (stat_items/bonus_items...).
+-- event_info_items: mảng jsonb [{icon, text}] — icon do người bán tự gõ emoji, không giới hạn số
+-- dòng. scarcity_text: 1 dòng chữ tự do.
+alter table digital_products add column if not exists event_info_items jsonb;
+alter table digital_products add column if not exists scarcity_text text;
+
+drop view if exists digital_products_public;
+create view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, p.full_name as seller_name, dp.bonus_items, dp.guarantee_text, dp.reference_price,
+         (select count(*)::int from digital_product_orders o where o.product_id = dp.id and o.status = 'paid') as paid_count,
+         dp.team_members, dp.stat_items, dp.metric_items, dp.event_info_items, dp.scarcity_text
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;

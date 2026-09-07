@@ -137,7 +137,7 @@ function threeStepHtml(template) {
 // tham số `position` để mỗi mẫu chỉ render đúng 1 lần, không lặp lại ở cả 2 chỗ. GIẢ, chỉ tạo cảm
 // giác gấp (Quỳnh tự xác nhận), không gắn khuyến mãi thật nào có hạn cụ thể. Không hiện lại sau khi
 // đã thanh toán — lúc đó thúc giục mua không còn ý nghĩa gì.
-const COUNTDOWN_POSITION = { chuyengia: 'buy', sach: 'hero' };
+const COUNTDOWN_POSITION = { chuyengia: 'buy', sach: 'hero', quynh: 'buy' };
 function countdownHtml(template, order, position) {
   if (COUNTDOWN_POSITION[template] !== position || (order && order.status === 'paid')) return '';
   return `<div class="lp-countdown">⏰ Ưu đãi kết thúc sau: <span id="lp-countdown-time" class="mono">--:--:--</span></div>`;
@@ -261,6 +261,8 @@ function demoProduct(tpl) {
     stat_items: [{ number: '5 năm', label: 'Kinh nghiệm' }, { number: '200+', label: 'Học viên' }, { number: '4.8/5', label: 'Đánh giá' }],
     team_members: [{ name: 'Nguyễn Thu', role: 'Đồng hành nội dung', bio: 'Hỗ trợ xây dựng bài tập thực hành mỗi ngày.', photo_url: placeholderImg('Ảnh', '#D6D0EF', '#4A3D8F') }],
     metric_items: [{ label: 'Tiết kiệm được mỗi tháng', before: '0đ', after: '3.500.000đ' }, { label: 'Số ngày theo dõi chi tiêu đều đặn', before: '2 ngày', after: '21 ngày' }],
+    event_info_items: [{ icon: '📅', text: '20:00 tối, ngày 18/08/2026' }, { icon: '⏱', text: 'Thời lượng: 21 ngày · bài tập mỗi ngày' }, { icon: '💻', text: 'Hình thức: Online · Tự học theo tài liệu PDF' }],
+    scarcity_text: 'Chỉ nhận 30 học viên mỗi đợt · Ưu tiên người đăng ký sớm',
     landing_page_content: {
       hook: 'Không phải nhịn tiêu — mà là hiểu đúng tiền của mình đang đi đâu, chỉ trong 21 ngày',
       van_de_intro: 'Bạn kiếm ra tiền nhưng cuối tháng vẫn không biết tiền đi đâu hết. Muốn tiết kiệm nhưng không biết bắt đầu từ đâu, muốn thoát nợ nhưng cứ trả rồi lại vay.',
@@ -635,6 +637,22 @@ function renderProduct(product, order) {
   const guaranteeHtml = product.guarantee_text
     ? `<div class="hint-box" style="margin-top:12px;text-align:center;">🔒 ${esc(product.guarantee_text)}</div>` : '';
 
+  // Khung "lịch học/sự kiện" + dòng cảnh báo số lượng có hạn ở cột phải (chỉ "quynh" — đúng khối icon
+  // ngày giờ/thời lượng/chủ đề + "Chỉ 30 chỗ mỗi khóa..." ở 30ngaytamlinhtaichinh.netlify.app, 2026-09-07
+  // Quỳnh: "e muốn làm y hệt như ladipage e gửi cơ mà, a tự làm cái kiểu này à" — bố cục 2 cột đã đúng
+  // nhưng cột phải trước đó chỉ có giá đơn giản, thiếu hẳn 2 khối này). Cả 2 đều do người bán TỰ NHẬP
+  // (event_info_items/scarcity_text), để trống thì không hiện — không phải AI/hệ thống tự bịa lịch học
+  // hay số chỗ giả.
+  const eventInfoHtml = lpTemplate === 'quynh' && Array.isArray(product.event_info_items) && product.event_info_items.length
+    ? `<div class="lp-event-info">${product.event_info_items.map(e => `<div class="lp-event-info-item"><span class="lp-event-info-icon">${esc(e.icon || '')}</span><span>${esc(e.text || '')}</span></div>`).join('')}</div>` : '';
+  const scarcityHtml = lpTemplate === 'quynh' && product.scarcity_text
+    ? `<div class="lp-scarcity">${esc(product.scarcity_text)}</div>` : '';
+  // Thẻ giá có gạch đầu dòng "bạn nhận được gì" (chỉ "quynh") — TÁI DÙNG đúng ket_qua_dat_duoc đã viết
+  // cho phần "Kết quả bạn đạt được" ở cột trái (không bịa nội dung riêng cho thẻ giá) — nhắc lại gần
+  // nút mua là kỹ thuật copywriting phổ biến, không phải trùng lặp lỗi.
+  const priceCardBulletsHtml = lpTemplate === 'quynh' && lp && Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
+    ? `<ul class="lp-price-card-bullets">${lp.ket_qua_dat_duoc.map(x => `<li>✓ ${esc(x)}</li>`).join('')}</ul>` : '';
+
   // "chuyengia" đẩy giá lên ngay trong hero (đúng kiểu khối giá nổi bật đầu trang ở
   // aichuyengia.topexpert.vn) — chỉ là 1 ô hiện giá, KHÔNG lặp nút mua thật (tránh 2 nơi có thể tạo
   // đơn khác nhau) — bấm vào cuộn xuống đúng nút mua thật duy nhất.
@@ -674,11 +692,16 @@ function renderProduct(product, order) {
       <div class="card">
       <div class="lp-main-col">${mainColHtml}</div>
       <div id="buy-area-anchor">
+        ${eventInfoHtml}
         ${countdownHtml(lpTemplate, order, 'buy')}
-        <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
+        <div class="${lpTemplate === 'quynh' ? 'lp-price-card' : ''}">
+          <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
+          ${priceCardBulletsHtml}
+        </div>
         ${soldCountHtml}
         ${threeStepHtml(lpTemplate)}
         ${buyHtml}
+        ${scarcityHtml}
         ${guaranteeHtml}
       </div>
       ${lp ? landingPageFaqHtml(lp) : ''}

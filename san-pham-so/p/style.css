@@ -293,6 +293,18 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .lp-radar{ width:100%; max-width:340px; display:block; margin:8px auto; }
 .lp-countdown{ background:#2A1A55; color:#fff; text-align:center; font-weight:700; font-size:13.5px; padding:11px 14px; border-radius:10px; margin-bottom:14px; }
 .lp-countdown .mono{ background:transparent; color:#F5C242; padding:0; }
+
+/* Khung lịch học/sự kiện + thẻ giá có gạch đầu dòng + dòng cảnh báo số chỗ có hạn (chỉ "quynh", xem
+   eventInfoHtml/priceCardBulletsHtml/scarcityHtml ở script.js — đúng cột phải "đậm đặc" ở
+   30ngaytamlinhtaichinh.netlify.app, 2026-09-07). Không set màu riêng — kế thừa đúng theme tối đã fix
+   (color:var(--ink) ở khối màu "quynh"), tự đúng màu trên nền đen. */
+.lp-event-info{ border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; flex-direction:column; gap:10px; }
+.lp-event-info-item{ display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--ink-soft); }
+.lp-event-info-icon{ flex:0 0 auto; }
+.lp-price-card{ border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
+.lp-price-card .price{ margin-bottom:10px; }
+.lp-price-card-bullets{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--ink-soft); }
+.lp-scarcity{ font-size:12px; color:var(--ink-soft); text-align:center; margin-top:10px; }
 /* "sach" hiện đồng hồ TRONG hero đen/vàng (đúng teedoo.io) — đổi nền tím sang viền vàng gold khớp
    theme, thay vì lặp lại đúng màu tím dùng cho "chuyengia". */
 .wrap[data-lp-template="sach"] .lp-countdown{ background:rgba(245,185,66,.12); border:1px solid #F5B942; color:#F5B942; margin:14px 0 0; }

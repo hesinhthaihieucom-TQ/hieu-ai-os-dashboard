@@ -48,7 +48,7 @@ function render(container) {
   const state = {
     screen: 'list', products: [], loading: true, selected: null, content: null, template: 'quynh',
     caseStudies: [], bonusItems: [], referencePrice: '', guaranteeText: '', caseStudyUploading: false, sellerPhotoUploading: false,
-    teamMembers: [], statItems: [], metricItems: [], teamPhotoUploadingIndex: null,
+    teamMembers: [], statItems: [], metricItems: [], eventInfoItems: [], scarcityText: '', teamPhotoUploadingIndex: null,
     generating: false, saving: false, error: null, showManualEdit: false,
     // Tạo nhanh 1 sản phẩm NGAY TẠI ĐÂY (2026-09-02, Quỳnh: "người dùng không cần làm bước 1-2-3
     // cũng có thể làm trực tiếp landing page, với người đã có sẵn 1 sản phẩm chỉ cần trang landing
@@ -270,6 +270,21 @@ function render(container) {
         `).join('')}
         <span class="btn-ghost btn btn-sm" id="lp-metric-add">+ Thêm chỉ số</span>
       </div>
+      <div class="card" style="margin-top:10px;">
+        <label style="margin-bottom:10px;display:block;">9. Thông tin lịch học/sự kiện (tuỳ chọn — chỉ dùng cho sản phẩm dạng khoá học/buổi học có lịch cụ thể, VD "📅 20:00 tối, ngày 18/08" hoặc "⏱ 30 ngày · 4 buổi Zoom")</label>
+        ${state.eventInfoItems.map((e, i) => `
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <input type="text" data-event-icon="${i}" value="${esc(e.icon || '')}" placeholder="Icon (VD: 📅)" style="flex:0 0 90px;">
+            <input type="text" data-event-text="${i}" value="${esc(e.text || '')}" placeholder="VD: 20:00 tối, ngày 18/08/2026" style="flex:1;">
+            <span class="btn-ghost btn btn-sm" data-event-remove="${i}" style="color:var(--danger);">Xoá</span>
+          </div>
+        `).join('')}
+        <span class="btn-ghost btn btn-sm" id="lp-event-add">+ Thêm dòng thông tin</span>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <label style="margin-bottom:10px;display:block;">10. Dòng cảnh báo số lượng có hạn (tuỳ chọn — VD "Chỉ 30 chỗ mỗi khóa · Ưu tiên người đăng ký sớm") — để trống nếu không muốn hứa hẹn giới hạn nào</label>
+        <input id="lp-scarcity" type="text" value="${esc(state.scarcityText)}" placeholder="VD: Chỉ 30 chỗ mỗi khóa">
+      </div>
     `;
   }
 
@@ -377,6 +392,8 @@ function render(container) {
     state.teamMembers = Array.isArray(p.team_members) ? [...p.team_members] : [];
     state.statItems = Array.isArray(p.stat_items) ? [...p.stat_items] : [];
     state.metricItems = Array.isArray(p.metric_items) ? [...p.metric_items] : [];
+    state.eventInfoItems = Array.isArray(p.event_info_items) ? [...p.event_info_items] : [];
+    state.scarcityText = p.scarcity_text || '';
     state.showManualEdit = false;
     state.screen = 'edit'; state.error = null;
   }
@@ -585,6 +602,20 @@ function render(container) {
       el.onclick = () => { state.metricItems.splice(Number(el.getAttribute('data-metric-remove')), 1); draw(); };
     });
 
+    const eventAddBtn = container.querySelector('#lp-event-add');
+    if (eventAddBtn) eventAddBtn.onclick = () => { state.eventInfoItems.push({ icon: '', text: '' }); draw(); };
+    container.querySelectorAll('[data-event-icon]').forEach(el => {
+      el.oninput = () => { state.eventInfoItems[Number(el.getAttribute('data-event-icon'))].icon = el.value; };
+    });
+    container.querySelectorAll('[data-event-text]').forEach(el => {
+      el.oninput = () => { state.eventInfoItems[Number(el.getAttribute('data-event-text'))].text = el.value; };
+    });
+    container.querySelectorAll('[data-event-remove]').forEach(el => {
+      el.onclick = () => { state.eventInfoItems.splice(Number(el.getAttribute('data-event-remove')), 1); draw(); };
+    });
+    const scarcityEl = container.querySelector('#lp-scarcity');
+    if (scarcityEl) scarcityEl.oninput = () => { state.scarcityText = scarcityEl.value; };
+
     container.querySelector('#lp-generate-btn').onclick = async () => {
       state.generating = true; state.error = null; draw();
       const stopProgress = animateProgressBar(container.querySelector('#lp-progress-el'), 25);
@@ -593,7 +624,7 @@ function render(container) {
         // AI viết chữ — AI viết xong tự PATCH landing_page_content luôn
         // (api/san-pham-so-tao-landing-page.js), không cần bấm "Lưu" riêng cho luồng chính (Quỳnh:
         // "90% chỉ là tải thông tin lên thôi").
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null });
         const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id, template: state.template }, 180000);
         state.content = { ...newContent(), ...data.result };
         state.selected.landing_page_content = state.content;
@@ -675,7 +706,7 @@ function render(container) {
     if (saveBtn) saveBtn.onclick = async () => {
       state.saving = true; state.error = null; draw();
       try {
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null });
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
         state.selected.case_study_images = state.caseStudies;
