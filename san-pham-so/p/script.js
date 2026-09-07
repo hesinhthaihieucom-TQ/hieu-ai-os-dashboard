@@ -414,8 +414,24 @@ function landingPageIntroHtml(product, lp, template) {
   const bonusListHtml = template === 'sach'
     ? `<div class="lp-bonus-box">${(product.bonus_items || []).map(b => `<div class="lp-bonus-row">🎁 ${esc(b)}</div>`).join('')}</div>`
     : `<ul class="lp-list">${(product.bonus_items || []).map(b => `<li>${esc(b)}</li>`).join('')}</ul>`;
+  // "sach" thêm dòng "Tổng giá trị / Bạn chỉ trả" ngay dưới hộp ưu đãi (đúng khối value-stack ở
+  // teedoo.io) — TÁI DÙNG reference_price đã có (giá trị tham khảo người bán tự nhập), không bịa giá
+  // trị riêng cho từng ưu đãi (bonus_items chỉ là chữ, không có giá từng món).
+  const valueStackHtml = template === 'sach' && product.reference_price && Number(product.reference_price) > Number(product.price)
+    ? `<div class="lp-value-stack"><div>Tổng giá trị<span>${Number(product.reference_price).toLocaleString('vi-VN')}đ</span></div><div class="lp-value-stack-final">Bạn chỉ trả<span>${Number(product.price).toLocaleString('vi-VN')}đ</span></div></div>` : '';
   const bonusHtml = Array.isArray(product.bonus_items) && product.bonus_items.length
-    ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2>${bonusListHtml}</div>` : '';
+    ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2>${bonusListHtml}${valueStackHtml}</div>` : '';
+  // Bảng so sánh 3 cột "Tự mày mò / Khoá học online / Sản phẩm này" (chỉ "sach", đúng khối "So sánh"
+  // ở teedoo.io) — 2 cột đầu là khung tham chiếu CHUNG của ngành (không gán cho đối thủ cụ thể nào),
+  // cột cuối dùng ĐÚNG dữ liệu thật của sản phẩm (giá, số phần trong chương trình, có ưu đãi hay
+  // không) — không bịa số liệu về người bán.
+  const soSanh3ColHtml = template === 'sach' && Array.isArray(lp.chuong_trinh) && lp.chuong_trinh.length
+    ? `<div class="lp-section"><h2 class="lp-h2">So sánh</h2><div class="lp-compare3">
+        <div class="lp-compare3-label"></div><div class="lp-compare3-head">Tự mày mò</div><div class="lp-compare3-head lp-compare3-head-final">Sản phẩm này</div>
+        <div class="lp-compare3-label">Chi phí</div><div class="lp-compare3-cell">0đ (+ nhiều tháng thử sai)</div><div class="lp-compare3-cell lp-compare3-cell-final">${Number(product.price).toLocaleString('vi-VN')}đ</div>
+        <div class="lp-compare3-label">Lộ trình</div><div class="lp-compare3-cell">Tự mò mẫm, không ai hướng dẫn</div><div class="lp-compare3-cell lp-compare3-cell-final">${lp.chuong_trinh.length} phần rõ ràng, làm theo từng bước</div>
+        <div class="lp-compare3-label">Hỗ trợ</div><div class="lp-compare3-cell">Không ai đồng hành</div><div class="lp-compare3-cell lp-compare3-cell-final">${Array.isArray(product.bonus_items) && product.bonus_items.length ? 'Có ưu đãi tặng kèm hỗ trợ' : 'Tự học theo tài liệu'}</div>
+      </div></div>` : '';
   // Thanh số liệu THẬT (product.stat_items, người bán tự nhập — VD "5 năm kinh nghiệm") — giải quyết
   // đúng kiểu "thanh thống kê" ở nhiều trang tham khảo mà KHÔNG bịa số, vì đây là số của chính họ.
   // "quynh" hiện dạng LƯỚI Ô VUÔNG có viền (đúng khối "132K/X10/10K+/6 tháng" ở trang gốc), 3 mẫu kia
@@ -490,6 +506,7 @@ function landingPageIntroHtml(product, lp, template) {
       ${caseStudyHtml}
       ${programHtml}
       ${bonusHtml}
+      ${soSanh3ColHtml}
       ${metricHtml}
       ${fitHtml}
     `;
