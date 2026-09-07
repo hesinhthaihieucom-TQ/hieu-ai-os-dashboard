@@ -17,8 +17,9 @@ window.SanPhamSoScreens = window.SanPhamSoScreens || {};
 // 'chon-loai' đã build thật ở san-pham-so/js/chon-loai.js (2026-09-01).
 // 'tao-landing-page' đã build thật ở san-pham-so/js/tao-landing-page.js (2026-09-01).
 // 'viet-noi-dung' đã build thật ở san-pham-so/js/viet-noi-dung.js (2026-09-02).
-// 'nghien-cuu-thi-truong' đã đổi thành 'ke-hoach-ra-mat' (san-pham-so/js/ke-hoach-ra-mat.js, đã build
-// thật) — phần hữu ích nhất của mục cũ (nghiên cứu thị trường, giá/marketing) đã có ở nơi khác rồi.
+// 'nghien-cuu-thi-truong' từng đổi thành 'ke-hoach-ra-mat' (2026-09-01), rồi Quỳnh bỏ hẳn mục này
+// khỏi NAV 2026-09-07 ("thôi bỏ mục kế hoạch ra mắt luôn đi") — đã xoá file
+// san-pham-so/js/ke-hoach-ra-mat.js + api/san-pham-so-ke-hoach-ra-mat.js, không giữ lại làm placeholder.
 
 // 'tao-ebook' (mục sidebar "Tạo Ebook/Workbook") đã BỎ hẳn khỏi NAV (app-shell.js) 2026-09-01 — nó
 // từng là màn cầu nối tạm dẫn sang 'tao-ai' trong lúc "Chọn Loại Sản Phẩm Số" chưa xây xong, giờ

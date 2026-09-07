@@ -15,7 +15,6 @@ const NAV = [
   { key: 'viet-noi-dung', title: '✍️ Viết Nội Dung' },
   { key: 'san-pham', title: '🛒 Sản phẩm của tôi' },
   { key: 'tao-landing-page', title: '🖥️ Tạo Landing Page' },
-  { key: 'ke-hoach-ra-mat', title: '🚀 Kế Hoạch Ra Mắt' },
   { key: 'don-hang', title: '📦 Đơn hàng của tôi' },
   { key: 'nang-cap', title: '🔥 Nâng cấp / Mua gói' },
   { key: 'quan-tri', title: 'Quản trị', adminOnly: true },
