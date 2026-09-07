@@ -372,7 +372,10 @@ function render(container, ctx){
     const autoFillActiveSlotKeys = state.postsPerDay===1 ? ['sang'] : state.postsPerDay===2 ? ['sang','toi'] : ['sang','trua','toi'];
     const emptySlotCount = days.reduce((sum,d)=> sum + SLOTS.filter(s => autoFillActiveSlotKeys.includes(s.key) && !entryFor(isoDate(d), s.key)).length, 0);
     const autoFillPerPostCost = state.autoFillMode==='new_hook' ? 4 : 3; // new_hook = 1 (sinh hook) + 3 (viết) lượt/bài
-    const autoFillToFillCount = Math.min(emptySlotCount, 9); // MAX_FILL_PER_CLICK ở api/auto-fill-week.js
+    // 2026-09-07: MAX_FILL_PER_CLICK ở api/auto-fill-week.js hạ từ 9 xuống 1/lần bấm (tránh timeout
+    // giữa chừng khiến lượt bị trừ thật mà bài không kịp hiện ra) — khớp số này theo đúng server.
+    const AUTO_FILL_MAX_PER_CLICK = 1;
+    const autoFillToFillCount = Math.min(emptySlotCount, AUTO_FILL_MAX_PER_CLICK);
 
     // "sắp xếp lại bố cục ... khó nhìn, rối" (2026-08-29, theo phản hồi chị Quỳnh) — LỊCH TUẦN mới là
     // thứ quan trọng nhất/xem nhiều nhất của trang này, nhưng trước đây bị chôn dưới 3 khối công cụ
@@ -449,9 +452,9 @@ function render(container, ctx){
         ${emptySlotCount===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
         <div class="btn-row">
           <button class="btn" data-action="auto-fill-week" ${state.autoFillBusy?'disabled':''}>${state.autoFillBusy?'Đang viết…':'Bắt đầu viết'}</button>
-          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Điền ${autoFillToFillCount} ô lần này (tốn khoảng ${autoFillToFillCount*autoFillPerPostCost} lượt AI)${emptySlotCount>9?`, còn ${emptySlotCount-9} ô nữa — bấm thêm lần nữa sau khi xong`:''}</span>
+          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Mỗi lần bấm viết đúng 1 bài (tốn ${autoFillPerPostCost} lượt AI) — còn ${emptySlotCount} ô trống, bấm nhiều lần để lấp đầy cả tuần</span>
         </div>
-        <div class="hint-box" style="margin-top:10px;">Có thể mất vài phút (AI viết từng bài một, không phải cùng lúc) — đừng thoát trang khi đang đợi.</div>
+        <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm chỉ viết 1 bài (khoảng 20-30 giây) rồi dừng — không viết liền cả tuần nữa, để không bị lỗi giữa chừng do chạy quá lâu. Muốn lấp đầy cả tuần thì bấm lại nhiều lần, mỗi lần xong 1 bài sẽ tự hiện ngay vào lịch bên trên.</div>
         `}
         ${!state.positioning ? `<div class="hint-box" style="margin-top:10px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — cần làm Định Vị trước để dùng được tính năng này.</div>` : ''}
         ${state.autoFillError?`<div class="error-box" style="margin-top:10px;">${esc(state.autoFillError)}</div>`:''}

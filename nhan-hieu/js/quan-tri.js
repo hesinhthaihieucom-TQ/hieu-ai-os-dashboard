@@ -103,7 +103,7 @@ function statusOf(p){
 }
 
 function render(container, ctx){
-  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', statusFilter:'all', studentOnly:false, error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{}, expandedMemberIds:new Set(), journeyDinhVi:new Set(), journeyPosted:new Set() };
+  const state = { screen:'loading', profiles:[], revenueTotal:0, revenueThisMonth:0, revenueByProfile:{}, q:'', planFilter:'all', statusFilter:'all', studentOnly:false, error:null, busyId:null, confirmDeleteId:null, manualAmount:{}, manualDays:{}, manualLuot:{}, justMarkedId:null, referralPartners:[], referralCounts:{}, customDays:{}, expandedMemberIds:new Set(), journeyDinhVi:new Set(), journeyPosted:new Set() };
 
   // Ai giới thiệu >= ngưỡng này được coi là "partner" — chị Quỳnh tự nhắn/chuyển khoản tay trả hoa
   // hồng tiền mặt cho họ (KHÔNG tự động chuyển tiền — SePay chỉ nhận tiền vào, không có API chuyển
@@ -402,6 +402,13 @@ function render(container, ctx){
             </div>
             <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Dùng khi cần cộng bù đúng số ngày lẻ (vd sửa lỗi thiếu ngày dùng thử) — chỉ đổi hạn dùng, KHÔNG bật "đã trả phí" như 3 nút bên trên.</div>
 
+            <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Cộng/hoàn lượt AI thủ công</div>
+            <div class="btn-row" style="justify-content:flex-start;align-items:center;">
+              <input type="number" data-manual-luot="${p.id}" placeholder="Số lượt, vd 22" style="width:120px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualLuot[p.id]||'')}">
+              <button class="btn-ghost btn btn-sm" data-credit-luot="${p.id}" ${state.busyId===p.id?'disabled':''}>Cộng lượt</button>
+            </div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Dùng khi cần hoàn lượt cho khách bị lỗi (vd bấm "AI viết cả tuần" bị timeout mà vẫn bị trừ lượt) — trừ thẳng vào số đã dùng của chu kỳ hiện tại (dùng thử: trọn đời, đã trả phí: đúng chu kỳ 30 ngày đang tính), không đụng gì khác.</div>
+
             <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Ghi nhận doanh thu thủ công</div>
             <div class="btn-row" style="justify-content:flex-start;align-items:center;">
               <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualAmount[p.id]||'')}">
@@ -502,6 +509,15 @@ function render(container, ctx){
     });
     container.querySelectorAll('[data-manual-amount]').forEach(el=>{
       el.oninput = ()=>{ state.manualAmount[el.getAttribute('data-manual-amount')] = el.value; };
+    });
+    container.querySelectorAll('[data-manual-luot]').forEach(el=>{
+      el.oninput = ()=>{ state.manualLuot[el.getAttribute('data-manual-luot')] = el.value; };
+    });
+    container.querySelectorAll('[data-credit-luot]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-credit-luot');
+        creditManualLuot(id, Number(state.manualLuot[id]));
+      };
     });
     container.querySelectorAll('[data-mark-revenue]').forEach(el=>{
       el.onclick = ()=>{ markRevenue(el.getAttribute('data-mark-revenue')); };
@@ -629,6 +645,38 @@ function render(container, ctx){
     state.busyId = id; draw();
     const { error } = await ctx.supabase.from('profiles').update({ access_until: next.toISOString() }).eq('id', id);
     if(error) state.error = error.message; else { state.error = null; state.customDays[id] = ''; }
+    await load();
+    state.busyId = null;
+    draw();
+  }
+
+  // Cộng/hoàn lượt AI thủ công cho 1 khách — dùng khi tính năng nào đó lỗi trừ lượt oan (vd "AI viết
+  // cả tuần" timeout, xem lich-dang.js) và không có cách nào tự hoàn qua code (lỗi xảy ra ở phía
+  // client, không throw exception ở server nên refundTrialQuota() không tự chạy được).
+  // - Dùng thử (has_paid=false): trial_ai_uses là bộ đếm TRỌN ĐỜI — trừ thẳng, không âm.
+  // - Đã trả phí: paid_ai_uses/paid_ai_bonus tính theo CHU KỲ 30 NGÀY hiện tại (paidCycleAnchor) —
+  //   nếu paid_ai_month đang khớp đúng chu kỳ này thì trừ thẳng vào paid_ai_uses (giống hệt
+  //   refund_ai_quota() ở schema_core.sql); nếu profile CHƯA dùng AI lần nào trong chu kỳ hiện tại
+  //   (paid_ai_month cũ/rỗng) thì phải set luôn paid_ai_month=chu kỳ hiện tại kèm bonus dương — nếu chỉ
+  //   cộng bonus mà không sửa paid_ai_month, lần dùng AI tiếp theo của khách sẽ bị RPC coi là "sang chu
+  //   kỳ mới" và tự xoá sạch bonus vừa cộng (xem consume_ai_quota()).
+  async function creditManualLuot(id, amount){
+    if(!amount || amount <= 0 || !Number.isFinite(amount)){ state.error = 'Nhập đúng số lượt (lớn hơn 0) trước khi cộng.'; draw(); return; }
+    const p = state.profiles.find(x=>x.id===id);
+    if(!p) return;
+    if(!(await confirmModal(`Cộng ${amount} lượt AI cho ${p.email||'người này'}? Xác nhận?`))) return;
+    state.busyId = id; draw();
+    let patch;
+    if(p.has_paid){
+      const cycle = currentCycleKey(paidCycleAnchor(p));
+      patch = p.paid_ai_month === cycle
+        ? { paid_ai_uses: Math.max(0, (p.paid_ai_uses||0) - amount) }
+        : { paid_ai_month: cycle, paid_ai_uses: 0, paid_ai_bonus: amount };
+    } else {
+      patch = { trial_ai_uses: Math.max(0, (p.trial_ai_uses||0) - amount) };
+    }
+    const { error } = await ctx.supabase.from('profiles').update(patch).eq('id', id);
+    if(error) state.error = error.message; else { state.error = null; state.manualLuot[id] = ''; }
     await load();
     state.busyId = null;
     draw();

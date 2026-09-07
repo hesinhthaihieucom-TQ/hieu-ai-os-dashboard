@@ -12,7 +12,11 @@
 // Giới hạn AN TOÀN mỗi lần bấm (không phải trần lượt, mà trần THỜI GIAN — đây là request đồng bộ,
 // người dùng đang chờ, viết hết nguyên 1 tuần 21 ô trong 1 lần gọi dễ vượt quá 300s Vercel cho
 // phép). Bấm nhiều lần nếu còn ô trống — trả về rõ số ô còn lại, không âm thầm bỏ sót.
-const MAX_FILL_PER_CLICK = 9;
+// 2026-09-07: hạ từ 9 xuống 1 — khách Dung báo trừ lượt thật (server vẫn viết tiếp sau khi client bỏ
+// cuộc vì quá 280s) nhưng bài không kịp hiện ra khi cả chuỗi 9 bài chưa xong đã bị coi là lỗi. Viết
+// ĐÚNG 1 bài/lần bấm thì luôn chạy xong nhanh (1 lượt gọi Claude), không bao giờ chạm ngưỡng timeout
+// nữa — đánh đổi là người dùng phải bấm nhiều lần hơn để lấp đầy cả tuần, đã báo rõ trong UI.
+const MAX_FILL_PER_CLICK = 1;
 
 const { requireUser } = require('./_lib/auth');
 const { checkAndConsumeTrialQuota, refundTrialQuota } = require('./_lib/trial-quota');
