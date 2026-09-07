@@ -559,3 +559,23 @@ create view digital_products_public as
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 29. ẢNH THỰC TẾ RIÊNG (chỉ "sach", 2026-09-07). Quỳnh: "cái teedoo chính là thay cho cái ebook đó,
+-- làm full y hệt như hình e gửi" — teedoo.io có 1 khối ảnh THỨ 2 riêng biệt với case_study_images
+-- ("HÌNH ẢNH THỰC TẾ — AI Lake Camp": ảnh lớp học/buổi đào tạo thật, khác hẳn ảnh case study khách
+-- hàng cụ thể). Thêm cột RIÊNG proof_images (cùng cấu trúc [{url, caption}] như case_study_images,
+-- không dùng chung 1 mảng để tránh 2 mục khác nhau lặp cùng ảnh) — tuỳ chọn, để trống thì không hiện.
+alter table digital_products add column if not exists proof_images jsonb;
+
+drop view if exists digital_products_public;
+create view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, p.full_name as seller_name, dp.bonus_items, dp.guarantee_text, dp.reference_price,
+         (select count(*)::int from digital_product_orders o where o.product_id = dp.id and o.status = 'paid') as paid_count,
+         dp.team_members, dp.stat_items, dp.metric_items, dp.event_info_items, dp.scarcity_text, dp.proof_images
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;

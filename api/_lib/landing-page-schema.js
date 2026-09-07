@@ -54,10 +54,11 @@ const TOOL_LANDING_PAGE = {
           properties: {
             ten: { type: 'string', description: 'Tên phần/chặng (VD "Phần 1", "Tuần 1", hoặc tên chủ đề riêng của phần đó) — ngắn.' },
             mo_ta: { type: 'string', description: '1-2 câu mô tả phần này làm gì/đạt được gì — BÁM SÁT mô tả sản phẩm đã có, không bịa thêm nội dung không tồn tại.' },
+            nhom: { type: 'string', description: 'CHỈ điền nếu sản phẩm có NHIỀU chặng gộp lại thành các nhóm lớn hơn (VD nhiều "chương" gộp thành 1 "PHẦN") — tên nhóm lớn chứa chặng này (VD "Phần 1: Tư duy"). Để trống nếu nội dung không cần chia nhóm 2 cấp.' },
           },
           required: ['ten', 'mo_ta'],
         },
-        description: 'Chia nội dung/cấu trúc sản phẩm thành các phần/chặng cụ thể (dựa theo mô tả đã có) — thay cho 1 đoạn giới thiệu chung, giúp người đọc thấy rõ lộ trình cụ thể sẽ nhận được.',
+        description: 'Chia nội dung/cấu trúc sản phẩm thành các phần/chặng cụ thể (dựa theo mô tả đã có) — thay cho 1 đoạn giới thiệu chung, giúp người đọc thấy rõ lộ trình cụ thể sẽ nhận được. Nếu số chặng nhiều (>6) và tự nhiên gộp được thành vài nhóm chủ đề lớn, dùng thêm "nhom" để nhóm 2 cấp — không bắt buộc.',
       },
       loi_nhan_nguoi_ban: {
         type: 'string',

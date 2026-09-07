@@ -244,6 +244,16 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .wrap[data-lp-template="sach"] .lp-problem-ten{ color:#8A6A10; }
 .wrap[data-lp-template="sach"] .lp-letter{ background:#0B0B10; color:#F3EFE3; border-left-color:#F5B942; font-style:normal; }
 
+/* Mục lục nhóm theo PHẦN (chỉ "sach", khi chuong_trinh có trường "nhom" — đúng khối "MỤC LỤC" ở
+   teedoo.io, xem chuongTrinhGroupedHtml ở script.js, 2026-09-07). */
+.lp-mucluc-group-title{ font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; color:#F5B942; margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid #2A2410; }
+.lp-mucluc-group-title:first-child{ margin-top:0; }
+.lp-mucluc-group{ display:flex; flex-direction:column; gap:8px; }
+.lp-mucluc-item{ display:flex; justify-content:space-between; gap:10px; padding:10px 12px; background:#17140A; border-radius:8px; font-size:13px; }
+.lp-mucluc-item-ten{ font-weight:600; color:#F3EFE3; flex:0 0 auto; }
+.lp-mucluc-item-mota{ color:#B9B4A6; text-align:right; }
+@media (min-width:640px){ .lp-mucluc-item{ font-size:13.5px; } }
+
 /* Hộp ưu đãi có viền + icon (chỉ "sach", xem bonusListHtml trong landingPageIntroHtml() ở script.js). */
 .lp-bonus-box{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
 .lp-bonus-row{ background:#FBF3DD; border:1px solid #F0DDA0; border-radius:8px; padding:10px 14px; font-size:13.5px; color:#5A4308; }

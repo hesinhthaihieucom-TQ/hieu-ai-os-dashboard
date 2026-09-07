@@ -45,7 +45,7 @@ module.exports = async (req, res) => {
     // Sửa tay nội dung landing page SAU KHI AI đã viết (san-pham-so-tao-landing-page.js) — tách riêng
     // khỏi 'save' vì không cần validate title/price/deliverable, chỉ ghi đúng 1 cột.
     if (action === 'update_landing_page') {
-      const { landing_page_content, landing_page_template, case_study_images, bonus_items, guarantee_text, reference_price, team_members, stat_items, metric_items, event_info_items, scarcity_text } = req.body || {};
+      const { landing_page_content, landing_page_template, case_study_images, bonus_items, guarantee_text, reference_price, team_members, stat_items, metric_items, event_info_items, scarcity_text, proof_images } = req.body || {};
       if (!id) { res.status(400).json({ error: 'Thiếu id.' }); return; }
       const resp = await supabaseAdmin(`digital_products?id=eq.${id}&owner_id=eq.${user.id}`, {
         method: 'PATCH',
@@ -61,6 +61,7 @@ module.exports = async (req, res) => {
           metric_items: metric_items || null,
           event_info_items: event_info_items || null,
           scarcity_text: scarcity_text || null,
+          proof_images: proof_images || null,
           updated_at: new Date().toISOString(),
         }),
       });

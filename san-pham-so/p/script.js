@@ -257,6 +257,10 @@ function demoProduct(tpl) {
       { url: placeholderImg('Case study 1', '#EFE7D6', '#8A6A3C'), caption: 'Chị Hạnh — hết nợ thẻ tín dụng sau 3 tháng' },
       { url: placeholderImg('Case study 2', '#EFE7D6', '#8A6A3C'), caption: 'Anh Khoa — tiết kiệm được 15% thu nhập mỗi tháng' },
     ],
+    proof_images: [
+      { url: placeholderImg('Ảnh thực tế 1', '#2A2410', '#F5B942'), caption: 'Buổi chia sẻ trực tiếp tháng 6' },
+      { url: placeholderImg('Ảnh thực tế 2', '#2A2410', '#F5B942'), caption: 'Học viên thực hành tại chỗ' },
+    ],
     bonus_items: ['Sổ tay theo dõi chi tiêu 21 ngày (PDF)', 'Nhóm Zalo hỗ trợ riêng cho học viên'],
     stat_items: [{ number: '5 năm', label: 'Kinh nghiệm' }, { number: '200+', label: 'Học viên' }, { number: '4.8/5', label: 'Đánh giá' }],
     team_members: [{ name: 'Nguyễn Thu', role: 'Đồng hành nội dung', bio: 'Hỗ trợ xây dựng bài tập thực hành mỗi ngày.', photo_url: placeholderImg('Ảnh', '#D6D0EF', '#4A3D8F') }],
@@ -273,9 +277,9 @@ function demoProduct(tpl) {
       ],
       ket_qua_dat_duoc: ['Biết chính xác tiền của mình đang đi đâu mỗi ngày', 'Xây quỹ dự phòng đầu tiên trong đời chỉ sau 21 ngày', 'Thoát khỏi cảm giác lo lắng mỗi khi nghĩ đến tiền'],
       chuong_trinh: [
-        { ten: 'Ngày 1-7: Nhìn thẳng vào sự thật', mo_ta: 'Ghi chép toàn bộ chi tiêu, nhận diện các khoản rò rỉ.' },
-        { ten: 'Ngày 8-14: Dựng lại ngân sách', mo_ta: 'Lập ngân sách thực tế theo đúng thu nhập của bạn.' },
-        { ten: 'Ngày 15-21: Xây quỹ dự phòng', mo_ta: 'Bắt đầu khoản tiết kiệm đầu tiên, dù nhỏ.' },
+        { ten: 'Ngày 1-7: Nhìn thẳng vào sự thật', mo_ta: 'Ghi chép toàn bộ chi tiêu, nhận diện các khoản rò rỉ.', nhom: 'Giai đoạn 1: Nhìn nhận' },
+        { ten: 'Ngày 8-14: Dựng lại ngân sách', mo_ta: 'Lập ngân sách thực tế theo đúng thu nhập của bạn.', nhom: 'Giai đoạn 1: Nhìn nhận' },
+        { ten: 'Ngày 15-21: Xây quỹ dự phòng', mo_ta: 'Bắt đầu khoản tiết kiệm đầu tiên, dù nhỏ.', nhom: 'Giai đoạn 2: Hành động' },
       ],
       loi_nhan_nguoi_ban: 'Tôi từng đứng đúng chỗ bạn đang đứng — không biết tiền của mình đi đâu, chỉ biết là không đủ. 21 ngày này là đúng những gì tôi đã tự làm để thay đổi.',
       ve_nguoi_ban: 'Người viết đã tự áp dụng đúng quy trình này để thoát khỏi nợ tiêu dùng.',
@@ -335,6 +339,14 @@ function qrUrl(amount, content) {
 // bản cũ "hời hợt" so với landing page thật của chị. VẪN ĐỌC ĐƯỢC field cũ (van_de/loi_ich/
 // noi_dung_gioi_thieu) cho sản phẩm đã tạo landing page TRƯỚC batch này — không lỗi, chỉ đơn giản
 // không có phần "đặt tên vấn đề"/"lộ trình theo chặng"/"lời nhắn cá nhân" cho tới khi viết lại bằng AI.
+// Người bán tự ẩn 1 mục (VD "Về người bán") nếu không muốn hiện, dù AI đã lỡ viết sẵn nội dung — khác
+// các mục dạng danh sách (bonus_items/case_study_images...) vốn đã TỰ ẩn khi mảng rỗng, 7 mục AI viết
+// nguyên đoạn văn này luôn có sẵn chữ nên cần công tắc ẩn tay riêng (lp.hidden_sections, chọn ở "✏️
+// Chỉnh sửa nội dung chữ" trong tao-landing-page.js, 2026-09-07).
+function isSectionHidden(lp, key) {
+  return Array.isArray(lp.hidden_sections) && lp.hidden_sections.includes(key);
+}
+
 function landingPageIntroHtml(product, lp, template) {
   // Nhãn nhỏ viết hoa phía trên tiêu đề (kiểu "BÓC TRẦN SỰ THẬT" ở mẫu gốc của Quỳnh) — CHỈ mẫu
   // "quynh" mới có, đúng đặc trưng riêng của trang tham khảo đó.
@@ -346,10 +358,30 @@ function landingPageIntroHtml(product, lp, template) {
     ? `<div class="lp-problem-grid">${lp.van_de_chi_tiet.map(v => `
         <div class="lp-problem-item"><div class="lp-problem-ten">${esc(v.ten || '')}</div><div class="lp-problem-mota">${esc(v.mo_ta || '')}</div></div>
       `).join('')}</div>` : '';
-  const chuongTrinhHtml = Array.isArray(lp.chuong_trinh) && lp.chuong_trinh.length
+  // "sach" hiện chương trình dạng MỤC LỤC NHÓM THEO PHẦN khi chuong_trinh có trường "nhom" (đúng khối
+  // "MỤC LỤC — PHẦN 1/2/3..." ở teedoo.io) — nhom là trường TUỲ CHỌN (xem landing-page-schema.js), chỉ
+  // nhóm khi có ≥1 mục có nhom; không có thì rơi về đúng danh sách phẳng như trước, không đổi gì cho
+  // 3 mẫu kia.
+  const chuongTrinhGroupedHtml = template === 'sach' && Array.isArray(lp.chuong_trinh) && lp.chuong_trinh.some(c => c.nhom && String(c.nhom).trim())
+    ? (() => {
+        const groups = [];
+        lp.chuong_trinh.forEach(c => {
+          const key = (c.nhom || '').trim() || null;
+          const last = groups[groups.length - 1];
+          if (last && last.nhom === key) last.items.push(c); else groups.push({ nhom: key, items: [c] });
+        });
+        return `<div class="lp-mucluc">${groups.map(g => `
+          ${g.nhom ? `<div class="lp-mucluc-group-title">${esc(g.nhom)}</div>` : ''}
+          <div class="lp-mucluc-group">${g.items.map(c => `
+            <div class="lp-mucluc-item"><span class="lp-mucluc-item-ten">${esc(c.ten || '')}</span><span class="lp-mucluc-item-mota">${esc(c.mo_ta || '')}</span></div>
+          `).join('')}</div>
+        `).join('')}</div>`;
+      })()
+    : '';
+  const chuongTrinhHtml = chuongTrinhGroupedHtml || (Array.isArray(lp.chuong_trinh) && lp.chuong_trinh.length
     ? `<div class="lp-program-list">${lp.chuong_trinh.map((c, i) => `
         <div class="lp-program-item"><div class="lp-program-num">${esc(programLabel(template, i))}</div><div><div class="lp-program-ten">${esc(c.ten || '')}</div><div class="lp-program-mota">${esc(c.mo_ta || '')}</div></div></div>
-      `).join('')}</div>` : '';
+      `).join('')}</div>` : '');
   const ketQuaListHtml = Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
     ? `<ul class="lp-list">${lp.ket_qua_dat_duoc.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
     : (Array.isArray(lp.loi_ich) && lp.loi_ich.length ? `<ul class="lp-list">${lp.loi_ich.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '');
@@ -409,6 +441,16 @@ function landingPageIntroHtml(product, lp, template) {
           ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
         </div>
       `).join('')}</div></div>` : '';
+  // "Ảnh thực tế" (chỉ "sach", product.proof_images — RIÊNG với case_study_images, đúng khối "HÌNH ẢNH
+  // THỰC TẾ — AI Lake Camp" ở teedoo.io: ảnh lớp học/buổi đào tạo thật, khác ảnh case study khách hàng
+  // cụ thể ở trên). Tuỳ chọn, để trống thì không hiện.
+  const proofImagesHtml = template === 'sach' && Array.isArray(product.proof_images) && product.proof_images.length
+    ? `<div class="lp-section">${eyebrow('Hình ảnh thực tế')}<h2 class="lp-h2">Những khoảnh khắc thật</h2><div class="lp-case-studies">${product.proof_images.map(c => `
+        <div class="lp-case-study-item">
+          <img src="${esc(c.url)}" alt="">
+          ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
+        </div>
+      `).join('')}</div></div>` : '';
   // "sach" hiện ưu đãi dạng HỘP CÓ VIỀN kèm icon (giống khối "Bạn sẽ nhận được gì" ở teedoo.io) thay
   // vì danh sách gạch đầu dòng đơn giản.
   const bonusListHtml = template === 'sach'
@@ -465,12 +507,13 @@ function landingPageIntroHtml(product, lp, template) {
   // "quynh" có thêm tiêu đề lớn "Bạn đang mắc kẹt ở đâu?" giữa nhãn nhỏ và đoạn mở đầu (đúng bố cục
   // trang gốc — trước đây thiếu hẳn dòng tiêu đề này, nhảy thẳng từ nhãn nhỏ xuống đoạn văn).
   const problemHeadlineHtml = template === 'quynh' ? `<h2 class="lp-h2">Bạn đang mắc kẹt ở đâu?</h2>` : '';
-  const problemHtml = lp.van_de_intro || lp.van_de ? `<div class="lp-section" id="lp-sec-problem">${eyebrow('Bóc trần sự thật')}${problemHeadlineHtml}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : '';
-  const programHtml = chuongTrinhHtml ? `<div class="lp-section" id="lp-sec-program">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section" id="lp-sec-program"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : '');
-  const resultsHtml = ketQuaHtml ? `<div class="lp-section">${eyebrow('Sau khi hoàn thành')}<h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : '';
-  const fitHtml = phuHopHtml ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : '';
-  const letterHtml = lp.loi_nhan_nguoi_ban ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : '';
-  const sellerHtml = lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller${template === 'quynh' ? ' lp-seller-quynh' : ''}">${founderPhotoHtml}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${bottomStatBarHtml}</div>` : (bottomStatBarHtml ? `<div class="lp-section">${bottomStatBarHtml}</div>` : '');
+  const problemHtml = (!isSectionHidden(lp, 'van_de') && (lp.van_de_intro || lp.van_de)) ? `<div class="lp-section" id="lp-sec-problem">${eyebrow('Bóc trần sự thật')}${problemHeadlineHtml}<p class="lp-body">${esc(lp.van_de_intro || lp.van_de)}</p>${vanDeChiTietHtml}</div>` : '';
+  const programHtml = isSectionHidden(lp, 'chuong_trinh') ? '' : (chuongTrinhHtml ? `<div class="lp-section" id="lp-sec-program">${eyebrow('Lộ trình thực chiến')}<h2 class="lp-h2">Lộ trình / chương trình</h2>${chuongTrinhHtml}</div>` : (lp.noi_dung_gioi_thieu ? `<div class="lp-section" id="lp-sec-program"><h2 class="lp-h2">Bạn sẽ nhận được gì</h2><p class="lp-body">${esc(lp.noi_dung_gioi_thieu)}</p></div>` : ''));
+  const resultsHtml = (!isSectionHidden(lp, 'ket_qua') && ketQuaHtml) ? `<div class="lp-section">${eyebrow('Sau khi hoàn thành')}<h2 class="lp-h2">Kết quả bạn đạt được</h2>${ketQuaHtml}</div>` : '';
+  const fitHtml = (!isSectionHidden(lp, 'phu_hop') && phuHopHtml) ? `<div class="lp-section">${eyebrow('Dành cho ai')}<h2 class="lp-h2">Phù hợp với ai</h2>${phuHopHtml}</div>` : '';
+  const letterHtml = (!isSectionHidden(lp, 'loi_nhan') && lp.loi_nhan_nguoi_ban) ? `<div class="lp-section">${eyebrow('Lời nhắn từ người bán')}<div class="lp-letter">${esc(lp.loi_nhan_nguoi_ban)}</div></div>` : '';
+  const sellerHidden = isSectionHidden(lp, 've_nguoi_ban');
+  const sellerHtml = sellerHidden ? '' : (lp.ve_nguoi_ban ? `<div class="lp-section">${eyebrow('Người đứng sau')}<h2 class="lp-h2">Về người bán</h2><div class="lp-seller${template === 'quynh' ? ' lp-seller-quynh' : ''}">${founderPhotoHtml}<p class="lp-body">${esc(lp.ve_nguoi_ban)}</p></div>${bottomStatBarHtml}</div>` : (bottomStatBarHtml ? `<div class="lp-section">${bottomStatBarHtml}</div>` : ''));
 
   if (template === 'quynh') {
     // Thứ tự ĐÚNG THEO TRANG GỐC 30ngaytamlinhtaichinh.netlify.app (2026-09-06, Quỳnh soi trực tiếp
@@ -503,6 +546,7 @@ function landingPageIntroHtml(product, lp, template) {
       ${resultsHtml}
       ${sellerHtml}
       ${teamHtml}
+      ${proofImagesHtml}
       ${caseStudyHtml}
       ${programHtml}
       ${bonusHtml}
@@ -550,7 +594,7 @@ function landingPageIntroHtml(product, lp, template) {
   `;
 }
 function landingPageFaqHtml(lp) {
-  if (!Array.isArray(lp.faq) || !lp.faq.length) return '';
+  if (!Array.isArray(lp.faq) || !lp.faq.length || isSectionHidden(lp, 'faq')) return '';
   return `
     <div class="lp-section" id="lp-sec-faq">
       <h2 class="lp-h2">Câu hỏi thường gặp</h2>

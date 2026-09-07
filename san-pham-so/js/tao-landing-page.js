@@ -12,8 +12,24 @@ function newContent() {
   return {
     hook: '', van_de_intro: '', van_de_chi_tiet: [], ket_qua_dat_duoc: [], chuong_trinh: [],
     loi_nhan_nguoi_ban: '', ve_nguoi_ban: '', phu_hop_voi_ai: [], faq: [], cta_text: '',
+    hidden_sections: [],
   };
 }
+
+// 2026-09-07 (Quỳnh: "mỗi phần ladipage mẫu người dùng chọn thì sẽ có mục xóa phần nào đó nếu người
+// dùng ko có dữ liệu") — CÁC MỤC AI VIẾT 1 KHỐI CHỮ (không có nút thêm/xoá từng dòng như bonus_items/
+// team_members/case_study_images — những mục ĐÓ đã tự ẩn khi mảng rỗng, không cần công tắc riêng). 7
+// mục này AI luôn điền sẵn khi viết landing page nên không thể "để trống" tự nhiên — cần công tắc ẩn
+// tay khi người bán thấy không phù hợp/không muốn hiện.
+const HIDEABLE_SECTIONS = [
+  { key: 'van_de', label: 'Vấn đề' },
+  { key: 'chuong_trinh', label: 'Lộ trình / chương trình' },
+  { key: 'ket_qua', label: 'Kết quả đạt được' },
+  { key: 'loi_nhan', label: 'Lời nhắn của bạn' },
+  { key: 've_nguoi_ban', label: 'Về người bán' },
+  { key: 'phu_hop', label: 'Phù hợp với ai' },
+  { key: 'faq', label: 'Câu hỏi thường gặp' },
+];
 
 // Mẫu giao diện landing page công khai (san-pham-so/p/) — style.css có 3 khối CSS tương ứng, chọn
 // bằng [data-lp-template]. Xem trước bằng chính trang mua THẬT qua <iframe src="p/?demo=1&tpl=...">
@@ -29,6 +45,7 @@ const LP_TEMPLATES = [
   { value: 'chuyengia', label: 'Chuyên gia', desc: 'Nền trắng sạch, tím indigo, thẻ "Phần" viền rõ — kiểu khoá học cho coach/chuyên gia.' },
 ];
 const MAX_CASE_STUDIES = 6;
+const MAX_PROOF_IMAGES = 6;
 const MAX_TEAM_MEMBERS = 6;
 // Tương thích sản phẩm đã lỡ chọn tên mẫu CŨ (classic/bold/minimal, trước 2026-09-03) — khớp đúng
 // hàm normalizeTemplate() ở san-pham-so/p/script.js.
@@ -48,6 +65,7 @@ function render(container) {
   const state = {
     screen: 'list', products: [], loading: true, selected: null, content: null, template: 'quynh',
     caseStudies: [], bonusItems: [], referencePrice: '', guaranteeText: '', caseStudyUploading: false, sellerPhotoUploading: false,
+    proofImages: [], proofUploading: false,
     teamMembers: [], statItems: [], metricItems: [], eventInfoItems: [], scarcityText: '', teamPhotoUploadingIndex: null,
     generating: false, saving: false, error: null, showManualEdit: false,
     // Tạo nhanh 1 sản phẩm NGAY TẠI ĐÂY (2026-09-02, Quỳnh: "người dùng không cần làm bước 1-2-3
@@ -285,6 +303,22 @@ function render(container) {
         <label style="margin-bottom:10px;display:block;">10. Dòng cảnh báo số lượng có hạn (tuỳ chọn — VD "Chỉ 30 chỗ mỗi khóa · Ưu tiên người đăng ký sớm") — để trống nếu không muốn hứa hẹn giới hạn nào</label>
         <input id="lp-scarcity" type="text" value="${esc(state.scarcityText)}" placeholder="VD: Chỉ 30 chỗ mỗi khóa">
       </div>
+      <div class="card" style="margin-top:10px;">
+        <label style="margin-bottom:10px;display:block;">11. Ảnh thực tế THẬT (lớp học/buổi đào tạo/hoạt động thật — tối đa ${MAX_PROOF_IMAGES} ảnh, khác ảnh case study ở mục 3) — không bắt buộc</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          ${state.proofImages.map((c, i) => `
+            <div style="width:130px;">
+              <img src="${esc(c.url)}" style="width:130px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;">
+              <input type="text" data-proof-caption="${i}" value="${esc(c.caption || '')}" placeholder="VD: Buổi đào tạo tháng 6" style="margin-top:4px;font-size:12px;padding:6px 8px;">
+              <span class="btn-ghost btn btn-sm" data-proof-remove="${i}" style="color:var(--danger);display:block;margin-top:4px;text-align:center;">Xoá</span>
+            </div>
+          `).join('')}
+        </div>
+        ${state.proofImages.length < MAX_PROOF_IMAGES ? `
+          <input id="lp-proof-input" type="file" accept="image/*" style="display:none;">
+          <span class="btn-ghost btn btn-sm" id="lp-proof-btn">${state.proofUploading ? 'Đang tải…' : '+ Thêm ảnh thực tế'}</span>
+        ` : ''}
+      </div>
     `;
   }
 
@@ -316,15 +350,31 @@ function render(container) {
     `;
   }
 
-  function namedListEditorHtml(items, tenAttr, moTaAttr, removeAttr, tenPlaceholder, moTaPlaceholder) {
+  function namedListEditorHtml(items, tenAttr, moTaAttr, removeAttr, tenPlaceholder, moTaPlaceholder, nhomAttr) {
     return `
       <div>
         ${(items || []).map((it, i) => `
           <div style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;">
             <input type="text" data-${tenAttr}="${i}" value="${esc(it.ten || '')}" placeholder="${esc(tenPlaceholder)}" style="margin-bottom:6px;font-weight:600;">
             <textarea data-${moTaAttr}="${i}" rows="2" placeholder="${esc(moTaPlaceholder)}">${esc(it.mo_ta || '')}</textarea>
+            ${nhomAttr ? `<input type="text" data-${nhomAttr}="${i}" value="${esc(it.nhom || '')}" placeholder="Tên nhóm lớn chứa phần này (không bắt buộc, VD: Phần 1: Tư duy)" style="margin-top:6px;font-size:12.5px;">` : ''}
             <span class="btn-ghost btn btn-sm" data-${removeAttr}="${i}" style="color:var(--danger);margin-top:6px;">Xoá</span>
           </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function hiddenSectionsHtml(c) {
+    const hidden = Array.isArray(c.hidden_sections) ? c.hidden_sections : [];
+    return `
+      <div style="margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;">
+        <label style="margin-bottom:8px;display:block;">Ẩn bớt phần không có dữ liệu (tick vào phần muốn ẨN khỏi trang bán — mặc định mọi phần đều hiện)</label>
+        ${HIDEABLE_SECTIONS.map(s => `
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-bottom:6px;">
+            <input type="checkbox" data-hide-section="${s.key}" ${hidden.includes(s.key) ? 'checked' : ''} style="width:auto;">
+            ${esc(s.label)}
+          </label>
         `).join('')}
       </div>
     `;
@@ -333,7 +383,8 @@ function render(container) {
   function manualEditFieldsHtml(c) {
     return `
       <div style="margin-top:14px;">
-        <label>Hook (tiêu đề chính)</label>
+        ${hiddenSectionsHtml(c)}
+        <label style="margin-top:14px;">Hook (tiêu đề chính)</label>
         <input id="lp-hook" type="text" value="${esc(c.hook)}">
 
         <label style="margin-top:14px;">Vấn đề — mở đầu</label>
@@ -347,7 +398,7 @@ function render(container) {
         <textarea id="lp-ket-qua" rows="4">${esc((c.ket_qua_dat_duoc || []).join('\n'))}</textarea>
 
         <label style="margin-top:14px;">Lộ trình / chương trình (mỗi phần 1 tên + mô tả)</label>
-        <div id="lp-chuong-trinh-list">${namedListEditorHtml(c.chuong_trinh, 'ct-ten', 'ct-mota', 'ct-remove', 'Tên phần', 'Mô tả')}</div>
+        <div id="lp-chuong-trinh-list">${namedListEditorHtml(c.chuong_trinh, 'ct-ten', 'ct-mota', 'ct-remove', 'Tên phần', 'Mô tả', 'ct-nhom')}</div>
         <span class="btn-ghost btn btn-sm" id="lp-ct-add">+ Thêm phần</span>
 
         <label style="margin-top:14px;">Lời nhắn của bạn (giọng cá nhân, gửi trực tiếp tới người đọc)</label>
@@ -386,6 +437,7 @@ function render(container) {
     state.content = p.landing_page_content ? { ...newContent(), ...p.landing_page_content } : newContent();
     state.template = normalizeTemplate(p.landing_page_template);
     state.caseStudies = Array.isArray(p.case_study_images) ? [...p.case_study_images] : [];
+    state.proofImages = Array.isArray(p.proof_images) ? [...p.proof_images] : [];
     state.bonusItems = Array.isArray(p.bonus_items) ? [...p.bonus_items] : [];
     state.referencePrice = p.reference_price || '';
     state.guaranteeText = p.guarantee_text || '';
@@ -534,6 +586,29 @@ function render(container) {
       el.onclick = () => { state.caseStudies.splice(Number(el.getAttribute('data-cs-remove')), 1); draw(); };
     });
 
+    const proofBtn = container.querySelector('#lp-proof-btn');
+    const proofInput = container.querySelector('#lp-proof-input');
+    if (proofBtn) proofBtn.onclick = () => proofInput.click();
+    if (proofInput) proofInput.onchange = async () => {
+      const file = proofInput.files[0];
+      if (!file) return;
+      state.proofUploading = true; state.error = null; draw();
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 900, 0.75);
+        state.proofImages.push({ url: dataUrl, caption: '' });
+      } catch (e) {
+        state.error = e.message || 'Tải ảnh thất bại — thử lại giúp mình.';
+      }
+      state.proofUploading = false;
+      draw();
+    };
+    container.querySelectorAll('[data-proof-caption]').forEach(el => {
+      el.oninput = () => { state.proofImages[Number(el.getAttribute('data-proof-caption'))].caption = el.value; };
+    });
+    container.querySelectorAll('[data-proof-remove]').forEach(el => {
+      el.onclick = () => { state.proofImages.splice(Number(el.getAttribute('data-proof-remove')), 1); draw(); };
+    });
+
     const bonusEl = container.querySelector('#lp-bonus');
     if (bonusEl) bonusEl.oninput = () => { state.bonusItems = bonusEl.value.split('\n').map(s => s.trim()).filter(Boolean); };
     const referencePriceEl = container.querySelector('#lp-reference-price');
@@ -624,7 +699,7 @@ function render(container) {
         // AI viết chữ — AI viết xong tự PATCH landing_page_content luôn
         // (api/san-pham-so-tao-landing-page.js), không cần bấm "Lưu" riêng cho luồng chính (Quỳnh:
         // "90% chỉ là tải thông tin lên thôi").
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null, proof_images: state.proofImages });
         const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id, template: state.template }, 180000);
         state.content = { ...newContent(), ...data.result };
         state.selected.landing_page_content = state.content;
@@ -647,6 +722,15 @@ function render(container) {
     const toggleManualBtn = container.querySelector('#lp-toggle-manual-btn');
     if (toggleManualBtn) toggleManualBtn.onclick = () => { state.showManualEdit = !state.showManualEdit; draw(); };
     if (!state.showManualEdit) return;
+
+    container.querySelectorAll('[data-hide-section]').forEach(el => {
+      el.onchange = () => {
+        const key = el.getAttribute('data-hide-section');
+        const hidden = new Set(Array.isArray(state.content.hidden_sections) ? state.content.hidden_sections : []);
+        if (el.checked) hidden.add(key); else hidden.delete(key);
+        state.content.hidden_sections = [...hidden];
+      };
+    });
 
     const hookEl = container.querySelector('#lp-hook');
     if (hookEl) hookEl.oninput = () => { state.content.hook = hookEl.value; };
@@ -676,12 +760,15 @@ function render(container) {
     });
 
     const ctAddBtn = container.querySelector('#lp-ct-add');
-    if (ctAddBtn) ctAddBtn.onclick = () => { state.content.chuong_trinh = [...(state.content.chuong_trinh || []), { ten: '', mo_ta: '' }]; draw(); };
+    if (ctAddBtn) ctAddBtn.onclick = () => { state.content.chuong_trinh = [...(state.content.chuong_trinh || []), { ten: '', mo_ta: '', nhom: '' }]; draw(); };
     container.querySelectorAll('[data-ct-ten]').forEach(el => {
       el.oninput = () => { state.content.chuong_trinh[Number(el.getAttribute('data-ct-ten'))].ten = el.value; };
     });
     container.querySelectorAll('[data-ct-mota]').forEach(el => {
       el.oninput = () => { state.content.chuong_trinh[Number(el.getAttribute('data-ct-mota'))].mo_ta = el.value; };
+    });
+    container.querySelectorAll('[data-ct-nhom]').forEach(el => {
+      el.oninput = () => { state.content.chuong_trinh[Number(el.getAttribute('data-ct-nhom'))].nhom = el.value; };
     });
     container.querySelectorAll('[data-ct-remove]').forEach(el => {
       el.onclick = () => { state.content.chuong_trinh.splice(Number(el.getAttribute('data-ct-remove')), 1); draw(); };
@@ -706,7 +793,7 @@ function render(container) {
     if (saveBtn) saveBtn.onclick = async () => {
       state.saving = true; state.error = null; draw();
       try {
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null, proof_images: state.proofImages });
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
         state.selected.case_study_images = state.caseStudies;
