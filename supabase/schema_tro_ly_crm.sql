@@ -192,12 +192,36 @@ create policy "crm_story_profiles_owner_all" on crm_story_profiles for all using
 -- nguyên cho chế độ trả lời từng câu — 2 chế độ không bắt buộc dùng cùng lúc.
 alter table crm_story_profiles add column if not exists free_story text;
 
+-- Phân loại Sức khỏe/Kinh doanh (2026-09-07, chị Quỳnh: "phải có mục phân loại... để khi AI tư vấn
+-- còn chọn câu chuyện phù hợp để kể cho khách hay đối tác") — khớp ĐÚNG 2 nhánh A/D đã có sẵn trong
+-- api/crm-tuvan.js. Mỗi user giờ có TỐI ĐA 2 dòng (1 mỗi category thay vì 1 dòng duy nhất trước đây)
+-- — đổi primary key từ (user_id) sang (user_id, category). Dòng CŨ (trước khi có cột này) tự nhận
+-- default 'chung' khi thêm cột — tro-ly-crm/js/cau-chuyen.js tự phát hiện dòng 'chung' còn nội dung
+-- và hỏi 1 lần xem thuộc lĩnh vực nào rồi ĐỔI HẲN category của đúng dòng đó (update, không tạo mới).
+alter table crm_story_profiles add column if not exists category text not null default 'chung';
+do $$
+begin
+  if exists (
+    select 1 from pg_constraint
+    where conname = 'crm_story_profiles_pkey' and conrelid = 'crm_story_profiles'::regclass
+      and pg_get_constraintdef(oid) = 'PRIMARY KEY (user_id)'
+  ) then
+    alter table crm_story_profiles drop constraint crm_story_profiles_pkey;
+    alter table crm_story_profiles add primary key (user_id, category);
+  end if;
+end $$;
+
 -- Lượt AI RIÊNG cho tro-ly-crm (2026-08-30, chị Quỳnh chốt "làm như Xây Nhân Hiệu — hiện bộ đếm
 -- lượt" rồi yêu cầu tính lại đúng chi phí thật) — ĐỘC LẬP hoàn toàn với hệ ai_usage/consume_ai_quota
 -- của Xây Nhân Hiệu. Không có khái niệm "dùng thử" — chỉ 1 trần theo tháng (300, xem
 -- api/_lib/crm-ai-quota.js), không có nhánh trial/paid như hàm consume_ai_quota gốc.
 alter table profiles add column if not exists crm_ai_uses int not null default 0;
 alter table profiles add column if not exists crm_ai_month text;
+-- Mốc BẮT ĐẦU TRẢ PHÍ CRM — CHỈ set 1 LẦN lúc crm_has_paid chuyển false->true (sepay-webhook.js),
+-- không ghi đè ở các lần gia hạn sau. RIÊNG với first_paid_at của Xây Nhân Hiệu (2 sản phẩm độc lập,
+-- có thể trả phí ở 2 thời điểm khác nhau) — "rà soát toàn bộ app, tính lượt... thì cũng phải làm hết
+-- với app CRM" (chị Quỳnh 2026-09-07, xem cột first_paid_at + paidCycleAnchor() bên Xây Nhân Hiệu).
+alter table profiles add column if not exists crm_first_paid_at timestamptz;
 -- "Mua thêm lượt" (Nâng Cấp) — cộng thẳng vào crm_ai_bonus của THÁNG HIỆN TẠI, giống hệt
 -- paid_ai_bonus bên Xây Nhân Hiệu (xem CRM_AMOUNT_TO_TOPUP_LUOT/api/sepay-webhook.js) — dùng hết
 -- trong tháng, không cộng dồn vĩnh viễn, tự về 0 khi sang tháng mới.
@@ -218,9 +242,11 @@ begin
   if not found then
     return jsonb_build_object('allowed', true); -- không tìm thấy profile: fail open, không chặn oan
   end if;
-  -- Cùng công thức chu kỳ 30 ngày từ created_at như consume_ai_quota() (Xây Nhân Hiệu) — xem giải
-  -- thích đầy đủ ở api/_lib/quota-cycle.js. Áp dụng cho Trợ Lý CRM để cùng logic reset công bằng.
-  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  -- Chu kỳ 30 ngày neo vào MỐC NÂNG CẤP (crm_first_paid_at), không phải ngày đăng ký — cùng công
+  -- thức/lý do như consume_ai_quota() (Xây Nhân Hiệu, 2026-09-07 sửa lại từ created_at) — xem giải
+  -- thích đầy đủ ở api/_lib/quota-cycle.js. coalesce về created_at cho ai trả phí TỪ TRƯỚC KHI cột
+  -- crm_first_paid_at tồn tại.
+  v_month := floor(extract(epoch from (now() - coalesce(v_profile.crm_first_paid_at, v_profile.created_at))) / (30 * 86400))::text;
   v_is_admin := (v_profile.role = 'admin');
   if v_profile.crm_ai_month = v_month then
     v_current_uses := v_profile.crm_ai_uses;
@@ -253,8 +279,8 @@ declare
 begin
   select * into v_profile from profiles where id = p_user_id for update;
   if not found then return; end if;
-  -- Cùng công thức chu kỳ 30 ngày từ created_at như consume_crm_ai_quota() ở trên.
-  v_month := floor(extract(epoch from (now() - v_profile.created_at)) / (30 * 86400))::text;
+  -- Cùng công thức chu kỳ 30 ngày (neo crm_first_paid_at) như consume_crm_ai_quota() ở trên.
+  v_month := floor(extract(epoch from (now() - coalesce(v_profile.crm_first_paid_at, v_profile.created_at))) / (30 * 86400))::text;
   if v_profile.crm_ai_month = v_month then
     update profiles set crm_ai_uses = greatest(0, crm_ai_uses - p_weight) where id = p_user_id;
   end if;
@@ -262,6 +288,14 @@ end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 revoke all on function public.refund_crm_ai_quota(uuid, int) from public, authenticated, anon;
 grant execute on function public.refund_crm_ai_quota(uuid, int) to service_role;
+
+-- Migrate 1 lần: recompute crm_ai_month cho MỌI khách CRM đã trả phí theo mốc mới (crm_first_paid_at),
+-- GIỮ NGUYÊN crm_ai_uses/crm_ai_bonus hiện có — tránh lặp lại bug "mất lượt đang dùng dở" đã gặp bên
+-- Xây Nhân Hiệu khi đổi công thức mà quên recompute lại giá trị đã lưu (2026-09-03). AN TOÀN CHẠY LẠI
+-- nhiều lần — chỉ tính lại đúng giá trị hiện tại theo công thức mới.
+update profiles
+set crm_ai_month = floor(extract(epoch from (now() - coalesce(crm_first_paid_at, created_at))) / (30 * 86400))::text
+where crm_has_paid = true;
 
 -- Migrate 1 lần: đổi crm_ai_month của MỌI user còn ở định dạng CŨ 'YYYY-MM' (bất kể tháng nào) sang
 -- định dạng chu kỳ mới (số chu kỳ 30 ngày từ created_at) — giữ nguyên crm_ai_uses/crm_ai_bonus hiện

@@ -300,7 +300,7 @@ async function creditCrmReferralReward(refereeProfile, transferAmount) {
   if (!refereeProfile.referred_by_ref_code || refereeProfile.crm_referral_reward_given) return;
 
   const referrerResp = await supabaseAdmin(
-    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,is_vip_partner,crm_ai_uses,crm_ai_month,crm_ai_bonus`
+    `profiles?ref_code=eq.${refereeProfile.referred_by_ref_code}&select=id,is_vip_partner,crm_ai_uses,crm_ai_month,crm_ai_bonus,created_at,crm_first_paid_at`
   );
   const referrerRows = referrerResp.ok ? await referrerResp.json() : [];
   const referrer = referrerRows[0];
@@ -311,13 +311,15 @@ async function creditCrmReferralReward(refereeProfile, transferAmount) {
   const rewardLuot = Math.round((transferAmount * rewardPercent) / REFERRAL_LUOT_PER_DONG);
   if (rewardLuot <= 0) return;
 
-  // Cộng vào crm_ai_bonus của THÁNG HIỆN TẠI — khớp đúng logic nhánh topupLuot ở dưới (crm dùng
-  // tháng lịch, không phải chu kỳ 30 ngày như paid_ai_* của nhan-hieu).
-  const month = new Date().toISOString().slice(0, 7);
-  const sameMonth = referrer.crm_ai_month === month;
+  // Chu kỳ 30 ngày neo crm_first_paid_at (chị Quỳnh 2026-09-07: "rà soát toàn bộ app... tính lượt...
+  // thì cũng phải làm hết với app CRM" — trước đây dùng THÁNG LỊCH ở đây, lệch với consume_crm_ai_quota()
+  // đã đổi sang chu kỳ 30 ngày, khiến bonus cộng vào sai "tháng" không bao giờ khớp được với chu kỳ
+  // thật RPC đang tính, coi như mất bonus).
+  const cycleKey = currentCycleKey(paidCycleAnchor({ created_at: referrer.created_at, first_paid_at: referrer.crm_first_paid_at }));
+  const sameMonth = referrer.crm_ai_month === cycleKey;
   const rewardPatch = sameMonth
     ? { crm_ai_bonus: (referrer.crm_ai_bonus || 0) + rewardLuot }
-    : { crm_ai_month: month, crm_ai_uses: 0, crm_ai_bonus: rewardLuot };
+    : { crm_ai_month: cycleKey, crm_ai_uses: 0, crm_ai_bonus: rewardLuot };
 
   const patchResp = await supabaseAdmin(`profiles?id=eq.${referrer.id}`, {
     method: 'PATCH',
@@ -549,7 +551,7 @@ module.exports = async (req, res) => {
       // Trợ Lý AI Tư Vấn & CRM — hạn dùng RIÊNG (crm_access_until), cộng dồn giống access_until của
       // nhan-hieu (base = hạn cũ nếu còn hiệu lực, else từ hôm nay). Không có ưu đãi mua sớm/giới
       // thiệu/học viên cho sản phẩm này (bản đầu, thêm sau nếu chị Quỳnh cần).
-      const profResp = await supabaseAdmin(`profiles?crm_ref_code=eq.${crmRefCode}&select=id,crm_access_until,crm_ai_uses,crm_ai_month,crm_ai_bonus,referred_by_ref_code,crm_referral_reward_given`);
+      const profResp = await supabaseAdmin(`profiles?crm_ref_code=eq.${crmRefCode}&select=id,crm_access_until,crm_ai_uses,crm_ai_month,crm_ai_bonus,crm_has_paid,crm_first_paid_at,created_at,referred_by_ref_code,crm_referral_reward_given`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
@@ -560,9 +562,13 @@ module.exports = async (req, res) => {
           const base = (profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now())
             ? new Date(profile.crm_access_until) : new Date();
           const next = new Date(base.getTime() + days * 86400000);
+          const activatePatch = { crm_access_until: next.toISOString(), crm_has_paid: true, crm_plan_days: days };
+          // crm_first_paid_at: mốc bắt đầu trả phí CRM, neo chu kỳ crm_ai_month — CHỈ set đúng 1 lần
+          // (chị Quỳnh 2026-09-07, xem cột này ở schema_tro_ly_crm.sql).
+          if (!profile.crm_has_paid) activatePatch.crm_first_paid_at = new Date().toISOString();
           const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ crm_access_until: next.toISOString(), crm_has_paid: true, crm_plan_days: days }),
+            body: JSON.stringify(activatePatch),
           });
           if (updateResp.ok) {
             status = 'matched';
@@ -575,14 +581,15 @@ module.exports = async (req, res) => {
             status = 'unmatched_amount';
           }
         } else if (topupLuot) {
-          // Cộng thẳng vào crm_ai_bonus của THÁNG HIỆN TẠI — nếu profile đang ở tháng cũ thì coi
-          // bonus/uses hiện có là đã hết hạn, cộng lượt mới vào tháng mới (giống hệt nhánh topupLuot
-          // của nhan-hieu ở trên, chỉ khác cột: crm_ai_* thay vì paid_ai_*).
-          const month = new Date().toISOString().slice(0, 7);
-          const sameMonth = profile.crm_ai_month === month;
+          // Cộng thẳng vào crm_ai_bonus của CHU KỲ HIỆN TẠI (30 ngày neo crm_first_paid_at, không
+          // phải tháng lịch — chị Quỳnh 2026-09-07, xem giải thích ở creditCrmReferralReward()) — nếu
+          // profile đang ở chu kỳ cũ thì coi bonus/uses hiện có là đã hết hạn, cộng lượt mới vào chu
+          // kỳ mới (giống hệt nhánh topupLuot của nhan-hieu ở trên, chỉ khác cột: crm_ai_* thay vì paid_ai_*).
+          const cycleKey = currentCycleKey(paidCycleAnchor({ created_at: profile.created_at, first_paid_at: profile.crm_first_paid_at }));
+          const sameMonth = profile.crm_ai_month === cycleKey;
           const patchBody = sameMonth
             ? { crm_ai_bonus: (profile.crm_ai_bonus || 0) + topupLuot }
-            : { crm_ai_month: month, crm_ai_uses: 0, crm_ai_bonus: topupLuot };
+            : { crm_ai_month: cycleKey, crm_ai_uses: 0, crm_ai_bonus: topupLuot };
           const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
             method: 'PATCH',
             body: JSON.stringify(patchBody),

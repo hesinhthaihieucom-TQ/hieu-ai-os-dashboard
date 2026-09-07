@@ -46,7 +46,7 @@ function render(container, ctx){
 
   async function load(){
     const { data, error } = await ctx.supabase.from('profiles')
-      .select('id,email,full_name,role,crm_has_paid,crm_access_until,crm_plan_days,crm_ai_uses,crm_ai_month,crm_ai_bonus')
+      .select('id,email,full_name,role,crm_has_paid,crm_access_until,crm_plan_days,crm_ai_uses,crm_ai_month,crm_ai_bonus,created_at,crm_first_paid_at')
       .not('crm_first_visited_at', 'is', null)
       .order('crm_access_until', { ascending:true });
     if(error){ state.error = error.message; state.profiles = []; return; }

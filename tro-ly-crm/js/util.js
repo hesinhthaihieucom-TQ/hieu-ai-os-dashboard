@@ -166,3 +166,27 @@ async function saveModuleDraft(ctx, key, data){
 async function clearModuleDraft(ctx, key){
   try{ await ctx.supabase.from('module_drafts').delete().eq('user_id', ctx.user.id).eq('module_key', key); } catch(e){}
 }
+
+// Y HỆT currentCycleKey()/paidCycleAnchor() ở nhan-hieu/js/util.js + api/_lib/quota-cycle.js (server)
+// — PHẢI giữ đúng công thức giống nhau. "rà soát toàn bộ app... tính lượt... thì cũng phải làm hết
+// với app CRM" (chị Quỳnh 2026-09-07) — crm_ai_month đổi từ chuỗi tháng lịch 'YYYY-MM' sang chỉ số
+// chu kỳ 30 ngày kể từ mốc NÂNG CẤP (crm_first_paid_at), fallback created_at cho ai chưa từng trả phí
+// hoặc trả phí TỪ TRƯỚC KHI cột crm_first_paid_at tồn tại.
+function currentCycleKey(createdAtIso){
+  const createdAt = new Date(createdAtIso).getTime();
+  const days = Math.floor((Date.now() - createdAt) / 86400000);
+  return String(Math.max(0, Math.floor(days / 30)));
+}
+function paidCycleAnchor(p){
+  return (p && (p.crm_first_paid_at || p.created_at)) || null;
+}
+// Chuỗi "dd/mm - dd/mm" của đúng chu kỳ 30 ngày HIỆN TẠI (tính từ mốc neo) — thay cho nhãn "tháng
+// này" không còn đúng nữa, y hệt currentCycleRangeLabel() bên nhan-hieu/js/util.js.
+function currentCycleRangeLabel(anchorIso){
+  const anchor = new Date(anchorIso).getTime();
+  const cycleIndex = Number(currentCycleKey(anchorIso));
+  const start = new Date(anchor + cycleIndex * 30 * 86400000);
+  const end = new Date(start.getTime() + 29 * 86400000);
+  const fmt = (d) => `${d.getDate()}/${d.getMonth()+1}`;
+  return `${fmt(start)} - ${fmt(end)}`;
+}

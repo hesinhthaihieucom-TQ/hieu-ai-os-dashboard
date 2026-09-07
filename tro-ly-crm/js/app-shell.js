@@ -47,8 +47,11 @@ const CRM_MONTHLY_AI_LIMIT = 300;
 const GATED_API_WEIGHTS = { 'api/crm-tuvan': 3, 'api/crm-cap-nhat-ho-so': 1 };
 
 function crmMonthlyUsage(p){
-  const month = new Date().toISOString().slice(0,7);
-  const sameMonth = p.crm_ai_month === month;
+  // Chu kỳ 30 ngày từ lúc NÂNG CẤP (crm_first_paid_at), không phải tháng lịch (chị Quỳnh 2026-09-07,
+  // xem paidCycleAnchor() ở util.js) — BUG THẬT trước đây: RPC (consume_crm_ai_quota) đã đổi sang
+  // định dạng chu kỳ số ('14'...) nhưng chỗ này vẫn so bằng chuỗi tháng lịch ('2026-09'), 2 bên KHÔNG
+  // BAO GIỜ khớp nhau, khiến số "đã dùng" hiển thị luôn ra 0 dù dùng bao nhiêu cũng vậy.
+  const sameMonth = p.crm_ai_month === currentCycleKey(paidCycleAnchor(p));
   const used = sameMonth ? (p.crm_ai_uses||0) : 0;
   const bonus = sameMonth ? (p.crm_ai_bonus||0) : 0;
   return { used, limit: CRM_MONTHLY_AI_LIMIT + bonus };
@@ -57,10 +60,11 @@ function crmQuotaHint(){
   const p = AppState.profile;
   if(!p) return '';
   const { used, limit } = crmMonthlyUsage(p);
-  if(p.role==='admin') return `<span style="color:#8A8F82;">🔥 Đã dùng ${used} lượt (tháng này) — không giới hạn</span>`;
+  const period = currentCycleRangeLabel(paidCycleAnchor(p));
+  if(p.role==='admin') return `<span style="color:#8A8F82;">🔥 Đã dùng ${used} lượt (${period}) — không giới hạn</span>`;
   const remaining = Math.max(0, limit - used);
   const color = remaining<=10 ? 'var(--danger)' : '#9CA396';
-  return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt tháng này</span>`;
+  return `<span style="color:${color};">✨ Còn ${remaining}/${limit} lượt (${period})</span>`;
 }
 window.onGatedApiSuccess = function(relativePath, weightOverride){
   const p = AppState.profile;
@@ -68,8 +72,8 @@ window.onGatedApiSuccess = function(relativePath, weightOverride){
   const path = relativePath.split('?')[0];
   const weight = weightOverride != null ? weightOverride : GATED_API_WEIGHTS[path];
   if(!weight) return;
-  const month = new Date().toISOString().slice(0,7);
-  if(p.crm_ai_month !== month){ p.crm_ai_month = month; p.crm_ai_uses = 0; p.crm_ai_bonus = 0; }
+  const cycleKey = currentCycleKey(paidCycleAnchor(p));
+  if(p.crm_ai_month !== cycleKey){ p.crm_ai_month = cycleKey; p.crm_ai_uses = 0; p.crm_ai_bonus = 0; }
   p.crm_ai_uses = (p.crm_ai_uses||0) + weight;
   const el = document.getElementById('sidebar-foot-info');
   if(el) el.innerHTML = sidebarFootHtml();
