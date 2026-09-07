@@ -23,7 +23,42 @@ const PLANS_REFERRAL = [
   { key:'6m_ref', label:'6 tháng (giá giới thiệu)', amount:2116000, recommended:true, note:'Giảm 15% nhờ qua link giới thiệu — còn 2.116.000đ so với giá thường 2.490.000đ.' },
   { key:'12m_ref', label:'12 tháng (giá giới thiệu)', amount:3392000, note:'Giảm 15% nhờ qua link giới thiệu — còn 3.392.000đ so với giá thường 3.990.000đ.' },
 ];
-function currentPlans(ctx){ return (ctx.profile && ctx.profile.referred_by_ref_code) ? PLANS_REFERRAL : PLANS; }
+// Ưu đãi "mua sớm trong ngày đầu tiên đăng ký" (2026-09-07, "bên xây nhân hiệu có gì bên này có
+// đó" — tặng giống hệt nhan-hieu: 6 tháng +1 tháng, 12 tháng +2 tháng) — PHẢI khớp tay
+// EARLY_BIRD_WINDOW_DAYS/EARLY_BIRD_BONUS_DAYS_BY_PLAN ở api/sepay-webhook.js (nơi THỰC SỰ cộng
+// ngày), khối này chỉ để HIỆN đúng ưu đãi/đếm ngược cho khách thấy trước khi chuyển khoản.
+const EARLY_BIRD_WINDOW_DAYS = 1;
+const EARLY_BIRD_BONUS_MONTHS = { '1m':0, '6m':1, '12m':2, '1m_ref':0, '6m_ref':1, '12m_ref':2 };
+function isInEarlyBirdWindow(profile){
+  if(!profile || !profile.created_at) return false;
+  return (Date.now() - new Date(profile.created_at).getTime()) <= EARLY_BIRD_WINDOW_DAYS * 86400000;
+}
+function earlyBirdHoursLeft(profile){
+  if(!profile || !profile.created_at) return null;
+  const elapsedMs = Date.now() - new Date(profile.created_at).getTime();
+  const totalMs = EARLY_BIRD_WINDOW_DAYS * 86400000;
+  if(elapsedMs >= totalMs) return null;
+  return Math.max(0, Math.ceil((totalMs - elapsedMs) / 3600000));
+}
+function earlyBirdTimeLeftLabel(profile){
+  const h = earlyBirdHoursLeft(profile);
+  if(h == null) return null;
+  const days = Math.floor(h / 24);
+  const hours = h % 24;
+  return days > 0 ? `${days} ngày ${hours} giờ` : `${hours} giờ`;
+}
+function decorateEarlyBird(plans, profile){
+  if(!isInEarlyBirdWindow(profile)) return plans;
+  return plans.map(pl=>{
+    const bonusMonths = EARLY_BIRD_BONUS_MONTHS[pl.key];
+    if(!bonusMonths) return pl;
+    return { ...pl, note: `🎁 Mua trong ngày đầu tiên đăng ký được TẶNG THÊM ${bonusMonths} tháng dùng! ${pl.note||''}`.trim() };
+  });
+}
+function currentPlans(ctx){
+  const base = (ctx.profile && ctx.profile.referred_by_ref_code) ? PLANS_REFERRAL : PLANS;
+  return decorateEarlyBird(base, ctx.profile);
+}
 
 // Nhãn "rẻ hơn X đ (~Y%)" cho gói 6/12 tháng — so với mua LẺ THEO THÁNG (giá 1m) nhân lên đúng số
 // tháng, khớp cách nhan-hieu/js/app-shell.js's planSavingsLabel() tính (2026-09-07, "bên xây nhân
@@ -156,6 +191,7 @@ function render(container, ctx){
       ${(!canTopup || state.tab==='goi') ? `
       <div class="card" style="max-width:460px;margin-top:16px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
+        ${earlyBirdTimeLeftLabel(p) ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdTimeLeftLabel(p))} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
         <div class="chips" id="plan-chips">
           ${plans.map(pl => {
             const savings = planSavingsLabel(pl);

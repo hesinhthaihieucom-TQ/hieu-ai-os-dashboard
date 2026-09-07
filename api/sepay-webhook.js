@@ -559,9 +559,15 @@ module.exports = async (req, res) => {
         const days = CRM_AMOUNT_TO_DAYS[transferAmount];
         const topupLuot = CRM_AMOUNT_TO_TOPUP_LUOT[transferAmount];
         if (days) {
+          // Ưu đãi "mua sớm trong ngày đầu tiên đăng ký" (2026-09-07, chị Quỳnh: "bên xây nhân hiệu
+          // có gì bên này có đó" — tặng giống hệt nhan-hieu: 6 tháng +1 tháng, 12 tháng +2 tháng).
+          // Dùng lại ĐÚNG isWithinEarlyBirdWindow/EARLY_BIRD_BONUS_DAYS_BY_PLAN đã có ở trên — không
+          // cần bảng loại trừ riêng cho CRM vì sản phẩm này không có giá học viên/flash-sale (2 loại
+          // duy nhất bị loại trừ ở nhan-hieu), giá giới thiệu vẫn được cộng dồn y hệt nhan-hieu.
+          const bonusDays = (isWithinEarlyBirdWindow(profile.created_at) && EARLY_BIRD_BONUS_DAYS_BY_PLAN[days]) ? EARLY_BIRD_BONUS_DAYS_BY_PLAN[days] : 0;
           const base = (profile.crm_access_until && new Date(profile.crm_access_until).getTime() > Date.now())
             ? new Date(profile.crm_access_until) : new Date();
-          const next = new Date(base.getTime() + days * 86400000);
+          const next = new Date(base.getTime() + (days + bonusDays) * 86400000);
           const activatePatch = { crm_access_until: next.toISOString(), crm_has_paid: true, crm_plan_days: days };
           // crm_first_paid_at: mốc bắt đầu trả phí CRM, neo chu kỳ crm_ai_month — CHỈ set đúng 1 lần
           // (chị Quỳnh 2026-09-07, xem cột này ở schema_tro_ly_crm.sql).
@@ -573,7 +579,7 @@ module.exports = async (req, res) => {
           if (updateResp.ok) {
             status = 'matched';
             matchedProfileId = profile.id;
-            daysGranted = days;
+            daysGranted = days + bonusDays; // ghi cả bonus vào log giao dịch để đối soát thấy rõ
             // Best-effort, KHÔNG để lỗi ở đây làm mất luôn việc ghi log sepay_transactions bên
             // dưới — referee đã kích hoạt xong gói của họ rồi, phần thưởng cho referrer là phụ.
             try { await creditCrmReferralReward(profile, transferAmount); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
