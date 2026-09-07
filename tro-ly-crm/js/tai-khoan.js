@@ -7,6 +7,8 @@ const PARTNER_REFERRAL_THRESHOLD = 5;
 function render(container, ctx){
   const state = {
     fullName: (ctx.profile && ctx.profile.full_name) || '',
+    avatarPreview: (ctx.profile && ctx.profile.avatar_url) || null,
+    avatarSaving: false,
     savingName: false,
     savedNameMsg: '',
     newPass: '',
@@ -47,10 +49,12 @@ function render(container, ctx){
 
   async function saveName(){
     state.savingName = true; draw();
-    // profiles không cho user thường .update() thẳng (RLS đã khoá) — phải qua RPC riêng
-    // update_my_full_name (xem supabase/schema_full.sql), khác cách tai-chinh/js/tai-khoan.js làm
-    // (.update() thẳng — sẽ bị RLS chặn âm thầm, không báo lỗi nhưng cũng không lưu được gì).
-    const { error } = await ctx.supabase.rpc('update_my_full_name', { new_name: state.fullName.trim() });
+    // profiles không cho user thường .update() thẳng (RLS đã khoá "profiles_self_update" từ v3) —
+    // phải qua RPC self-write. Đổi từ update_my_full_name (RPC hẹp, chỉ định nghĩa ở schema_suc_
+    // khoe.sql — CRM lỡ phụ thuộc app khác chạy schema TRƯỚC thì mới có RPC này) sang
+    // update_own_profile (RPC chung ecosystem-wide ở schema_core.sql, cùng RPC nhan-hieu/js/
+    // tai-khoan.js đang dùng — 2026-09-07, "phần thông tin người dùng cũng thế").
+    const { error } = await ctx.supabase.rpc('update_own_profile', { p_full_name: state.fullName.trim() });
     state.savingName = false;
     if(!error){
       ctx.profile.full_name = state.fullName.trim();
@@ -60,6 +64,36 @@ function render(container, ctx){
     }
     draw();
     setTimeout(()=>{ state.savedNameMsg=''; const el = container.querySelector('#tk-name-saved'); if(el) el.textContent=''; }, 1800);
+  }
+
+  // Ảnh đại diện (2026-09-07, "phần thông tin người dùng cũng thế" — khớp nhan-hieu/js/tai-
+  // khoan.js) — nén vuông 200x200 rồi lưu base64 thẳng vào profiles.avatar_url qua update_own_profile.
+  function uploadAvatar(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = async ()=>{
+        const size = 200;
+        const c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        const cx = c.getContext('2d');
+        const scale = Math.max(size/img.width, size/img.height);
+        const w = img.width*scale, h = img.height*scale;
+        cx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+        const dataUrl = c.toDataURL('image/jpeg', 0.85);
+        state.avatarPreview = dataUrl;
+        state.avatarSaving = true; draw();
+        const { error } = await ctx.supabase.rpc('update_own_profile', { p_avatar_url: dataUrl });
+        state.avatarSaving = false;
+        if(!error && ctx.profile) ctx.profile.avatar_url = dataUrl;
+        const footEl = document.getElementById('sidebar-foot-info');
+        if(footEl) footEl.innerHTML = sidebarFootHtml();
+        draw();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   async function changePassword(){
@@ -83,6 +117,16 @@ function render(container, ctx){
 
       <div class="section">
         <h3>Thông tin cơ bản</h3>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          ${state.avatarPreview
+            ? `<img src="${state.avatarPreview}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;">`
+            : `<div style="width:72px;height:72px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;">${esc((state.fullName||'?').charAt(0).toUpperCase())}</div>`}
+          <div>
+            <input type="file" accept="image/*" id="tk-avatar-upload" style="font-size:13px;">
+            ${state.avatarSaving?`<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Đang lưu…</div>`:''}
+          </div>
+        </div>
+
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Email</label>
         <input type="text" value="${esc((ctx.user && ctx.user.email) || '')}" disabled style="background:var(--bg);color:var(--ink-soft);">
 
@@ -132,6 +176,9 @@ function render(container, ctx){
   }
 
   function bind(){
+    const avatarUpload = container.querySelector('#tk-avatar-upload');
+    if(avatarUpload) avatarUpload.onchange = ()=>uploadAvatar(avatarUpload.files[0]);
+
     container.querySelector('#tk-name').oninput = (e)=>{ state.fullName = e.target.value; };
     container.querySelector('#tk-save-name').onclick = saveName;
 
