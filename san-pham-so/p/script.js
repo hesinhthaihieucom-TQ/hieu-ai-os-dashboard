@@ -88,7 +88,7 @@ function tickerHtml(product, lp, template) {
 // ở thanhnguyen.vn) — ghép TỪ DỮ LIỆU THẬT đã có (van_de_chi_tiet làm cột trái, ket_qua_dat_duoc làm
 // cột phải, theo đúng thứ tự đã viết), không tự bịa thêm hàng/số liệu nào khác.
 function comparisonTableHtml(lp, template) {
-  if (template !== 'video') return '';
+  if (template !== 'video' && template !== 'chuyengia') return '';
   const left = lp.van_de_chi_tiet || [];
   const right = lp.ket_qua_dat_duoc || [];
   const rows = Math.min(left.length, right.length);
@@ -338,7 +338,10 @@ function qrUrl(amount, content) {
 function landingPageIntroHtml(product, lp, template) {
   // Nhãn nhỏ viết hoa phía trên tiêu đề (kiểu "BÓC TRẦN SỰ THẬT" ở mẫu gốc của Quỳnh) — CHỈ mẫu
   // "quynh" mới có, đúng đặc trưng riêng của trang tham khảo đó.
-  const eyebrow = template === 'quynh' ? (t => `<div class="lp-eyebrow">${esc(t)}</div>`) : (() => '');
+  // "chuyengia" cũng có nhãn nhỏ trên mỗi mục (CÂU CHUYỆN THẬT/HỌC VIÊN NÓI GÌ/SẢN PHẨM THỰC TẾ... ở
+  // aichuyengia.topexpert.vn) — trước đó chỉ bật cho "quynh", 2026-09-07 mở rộng thêm sau khi đọc lại
+  // toàn bộ trang thật.
+  const eyebrow = (template === 'quynh' || template === 'chuyengia') ? (t => `<div class="lp-eyebrow">${esc(t)}</div>`) : (() => '');
   const vanDeChiTietHtml = Array.isArray(lp.van_de_chi_tiet) && lp.van_de_chi_tiet.length
     ? `<div class="lp-problem-grid">${lp.van_de_chi_tiet.map(v => `
         <div class="lp-problem-item"><div class="lp-problem-ten">${esc(v.ten || '')}</div><div class="lp-problem-mota">${esc(v.mo_ta || '')}</div></div>
@@ -489,6 +492,28 @@ function landingPageIntroHtml(product, lp, template) {
       ${bonusHtml}
       ${metricHtml}
       ${fitHtml}
+    `;
+  }
+
+  if (template === 'chuyengia') {
+    // Thứ tự ĐÚNG THEO TRANG GỐC aichuyengia.topexpert.vn (2026-09-07, đọc lại toàn bộ trang thật) —
+    // trang gốc đi: LỜI NHẮN ("Câu chuyện thật — Bạn có đang mắc kẹt?", ngay SAU hero, không phải cuối
+    // trang như bản cũ) → khối trước/bây giờ (đã lồng trong lời nhắn ở trang gốc, giữ riêng ở đây cho
+    // rõ) → Vấn đề (5 mục đánh số) → Kết quả thực tế (testimonial) → Lộ trình/module → Đội ngũ giảng
+    // viên → Ưu đãi (quà tặng) → Chỉ số trước/sau (radar) + bảng so sánh trước/sau.
+    return `
+      ${letterHtml}
+      ${beforeAfterHtml(lp, template)}
+      ${problemHtml}
+      ${caseStudyHtml}
+      ${programHtml}
+      ${teamHtml}
+      ${bonusHtml}
+      ${metricHtml}
+      ${comparisonTableHtml(lp, template)}
+      ${resultsHtml}
+      ${fitHtml}
+      ${sellerHtml}
     `;
   }
 
@@ -647,11 +672,14 @@ function renderProduct(product, order) {
     ? `<div class="lp-event-info">${product.event_info_items.map(e => `<div class="lp-event-info-item"><span class="lp-event-info-icon">${esc(e.icon || '')}</span><span>${esc(e.text || '')}</span></div>`).join('')}</div>` : '';
   const scarcityHtml = lpTemplate === 'quynh' && product.scarcity_text
     ? `<div class="lp-scarcity">${esc(product.scarcity_text)}</div>` : '';
-  // Thẻ giá có gạch đầu dòng "bạn nhận được gì" (chỉ "quynh") — TÁI DÙNG đúng ket_qua_dat_duoc đã viết
-  // cho phần "Kết quả bạn đạt được" ở cột trái (không bịa nội dung riêng cho thẻ giá) — nhắc lại gần
-  // nút mua là kỹ thuật copywriting phổ biến, không phải trùng lặp lỗi.
-  const priceCardBulletsHtml = lpTemplate === 'quynh' && lp && Array.isArray(lp.ket_qua_dat_duoc) && lp.ket_qua_dat_duoc.length
-    ? `<ul class="lp-price-card-bullets">${lp.ket_qua_dat_duoc.map(x => `<li>✓ ${esc(x)}</li>`).join('')}</ul>` : '';
+  // Thẻ giá có gạch đầu dòng "bạn nhận được gì" — "quynh" TÁI DÙNG ket_qua_dat_duoc (phần "Kết quả bạn
+  // đạt được"), "chuyengia" TÁI DÙNG bonus_items (đúng khối "Tổng kết những gì bạn nhận được" cạnh nút
+  // đăng ký cuối trang ở aichuyengia.topexpert.vn) — không bịa nội dung riêng cho thẻ giá, nhắc lại dữ
+  // liệu đã có gần nút mua là kỹ thuật copywriting phổ biến, không phải trùng lặp lỗi.
+  const priceCardBulletsSource = lpTemplate === 'quynh' ? (lp && lp.ket_qua_dat_duoc)
+    : lpTemplate === 'chuyengia' ? product.bonus_items : null;
+  const priceCardBulletsHtml = Array.isArray(priceCardBulletsSource) && priceCardBulletsSource.length
+    ? `<ul class="lp-price-card-bullets">${priceCardBulletsSource.map(x => `<li>✓ ${esc(x)}</li>`).join('')}</ul>` : '';
 
   // "chuyengia" đẩy giá lên ngay trong hero (đúng kiểu khối giá nổi bật đầu trang ở
   // aichuyengia.topexpert.vn) — chỉ là 1 ô hiện giá, KHÔNG lặp nút mua thật (tránh 2 nơi có thể tạo
@@ -694,7 +722,7 @@ function renderProduct(product, order) {
       <div id="buy-area-anchor">
         ${eventInfoHtml}
         ${countdownHtml(lpTemplate, order, 'buy')}
-        <div class="${lpTemplate === 'quynh' ? 'lp-price-card' : ''}">
+        <div class="${(lpTemplate === 'quynh' || lpTemplate === 'chuyengia') ? 'lp-price-card' : ''}">
           <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
           ${priceCardBulletsHtml}
         </div>

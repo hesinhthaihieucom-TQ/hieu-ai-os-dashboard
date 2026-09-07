@@ -265,6 +265,15 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .wrap[data-lp-template="chuyengia"] .lp-program-num{ background:#6C4CE0; border-radius:6px; width:auto; height:auto; padding:4px 10px; font-size:11px; letter-spacing:.03em; }
 .wrap[data-lp-template="chuyengia"] .lp-letter{ background:#EEEAFB; border-left-color:#6C4CE0; font-style:normal; }
 .wrap[data-lp-template="chuyengia"] .lp-faq-item{ border-color:#E4E1F5; }
+/* Bảng so sánh "chưa có hệ thống/đã làm chủ AI" (chỉ "chuyengia" — dùng chung comparisonTableHtml()
+   với "video" nhưng màu gốc là nền tối hồng, đổi lại cho đúng nền trắng/tím ở
+   aichuyengia.topexpert.vn, 2026-09-07 đọc lại toàn bộ trang thật mới thấy thiếu khối này). */
+.wrap[data-lp-template="chuyengia"] .lp-compare{ background:#E4E1F5; }
+.wrap[data-lp-template="chuyengia"] .lp-compare-head.lp-compare-bad{ background:#FBEAE5; color:#A6462E; }
+.wrap[data-lp-template="chuyengia"] .lp-compare-head.lp-compare-good{ background:#EEEAFB; color:#6C4CE0; }
+.wrap[data-lp-template="chuyengia"] .lp-compare-cell{ background:#fff; }
+.wrap[data-lp-template="chuyengia"] .lp-compare-cell.lp-compare-bad{ color:#A6462E; }
+.wrap[data-lp-template="chuyengia"] .lp-compare-cell.lp-compare-good{ color:#4A3D8F; }
 
 /* Hero 2 cột (ảnh cạnh tiêu đề, chỉ "chuyengia" — .lp-hero-top dùng chung markup với "quynh" nhưng mặc
    định vẫn xếp chồng dạng block, chỉ mẫu này bật flex) + thanh số liệu ngay dưới hero + lưới ảnh case
