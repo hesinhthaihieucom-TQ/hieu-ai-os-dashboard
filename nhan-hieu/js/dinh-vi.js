@@ -39,6 +39,16 @@ const TOUR_STEPS = [
   {selector:'[data-action="go-paste"]', title:'Đã có sẵn bản Định Vị?', text:'Nếu bạn đã từng làm Định Vị ở nơi khác (hoặc có bản cũ), bấm vào đây để dán thẳng kết quả vào thay vì trả lời lại từ đầu.'},
 ];
 
+// "Nếu làm định vị nhiều thế ngay từ đầu sẽ tạo ra độ ma sát lớn khiến người ta không chốt đơn đúng"
+// (chị Quỳnh 2026-09-10) — 16 câu là nhiều với người mới, trước khi kịp thấy giá trị gì. API đã tự
+// điền "(không trả lời)" cho câu bỏ trống (xem api/dinh-vi.js) nên KHÔNG cần dựng 1 luồng/API riêng
+// cho "bản nhanh" — chỉ cần cho phép nộp sớm với 3 câu nhóm A (lĩnh vực/mục tiêu/vấn đề, đủ để AI có
+// khung cơ bản), phần còn lại bỏ trống. Muốn bổ sung sau thì dùng đúng "✏️ Sửa" đã có sẵn ở từng mục
+// kết quả (EDITABLE_SECTIONS, miễn phí, không tốn lượt) — không cần chạy lại cả 16 câu.
+const QUICK_START_QUESTION_IDS = ['a1','a2','a3'];
+function quickStartReady(answers){
+  return QUICK_START_QUESTION_IDS.every(id=>isAnswered(QUESTIONS.find(q=>q.id===id), answers[id]));
+}
 function isAnswered(q, val){
   if(q.type==='textarea') return !!(val && val.trim().length>0);
   if(q.type==='radio') return !!val;
@@ -351,6 +361,12 @@ function render(container, ctx){
         ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
         <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:11px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>':''}
       </div>
+      ${state.qIndex < QUESTIONS.length-1 && quickStartReady(state.answers) ? `
+      <div style="text-align:center;margin-top:16px;">
+        <span style="color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;" data-action="quick-finish">✋ Trả lời vậy đủ rồi, xem kết quả ngay →</span>
+        <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Bỏ qua các câu còn lại — kết quả sẽ chung chung hơn ở vài mục, nhưng sau đó tự sửa/bổ sung trực tiếp bất cứ mục nào cũng được, miễn phí, không tốn thêm lượt.</div>
+      </div>
+      ` : ''}
     `;
   }
 
@@ -1006,6 +1022,8 @@ function render(container, ctx){
 
     const nextBtn = container.querySelector('[data-action="next"]');
     if(nextBtn) nextBtn.onclick = onNext;
+    const quickFinishBtn = container.querySelector('[data-action="quick-finish"]');
+    if(quickFinishBtn) quickFinishBtn.onclick = finishWizard;
 
     const retryBtn = container.querySelector('[data-action="retry"]');
     if(retryBtn) retryBtn.onclick = ()=>{
@@ -1062,8 +1080,9 @@ function render(container, ctx){
 
   function onNext(){
     if(state.qIndex < QUESTIONS.length-1){ state.qIndex++; resetSuggestions(); draw(); persistWizardDraft(); }
-    else { state.screen='saving1'; draw(); startHeavyProgress(90); runLuot1(); }
+    else finishWizard();
   }
+  function finishWizard(){ state.screen='saving1'; draw(); startHeavyProgress(90); runLuot1(); }
 
   function resetSuggestions(){
     state.suggestions = null; state.suggestError = null; state.suggestForQ = null; state.suggestLoading = false;

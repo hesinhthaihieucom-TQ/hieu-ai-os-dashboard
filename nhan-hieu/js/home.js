@@ -10,7 +10,7 @@
 // group:'once' — làm 1 lần duy nhất, KHÔNG lặp lại mỗi tuần. group:'weekly' — 3 bước còn lại mới
 // thật sự lặp lại mỗi khi sản xuất content mới.
 const STEPS = [
-  { key:'dinh-vi', label:'Định Vị thật chi tiết', group:'once', why:'Nền tảng cho mọi bước sau — trục nội dung, chân dung khách hàng, giọng văn AI dùng lại xuyên suốt đều lấy từ đây, nên trả lời kỹ ngay từ đầu, đỡ phải sửa lại nhiều lần về sau.' },
+  { key:'dinh-vi', label:'Định Vị', group:'once', why:'Nền tảng cho mọi bước sau — trục nội dung, chân dung khách hàng, giọng văn AI dùng lại xuyên suốt đều lấy từ đây. Không cần trả lời hết 16 câu ngay lần đầu — trả lời 3 câu đầu (lĩnh vực/mục tiêu/vấn đề) là đủ để bấm "Xem kết quả ngay", phần còn lại bổ sung dần sau bằng nút "✏️ Sửa" ở từng mục, miễn phí.' },
   { key:'sua-kenh', label:'Sửa Kênh khớp định vị', group:'once', why:'Đồng bộ ảnh đại diện/ảnh bìa/bio khớp với định vị vừa chốt. Chỉ cần làm 1 lần, nhưng nên làm trước khi đẩy content ra ngoài — bài viral kéo người lạ vào trang mà kênh chưa khớp định vị thì phí mất khách.' },
   { key:'lich-dang', label:'Lịch Đăng Bài → AI gợi ý lịch tuần', group:'weekly', why:'Lên khung trục nội dung + định dạng cho cả 7 ngày TRƯỚC khi viết bất kỳ bài nào — tránh viết lan man rồi không biết nhét vào đâu. Nhập mục tiêu tuần này (ra mắt sản phẩm, tăng follow...) để AI ưu tiên đúng chỗ.' },
   { key:'viet-content', label:'Viết từng ô lịch từ Kho Content/Kho Hook', group:'weekly', why:'Ô nào AI đã khớp sẵn 1 bài bạn từng viết — Chấm Điểm Content/Hook nhanh trước khi dùng (1 lượt) để chắc bài đủ chuẩn trước khi lên lịch thật. Ô chưa có bài — bấm "Chọn bài mẫu đúng trục" vào Kho Content/Kho Hook đúng trục để viết; nếu vừa thấy 1 bài viral ở nơi khác thì qua Tái Chế Content Viral thay vì viết từ đầu.' },
@@ -19,7 +19,7 @@ const STEPS = [
 const STEP_GROUP_LABEL = { once:'Làm 1 lần đầu tiên (nền tảng)', weekly:'Lặp lại mỗi khi sản xuất content mới' };
 
 const IMPORTANT_NOTES = [
-  { icon:'🎯', text:'<b>Định Vị luôn làm trước tiên</b> — mọi bài viết/kết quả AI ở các bước sau đều dựa vào kết quả Định Vị, nên trả lời thật kỹ ngay từ đầu.' },
+  { icon:'🎯', text:'<b>Định Vị luôn làm trước tiên</b> — nhưng không cần trả lời hết 16 câu ngay từ đầu. Trả lời 3 câu đầu là bấm "Xem kết quả ngay" được, phần còn lại tự sửa/bổ sung dần sau đó (miễn phí, không tốn lượt) mà không cần làm lại từ đầu.' },
   { icon:'💾', text:'<b>Không lo mất dữ liệu khi chuyển trang</b> — mọi tiến trình đang làm dở (câu trả lời, bài đang viết, ảnh đã tải lên...) tự động lưu lại, quay lại vẫn còn nguyên.' },
   { icon:'⚡', text:'<b>Lượt AI tính theo độ phức tạp</b> — hành động càng nhiều bước AI xử lý thì càng tốn nhiều lượt hơn, không đồng giá. Xem chi tiết và tự lên kế hoạch dùng ở mục <b>Tài khoản</b> (bấm vào ảnh đại diện/tên ở cuối sidebar).' },
   { icon:'⏱️', text:'<b>AI cần khoảng 30 giây - 2 phút để xử lý</b> mỗi lần — đừng thoát app hay khoá màn hình giữa chừng, cứ để chờ.' },
