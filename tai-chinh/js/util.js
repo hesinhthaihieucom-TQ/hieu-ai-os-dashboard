@@ -1,5 +1,7 @@
+// esc() phải escape cả " và ' — thiếu escape " từng gây bug thật bên nhan-hieu (nội dung chèn vào
+// thuộc tính HTML bọc "..." bị cắt mất khi gặp dấu " trong text), sửa đồng bộ luôn ở đây.
 function esc(s){
-  return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // Khách (chưa đăng nhập) làm Chấm Điểm Nghiệp Tiền TRƯỚC, đăng ký SAU khi muốn lưu (2026-08-26,

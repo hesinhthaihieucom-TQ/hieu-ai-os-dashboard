@@ -1,8 +1,12 @@
 // Bộ tiện ích dùng chung — rút gọn từ suc-khoe/js/util.js, bỏ phần biểu đồ/màu danh mục (không
 // dùng ở app này), giữ đúng phần chung cho mọi app trong hệ sinh thái HIỂU (esc, modal, gọi API,
 // lưu draft, ảnh xem to).
+// esc() phải escape cả " và ' — đa số nơi dùng esc() để chèn giá trị vào thuộc tính HTML bọc bởi
+// "..." (vd data-copy-value="${esc(value)}"), thiếu escape " sẽ khiến trình duyệt hiểu nhầm là đóng
+// thuộc tính sớm, cắt mất phần còn lại (bug thật đã gặp bên nhan-hieu/js/util.js — cùng hàm y hệt,
+// sửa đồng bộ luôn ở đây phòng trước).
 function esc(s){
-  return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // PushManager.subscribe() cần applicationServerKey dạng Uint8Array, nhưng VAPID public key ta có

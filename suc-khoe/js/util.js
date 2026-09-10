@@ -1,8 +1,10 @@
 // Bộ tiện ích dùng chung — rút gọn từ tai-chinh/js/util.js, CHỈ giữ phần thật sự dùng chung/generic
 // (esc, modal, gọi API, lưu draft, biểu đồ cột đơn giản). Bỏ hết nội dung nghiệp vụ riêng của
 // tai-chinh (5 Trụ Cột, GLOSSARY, danh mục thu/chi...) vì không áp dụng cho app sức khỏe này.
+// esc() phải escape cả " và ' — thiếu escape " từng gây bug thật bên nhan-hieu (nội dung chèn vào
+// thuộc tính HTML bọc "..." bị cắt mất khi gặp dấu " trong text), sửa đồng bộ luôn ở đây.
 function esc(s){
-  return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // Phóng to 1 ảnh (vd ảnh sản phẩm) thành lightbox toàn màn hình — đóng bằng bấm ra ngoài hoặc Esc.

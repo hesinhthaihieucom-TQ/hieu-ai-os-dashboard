@@ -1,5 +1,14 @@
+// 2026-09-10, chị Quỳnh báo "mấy phần bình luận với đẩy bài ko copy được full câu mà chỉ copy đc dòng
+// đầu tiên thui" — nguyên nhân thật: esc() trước đây KHÔNG escape dấu ngoặc kép ("), trong khi hầu hết
+// mọi nơi trong app dùng esc() để chèn giá trị vào TRONG thuộc tính HTML bọc bởi "..." (vd
+// data-copy-value="${esc(value)}"). Hễ nội dung AI sinh ra có 1 dấu " (rất hay gặp ở bình luận/CTA
+// tự nhiên, người viết hay trích dẫn/nhấn mạnh bằng ngoặc kép) là trình duyệt hiểu nhầm đó là dấu đóng
+// thuộc tính — mọi ký tự SAU dấu " đó bị cắt mất khỏi thuộc tính, nên copy ra chỉ còn đúng phần trước
+// dấu " (thường trông như "chỉ 1 dòng"). Escape thêm " -> &quot; (và ' -> &#39; luôn cho an toàn, dù
+// codebase hiện chỉ dùng ngoặc kép cho thuộc tính) để sửa TẬN GỐC cho MỌI nơi dùng esc(), không riêng
+// gì phần bình luận/đẩy bài.
 function esc(s){
-  return String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // Phóng to 1 ảnh minh hoạ nhỏ (VD ảnh mẫu ở Dạng Content) thành lightbox toàn màn hình — dùng
