@@ -220,7 +220,15 @@ function render(container, ctx){
   // trùng 1 bài vào 2 ô. Tải TOÀN BỘ post_id đã dùng (mọi tuần, không lọc theo channel — 1 bài dùng ở
   // lane này thì cũng không nên gợi ý lại ở lane kia), dùng chung logic đã có ở fetchAiSchedule().
   async function loadScheduledPostIds(){
-    const { data } = await ctx.supabase.from('calendar_entries').select('post_id').eq('user_id', ctx.user.id).not('post_id', 'is', null);
+    // Thiếu withTimeout() so với mọi hàm load khác ở trên (phát hiện 2026-09-10, chị Quỳnh báo "kêu
+    // kết nối mạng chậm, đổi mạng cũng không được" — không phải mạng, xem calendar_entries_user_date_idx
+    // ở schema_nhan_hieu.sql) — nếu Supabase chậm/treo, hàm này chờ vô thời hạn, kéo cả Promise.all
+    // trong boot() treo theo dù các hàm còn lại đều có timeout đúng.
+    const { data, error } = await withTimeout(
+      ctx.supabase.from('calendar_entries').select('post_id').eq('user_id', ctx.user.id).not('post_id', 'is', null),
+      12000, 'Kết nối mạng chậm/không ổn định — không tải được danh sách bài đã xếp lịch. Kiểm tra mạng rồi thử lại.'
+    );
+    if(error) throw new Error(error.message);
     state.scheduledPostIds = new Set((data||[]).map(e=>e.post_id));
   }
 

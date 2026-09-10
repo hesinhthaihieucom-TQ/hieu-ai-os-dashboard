@@ -102,6 +102,9 @@ alter table posts add column if not exists day_bai_plan jsonb;
 -- data-toggle-posted ở nhan-hieu/js/lich-dang.js) để: (1) Kho Content chia được đã đăng/chưa đăng,
 -- (2) picker chọn bài để xếp lịch tự loại bài đã đăng rồi, đỡ chọn nhầm/chọn trùng.
 alter table posts add column if not exists posted boolean not null default false;
+-- Cùng lý do với calendar_entries_user_date_idx bên dưới — loadPosts() ở lich-dang.js lọc user_id +
+-- order created_at desc + limit 30, chưa có index nào nên phải quét toàn bảng posts.
+create index if not exists posts_user_created_idx on posts(user_id, created_at desc);
 
 create table if not exists calendar_entries (
   id uuid primary key default gen_random_uuid(),
@@ -117,6 +120,14 @@ create table if not exists calendar_entries (
 -- Trước đây tự suy "đã đăng" chỉ bằng cách so ngày xếp lịch với hôm nay (qua ngày là coi như đã
 -- đăng) — sai vì xếp lịch không có nghĩa là đã thực sự đăng. Giờ người dùng phải tự tích xác nhận.
 alter table calendar_entries add column if not exists posted boolean not null default false;
+
+-- Chị Quỳnh báo Lịch Đăng Bài "kêu kết nối mạng chậm, đổi mạng cũng không được" (2026-09-10) — KHÔNG
+-- phải mạng: bảng này chưa từng có index nào ngoài khoá chính, nên MỌI truy vấn lọc theo user_id (vd
+-- loadEntries()/loadScheduledPostIds() ở nhan-hieu/js/lich-dang.js) đều phải quét toàn bảng — càng
+-- nhiều người dùng/càng nhiều dữ liệu thì càng chậm dần, tới lúc vượt quá 12s timeout phía client
+-- (withTimeout ở util.js) dù mạng của khách hoàn toàn bình thường. Tài khoản của chị Quỳnh (admin,
+-- test nhiều nhất) là người có nhiều dữ liệu nhất nên gặp đầu tiên.
+create index if not exists calendar_entries_user_date_idx on calendar_entries(user_id, scheduled_date);
 
 -- Gợi ý AI + mục tiêu tuần ở Lịch Đăng Bài — trước đây lưu localStorage (chỉ máy nào tạo mới thấy),
 -- khách tạo lịch trên điện thoại xong mở web lại không thấy gì. Lưu ở đây để đồng bộ mọi thiết bị.
@@ -509,6 +520,7 @@ alter table recording_schedule enable row level security;
 drop policy if exists "recording_schedule_owner_all" on recording_schedule;
 create policy "recording_schedule_owner_all" on recording_schedule for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create index if not exists recording_schedule_user_idx on recording_schedule(user_id, done, scheduled_at);
 
 -- Giờ đăng bài theo TỪNG NGƯỜI DÙNG tự chọn (2026-08-21, theo phản hồi chị Quỳnh: "giờ đăng bài là
 -- cho người ta tự chọn") — trước đó hardcode chung 8:00/12:00/19:00 cho mọi người. Lưu dạng text
@@ -712,6 +724,7 @@ create table if not exists personal_photos (
 alter table personal_photos enable row level security;
 drop policy if exists "personal_photos_owner_all" on personal_photos;
 create policy "personal_photos_owner_all" on personal_photos for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create index if not exists personal_photos_user_idx on personal_photos(user_id);
 
 -- card_corner (2026-08-28) — chị Quỳnh tự chọn góc đặt khung case study cho TỪNG ảnh cá nhân, vì vị
 -- trí che mặt hay không tuỳ ảnh, không có cách nào AI tự đoán chắc chắn mà không tốn thêm 1 lượt gọi
