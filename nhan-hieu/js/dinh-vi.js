@@ -694,19 +694,24 @@ function render(container, ctx){
                 <span class="btn-ghost btn btn-sm" data-action="cancel-edit-truc">Huỷ</span>
               </div>
             </div>
-          ` : `
-            ${r2.he_truc_noi_dung.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(r2.he_truc_noi_dung.cong_thuc)}</div>`:''}
+          ` : (()=>{
+            // Tài khoản dán/parse kết quả có sẵn TỪ TRƯỚC KHI trường he_truc_noi_dung tồn tại (hoặc AI
+            // không trả về đủ) sẽ có r2.he_truc_noi_dung undefined — cùng fallback với saveTruc() ở
+            // dưới (state.editingTruc), tránh "undefined is not an object" làm sập cả trang Định Vị.
+            const truc = r2.he_truc_noi_dung || { truc_chinh:'', tru_phu:[] };
+            return `
+            ${truc.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(truc.cong_thuc)}</div>`:''}
             <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
               <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
-              <div style="color:#fff;font-size:16px;font-weight:700;">${esc(r2.he_truc_noi_dung.truc_chinh)}</div>
+              <div style="color:#fff;font-size:16px;font-weight:700;">${esc(truc.truc_chinh)}</div>
             </div>
             <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
-            ${r2.he_truc_noi_dung.tru_phu.map(t=>`
+            ${(truc.tru_phu||[]).map(t=>`
               <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
                 <b>${esc(t.ten)}</b><br><span style="font-size:13px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
               </div>
             `).join('')}
-          `}
+          `;})()}
         </div>
         ${(()=>{
           const dt = r2.dong_tien_phu_hop || {};
