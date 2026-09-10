@@ -490,12 +490,31 @@ function render(container, ctx){
   function resultsHtml(){
     const r = state.luot1;
     const r2 = state.luot2;
+    // "phải có gì cho ngta muốn làm hết chứ" (chị Quỳnh 2026-09-10, phản hồi lại tính năng "trả lời
+    // xong 3 câu là xem kết quả ngay") — không thưởng lượt (chị chốt), chỉ dùng tâm lý "làm dở dang"
+    // (giống thanh % hồ sơ LinkedIn): hiện rõ còn thiếu bao nhiêu câu + 1 nút nhảy thẳng tới câu đầu
+    // tiên CHƯA trả lời, để quay lại hoàn thiện không cần lướt tìm.
+    const answeredCount = QUESTIONS.filter(q=>isAnswered(q, state.answers[q.id])).length;
+    const incompleteCount = QUESTIONS.length - answeredCount;
     return `
       <div class="page-head" style="text-align:center;">
         <div class="tag">Định Vị</div>
         <h1>Định vị thương hiệu của bạn</h1>
       </div>
       ${state.saveError?`<div class="error-box" style="margin-bottom:14px;">${esc(state.saveError)}</div>`:''}
+      ${incompleteCount>0 ? `
+      <div class="card" style="margin-bottom:14px;border-color:var(--gold);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap;">
+          <b style="font-size:13.5px;">📝 Định vị mới trả lời ${answeredCount}/${QUESTIONS.length} câu</b>
+          <span style="font-size:11px;color:var(--ink-soft);">${Math.round(answeredCount/QUESTIONS.length*100)}%</span>
+        </div>
+        <div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:10px;">
+          <div style="height:100%;background:var(--gold);width:${Math.round(answeredCount/QUESTIONS.length*100)}%;"></div>
+        </div>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Còn ${incompleteCount} câu chưa trả lời — AI càng hiểu bạn kỹ thì content viết ra sau này càng đúng chất giọng và câu chuyện thật của bạn. Trả lời tiếp lúc nào rảnh — không cần gõ lại các câu đã trả lời, nhưng khi bấm "Xem kết quả" ở cuối sẽ chạy lại AI để ra bản đầy đủ hơn (tính thêm 8 lượt, giống "Sửa lại câu trả lời").</div>
+        <button class="btn btn-sm" data-action="continue-unanswered">Trả lời tiếp câu còn thiếu →</button>
+      </div>
+      ` : ''}
       <div class="card" style="margin-bottom:14px;background:var(--accent-soft);text-align:center;">
         <h3 style="margin-bottom:6px;">✅ Định vị xong rồi — bước tiếp theo</h3>
         <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">Qua mục Lịch Đăng Bài để bắt đầu lên lịch — bấm "❓ Hướng dẫn" ở đó để xem cách dùng từng bước.</div>
@@ -804,6 +823,13 @@ function render(container, ctx){
     // để họ tự bấm "❓ Hướng dẫn" nếu cần — không tự mở/nháy sáng gì cả.
     const goLichDangBtn = container.querySelector('[data-action="go-lich-dang"]');
     if(goLichDangBtn) goLichDangBtn.onclick = ()=>{ location.hash = '#lich-dang'; };
+    const continueUnansweredBtn = container.querySelector('[data-action="continue-unanswered"]');
+    if(continueUnansweredBtn) continueUnansweredBtn.onclick = ()=>{
+      const idx = QUESTIONS.findIndex(q=>!isAnswered(q, state.answers[q.id]));
+      state.qIndex = idx>=0 ? idx : 0;
+      state.screen = 'wizard';
+      resetSuggestions(); draw();
+    };
     const redoFromDoneBtn = container.querySelector('[data-action="redo-from-done"]');
     if(redoFromDoneBtn) redoFromDoneBtn.onclick = async ()=>{
       await maybeReconstructAnswers();
