@@ -218,21 +218,14 @@ function render(container, ctx){
   }
 
   // BMI tự tính từ chiều cao + cân nặng cùng mốc (2026-09-06, chị Quỳnh: "thêm ô BMI") — KHÔNG phải
-  // ô nhập tay, luôn tính lại từ 2 số đã có sẵn để không bao giờ lệch nhau. Phân loại theo chuẩn WHO
-  // khu vực Châu Á - Thái Bình Dương (ngưỡng thấp hơn chuẩn phương Tây, phù hợp hơn cho người Việt).
+  // ô nhập tay, luôn tính lại từ 2 số đã có sẵn để không bao giờ lệch nhau. Công thức + phân loại
+  // dùng chung skBmiFromMeasures/skBmiCategory (util.js) — lich-trinh.js cũng cần dùng lại đúng khung
+  // này để cá nhân hoá lịch trình ăn/tập theo "tạng người" (2026-09-12).
   function computeBMI(week){
-    const h = parseFloat(getVal('chieucao', week));
-    const w = parseFloat(getVal('cannang', week));
-    if(!isFinite(h) || !isFinite(w) || h<=0) return null;
-    const m = h/100;
-    return Math.round(w/(m*m)*10)/10;
+    return skBmiFromMeasures(getVal('chieucao', week), getVal('cannang', week));
   }
   function bmiCategory(bmi){
-    if(bmi==null) return null;
-    if(bmi<18.5) return { label:'Thiếu cân', color:'#2f7fc4', concern:false };
-    if(bmi<23) return { label:'Bình thường', color:'#1f9d63', concern:false };
-    if(bmi<25) return { label:'Thừa cân', color:'#e8643c', concern:true };
-    return { label:'Béo phì', color:'#c0392b', concern:true };
+    return skBmiCategory(bmi);
   }
 
   // Hình minh hoạ cây nến cho Siêu Âm Năng Lượng (2026-09-06, chị Quỳnh: "phần siêu âm năng lượng

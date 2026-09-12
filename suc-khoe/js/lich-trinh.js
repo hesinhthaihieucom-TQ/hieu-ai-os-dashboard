@@ -12,11 +12,41 @@ const SK_GI_TABLES = [
   { title:'3 — Rau củ', color:'#2f7fc4', high:['Khoai tây nướng 111'], mid:['Ngô ngọt luộc 58','Cháo ngô 68','Khoai tây trắng luộc 82','Khoai tây nghiền 87'], low:['Cà rốt 39','Củ cải 52','Đậu Hà Lan non 54'] },
 ];
 
+// 2026-09-12, chị Quỳnh: "lịch trình của khách đã gán gói là 1 lịch trình cụ thể như là sáng uống gì
+// ăn gì, trưa uống gì ăn gì, tối... tập giờ nào tập gì" + xác nhận dùng khung BMI/cân nặng làm "tạng
+// người" (Gầy - Cân đối - Thừa cân/Béo phì, khớp key của skBmiCategory ở util.js — dùng LẠI đúng BMI
+// đã tính ở Theo Dõi Tuần, không hỏi thêm khách câu nào mới). Nội dung là kiến thức dinh dưỡng/vận
+// động CHUNG (không gắn sản phẩm/không phải công dụng TPCN) — mở rộng đúng nguyên tắc đã có sẵn ở
+// anUongTab (nhịp ăn 4-4-12, quy tắc bàn tay, bảng GI) thành lịch cụ thể theo từng buổi trong ngày.
+const SK_DAILY_SCHEDULE_BY_BMI = {
+  gay: {
+    label:'Thiếu cân — cần tăng cân lành mạnh & tăng cơ',
+    sang: { uong:'1 cốc nước ấm ngay khi thức dậy, có thể thêm 1 ly sữa/sinh tố năng lượng cao (chuối, bơ, yến mạch, sữa nguyên kem).', an:'Ăn no đủ 3 nhóm: tinh bột + đạm + chất béo tốt — VD trứng, bánh mì nguyên cám, bơ đậu phộng, sữa chua Hy Lạp.' },
+    trua: { uong:'Uống đủ nước trước bữa 30 phút.', an:'Ăn đủ no, đạm NHIỀU HƠN quy tắc bàn tay thông thường (thêm nửa lòng bàn tay đạm), đủ tinh bột, thêm 1 phần chất béo tốt (dầu ô liu, quả bơ).' },
+    toi: { uong:'Nước ấm hoặc trà thảo mộc.', an:'Không bỏ bữa tối — vẫn đủ đạm, có thể thêm bữa phụ nhẹ (sữa, các loại hạt) trước ngủ nếu đói.' },
+    tap: { gio:'Chiều hoặc tối (17h-19h)', bai:'Tập kháng lực nhẹ (tạ tay/dây kháng lực) 2-3 buổi/tuần — ưu tiên xây cơ, KHÔNG tập cardio cường độ cao kéo dài (dễ đốt thêm năng lượng cần cho tăng cân).' },
+  },
+  can_doi: {
+    label:'Bình thường — duy trì vóc dáng hiện tại',
+    sang: { uong:'1 cốc nước ấm ngay khi thức dậy.', an:'Ăn sáng đầy đủ, cân bằng theo quy tắc bàn tay (tinh bột GI thấp + đạm + rau).' },
+    trua: { uong:'Uống đủ nước trước bữa.', an:'Theo tỉ lệ 4-3-2-1: rau xanh nhiều nhất — đạm — tinh bột — chất béo.' },
+    toi: { uong:'Nước ấm hoặc trà thảo mộc, hạn chế đồ uống có đường.', an:'Ăn nhẹ hơn bữa trưa, ưu tiên đạm + rau, giảm tinh bột, ăn trước 20h và cách giờ ngủ ít nhất 2-3 tiếng.' },
+    tap: { gio:'Sáng sớm hoặc chiều tối, tuỳ lịch cá nhân', bai:'30 phút/buổi, 3-4 buổi/tuần — kết hợp cardio nhẹ (đi bộ nhanh, đạp xe) + vận động linh hoạt để duy trì thể lực.' },
+  },
+  thua_can: {
+    label:'Thừa cân/Béo phì — cần giảm mỡ',
+    sang: { uong:'1 cốc nước ấm, có thể thêm nước chanh ấm KHÔNG đường.', an:'Đủ đạm + rau, giảm tinh bột tinh chế (tránh xôi/bánh ngọt) — theo đúng nhịp 4-4-12 đã có.' },
+    trua: { uong:'Uống đủ nước trước bữa 30 phút để giảm cảm giác đói giả.', an:'Rau xanh nhiều nhất (tỉ lệ 4-3-2-1), đạm nạc, tinh bột GI thấp lượng vừa phải, hạn chế đồ chiên rán.' },
+    toi: { uong:'Nước ấm/trà thảo mộc không đường.', an:'Ăn nhẹ, ưu tiên rau + đạm, giảm tối đa tinh bột (tránh nhóm GI cao buổi tối — xem bảng GI bên dưới), ăn trước 19-20h, giữ khoảng nhịn đêm 12 tiếng.' },
+    tap: { gio:'Sáng sớm (trước ăn sáng, nếu thể lực cho phép) hoặc chiều tối', bai:'30-45 phút/buổi, 4-5 buổi/tuần — kết hợp cardio (đi bộ nhanh, đạp xe, bơi) + bài tập toàn thân nhẹ, tăng dần cường độ theo thời gian.' },
+  },
+};
+
 (function(){
 function render(container, ctx){
   const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
     insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[],
-    calcWeight:'', calcGoal:'duy_tri', healthLevel:null };
+    calcWeight:'', calcGoal:'duy_tri', healthLevel:null, bmiCategory:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -24,15 +54,29 @@ function render(container, ctx){
   // đây là gán sản phẩm khách đang dùng á, chứ k phải mỗi combo") — khách mua lẻ/ngoài app không có
   // Combo (sk_package_id null) nhưng có sk_customer_products vẫn cần thấy đúng hướng dẫn sử dụng của
   // đúng sản phẩm họ dùng, xem sanPhamTab().
+  // Mốc gần nhất có đủ chiều cao + cân nặng để tính BMI (2026-09-12, chị Quỳnh chốt dùng khung BMI/
+  // cân nặng làm "tạng người" cá nhân hoá lịch trình ăn/tập — xem SK_DAILY_SCHEDULE_BY_BMI) — quét từ
+  // mốc mới nhất (Tuần 8) lùi về "Bắt đầu", không bắt khách phải đo lại nếu đã có số liệu tuần trước.
+  function latestBmiFromMetrics(metrics){
+    if(!metrics) return null;
+    for(let week=8; week>=0; week--){
+      const h = metrics.chieucao && metrics.chieucao[week];
+      const w = metrics.cannang && metrics.cannang[week];
+      if(h && w) return skBmiFromMeasures(h, w);
+    }
+    return null;
+  }
+
   async function load(){
     const packageId = ctx.profile && ctx.profile.sk_package_id;
-    const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }] = await Promise.all([
+    const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }, { data: weeklyLog }] = await Promise.all([
       packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
       packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
       ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
       ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
       ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
       ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
+      ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
     ]);
     state.packageName = pkg ? pkg.name : null;
     state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
@@ -42,6 +86,7 @@ function render(container, ctx){
     // đồ của em, người có vấn đề sức khỏe nặng theo nhãn") — null nếu khách CHƯA làm Kiểm Tra Sức
     // Khỏe (không tự suy diễn "an toàn" hay "nặng" khi chưa có dữ liệu, mặc định dùng phác đồ như cũ).
     state.healthLevel = checkin ? skComputeHealthLevel(checkin.survey_insulin, checkin.survey_toxin, checkin.survey_metabolic).level : null;
+    state.bmiCategory = skBmiCategory(latestBmiFromMetrics(weeklyLog && weeklyLog.metrics));
     const allProducts = products || [];
     allProducts.forEach(p=>{ state.productByName[p.name] = p; });
     const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
@@ -144,9 +189,42 @@ function render(container, ctx){
     `;
   }
 
+  // 2026-09-12, chị Quỳnh: "lịch trình của khách đã gán gói là 1 lịch trình cụ thể như là sáng uống
+  // gì ăn gì, trưa uống gì ăn gì, tối... tập giờ nào tập gì" — thẻ này đứng ĐẦU tab Sản Phẩm (tab
+  // chính của Lịch Trình) nên khách thấy ngay lịch 1 ngày cụ thể, không phải lục qua tận tab Ăn Uống/
+  // Tập Luyện mới thấy. Cá nhân hoá theo "tạng người" = BMI mốc gần nhất (state.bmiCategory) — chưa
+  // đo đủ chiều cao+cân nặng thì hiện nhắc đo, không đoán bừa "tạng người" khi chưa có số liệu.
+  function dailyScheduleHtml(){
+    if(!state.bmiCategory) return `<div class="hint-box" style="margin-bottom:18px;">Nhập đủ Chiều cao + Cân nặng ở "Theo Dõi Sức Khỏe Theo Tuần" để xem lịch trình 1 ngày cụ thể phù hợp với vóc dáng của bạn (sáng/trưa/tối ăn uống gì, tập giờ nào).</div>`;
+    const s = SK_DAILY_SCHEDULE_BY_BMI[state.bmiCategory.key];
+    if(!s) return '';
+    const slot = (label, icon, data) => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--line);">
+        <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${icon} ${esc(label)}</div>
+        <div style="font-size:13px;line-height:1.7;"><b>Uống:</b> ${esc(data.uong)}</div>
+        <div style="font-size:13px;line-height:1.7;"><b>Ăn:</b> ${esc(data.an)}</div>
+      </div>
+    `;
+    return `
+      <div class="card" style="margin-bottom:18px;">
+        ${skSectionHeaderHtml(`Lịch trình 1 ngày — ${s.label}`, state.bmiCategory.color, '📅')}
+        <div class="hint-box" style="margin-bottom:6px;">Dựa theo BMI mốc gần nhất bạn đã đo (${state.bmiCategory.label}) — kiến thức dinh dưỡng/vận động chung, không thay thế tư vấn y tế.</div>
+        ${slot('Sáng', '🌅', s.sang)}
+        ${slot('Trưa', '☀️', s.trua)}
+        ${slot('Tối', '🌙', s.toi)}
+        <div style="padding-top:10px;">
+          <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">🏃 Tập luyện</div>
+          <div style="font-size:13px;line-height:1.7;"><b>Giờ tập:</b> ${esc(s.tap.gio)}</div>
+          <div style="font-size:13px;line-height:1.7;"><b>Bài tập:</b> ${esc(s.tap.bai)}</div>
+        </div>
+      </div>
+    `;
+  }
+
   function sanPhamTab(){
     const doneCount = state.items.filter(i=>state.doneIds.has(i.id)).length;
     return `
+      ${dailyScheduleHtml()}
       ${state.packageName ? `
         <div class="card" style="margin-bottom:18px;">
           ${skSectionHeaderHtml('Giờ nhắc mỗi ngày của bạn', '#7c6bd4', '⏰')}
@@ -356,11 +434,33 @@ function render(container, ctx){
     state.insightLoading = false; draw();
   }
 
+  // 2026-09-12, chị Quỳnh: "bổ sung thêm kiến thức về ăn tập khác dành cho các tạng người khác nhau"
+  // — nhóm "Chưa tập bao giờ" (trước gọi "Nhóm 1") giữ nguyên làm điểm bắt đầu CHUNG cho mọi tạng
+  // người (ai cũng nên bắt đầu ở đây trước), sau đó thêm nhánh nâng cao riêng theo BMI (state.bmiCategory,
+  // cùng khung dùng cho dailyScheduleHtml()) khi đã quen tập.
+  const SK_ADVANCED_WORKOUT_BY_BMI = {
+    gay: { title:'Tăng cơ, tăng cân lành mạnh', color:'#2f7fc4',
+      muctieu:'- Tăng khối cơ, cải thiện sức mạnh\n- Không đốt thêm calo quá mức cần thiết',
+      tanSuat:'3-4 buổi/tuần, 30-40 phút/buổi.', lich:'Thứ 2 — Thứ 4 — Thứ 6 (+ Thứ 7 nếu đã quen).',
+      noiDung:'1. Khởi động (5 phút).\n2. Bài tập kháng lực chính (20-25 phút): tạ tay/dây kháng lực/bài tập trọng lượng cơ thể (squat, plank, chống đẩy) — 3 hiệp x 8-12 lần mỗi bài, nghỉ 60-90 giây giữa hiệp.\n3. Giãn cơ (5-10 phút).',
+      luuY:'Không tập cardio kéo dài (trên 20 phút) — dễ đốt mất năng lượng cần cho tăng cân. Ăn đủ trong vòng 1 tiếng sau tập để hồi phục cơ.' },
+    can_doi: { title:'Duy trì thể lực', color:'#1f9d63',
+      muctieu:'- Duy trì vóc dáng và sức bền hiện tại\n- Tăng dần cường độ khi đã quen',
+      tanSuat:'3-4 buổi/tuần, 30 phút/buổi.', lich:'Thứ 2 — Thứ 4 — Thứ 6 — Chủ Nhật.',
+      noiDung:'1. Khởi động (5 phút).\n2. Xen kẽ cardio nhẹ (đi bộ nhanh, đạp xe 15 phút) + bài tập toàn thân (squat, plank, lunge — 10 phút).\n3. Giãn cơ (5 phút).',
+      luuY:'Có thể tăng dần thời gian/cường độ mỗi 2-3 tuần nếu thấy nhẹ nhàng — không cần vội.' },
+    thua_can: { title:'Đốt mỡ, tăng sức bền', color:'#e8643c',
+      muctieu:'- Tăng tiêu hao năng lượng, cải thiện tim mạch\n- Bảo vệ khớp gối/lưng khi vận động',
+      tanSuat:'4-5 buổi/tuần, 30-45 phút/buổi.', lich:'Thứ 2 — Thứ 3 — Thứ 5 — Thứ 6 — Chủ Nhật.',
+      noiDung:'1. Khởi động kỹ (7-10 phút) — đặc biệt khớp gối/hông.\n2. Cardio chính (20-30 phút): đi bộ nhanh, đạp xe, bơi — cường độ vừa (vẫn nói chuyện được).\n3. Bài tập toàn thân nhẹ, ít tác động khớp (10 phút): squat có điểm tựa, đứng lên ngồi xuống ghế, nâng chân.\n4. Giãn cơ (5 phút).',
+      luuY:'Tăng dần thời gian trước, tăng cường độ sau — không vội tập nặng ngay để tránh chấn thương khớp gối/lưng.' },
+  };
   function tapLuyenTab(){
+    const adv = state.bmiCategory && SK_ADVANCED_WORKOUT_BY_BMI[state.bmiCategory.key];
     return `
-      <div class="card">
-        ${skSectionHeaderHtml('Nhóm 1 — Chưa tập bao giờ', '#1f9d63', '🌱')}
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">Người mới, mẹ bỉm, người mệt, thừa cân, ngại vận động.</div>
+      <div class="card" style="margin-bottom:18px;">
+        ${skSectionHeaderHtml('Nhóm mới bắt đầu — áp dụng cho mọi tạng người', '#1f9d63', '🌱')}
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">Người mới, mẹ bỉm, người mệt, ngại vận động — ai cũng nên bắt đầu ở nhóm này trước khi tăng dần.</div>
         ${skRichBodyHtml(`🎯 Mục tiêu:
 - Đánh thức cơ thể
 - Tạo thói quen
@@ -377,7 +477,19 @@ function render(container, ctx){
           ⚠️ Lưu ý quan trọng: Không cần ra mồ hôi nhiều · Không tập đến mệt rã rời · Tập xong vẫn còn năng lượng → là đúng.
         </div>
       </div>
-      <div class="hint-box" style="margin-top:16px;">Các nhóm thể lực khá hơn (đã tập quen, thể lực tốt) sẽ được chị Quỳnh bổ sung bài tập riêng sau.</div>
+
+      ${adv ? `
+        <div class="card">
+          ${skSectionHeaderHtml(`Khi đã quen tập — ${esc(adv.title)}`, adv.color, '💪')}
+          <div style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">Gợi ý riêng theo vóc dáng hiện tại của bạn (${esc(state.bmiCategory.label)}, theo BMI mốc gần nhất) — chỉ nên chuyển sang nhóm này sau khi đã quen với nhóm mới bắt đầu ở trên.</div>
+          ${skRichBodyHtml(`🎯 Mục tiêu:\n${adv.muctieu}\n⏰ Tần suất: ${adv.tanSuat}\n📅 Lịch gợi ý: ${adv.lich}`)}
+          <div style="margin-top:14px;">
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:8px;">🧑‍🦰 Nội dung mỗi buổi</div>
+            ${skRichBodyHtml(adv.noiDung)}
+          </div>
+          <div class="hint-box" style="margin-top:14px;">⚠️ Lưu ý: ${esc(adv.luuY)}</div>
+        </div>
+      ` : `<div class="hint-box" style="margin-top:16px;">Nhập đủ Chiều cao + Cân nặng ở "Theo Dõi Sức Khỏe Theo Tuần" để xem gợi ý bài tập nâng cao phù hợp với vóc dáng của bạn.</div>`}
     `;
   }
 

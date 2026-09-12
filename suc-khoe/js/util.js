@@ -90,6 +90,24 @@ function skComputeHealthLevel(insulin, toxin, metabolic){
   return { level, score, meta, ci, ct, cm };
 }
 
+// BMI dùng chung — trích từ theo-doi-tuan.js (2026-09-12) vì lich-trinh.js cũng cần biết "tạng người"
+// (Gầy/Cân đối/Thừa cân-Béo phì) của khách để cá nhân hoá lịch trình ăn/tập theo đúng khung chị Quỳnh
+// chốt (BMI/cân nặng — dùng lại số liệu app đã có, không hỏi thêm khách câu nào mới). Ngưỡng theo WHO
+// khu vực Châu Á - Thái Bình Dương (thấp hơn chuẩn phương Tây, phù hợp hơn cho người Việt).
+function skBmiFromMeasures(heightCm, weightKg){
+  const h = parseFloat(heightCm), w = parseFloat(weightKg);
+  if(!isFinite(h) || !isFinite(w) || h<=0) return null;
+  const m = h/100;
+  return Math.round(w/(m*m)*10)/10;
+}
+function skBmiCategory(bmi){
+  if(bmi==null) return null;
+  if(bmi<18.5) return { key:'gay', label:'Thiếu cân', color:'#2f7fc4', concern:false };
+  if(bmi<23) return { key:'can_doi', label:'Bình thường', color:'#1f9d63', concern:false };
+  if(bmi<25) return { key:'thua_can', label:'Thừa cân', color:'#e8643c', concern:true };
+  return { key:'thua_can', label:'Béo phì', color:'#c0392b', concern:true };
+}
+
 function skOrderGift(total, itemCount){
   if(total >= 5000000) return { key:'binh_lac_son', label:'🎁 Tặng 1 bình lắc + 1 thỏi son Hàn — chọn màu bên dưới', images:[SK_GIFT_SHAKER_IMAGE], needsColor:true };
   if(total >= 2000000 && itemCount >= 2) return { key:'binh_lac', label:'🎁 Tặng 1 bình lắc', images:[SK_GIFT_SHAKER_IMAGE], needsColor:false };
