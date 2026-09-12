@@ -12,36 +12,6 @@ const SK_GI_TABLES = [
   { title:'3 — Rau củ', color:'#2f7fc4', high:['Khoai tây nướng 111'], mid:['Ngô ngọt luộc 58','Cháo ngô 68','Khoai tây trắng luộc 82','Khoai tây nghiền 87'], low:['Cà rốt 39','Củ cải 52','Đậu Hà Lan non 54'] },
 ];
 
-// 2026-09-12, chị Quỳnh: "lịch trình của khách đã gán gói là 1 lịch trình cụ thể như là sáng uống gì
-// ăn gì, trưa uống gì ăn gì, tối... tập giờ nào tập gì" + xác nhận dùng khung BMI/cân nặng làm "tạng
-// người" (Gầy - Cân đối - Thừa cân/Béo phì, khớp key của skBmiCategory ở util.js — dùng LẠI đúng BMI
-// đã tính ở Theo Dõi Tuần, không hỏi thêm khách câu nào mới). Nội dung là kiến thức dinh dưỡng/vận
-// động CHUNG (không gắn sản phẩm/không phải công dụng TPCN) — mở rộng đúng nguyên tắc đã có sẵn ở
-// anUongTab (nhịp ăn 4-4-12, quy tắc bàn tay, bảng GI) thành lịch cụ thể theo từng buổi trong ngày.
-const SK_DAILY_SCHEDULE_BY_BMI = {
-  gay: {
-    label:'Thiếu cân — cần tăng cân lành mạnh & tăng cơ',
-    sang: { uong:'1 cốc nước ấm ngay khi thức dậy, có thể thêm 1 ly sữa/sinh tố năng lượng cao (chuối, bơ, yến mạch, sữa nguyên kem).', an:'Ăn no đủ 3 nhóm: tinh bột + đạm + chất béo tốt — VD trứng, bánh mì nguyên cám, bơ đậu phộng, sữa chua Hy Lạp.' },
-    trua: { uong:'Uống đủ nước trước bữa 30 phút.', an:'Ăn đủ no, đạm NHIỀU HƠN quy tắc bàn tay thông thường (thêm nửa lòng bàn tay đạm), đủ tinh bột, thêm 1 phần chất béo tốt (dầu ô liu, quả bơ).' },
-    toi: { uong:'Nước ấm hoặc trà thảo mộc.', an:'Không bỏ bữa tối — vẫn đủ đạm, có thể thêm bữa phụ nhẹ (sữa, các loại hạt) trước ngủ nếu đói.' },
-    tap: { gio:'Chiều hoặc tối (17h-19h)', bai:'Tập kháng lực nhẹ (tạ tay/dây kháng lực) 2-3 buổi/tuần — ưu tiên xây cơ, KHÔNG tập cardio cường độ cao kéo dài (dễ đốt thêm năng lượng cần cho tăng cân).' },
-  },
-  can_doi: {
-    label:'Bình thường — duy trì vóc dáng hiện tại',
-    sang: { uong:'1 cốc nước ấm ngay khi thức dậy.', an:'Ăn sáng đầy đủ, cân bằng theo quy tắc bàn tay (tinh bột GI thấp + đạm + rau).' },
-    trua: { uong:'Uống đủ nước trước bữa.', an:'Theo tỉ lệ 4-3-2-1: rau xanh nhiều nhất — đạm — tinh bột — chất béo.' },
-    toi: { uong:'Nước ấm hoặc trà thảo mộc, hạn chế đồ uống có đường.', an:'Ăn nhẹ hơn bữa trưa, ưu tiên đạm + rau, giảm tinh bột, ăn trước 20h và cách giờ ngủ ít nhất 2-3 tiếng.' },
-    tap: { gio:'Sáng sớm hoặc chiều tối, tuỳ lịch cá nhân', bai:'30 phút/buổi, 3-4 buổi/tuần — kết hợp cardio nhẹ (đi bộ nhanh, đạp xe) + vận động linh hoạt để duy trì thể lực.' },
-  },
-  thua_can: {
-    label:'Thừa cân/Béo phì — cần giảm mỡ',
-    sang: { uong:'1 cốc nước ấm, có thể thêm nước chanh ấm KHÔNG đường.', an:'Đủ đạm + rau, giảm tinh bột tinh chế (tránh xôi/bánh ngọt) — theo đúng nhịp 4-4-12 đã có.' },
-    trua: { uong:'Uống đủ nước trước bữa 30 phút để giảm cảm giác đói giả.', an:'Rau xanh nhiều nhất (tỉ lệ 4-3-2-1), đạm nạc, tinh bột GI thấp lượng vừa phải, hạn chế đồ chiên rán.' },
-    toi: { uong:'Nước ấm/trà thảo mộc không đường.', an:'Ăn nhẹ, ưu tiên rau + đạm, giảm tối đa tinh bột (tránh nhóm GI cao buổi tối — xem bảng GI bên dưới), ăn trước 19-20h, giữ khoảng nhịn đêm 12 tiếng.' },
-    tap: { gio:'Sáng sớm (trước ăn sáng, nếu thể lực cho phép) hoặc chiều tối', bai:'30-45 phút/buổi, 4-5 buổi/tuần — kết hợp cardio (đi bộ nhanh, đạp xe, bơi) + bài tập toàn thân nhẹ, tăng dần cường độ theo thời gian.' },
-  },
-};
-
 (function(){
 function render(container, ctx){
   const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
@@ -54,19 +24,6 @@ function render(container, ctx){
   // đây là gán sản phẩm khách đang dùng á, chứ k phải mỗi combo") — khách mua lẻ/ngoài app không có
   // Combo (sk_package_id null) nhưng có sk_customer_products vẫn cần thấy đúng hướng dẫn sử dụng của
   // đúng sản phẩm họ dùng, xem sanPhamTab().
-  // Mốc gần nhất có đủ chiều cao + cân nặng để tính BMI (2026-09-12, chị Quỳnh chốt dùng khung BMI/
-  // cân nặng làm "tạng người" cá nhân hoá lịch trình ăn/tập — xem SK_DAILY_SCHEDULE_BY_BMI) — quét từ
-  // mốc mới nhất (Tuần 8) lùi về "Bắt đầu", không bắt khách phải đo lại nếu đã có số liệu tuần trước.
-  function latestBmiFromMetrics(metrics){
-    if(!metrics) return null;
-    for(let week=8; week>=0; week--){
-      const h = metrics.chieucao && metrics.chieucao[week];
-      const w = metrics.cannang && metrics.cannang[week];
-      if(h && w) return skBmiFromMeasures(h, w);
-    }
-    return null;
-  }
-
   async function load(){
     const packageId = ctx.profile && ctx.profile.sk_package_id;
     const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }, { data: weeklyLog }] = await Promise.all([
@@ -86,7 +43,7 @@ function render(container, ctx){
     // đồ của em, người có vấn đề sức khỏe nặng theo nhãn") — null nếu khách CHƯA làm Kiểm Tra Sức
     // Khỏe (không tự suy diễn "an toàn" hay "nặng" khi chưa có dữ liệu, mặc định dùng phác đồ như cũ).
     state.healthLevel = checkin ? skComputeHealthLevel(checkin.survey_insulin, checkin.survey_toxin, checkin.survey_metabolic).level : null;
-    state.bmiCategory = skBmiCategory(latestBmiFromMetrics(weeklyLog && weeklyLog.metrics));
+    state.bmiCategory = skLatestBmiCategoryFromMetrics(weeklyLog && weeklyLog.metrics);
     const allProducts = products || [];
     allProducts.forEach(p=>{ state.productByName[p.name] = p; });
     const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
@@ -153,70 +110,107 @@ function render(container, ctx){
     if(p) p._reminderTime = time||null;
   }
 
-  function regimenHtml(){
-    if(state.regimenSections.length===0) return '';
+  // 1 bước dùng sản phẩm trong regimen_sections (ảnh, tên, liều/hướng dẫn, nhãn ưu tiên) — tách riêng
+  // để dùng lại trong TỪNG khung giờ của lịch trình 1 ngày (xem dailyScheduleHtml), không chỉ trong
+  // danh sách theo mục time_label như trước.
+  function regimenStepHtml(step){
+    const p = step.product_name ? state.productByName[step.product_name] : null;
+    const isPriority = !!step.priority;
+    // Liều theo phác đồ combo (mặc định) hay theo đúng nhãn công bố (2026-09-05, chị Quỳnh: "người
+    // bình thường thì theo phác đồ của em, người có vấn đề sức khỏe nặng theo nhãn") — CHỈ áp dụng khi
+    // Kiểm Tra Sức Khỏe của khách ở mức "Cao" VÀ step này có ghi liều nhãn riêng (safe_instruction).
+    const usingSafe = state.healthLevel==='Cao' && step.safe_instruction;
+    const shownInstruction = usingSafe ? step.safe_instruction : step.instruction;
     return `
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Hướng dẫn sử dụng theo khung giờ</h2></div>
-      ${state.regimenSections.map(sec=>`
-        <details class="kt-section" open>
-          <summary class="kt-summary">⏰ ${esc(sec.time_label||'')}</summary>
-          <div style="margin-top:12px;">
-            ${sec.note ? `<div class="hint-box" style="margin-bottom:12px;">${esc(sec.note)}</div>` : ''}
-            ${(sec.steps||[]).map(step=>{
-              const p = step.product_name ? state.productByName[step.product_name] : null;
-              const isPriority = !!step.priority;
-              // Liều theo phác đồ combo (mặc định) hay theo đúng nhãn công bố (2026-09-05, chị Quỳnh:
-              // "người bình thường thì theo phác đồ của em, người có vấn đề sức khỏe nặng theo nhãn")
-              // — CHỈ áp dụng khi Kiểm Tra Sức Khỏe của khách ở mức "Cao" VÀ step này có ghi liều nhãn
-              // riêng (safe_instruction, xem seed_sk_packages_regimen_v1.sql — chỉ 3 sản phẩm có phác
-              // đồ combo khác nhãn: Bios Life Slim, Aloe Vera, Red Clover Plus).
-              const usingSafe = state.healthLevel==='Cao' && step.safe_instruction;
-              const shownInstruction = usingSafe ? step.safe_instruction : step.instruction;
-              return `
-              <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;margin:0 -14px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;border-radius:8px;':''}">
-                ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
-                <div style="flex:1;min-width:0;">
-                  ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</span>${p && p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}</div>` : ''}
-                  <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
-                  ${usingSafe ? `<div style="font-size:11.5px;color:#c0392b;margin-top:4px;">⚠️ Dùng đúng liều theo nhãn công bố — kết quả Kiểm Tra Sức Khỏe của bạn ở mức Cao nên ưu tiên an toàn hơn phác đồ thường.</div>` : ''}
-                </div>
-              </div>
-            `;}).join('')}
-            ${(sec.steps||[]).some(s=>s.priority) ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">⭐ = sản phẩm nên ưu tiên mua trước nếu chưa mua trọn bộ.</div>` : ''}
-          </div>
-        </details>
-      `).join('')}
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;margin:0 -14px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;border-radius:8px;':''}">
+        ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
+        <div style="flex:1;min-width:0;">
+          ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</span>${p && p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}</div>` : ''}
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
+          ${usingSafe ? `<div style="font-size:11.5px;color:#c0392b;margin-top:4px;">⚠️ Dùng đúng liều theo nhãn công bố — kết quả Kiểm Tra Sức Khỏe của bạn ở mức Cao nên ưu tiên an toàn hơn phác đồ thường.</div>` : ''}
+        </div>
+      </div>
     `;
   }
 
+  // regimen_sections.time_label là text tự do do chị Quỳnh soạn (VD "Ăn trưa: Bữa cứng 1", "Buổi tối
+  // trước khi ngủ"...) nhưng đều CHỨA đúng từ sáng/trưa/tối — gộp theo đúng 3 khung giờ này để xếp
+  // chung với lịch ăn uống/tập luyện (xem dailyScheduleHtml). Mục nào không khớp từ nào (hiếm, VD ghi
+  // rõ "Giữa buổi sáng" vẫn khớp /sáng/) rơi vào "khac", hiện ở cuối để không mất nội dung.
+  function bucketRegimenSectionsByTime(){
+    const buckets = { sang:[], trua:[], toi:[], khac:[] };
+    state.regimenSections.forEach(sec=>{
+      const label = sec.time_label || '';
+      if(/tối/i.test(label)) buckets.toi.push(sec);
+      else if(/trưa/i.test(label)) buckets.trua.push(sec);
+      else if(/sáng/i.test(label)) buckets.sang.push(sec);
+      else buckets.khac.push(sec);
+    });
+    return buckets;
+  }
+  function regimenSectionsHtml(secs){
+    return secs.map(sec=>`
+      ${sec.note ? `<div class="hint-box" style="margin:8px 0;">${esc(sec.note)}</div>` : ''}
+      ${(sec.steps||[]).map(regimenStepHtml).join('')}
+    `).join('');
+  }
+
   // 2026-09-12, chị Quỳnh: "lịch trình của khách đã gán gói là 1 lịch trình cụ thể như là sáng uống
-  // gì ăn gì, trưa uống gì ăn gì, tối... tập giờ nào tập gì" — thẻ này đứng ĐẦU tab Sản Phẩm (tab
-  // chính của Lịch Trình) nên khách thấy ngay lịch 1 ngày cụ thể, không phải lục qua tận tab Ăn Uống/
-  // Tập Luyện mới thấy. Cá nhân hoá theo "tạng người" = BMI mốc gần nhất (state.bmiCategory) — chưa
-  // đo đủ chiều cao+cân nặng thì hiện nhắc đo, không đoán bừa "tạng người" khi chưa có số liệu.
+  // gì ăn gì, trưa uống gì ăn gì, tối... tập giờ nào tập gì" + sau đó: "lịch trình 1 ngày này là kết
+  // hợp với hướng dẫn sử dụng theo khung giờ á, đừng tách ra" — GỘP CHUNG 1 khối thay vì 2 thẻ riêng
+  // (trước đây "Lịch trình 1 ngày" và "Hướng dẫn sử dụng theo khung giờ" là 2 card tách biệt): mỗi
+  // khung Sáng/Trưa/Tối vừa hiện gợi ý ăn uống chung (theo BMI hoặc admin tuỳ chỉnh riêng), vừa hiện
+  // đúng sản phẩm cần dùng ở khung giờ đó (từ sk_packages.regimen_sections).
+  //
+  // Cá nhân hoá "tạng người" = BMI mốc gần nhất (state.bmiCategory) — chưa đo đủ chiều cao+cân nặng
+  // thì bỏ qua phần ăn uống chung, chỉ hiện đúng phần sản phẩm (nếu có), không đoán bừa "tạng người".
+  // 2026-09-12, chị Quỳnh: "cho e quyền sửa lịch trình của người dùng" (xác nhận: sửa RIÊNG cho 1
+  // khách cụ thể, không phải sửa chung cho cả gói) — profiles.sk_daily_schedule_override (set qua admin
+  // Quản Trị) LUÔN ưu tiên hơn mặc định theo BMI nếu admin đã tuỳ chỉnh cho đúng khách này.
   function dailyScheduleHtml(){
-    if(!state.bmiCategory) return `<div class="hint-box" style="margin-bottom:18px;">Nhập đủ Chiều cao + Cân nặng ở "Theo Dõi Sức Khỏe Theo Tuần" để xem lịch trình 1 ngày cụ thể phù hợp với vóc dáng của bạn (sáng/trưa/tối ăn uống gì, tập giờ nào).</div>`;
-    const s = SK_DAILY_SCHEDULE_BY_BMI[state.bmiCategory.key];
-    if(!s) return '';
-    const slot = (label, icon, data) => `
+    const override = ctx.profile && ctx.profile.sk_daily_schedule_override;
+    const s = override || (state.bmiCategory && SK_DAILY_SCHEDULE_BY_BMI[state.bmiCategory.key]);
+    const buckets = bucketRegimenSectionsByTime();
+    const hasRegimen = state.regimenSections.length > 0;
+    if(!s && !hasRegimen) return `<div class="hint-box" style="margin-bottom:18px;">Nhập đủ Chiều cao + Cân nặng ở "Theo Dõi Sức Khỏe Theo Tuần" để xem lịch trình 1 ngày cụ thể phù hợp với vóc dáng của bạn (sáng/trưa/tối ăn uống gì, tập giờ nào).</div>`;
+    const color = override ? '#7c6bd4' : (s ? state.bmiCategory.color : '#e8643c');
+    const headerLabel = override ? (s.label || 'Lịch trình riêng của bạn') : (s ? `Lịch trình 1 ngày — ${s.label}` : 'Lịch trình 1 ngày của bạn');
+    const subtitle = override
+      ? 'Lịch trình này được tuỳ chỉnh riêng cho bạn, kết hợp cùng hướng dẫn sử dụng sản phẩm theo đúng khung giờ.'
+      : s ? `Dựa theo BMI mốc gần nhất bạn đã đo (${state.bmiCategory.label}) — kết hợp hướng dẫn sử dụng sản phẩm theo đúng khung giờ.`
+        : 'Nhập đủ Chiều cao + Cân nặng ở "Theo Dõi Sức Khỏe Theo Tuần" để có thêm gợi ý ăn uống/tập luyện chung, phù hợp vóc dáng của bạn.';
+    const anyPriority = state.regimenSections.some(sec=>(sec.steps||[]).some(st=>st.priority));
+    const slot = (label, icon, data, secs) => `
       <div style="padding:10px 0;border-bottom:1px solid var(--line);">
         <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${icon} ${esc(label)}</div>
-        <div style="font-size:13px;line-height:1.7;"><b>Uống:</b> ${esc(data.uong)}</div>
-        <div style="font-size:13px;line-height:1.7;"><b>Ăn:</b> ${esc(data.an)}</div>
+        ${data ? `
+          <div style="font-size:13px;line-height:1.7;"><b>Uống:</b> ${esc(data.uong)}</div>
+          <div style="font-size:13px;line-height:1.7;"><b>Ăn:</b> ${esc(data.an)}</div>
+        ` : ''}
+        ${regimenSectionsHtml(secs)}
       </div>
     `;
     return `
       <div class="card" style="margin-bottom:18px;">
-        ${skSectionHeaderHtml(`Lịch trình 1 ngày — ${s.label}`, state.bmiCategory.color, '📅')}
-        <div class="hint-box" style="margin-bottom:6px;">Dựa theo BMI mốc gần nhất bạn đã đo (${state.bmiCategory.label}) — kiến thức dinh dưỡng/vận động chung, không thay thế tư vấn y tế.</div>
-        ${slot('Sáng', '🌅', s.sang)}
-        ${slot('Trưa', '☀️', s.trua)}
-        ${slot('Tối', '🌙', s.toi)}
-        <div style="padding-top:10px;">
-          <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">🏃 Tập luyện</div>
-          <div style="font-size:13px;line-height:1.7;"><b>Giờ tập:</b> ${esc(s.tap.gio)}</div>
-          <div style="font-size:13px;line-height:1.7;"><b>Bài tập:</b> ${esc(s.tap.bai)}</div>
-        </div>
+        ${skSectionHeaderHtml(headerLabel, color, '📅')}
+        <div class="hint-box" style="margin-bottom:6px;">${esc(subtitle)}</div>
+        ${slot('Sáng', '🌅', s && s.sang, buckets.sang)}
+        ${slot('Trưa', '☀️', s && s.trua, buckets.trua)}
+        ${slot('Tối', '🌙', s && s.toi, buckets.toi)}
+        ${buckets.khac.length>0 ? `
+          <div style="padding:10px 0;border-bottom:1px solid var(--line);">
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">⏰ Khác trong ngày</div>
+            ${regimenSectionsHtml(buckets.khac)}
+          </div>
+        ` : ''}
+        ${s ? `
+          <div style="padding-top:10px;">
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">🏃 Tập luyện</div>
+            <div style="font-size:13px;line-height:1.7;"><b>Giờ tập:</b> ${esc(s.tap.gio)}</div>
+            <div style="font-size:13px;line-height:1.7;"><b>Bài tập:</b> ${esc(s.tap.bai)}</div>
+          </div>
+        ` : ''}
+        ${anyPriority ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">⭐ = sản phẩm nên ưu tiên mua trước nếu chưa mua trọn bộ.</div>` : ''}
       </div>
     `;
   }

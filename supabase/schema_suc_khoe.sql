@@ -444,3 +444,11 @@ drop policy if exists "sk_health_checkin_history_owner_insert" on sk_health_chec
 create policy "sk_health_checkin_history_owner_insert" on sk_health_checkin_history for insert with check (auth.uid() = user_id);
 drop policy if exists "sk_health_checkin_history_admin_all" on sk_health_checkin_history;
 create policy "sk_health_checkin_history_admin_all" on sk_health_checkin_history for all using (is_admin()) with check (is_admin());
+
+-- Lịch trình 1 ngày (sáng/trưa/tối ăn uống + tập luyện) TUỲ CHỈNH RIÊNG cho từng khách (2026-09-12,
+-- chị Quỳnh: "cho e quyền sửa lịch trình của người dùng" — xác nhận sửa RIÊNG cho 1 khách cụ thể, không
+-- phải sửa chung cho cả gói) — null = dùng mặc định theo BMI (SK_DAILY_SCHEDULE_BY_BMI, lich-trinh.js),
+-- có giá trị = ưu tiên dùng nội dung admin đã tuỳ biến cho đúng khách này. Shape jsonb: { label,
+-- sang:{uong,an}, trua:{uong,an}, toi:{uong,an}, tap:{gio,bai} } — khớp cấu trúc SK_DAILY_SCHEDULE_BY_BMI
+-- để lich-trinh.js dùng chung 1 hàm render cho cả 2 trường hợp mặc định/tuỳ chỉnh.
+alter table profiles add column if not exists sk_daily_schedule_override jsonb;

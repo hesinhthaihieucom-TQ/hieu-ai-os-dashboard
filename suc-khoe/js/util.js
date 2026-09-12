@@ -11,7 +11,12 @@ function esc(s){
 function openImageLightbox(src, alt){
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.88);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;';
-  overlay.innerHTML = `<img src="${esc(src)}" alt="${esc(alt||'')}" style="max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.4);">`;
+  // 2026-09-12, chị Quỳnh: "hiện hình ảnh zoom lên đang bị... ko đc full hinh mà nó còn bé xíu" — với
+  // ảnh nguồn có kích thước nhỏ (VD ảnh hướng dẫn chụp 180x180px), max-width/max-height:100% chỉ CO
+  // NHỎ LẠI nếu ảnh to hơn khung, không bao giờ phóng to ảnh nhỏ lên — nên ảnh nhỏ vẫn hiện nhỏ giữa
+  // khung tối mênh mông. Đổi sang width cố định theo % viewport để LUÔN phóng to đủ lớn, kể cả ảnh gốc
+  // nhỏ (chấp nhận hơi mờ khi phóng ảnh nhỏ, còn hơn hiện bé xíu).
+  overlay.innerHTML = `<img src="${esc(src)}" alt="${esc(alt||'')}" style="width:min(92vw,560px);max-height:88vh;object-fit:contain;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.4);">`;
   function close(){ overlay.remove(); document.removeEventListener('keydown', onKey); }
   function onKey(e){ if(e.key==='Escape') close(); }
   overlay.onclick = close;
@@ -107,6 +112,50 @@ function skBmiCategory(bmi){
   if(bmi<25) return { key:'thua_can', label:'Thừa cân', color:'#e8643c', concern:true };
   return { key:'thua_can', label:'Béo phì', color:'#c0392b', concern:true };
 }
+
+// Mốc gần nhất có đủ chiều cao + cân nặng để tính BMI, từ sk_weekly_logs.metrics (2026-09-12) — dùng
+// chung giữa theo-doi-tuan.js, lich-trinh.js (hiện lịch trình cá nhân hoá) và quan-tri.js (admin xem
+// trước "tạng người" của khách khi tuỳ chỉnh lịch trình riêng) — quét từ mốc mới nhất (Tuần 8) lùi về
+// "Bắt đầu", không bắt khách đo lại nếu đã có số liệu tuần trước.
+function skLatestBmiCategoryFromMetrics(metrics){
+  if(!metrics) return null;
+  for(let week=8; week>=0; week--){
+    const h = metrics.chieucao && metrics.chieucao[week];
+    const w = metrics.cannang && metrics.cannang[week];
+    if(h && w) return skBmiCategory(skBmiFromMeasures(h, w));
+  }
+  return null;
+}
+
+// 2026-09-12, chị Quỳnh: "lịch trình của khách đã gán gói là 1 lịch trình cụ thể như là sáng uống gì
+// ăn gì, trưa uống gì ăn gì, tối... tập giờ nào tập gì" + xác nhận dùng khung BMI/cân nặng làm "tạng
+// người" (Gầy - Cân đối - Thừa cân/Béo phì, khớp key của skBmiCategory ở trên — dùng LẠI đúng BMI đã
+// tính ở Theo Dõi Tuần, không hỏi thêm khách câu nào mới). Nội dung là kiến thức dinh dưỡng/vận động
+// CHUNG (không gắn sản phẩm/không phải công dụng TPCN). Đặt ở util.js (không phải lich-trinh.js) để
+// quan-tri.js cũng dùng được làm bản nháp khi admin tuỳ chỉnh lịch trình riêng cho 1 khách.
+const SK_DAILY_SCHEDULE_BY_BMI = {
+  gay: {
+    label:'Thiếu cân — cần tăng cân lành mạnh & tăng cơ',
+    sang: { uong:'1 cốc nước ấm ngay khi thức dậy, có thể thêm 1 ly sữa/sinh tố năng lượng cao (chuối, bơ, yến mạch, sữa nguyên kem).', an:'Ăn no đủ 3 nhóm: tinh bột + đạm + chất béo tốt — VD trứng, bánh mì nguyên cám, bơ đậu phộng, sữa chua Hy Lạp.' },
+    trua: { uong:'Uống đủ nước trước bữa 30 phút.', an:'Ăn đủ no, đạm NHIỀU HƠN quy tắc bàn tay thông thường (thêm nửa lòng bàn tay đạm), đủ tinh bột, thêm 1 phần chất béo tốt (dầu ô liu, quả bơ).' },
+    toi: { uong:'Nước ấm hoặc trà thảo mộc.', an:'Không bỏ bữa tối — vẫn đủ đạm, có thể thêm bữa phụ nhẹ (sữa, các loại hạt) trước ngủ nếu đói.' },
+    tap: { gio:'Chiều hoặc tối (17h-19h)', bai:'Tập kháng lực nhẹ (tạ tay/dây kháng lực) 2-3 buổi/tuần — ưu tiên xây cơ, KHÔNG tập cardio cường độ cao kéo dài (dễ đốt thêm năng lượng cần cho tăng cân).' },
+  },
+  can_doi: {
+    label:'Bình thường — duy trì vóc dáng hiện tại',
+    sang: { uong:'1 cốc nước ấm ngay khi thức dậy.', an:'Ăn sáng đầy đủ, cân bằng theo quy tắc bàn tay (tinh bột GI thấp + đạm + rau).' },
+    trua: { uong:'Uống đủ nước trước bữa.', an:'Theo tỉ lệ 4-3-2-1: rau xanh nhiều nhất — đạm — tinh bột — chất béo.' },
+    toi: { uong:'Nước ấm hoặc trà thảo mộc, hạn chế đồ uống có đường.', an:'Ăn nhẹ hơn bữa trưa, ưu tiên đạm + rau, giảm tinh bột, ăn trước 20h và cách giờ ngủ ít nhất 2-3 tiếng.' },
+    tap: { gio:'Sáng sớm hoặc chiều tối, tuỳ lịch cá nhân', bai:'30 phút/buổi, 3-4 buổi/tuần — kết hợp cardio nhẹ (đi bộ nhanh, đạp xe) + vận động linh hoạt để duy trì thể lực.' },
+  },
+  thua_can: {
+    label:'Thừa cân/Béo phì — cần giảm mỡ',
+    sang: { uong:'1 cốc nước ấm, có thể thêm nước chanh ấm KHÔNG đường.', an:'Đủ đạm + rau, giảm tinh bột tinh chế (tránh xôi/bánh ngọt) — theo đúng nhịp 4-4-12 đã có.' },
+    trua: { uong:'Uống đủ nước trước bữa 30 phút để giảm cảm giác đói giả.', an:'Rau xanh nhiều nhất (tỉ lệ 4-3-2-1), đạm nạc, tinh bột GI thấp lượng vừa phải, hạn chế đồ chiên rán.' },
+    toi: { uong:'Nước ấm/trà thảo mộc không đường.', an:'Ăn nhẹ, ưu tiên rau + đạm, giảm tối đa tinh bột (tránh nhóm GI cao buổi tối), ăn trước 19-20h, giữ khoảng nhịn đêm 12 tiếng.' },
+    tap: { gio:'Sáng sớm (trước ăn sáng, nếu thể lực cho phép) hoặc chiều tối', bai:'30-45 phút/buổi, 4-5 buổi/tuần — kết hợp cardio (đi bộ nhanh, đạp xe, bơi) + bài tập toàn thân nhẹ, tăng dần cường độ theo thời gian.' },
+  },
+};
 
 function skOrderGift(total, itemCount){
   if(total >= 5000000) return { key:'binh_lac_son', label:'🎁 Tặng 1 bình lắc + 1 thỏi son Hàn — chọn màu bên dưới', images:[SK_GIFT_SHAKER_IMAGE], needsColor:true };

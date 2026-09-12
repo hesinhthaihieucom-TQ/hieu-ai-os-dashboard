@@ -184,18 +184,50 @@ function renderSanPham(container, ctx){
     draw();
   }
 
-  function newForm(){ return { id:null, name:'', short_description:'', benefits:'', retail_price:'', image_url:'' }; }
+  // 2026-09-12, chị Quỳnh: "cho e sửa cái hướng dẫn sử dụng từng sản phẩm" — trước đây "Đối tượng sử
+  // dụng"/"Cách dùng" chỉ nằm trong detail_sections (mảng {title,body} tự do), chỉ sửa được qua file
+  // SQL, không có UI. Thay vì bắt admin tự soạn cả mảng JSON, tách riêng 2 ô text đúng 2 mục khách
+  // hàng thật sự cần xem (skProductUsageHtml ở lich-trinh.js đang lọc đúng 2 mục này) — lúc lưu GHÉP
+  // LẠI vào đúng vị trí trong detail_sections, các mục khác (thành phần, cơ chế...) giữ nguyên không đụng tới.
+  function findSectionBody(sections, re){
+    const hit = (sections||[]).find(s=>re.test(s.title||''));
+    return hit ? (hit.body||'') : '';
+  }
+  function withSectionBody(sections, re, defaultTitle, body){
+    const list = Array.isArray(sections) ? sections.map(s=>({ ...s })) : [];
+    const idx = list.findIndex(s=>re.test(s.title||''));
+    if(body.trim()===''){
+      if(idx>=0) list.splice(idx,1);
+      return list;
+    }
+    if(idx>=0) list[idx].body = body;
+    else list.push({ title:defaultTitle, body });
+    return list;
+  }
+
+  function newForm(){ return { id:null, name:'', short_description:'', benefits:'', retail_price:'', image_url:'', detail_sections:[], usageAudience:'', usageInstruction:'' }; }
   function openNew(){ state.form = newForm(); draw(); }
-  function openEdit(p){ state.form = { ...p, retail_price: p.retail_price ?? '' }; draw(); }
+  function openEdit(p){
+    state.form = {
+      ...p, retail_price: p.retail_price ?? '',
+      usageAudience: findSectionBody(p.detail_sections, /đối tượng/i),
+      usageInstruction: findSectionBody(p.detail_sections, /cách dùng/i),
+    };
+    draw();
+  }
 
   async function save(){
     if(!state.form.name.trim()) return;
     state.saving = true; draw();
+    let sections = Array.isArray(state.form.detail_sections) ? state.form.detail_sections : [];
+    sections = withSectionBody(sections, /đối tượng/i, 'Đối tượng sử dụng', state.form.usageAudience.trim());
+    sections = withSectionBody(sections, /cách dùng/i, 'Cách dùng', state.form.usageInstruction.trim());
     const payload = {
       name: state.form.name.trim(), short_description: state.form.short_description.trim()||null,
       benefits: state.form.benefits.trim()||null,
       retail_price: state.form.retail_price===''? null : Number(state.form.retail_price),
       image_url: state.form.image_url.trim()||null,
+      detail_sections: sections,
     };
     const { error } = state.form.id
       ? await ctx.supabase.from('sk_products').update(payload).eq('id', state.form.id)
@@ -222,6 +254,8 @@ function renderSanPham(container, ctx){
           <div class="field" style="margin-top:12px;"><label>Công dụng</label><textarea id="sp-benefits">${esc(state.form.benefits)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Giá bán lẻ (đ)</label><input type="number" id="sp-price" value="${esc(state.form.retail_price)}"></div>
           <div class="field" style="margin-top:12px;"><label>Link ảnh (URL)</label><input type="text" id="sp-image" value="${esc(state.form.image_url)}" placeholder="https://..."></div>
+          <div class="field" style="margin-top:12px;"><label>Đối tượng sử dụng</label><textarea id="sp-usage-audience" placeholder="VD: Người trưởng thành, không dùng cho phụ nữ mang thai...">${esc(state.form.usageAudience)}</textarea></div>
+          <div class="field" style="margin-top:12px;"><label>Cách dùng (Hướng dẫn sử dụng)</label><textarea id="sp-usage-instruction" placeholder="VD: Uống 1 viên/lần, 2 lần/ngày trước bữa ăn 30 phút...">${esc(state.form.usageInstruction)}</textarea></div>
           <div class="btn-row" style="justify-content:flex-start;margin-top:16px;">
             <button class="btn btn-sm" id="sp-save" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'Lưu'}</button>
             <span class="btn-ghost btn btn-sm" id="sp-cancel">Huỷ</span>
@@ -254,6 +288,8 @@ function renderSanPham(container, ctx){
     const benefitsEl = container.querySelector('#sp-benefits'); if(benefitsEl) benefitsEl.oninput = (e)=>{ state.form.benefits = e.target.value; };
     const priceEl = container.querySelector('#sp-price'); if(priceEl) priceEl.oninput = (e)=>{ state.form.retail_price = e.target.value; };
     const imageEl = container.querySelector('#sp-image'); if(imageEl) imageEl.oninput = (e)=>{ state.form.image_url = e.target.value; };
+    const usageAudienceEl = container.querySelector('#sp-usage-audience'); if(usageAudienceEl) usageAudienceEl.oninput = (e)=>{ state.form.usageAudience = e.target.value; };
+    const usageInstructionEl = container.querySelector('#sp-usage-instruction'); if(usageInstructionEl) usageInstructionEl.oninput = (e)=>{ state.form.usageInstruction = e.target.value; };
     container.querySelectorAll('[data-edit]').forEach(el=>{
       el.onclick = ()=>{ openEdit(state.list.find(p=>p.id===el.getAttribute('data-edit'))); };
     });
@@ -418,7 +454,8 @@ function renderThanhVien(container, ctx){
   const state = { loading:true, rows:[], packages:[], allProducts:[], search:'', busyId:null, pointsFormFor:null, pointsForm:{ month:new Date().toISOString().slice(0,7), points:'', purchase_amount:'', commission:'', note:'' },
     anyQuery:'', anySearching:false, anySearched:false, anyResults:[],
     customerProductsFor:null, customerProductIds:null,
-    scheduleFor:null, scheduleItemsByPackage:{} };
+    scheduleFor:null, scheduleItemsByPackage:{},
+    dailyScheduleFor:null, dailyScheduleForm:null, dailyScheduleSaving:false, dailyScheduleBmiByUser:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -428,7 +465,7 @@ function renderThanhVien(container, ctx){
       // Chỉ lấy người ĐÃ TỪNG vào app suc-khoe (sk_first_visited_at chỉ set ở loadProfile() của
       // suc-khoe/js/app-shell.js) — profiles là bảng CHUNG giữa mọi app, không lọc sẽ lẫn người chỉ
       // dùng nhan-hieu/tai-chinh/san-pham-so.
-      ctx.supabase.from('profiles').select('id,email,full_name,role,sk_package_id,sk_package_started_at,sk_first_visited_at').not('sk_first_visited_at', 'is', null).order('sk_first_visited_at', { ascending:false }).limit(200),
+      ctx.supabase.from('profiles').select('id,email,full_name,role,sk_package_id,sk_package_started_at,sk_first_visited_at,sk_daily_schedule_override').not('sk_first_visited_at', 'is', null).order('sk_first_visited_at', { ascending:false }).limit(200),
       ctx.supabase.from('sk_packages').select('id,name'),
       ctx.supabase.from('sk_products').select('id,name').order('name', { ascending:true }),
     ]);
@@ -477,6 +514,93 @@ function renderThanhVien(container, ctx){
     `;
   }
 
+  // 2026-09-12, chị Quỳnh: "cho e quyền sửa lịch trình của người dùng" (xác nhận sửa RIÊNG cho 1 khách
+  // cụ thể) — profiles.sk_daily_schedule_override ghi đè lịch trình 1 ngày mặc định theo BMI (xem
+  // lich-trinh.js dailyScheduleHtml). Mở form là tải sẵn BMI mốc gần nhất của khách làm bản nháp hợp
+  // lý (không bắt admin gõ từ đầu) — đã có tuỳ chỉnh trước đó thì ưu tiên hiện đúng bản đã lưu.
+  async function openDailyScheduleEdit(userId, currentOverride){
+    if(state.dailyScheduleFor === userId){ state.dailyScheduleFor = null; state.dailyScheduleForm = null; draw(); return; }
+    state.dailyScheduleFor = userId; state.dailyScheduleForm = null; draw();
+    let bmiCat = state.dailyScheduleBmiByUser[userId];
+    if(bmiCat === undefined){
+      const { data } = await ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', userId).maybeSingle();
+      bmiCat = skLatestBmiCategoryFromMetrics(data && data.metrics) || null;
+      state.dailyScheduleBmiByUser[userId] = bmiCat;
+    }
+    const base = currentOverride || (bmiCat && SK_DAILY_SCHEDULE_BY_BMI[bmiCat.key]) || {
+      label:'', sang:{uong:'',an:''}, trua:{uong:'',an:''}, toi:{uong:'',an:''}, tap:{gio:'',bai:''},
+    };
+    // Deep clone để không sửa nhầm vào hằng số SK_DAILY_SCHEDULE_BY_BMI dùng chung (util.js).
+    state.dailyScheduleForm = JSON.parse(JSON.stringify(base));
+    state.dailyScheduleBmiLabel = bmiCat ? bmiCat.label : null;
+    draw();
+  }
+
+  async function saveDailySchedule(userId){
+    state.dailyScheduleSaving = true; draw();
+    const { error } = await ctx.supabase.from('profiles').update({ sk_daily_schedule_override: state.dailyScheduleForm }).eq('id', userId);
+    state.dailyScheduleSaving = false;
+    if(error){ alert('Không lưu được lịch trình: ' + error.message); return; }
+    const row = state.rows.find(r=>r.id===userId); if(row) row.sk_daily_schedule_override = state.dailyScheduleForm;
+    const anyRow = state.anyResults.find(r=>r.id===userId); if(anyRow) anyRow.sk_daily_schedule_override = state.dailyScheduleForm;
+    draw();
+  }
+
+  async function resetDailySchedule(userId){
+    if(!(await confirmModal('Bỏ tuỳ chỉnh riêng, quay về lịch trình mặc định theo BMI cho khách này?'))) return;
+    state.dailyScheduleSaving = true; draw();
+    const { error } = await ctx.supabase.from('profiles').update({ sk_daily_schedule_override: null }).eq('id', userId);
+    state.dailyScheduleSaving = false;
+    if(error){ alert('Không xoá được: ' + error.message); return; }
+    const row = state.rows.find(r=>r.id===userId); if(row) row.sk_daily_schedule_override = null;
+    const anyRow = state.anyResults.find(r=>r.id===userId); if(anyRow) anyRow.sk_daily_schedule_override = null;
+    state.dailyScheduleFor = null; state.dailyScheduleForm = null;
+    draw();
+  }
+
+  function dailyScheduleEditHtml(userId, currentOverride){
+    return `
+      <span class="btn-ghost btn btn-sm" data-toggle-daily-schedule="${userId}">✏️ Sửa lịch trình 1 ngày</span>
+      ${state.dailyScheduleFor===userId ? (()=>{
+        const f = state.dailyScheduleForm;
+        if(!f) return `<div class="card" style="margin-top:10px;width:100%;"><div class="loading"><div class="spinner"></div></div></div>`;
+        const field = (path, label, isTextarea) => {
+          const val = path.split('.').reduce((o,k)=>o[k], f);
+          return `
+            <div class="field" style="margin-top:8px;">
+              <label style="font-size:12px;">${esc(label)}</label>
+              ${isTextarea ? `<textarea data-ds-field="${path}" style="min-height:44px;">${esc(val)}</textarea>` : `<input type="text" data-ds-field="${path}" value="${esc(val)}">`}
+            </div>
+          `;
+        };
+        return `
+          <div class="card" style="margin-top:10px;width:100%;">
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">
+              ${currentOverride ? 'Khách này đang dùng lịch trình TUỲ CHỈNH riêng.' : `Chưa tuỳ chỉnh — bản nháp bên dưới lấy theo BMI mốc gần nhất của khách${state.dailyScheduleBmiLabel ? ` (${esc(state.dailyScheduleBmiLabel)})` : ' (chưa có số liệu, để trống)'}.`}
+            </div>
+            ${field('label', 'Tên lịch trình (hiện cho khách thấy)')}
+            <div style="font-weight:700;font-size:13px;margin-top:12px;">🌅 Sáng</div>
+            ${field('sang.uong', 'Uống', true)}
+            ${field('sang.an', 'Ăn', true)}
+            <div style="font-weight:700;font-size:13px;margin-top:12px;">☀️ Trưa</div>
+            ${field('trua.uong', 'Uống', true)}
+            ${field('trua.an', 'Ăn', true)}
+            <div style="font-weight:700;font-size:13px;margin-top:12px;">🌙 Tối</div>
+            ${field('toi.uong', 'Uống', true)}
+            ${field('toi.an', 'Ăn', true)}
+            <div style="font-weight:700;font-size:13px;margin-top:12px;">🏃 Tập luyện</div>
+            ${field('tap.gio', 'Giờ tập')}
+            ${field('tap.bai', 'Bài tập', true)}
+            <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
+              <button class="btn btn-sm" data-save-daily-schedule="${userId}" ${state.dailyScheduleSaving?'disabled':''}>${state.dailyScheduleSaving?'Đang lưu…':'Lưu'}</button>
+              ${currentOverride ? `<span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-reset-daily-schedule="${userId}">Bỏ tuỳ chỉnh, dùng lại mặc định</span>` : ''}
+            </div>
+          </div>
+        `;
+      })() : ''}
+    `;
+  }
+
   // Gán ĐÚNG sản phẩm khách đang dùng, riêng lẻ (2026-09-05, chị Quỳnh: "gán gói ở đây là gán sản
   // phẩm khách đang dùng á, chứ k phải mỗi combo") — độc lập với sk_package_id (1 trong 3 bộ Combo có
   // lịch dùng sẵn): khách mua lẻ/ngoài app không nhất thiết khớp đúng 1 combo, nhưng Lịch Trình Của
@@ -515,7 +639,7 @@ function renderThanhVien(container, ctx){
     const q = state.anyQuery.trim();
     if(!q){ state.anySearched = true; state.anyResults = []; draw(); return; }
     state.anySearching = true; state.anySearched = true; draw();
-    const { data } = await ctx.supabase.from('profiles').select('id,email,full_name,sk_package_id')
+    const { data } = await ctx.supabase.from('profiles').select('id,email,full_name,sk_package_id,sk_daily_schedule_override')
       .or(`email.ilike.%${q}%,full_name.ilike.%${q}%`).limit(20);
     state.anyResults = data || [];
     state.anySearching = false;
@@ -602,6 +726,7 @@ function renderThanhVien(container, ctx){
                   ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
                 </select>
                 ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
+                ${dailyScheduleEditHtml(r.id, r.sk_daily_schedule_override)}
                 ${customerProductsPickerHtml(r.id)}
               </div>
             `).join('')
@@ -625,6 +750,7 @@ function renderThanhVien(container, ctx){
             </select>
             <span class="btn-ghost btn btn-sm" data-add-points="${r.id}">+ Ghi điểm/hoa hồng</span>
             ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
+            ${dailyScheduleEditHtml(r.id, r.sk_daily_schedule_override)}
             ${customerProductsPickerHtml(r.id)}
           </div>
           ${state.pointsFormFor===r.id ? `
@@ -684,6 +810,27 @@ function renderThanhVien(container, ctx){
         const [userId, productId] = el.getAttribute('data-toggle-customer-product').split('|');
         toggleCustomerProduct(userId, productId);
       };
+    });
+    container.querySelectorAll('[data-toggle-daily-schedule]').forEach(el=>{
+      el.onclick = ()=>{
+        const userId = el.getAttribute('data-toggle-daily-schedule');
+        const row = state.rows.find(r=>r.id===userId) || state.anyResults.find(r=>r.id===userId);
+        openDailyScheduleEdit(userId, row ? row.sk_daily_schedule_override : null);
+      };
+    });
+    container.querySelectorAll('[data-ds-field]').forEach(el=>{
+      el.oninput = (e)=>{
+        const path = el.getAttribute('data-ds-field').split('.');
+        let obj = state.dailyScheduleForm;
+        for(let i=0;i<path.length-1;i++) obj = obj[path[i]];
+        obj[path[path.length-1]] = e.target.value;
+      };
+    });
+    container.querySelectorAll('[data-save-daily-schedule]').forEach(el=>{
+      el.onclick = ()=>saveDailySchedule(el.getAttribute('data-save-daily-schedule'));
+    });
+    container.querySelectorAll('[data-reset-daily-schedule]').forEach(el=>{
+      el.onclick = ()=>resetDailySchedule(el.getAttribute('data-reset-daily-schedule'));
     });
     const cancelBtn = container.querySelector('#pf-cancel'); if(cancelBtn) cancelBtn.onclick = ()=>{ state.pointsFormFor=null; draw(); };
     const monthEl = container.querySelector('#pf-month'); if(monthEl) monthEl.oninput = (e)=>{ state.pointsForm.month = e.target.value; };

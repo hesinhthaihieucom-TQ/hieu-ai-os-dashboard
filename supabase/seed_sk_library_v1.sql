@@ -139,4 +139,8 @@ $c$- Dinh dưỡng hợp lý: ăn nhiều rau xanh, trái cây tươi, cá béo,
 - Khám sức khỏe định kỳ: phát hiện sớm bệnh mạn tính (cao huyết áp, tiểu đường, loãng xương), tiêm phòng đầy đủ.
 - Ngủ đủ giấc, tránh chất kích thích: ngủ đủ 7-8 tiếng/đêm, hạn chế rượu, thuốc lá, cà phê quá mức.
 - Lão hóa là quá trình không thể tránh khỏi, nhưng hoàn toàn có thể làm chậm lại quá trình này nếu duy trì lối sống lành mạnh.$c$,
-array(select id from sk_products where name in ('Unicity Oasis','Joint Mobility','Hỗn hợp Canxi - Magiê')));
+array(select id from sk_products where name in ('Unicity Oasis','Joint Mobility','Hỗn hợp Canxi - Magiê')))
+-- 2026-09-12: thêm on conflict để an toàn chạy lại nhiều lần — trước đây chạy lại file này bị NHÂN ĐÔI
+-- toàn bộ 11 mục (issue_name chưa có ràng buộc unique). Chạy seed_sk_library_v2_dedupe_fix.sql TRƯỚC
+-- file này 1 lần để dọn dữ liệu trùng + thêm ràng buộc unique, rồi file này mới chạy lại an toàn được.
+on conflict (issue_name) do nothing;
