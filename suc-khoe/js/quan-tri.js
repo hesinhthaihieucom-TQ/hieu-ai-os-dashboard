@@ -417,7 +417,8 @@ function renderGoiLichTrinh(container, ctx){
 function renderThanhVien(container, ctx){
   const state = { loading:true, rows:[], packages:[], allProducts:[], search:'', busyId:null, pointsFormFor:null, pointsForm:{ month:new Date().toISOString().slice(0,7), points:'', purchase_amount:'', commission:'', note:'' },
     anyQuery:'', anySearching:false, anySearched:false, anyResults:[],
-    customerProductsFor:null, customerProductIds:null };
+    customerProductsFor:null, customerProductIds:null,
+    scheduleFor:null, scheduleItemsByPackage:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -439,6 +440,42 @@ function renderThanhVien(container, ctx){
   }
 
   function packageName(id){ const p = state.packages.find(x=>x.id===id); return p ? p.name : null; }
+
+  // 2026-09-12, chị Quỳnh: "gán gói xong ko ra được lịch trình chi tiết của các gói" — trước đây phải
+  // sang tận tab "Gói & Lịch Trình" mới xem được lịch trình chi tiết của 1 gói, không có cách nào xem
+  // ngay tại đây (Thành Viên) để kiểm tra đúng gói vừa gán. Thêm nút xem nhanh, cache theo package_id
+  // (nhiều khách chung 1 gói không cần tải lại).
+  async function toggleSchedule(userId, packageId){
+    if(state.scheduleFor === userId){ state.scheduleFor = null; draw(); return; }
+    state.scheduleFor = userId; draw();
+    if(!state.scheduleItemsByPackage[packageId]){
+      const { data } = await ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true });
+      state.scheduleItemsByPackage[packageId] = data || [];
+    }
+    draw();
+  }
+
+  function packageSchedulePreviewHtml(userId, packageId){
+    if(!packageId) return '';
+    return `
+      <span class="btn-ghost btn btn-sm" data-toggle-schedule="${userId}|${packageId}">📋 Lịch trình gói này</span>
+      ${state.scheduleFor===userId ? `
+        <div class="card" style="margin-top:10px;width:100%;">
+          ${!state.scheduleItemsByPackage[packageId] ? `<div class="loading"><div class="spinner"></div></div>` : (
+            state.scheduleItemsByPackage[packageId].length===0
+              ? `<div style="color:var(--ink-soft);font-size:12.5px;">Gói "${esc(packageName(packageId))}" chưa có mục lịch trình nào — vào tab "Gói & Lịch Trình" để thêm.</div>`
+              : state.scheduleItemsByPackage[packageId].map(item=>`
+                <div style="padding:8px 0;border-bottom:1px solid var(--line);">
+                  <div class="meta">Ngày ${item.day_offset}</div>
+                  <div style="font-weight:600;font-size:13px;">${esc(item.title)}</div>
+                  ${item.description ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(item.description)}</div>` : ''}
+                </div>
+              `).join('')
+          )}
+        </div>
+      ` : ''}
+    `;
+  }
 
   // Gán ĐÚNG sản phẩm khách đang dùng, riêng lẻ (2026-09-05, chị Quỳnh: "gán gói ở đây là gán sản
   // phẩm khách đang dùng á, chứ k phải mỗi combo") — độc lập với sk_package_id (1 trong 3 bộ Combo có
@@ -493,10 +530,17 @@ function renderThanhVien(container, ctx){
     }).eq('id', userId);
     state.busyId = null;
     if(error){ alert('Không gán được gói: ' + error.message); draw(); return; }
-    // Cập nhật ngay dòng trong kết quả tìm "khách bất kỳ" (nếu có) — khỏi phải tìm lại mới thấy đổi.
+    // 2026-09-12, chị Quỳnh: "khi gán gói ở quản trị, xong nó lại nhảy sang mục gán sản phẩm" — trước
+    // đây gọi await load() ở đây, tức TOÀN BỘ danh sách khách chớp qua spinner rồi vẽ lại từ đầu ngay
+    // sau khi chọn gói (select vừa đổi giá trị bị disable+render lại giữa chừng) — dễ khiến layout
+    // dịch chuyển đúng lúc đang thao tác, cảm giác như bấm nhầm sang khung "Sản phẩm đang dùng" ngay
+    // bên cạnh. Giờ chỉ cập nhật đúng dòng đang sửa tại chỗ (đã biết chắc chắn ghi thành công), không
+    // vẽ lại toàn bộ danh sách/không hiện spinner nữa.
+    const row = state.rows.find(r=>r.id===userId);
+    if(row) row.sk_package_id = packageId || null;
     const anyRow = state.anyResults.find(r=>r.id===userId);
     if(anyRow) anyRow.sk_package_id = packageId || null;
-    await load();
+    draw();
   }
 
   async function submitPoints(userId){
@@ -557,6 +601,7 @@ function renderThanhVien(container, ctx){
                   <option value="">— Chưa gán gói —</option>
                   ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
                 </select>
+                ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
                 ${customerProductsPickerHtml(r.id)}
               </div>
             `).join('')
@@ -579,6 +624,7 @@ function renderThanhVien(container, ctx){
               ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
             </select>
             <span class="btn-ghost btn btn-sm" data-add-points="${r.id}">+ Ghi điểm/hoa hồng</span>
+            ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
             ${customerProductsPickerHtml(r.id)}
           </div>
           ${state.pointsFormFor===r.id ? `
@@ -626,6 +672,12 @@ function renderThanhVien(container, ctx){
     });
     container.querySelectorAll('[data-open-customer-products]').forEach(el=>{
       el.onclick = ()=>openCustomerProducts(el.getAttribute('data-open-customer-products'));
+    });
+    container.querySelectorAll('[data-toggle-schedule]').forEach(el=>{
+      el.onclick = ()=>{
+        const [userId, packageId] = el.getAttribute('data-toggle-schedule').split('|');
+        toggleSchedule(userId, packageId);
+      };
     });
     container.querySelectorAll('[data-toggle-customer-product]').forEach(el=>{
       el.onclick = ()=>{
