@@ -19,10 +19,15 @@ const NAV = [
 
 const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, pastReviewThreshold:false, profileLoadError:null };
 // Điều kiện hiện popup xin đánh giá (2026-08-24, theo yêu cầu chị Quỳnh) — đã dùng có kết quả thật
-// (từ 3 bài đã viết) HOẶC đã dùng app đủ lâu (từ 3 ngày), không hỏi ngay lúc mới vào khi chưa kịp
-// thấy giá trị gì.
+// (từ 3 bài đã viết) HOẶC đã dùng app đủ lâu, không hỏi ngay lúc mới vào khi chưa kịp thấy giá trị gì.
+// MIN_DAYS hạ từ 3 -> 1 (2026-09-12, chị Quỳnh: audit hành trình người mới phát hiện trial chỉ có
+// đúng 3 NGÀY (profiles.access_until = signup + 3 ngày, xem handle_new_user() ở schema_core.sql) —
+// nên với người không kịp viết đủ 3 bài, MIN_DAYS=3 cũ khiến banner mời nâng cấp/đánh giá lần đầu tiên
+// hiện ra ĐÚNG lúc tài khoản hết hạn, không còn thời gian cân nhắc trước. Hạ còn 1 ngày để họ thấy giá
+// + đánh giá sớm hơn, còn 2 ngày để cân nhắc trước khi hết hạn thật — không đụng gì tới độ dài trial
+// (vẫn 3 ngày) hay trần lượt dùng thử (vẫn 50), đó là quyết định giá/ngân sách riêng của chị.
 const REVIEW_PROMPT_MIN_POSTS = 3;
-const REVIEW_PROMPT_MIN_DAYS = 3;
+const REVIEW_PROMPT_MIN_DAYS = 1;
 const REVIEW_MIN_WORDS_FOR_REWARD = 50;
 const REVIEW_REWARD_LUOT = 20;
 
