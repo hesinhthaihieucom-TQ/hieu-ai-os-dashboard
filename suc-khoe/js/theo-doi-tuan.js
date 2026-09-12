@@ -171,17 +171,20 @@ function render(container, ctx){
         <h3 style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px;">📸 Ảnh tiến trình — ${esc(SK_WEEK_NAMES[week])}</h3>
         <details style="margin-bottom:14px;">
           <summary style="cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600;">🖼️ Xem hướng dẫn cách chụp</summary>
-          <div style="margin-top:10px;padding:14px;background:var(--surface-soft,#f5f5f5);border-radius:10px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-            <svg viewBox="0 0 180 90" style="width:160px;height:auto;flex-shrink:0;">
-              ${[20,90,160].map((cx,i)=>`
-                <g opacity=".7">
-                  <ellipse cx="${cx}" cy="14" rx="9" ry="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                  <path d="M${cx} 24 L${cx} 55 M${cx} 30 L${cx-14} 40 M${cx} 30 L${cx+14} 40 M${cx} 55 L${cx-10} 84 M${cx} 55 L${cx+10} 84" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </g>
-                <text x="${cx}" y="90" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">${['Trước','Nghiêng','Sau'][i]}</text>
+          <div style="margin-top:10px;padding:14px;background:var(--surface-soft,#f5f5f5);border-radius:10px;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+              ${[
+                ['assets/huong-dan-chup-3-mat.jpg','3 mặt, phông nền sạch sẽ, ít đồ vật, hở bụng/tay/vai'],
+                ['assets/huong-dan-chup-toan-than.jpg','Cận cảnh điểm bạn muốn cải thiện, biểu cảm thoải mái'],
+                ['assets/huong-dan-chup-da-mat.jpg','Da mặt: chụp thẳng, đủ sáng, không trang điểm đậm'],
+              ].map(([src,caption])=>`
+                <div style="width:110px;text-align:center;">
+                  <img src="${src}" data-zoom="${src}" style="width:110px;height:110px;object-fit:cover;border-radius:10px;cursor:zoom-in;">
+                  <div style="font-size:10.5px;color:var(--ink-soft);line-height:1.5;margin-top:6px;">${esc(caption)}</div>
+                </div>
               `).join('')}
-            </svg>
-            <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.8;min-width:160px;flex:1;">
+            </div>
+            <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.8;">
               — Chụp đủ <b>3 mặt</b>: trước, nghiêng, sau<br>
               — Phông nền sạch sẽ, ít đồ vật xung quanh<br>
               — Mặc đồ tập hở bụng/tay/vai để nhìn rõ dáng<br>
