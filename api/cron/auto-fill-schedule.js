@@ -50,13 +50,14 @@ const PERSONAL_SLOTS = ['sang', 'trua', 'toi']; // DÙNG CHUNG với auto-fill-w
 const MAX_FILL_PER_RUN_PERSONAL = LOOKAHEAD_DAYS * PERSONAL_SLOTS.length; // 3 ngày × 3 buổi = 9
 
 // TẠM DỪNG (chị Quỳnh 2026-09-06, đang xem lại chi phí AI thật của cron — cron này không log lượt
-// nên không tính được số chính xác đã tốn) — Fanpage tạm dừng HẲN, lane Cá nhân chỉ còn giữ ĐÚNG
-// buổi Sáng (Trưa/Tối tạm dừng). Đổi 2 cờ này để bật lại đúng như cũ khi cần — KHÔNG xoá code Fanpage/
-// Trưa/Tối. Chỉ chặn ở CRON TỰ ĐỘNG này — không đụng các nút bấm TAY khác (regen-fanpage-week.js,
-// "AI viết luôn" ở lich-dang.js/auto-fill-week.js cho mọi khách) vì đó là hành động người dùng TỰ bấm,
-// không phải chi phí "tự động chạy nền" đang muốn tạm dừng.
+// nên không tính được số chính xác đã tốn) — Fanpage tạm dừng HẲN. Lane Cá nhân ban đầu chỉ giữ buổi
+// Sáng, rồi tạm dừng NỐT (2026-09-14, chị Quỳnh: "bỏ cái tự động làm lịch cho tuần cho e đi" — không
+// muốn cron tự lấp lịch cá nhân của chị nữa, dù chỉ 1 buổi/ngày). Đổi 2 cờ này để bật lại đúng như cũ
+// khi cần — KHÔNG xoá code Fanpage/Trưa/Tối. Chỉ chặn ở CRON TỰ ĐỘNG này — không đụng các nút bấm TAY
+// khác (regen-fanpage-week.js, "AI viết luôn" ở lich-dang.js/auto-fill-week.js cho mọi khách) vì đó
+// là hành động người dùng TỰ bấm, không phải chi phí "tự động chạy nền" đang muốn tạm dừng.
 const FANPAGE_AUTOFILL_PAUSED = true;
-const PERSONAL_AUTOFILL_SLOTS_ENABLED = ['sang'];
+const PERSONAL_AUTOFILL_SLOTS_ENABLED = [];
 const NGOI_NOI_FORMAT = 'Video Ngồi Nói'; // phải khớp đúng tên trong FORMAT_NAMES (api/_lib/formats.js)
 const FORCE_NGOI_NOI = `BẮT BUỘC: chọn dinh_dang_de_xuat = "${NGOI_NOI_FORMAT}" cho bài này (khung giờ tối dành riêng cho dạng video ngồi nói chia sẻ trực diện) — viết ly_do_dinh_dang và goi_y_caption khớp đúng dạng này.`;
 const EXCLUDE_NGOI_NOI = `KHÔNG được chọn dinh_dang_de_xuat = "${NGOI_NOI_FORMAT}" cho bài này — dạng đó chỉ dành riêng cho khung giờ tối, chọn 1 trong các dạng còn lại phù hợp hơn.`;
