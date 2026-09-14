@@ -86,6 +86,10 @@ function render(container, ctx){
     // "cho e quyền được chọn nhiều ở mỗi kho... ví dụ như xóa" (chị Quỳnh 2026-09-14) — cùng pattern
     // đã thêm ở kho-content.js.
     selectedPersonal:new Set(),
+    promotingId:null, promoteErrorFor:null, promoteError:null,
+    // "các tác vụ đều có nút bấm vào mới hiện chứ ko liệt kê hết ra... quy tắc bắt buộc cho tất cả
+    // các app" (chị Quỳnh 2026-09-14) — cùng pattern "▾ Tuỳ chọn" đã có ở kho-content.js.
+    expandedOptionsIds:new Set(),
     adminMenuFor:null,
   };
 
@@ -391,18 +395,71 @@ function render(container, ctx){
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${h.id}" ${state.selectedPersonal.has(h.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><div class="body" style="margin:0;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div></label>
-        <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
+        ${khoToiOptionsPanelHtml(h)}
+      </div>
+    `).join('');
+  }
+
+  // "các tác vụ đều có nút bấm vào mới hiện chứ ko liệt kê hết ra như này, từ giờ nó là quy tắc bắt
+  // buộc cho tất cả các app" (chị Quỳnh 2026-09-14) — cùng đúng pattern "▾ Tuỳ chọn" đã có ở
+  // kho-content.js (postOptionsPanelHtml).
+  function khoToiOptionsPanelHtml(h){
+    const isOpen = state.expandedOptionsIds.has(h.id);
+    return `
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
+        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-options="${h.id}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
+        ${isOpen ? khoToiOptionsBodyHtml(h) : ''}
+      </div>
+    `;
+  }
+  function khoToiOptionsBodyHtml(h){
+    return `
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:12px;">
+        <!-- "cho kho hook cũng thế luôn" (chị Quỳnh 2026-09-14) — y hệt "Đẩy vào Bài đã viết"/"Thêm
+        vào lịch luôn" ở kho-content.js: đẩy THẲNG hook (không qua AI) thành 1 bài trong "Bài đã viết"
+        — dùng làm điểm bắt đầu để tự viết tiếp/sửa, không phải bài hoàn chỉnh. -->
+        <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
+          <span class="btn-ghost btn btn-sm" ${state.promotingId===h.id?'disabled':''} data-promote-post="${h.id}">${state.promotingId===h.id?'Đang đẩy…':'→ Đẩy vào Bài đã viết'}</span>
+          <span class="btn-ghost btn btn-sm" ${state.promotingId===h.id?'disabled':''} data-promote-schedule="${h.id}">${state.promotingId===h.id?'Đang xử lý…':'→ Thêm vào lịch luôn'}</span>
+        </div>
+        ${state.promoteErrorFor===h.id?`<div class="error-box">${esc(state.promoteError)}</div>`:''}
+        ${writeActionHtml('personal:'+h.id)}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--line);">
           ${h.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
             :h.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>'
             // "bài trong kho của tôi cũng phải có nút bấm đóng góp vào kho viral chứ" (chị Quỳnh
             // 2026-09-07) — cùng lý do đã sửa ở kho-content.js: trước đây chỉ mời đóng góp 1 LẦN DUY
             // NHẤT ngay lúc thêm hook mới, bỏ lỡ là hết cách đóng góp lại.
             :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${h.id}">Đóng góp vào Kho Viral</span>`}
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
         </div>
-        ${writeActionHtml('personal:'+h.id)}
       </div>
-    `).join('');
+    `;
+  }
+
+  // Đẩy nguyên văn 1 hook Kho của tôi thành 1 bài trong "Bài đã viết" (posts) — KHÔNG gọi AI, dùng
+  // làm điểm bắt đầu để tự viết tiếp/sửa (khác hẳn hook chỉ là câu mở đầu, chưa phải bài hoàn chỉnh) —
+  // cùng cơ chế với kho-content.js (source_table/source_id, window.PendingPost khi cần xếp lịch luôn).
+  async function promoteToPersonalPost(id, alsoSchedule){
+    const h = state.personal.find(x=>x.id===id);
+    if(!h || state.promotingId) return;
+    state.promotingId = id; state.promoteErrorFor = null; state.promoteError = null; draw();
+    const content = h.hook_text + (h.note ? `\n\n${h.note}` : '');
+    const { data, error } = await ctx.supabase.from('posts').insert({
+      user_id: ctx.user.id, title: excerpt(h.hook_text, 60), content, tags: h.tags || null,
+      source_table: 'hooks_bank_personal', source_id: h.id,
+    }).select().single();
+    state.promotingId = null;
+    if(error){ state.promoteErrorFor = id; state.promoteError = error.message; draw(); return; }
+    if(alsoSchedule){
+      window.PendingPost = data;
+      location.hash = 'lich-dang';
+      return;
+    }
+    // "Bài đã viết" không nằm trong module này (kho-content.js mới có) — nhảy sang đó, dùng luôn
+    // window.PendingViewPostId đã có (xem kho-content.js: mở đúng tab, bung nội dung, cuộn tới bài).
+    window.PendingViewPostId = data.id;
+    location.hash = 'kho-content';
   }
 
   // "cho e quyền đc xóa ở kho hook luôn. và quyền đc chuyển trụ nội dung ở các kho khi e thấy phân
@@ -462,6 +519,13 @@ function render(container, ctx){
     if(tourBtn) tourBtn.onclick = ()=>{ if(state.tab!=='tao-hook'){ state.tab='tao-hook'; draw(); } window.startPageTour(TOUR_STEPS); };
 
     container.querySelectorAll('[data-tab]').forEach(el=>{ el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); }; });
+    container.querySelectorAll('[data-toggle-options]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-toggle-options');
+        if(state.expandedOptionsIds.has(id)) state.expandedOptionsIds.delete(id); else state.expandedOptionsIds.add(id);
+        draw();
+      };
+    });
     container.querySelectorAll('[data-chung-pillar]').forEach(el=>{
       el.onclick = ()=>{ state.chungPillar = el.getAttribute('data-chung-pillar'); draw(); };
     });
@@ -575,6 +639,12 @@ function render(container, ctx){
         await ctx.supabase.from('hooks_bank_personal').update({ share_status:'pending' }).eq('id', id);
         await loadPersonal(); draw();
       };
+    });
+    container.querySelectorAll('[data-promote-post]').forEach(el=>{
+      el.onclick = ()=>{ promoteToPersonalPost(el.getAttribute('data-promote-post'), false); };
+    });
+    container.querySelectorAll('[data-promote-schedule]').forEach(el=>{
+      el.onclick = ()=>{ promoteToPersonalPost(el.getAttribute('data-promote-schedule'), true); };
     });
 
     const shareYes = container.querySelector('[data-share-yes]');

@@ -652,14 +652,44 @@ function render(container, ctx){
         <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}</h3></label>
         ${contentBodyHtml('personal:'+b.id, b.content)}
         ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
-        <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-          <div style="display:flex;gap:12px;align-items:center;">
-            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
-            <!-- "sao ko copy được bài ở mục kho của tôi" (chị Quỳnh 2026-09-14) — mục này trước giờ
-            chỉ copy được bằng cách bôi đen chọn tay, không có nút bấm 1 phát như các nơi khác trong
-            app đã có (data-copy-value dùng chung, xem bind()). -->
-            <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(b.content||'')}">Copy nội dung</span>
-          </div>
+        ${khoToiOptionsPanelHtml(b)}
+      </div>
+    `).join('');
+  }
+
+  // "cho tất cả các kho thì các cái tác vụ đều có nút bấm vào mới hiện tác vụ chứ ko liệt kê hết ra
+  // như này, từ giờ nó là quy tắc bắt buộc cho tất cả các app" (chị Quỳnh 2026-09-14) — cùng đúng
+  // pattern "▾ Tuỳ chọn" đã có ở "Bài đã viết" (postOptionsPanelHtml), áp dụng lại cho "Kho của tôi".
+  // Dùng key CÓ TIỀN TỐ 'personal:' trong expandedOptionsIds — Set này DÙNG CHUNG với "Bài đã viết"
+  // (postOptionsPanelHtml dùng thẳng p.id không tiền tố), tránh trùng id giữa 2 bảng khác nhau.
+  function khoToiOptionsPanelHtml(b){
+    const key = 'personal:'+b.id;
+    const isOpen = state.expandedOptionsIds.has(key);
+    return `
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
+        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-options="${key}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
+        ${isOpen ? khoToiOptionsBodyHtml(b) : ''}
+      </div>
+    `;
+  }
+  function khoToiOptionsBodyHtml(b){
+    return `
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:12px;">
+        <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
+          <!-- "sao ko copy được bài ở mục kho của tôi" (chị Quỳnh 2026-09-14) — mục này trước giờ chỉ
+          copy được bằng cách bôi đen chọn tay, không có nút bấm 1 phát như các nơi khác (data-copy-value
+          dùng chung, xem bind()). -->
+          <span class="btn-ghost btn btn-sm" data-copy-value="${esc(b.content||'')}">Copy nội dung</span>
+          <!-- "cho e cái phần kho của tôi được có thêm mục đẩy vào bài đã viết hoặc thêm vào lịch luôn"
+          (chị Quỳnh 2026-09-14) — đẩy THẲNG nguyên văn ghi chú thành 1 bài trong "Bài đã viết" (không
+          qua AI viết lại, khác hẳn "Viết bài từ mục này" bên dưới — dùng khi ghi chú đã đủ tốt để dùng
+          nguyên luôn, không cần AI paraphrase lại). -->
+          <span class="btn-ghost btn btn-sm" ${state.promotingId===b.id?'disabled':''} data-promote-post="${b.id}">${state.promotingId===b.id?'Đang đẩy…':'→ Đẩy vào Bài đã viết'}</span>
+          <span class="btn-ghost btn btn-sm" ${state.promotingId===b.id?'disabled':''} data-promote-schedule="${b.id}">${state.promotingId===b.id?'Đang xử lý…':'→ Thêm vào lịch luôn'}</span>
+        </div>
+        ${state.promoteErrorFor===b.id?`<div class="error-box">${esc(state.promoteError)}</div>`:''}
+        ${writeActionHtml('personal:'+b.id)}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--line);">
           ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
             :b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>'
             // "bài trong kho của tôi cũng phải có nút bấm đóng góp vào kho viral chứ" (chị Quỳnh
@@ -668,19 +698,10 @@ function render(container, ctx){
             // cách nào đóng góp lại nữa. Giờ luôn có nút này cho MỌI mục chưa từng gửi (share_status
             // rỗng), không cần đã đánh dấu viral từ đầu.
             :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${b.id}">Đóng góp vào Kho Viral</span>`}
+          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
         </div>
-        <!-- "cho e cái phần kho của tôi được có thêm mục đẩy vào bài đã viết hoặc thêm vào lịch luôn"
-        (chị Quỳnh 2026-09-14) — đẩy THẲNG nguyên văn ghi chú thành 1 bài trong "Bài đã viết" (không
-        qua AI viết lại, khác hẳn nút "Viết bài từ mục này" bên dưới — đây là dùng nguyên bản đã có sẵn
-        khi ghi chú đã đủ tốt để dùng luôn, không cần AI paraphrase lại). -->
-        <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
-          <span class="btn-ghost btn btn-sm" ${state.promotingId===b.id?'disabled':''} data-promote-post="${b.id}">${state.promotingId===b.id?'Đang đẩy…':'→ Đẩy vào Bài đã viết'}</span>
-          <span class="btn-ghost btn btn-sm" ${state.promotingId===b.id?'disabled':''} data-promote-schedule="${b.id}">${state.promotingId===b.id?'Đang xử lý…':'→ Thêm vào lịch luôn'}</span>
-        </div>
-        ${state.promoteErrorFor===b.id?`<div class="error-box" style="margin-top:8px;">${esc(state.promoteError)}</div>`:''}
-        ${writeActionHtml('personal:'+b.id)}
       </div>
-    `).join('');
+    `;
   }
 
   // Đẩy nguyên văn 1 mục Kho của tôi thành 1 bài thật trong "Bài đã viết" (posts) — KHÔNG gọi AI, chỉ
