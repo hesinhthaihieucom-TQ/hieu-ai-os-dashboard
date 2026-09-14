@@ -171,13 +171,24 @@ function trimLuot2ForWriting(luot2) {
   return { chan_dung_khach_hang, noi_dau_rao_can, khao_khat_muc_tieu, insight_cot_loi, he_truc_noi_dung };
 }
 
+// Ngày THẬT lúc gọi AI (giờ Việt Nam) — chèn vào MỌI userContent qua contextBlockOf() (dùng chung ở
+// 7 endpoint viết bài) để AI có mốc thời gian thật, không tự đoán/bịa. Cần cho quy tắc "cập nhật năm
+// tháng" ở viet-tu-kho-goc.js (chị Quỳnh 2026-09-14: "hiện đang sắp bước sang 2027 thì ko đc để bài
+// là 2026-2026 nữa... cần đổi thành năm thế giới số 2 chẳng hạn") — AI không tự biết ngày thật, phải
+// được cho biết mới tính lại đúng năm/số thần số học theo đúng thời điểm bài được viết.
+function todayVnBlock() {
+  const now = new Date(Date.now() + 7 * 3600000); // UTC+7, đủ dùng cho hiển thị ngày (không cần chính xác múi giờ DST)
+  return `NGÀY HÔM NAY (giờ Việt Nam, dùng làm mốc thời gian thật — không tự đoán ngày khác): ${now.toISOString().slice(0, 10)}`;
+}
+
 function contextBlockOf(positioning, quick_context) {
+  const dateLine = todayVnBlock();
   if (positioning && positioning.luot1) {
     const trimmedLuot2 = trimLuot2ForWriting(positioning.luot2);
-    return `ĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${trimmedLuot2 ? JSON.stringify(trimmedLuot2, null, 2) : ''}`;
+    return `${dateLine}\nĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n${trimmedLuot2 ? JSON.stringify(trimmedLuot2, null, 2) : ''}`;
   }
-  if (quick_context && quick_context.trim()) return `BỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
-  return 'BỐI CẢNH: (không có)';
+  if (quick_context && quick_context.trim()) return `${dateLine}\nBỐI CẢNH NHANH (chưa làm Định Vị đầy đủ): ${quick_context.trim()}`;
+  return `${dateLine}\nBỐI CẢNH: (không có)`;
 }
 
 // product_cta_mau/group_cta_mau: câu CTA mẫu lưu RIÊNG cho đúng tài sản đó ở Định Vị (thay cho Kho
