@@ -67,6 +67,7 @@ function render(container, ctx){
     // Quỳnh 2026-09-14) — 1 Set riêng mỗi danh sách (không dùng chung 1 Set vì id có thể trùng giữa
     // các bảng khác nhau — posts vs content_bank_personal).
     selectedPosts:new Set(), selectedPersonal:new Set(),
+    promotingId:null, promoteErrorFor:null, promoteError:null,
     caseStudies:[], caseStudyUploading:false, caseStudyError:null, caseStudyUploadProgress:null,
     adminMenuFor:null,
     // Ảnh cá nhân (2026-08-28, theo yêu cầu chị Quỳnh) — dùng làm NỀN ghép cùng ảnh case study khi
@@ -668,9 +669,43 @@ function render(container, ctx){
             // rỗng), không cần đã đánh dấu viral từ đầu.
             :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${b.id}">Đóng góp vào Kho Viral</span>`}
         </div>
+        <!-- "cho e cái phần kho của tôi được có thêm mục đẩy vào bài đã viết hoặc thêm vào lịch luôn"
+        (chị Quỳnh 2026-09-14) — đẩy THẲNG nguyên văn ghi chú thành 1 bài trong "Bài đã viết" (không
+        qua AI viết lại, khác hẳn nút "Viết bài từ mục này" bên dưới — đây là dùng nguyên bản đã có sẵn
+        khi ghi chú đã đủ tốt để dùng luôn, không cần AI paraphrase lại). -->
+        <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
+          <span class="btn-ghost btn btn-sm" ${state.promotingId===b.id?'disabled':''} data-promote-post="${b.id}">${state.promotingId===b.id?'Đang đẩy…':'→ Đẩy vào Bài đã viết'}</span>
+          <span class="btn-ghost btn btn-sm" ${state.promotingId===b.id?'disabled':''} data-promote-schedule="${b.id}">${state.promotingId===b.id?'Đang xử lý…':'→ Thêm vào lịch luôn'}</span>
+        </div>
+        ${state.promoteErrorFor===b.id?`<div class="error-box" style="margin-top:8px;">${esc(state.promoteError)}</div>`:''}
         ${writeActionHtml('personal:'+b.id)}
       </div>
     `).join('');
+  }
+
+  // Đẩy nguyên văn 1 mục Kho của tôi thành 1 bài thật trong "Bài đã viết" (posts) — KHÔNG gọi AI, chỉ
+  // copy title/content sang, giữ liên kết nguồn qua source_table/source_id (đúng quy ước đã có, xem
+  // "Ghi lại bài viết này bắt nguồn từ mục nào trong Kho" ở schema_nhan_hieu.sql). alsoSchedule=true
+  // thì tiếp tục nhảy sang Lịch Đăng Bài với bài vừa tạo làm "đang chờ xếp lịch" (window.PendingPost,
+  // dùng chung đúng cơ chế với nút "Đưa vào lịch →" đã có cho bài trong "Bài đã viết").
+  async function promoteToPersonalPost(id, alsoSchedule){
+    const b = state.personalBank.find(x=>x.id===id);
+    if(!b || state.promotingId) return;
+    state.promotingId = id; state.promoteErrorFor = null; state.promoteError = null; draw();
+    const { data, error } = await ctx.supabase.from('posts').insert({
+      user_id: ctx.user.id, title: b.title, content: b.content, tags: b.tags || null,
+      source_table: 'content_bank_personal', source_id: b.id,
+    }).select().single();
+    state.promotingId = null;
+    if(error){ state.promoteErrorFor = id; state.promoteError = error.message; draw(); return; }
+    await loadPosts();
+    if(alsoSchedule){
+      window.PendingPost = data;
+      location.hash = 'lich-dang';
+      return;
+    }
+    state.tab = 'da-viet';
+    draw();
   }
 
   // "cho e quyền đc xóa ở kho hook luôn. và quyền đc chuyển trụ nội dung ở các kho khi e thấy phân
@@ -1152,6 +1187,12 @@ function render(container, ctx){
         await ctx.supabase.from('content_bank_personal').update({ share_status:'pending' }).eq('id', id);
         await loadPersonal(); draw();
       };
+    });
+    container.querySelectorAll('[data-promote-post]').forEach(el=>{
+      el.onclick = ()=>{ promoteToPersonalPost(el.getAttribute('data-promote-post'), false); };
+    });
+    container.querySelectorAll('[data-promote-schedule]').forEach(el=>{
+      el.onclick = ()=>{ promoteToPersonalPost(el.getAttribute('data-promote-schedule'), true); };
     });
 
     const shareYes = container.querySelector('[data-share-yes]');
