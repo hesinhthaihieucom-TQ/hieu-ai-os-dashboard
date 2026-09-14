@@ -125,7 +125,25 @@ function render(container, ctx){
       state.tab = window.PendingKhoContentTab;
       window.PendingKhoContentTab = null;
     }
+    // "Xem bài" ở Lịch Đăng Bài giờ nhảy thẳng sang đúng bài này ở đây thay vì hiện modal riêng chỉ
+    // đọc được (2026-09-14, chị Quỳnh: "nó nhảy sang bài đã viết ở kho content nó oki hơn á vì nó có
+    // đủ tác vụ ở bên đó hơn") — mở đúng tab "Bài đã viết", bỏ hết bộ lọc đang set dở (đề phòng đang
+    // lọc theo trục/trạng thái khác khiến bài bị ẩn mất), bung sẵn nội dung + khối "Tuỳ chọn" (Đẩy bài,
+    // Sửa bài, CTA...) luôn, rồi cuộn tới đúng thẻ bài đó.
+    let scrollToPostId = null;
+    if(window.PendingViewPostId){
+      scrollToPostId = window.PendingViewPostId;
+      window.PendingViewPostId = null;
+      state.tab = 'da-viet';
+      state.daVietPillar = 'all'; state.daVietStatus = 'all'; state.daVietSearch = '';
+      state.expandedIds.add('post:'+scrollToPostId);
+      state.expandedOptionsIds.add(scrollToPostId);
+    }
     draw();
+    if(scrollToPostId){
+      const el = document.getElementById('post-card-'+scrollToPostId);
+      if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
   }
   async function loadPosts(){
     // KHÔNG select('*') — posts.image_data (ảnh case study AI ghép, vài trăm KB/ảnh) không dùng ở
@@ -398,7 +416,7 @@ function render(container, ctx){
     return hint + filterBar + items.map(p=>{
       const isEditing = state.editingPostId === p.id;
       return `
-      <div class="section">
+      <div class="section" id="post-card-${p.id}">
         ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--danger);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
         ${isEditing ? '' : (p.posted ? postMetricsHtml(p) : '')}
         ${isEditing ? editPostHtml(p) : titleOnlyBodyHtml('post:'+p.id, p.content)}
@@ -613,7 +631,13 @@ function render(container, ctx){
         ${contentBodyHtml('personal:'+b.id, b.content)}
         ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
+            <!-- "sao ko copy được bài ở mục kho của tôi" (chị Quỳnh 2026-09-14) — mục này trước giờ
+            chỉ copy được bằng cách bôi đen chọn tay, không có nút bấm 1 phát như các nơi khác trong
+            app đã có (data-copy-value dùng chung, xem bind()). -->
+            <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(b.content||'')}">Copy nội dung</span>
+          </div>
           ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
             :b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>'
             // "bài trong kho của tôi cũng phải có nút bấm đóng góp vào kho viral chứ" (chị Quỳnh

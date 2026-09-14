@@ -1040,19 +1040,16 @@ function render(container, ctx){
         draw();
       };
     });
+    // "nó nhảy sang bài đã viết ở kho content nó oki hơn á vì nó có đủ tác vụ ở bên đó hơn" (chị
+    // Quỳnh 2026-09-14) — trước đây mở 1 modal riêng chỉ đọc/copy/tải ảnh được, giờ nhảy thẳng sang
+    // đúng bài ở Kho Content (tab "Bài đã viết") — nơi đã có sẵn đủ Sửa bài/Đẩy bài/CTA/Copy, không
+    // cần dựng lại 1 bộ công cụ trùng lặp ở đây (xem window.PendingViewPostId ở kho-content.js).
     container.querySelectorAll('[data-view-post]').forEach(el=>{
-      el.onclick = async ()=>{
+      el.onclick = ()=>{
         const entry = state.entries.find(x=>x.id===el.getAttribute('data-view-post'));
-        const post = entry && entry.post_id ? state.posts.find(p=>p.id===entry.post_id) : null;
-        if(!post) return;
-        // Bài case study (slot Trưa, tự viết + ghép ảnh qua api/cron/auto-fill-schedule.js) có sẵn
-        // ảnh THẬT trong posts.image_data (base64 JPEG) — theo yêu cầu chị Quỳnh 2026-08-29: "cho
-        // hiện luôn cái hình mà AI làm". Tải ảnh RIÊNG đúng lúc bấm xem (không nằm trong loadPosts()
-        // nữa — xem lý do ở loadPosts()), nên chỉ tốn payload của đúng 1 ảnh, không phải cả 30 bài.
-        const { data } = await ctx.supabase.from('posts').select('image_data').eq('id', post.id).maybeSingle();
-        const imgRaw = data && data.image_data;
-        const imageDataUrl = imgRaw ? `data:image/jpeg;base64,${imgRaw.replace(/^data:image\/\w+;base64,/, '')}` : null;
-        openTextModal(post.title, post.content, imageDataUrl);
+        if(!entry || !entry.post_id) return;
+        window.PendingViewPostId = entry.post_id;
+        location.hash = 'kho-content';
       };
     });
     container.querySelectorAll('[data-remove]').forEach(el=>{
