@@ -202,12 +202,16 @@ function render(container, ctx){
   }
   async function loadPosts(){
     // KHÔNG select('*') — posts.image_data (ảnh case study AI ghép, mỗi ảnh vài trăm KB) sẽ cộng dồn
-    // theo cả 30 bài gần nhất mỗi lần vào trang, dễ vượt 12s timeout dù mạng vẫn ổn (phát hiện
-    // 2026-08-30: chị Quỳnh báo "đang quay kêu lỗi mạng nhưng không phải" — đúng lúc cron case study
-    // đã tạo đủ nhiều ảnh để payload nặng lên rõ rệt). Chỉ lấy đúng cột thật sự dùng ở trang này — ảnh
-    // được tải riêng, đúng 1 bài, ngay lúc bấm "Xem bài" (xem data-view-post ở bind()).
+    // rất nặng nếu tải hết mọi bài mỗi lần vào trang (phát hiện 2026-08-30: chị Quỳnh báo "đang quay
+    // kêu lỗi mạng nhưng không phải" — đúng lúc cron case study đã tạo đủ nhiều ảnh để payload nặng
+    // lên rõ rệt). Chỉ lấy đúng cột thật sự dùng ở trang này — ảnh được tải riêng, đúng 1 bài, ngay
+    // lúc bấm "Xem bài" (xem data-view-post ở bind()).
+    // Bỏ limit(30) (2026-09-14, chị Quỳnh báo "mục chọn bài viết ở lịch đăng bài đang chưa hiển thị
+    // hết các bài chưa đăng") — giới hạn 30 bài gần nhất từng cần để né payload ảnh nặng, nhưng ảnh
+    // đã tách khỏi câu select này từ lâu (dòng trên) nên giới hạn đó không còn lý do tồn tại, chỉ còn
+    // tác dụng phụ là làm rớt bài cũ khỏi ô "Chọn bài đã viết" khi tài khoản có trên 30 bài.
     const { data, error } = await withTimeout(
-      ctx.supabase.from('posts').select('id,title,content,structure,posted').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(30),
+      ctx.supabase.from('posts').select('id,title,content,structure,posted').eq('user_id', ctx.user.id).order('created_at', { ascending:false }),
       12000, 'Kết nối mạng chậm/không ổn định — không tải được danh sách bài. Kiểm tra mạng rồi thử lại.'
     );
     if(error) throw new Error(error.message);
