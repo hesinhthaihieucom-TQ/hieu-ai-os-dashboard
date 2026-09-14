@@ -63,6 +63,10 @@ function render(container, ctx){
     chungPillar:'all', daVietPillar:'all', khoToiPillar:'all', expandedIds:new Set(), expandedOptionsIds:new Set(), expandedDayBaiIds:new Set(),
     daVietStatus:'all', daVietSearch:'', khoToiSearch:'', chungSearch:'', scheduledPostIds:new Set(),
     editingPostId:null, editDraft:null, editSaving:false, editSaveError:null,
+    // "cho e quyền được chọn nhiều ở mỗi kho để... thao tác 1 lượt cho nhanh ví dụ như xóa" (chị
+    // Quỳnh 2026-09-14) — 1 Set riêng mỗi danh sách (không dùng chung 1 Set vì id có thể trùng giữa
+    // các bảng khác nhau — posts vs content_bank_personal).
+    selectedPosts:new Set(), selectedPersonal:new Set(),
     caseStudies:[], caseStudyUploading:false, caseStudyError:null, caseStudyUploadProgress:null,
     adminMenuFor:null,
     // Ảnh cá nhân (2026-08-28, theo yêu cầu chị Quỳnh) — dùng làm NỀN ghép cùng ảnh case study khi
@@ -413,11 +417,11 @@ function render(container, ctx){
 
     if(items.length===0) return hint + filterBar + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp bộ lọc.</div>`;
 
-    return hint + filterBar + items.map(p=>{
+    return hint + filterBar + bulkBarHtml(state.selectedPosts, 'posts') + items.map(p=>{
       const isEditing = state.editingPostId === p.id;
       return `
       <div class="section" id="post-card-${p.id}">
-        ${isEditing ? '' : `<h3>${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--danger);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3>`}
+        ${isEditing ? '' : `<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-post="${p.id}" ${state.selectedPosts.has(p.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--danger);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3></label>`}
         ${isEditing ? '' : (p.posted ? postMetricsHtml(p) : '')}
         ${isEditing ? editPostHtml(p) : titleOnlyBodyHtml('post:'+p.id, p.content)}
         ${isEditing ? '' : postOptionsPanelHtml(p)}
@@ -456,6 +460,23 @@ function render(container, ctx){
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
         <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-options="${p.id}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
         ${isOpen ? postOptionsBodyHtml(p) : ''}
+      </div>
+    `;
+  }
+
+  // Thanh thao tác hàng loạt — hiện NGAY TRÊN danh sách khi đã chọn từ 1 mục trở lên (checkbox mỗi
+  // thẻ, xem data-select-post/data-select-personal ở bind()). listKey khớp đúng tên bảng Supabase
+  // thật (posts/content_bank_personal) — dùng thẳng trong data-bulk-delete để bind() biết xoá bảng
+  // nào + Set nào, không cần thêm if/else rẽ nhánh riêng cho từng danh sách.
+  function bulkBarHtml(selectedSet, listKey){
+    if(selectedSet.size === 0) return '';
+    return `
+      <div class="hint-box" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--accent-soft);border-color:var(--accent);">
+        <span>Đã chọn <b>${selectedSet.size}</b> mục</span>
+        <div class="btn-row" style="margin-top:0;">
+          <span style="color:var(--danger);cursor:pointer;font-size:13px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
+          <span class="btn-ghost btn btn-sm" data-bulk-clear="${listKey}">Bỏ chọn</span>
+        </div>
       </div>
     `;
   }
@@ -624,10 +645,10 @@ function render(container, ctx){
     items = sortUnusedFirst(items, 'personal');
     const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
     if(items.length===0) return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
-    return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + items.map(b=>`
+    return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'content_bank_personal') + items.map(b=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
-        <h3>${esc(b.title)}</h3>
+        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}</h3></label>
         ${contentBodyHtml('personal:'+b.id, b.content)}
         ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
@@ -987,6 +1008,44 @@ function render(container, ctx){
         if(!(await confirmModal('Xoá vĩnh viễn bài này khỏi Kho Content? Không khôi phục được — nếu bài đã có trong Lịch Đăng Bài, chỗ đó cũng sẽ mất liên kết tới bài.'))) return;
         await ctx.supabase.from('posts').delete().eq('id', id);
         await loadPosts();
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-select-post]').forEach(el=>{
+      el.onchange = ()=>{
+        const id = el.getAttribute('data-select-post');
+        if(el.checked) state.selectedPosts.add(id); else state.selectedPosts.delete(id);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-select-personal]').forEach(el=>{
+      el.onchange = ()=>{
+        const id = el.getAttribute('data-select-personal');
+        if(el.checked) state.selectedPersonal.add(id); else state.selectedPersonal.delete(id);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-bulk-clear]').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-bulk-clear');
+        if(key==='posts') state.selectedPosts.clear(); else if(key==='content_bank_personal') state.selectedPersonal.clear();
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-bulk-delete]').forEach(el=>{
+      el.onclick = async ()=>{
+        const key = el.getAttribute('data-bulk-delete');
+        // Map thẳng listKey -> đúng bảng/Set/hàm tải lại — table PHẢI khớp tên bảng Supabase thật
+        // (posts/content_bank_personal), tránh phải rẽ nhánh if/else riêng cho từng danh sách.
+        const cfg = key==='posts'
+          ? { set: state.selectedPosts, table:'posts', reload: loadPosts, msg:(n)=>`Xoá vĩnh viễn ${n} bài đã chọn khỏi Kho Content? Không khôi phục được — nếu bài đã có trong Lịch Đăng Bài, chỗ đó cũng sẽ mất liên kết tới bài.` }
+          : { set: state.selectedPersonal, table:'content_bank_personal', reload: loadPersonal, msg:(n)=>`Xoá vĩnh viễn ${n} mục đã chọn khỏi Kho của tôi? Không khôi phục được.` };
+        if(!cfg.set.size) return;
+        const ids = Array.from(cfg.set);
+        if(!(await confirmModal(cfg.msg(ids.length)))) return;
+        await ctx.supabase.from(cfg.table).delete().in('id', ids);
+        cfg.set.clear();
+        await cfg.reload();
         draw();
       };
     });

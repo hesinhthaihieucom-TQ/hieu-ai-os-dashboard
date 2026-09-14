@@ -83,6 +83,9 @@ function render(container, ctx){
     genShowAllCats:false,
     genLoading:false, genError:null, genResult:null, genThumbTitles:null, genSavedIdx:{}, genThumbSavedIdx:{},
     chungPillar:'all', khoToiPillar:'all', posts:[], khoToiSearch:'', chungSearch:'',
+    // "cho e quyền được chọn nhiều ở mỗi kho... ví dụ như xóa" (chị Quỳnh 2026-09-14) — cùng pattern
+    // đã thêm ở kho-content.js.
+    selectedPersonal:new Set(),
     adminMenuFor:null,
   };
 
@@ -361,6 +364,20 @@ function render(container, ctx){
     `;
   }
 
+  // Thanh thao tác hàng loạt — cùng pattern đã thêm ở kho-content.js (bulkBarHtml).
+  function bulkBarHtml(selectedSet, listKey){
+    if(selectedSet.size === 0) return '';
+    return `
+      <div class="hint-box" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--accent-soft);border-color:var(--accent);">
+        <span>Đã chọn <b>${selectedSet.size}</b> mục</span>
+        <div class="btn-row" style="margin-top:0;">
+          <span style="color:var(--danger);cursor:pointer;font-size:13px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
+          <span class="btn-ghost btn btn-sm" data-bulk-clear="${listKey}">Bỏ chọn</span>
+        </div>
+      </div>
+    `;
+  }
+
   function khoToiListHtml(){
     if(state.personal.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
 
@@ -370,10 +387,10 @@ function render(container, ctx){
     items = sortUnusedFirst(items, h=>'personal:'+h.id);
     const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
     if(items.length===0) return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
-    return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + items.map(h=>`
+    return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'hooks_bank_personal') + items.map(h=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
-        <div class="body"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>
+        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${h.id}" ${state.selectedPersonal.has(h.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><div class="body" style="margin:0;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div></label>
         <div class="btn-row" style="margin-top:10px;justify-content:space-between;">
           <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
           ${h.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
@@ -528,6 +545,26 @@ function render(container, ctx){
         const id = el.getAttribute('data-del');
         if(!(await confirmModal('Xoá vĩnh viễn hook này khỏi Kho của tôi? Không khôi phục được.'))) return;
         await ctx.supabase.from('hooks_bank_personal').delete().eq('id', id);
+        await loadPersonal(); draw();
+      };
+    });
+    container.querySelectorAll('[data-select-personal]').forEach(el=>{
+      el.onchange = ()=>{
+        const id = el.getAttribute('data-select-personal');
+        if(el.checked) state.selectedPersonal.add(id); else state.selectedPersonal.delete(id);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-bulk-clear]').forEach(el=>{
+      el.onclick = ()=>{ state.selectedPersonal.clear(); draw(); };
+    });
+    container.querySelectorAll('[data-bulk-delete]').forEach(el=>{
+      el.onclick = async ()=>{
+        const ids = Array.from(state.selectedPersonal);
+        if(!ids.length) return;
+        if(!(await confirmModal(`Xoá vĩnh viễn ${ids.length} hook đã chọn khỏi Kho của tôi? Không khôi phục được.`))) return;
+        await ctx.supabase.from('hooks_bank_personal').delete().in('id', ids);
+        state.selectedPersonal.clear();
         await loadPersonal(); draw();
       };
     });
