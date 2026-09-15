@@ -14,41 +14,62 @@ const SK_GI_TABLES = [
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
+  const state = { loading:true, loadError:'', tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
     insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[],
     calcWeight:'', calcGoal:'duy_tri', healthLevel:null, bmiCategory:null };
 
-  function draw(){ container.innerHTML = html(); bind(); }
+  // 2026-09-15, chị Quỳnh: "phần lịch trình cứ quay hoài hoài" — nếu html() ném lỗi giữa chừng (dữ
+  // liệu bất thường nào đó), trước đây container.innerHTML KHÔNG ĐƯỢC GÁN (lỗi chặn cả câu lệnh),
+  // nên màn hình kẹt nguyên ở nội dung cũ — thường là spinner của lần vẽ trước, trông như "quay mãi
+  // không dừng". Bọc try/catch để LUÔN thấy được lỗi thật thay vì kẹt vô thời hạn.
+  function draw(){
+    try{
+      container.innerHTML = html();
+      bind();
+    } catch(e){
+      container.innerHTML = `<div class="error-box">Lỗi hiển thị Lịch Trình: ${esc((e && e.message) || String(e))}</div>`;
+    }
+  }
 
   // Không còn bắt buộc có sk_package_id mới tải/hiện được trang (2026-09-05, chị Quỳnh: "gán gói ở
   // đây là gán sản phẩm khách đang dùng á, chứ k phải mỗi combo") — khách mua lẻ/ngoài app không có
   // Combo (sk_package_id null) nhưng có sk_customer_products vẫn cần thấy đúng hướng dẫn sử dụng của
   // đúng sản phẩm họ dùng, xem sanPhamTab().
   async function load(){
-    const packageId = ctx.profile && ctx.profile.sk_package_id;
-    const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }, { data: weeklyLog }] = await Promise.all([
-      packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
-      packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
-      ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
-      ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
-      ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
-      ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
-      ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
-    ]);
-    state.packageName = pkg ? pkg.name : null;
-    state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
-    state.items = items || [];
-    state.doneIds = new Set((progress||[]).map(p=>p.schedule_item_id));
-    // Mức độ nguy cơ từ Kiểm Tra Sức Khỏe (2026-09-05, chị Quỳnh: "người bình thường thì theo phác
-    // đồ của em, người có vấn đề sức khỏe nặng theo nhãn") — null nếu khách CHƯA làm Kiểm Tra Sức
-    // Khỏe (không tự suy diễn "an toàn" hay "nặng" khi chưa có dữ liệu, mặc định dùng phác đồ như cũ).
-    state.healthLevel = checkin ? skComputeHealthLevel(checkin.survey_insulin, checkin.survey_toxin, checkin.survey_metabolic).level : null;
-    state.bmiCategory = skLatestBmiCategoryFromMetrics(weeklyLog && weeklyLog.metrics);
-    const allProducts = products || [];
-    allProducts.forEach(p=>{ state.productByName[p.name] = p; });
-    const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
-    state.customerProducts = allProducts.filter(p=>reminderByProductId[p.id]!==undefined)
-      .map(p=>({ ...p, _reminderTime: reminderByProductId[p.id] }));
+    state.loading = true; state.loadError = ''; draw();
+    // 2026-09-15, chị Quỳnh: "phần lịch trình cứ quay hoài hoài" — trước đây load() không có try/catch,
+    // nên hễ 1 trong các query dưới đây lỗi (mất mạng, RLS, hoặc render() ném lỗi vì dữ liệu bất
+    // thường) là Promise bị reject/throw ÂM THẦM, state.loading không bao giờ được set về false —
+    // trang kẹt mãi ở spinner, không có cách nào biết vì sao. Giờ bắt lỗi rõ ràng + luôn tắt spinner dù
+    // thành công hay thất bại, kèm nút thử lại thay vì quay vô thời hạn.
+    try{
+      const packageId = ctx.profile && ctx.profile.sk_package_id;
+      const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }, { data: weeklyLog }] = await Promise.all([
+        packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
+        packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
+        ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
+        ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
+        ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
+        ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
+        ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
+      ]);
+      state.packageName = pkg ? pkg.name : null;
+      state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
+      state.items = items || [];
+      state.doneIds = new Set((progress||[]).map(p=>p.schedule_item_id));
+      // Mức độ nguy cơ từ Kiểm Tra Sức Khỏe (2026-09-05, chị Quỳnh: "người bình thường thì theo phác
+      // đồ của em, người có vấn đề sức khỏe nặng theo nhãn") — null nếu khách CHƯA làm Kiểm Tra Sức
+      // Khỏe (không tự suy diễn "an toàn" hay "nặng" khi chưa có dữ liệu, mặc định dùng phác đồ như cũ).
+      state.healthLevel = checkin ? skComputeHealthLevel(checkin.survey_insulin, checkin.survey_toxin, checkin.survey_metabolic).level : null;
+      state.bmiCategory = skLatestBmiCategoryFromMetrics(weeklyLog && weeklyLog.metrics);
+      const allProducts = products || [];
+      allProducts.forEach(p=>{ state.productByName[p.name] = p; });
+      const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
+      state.customerProducts = allProducts.filter(p=>reminderByProductId[p.id]!==undefined)
+        .map(p=>({ ...p, _reminderTime: reminderByProductId[p.id] }));
+    } catch(e){
+      state.loadError = (e && e.message) || 'Không tải được lịch trình — thử lại giúp mình.';
+    }
     state.loading = false;
     draw();
   }
@@ -500,6 +521,13 @@ function render(container, ctx){
   function html(){
     if(!ctx.profile) return `<div class="loading"><div class="spinner"></div></div>`;
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
+    if(state.loadError){
+      return `
+        <div class="page-head"><h1>Lịch Trình Của Bạn</h1></div>
+        <div class="error-box">Không tải được lịch trình: ${esc(state.loadError)}</div>
+        <button class="btn btn-sm" id="lt-retry" style="margin-top:12px;">Thử lại</button>
+      `;
+    }
     // Không có Combo (sk_package_id) NHƯNG có sản phẩm lẻ được gán (sk_customer_products) vẫn hiện
     // trang bình thường (2026-09-05) — chỉ chặn hẳn khi KHÔNG có cả 2.
     if(!ctx.profile.sk_package_id && state.customerProducts.length===0){
@@ -524,6 +552,7 @@ function render(container, ctx){
   }
 
   function bind(){
+    const retryBtn = container.querySelector('#lt-retry'); if(retryBtn) retryBtn.onclick = load;
     container.querySelectorAll('[data-tab]').forEach(el=>{
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
     });
