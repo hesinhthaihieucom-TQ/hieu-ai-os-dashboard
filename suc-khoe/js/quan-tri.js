@@ -532,6 +532,13 @@ function renderThanhVien(container, ctx){
     };
     // Deep clone để không sửa nhầm vào hằng số SK_DAILY_SCHEDULE_BY_BMI dùng chung (util.js).
     state.dailyScheduleForm = JSON.parse(JSON.stringify(base));
+    // 2026-09-15, chị Quỳnh: "phải sửa chi tiết từng sản phẩm dùng như nào, vào thời điểm nào, liều
+    // lượng dùng ra sao" — mỗi khung sang/trua/toi có thêm mảng "products" (product_name/instruction/
+    // priority, cùng shape step của regimen_sections) để admin khai riêng đúng sản phẩm/liều cho khách
+    // này. Đảm bảo luôn có mảng (kể cả bản BMI mặc định/override cũ chưa từng có field này).
+    ['sang','trua','toi'].forEach(k=>{
+      if(!Array.isArray(state.dailyScheduleForm[k].products)) state.dailyScheduleForm[k].products = [];
+    });
     state.dailyScheduleBmiLabel = bmiCat ? bmiCat.label : null;
     draw();
   }
@@ -573,6 +580,30 @@ function renderThanhVien(container, ctx){
             </div>
           `;
         };
+        // 2026-09-15, chị Quỳnh: "phải sửa chi tiết từng sản phẩm dùng như nào, vào thời điểm nào, liều
+        // lượng dùng ra sao" — ô uống/ăn ở trên chỉ là kiến thức CHUNG, không đủ. Thêm đúng danh sách
+        // sản phẩm (tên + liều dùng/hướng dẫn + ưu tiên) cho TỪNG khung giờ — để trống = khách vẫn thấy
+        // lịch dùng sản phẩm mặc định theo gói (xem lich-trinh.js dailyScheduleHtml, overrideProductsFor).
+        const productStepsEditor = (slotKey, slotLabel) => {
+          const products = f[slotKey].products || [];
+          return `
+            <div style="margin-top:6px;">
+              <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;">Sản phẩm dùng vào ${esc(slotLabel)} (để trống = dùng theo lịch chung của gói)</div>
+              ${products.map((p,i)=>`
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
+                  <select data-ds-product="${slotKey}|${i}" style="width:auto;min-width:140px;margin:0;">
+                    <option value="">— Chọn sản phẩm —</option>
+                    ${state.allProducts.map(prod=>`<option value="${esc(prod.name)}" ${p.product_name===prod.name?'selected':''}>${esc(prod.name)}</option>`).join('')}
+                  </select>
+                  <input type="text" data-ds-product-instruction="${slotKey}|${i}" value="${esc(p.instruction||'')}" placeholder="Liều dùng/hướng dẫn, VD: 1 viên trước ăn 30 phút" style="flex:1;min-width:180px;margin:0;">
+                  <label style="display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap;margin:0;"><input type="checkbox" data-ds-product-priority="${slotKey}|${i}" ${p.priority?'checked':''} style="width:auto;margin:0;">Ưu tiên</label>
+                  <span data-ds-product-remove="${slotKey}|${i}" style="color:var(--danger);cursor:pointer;font-size:13px;">✕</span>
+                </div>
+              `).join('')}
+              <span class="btn-ghost btn btn-sm" data-ds-product-add="${slotKey}">+ Thêm sản phẩm</span>
+            </div>
+          `;
+        };
         return `
           <div class="card" style="margin-top:10px;width:100%;">
             <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">
@@ -582,12 +613,15 @@ function renderThanhVien(container, ctx){
             <div style="font-weight:700;font-size:13px;margin-top:12px;">🌅 Sáng</div>
             ${field('sang.uong', 'Uống', true)}
             ${field('sang.an', 'Ăn', true)}
+            ${productStepsEditor('sang', 'buổi Sáng')}
             <div style="font-weight:700;font-size:13px;margin-top:12px;">☀️ Trưa</div>
             ${field('trua.uong', 'Uống', true)}
             ${field('trua.an', 'Ăn', true)}
+            ${productStepsEditor('trua', 'buổi Trưa')}
             <div style="font-weight:700;font-size:13px;margin-top:12px;">🌙 Tối</div>
             ${field('toi.uong', 'Uống', true)}
             ${field('toi.an', 'Ăn', true)}
+            ${productStepsEditor('toi', 'buổi Tối')}
             <div style="font-weight:700;font-size:13px;margin-top:12px;">🏃 Tập luyện</div>
             ${field('tap.gio', 'Giờ tập')}
             ${field('tap.bai', 'Bài tập', true)}
@@ -831,6 +865,39 @@ function renderThanhVien(container, ctx){
     });
     container.querySelectorAll('[data-reset-daily-schedule]').forEach(el=>{
       el.onclick = ()=>resetDailySchedule(el.getAttribute('data-reset-daily-schedule'));
+    });
+    container.querySelectorAll('[data-ds-product]').forEach(el=>{
+      el.onchange = (e)=>{
+        const [slot, idx] = el.getAttribute('data-ds-product').split('|');
+        state.dailyScheduleForm[slot].products[Number(idx)].product_name = e.target.value;
+      };
+    });
+    container.querySelectorAll('[data-ds-product-instruction]').forEach(el=>{
+      el.oninput = (e)=>{
+        const [slot, idx] = el.getAttribute('data-ds-product-instruction').split('|');
+        state.dailyScheduleForm[slot].products[Number(idx)].instruction = e.target.value;
+      };
+    });
+    container.querySelectorAll('[data-ds-product-priority]').forEach(el=>{
+      el.onchange = (e)=>{
+        const [slot, idx] = el.getAttribute('data-ds-product-priority').split('|');
+        state.dailyScheduleForm[slot].products[Number(idx)].priority = e.target.checked;
+      };
+    });
+    container.querySelectorAll('[data-ds-product-remove]').forEach(el=>{
+      el.onclick = ()=>{
+        const [slot, idx] = el.getAttribute('data-ds-product-remove').split('|');
+        state.dailyScheduleForm[slot].products.splice(Number(idx), 1);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-ds-product-add]').forEach(el=>{
+      el.onclick = ()=>{
+        const slot = el.getAttribute('data-ds-product-add');
+        if(!Array.isArray(state.dailyScheduleForm[slot].products)) state.dailyScheduleForm[slot].products = [];
+        state.dailyScheduleForm[slot].products.push({ product_name:'', instruction:'', priority:false });
+        draw();
+      };
     });
     const cancelBtn = container.querySelector('#pf-cancel'); if(cancelBtn) cancelBtn.onclick = ()=>{ state.pointsFormFor=null; draw(); };
     const monthEl = container.querySelector('#pf-month'); if(monthEl) monthEl.oninput = (e)=>{ state.pointsForm.month = e.target.value; };

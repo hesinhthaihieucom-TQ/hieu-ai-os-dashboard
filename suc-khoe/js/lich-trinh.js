@@ -179,24 +179,34 @@ function render(container, ctx){
       ? 'Lịch trình này được tuỳ chỉnh riêng cho bạn, kết hợp cùng hướng dẫn sử dụng sản phẩm theo đúng khung giờ.'
       : s ? `Dựa theo BMI mốc gần nhất bạn đã đo (${state.bmiCategory.label}) — kết hợp hướng dẫn sử dụng sản phẩm theo đúng khung giờ.`
         : 'Nhập đủ Chiều cao + Cân nặng ở "Theo Dõi Sức Khỏe Theo Tuần" để có thêm gợi ý ăn uống/tập luyện chung, phù hợp vóc dáng của bạn.';
-    const anyPriority = state.regimenSections.some(sec=>(sec.steps||[]).some(st=>st.priority));
-    const slot = (label, icon, data, secs) => `
+    // 2026-09-15, chị Quỳnh: "vẫn chưa sửa được lịch trình riêng... phải sửa chi tiết từng sản phẩm
+    // dùng như nào, vào thời điểm nào, liều lượng dùng ra sao" — override trước đây chỉ cho sửa chữ
+    // ăn/uống CHUNG, không sửa được ĐÚNG sản phẩm/liều dùng theo khung giờ. Giờ mỗi khung (sang/trua/
+    // toi) trong override có thêm mảng "products" (cùng shape step của regimen_sections: product_name/
+    // instruction/priority) — nếu admin đã khai báo sản phẩm riêng cho khung đó thì hiện ĐÚNG danh
+    // sách đó (thay thế hẳn lịch của gói ở khung này), khung nào chưa khai báo vẫn hiện theo gói như cũ.
+    const overrideProductsFor = (key) => override && override[key] && Array.isArray(override[key].products) ? override[key].products : null;
+    const anyPriority = ['sang','trua','toi'].some(k=>(overrideProductsFor(k)||[]).some(p=>p.priority))
+      || state.regimenSections.some(sec=>(sec.steps||[]).some(st=>st.priority));
+    const slot = (label, icon, key, data, secs) => {
+      const overrideProducts = overrideProductsFor(key);
+      return `
       <div style="padding:10px 0;border-bottom:1px solid var(--line);">
         <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${icon} ${esc(label)}</div>
         ${data ? `
           <div style="font-size:13px;line-height:1.7;"><b>Uống:</b> ${esc(data.uong)}</div>
           <div style="font-size:13px;line-height:1.7;"><b>Ăn:</b> ${esc(data.an)}</div>
         ` : ''}
-        ${regimenSectionsHtml(secs)}
+        ${overrideProducts && overrideProducts.length>0 ? overrideProducts.map(regimenStepHtml).join('') : regimenSectionsHtml(secs)}
       </div>
-    `;
+    `;};
     return `
       <div class="card" style="margin-bottom:18px;">
         ${skSectionHeaderHtml(headerLabel, color, '📅')}
         <div class="hint-box" style="margin-bottom:6px;">${esc(subtitle)}</div>
-        ${slot('Sáng', '🌅', s && s.sang, buckets.sang)}
-        ${slot('Trưa', '☀️', s && s.trua, buckets.trua)}
-        ${slot('Tối', '🌙', s && s.toi, buckets.toi)}
+        ${slot('Sáng', '🌅', 'sang', s && s.sang, buckets.sang)}
+        ${slot('Trưa', '☀️', 'trua', s && s.trua, buckets.trua)}
+        ${slot('Tối', '🌙', 'toi', s && s.toi, buckets.toi)}
         ${buckets.khac.length>0 ? `
           <div style="padding:10px 0;border-bottom:1px solid var(--line);">
             <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">⏰ Khác trong ngày</div>
