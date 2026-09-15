@@ -66,7 +66,7 @@ function render(container, ctx){
     // "cho e quyền được chọn nhiều ở mỗi kho để... thao tác 1 lượt cho nhanh ví dụ như xóa" (chị
     // Quỳnh 2026-09-14) — 1 Set riêng mỗi danh sách (không dùng chung 1 Set vì id có thể trùng giữa
     // các bảng khác nhau — posts vs content_bank_personal).
-    selectedPosts:new Set(), selectedPersonal:new Set(),
+    selectedPosts:new Set(), selectedPersonal:new Set(), bulkDeleteError:null,
     promotingId:null, promoteErrorFor:null, promoteError:null,
     caseStudies:[], caseStudyUploading:false, caseStudyError:null, caseStudyUploadProgress:null,
     adminMenuFor:null,
@@ -100,7 +100,22 @@ function render(container, ctx){
     });
   }
 
-  function draw(){ container.innerHTML = html(); bind(); }
+  // "kho content cứ đang quay quay hoài ko hiện" (chị Quỳnh 2026-09-15) — draw()/boot() trước đây
+  // không có try/catch: nếu html() ném lỗi ở bất kỳ đâu (dữ liệu tài khoản dạng cũ/thiếu field, hay
+  // lỗi mạng lúc tải), màn hình "Đang tải…" ở boot() bị kẹt VĨNH VIỄN, không có thông báo lỗi gì cả —
+  // đúng lỗi đã sửa cho dinh-vi.js/lich-dang.js trước đó (draw() try/catch, xem 2 file đó). Áp lại
+  // đúng pattern này ở đây: lỗi thì hiện rõ + nút "Tải lại trang", không còn quay vô thời hạn.
+  function draw(){
+    try{
+      container.innerHTML = html();
+      bind();
+    } catch(e){
+      container.innerHTML = `<div class="loading">
+        <p style="color:var(--danger);padding:0 20px 18px;">${esc((e && e.message) || 'Có lỗi khi hiển thị trang, thử tải lại.')}</p>
+        <button class="btn" onclick="location.reload()">Tải lại trang</button>
+      </div>`;
+    }
+  }
 
   // Đánh dấu bài nào đã có trong Lịch Đăng Bài rồi (giống pattern đã có ở viet-content.js) — theo
   // yêu cầu chị Quỳnh 2026-08-26: "content nào đã cho vào lịch thì nút đưa vào lịch phải hiện là
@@ -112,6 +127,7 @@ function render(container, ctx){
 
   async function boot(){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
+    try{
     const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
     state.positioning = pos || null;
     state.positioningId = pos ? pos.id : null;
@@ -148,6 +164,12 @@ function render(container, ctx){
     if(scrollToPostId){
       const el = document.getElementById('post-card-'+scrollToPostId);
       if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+    } catch(e){
+      container.innerHTML = `<div class="loading">
+        <p style="color:var(--danger);padding:0 20px 18px;">${esc((e && e.message) || 'Lỗi mạng hoặc lỗi tải dữ liệu không rõ nguyên nhân.')}</p>
+        <button class="btn" onclick="location.reload()">Tải lại trang</button>
+      </div>`;
     }
   }
   async function loadPosts(){
@@ -418,7 +440,7 @@ function render(container, ctx){
 
     if(items.length===0) return hint + filterBar + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp bộ lọc.</div>`;
 
-    return hint + filterBar + bulkBarHtml(state.selectedPosts, 'posts') + items.map(p=>{
+    return hint + filterBar + bulkBarHtml(state.selectedPosts, 'posts', items.map(p=>p.id)) + items.map(p=>{
       const isEditing = state.editingPostId === p.id;
       return `
       <div class="section" id="post-card-${p.id}">
@@ -465,20 +487,29 @@ function render(container, ctx){
     `;
   }
 
-  // Thanh thao tác hàng loạt — hiện NGAY TRÊN danh sách khi đã chọn từ 1 mục trở lên (checkbox mỗi
-  // thẻ, xem data-select-post/data-select-personal ở bind()). listKey khớp đúng tên bảng Supabase
+  // Thanh thao tác hàng loạt — luôn hiện "Chọn tất cả" phía trên danh sách (chị Quỳnh 2026-09-15:
+  // "mục chọn tất cả của các kho đâu?", trước đó chỉ có checkbox từng mục, thiếu cách chọn nhanh cả
+  // loạt); khối xoá chỉ hiện thêm khi đã chọn từ 1 mục trở lên. listKey khớp đúng tên bảng Supabase
   // thật (posts/content_bank_personal) — dùng thẳng trong data-bulk-delete để bind() biết xoá bảng
-  // nào + Set nào, không cần thêm if/else rẽ nhánh riêng cho từng danh sách.
-  function bulkBarHtml(selectedSet, listKey){
-    if(selectedSet.size === 0) return '';
+  // nào + Set nào. allIds là id của các mục ĐANG HIỂN THỊ sau khi lọc/tìm kiếm (không phải toàn bộ
+  // kho) — "Chọn tất cả" chọn đúng những gì đang thấy trên màn hình, khớp kỳ vọng thông thường.
+  function bulkBarHtml(selectedSet, listKey, allIds){
+    const allSelected = allIds.length > 0 && allIds.every(id=>selectedSet.has(id));
     return `
-      <div class="hint-box" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--accent-soft);border-color:var(--accent);">
-        <span>Đã chọn <b>${selectedSet.size}</b> mục</span>
-        <div class="btn-row" style="margin-top:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;">
+          <input type="checkbox" data-select-all="${listKey}" data-select-all-ids="${allIds.join(',')}" ${allSelected?'checked':''}>
+          Chọn tất cả (${allIds.length})
+        </label>
+        ${selectedSet.size > 0 ? `
+        <div class="btn-row" style="margin-top:0;align-items:center;">
+          <span style="font-size:12.5px;color:var(--ink-soft);">Đã chọn <b>${selectedSet.size}</b></span>
           <span style="color:var(--danger);cursor:pointer;font-size:13px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
           <span class="btn-ghost btn btn-sm" data-bulk-clear="${listKey}">Bỏ chọn</span>
         </div>
+        ` : ''}
       </div>
+      ${state.bulkDeleteError?`<div class="error-box" style="margin-bottom:12px;">${esc(state.bulkDeleteError)}</div>`:''}
     `;
   }
 
@@ -646,7 +677,7 @@ function render(container, ctx){
     items = sortUnusedFirst(items, 'personal');
     const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
     if(items.length===0) return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
-    return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'content_bank_personal') + items.map(b=>`
+    return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'content_bank_personal', items.map(b=>b.id)) + items.map(b=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}</h3></label>
@@ -1088,6 +1119,15 @@ function render(container, ctx){
         draw();
       };
     });
+    container.querySelectorAll('[data-select-all]').forEach(el=>{
+      el.onchange = ()=>{
+        const key = el.getAttribute('data-select-all');
+        const ids = el.getAttribute('data-select-all-ids').split(',').filter(Boolean);
+        const set = key==='posts' ? state.selectedPosts : state.selectedPersonal;
+        if(el.checked) ids.forEach(id=>set.add(id)); else ids.forEach(id=>set.delete(id));
+        draw();
+      };
+    });
     container.querySelectorAll('[data-bulk-delete]').forEach(el=>{
       el.onclick = async ()=>{
         const key = el.getAttribute('data-bulk-delete');
@@ -1099,7 +1139,13 @@ function render(container, ctx){
         if(!cfg.set.size) return;
         const ids = Array.from(cfg.set);
         if(!(await confirmModal(cfg.msg(ids.length)))) return;
-        await ctx.supabase.from(cfg.table).delete().in('id', ids);
+        // "e ko xóa được content khi chọn nhiều content" (chị Quỳnh 2026-09-15) — trước đây bỏ qua
+        // hẳn {error} của lệnh xoá, nên nếu Supabase trả lỗi (mạng chập chờn...) thì mọi thứ vẫn âm
+        // thầm chạy tiếp như xoá thành công — bài KHÔNG mất thật nhưng người dùng không biết vì sao
+        // "bấm xoá mà không thấy gì". Giờ kiểm tra + hiện lỗi thật ngay trên thanh chọn hàng loạt.
+        state.bulkDeleteError = null;
+        const { error } = await ctx.supabase.from(cfg.table).delete().in('id', ids);
+        if(error){ state.bulkDeleteError = error.message; draw(); return; }
         cfg.set.clear();
         await cfg.reload();
         draw();

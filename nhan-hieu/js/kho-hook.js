@@ -85,7 +85,7 @@ function render(container, ctx){
     chungPillar:'all', khoToiPillar:'all', posts:[], khoToiSearch:'', chungSearch:'',
     // "cho e quyền được chọn nhiều ở mỗi kho... ví dụ như xóa" (chị Quỳnh 2026-09-14) — cùng pattern
     // đã thêm ở kho-content.js.
-    selectedPersonal:new Set(),
+    selectedPersonal:new Set(), bulkDeleteError:null,
     promotingId:null, promoteErrorFor:null, promoteError:null,
     // "các tác vụ đều có nút bấm vào mới hiện chứ ko liệt kê hết ra... quy tắc bắt buộc cho tất cả
     // các app" (chị Quỳnh 2026-09-14) — cùng pattern "▾ Tuỳ chọn" đã có ở kho-content.js.
@@ -104,24 +104,44 @@ function render(container, ctx){
   }
   function persistGenDraft(){ saveModuleDraft(ctx, DRAFT_KEY, draftPayload()); }
 
-  function draw(){ container.innerHTML = html(); bind(); }
+  // Cùng lưới an toàn đã thêm ở kho-content.js (2026-09-15, chị Quỳnh báo Kho Content "quay quay hoài
+  // ko hiện") — draw()/boot() trước đây không có try/catch, lỗi ở bất kỳ đâu trong html() sẽ khiến
+  // màn "Đang tải…" kẹt vĩnh viễn không có thông báo gì.
+  function draw(){
+    try{
+      container.innerHTML = html();
+      bind();
+    } catch(e){
+      container.innerHTML = `<div class="loading">
+        <p style="color:var(--danger);padding:0 20px 18px;">${esc((e && e.message) || 'Có lỗi khi hiển thị trang, thử tải lại.')}</p>
+        <button class="btn" onclick="location.reload()">Tải lại trang</button>
+      </div>`;
+    }
+  }
 
   async function boot(){
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
-    const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
-    state.positioning = pos || null;
-    await Promise.all([loadPersonal(), loadShared(), loadSharedContent(), loadPosts()]);
-    // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung trong
-    // Kho Hook Viral thay vì bắt người dùng tự lọc lại từ đầu (khớp cách kho-content.js đã làm).
-    if(window.PendingPillar){
-      state.tab = 'kho-chung';
-      state.chungPillar = window.PendingPillar;
-      window.PendingPillar = null;
-    } else {
-      const draft = await loadModuleDraft(ctx, DRAFT_KEY);
-      if(draft) Object.assign(state, draft);
+    try{
+      const { data: pos } = await ctx.supabase.from('positioning_results').select('*').eq('user_id', ctx.user.id).maybeSingle();
+      state.positioning = pos || null;
+      await Promise.all([loadPersonal(), loadShared(), loadSharedContent(), loadPosts()]);
+      // Đi tới từ Lịch Đăng Bài khi slot đó chưa có bài viết sẵn — mở thẳng đúng trục nội dung trong
+      // Kho Hook Viral thay vì bắt người dùng tự lọc lại từ đầu (khớp cách kho-content.js đã làm).
+      if(window.PendingPillar){
+        state.tab = 'kho-chung';
+        state.chungPillar = window.PendingPillar;
+        window.PendingPillar = null;
+      } else {
+        const draft = await loadModuleDraft(ctx, DRAFT_KEY);
+        if(draft) Object.assign(state, draft);
+      }
+      draw();
+    } catch(e){
+      container.innerHTML = `<div class="loading">
+        <p style="color:var(--danger);padding:0 20px 18px;">${esc((e && e.message) || 'Lỗi mạng hoặc lỗi tải dữ liệu không rõ nguyên nhân.')}</p>
+        <button class="btn" onclick="location.reload()">Tải lại trang</button>
+      </div>`;
     }
-    draw();
   }
   async function loadPersonal(){
     const { data, error } = await ctx.supabase.from('hooks_bank_personal').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false });
@@ -369,16 +389,26 @@ function render(container, ctx){
   }
 
   // Thanh thao tác hàng loạt — cùng pattern đã thêm ở kho-content.js (bulkBarHtml).
-  function bulkBarHtml(selectedSet, listKey){
-    if(selectedSet.size === 0) return '';
+  // "mục chọn tất cả của các kho đâu??" (chị Quỳnh 2026-09-15) — luôn hiện "Chọn tất cả" phía trên
+  // danh sách, khối xoá chỉ hiện thêm khi đã chọn từ 1 mục. allIds là id các mục ĐANG HIỂN THỊ sau
+  // lọc/tìm kiếm (khớp cách đã làm ở kho-content.js).
+  function bulkBarHtml(selectedSet, listKey, allIds){
+    const allSelected = allIds.length > 0 && allIds.every(id=>selectedSet.has(id));
     return `
-      <div class="hint-box" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--accent-soft);border-color:var(--accent);">
-        <span>Đã chọn <b>${selectedSet.size}</b> mục</span>
-        <div class="btn-row" style="margin-top:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;">
+          <input type="checkbox" data-select-all="${listKey}" data-select-all-ids="${allIds.join(',')}" ${allSelected?'checked':''}>
+          Chọn tất cả (${allIds.length})
+        </label>
+        ${selectedSet.size > 0 ? `
+        <div class="btn-row" style="margin-top:0;align-items:center;">
+          <span style="font-size:12.5px;color:var(--ink-soft);">Đã chọn <b>${selectedSet.size}</b></span>
           <span style="color:var(--danger);cursor:pointer;font-size:13px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
           <span class="btn-ghost btn btn-sm" data-bulk-clear="${listKey}">Bỏ chọn</span>
         </div>
+        ` : ''}
       </div>
+      ${state.bulkDeleteError?`<div class="error-box" style="margin-bottom:12px;">${esc(state.bulkDeleteError)}</div>`:''}
     `;
   }
 
@@ -391,7 +421,7 @@ function render(container, ctx){
     items = sortUnusedFirst(items, h=>'personal:'+h.id);
     const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
     if(items.length===0) return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
-    return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'hooks_bank_personal') + items.map(h=>`
+    return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'hooks_bank_personal', items.map(h=>h.id)) + items.map(h=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${h.id}" ${state.selectedPersonal.has(h.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><div class="body" style="margin:0;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div></label>
@@ -622,12 +652,23 @@ function render(container, ctx){
     container.querySelectorAll('[data-bulk-clear]').forEach(el=>{
       el.onclick = ()=>{ state.selectedPersonal.clear(); draw(); };
     });
+    container.querySelectorAll('[data-select-all]').forEach(el=>{
+      el.onchange = ()=>{
+        const ids = el.getAttribute('data-select-all-ids').split(',').filter(Boolean);
+        if(el.checked) ids.forEach(id=>state.selectedPersonal.add(id)); else ids.forEach(id=>state.selectedPersonal.delete(id));
+        draw();
+      };
+    });
     container.querySelectorAll('[data-bulk-delete]').forEach(el=>{
       el.onclick = async ()=>{
         const ids = Array.from(state.selectedPersonal);
         if(!ids.length) return;
         if(!(await confirmModal(`Xoá vĩnh viễn ${ids.length} hook đã chọn khỏi Kho của tôi? Không khôi phục được.`))) return;
-        await ctx.supabase.from('hooks_bank_personal').delete().in('id', ids);
+        // "e ko xóa được content khi chọn nhiều content" (chị Quỳnh 2026-09-15) — cùng lỗi đã sửa ở
+        // kho-content.js: trước đây bỏ qua hẳn {error}, xoá thất bại vẫn âm thầm coi như thành công.
+        state.bulkDeleteError = null;
+        const { error } = await ctx.supabase.from('hooks_bank_personal').delete().in('id', ids);
+        if(error){ state.bulkDeleteError = error.message; draw(); return; }
         state.selectedPersonal.clear();
         await loadPersonal(); draw();
       };

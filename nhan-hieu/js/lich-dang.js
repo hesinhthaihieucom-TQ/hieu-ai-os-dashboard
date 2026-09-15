@@ -580,7 +580,13 @@ function render(container, ctx){
                   ${suggestion?`<div style="font-size:11px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
                   <select data-picker-select style="width:100%;margin-top:4px;font-size:12px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
-                    ${state.posts.filter(p=>(!p.posted && !state.scheduledPostIds.has(p.id)) || (e && e.post_id===p.id)).map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}${p.posted?' (đã đăng)':''}</option>`).join('')}
+                    ${state.posts.filter(p=>(!p.posted && !state.scheduledPostIds.has(p.id)) || (e && e.post_id===p.id))
+                      // "hiện thứ tự bài đăng theo kiểu chữ cái đầu ABC với số cho dễ nhìn — dạng số sẽ
+                      // xếp đầu tiên, sau đó tới dạng chữ ABC" (chị Quỳnh 2026-09-15) — numeric:true để
+                      // "10 cách" xếp sau "9 cách" (so số thật, không so từng ký tự), locale 'vi' để dấu
+                      // tiếng Việt xếp đúng vị trí thay vì rơi hết xuống cuối theo mã ký tự thô.
+                      .slice().sort((a,b)=>(a.title||'').localeCompare(b.title||'', 'vi', { numeric:true, sensitivity:'base' }))
+                      .map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}${p.posted?' (đã đăng)':''}</option>`).join('')}
                   </select>
                   <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng hoặc đã có sẵn trong lịch rồi không hiện ở đây nữa, đỡ chọn trùng.</div>
                   <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
