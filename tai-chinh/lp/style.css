@@ -87,6 +87,32 @@ a{ color:var(--accent); }
 .lp-price-arrow{ display:flex; align-items:center; color:var(--ink-soft); font-size:13px; padding:0 3px; }
 .lp-price-guarantee{ background:var(--gold-soft); color:#7A5A1E; border-radius:10px; padding:12px 16px; font-size:13px; line-height:1.6; margin-top:18px; }
 
+/* Ảnh minh hoạ app (chart THẬT vẽ lại từ đúng hàm SVG app đang dùng — radarChartHtml/donutChartHtml
+   ở js/util.js — không phải ảnh chụp tưởng tượng, số liệu mẫu chỉ để minh hoạ giao diện thật). */
+.lp-shot-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px 18px 18px; box-shadow:0 1px 2px rgba(30,36,32,.04); }
+.lp-shot-label{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); text-align:center; margin-bottom:2px; }
+.lp-shot-cap{ text-align:center; font-size:13px; color:var(--ink-soft); margin-top:12px; line-height:1.6; }
+.lp-shot-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:26px; }
+@media (max-width:560px){ .lp-shot-grid{ grid-template-columns:1fr; } }
+
+/* Mock 1 dòng Ghi Chép — dùng đúng class .chip/.selected của app thật, không phải ảnh chụp */
+.lp-mock-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+.lp-mock-row:last-child{ border-bottom:none; }
+.lp-mock-vibe{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; }
+.lp-mock-vibe.green{ background:var(--accent-soft); color:var(--accent); }
+.lp-mock-vibe.red{ background:#FBEAE5; color:var(--danger); }
+.lp-mock-vibe.gray{ background:#EEECE3; color:var(--ink-soft); }
+
+/* Uy tín người sáng lập — số liệu công khai thật của chị Quỳnh (không phải feedback khách hàng) */
+.lp-authority{ display:flex; flex-wrap:wrap; justify-content:center; gap:28px; padding:22px 16px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); }
+.lp-authority-item{ text-align:center; }
+.lp-authority-item .num{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--accent); }
+.lp-authority-item .lbl{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+
+/* Phản hồi người dùng — placeholder chờ ảnh chụp thật, KHÔNG dùng lại feedback của khoá học 30 Ngày
+   Tâm Linh Tài Chính (sản phẩm khác, khách nói về nội dung khác, gắn vào đây sẽ gây hiểu nhầm). */
+.lp-testi-placeholder{ background:var(--accent-soft); border:1.5px dashed var(--accent); border-radius:var(--radius); padding:26px 22px; text-align:center; color:var(--ink-soft); font-size:13.5px; line-height:1.7; }
+
 /* FAQ */
 .lp-faq{ display:flex; flex-direction:column; gap:8px; }
 .lp-faq-item{ border:1px solid var(--line); border-radius:12px; padding:14px 18px; background:var(--panel); }
