@@ -1,132 +1,189 @@
+/* Bảng màu/bố cục lấy đúng theo landing page tham khảo (30ngaytamlinhtaichinh.netlify.app, khoá học
+   của chính chị Quỳnh) theo yêu cầu "làm y hệt mẫu, bố cục và màu sắc luôn" (2026-09-15) — nền đen
+   sâu nhiều lớp + chữ vàng/cam làm điểm nhấn, khác hẳn bản trước (nền sáng theo màu app). Font giữ
+   nguyên Playfair Display/Be Vietnam Pro — app đã dùng sẵn 2 font này nên không đổi. */
 :root{
-  --bg: #F7F4EC;
-  --panel: #FFFFFF;
-  --ink: #1E2420;
-  --ink-soft: #5B5F55;
-  --line: #E4DFCF;
-  --accent: #2F6F62;
-  --accent-soft: #E7F0EC;
-  --gold: #B8862E;
-  --gold-soft: #F5EBD8;
-  --danger: #A6462E;
+  --black: #0a0a0a;
+  --black2: #111111;
+  --black3: #1a1a1a;
+  --black4: #222222;
+  --gold: #F0C24B;
+  --gold-light: #F5D77A;
+  --orange: #E3A83B;
+  --orange-dark: #C98A1F;
+  --white: #FFFFFF;
+  --gray: #999999;
+  --gray2: #666666;
+  --red: #EF4444;
+  --red-dark: #B91C1C;
+  --line: rgba(255,255,255,.08);
   --radius: 16px;
 }
 *{ box-sizing:border-box; }
 html{ scroll-behavior:smooth; }
-body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Be Vietnam Pro',sans-serif; line-height:1.6; }
-h1,h2,h3{ font-family:'Playfair Display',serif; margin:0; text-wrap:balance; }
-a{ color:var(--accent); }
-.wrap{ max-width:640px; margin:0 auto; padding:0 20px; }
+body{ margin:0; background:var(--black); color:var(--gray); font-family:'Be Vietnam Pro',sans-serif; line-height:1.6; padding-bottom:70px; }
+h1,h2,h3{ font-family:'Playfair Display',serif; margin:0; text-wrap:balance; color:var(--white); }
+a{ color:var(--gold); }
+b, strong{ color:var(--white); }
+.wrap{ max-width:680px; margin:0 auto; padding:0 20px; }
 
 /* ===== Header ===== */
 .lp-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px; max-width:680px; margin:0 auto; }
 .lp-brand{ display:flex; align-items:center; gap:10px; }
 .lp-brand img{ width:32px; height:32px; border-radius:50%; object-fit:cover; }
-.lp-brand span{ font-family:'Playfair Display',serif; font-weight:700; font-size:15.5px; line-height:1.25; }
-.lp-header a{ font-size:13.5px; font-weight:600; text-decoration:none; color:var(--accent); white-space:nowrap; }
+.lp-brand span{ font-family:'Playfair Display',serif; font-weight:700; font-size:15.5px; line-height:1.25; color:var(--white); }
+.lp-header a{ font-size:13.5px; font-weight:600; text-decoration:none; color:var(--gold); white-space:nowrap; }
 
 /* ===== Hero ===== */
 .lp-hero{ text-align:center; padding:28px 0 8px; }
-.lp-hero .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; }
+.lp-hero .eyebrow{
+  display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--gold); background:rgba(240,194,75,.1); border:1px solid rgba(240,194,75,.35); border-radius:999px; padding:6px 14px; margin-bottom:16px;
+}
 .lp-hero h1{ font-size:clamp(26px,5vw,36px); font-weight:900; line-height:1.28; margin-bottom:16px; }
-.lp-hero .sub{ font-size:15px; color:var(--ink-soft); line-height:1.75; max-width:520px; margin:0 auto 26px; }
-.lp-hero .tagline{ font-style:italic; color:var(--ink); }
+.lp-hero h1 .gold{ color:var(--gold); }
+.lp-hero .sub{ font-size:15px; color:var(--gray); line-height:1.75; max-width:520px; margin:0 auto 26px; }
+.lp-hero .tagline{ font-style:italic; color:var(--white); }
 
 .lp-cta{
   display:inline-block; appearance:none; border:none; cursor:pointer; text-decoration:none;
   font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:15.5px; padding:16px 30px;
-  border-radius:999px; background:var(--accent); color:#fff; transition:opacity .12s ease;
+  border-radius:999px; background:linear-gradient(135deg, var(--gold-light), var(--orange-dark)); color:#241a03;
+  transition:opacity .12s ease, transform .12s ease; box-shadow:0 6px 20px rgba(227,168,59,.25);
 }
-.lp-cta:hover{ opacity:.92; }
-.lp-cta-note{ margin-top:12px; font-size:12.5px; color:var(--ink-soft); }
+.lp-cta:hover{ opacity:.92; transform:translateY(-1px); }
+.lp-cta-note{ margin-top:12px; font-size:12.5px; color:var(--gray2); }
 .lp-cta-wrap{ margin:26px 0; }
 
 /* ===== Sections ===== */
-.lp-section{ padding:34px 0; border-top:1px solid var(--line); }
+.lp-section{ padding:36px 0; border-top:1px solid var(--line); }
 .lp-section:first-of-type{ border-top:none; }
-.lp-h2{ font-size:22px; text-align:center; margin-bottom:8px; }
-.lp-h2-sub{ text-align:center; color:var(--ink-soft); font-size:13.5px; margin-bottom:24px; }
+.lp-eyebrow-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+.lp-h2{ font-size:24px; margin-bottom:6px; }
+.lp-h2 .gold{ color:var(--gold); display:block; }
+.lp-h2-bar{ width:44px; height:3px; background:var(--orange); border-radius:2px; margin:14px 0 18px; }
+.lp-h2-center{ text-align:center; }
+.lp-h2-center .lp-h2-bar{ margin-left:auto; margin-right:auto; }
+.lp-h2-sub{ color:var(--gray); font-size:13.5px; margin-bottom:24px; }
+.lp-h2-sub.center{ text-align:center; }
+
+/* Card nền tối dùng chung */
+.lp-card{ background:var(--black2); border:1px solid var(--line); border-radius:12px; padding:16px; }
 
 /* Vấn đề — Nút Chặn */
-.lp-problem-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.lp-problem-item{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
-.lp-problem-ten{ font-weight:700; color:var(--accent); font-size:13.5px; margin-bottom:6px; line-height:1.4; }
-.lp-problem-mota{ color:var(--ink-soft); font-size:13px; line-height:1.6; }
+.lp-problem-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+.lp-problem-item{ background:var(--black2); border:1px solid var(--line); border-radius:12px; padding:16px; position:relative; padding-left:22px; }
+.lp-problem-item::before{ content:''; position:absolute; left:16px; top:22px; width:6px; height:6px; border-radius:50%; background:var(--red); }
+.lp-problem-ten{ font-weight:700; color:var(--white); font-size:13.5px; margin-bottom:6px; line-height:1.4; }
+.lp-problem-mota{ color:var(--gray); font-size:13px; line-height:1.6; }
+.lp-callout{ background:var(--black3); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:13.5px; line-height:1.7; color:var(--gray); }
+.lp-callout .gold{ color:var(--gold); font-weight:700; }
+.lp-stat-line{ display:flex; align-items:center; gap:10px; background:var(--black3); border:1px solid rgba(240,194,75,.25); border-radius:12px; padding:14px 18px; margin-top:12px; font-size:13.5px; color:var(--gray); }
+.lp-stat-line .dot{ width:7px; height:7px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+.lp-stat-line b{ color:var(--gold); }
 
 /* Kết quả */
 .lp-list{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
-.lp-list li{ display:flex; gap:10px; font-size:14.5px; line-height:1.6; color:var(--ink); }
-.lp-list li::before{ content:'✓'; flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+.lp-list li{ display:flex; gap:10px; font-size:14.5px; line-height:1.6; color:var(--gray); }
+.lp-list li::before{ content:'✓'; flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:rgba(240,194,75,.12); color:var(--gold); font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
 
-/* Chương trình */
-.lp-program-list{ display:flex; flex-direction:column; gap:16px; }
-.lp-program-item{ display:flex; gap:14px; align-items:flex-start; }
-.lp-program-num{ flex:0 0 auto; width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; }
-.lp-program-ten{ font-weight:700; font-size:15px; margin-bottom:3px; }
-.lp-program-mota{ color:var(--ink-soft); font-size:13.5px; line-height:1.6; }
-
-/* Lời nhắn */
-.lp-letter{ background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 14px 14px 0; padding:22px 24px; font-size:15px; line-height:1.75; font-style:italic; }
-
-/* Phù hợp */
-.lp-fit-grid{ display:flex; flex-direction:column; gap:10px; }
-.lp-fit-item{ display:flex; gap:10px; align-items:flex-start; font-size:14.5px; line-height:1.6; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
-.lp-fit-item .ic{ flex:0 0 auto; font-size:17px; }
-
-/* Giá */
-.lp-price-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:28px 24px; text-align:center; box-shadow:0 1px 2px rgba(30,36,32,.04); }
-.lp-price-old{ font-size:16px; color:var(--ink-soft); text-decoration:line-through; }
-.lp-price-new{ font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:700; color:var(--accent); margin:6px 0 4px; }
-.lp-price-warn{ background:#FBEAE5; border:1px solid var(--danger); color:var(--danger); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:700; line-height:1.5; margin:14px 0; }
-.lp-price-steps{ display:flex; align-items:stretch; gap:0; margin-bottom:20px; }
-.lp-price-step{ flex:1; text-align:center; padding:10px 6px; border-radius:9px; border:1.5px dashed var(--line); opacity:.55; }
-.lp-price-step.active{ background:var(--accent-soft); border:1.5px solid var(--accent); opacity:1; }
-.lp-price-step .amt{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:13px; color:var(--ink-soft); }
-.lp-price-step.active .amt{ font-size:14.5px; color:var(--accent); }
-.lp-price-step .lbl{ font-size:10.5px; color:var(--ink-soft); margin-top:3px; }
-.lp-price-arrow{ display:flex; align-items:center; color:var(--ink-soft); font-size:13px; padding:0 3px; }
-.lp-price-guarantee{ background:var(--gold-soft); color:#7A5A1E; border-radius:10px; padding:12px 16px; font-size:13px; line-height:1.6; margin-top:18px; }
+/* Chương trình / Hành trình — dạng lưới thẻ như "TUẦN N" của mẫu */
+.lp-program-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.lp-program-item{ background:var(--black2); border:1px solid var(--line); border-radius:12px; padding:16px; }
+.lp-program-item.full{ grid-column:1 / -1; }
+.lp-program-num{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
+.lp-program-ten{ font-weight:700; font-size:15px; color:var(--white); margin-bottom:5px; }
+.lp-program-mota{ color:var(--gray); font-size:13px; line-height:1.6; }
 
 /* Ảnh minh hoạ app (chart THẬT vẽ lại từ đúng hàm SVG app đang dùng — radarChartHtml/donutChartHtml
    ở js/util.js — không phải ảnh chụp tưởng tượng, số liệu mẫu chỉ để minh hoạ giao diện thật). */
-.lp-shot-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px 18px 18px; box-shadow:0 1px 2px rgba(30,36,32,.04); }
-.lp-shot-label{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); text-align:center; margin-bottom:2px; }
-.lp-shot-cap{ text-align:center; font-size:13px; color:var(--ink-soft); margin-top:12px; line-height:1.6; }
+.lp-shot-card{ background:var(--black2); border:1px solid var(--line); border-radius:var(--radius); padding:22px 18px 18px; }
+.lp-shot-label{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold); text-align:center; margin-bottom:2px; }
+.lp-shot-cap{ text-align:center; font-size:13px; color:var(--gray2); margin-top:12px; line-height:1.6; }
 .lp-shot-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:26px; }
-@media (max-width:560px){ .lp-shot-grid{ grid-template-columns:1fr; } }
+@media (max-width:560px){ .lp-shot-grid, .lp-problem-grid, .lp-program-grid{ grid-template-columns:1fr; } }
 
-/* Mock 1 dòng Ghi Chép — dùng đúng class .chip/.selected của app thật, không phải ảnh chụp */
-.lp-mock-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+.lp-mock-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--gray); gap:8px; flex-wrap:wrap; }
 .lp-mock-row:last-child{ border-bottom:none; }
-.lp-mock-vibe{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; }
-.lp-mock-vibe.green{ background:var(--accent-soft); color:var(--accent); }
-.lp-mock-vibe.red{ background:#FBEAE5; color:var(--danger); }
-.lp-mock-vibe.gray{ background:#EEECE3; color:var(--ink-soft); }
+.lp-mock-vibe{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+.lp-mock-vibe.green{ background:rgba(240,194,75,.12); color:var(--gold-light); }
+.lp-mock-vibe.red{ background:rgba(239,68,68,.14); color:var(--red); }
+.lp-mock-vibe.gray{ background:rgba(255,255,255,.08); color:var(--gray); }
 
-/* Uy tín người sáng lập — số liệu công khai thật của chị Quỳnh (không phải feedback khách hàng) */
-.lp-authority{ display:flex; flex-wrap:wrap; justify-content:center; gap:28px; padding:22px 16px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); }
-.lp-authority-item{ text-align:center; }
-.lp-authority-item .num{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--accent); }
-.lp-authority-item .lbl{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+/* Lời nhắn */
+.lp-letter{ background:var(--black3); border-left:3px solid var(--gold); border-radius:0 14px 14px 0; padding:22px 24px; font-size:15px; line-height:1.75; font-style:italic; color:var(--gray); }
+.lp-letter .signed{ display:block; margin-top:14px; font-style:normal; font-weight:700; color:var(--white); font-size:13px; }
+
+/* Phù hợp — dạng chip như mẫu (thay vì thẻ dài) */
+.lp-fit-chips{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.lp-fit-chip{ font-size:13px; color:var(--gray); background:var(--black2); border:1px solid var(--line); border-radius:999px; padding:9px 16px; }
+
+/* Người xây dựng phương pháp */
+.lp-founder{ background:var(--black2); border:1px solid var(--line); border-radius:var(--radius); padding:26px 22px; text-align:center; }
+.lp-founder img{ width:150px; height:214px; object-fit:cover; border-radius:12px; margin:0 auto 16px; display:block; }
+.lp-founder h3{ font-size:20px; margin-bottom:4px; }
+.lp-founder .role{ font-size:13px; color:var(--gold); margin-bottom:18px; }
+.lp-founder-stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+.lp-founder-stat{ background:var(--black3); border-radius:10px; padding:12px 8px; }
+.lp-founder-stat .num{ font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:700; color:var(--gold); }
+.lp-founder-stat .lbl{ font-size:11px; color:var(--gray2); margin-top:2px; }
+.lp-founder p{ font-size:13.5px; line-height:1.7; text-align:left; color:var(--gray); margin-bottom:14px; }
+.lp-founder-tags{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+.lp-founder-tag{ font-size:11.5px; background:var(--black3); border:1px solid var(--line); border-radius:999px; padding:6px 13px; color:var(--gray); }
 
 /* Phản hồi người dùng — placeholder chờ ảnh chụp thật, KHÔNG dùng lại feedback của khoá học 30 Ngày
    Tâm Linh Tài Chính (sản phẩm khác, khách nói về nội dung khác, gắn vào đây sẽ gây hiểu nhầm). */
-.lp-testi-placeholder{ background:var(--accent-soft); border:1.5px dashed var(--accent); border-radius:var(--radius); padding:26px 22px; text-align:center; color:var(--ink-soft); font-size:13.5px; line-height:1.7; }
+.lp-testi-placeholder{ background:rgba(240,194,75,.06); border:1.5px dashed rgba(240,194,75,.4); border-radius:var(--radius); padding:26px 22px; text-align:center; color:var(--gray); font-size:13.5px; line-height:1.7; }
+
+/* Trước & sau */
+.lp-compare{ display:flex; flex-direction:column; gap:20px; }
+.lp-compare-row .lbl{ font-size:13.5px; color:var(--white); font-weight:600; margin-bottom:10px; }
+.lp-compare-bar{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.lp-compare-bar .track{ flex:1; height:10px; border-radius:999px; background:var(--black3); overflow:hidden; }
+.lp-compare-bar .fill{ height:100%; border-radius:999px; }
+.lp-compare-bar.before .fill{ background:var(--red); }
+.lp-compare-bar.after .fill{ background:var(--gold); }
+.lp-compare-bar .val{ font-size:11.5px; font-weight:700; white-space:nowrap; width:96px; }
+.lp-compare-bar.before .val{ color:var(--red); }
+.lp-compare-bar.after .val{ color:var(--gold); }
+.lp-compare-legend{ display:flex; gap:22px; justify-content:center; margin-top:6px; font-size:12px; color:var(--gray2); }
+.lp-compare-legend span{ display:inline-flex; align-items:center; gap:6px; }
+.lp-compare-legend .dot{ width:8px; height:8px; border-radius:50%; }
+.lp-compare-legend .dot.before{ background:var(--red); }
+.lp-compare-legend .dot.after{ background:var(--gold); }
+
+/* Giá */
+.lp-price-card{ background:var(--black2); border:1px solid var(--line); border-radius:var(--radius); padding:28px 24px; text-align:center; }
+.lp-price-old{ font-size:16px; color:var(--gray2); text-decoration:line-through; }
+.lp-price-new{ font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:700; color:var(--gold); margin:6px 0 4px; }
+.lp-price-warn{ background:rgba(239,68,68,.1); border:1px solid var(--red); color:#FCA5A5; border-radius:10px; padding:10px 14px; font-size:13px; font-weight:700; line-height:1.5; margin:14px 0; }
+.lp-price-steps{ display:flex; align-items:stretch; gap:0; margin-bottom:20px; }
+.lp-price-step{ flex:1; text-align:center; padding:10px 6px; border-radius:9px; border:1.5px dashed var(--line); opacity:.55; }
+.lp-price-step.active{ background:rgba(240,194,75,.1); border:1.5px solid var(--gold); opacity:1; }
+.lp-price-step .amt{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:13px; color:var(--gray2); }
+.lp-price-step.active .amt{ font-size:14.5px; color:var(--gold); }
+.lp-price-step .lbl{ font-size:10.5px; color:var(--gray2); margin-top:3px; }
+.lp-price-arrow{ display:flex; align-items:center; color:var(--gray2); font-size:13px; padding:0 3px; }
+.lp-price-guarantee{ background:var(--black3); color:var(--gold-light); border-radius:10px; padding:12px 16px; font-size:13px; line-height:1.6; margin-top:18px; }
 
 /* FAQ */
 .lp-faq{ display:flex; flex-direction:column; gap:8px; }
-.lp-faq-item{ border:1px solid var(--line); border-radius:12px; padding:14px 18px; background:var(--panel); }
-.lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:14.5px; list-style:none; }
+.lp-faq-item{ border:1px solid var(--line); border-radius:12px; padding:14px 18px; background:var(--black2); }
+.lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:14.5px; list-style:none; color:var(--white); }
 .lp-faq-item summary::-webkit-details-marker{ display:none; }
-.lp-faq-item summary::after{ content:'+'; float:right; font-size:18px; color:var(--accent); }
+.lp-faq-item summary::after{ content:'+'; float:right; font-size:18px; color:var(--gold); }
 .lp-faq-item[open] summary::after{ content:'−'; }
 .lp-faq-item[open] summary{ margin-bottom:10px; }
-.lp-faq-answer{ color:var(--ink-soft); font-size:13.5px; line-height:1.65; }
+.lp-faq-answer{ color:var(--gray); font-size:13.5px; line-height:1.65; }
 
 /* Final CTA + footer */
 .lp-final{ text-align:center; padding:36px 0 8px; }
-.lp-footer{ text-align:center; padding:26px 20px 50px; font-size:12px; color:var(--ink-soft); }
+.lp-footer{ text-align:center; padding:26px 20px 20px; font-size:12px; color:var(--gray2); }
+
+/* Thanh CTA cố định dưới màn hình — đúng bố cục mẫu (sticky bottom bar) */
+.lp-sticky{ position:fixed; left:0; right:0; bottom:0; z-index:50; background:rgba(10,10,10,.92); backdrop-filter:blur(6px); border-top:1px solid var(--line); padding:10px 16px; display:flex; justify-content:center; }
+.lp-sticky .lp-cta{ width:100%; max-width:420px; text-align:center; padding:13px 20px; font-size:14.5px; }
 
 @media (max-width:520px){
-  .lp-problem-grid{ grid-template-columns:1fr; }
+  .lp-founder-stats{ grid-template-columns:1fr 1fr; }
 }
