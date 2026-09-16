@@ -27,7 +27,7 @@
   <h1>"Số dư là Quả, rung động là Nhân"<br>Tạm biệt vòng lặp kẹt tiền,<br>mở toang <span class="gold">4 Nút Chặn Dòng Tiền</span></h1>
   <p class="sub">Web App đầu tiên kết hợp <b>Quản Lý Thu Chi</b> × <b>Trắc Nghiệm Chấm Điểm Nghiệp Tiền</b>. Giúp bạn bắt quả tang <b>Dòng Tiền Sợ Hãi — Dòng Tiền Bình An</b>, dọn sạch rác tâm trí và khơi thông dòng chảy thanh khoản mỗi ngày!</p>
   <div class="lp-cta-wrap">
-    <a class="lp-cta" href="../index.html?promo=lp199k#thiet-lap-nhanh">Làm bài chẩn đoán miễn phí — mở khoá 199.000đ →</a>
+    <a class="lp-cta" href="#dang-ky">Đăng ký ngay — mở khoá 199.000đ →</a>
     <div class="lp-cta-note">Trọn đời · Thanh toán 1 lần duy nhất · Không ràng buộc</div>
   </div>
 
@@ -257,8 +257,31 @@
         ✅ Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng — miễn phí dùng mãi mãi dù chưa mở khoá<br>
         ✅ Chương trình giới thiệu bạn bè — nhận 20% hoa hồng mỗi người bạn giới thiệu mua trọn đời
       </div>
-      <a class="lp-cta" style="margin-top:18px;" href="../index.html?promo=lp199k#thiet-lap-nhanh">Đăng ký trải nghiệm ngay — chỉ 199.000đ →</a>
+      <button class="lp-cta" style="margin-top:18px;border:none;cursor:pointer;" id="lp-open-signup">Đăng ký trải nghiệm ngay — chỉ 199.000đ →</button>
       <div class="lp-price-guarantee">🔁 Cam kết hoàn tiền 100% trong 7 ngày đầu nếu dùng thấy không hợp — không cần lý do, chỉ cần nhắn email đăng ký.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 6b: ĐĂNG KÝ & THANH TOÁN (ngay tại trang, không cần qua app trước) -->
+  <section class="lp-section" id="dang-ky">
+    <div class="lp-eyebrow-label" style="text-align:center;">Đăng ký &amp; thanh toán</div>
+    <h2 class="lp-h2 lp-h2-center">Điền thông tin —<br><span class="gold">lấy mã QR ngay</span></h2>
+    <div class="lp-h2-bar"></div>
+
+    <div class="lp-signup-card" id="lp-signup-form-wrap">
+      <label class="lp-signup-label">Họ và tên *</label>
+      <input class="lp-signup-input" id="lp-su-name" type="text" placeholder="Nguyễn Văn A">
+      <label class="lp-signup-label">Email *</label>
+      <input class="lp-signup-input" id="lp-su-email" type="email" placeholder="email@gmail.com">
+      <label class="lp-signup-label">Mật khẩu (để đăng nhập lại app sau này) *</label>
+      <input class="lp-signup-input" id="lp-su-pass" type="password" placeholder="Ít nhất 6 ký tự">
+      <div id="lp-signup-error" class="lp-signup-error" hidden></div>
+      <button class="lp-cta" id="lp-su-submit" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Xác nhận thông tin — lấy mã QR →</button>
+      <div class="lp-shot-cap" style="margin-top:14px;">Chưa chắc chắn? <a href="../index.html?promo=lp199k#thiet-lap-nhanh">Làm bài Chấm Điểm Nghiệp Tiền miễn phí trước</a>, không cần tài khoản.</div>
+    </div>
+
+    <div class="lp-signup-card" id="lp-payment-wrap" hidden>
+      <div id="lp-payment-inner"></div>
     </div>
   </section>
 
@@ -300,7 +323,7 @@
   </section>
 
   <section class="lp-final">
-    <a class="lp-cta" href="../index.html?promo=lp199k#thiet-lap-nhanh">Làm bài chẩn đoán miễn phí — mở khoá 199.000đ →</a>
+    <a class="lp-cta" href="#dang-ky">Đăng ký ngay — mở khoá 199.000đ →</a>
     <div class="lp-cta-note">Trọn đời · Thanh toán 1 lần duy nhất · Không ràng buộc</div>
   </section>
 
@@ -309,8 +332,112 @@
 <footer class="lp-footer">Bản quyền thuộc về Hệ Sinh Thái HIỂU — Sổ Dòng Tiền Tâm Thức (Lê Tú Quỳnh)</footer>
 
 <div class="lp-sticky">
-  <a class="lp-cta" href="../index.html?promo=lp199k#thiet-lap-nhanh">Làm bài miễn phí — mở khoá 199.000đ →</a>
+  <a class="lp-cta" href="#dang-ky">Đăng ký ngay — 199.000đ →</a>
 </div>
+
+<script>
+// Đăng ký + thanh toán NGAY TẠI Landing Page (2026-09-16, chị Quỳnh yêu cầu) — gọi api/tc-lp-signup
+// (server tạo tài khoản qua Admin API rồi trả về ref_code, vì trang tĩnh này không có phiên đăng
+// nhập để tự đọc profiles.ref_code qua RLS như luồng đăng ký thường của app). Đường dẫn gọi API phải
+// là "../api/..." (lùi 1 cấp từ lp/) — vercel.json chỉ rewrite đúng "/tai-chinh/api/*", gọi thẳng
+// "/api/..." từ đây sẽ ra ngoài phạm vi rewrite khi chạy qua domain proxy Cloudflare.
+(function(){
+  const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
+  const AMOUNT = 199000;
+  let refCodeCaptured = null;
+  try {
+    const m = /[?&]ref=([A-Za-z0-9]+)/.exec(location.search);
+    if(m) refCodeCaptured = m[1].toUpperCase();
+  } catch(e){}
+
+  const openBtn = document.getElementById('lp-open-signup');
+  if(openBtn) openBtn.onclick = ()=>{
+    document.getElementById('dang-ky').scrollIntoView({behavior:'smooth'});
+    setTimeout(()=>{ const n = document.getElementById('lp-su-name'); if(n) n.focus(); }, 400);
+  };
+
+  function showError(msg){
+    const el = document.getElementById('lp-signup-error');
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  const submitBtn = document.getElementById('lp-su-submit');
+  if(submitBtn) submitBtn.onclick = async ()=>{
+    const name = document.getElementById('lp-su-name').value.trim();
+    const email = document.getElementById('lp-su-email').value.trim();
+    const pass = document.getElementById('lp-su-pass').value;
+    document.getElementById('lp-signup-error').hidden = true;
+    if(!name){ showError('Vui lòng nhập họ tên.'); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showError('Email không hợp lệ.'); return; }
+    if(!pass || pass.length < 6){ showError('Mật khẩu cần ít nhất 6 ký tự.'); return; }
+
+    submitBtn.disabled = true; submitBtn.textContent = 'Đang xử lý…';
+    try{
+      const resp = await fetch('../api/tc-lp-signup', {
+        method:'POST',
+        headers:{ 'content-type':'application/json' },
+        body: JSON.stringify({ full_name:name, email, password:pass, ref:refCodeCaptured }),
+      });
+      const data = await resp.json();
+      if(!resp.ok || !data.ok){ showError(data.error || 'Không tạo được tài khoản — thử lại giúp mình.'); submitBtn.disabled=false; submitBtn.textContent='Xác nhận thông tin — lấy mã QR →'; return; }
+      if(!data.ref_code){ showError(data.warn || 'Tài khoản đã tạo — vào app đăng nhập để lấy mã QR.'); submitBtn.disabled=false; submitBtn.textContent='Xác nhận thông tin — lấy mã QR →'; return; }
+      renderPaymentCard(data.ref_code);
+    } catch(e){
+      showError('Không kết nối được server — thử lại giúp mình.');
+      submitBtn.disabled = false; submitBtn.textContent = 'Xác nhận thông tin — lấy mã QR →';
+    }
+  };
+
+  let pollTimer = null;
+  function renderPaymentCard(refCode){
+    document.getElementById('lp-signup-form-wrap').hidden = true;
+    const wrap = document.getElementById('lp-payment-wrap');
+    wrap.hidden = false;
+    const transferContent = `SEVQR ${refCode}`;
+    const qrUrl = `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${AMOUNT}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`;
+    document.getElementById('lp-payment-inner').innerHTML = `
+      <div style="text-align:center;">
+        <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
+      </div>
+      <div style="margin-top:16px;">
+        <div class="lp-pay-row"><b>Ngân hàng:</b> Vietinbank</div>
+        <div class="lp-pay-row"><b>Số tài khoản:</b> ${PAYMENT_BANK.account} <span class="lp-pay-copy" data-copy="${PAYMENT_BANK.account}">Copy</span></div>
+        <div class="lp-pay-row"><b>Chủ tài khoản:</b> ${PAYMENT_BANK.accountName}</div>
+        <div class="lp-pay-row"><b>Số tiền:</b> ${AMOUNT.toLocaleString('vi-VN')}đ <span class="lp-pay-copy" data-copy="${AMOUNT}">Copy</span></div>
+        <div class="lp-pay-row"><b>Nội dung CK (bắt buộc giữ nguyên):</b> ${transferContent} <span class="lp-pay-copy" data-copy="${transferContent}">Copy</span></div>
+      </div>
+      <div class="lp-shot-cap" style="margin-top:14px;">Chuyển đúng số tiền + giữ nguyên nội dung (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận.</div>
+      <div class="lp-pay-status" id="lp-pay-status">⏳ Đang chờ chuyển khoản…</div>
+    `;
+    wrap.querySelectorAll('[data-copy]').forEach(el=>{
+      el.onclick = async ()=>{
+        try{ await navigator.clipboard.writeText(el.getAttribute('data-copy')); const old=el.textContent; el.textContent='Đã copy ✓'; setTimeout(()=>{el.textContent=old;},1500); } catch(e){}
+      };
+    });
+    wrap.scrollIntoView({behavior:'smooth'});
+    startPolling(refCode);
+  }
+
+  function startPolling(refCode){
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async ()=>{
+      try{
+        const resp = await fetch(`../api/tc-lp-status?ref_code=${encodeURIComponent(refCode)}`);
+        const data = await resp.json();
+        if(data.ok && data.paid){
+          clearInterval(pollTimer);
+          const statusEl = document.getElementById('lp-pay-status');
+          if(statusEl){
+            statusEl.className = 'lp-pay-status paid';
+            statusEl.innerHTML = '✅ Đã thanh toán thành công! <a href="../index.html" style="color:var(--gold);font-weight:700;">Vào app ngay →</a>';
+          }
+        }
+      } catch(e){}
+    }, 4000);
+  }
+})();
+</script>
 
 </body>
 </html>
