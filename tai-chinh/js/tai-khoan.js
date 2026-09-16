@@ -40,10 +40,16 @@ function render(container, ctx){
   }
   loadReferrals();
 
+  // Chị Quỳnh chốt 2026-09-16: link giới thiệu trỏ thẳng tới Landing Page bán hàng (tai-chinh/lp/,
+  // đẹp hơn + chốt trực tiếp tại đó) thay vì link vào thẳng app — LP tự đọc ?ref= để gắn
+  // referred_by_ref_code khi bạn được giới thiệu đăng ký (xem tai-chinh/lp/index.html). Tự suy ra
+  // thư mục app từ location.pathname (bỏ "index.html"/dấu "/" cuối) thay vì hardcode domain, vì app
+  // chạy được ở cả domain riêng (qua Cloudflare Worker) lẫn domain Vercel gốc.
   function referralLink(){
     const refCode = ctx.profile && ctx.profile.ref_code;
     if(!refCode) return '';
-    return `${location.origin}${location.pathname}?ref=${refCode}`;
+    const appDir = location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
+    return `${location.origin}${appDir}/lp/?ref=${refCode}`;
   }
 
   async function saveName(){

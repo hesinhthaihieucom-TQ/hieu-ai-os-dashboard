@@ -450,6 +450,10 @@ module.exports = async (req, res) => {
           // Ưu đãi tháng đầu chỉ áp dụng đúng 1 lần — đánh dấu đã dùng để lần mua gói 1 tháng sau
           // đó tự động về giá thường (gói 6/12 tháng học viên không bị ảnh hưởng bởi cờ này).
           if (transferAmount === FIRST_MONTH_DISCOUNT_AMOUNT) patchBody.first_month_discount_used = true;
+          // Đánh dấu đã DÙNG ưu đãi giới thiệu — chị Quỳnh chốt 2026-09-16: chỉ giảm 15% đúng 1 lần
+          // đầu tiên, các lần gia hạn sau đó currentPaymentPlans() phải về giá thường dù
+          // referred_by_ref_code không đổi/không hết hạn (xem cờ này ở schema_core.sql).
+          if (REFERRAL_AMOUNTS.has(transferAmount)) patchBody.referral_discount_used = true;
           const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
             method: 'PATCH',
             body: JSON.stringify(patchBody),

@@ -77,6 +77,12 @@ alter table profiles add column if not exists referred_by_ref_code text;
 -- công 1 gói giá thường (không tính gói ưu đãi). Các lần mua/gia hạn sau đó của cùng người này
 -- không thưởng lại nữa (cờ này chặn double-reward).
 alter table profiles add column if not exists referral_reward_given boolean not null default false;
+-- referral_discount_used: phía NGƯỜI ĐƯỢC giới thiệu (referee) — đánh dấu đã DÙNG ưu đãi giảm 15%
+-- một lần rồi (set true ở sepay-webhook.js khi khớp 1 trong REFERRAL_AMOUNTS). referred_by_ref_code
+-- không tự hết hạn/không đổi được, nên nếu không có cờ này, currentPaymentPlans() sẽ tiếp tục hiện
+-- giá giới thiệu ở MỌI lần gia hạn sau đó — chị Quỳnh chốt 2026-09-16: ưu đãi chỉ áp dụng đúng 1 lần
+-- đăng ký/mua đầu tiên, các lần gia hạn sau phải về giá thường dù vẫn còn liên kết referred_by_ref_code.
+alter table profiles add column if not exists referral_discount_used boolean not null default false;
 
 -- Chính sách CTV toàn hệ sinh thái (2026-08-27, chị Quỳnh chốt) — 2 trục ĐỘC LẬP nhau:
 -- 1) "Hiểu Partner": đủ >=5 giới thiệu thành công CỘNG DỒN cả referrals (nhan-hieu) lẫn tc_referrals

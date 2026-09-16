@@ -246,7 +246,10 @@ function currentPaymentPlans(){
   const isStudent = !!(p && p.is_student);
   const base = isStudent
     ? buildStudentPlans(p)
-    : (p && p.referred_by_ref_code) ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS;
+    // Chỉ hiện giá giới thiệu nếu CHƯA từng dùng ưu đãi này lần nào (referral_discount_used) — chị
+    // Quỳnh chốt 2026-09-16: ưu đãi 15% chỉ áp dụng đúng 1 lần đăng ký/mua đầu tiên, các lần gia hạn
+    // sau đó về giá thường dù referred_by_ref_code không đổi (xem cờ này ở schema_core.sql).
+    : (p && p.referred_by_ref_code && !p.referral_discount_used) ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS;
   // "cái ưu đãi đều sẽ ko áp dụng cho học viên nha" (chị Quỳnh 2026-09-07) — flash-sale trước đây
   // KHÔNG loại trừ học viên (chỉ referral/early-bird đã loại) — hiện tại vô hại vì FLASH_SALE_CUTOFF
   // đã qua (isFlashSaleActive() luôn false), nhưng vẫn là lỗ hổng thật nếu sau này mở lại 1 đợt flash-
