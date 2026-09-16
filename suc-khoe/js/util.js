@@ -7,6 +7,21 @@ function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// 2026-09-16, chị Quỳnh: "e muốn khi ng dùng vào là sẽ được check kiểm tra sức khỏe luôn xong mới
+// đăng ký" — khách CHƯA đăng nhập tick Kiểm Tra Sức Khỏe thì chưa có user_id để lưu Supabase, nên tạm
+// lưu ở localStorage (chỉ máy đó) cho tới khi đăng ký/đăng nhập xong thì app-shell.js tự chuyển vào
+// sk_health_checkins cho đúng user_id mới, không mất công khách tick lại từ đầu.
+const SK_GUEST_CHECKIN_KEY = 'sk_guest_checkin_draft';
+function loadGuestCheckinDraft(){
+  try{ return JSON.parse(localStorage.getItem(SK_GUEST_CHECKIN_KEY) || 'null'); } catch(e){ return null; }
+}
+function saveGuestCheckinDraft(data){
+  try{ localStorage.setItem(SK_GUEST_CHECKIN_KEY, JSON.stringify(data)); } catch(e){}
+}
+function clearGuestCheckinDraft(){
+  try{ localStorage.removeItem(SK_GUEST_CHECKIN_KEY); } catch(e){}
+}
+
 // Phóng to 1 ảnh (vd ảnh sản phẩm) thành lightbox toàn màn hình — đóng bằng bấm ra ngoài hoặc Esc.
 function openImageLightbox(src, alt){
   const overlay = document.createElement('div');

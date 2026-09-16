@@ -47,11 +47,35 @@ function render(container, ctx){
   // phẩm gợi ý, người dùng tự bỏ bớt nếu không muốn mua. Lưu chiều "đã bỏ" thay vì "đã chọn" để sản
   // phẩm MỚI xuất hiện (khi tick thêm triệu chứng khác) cũng tự động ở trạng thái được chọn luôn,
   // không cần logic đồng bộ riêng.
+  // 2026-09-16, chị Quỳnh: "e muốn khi ng dùng vào là sẽ được check kiểm tra sức khỏe luôn xong mới
+  // đăng ký" — module này giờ render được cho CẢ khách chưa đăng nhập (ctx.user null, xem app-shell.js
+  // renderGuestCheckScreen). isGuest quyết định lưu vào Supabase (đã đăng nhập) hay localStorage tạm
+  // (chưa đăng nhập, xem util.js saveGuestCheckinDraft) — không mất công khách tick lại khi đăng ký.
+  const isGuest = !ctx.user;
   const state = { loading:true, tab:'check', insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set(), history:[], savingHistory:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function load(){
+    if(isGuest){
+      // Không có user_id nên bỏ qua 2 bảng riêng-theo-khách (sk_health_checkins/history) — chỉ tải
+      // catalog dùng chung (đã mở đọc công khai, xem schema_suc_khoe.sql) + khôi phục nháp đã tick.
+      const [{ data: entries }, { data: products }] = await Promise.all([
+        ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
+        ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
+      ]);
+      state.products = products || [];
+      state.libraryEntries = entries || [];
+      const draft = loadGuestCheckinDraft();
+      if(draft){
+        state.insulin = draft.insulin || [];
+        state.toxin = draft.toxin || [];
+        state.metabolic = draft.metabolic || [];
+      }
+      state.loading = false;
+      draw();
+      return;
+    }
     const [{ data: row }, { data: entries }, { data: products }, { data: history }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
@@ -72,7 +96,8 @@ function render(container, ctx){
 
   // Lưu 1 mốc kết quả vào lịch sử theo thời gian (2026-09-05, chị Quỳnh: "nên có mục lưu lại kết quả
   // để theo dõi theo các mốc thời gian") — CHỦ ĐỘNG bấm lưu (không tự log mỗi lần tick, sẽ tạo quá
-  // nhiều dòng rác), dùng lại đúng logic tính điểm hiện có (skComputeHealthLevel).
+  // nhiều dòng rác), dùng lại đúng logic tính điểm hiện có (skComputeHealthLevel). Chỉ khách ĐÃ đăng
+  // nhập mới thấy nút này (xem checkTabHtml) nên không cần nhánh isGuest ở đây.
   async function saveHistorySnapshot(){
     state.savingHistory = true; draw();
     const { level, score } = skComputeHealthLevel(state.insulin, state.toxin, state.metabolic);
@@ -88,6 +113,10 @@ function render(container, ctx){
   }
 
   async function save(){
+    if(isGuest){
+      saveGuestCheckinDraft({ insulin: state.insulin, toxin: state.toxin, metabolic: state.metabolic });
+      return;
+    }
     const { error } = await ctx.supabase.from('sk_health_checkins').upsert({
       user_id: ctx.user.id,
       survey_insulin: state.insulin, survey_toxin: state.toxin, survey_metabolic: state.metabolic,
@@ -201,12 +230,13 @@ function render(container, ctx){
         <p>Tick chọn các dấu hiệu bạn đang gặp ở mỗi nhóm — kết quả cập nhật ngay theo từng lượt tick, không cần bấm nộp bài.</p>
       </div>
 
+      ${isGuest ? `<div class="hint-box" style="margin-bottom:16px;">👀 Bạn đang xem thử — kết quả tạm lưu trên máy này. Đăng ký miễn phí để lưu lại lâu dài và nhận gợi ý sản phẩm phù hợp.</div>` : ''}
       <div class="chips" style="margin-bottom:20px;">
         <div class="chip ${state.tab==='check'?'selected':''}" data-tab="check">Kiểm tra</div>
-        <div class="chip ${state.tab==='history'?'selected':''}" data-tab="history">📌 Lịch sử đã lưu${state.history.length>0?` (${state.history.length})`:''}</div>
+        ${!isGuest ? `<div class="chip ${state.tab==='history'?'selected':''}" data-tab="history">📌 Lịch sử đã lưu${state.history.length>0?` (${state.history.length})`:''}</div>` : ''}
       </div>
 
-      ${state.tab==='history' ? historyTabHtml() : checkTabHtml(r, libMatches, productMatches, cartChosen, cartTotal, cartPv, gift)}
+      ${state.tab==='history' && !isGuest ? historyTabHtml() : checkTabHtml(r, libMatches, productMatches, cartChosen, cartTotal, cartPv, gift)}
     `;
   }
 
@@ -268,7 +298,9 @@ function render(container, ctx){
           </ul>
           <div style="margin-bottom:12px;">${skSectionHeaderHtml('Ảnh hưởng hiện tại', '#e8643c', '⚡')}<div style="font-size:14px;line-height:1.8;">${esc(r.impact)}</div></div>
           <div style="margin-bottom:16px;">${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:14px;line-height:1.8;">${esc(r.future)}</div></div>
-          <button class="btn btn-sm" id="sk-save-history" ${state.savingHistory?'disabled':''}>${state.savingHistory?'Đang lưu…':'📌 Lưu mốc này vào lịch sử'}</button>
+          ${isGuest
+            ? `<button class="btn btn-sm" id="sk-guest-signup">📝 Đăng ký miễn phí để lưu kết quả + nhận gợi ý sản phẩm phù hợp</button>`
+            : `<button class="btn btn-sm" id="sk-save-history" ${state.savingHistory?'disabled':''}>${state.savingHistory?'Đang lưu…':'📌 Lưu mốc này vào lịch sử'}</button>`}
         </div>
       ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
 
@@ -296,7 +328,9 @@ function render(container, ctx){
             <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
             <div style="display:flex;gap:8px;">
               <span class="btn-ghost btn btn-sm" id="sk-toggle-all">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
-              <button class="btn btn-sm" id="sk-order-matched" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
+              ${isGuest
+                ? `<button class="btn btn-sm" id="sk-guest-signup">Đăng ký để đặt hàng</button>`
+                : `<button class="btn btn-sm" id="sk-order-matched" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>`}
             </div>
           </div>
           ${skGiftPreviewHtml(gift)}
@@ -317,6 +351,9 @@ function render(container, ctx){
     });
     const saveHistoryBtn = container.querySelector('#sk-save-history');
     if(saveHistoryBtn) saveHistoryBtn.onclick = saveHistorySnapshot;
+    container.querySelectorAll('#sk-guest-signup').forEach(el=>{
+      el.onclick = ()=>{ if(window.skRequestGuestSignup) window.skRequestGuestSignup(); };
+    });
     container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
       el.onchange = (e)=>{
         const id = el.getAttribute('data-cart-toggle');

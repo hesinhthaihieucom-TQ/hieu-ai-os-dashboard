@@ -24,7 +24,7 @@ const NAV = [
   { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin'
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login' };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', showAuthForm:false };
 
 function sidebarFootHtml(){
   const p = AppState.profile;
@@ -57,7 +57,7 @@ async function initApp(){
     AppState.route = currentRouteFromHash();
     renderApp();
   } else {
-    renderAuthScreen();
+    renderUnauthedScreen();
   }
 
   // Cảnh báo trình duyệt trong app (Facebook/Instagram/Zalo...) NGAY LẦN ĐẦU VÀO, kể cả CHƯA đăng
@@ -74,13 +74,18 @@ async function initApp(){
       loadProfile().then(()=>{
         location.hash = 'trang-chu';
         renderApp();
+        // 2026-09-16, chị Quỳnh: hỏi cài app đúng lúc hợp lý (ngay sau khi đăng nhập/đăng ký xong lần
+        // đầu vào app thật, giống pattern tai-chinh/nhan-hieu) — app này chưa có tour riêng nên gọi
+        // thẳng ở đây thay vì chờ callback tour như 2 app kia.
+        if(window.maybeShowInstallPrompt) window.maybeShowInstallPrompt();
       });
     } else if(event === 'SIGNED_OUT'){
       AppState.user = null;
       AppState.profile = null;
       AppState.route = 'trang-chu';
+      AppState.showAuthForm = false;
       location.hash = '';
-      renderAuthScreen();
+      renderUnauthedScreen();
     }
   });
 
@@ -103,9 +108,66 @@ async function loadProfile(){
     const { data: refreshed } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
     if(refreshed) AppState.profile = refreshed;
   }
+  await transferGuestCheckinDraftIfAny();
+}
+
+// 2026-09-16, chị Quỳnh: "e muốn khi ng dùng vào là sẽ được check kiểm tra sức khỏe luôn xong mới
+// đăng ký" — khách tick xong ở màn hình khách (renderGuestCheckScreen) được lưu tạm localStorage (xem
+// util.js saveGuestCheckinDraft, chưa có user_id lúc đó). Ngay khi có user_id thật (vừa đăng nhập/
+// đăng ký), chuyển nháp đó vào sk_health_checkins — không bắt khách tick lại từ đầu. CỘNG DỒN (không
+// ghi đè) với dữ liệu đã có sẵn của tài khoản (phòng khi khách đăng nhập vào tài khoản cũ đã có kết
+// quả riêng) để không mất dữ liệu bên nào.
+async function transferGuestCheckinDraftIfAny(){
+  const draft = loadGuestCheckinDraft();
+  if(!draft || !AppState.user) return;
+  const { data: existing } = await supabaseClient.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', AppState.user.id).maybeSingle();
+  const merge = (a,b) => Array.from(new Set([...(a||[]), ...(b||[])]));
+  const { error } = await supabaseClient.from('sk_health_checkins').upsert({
+    user_id: AppState.user.id,
+    survey_insulin: merge(existing && existing.survey_insulin, draft.insulin),
+    survey_toxin: merge(existing && existing.survey_toxin, draft.toxin),
+    survey_metabolic: merge(existing && existing.survey_metabolic, draft.metabolic),
+    updated_at: new Date().toISOString(),
+  }, { onConflict:'user_id' });
+  if(!error) clearGuestCheckinDraft();
 }
 
 let authFields = { name:'', email:'', pass:'', passConfirm:'' };
+
+// 2026-09-16, chị Quỳnh: "e muốn khi ng dùng vào là sẽ được check kiểm tra sức khỏe luôn xong mới
+// đăng ký" — trước đây chưa đăng nhập là CHỈ thấy màn hình đăng nhập/đăng ký (renderAuthScreen), không
+// vào được gì cả. Giờ mặc định cho khách CHƯA đăng nhập thấy thẳng Kiểm Tra Sức Khỏe (renderGuestCheckScreen)
+// — chỉ chuyển sang màn hình đăng nhập/đăng ký khi khách chủ động bấm "Đăng nhập"/"Đăng ký" (từ kết
+// quả Kiểm Tra hoặc link ở góc màn hình). AppState.showAuthForm quyết định hiện màn nào.
+function renderUnauthedScreen(err, successMsg){
+  if(AppState.showAuthForm){ renderAuthScreen(err, successMsg); return; }
+  renderGuestCheckScreen();
+}
+
+function renderGuestCheckScreen(){
+  const root = document.getElementById('app');
+  root.innerHTML = `
+    <div style="max-width:720px;margin:0 auto;padding:24px 16px 60px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <img src="assets/logo-hieu-manh.png" alt="" style="height:34px;" onerror="this.style.display='none'">
+        <span id="guest-login-link" style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;">Đã có tài khoản? Đăng nhập</span>
+      </div>
+      <div id="guest-check-mount"></div>
+    </div>
+  `;
+  root.querySelector('#guest-login-link').onclick = ()=>{
+    AppState.showAuthForm = true; AppState.authMode = 'login'; renderUnauthedScreen();
+  };
+  const mount = root.querySelector('#guest-check-mount');
+  window.Modules['kiem-tra-suc-khoe'].render(mount, { supabase: supabaseClient, user: null, profile: null });
+}
+
+// Cầu nối để kiem-tra-suc-khoe.js (không biết gì về AppState/auth) gọi được khi khách bấm nút "Đăng
+// ký" ngay tại kết quả — tránh phải truyền thẳng AppState vào module (module chỉ nhận ctx supabase/
+// user/profile như mọi module khác).
+window.skRequestGuestSignup = function(){
+  AppState.showAuthForm = true; AppState.authMode = 'signup'; renderUnauthedScreen();
+};
 
 function renderAuthScreen(err, successMsg){
   const root = document.getElementById('app');
@@ -130,12 +192,15 @@ function renderAuthScreen(err, successMsg){
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
       </div>
+      <div id="guest-back-link" style="margin-top:14px;font-size:13px;color:var(--ink-soft);cursor:pointer;">← Quay lại Kiểm Tra Sức Khỏe</div>
     </div>
   `;
 
   root.querySelectorAll('.auth-tab').forEach(el=>{
     el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderAuthScreen(); };
   });
+  const backLink = root.querySelector('#guest-back-link');
+  if(backLink) backLink.onclick = ()=>{ AppState.showAuthForm = false; renderUnauthedScreen(); };
 
   const nameEl = root.querySelector('#af-name'); if(nameEl) nameEl.oninput = ()=>{ authFields.name = nameEl.value; };
   root.querySelector('#af-email').oninput = (e)=>{ authFields.email = e.target.value; };
@@ -173,7 +238,7 @@ function renderAuthScreen(err, successMsg){
 }
 
 function renderApp(){
-  if(!AppState.user){ renderAuthScreen(); return; }
+  if(!AppState.user){ renderUnauthedScreen(); return; }
   const root = document.getElementById('app');
   root.innerHTML = `
     <div class="topbar-mobile">

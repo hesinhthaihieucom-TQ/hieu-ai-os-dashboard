@@ -254,13 +254,18 @@ create policy "sk_package_schedule_items_read" on sk_package_schedule_items for 
 drop policy if exists "sk_package_schedule_items_admin_write" on sk_package_schedule_items;
 create policy "sk_package_schedule_items_admin_write" on sk_package_schedule_items for all using (is_admin()) with check (is_admin());
 
+-- 2026-09-16, chị Quỳnh: "e muốn khi ng dùng vào là sẽ được check kiểm tra sức khỏe luôn xong mới
+-- đăng ký" — Kiểm Tra Sức Khỏe giờ cho KHÁCH CHƯA ĐĂNG NHẬP dùng thử trước (xem app-shell.js
+-- renderGuestCheckScreen), cần thấy đúng mục Thư Viện khớp + sản phẩm gợi ý để thấy giá trị TRƯỚC khi
+-- đăng ký — nên mở đọc công khai (không còn giới hạn "đã đăng nhập"). Đây là dữ liệu catalog/nội
+-- dung chung, không phải dữ liệu riêng của khách nào, nên mở công khai an toàn. Ghi vẫn chỉ admin.
 drop policy if exists "sk_library_entries_read" on sk_library_entries;
-create policy "sk_library_entries_read" on sk_library_entries for select using (auth.role() = 'authenticated');
+create policy "sk_library_entries_read" on sk_library_entries for select using (true);
 drop policy if exists "sk_library_entries_admin_write" on sk_library_entries;
 create policy "sk_library_entries_admin_write" on sk_library_entries for all using (is_admin()) with check (is_admin());
 
 drop policy if exists "sk_products_read" on sk_products;
-create policy "sk_products_read" on sk_products for select using (auth.role() = 'authenticated');
+create policy "sk_products_read" on sk_products for select using (true);
 drop policy if exists "sk_products_admin_write" on sk_products;
 create policy "sk_products_admin_write" on sk_products for all using (is_admin()) with check (is_admin());
 
