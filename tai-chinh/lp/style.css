@@ -43,6 +43,12 @@ b, strong{ color:var(--white); }
 .lp-hero h1{ font-size:clamp(26px,5vw,36px); font-weight:700; line-height:1.28; margin-bottom:16px; }
 .lp-hero h1 .gold{ color:var(--gold); }
 .lp-hero .sub{ font-size:15px; color:var(--gray); line-height:1.75; max-width:520px; margin:0 auto 26px; }
+/* .sub-br: 3 dấu xuống dòng chủ động chỉ đẹp khi mỗi cụm ý vừa đúng 1 dòng (đủ rộng, ví dụ máy tính) —
+   trên điện thoại (màn hẹp hơn 520px) mỗi cụm đó tự nó ĐÃ đủ dài để browser tự xuống dòng thêm 1 lần
+   nữa, cộng dấu xuống dòng chủ động thành ra vỡ ra 6 dòng có dòng mồ côi rất ngắn ("An,", "mỗi ngày!")
+   nhìn rối (chị Quỳnh phản hồi 2026-09-16, thấy trên điện thoại thật) — tắt hẳn dấu xuống dòng chủ
+   động ở màn hẹp, để trình duyệt tự xuống dòng tự nhiên, đều và gọn hơn hẳn. */
+@media (max-width:600px){ .sub-br{ display:none; } }
 .lp-hero .tagline{ font-style:italic; color:var(--white); }
 
 .lp-cta{
