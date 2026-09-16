@@ -42,16 +42,16 @@
   .badge-pill b{ color:var(--ink); font-weight:600; font-size:13.5px; display:block; text-align:left; } .badge-pill span{ font-size:11.5px; color:var(--ink-soft); }
   .hero-title{ font-size:46px; line-height:1.12; font-weight:700; letter-spacing:-.01em; margin-bottom:20px; position:relative; }
   .hero-title .hi{ color:var(--gold); display:block; }
-  @media (max-width:640px){ .hero-title{ font-size:32px; } }
+  @media (max-width:640px){ .hero-title{ font-size:34px; } }
   .hero-sub{ font-size:16px; line-height:1.65; color:var(--ink-soft); max-width:56ch; margin:0 auto 28px; position:relative; }
   .hero-sub b{ color:var(--ink); }
   .meta-list{ display:flex; flex-direction:column; gap:0; margin:0 auto 28px; text-align:left; position:relative; }
-  .meta-row{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line-soft); font-size:13.5px; }
+  .meta-row{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line-soft); font-size:14.5px; }
   .meta-row:last-child{ border-bottom:none; }
   .meta-row .mi{ font-size:15px; width:20px; text-align:center; flex-shrink:0; }
   .meta-row .mv{ color:var(--ink-soft); } .meta-row .mv b{ color:var(--gold); font-weight:600; }
   .hero-ctas{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; position:relative; }
-  .btn{ display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:15px; padding:15px 26px; border-radius:10px; border:none; cursor:pointer; text-decoration:none; transition:transform .15s, box-shadow .15s; font-family:'Be Vietnam Pro',sans-serif; }
+  .btn{ display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:17px; padding:16px 28px; border-radius:10px; border:none; cursor:pointer; text-decoration:none; transition:transform .15s, box-shadow .15s; font-family:'Be Vietnam Pro',sans-serif; }
   .btn:hover{ transform:translateY(-1px); } .btn:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
   .btn-gold{ background:linear-gradient(180deg,var(--gold-hi),var(--gold)); color:#241A05; box-shadow:0 14px 28px -12px rgba(227,168,59,.45); }
   .btn-ghost{ background:transparent; color:var(--ink); border:1px solid var(--line); }
@@ -68,15 +68,15 @@
   .pricecard.active .p-price{ color:var(--gold-hi); }
   .pricecard .p-price small{ font-size:12px; font-weight:500; color:var(--ink-faint); }
   .pricecard .p-day{ font-size:11.5px; color:var(--gold); font-weight:600; margin-top:4px; }
-  .pricecard .p-note{ font-size:12px; color:var(--ink-faint); margin-top:8px; line-height:1.5; }
+  .pricecard .p-note{ font-size:13px; color:var(--ink-faint); margin-top:8px; line-height:1.55; }
   .pricecard .p-feats{ margin-top:14px; padding-top:14px; border-top:1px dashed rgba(212,175,55,.3); display:flex; flex-direction:column; gap:6px; text-align:left; }
-  .pricecard .p-feats div{ font-size:11.5px; color:var(--ink-soft); display:flex; gap:6px; align-items:flex-start; }
+  .pricecard .p-feats div{ font-size:12.5px; line-height:1.5; color:var(--ink-soft); display:flex; gap:6px; align-items:flex-start; }
   .pricecard .p-feats div span:first-child{ color:var(--gold); flex-shrink:0; }
   .incl-list{ margin-top:18px; padding-top:18px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:8px; }
-  .incl-list .ir{ display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+  .incl-list .ir{ display:flex; align-items:flex-start; gap:8px; font-size:14.5px; color:var(--ink-soft); line-height:1.55; }
   .incl-list .ir span:first-child{ color:var(--gold); flex-shrink:0; }
-  .price-foot{ margin-top:18px; font-size:12px; color:var(--ink-faint); line-height:1.6; text-align:center; } .price-foot b{ color:var(--ink-soft); }
-  .value-note{ margin-top:20px; padding:16px 20px; background:var(--gold-soft); border-radius:12px; font-size:13px; line-height:1.65; color:var(--ink-soft); text-align:center; max-width:640px; margin-left:auto; margin-right:auto; }
+  .price-foot{ margin-top:18px; font-size:13.5px; color:var(--ink-faint); line-height:1.6; text-align:center; } .price-foot b{ color:var(--ink-soft); }
+  .value-note{ margin-top:20px; padding:16px 20px; background:var(--gold-soft); border-radius:12px; font-size:15px; line-height:1.65; color:var(--ink-soft); text-align:center; max-width:640px; margin-left:auto; margin-right:auto; }
   .value-note b{ color:var(--gold-hi); }
   .compare-tag{ margin-bottom:10px; }
   .compare-tag .was-lbl{ font-size:10.5px; color:var(--ink-faint); display:block; margin-bottom:2px; }
@@ -88,9 +88,9 @@
   @media (max-width:560px){ .usp-grid{ grid-template-columns:1fr; } }
   .usp-card{ padding:22px; text-align:left; }
   .usp-card .ic{ width:40px; height:40px; border-radius:10px; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px; }
-  .usp-card h3{ font-family:'Playfair Display',serif; font-size:15px; font-weight:700; margin-bottom:7px; line-height:1.3; }
-  .usp-card p{ font-size:12.5px; line-height:1.6; color:var(--ink-faint); }
-  .usp-stat{ margin-top:20px; padding:18px 22px; text-align:center; font-size:13.5px; line-height:1.65; color:var(--ink-soft); }
+  .usp-card h3{ font-family:'Playfair Display',serif; font-size:16.5px; font-weight:700; margin-bottom:7px; line-height:1.3; }
+  .usp-card p{ font-size:14.5px; line-height:1.6; color:var(--ink-faint); }
+  .usp-stat{ margin-top:20px; padding:18px 22px; text-align:center; font-size:14.5px; line-height:1.65; color:var(--ink-soft); }
   .usp-stat b{ color:var(--gold-hi); font-family:'Playfair Display',serif; font-size:17px; }
 
   .section{ padding:74px 0; }
@@ -103,14 +103,14 @@
   .painrow{ display:flex; gap:14px; align-items:flex-start; padding:18px 20px; }
   .painrow .pdot{ width:8px; height:8px; border-radius:50%; background:var(--red); margin-top:7px; flex-shrink:0; }
   .painrow p{ font-size:15px; line-height:1.55; color:var(--ink-soft); text-align:left; } .painrow p b{ color:var(--ink); font-weight:600; }
-  .pain-close{ margin-top:20px; padding:22px 24px; font-size:14.5px; line-height:1.7; color:var(--ink-soft); border-left:2px solid var(--gold); text-align:left; }
+  .pain-close{ margin-top:20px; padding:22px 24px; font-size:15px; line-height:1.7; color:var(--ink-soft); border-left:2px solid var(--gold); text-align:left; }
   .pain-close b{ color:var(--gold-hi); font-family:'Be Vietnam Pro',sans-serif; font-size:11px; letter-spacing:.06em; display:block; margin-bottom:8px; text-transform:uppercase; }
 
   .flow{ display:flex; align-items:center; gap:10px; margin-top:36px; flex-wrap:wrap; }
   @media (max-width:880px){ .flow{ flex-direction:column; align-items:stretch; } }
   .flow-step{ flex:1; min-width:180px; padding:20px 18px; text-align:center; }
   .flow-step .fn{ font-family:'Be Vietnam Pro',sans-serif; font-size:10px; font-weight:700; color:var(--gold); letter-spacing:.06em; margin-bottom:8px; text-transform:uppercase; }
-  .flow-step .ft{ font-size:13.5px; font-weight:700; color:var(--ink); line-height:1.4; }
+  .flow-step .ft{ font-size:15px; font-weight:700; color:var(--ink); line-height:1.4; }
   .flow-arrow{ color:var(--gold); font-size:20px; flex-shrink:0; }
   @media (max-width:880px){ .flow-arrow{ transform:rotate(90deg); align-self:center; } }
 
@@ -119,7 +119,7 @@
   .dcard{ padding:24px; text-align:left; }
   .dcard .dn{ font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-bottom:10px; }
   .dcard .dn span{ display:block; font-family:'Be Vietnam Pro',sans-serif; font-size:10px; font-weight:700; letter-spacing:.05em; color:var(--gold); text-transform:uppercase; margin-bottom:6px; }
-  .dcard p{ font-size:13px; line-height:1.6; color:var(--ink-faint); }
+  .dcard p{ font-size:14.5px; line-height:1.6; color:var(--ink-faint); }
 
   .mockrow{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:44px; }
   @media (max-width:980px){ .mockrow{ grid-template-columns:1fr 1fr; } }
@@ -137,7 +137,7 @@
   .proofcard .pf-fallback{ background:var(--gold-soft); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-weight:700; color:var(--gold); font-size:16px; }
   .proofcard .pf-nm{ font-size:15px; font-weight:700; color:var(--ink); }
   .proofcard .pf-rl{ font-size:12px; color:var(--ink-faint); margin-top:2px; }
-  .proofcard .pf-quote{ font-size:14px; line-height:1.75; color:var(--ink-soft); margin-bottom:16px; }
+  .proofcard .pf-quote{ font-size:15.5px; line-height:1.75; color:var(--ink-soft); margin-bottom:16px; }
   .proofcard .pf-quote b{ color:var(--gold-hi); font-weight:700; }
   .pillrow{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
   .pill{ font-size:11.5px; font-weight:700; color:var(--gold-hi); background:var(--gold-soft); padding:6px 12px; border-radius:999px; }
@@ -147,7 +147,7 @@
   .shotrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   @media (max-width:520px){ .shotrow{ grid-template-columns:1fr; } }
   .pf-cap{ font-size:12px; line-height:1.6; color:var(--ink-faint); font-style:italic; margin-top:8px; }
-  .disclaimer{ padding:16px 18px; font-size:12px; line-height:1.65; color:var(--ink-faint); border:1px dashed var(--line); border-radius:12px; }
+  .disclaimer{ padding:16px 18px; font-size:13.5px; line-height:1.65; color:var(--ink-faint); border:1px dashed var(--line); border-radius:12px; }
 
   .quoteblock{ padding:44px; text-align:center; }
   .quoteblock .qav{ width:64px; height:64px; border-radius:50%; object-fit:cover; object-position:50% 15%; margin:0 auto 18px; border:2px solid var(--gold-soft); }
@@ -159,8 +159,8 @@
   .tcard{ padding:20px; text-align:left; }
   .tcard .who{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
   .tcard .who .av{ width:38px; height:38px; border-radius:50%; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
-  .tcard .who .nm{ font-size:13.5px; font-weight:700; color:var(--ink); } .tcard .who .rl{ font-size:11.5px; color:var(--ink-faint); }
-  .tcard .quote{ font-size:13.5px; line-height:1.6; color:var(--ink-soft); margin-bottom:12px; white-space:pre-line; }
+  .tcard .who .nm{ font-size:15px; font-weight:700; color:var(--ink); } .tcard .who .rl{ font-size:11.5px; color:var(--ink-faint); }
+  .tcard .quote{ font-size:15px; line-height:1.6; color:var(--ink-soft); margin-bottom:12px; white-space:pre-line; }
   .tcard .tagrow{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-faint); } .tcard .tagrow .heart{ color:var(--red); }
   .tnote{ margin-top:20px; font-size:11.5px; color:var(--ink-faint); text-align:center; font-family:'Be Vietnam Pro',sans-serif; line-height:1.6; }
 
@@ -173,35 +173,37 @@
   .whogrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
   @media (max-width:640px){ .whogrid{ grid-template-columns:1fr; } }
   .whoitem{ display:flex; gap:12px; align-items:flex-start; padding:16px 18px; text-align:left; }
-  .whoitem .ck{ color:var(--gold); font-weight:700; flex-shrink:0; } .whoitem p{ font-size:13.5px; line-height:1.5; color:var(--ink-soft); }
+  .whoitem .ck{ color:var(--gold); font-weight:700; flex-shrink:0; } .whoitem p{ font-size:15px; line-height:1.55; color:var(--ink-soft); }
   .noitem .ck{ color:var(--red); }
 
   .reg-steps{ display:flex; gap:10px; margin-bottom:32px; }
   .reg-step{ flex:1; display:flex; align-items:center; gap:10px; padding:14px 16px; text-decoration:none; color:inherit; }
   .reg-step .rsn{ width:26px; height:26px; border-radius:50%; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; }
-  .reg-step .rst{ font-size:12.5px; color:var(--ink-soft); font-weight:600; }
+  .reg-step .rst{ font-size:13.5px; color:var(--ink-soft); font-weight:600; }
   @media (max-width:640px){ .reg-steps{ flex-direction:column; } }
 
   .signup-card{ padding:28px; max-width:480px; margin:0 auto; }
   .signup-label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin:14px 0 6px; }
   .signup-label:first-child{ margin-top:0; }
-  .signup-input{ width:100%; padding:13px 14px; border-radius:10px; border:1px solid var(--line); background:var(--card-2); color:var(--ink); font-size:14px; font-family:'Be Vietnam Pro',sans-serif; }
+  /* font-size 16px KHÔNG CHỈ để dễ đọc — dưới 16px Safari trên iPhone tự động zoom vào ô input lúc
+     chạm để gõ, làm vỡ bố cục ngay giữa lúc khách đang điền thông tin thanh toán. */
+  .signup-input{ width:100%; padding:14px; border-radius:10px; border:1px solid var(--line); background:var(--card-2); color:var(--ink); font-size:16px; font-family:'Be Vietnam Pro',sans-serif; }
   .signup-input:focus{ outline:2px solid var(--gold); outline-offset:1px; }
-  .signup-error{ margin-top:12px; padding:11px 14px; background:var(--red-soft); color:#FCA5A5; border-radius:8px; font-size:12.5px; line-height:1.5; }
+  .signup-error{ margin-top:12px; padding:11px 14px; background:var(--red-soft); color:#FCA5A5; border-radius:8px; font-size:13.5px; line-height:1.5; }
   .signup-hint{ margin-top:14px; font-size:12px; color:var(--ink-faint); text-align:center; line-height:1.6; }
-  .pay-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line-soft); font-size:13px; gap:10px; }
+  .pay-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line-soft); font-size:15px; gap:10px; }
   .pay-row:last-of-type{ border-bottom:none; }
   .pay-copy{ font-size:10.5px; font-weight:600; color:var(--gold); background:var(--gold-soft); border:1px solid rgba(212,175,55,.3); padding:4px 9px; border-radius:6px; cursor:pointer; flex-shrink:0; }
-  .pay-status{ margin-top:16px; padding:14px; text-align:center; border-radius:10px; background:var(--card-2); font-size:13.5px; font-weight:600; color:var(--ink-soft); }
+  .pay-status{ margin-top:16px; padding:14px; text-align:center; border-radius:10px; background:var(--card-2); font-size:14.5px; font-weight:600; color:var(--ink-soft); }
   .pay-status.paid{ background:rgba(34,197,94,.15); color:#4ADE80; }
 
   .faq{ display:flex; flex-direction:column; gap:10px; text-align:left; }
   .faqitem{ overflow:hidden; }
-  .faqitem summary{ list-style:none; cursor:pointer; padding:18px 22px; font-size:14px; font-weight:600; color:var(--ink); display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .faqitem summary{ list-style:none; cursor:pointer; padding:18px 22px; font-size:16px; font-weight:600; color:var(--ink); display:flex; justify-content:space-between; align-items:center; gap:12px; }
   .faqitem summary::-webkit-details-marker{ display:none; }
   .faqitem summary::after{ content:"+"; font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:18px; color:var(--gold); flex-shrink:0; transition:transform .2s; }
   .faqitem[open] summary::after{ transform:rotate(45deg); }
-  .faqitem .a{ padding:0 22px 20px; font-size:13.5px; line-height:1.65; color:var(--ink-soft); }
+  .faqitem .a{ padding:0 22px 20px; font-size:15px; line-height:1.65; color:var(--ink-soft); }
 
   .finalcta{ padding:60px 44px; text-align:center; position:relative; overflow:hidden; }
   .finalcta::before{ content:""; position:absolute; inset:0; background:radial-gradient(60% 90% at 50% 0%, var(--gold-soft), transparent 65%); }
@@ -216,7 +218,7 @@
   .stickybar .in{ max-width:1080px; margin:0 auto; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
   .stickybar .sp{ font-family:'Be Vietnam Pro',sans-serif; } .stickybar .sp .now{ font-size:17px; font-weight:700; color:var(--gold-hi); font-variant-numeric:tabular-nums; } .stickybar .sp .lbl{ font-size:11px; color:var(--ink-faint); display:block; margin-bottom:1px; }
   .stickybar .sp .was{ text-decoration:line-through; text-decoration-color:var(--red); color:var(--ink-faint); font-weight:600; }
-  @media (max-width:520px){ .stickybar .lbl{ display:none; } .btn{ padding:13px 18px; font-size:13.5px; } }
+  @media (max-width:520px){ .stickybar .lbl{ display:none; } .btn{ padding:13px 18px; font-size:15px; } }
   @media (max-width:400px){ .stickybar .was{ display:none; } }
   [hidden]{ display:none!important; }
 </style>
