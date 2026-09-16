@@ -16,6 +16,24 @@ const TC_REF_STORAGE_KEY = 'tc_referred_by_ref_code';
     if(m && !localStorage.getItem(TC_REF_STORAGE_KEY)) localStorage.setItem(TC_REF_STORAGE_KEY, m[1].toUpperCase());
   } catch(e){}
 })();
+// Giá khuyến mãi 199.000đ RIÊNG cho Landing Page bán hàng (tai-chinh/lp/, CTA có ?promo=lp199k) —
+// theo yêu cầu chị Quỳnh 2026-09-16. KHÁC HẲN 3 mức 299k/599k/999k đang bán cho người vào thẳng app
+// (giữ nguyên, không đụng) — chỉ áp dụng cho ai bấm vào từ đúng link landing page này. Bắt CÀNG SỚM
+// CÀNG TỐT giống mã giới thiệu ở trên, giữ trong localStorage tới khi họ trả phí (không tự xoá — họ
+// có thể rời đi rồi quay lại thanh toán sau vẫn cần thấy đúng giá đã hứa). Số tiền phải khớp TAY với
+// TC_LP_PROMO_AMOUNT ở api/sepay-webhook.js — đã kiểm tra 199000 không trùng bất kỳ giá trị nào khác
+// trong toàn bộ webhook (299k/599k/999k của chính tai-chinh + mọi mức giá nhan-hieu/tro-ly-crm/VIP).
+const TC_LP_PROMO_STORAGE_KEY = 'tc_lp_promo_199k';
+const TC_LP_PROMO_AMOUNT = 199000;
+(function captureLpPromo(){
+  try {
+    const params = new URLSearchParams(location.search);
+    if(params.get('promo') === 'lp199k') localStorage.setItem(TC_LP_PROMO_STORAGE_KEY, '1');
+  } catch(e){}
+})();
+function tcHasLpPromo(){
+  try { return localStorage.getItem(TC_LP_PROMO_STORAGE_KEY) === '1'; } catch(e){ return false; }
+}
 //
 // Thu phí (2026-08-23, theo yêu cầu chị Quỳnh; SỬA 2026-08-24 — bỏ hẳn 14 ngày dùng thử): freemium,
 // KHÔNG phải all-or-nothing như nhan-hieu. Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng luôn FREE mãi mãi
@@ -85,11 +103,28 @@ function tcNextTierPrice(profile){
   if(days < 30) return TC_PRICE_TIER_3;
   return null;
 }
+// Giá THẬT sẽ hiện/thu — ưu tiên giá khuyến mãi landing page nếu có (xem tcHasLpPromo() ở trên),
+// không thì về đúng 3 mức tiêu chuẩn tcCurrentPrice(). Dùng hàm này ở MỌI nơi hiện/thu tiền thay vì
+// gọi thẳng tcCurrentPrice(), để không sót chỗ nào vẫn hiện giá tiêu chuẩn cho người có khuyến mãi.
+function tcActivePrice(profile){
+  return tcHasLpPromo() ? TC_LP_PROMO_AMOUNT : tcCurrentPrice(profile);
+}
 // Khối giá DÙNG CHUNG ở MỌI nơi mời nâng cấp (2026-08-26, góp ý Quỳnh: "hiển thị đều cho người ta
 // thấy được cái sự rẻ của bắt đầu ngay với 299k") — gạch ngang giá chuẩn 999k bên cạnh giá hiện tại +
 // nói rõ số tiền tiết kiệm được, thay vì chỉ nói giá suông. 999k là mốc giá THẬT (chính người này sẽ
 // phải trả nếu chờ đủ 30 ngày), không phải giá bịa ra để so sánh — an toàn về mặt không lừa dối.
 function tcPriceAnchorHtml(profile){
+  // Người vào từ Landing Page khuyến mãi (?promo=lp199k) thấy 1 khối RIÊNG, không phải bảng 3 mốc
+  // giá tiêu chuẩn — hiện cả 2 cùng lúc sẽ gây mâu thuẫn/khó hiểu ("199k" ở link nhưng vào app lại
+  // thấy "299k"). Không tự hết hạn theo ngày như 3 mức kia — đây là ưu đãi CỐ ĐỊNH cho đúng nguồn
+  // landing page, không phụ thuộc lúc nào họ bấm vào.
+  if(tcHasLpPromo()){
+    return `
+      <div style="text-align:center;font-size:20px;color:var(--ink-soft);text-decoration:line-through;line-height:1.3;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</div>
+      <div style="text-align:center;font-size:24px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${TC_LP_PROMO_AMOUNT.toLocaleString('vi-VN')}đ</div>
+      <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Giá ưu đãi riêng từ Landing Page — tiết kiệm ${(TC_PRICE_TIER_3-TC_LP_PROMO_AMOUNT).toLocaleString('vi-VN')}đ</div>
+    `;
+  }
   const price = tcCurrentPrice(profile);
   const tierDaysLeft = tcPriceTierDaysLeft(profile);
   const nextPrice = tcNextTierPrice(profile);
@@ -674,7 +709,7 @@ function tcBenefitsHtml(){
 function tcPaymentCardHtml(){
   const p = AppState.profile;
   const refCode = p && p.ref_code;
-  const price = tcCurrentPrice(p);
+  const price = tcActivePrice(p);
   // VietinBank CHỈ báo biến động số dư về SePay nếu nội dung chuyển khoản bắt đầu bằng "SEVQR"
   // (yêu cầu riêng SePay cho VietinBank) — xem api/sepay-webhook.js.
   const transferContent = refCode ? `SEVQR ${refCode}` : null;
@@ -771,7 +806,7 @@ function renderLockOverlay(content){
       <div style="font-size:30px;margin-bottom:6px;">🔒</div>
       <div style="font-family:'Playfair Display',serif;font-size:18px;color:#1E2420;margin-bottom:8px;">Tính năng trả phí</div>
       ${weakest ? `<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Bạn đang yếu nhất ở khâu <b>${esc(weakest.label)}</b> — mở khoá để đi sâu vào đúng chỗ này.</p>` : `<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Đây là bản xem trước trang này — mở khoá trọn đời để dùng đầy đủ, lưu được dữ liệu.</p>`}
-      <button id="tc-lock-cta" class="btn" style="width:100%;">Mở khoá ngay — ${tcCurrentPrice().toLocaleString('vi-VN')}đ</button>
+      <button id="tc-lock-cta" class="btn" style="width:100%;">Mở khoá ngay — ${tcActivePrice().toLocaleString('vi-VN')}đ</button>
     </div>
   `;
   document.body.appendChild(overlay);

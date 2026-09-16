@@ -81,7 +81,11 @@ const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;
 const TC_PRICE_TIER_1_AMOUNT = 299000; // ngày 0-15 kể từ lần đầu vào app
 const TC_PRICE_TIER_2_AMOUNT = 599000; // ngày 15-30
 const TC_PRICE_TIER_3_AMOUNT = 999000; // sau ngày 30 — giá chuẩn
-const TC_LIFETIME_AMOUNTS = new Set([TC_PRICE_TIER_1_AMOUNT, TC_PRICE_TIER_2_AMOUNT, TC_PRICE_TIER_3_AMOUNT]);
+// Giá khuyến mãi RIÊNG cho Landing Page bán hàng (tai-chinh/lp/, ?promo=lp199k — xem
+// TC_LP_PROMO_AMOUNT/tcActivePrice() ở tai-chinh/js/app-shell.js), chị Quỳnh chốt 2026-09-16. Đã
+// kiểm tra 199000 không trùng bất kỳ giá trị nào khác trong file này.
+const TC_LP_PROMO_AMOUNT = 199000;
+const TC_LIFETIME_AMOUNTS = new Set([TC_PRICE_TIER_1_AMOUNT, TC_PRICE_TIER_2_AMOUNT, TC_PRICE_TIER_3_AMOUNT, TC_LP_PROMO_AMOUNT]);
 // Chương trình giới thiệu tai-chinh (2026-08-23, chị Quỳnh chốt "20% cho người giới thiệu") — MỘT
 // CHIỀU, referee vẫn trả nguyên giá đang bán lúc đó (khác nhan-hieu có giảm giá riêng cho referee).
 // Trả bằng TIỀN THẬT (không có hệ lượt AI như nhan-hieu để quy đổi) — ghi vào sổ tc_referrals, chị
