@@ -40,9 +40,9 @@ b, strong{ color:var(--white); }
   display:inline-block; font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:11px; letter-spacing:2px; text-transform:uppercase;
   color:var(--gold); background:rgba(240,194,75,.1); border:1px solid rgba(240,194,75,.35); border-radius:999px; padding:6px 14px; margin-bottom:16px;
 }
-.lp-hero h1{ font-size:clamp(26px,5vw,36px); font-weight:700; line-height:1.28; margin-bottom:16px; }
+.lp-hero h1{ font-size:clamp(30px,6.5vw,44px); font-weight:700; line-height:1.24; margin-bottom:18px; }
 .lp-hero h1 .gold{ color:var(--gold); }
-.lp-hero .sub{ font-size:15px; color:var(--gray); line-height:1.75; max-width:520px; margin:0 auto 26px; }
+.lp-hero .sub{ font-size:16.5px; color:var(--gray); line-height:1.7; max-width:540px; margin:0 auto 28px; }
 /* .sub-br: 3 dấu xuống dòng chủ động chỉ đẹp khi mỗi cụm ý vừa đúng 1 dòng (đủ rộng, ví dụ máy tính) —
    trên điện thoại (màn hẹp hơn 520px) mỗi cụm đó tự nó ĐÃ đủ dài để browser tự xuống dòng thêm 1 lần
    nữa, cộng dấu xuống dòng chủ động thành ra vỡ ra 6 dòng có dòng mồ côi rất ngắn ("An,", "mỗi ngày!")
@@ -53,7 +53,7 @@ b, strong{ color:var(--white); }
 
 .lp-cta{
   display:inline-block; appearance:none; border:none; cursor:pointer; text-decoration:none;
-  font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:15.5px; padding:16px 30px;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:17px; padding:17px 32px;
   border-radius:999px; background:linear-gradient(135deg, var(--gold-light), var(--orange-dark)); color:#241a03;
   transition:opacity .12s ease, transform .12s ease; box-shadow:0 6px 20px rgba(227,168,59,.25);
 }
@@ -65,12 +65,12 @@ b, strong{ color:var(--white); }
 .lp-section{ padding:36px 0; border-top:1px solid var(--line); }
 .lp-section:first-of-type{ border-top:none; }
 .lp-eyebrow-label{ font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
-.lp-h2{ font-size:24px; margin-bottom:6px; }
+.lp-h2{ font-size:29px; margin-bottom:8px; }
 .lp-h2 .gold{ color:var(--gold); display:block; }
 .lp-h2-bar{ width:44px; height:3px; background:var(--orange); border-radius:2px; margin:14px 0 18px; }
 .lp-h2-center{ text-align:center; }
 .lp-h2-center .lp-h2-bar{ margin-left:auto; margin-right:auto; }
-.lp-h2-sub{ color:var(--gray); font-size:13.5px; margin-bottom:24px; }
+.lp-h2-sub{ color:var(--gray); font-size:15.5px; line-height:1.65; margin-bottom:24px; }
 .lp-h2-sub.center{ text-align:center; }
 
 /* Card nền tối dùng chung */
@@ -80,17 +80,17 @@ b, strong{ color:var(--white); }
 .lp-problem-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
 .lp-problem-item{ background:var(--black2); border:1px solid var(--line); border-radius:12px; padding:16px; position:relative; padding-left:22px; }
 .lp-problem-item::before{ content:''; position:absolute; left:16px; top:22px; width:6px; height:6px; border-radius:50%; background:var(--red); }
-.lp-problem-ten{ font-weight:700; color:var(--white); font-size:13.5px; margin-bottom:6px; line-height:1.4; }
-.lp-problem-mota{ color:var(--gray); font-size:13px; line-height:1.6; }
-.lp-callout{ background:var(--black3); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:13.5px; line-height:1.7; color:var(--gray); }
+.lp-problem-ten{ font-weight:700; color:var(--white); font-size:15.5px; margin-bottom:7px; line-height:1.4; }
+.lp-problem-mota{ color:var(--gray); font-size:15px; line-height:1.65; }
+.lp-callout{ background:var(--black3); border:1px solid var(--line); border-radius:12px; padding:18px 20px; font-size:15px; line-height:1.7; color:var(--gray); }
 .lp-callout .gold{ color:var(--gold); font-weight:700; }
-.lp-stat-line{ display:flex; align-items:center; gap:10px; background:var(--black3); border:1px solid rgba(240,194,75,.25); border-radius:12px; padding:14px 18px; margin-top:12px; font-size:13.5px; color:var(--gray); }
+.lp-stat-line{ display:flex; align-items:center; gap:10px; background:var(--black3); border:1px solid rgba(240,194,75,.25); border-radius:12px; padding:14px 18px; margin-top:12px; font-size:14.5px; line-height:1.5; color:var(--gray); }
 .lp-stat-line .dot{ width:7px; height:7px; border-radius:50%; background:var(--gold); flex-shrink:0; }
 .lp-stat-line b{ color:var(--gold); }
 
 /* Kết quả */
 .lp-list{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
-.lp-list li{ display:flex; gap:10px; font-size:14.5px; line-height:1.6; color:var(--gray); }
+.lp-list li{ display:flex; gap:10px; font-size:15.5px; line-height:1.6; color:var(--gray); }
 .lp-list li::before{ content:'✓'; flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:rgba(240,194,75,.12); color:var(--gold); font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
 
 /* Chương trình / Hành trình — dạng lưới thẻ như "TUẦN N" của mẫu */
@@ -98,14 +98,14 @@ b, strong{ color:var(--white); }
 .lp-program-item{ background:var(--black2); border:1px solid var(--line); border-radius:12px; padding:16px; }
 .lp-program-item.full{ grid-column:1 / -1; }
 .lp-program-num{ font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
-.lp-program-ten{ font-weight:700; font-size:15px; color:var(--white); margin-bottom:5px; }
-.lp-program-mota{ color:var(--gray); font-size:13px; line-height:1.6; }
+.lp-program-ten{ font-weight:700; font-size:16.5px; color:var(--white); margin-bottom:6px; }
+.lp-program-mota{ color:var(--gray); font-size:15px; line-height:1.65; }
 
 /* Ảnh minh hoạ app (chart THẬT vẽ lại từ đúng hàm SVG app đang dùng — radarChartHtml/donutChartHtml
    ở js/util.js — không phải ảnh chụp tưởng tượng, số liệu mẫu chỉ để minh hoạ giao diện thật). */
 .lp-shot-card{ background:var(--black2); border:1px solid var(--line); border-radius:var(--radius); padding:22px 18px 18px; }
 .lp-shot-label{ font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); text-align:center; margin-bottom:2px; }
-.lp-shot-cap{ text-align:center; font-size:13px; color:var(--gray2); margin-top:12px; line-height:1.6; }
+.lp-shot-cap{ text-align:center; font-size:13.5px; color:var(--gray2); margin-top:12px; line-height:1.6; }
 .lp-shot-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:26px; }
 @media (max-width:560px){ .lp-shot-grid, .lp-problem-grid, .lp-program-grid{ grid-template-columns:1fr; } }
 
@@ -117,8 +117,8 @@ b, strong{ color:var(--white); }
 .lp-vs-list{ display:flex; flex-direction:column; gap:10px; }
 .lp-vs-row{ background:var(--black2); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
 .lp-vs-head-row{ display:none; }
-.lp-vs-crit{ font-size:12px; font-weight:600; color:var(--gold); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
-.lp-vs-item{ font-size:13px; line-height:1.6; padding:6px 0; }
+.lp-vs-crit{ font-size:13px; font-weight:600; color:var(--gold); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+.lp-vs-item{ font-size:14.5px; line-height:1.6; padding:6px 0; }
 .lp-vs-item.no{ color:var(--gray2); }
 .lp-vs-item.yes{ color:var(--white); }
 @media (min-width:701px){
@@ -143,23 +143,23 @@ b, strong{ color:var(--white); }
 .lp-mock-vibe.gray{ background:rgba(255,255,255,.08); color:var(--gray); }
 
 /* Lời nhắn */
-.lp-letter{ background:var(--black3); border-left:3px solid var(--gold); border-radius:0 14px 14px 0; padding:22px 24px; font-size:15px; line-height:1.75; font-style:italic; color:var(--gray); }
+.lp-letter{ background:var(--black3); border-left:3px solid var(--gold); border-radius:0 14px 14px 0; padding:22px 24px; font-size:16px; line-height:1.75; font-style:italic; color:var(--gray); }
 .lp-letter .signed{ display:block; margin-top:14px; font-style:normal; font-weight:700; color:var(--white); font-size:13px; }
 
 /* Phù hợp — dạng chip như mẫu (thay vì thẻ dài) */
 .lp-fit-chips{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-.lp-fit-chip{ font-size:13px; color:var(--gray); background:var(--black2); border:1px solid var(--line); border-radius:999px; padding:9px 16px; }
+.lp-fit-chip{ font-size:14.5px; line-height:1.5; color:var(--gray); background:var(--black2); border:1px solid var(--line); border-radius:999px; padding:10px 16px; }
 
 /* Người xây dựng phương pháp */
 .lp-founder{ background:var(--black2); border:1px solid var(--line); border-radius:var(--radius); padding:26px 22px; text-align:center; }
 .lp-founder img{ width:150px; height:214px; object-fit:cover; border-radius:12px; margin:0 auto 16px; display:block; }
-.lp-founder h3{ font-size:20px; margin-bottom:4px; }
+.lp-founder h3{ font-size:22px; margin-bottom:5px; }
 .lp-founder .role{ font-size:13px; color:var(--gold); margin-bottom:18px; }
 .lp-founder-stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
 .lp-founder-stat{ background:var(--black3); border-radius:10px; padding:12px 8px; }
 .lp-founder-stat .num{ font-family:'Playfair Display',serif; font-size:19px; font-weight:700; color:var(--gold); }
 .lp-founder-stat .lbl{ font-size:11px; color:var(--gray2); margin-top:2px; }
-.lp-founder p{ font-size:13.5px; line-height:1.7; text-align:left; color:var(--gray); margin-bottom:14px; }
+.lp-founder p{ font-size:15px; line-height:1.7; text-align:left; color:var(--gray); margin-bottom:14px; }
 .lp-founder-tags{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
 .lp-founder-tag{ font-size:11.5px; background:var(--black3); border:1px solid var(--line); border-radius:999px; padding:6px 13px; color:var(--gray); }
 
@@ -173,7 +173,7 @@ b, strong{ color:var(--white); }
 .lp-testi-shot img{ display:block; width:100%; height:auto; }
 .lp-testi-meta{ display:flex; align-items:center; gap:12px; padding:14px 16px; }
 .lp-testi-avatar{ width:42px; height:42px; flex-shrink:0; border-radius:50%; background:linear-gradient(135deg, var(--orange), var(--gold)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; color:var(--black); }
-.lp-testi-name{ font-weight:700; font-size:14px; color:#fff; }
+.lp-testi-name{ font-weight:700; font-size:15px; color:#fff; }
 .lp-testi-role{ font-size:11px; color:rgba(255,255,255,.45); margin-top:2px; }
 
 /* Trước & sau */
@@ -202,20 +202,23 @@ b, strong{ color:var(--white); }
 .lp-price-new{ font-family:'Playfair Display',serif; font-size:42px; font-weight:700; color:var(--gold); margin:8px 0 4px; text-shadow:0 0 24px rgba(240,194,75,.35); }
 .lp-price-why{ text-align:left; background:rgba(240,194,75,.07); border:1px solid rgba(240,194,75,.25); border-radius:12px; padding:16px 18px; margin:18px 0 4px; }
 .lp-price-why-title{ font-weight:700; color:var(--gold-light); font-size:13.5px; margin-bottom:8px; }
-.lp-price-why-item{ font-size:13px; line-height:1.7; color:var(--gray); margin-bottom:6px; }
+.lp-price-why-item{ font-size:14.5px; line-height:1.7; color:var(--gray); margin-bottom:6px; }
 .lp-price-why-item:last-child{ margin-bottom:0; }
-.lp-price-guarantee{ background:var(--black3); color:var(--gold-light); border-radius:10px; padding:12px 16px; font-size:13px; line-height:1.6; margin-top:18px; }
+.lp-price-guarantee{ background:var(--black3); color:var(--gold-light); border-radius:10px; padding:14px 16px; font-size:14.5px; line-height:1.6; margin-top:18px; }
 
 /* Form đăng ký + thẻ thanh toán ngay tại Landing Page (2026-09-16, chị Quỳnh yêu cầu — điền xong ra
    ngay mã QR, không cần chuyển qua app trước). Cùng style thẻ tối như .lp-price-card. */
 .lp-signup-card{ background:var(--black2); border:1px solid var(--line); border-radius:var(--radius); padding:26px 22px; }
 .lp-signup-label{ display:block; font-size:12.5px; font-weight:600; color:var(--gray); margin:14px 0 6px; }
 .lp-signup-label:first-child{ margin-top:0; }
-.lp-signup-input{ width:100%; box-sizing:border-box; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--black3); color:var(--white); font-family:'Be Vietnam Pro',sans-serif; font-size:14px; }
+/* font-size 16px KHÔNG CHỈ để dễ đọc — dưới 16px Safari trên iPhone tự động zoom vào ô input lúc
+   chạm để gõ (hành vi mặc định của iOS), làm vỡ bố cục ngay giữa lúc khách đang điền thông tin
+   thanh toán, đúng lúc nhạy cảm nhất không nên có trục trặc. */
+.lp-signup-input{ width:100%; box-sizing:border-box; padding:13px 14px; border-radius:10px; border:1px solid var(--line); background:var(--black3); color:var(--white); font-family:'Be Vietnam Pro',sans-serif; font-size:16px; }
 .lp-signup-input::placeholder{ color:var(--gray2); }
 .lp-signup-input:focus{ outline:none; border-color:var(--gold); }
 .lp-signup-error{ background:rgba(239,68,68,.12); border:1px solid var(--red); color:#FCA5A5; border-radius:8px; padding:10px 14px; font-size:13px; margin-top:12px; }
-.lp-pay-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13.5px; color:var(--gray); padding:6px 0; }
+.lp-pay-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; color:var(--gray); padding:7px 0; }
 .lp-pay-row b{ color:var(--white); }
 .lp-pay-copy{ font-size:11.5px; font-weight:600; background:var(--black3); border:1px solid var(--line); color:var(--gold); border-radius:999px; padding:4px 12px; cursor:pointer; }
 .lp-pay-status{ text-align:center; font-size:13px; color:var(--gray2); margin-top:14px; }
@@ -224,12 +227,12 @@ b, strong{ color:var(--white); }
 /* FAQ */
 .lp-faq{ display:flex; flex-direction:column; gap:8px; }
 .lp-faq-item{ border:1px solid var(--line); border-radius:12px; padding:14px 18px; background:var(--black2); }
-.lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:14.5px; list-style:none; color:var(--white); }
+.lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:16px; list-style:none; color:var(--white); }
 .lp-faq-item summary::-webkit-details-marker{ display:none; }
 .lp-faq-item summary::after{ content:'+'; float:right; font-size:18px; color:var(--gold); }
 .lp-faq-item[open] summary::after{ content:'−'; }
 .lp-faq-item[open] summary{ margin-bottom:10px; }
-.lp-faq-answer{ color:var(--gray); font-size:13.5px; line-height:1.65; }
+.lp-faq-answer{ color:var(--gray); font-size:15px; line-height:1.65; }
 
 /* Final CTA + footer */
 .lp-final{ text-align:center; padding:36px 0 8px; }
@@ -237,7 +240,7 @@ b, strong{ color:var(--white); }
 
 /* Thanh CTA cố định dưới màn hình — đúng bố cục mẫu (sticky bottom bar) */
 .lp-sticky{ position:fixed; left:0; right:0; bottom:0; z-index:50; background:rgba(10,10,10,.92); backdrop-filter:blur(6px); border-top:1px solid var(--line); padding:10px 16px; display:flex; justify-content:center; }
-.lp-sticky .lp-cta{ width:100%; max-width:420px; text-align:center; padding:13px 20px; font-size:14.5px; }
+.lp-sticky .lp-cta{ width:100%; max-width:420px; text-align:center; padding:14px 20px; font-size:15.5px; }
 
 @media (max-width:520px){
   .lp-founder-stats{ grid-template-columns:1fr 1fr; }
