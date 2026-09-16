@@ -163,6 +163,7 @@ b, strong{ color:var(--white); }
 
 /* Giá */
 .lp-price-card{ background:var(--black2); border:1px solid var(--line); border-radius:var(--radius); padding:28px 24px; text-align:center; }
+.lp-price-badge{ display:inline-block; font-size:12.5px; font-weight:700; color:#241a03; background:linear-gradient(135deg, var(--gold-light), var(--orange-dark)); border-radius:999px; padding:7px 16px; margin-bottom:16px; }
 .lp-price-old{ font-size:16px; color:var(--gray2); text-decoration:line-through; }
 .lp-price-new{ font-family:'Playfair Display',serif; font-size:34px; font-weight:700; color:var(--gold); margin:6px 0 4px; }
 .lp-price-guarantee{ background:var(--black3); color:var(--gold-light); border-radius:10px; padding:12px 16px; font-size:13px; line-height:1.6; margin-top:18px; }
