@@ -61,6 +61,13 @@ const AMOUNT_TO_DAYS = {
   424000: 30,    // 1 tháng, giá giới thiệu
   2032000: 180,  // 6 tháng, giá giới thiệu
   3392000: 365,  // 12 tháng, giá giới thiệu
+  // Ưu đãi "15 phút" ngay khi vừa hết hạn (2026-09-17, chị Quỳnh chốt: chỉ áp gói 6/12 tháng, giảm
+  // 10%) — xem EXPIRED_URGENCY_PLANS/isInExpiredUrgencyWindow() ở nhan-hieu/js/app-shell.js. Cửa sổ
+  // 15 phút chỉ là UI/tâm lý thúc giục — webhook này (như mọi ưu đãi khác trong file) KHÔNG kiểm tra
+  // lại thời điểm khách chuyển khoản, chỉ cần khớp đúng số tiền là kích hoạt, chấp nhận rủi ro khách
+  // chuyển trễ vẫn được lên (giống hệt flash-sale/referral/học viên ở trên).
+  2151000: 180,  // 6 tháng, ưu đãi 15 phút (giảm 10% so với giá thường 2.390.000đ)
+  3591000: 365,  // 12 tháng, ưu đãi 15 phút (giảm 10% so với giá thường 3.990.000đ)
 };
 // Số tiền coi là "đã dùng ưu đãi tháng đầu" — sau lần này học viên mua gói 1 tháng sẽ trả giá thường.
 const FIRST_MONTH_DISCOUNT_AMOUNT = 399200;

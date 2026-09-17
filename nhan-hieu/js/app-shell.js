@@ -198,6 +198,45 @@ const REFERRAL_REGULAR_PLANS = [
   { key:'6m_ref', label:'6 tháng (giá giới thiệu)', amount:2032000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 2.032.000đ so với giá thường 2.390.000đ.', recommended:true },
   { key:'12m_ref', label:'12 tháng (giá giới thiệu)', amount:3392000, note:'Giảm 15% nhờ vào qua link giới thiệu — còn 3.392.000đ so với giá thường 3.990.000đ.', recommended:true },
 ];
+// Ưu đãi "15 phút" ngay khi vừa hết hạn (2026-09-17, chị Quỳnh: "cho họ kiểu ưu đãi trong 15p khi
+// hiện cái mục nâng cấp đó, giảm 10%") — đúng lúc khách vừa bị chặn 1 hành động AI, ý định mua đang
+// cao nhất. CHỈ áp cho gói 6/12 tháng (chị Quỳnh chốt), không áp gói 1 tháng, không áp học viên
+// (đã có mức giảm riêng 20%, không cộng dồn — cùng quy tắc với flash-sale/referral/early-bird).
+// Mốc đếm ngược lấy THẲNG từ access_until (dữ liệu server đã có sẵn, đồng bộ mọi thiết bị) thay vì
+// tự lưu thêm 1 mốc riêng — cửa sổ ưu đãi là [access_until, access_until + 15 phút]. LƯU Ý: thanh
+// toán ở đây là chuyển khoản ngân hàng thật, không phải giỏ hàng real-time — hệ thống KHÔNG có cách
+// nào chặn cứng người chuyển trễ hơn 15 phút (webhook chỉ đối chiếu đúng số tiền, không biết giờ
+// khách bấm xem trang) — chấp nhận rủi ro này giống hệt mọi mã giảm giá khác trong file này (flash-
+// sale/referral/học viên), thà nhận trễ còn hơn từ chối rồi khách thắc mắc "tôi chuyển rồi sao chưa
+// lên". 2 số tiền dưới đã kiểm tra không trùng bất kỳ gói nào khác.
+const EXPIRED_URGENCY_WINDOW_MINUTES = 15;
+const EXPIRED_URGENCY_PLANS = [
+  { key:'6m_urgent', label:'6 tháng — Ưu đãi 15 phút', amount:2151000, note:'⏰ Giảm 10% so với giá thường (2.390.000đ) — chỉ hiện trong 15 phút kể từ lúc hết hạn.', recommended:true, urgent:true },
+  { key:'12m_urgent', label:'12 tháng — Ưu đãi 15 phút', amount:3591000, note:'⏰ Giảm 10% so với giá thường (3.990.000đ) — chỉ hiện trong 15 phút kể từ lúc hết hạn.', recommended:true, urgent:true },
+];
+function isInExpiredUrgencyWindow(profile){
+  if(!profile || !profile.access_until) return false;
+  const elapsedMs = Date.now() - new Date(profile.access_until).getTime();
+  return elapsedMs > 0 && elapsedMs <= EXPIRED_URGENCY_WINDOW_MINUTES * 60000;
+}
+function expiredUrgencySecondsLeft(profile){
+  if(!profile || !profile.access_until) return null;
+  const elapsedMs = Date.now() - new Date(profile.access_until).getTime();
+  const totalMs = EXPIRED_URGENCY_WINDOW_MINUTES * 60000;
+  if(elapsedMs <= 0 || elapsedMs >= totalMs) return null;
+  return Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000));
+}
+function expiredUrgencyTimeLeftLabel(profile){
+  const s = expiredUrgencySecondsLeft(profile);
+  if(s == null) return null;
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+// true đúng 1 LẦN cho biết selectedPaymentPlanKey vừa được tự chuyển sang gói ưu đãi 15 phút — tránh
+// việc mỗi lần vẽ lại trang lại ghi đè lựa chọn thủ công của khách (vd khách cố tình bấm sang gói 12
+// tháng ưu đãi thay vì 6 tháng mặc định) về đúng mặc định ban đầu.
+let urgencyDefaultApplied = false;
+
 // Ưu đãi "mua sớm trong ngày đầu tiên đăng ký" (2026-08-26, chính sách lâu dài — khớp
 // isWithinEarlyBirdWindow ở api/sepay-webhook.js, nơi thật sự cộng thêm ngày dùng) — PHẢI hiện rõ
 // ngay ở bảng giá thì mới có tác dụng thúc đẩy mua ngay trong lúc còn hào hứng dùng thử, không thì
@@ -234,7 +273,7 @@ function earlyBirdTimeLeftLabel(profile){
 function decorateEarlyBird(plans, profile){
   if(!isInEarlyBirdWindow(profile)) return plans;
   return plans.map(pl=>{
-    if(pl.flash) return pl; // flash-sale đã là ưu đãi riêng theo ngày lịch, không cộng dồn thêm
+    if(pl.flash || pl.urgent) return pl; // flash-sale/ưu đãi 15 phút đã là ưu đãi riêng, không cộng dồn thêm
     const prefix = Object.keys(EARLY_BIRD_BONUS_MONTHS).find(k=>pl.key.startsWith(k));
     if(!prefix) return pl;
     const bonusMonths = EARLY_BIRD_BONUS_MONTHS[prefix];
@@ -256,7 +295,8 @@ function currentPaymentPlans(){
   // sale khác bằng cách đổi lại cutoff. Loại hẳn học viên khỏi CẢ 3 loại ưu đãi (flash-sale/referral/
   // early-bird) — giá học viên đã là mức giảm riêng, không cộng dồn thêm ưu đãi nào khác.
   const withFlash = (!isStudent && isFlashSaleActive()) ? [...FLASH_SALE_PLANS, ...base] : base;
-  return isStudent ? withFlash : decorateEarlyBird(withFlash, p);
+  const withUrgency = (!isStudent && isInExpiredUrgencyWindow(p)) ? [...EXPIRED_URGENCY_PLANS, ...withFlash] : withFlash;
+  return isStudent ? withUrgency : decorateEarlyBird(withUrgency, p);
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
 // - Gói 1 tháng: so với giá thường CÙNG 1 tháng (499.000đ) — không hiện gì nếu đã hết ưu đãi
@@ -664,6 +704,14 @@ function paymentCardHtml(){
   const refCode = p && p.ref_code;
   const isStudent = !!(p && p.is_student);
   const plans = currentPaymentPlans();
+  // Tự chọn sẵn gói 6 tháng ưu đãi 15 phút ngay lần đầu cửa sổ này xuất hiện — đúng lúc khách vừa bị
+  // chặn nên cho thấy giá tốt nhất ngay, không bắt tự tìm/bấm mới thấy. Chỉ tự chọn ĐÚNG 1 LẦN
+  // (urgencyDefaultApplied) — nếu khách tự bấm sang gói khác thì tôn trọng lựa chọn đó ở các lần vẽ
+  // lại tiếp theo, không ghi đè ngược lại.
+  if(!urgencyDefaultApplied && plans.some(pl => pl.urgent)){
+    urgencyDefaultApplied = true;
+    selectedPaymentPlanKey = '6m_urgent';
+  }
   const plan = plans.find(pl => pl.key === selectedPaymentPlanKey) || plans.find(pl => pl.recommended) || plans[0];
   selectedPaymentPlanKey = plan.key; // đồng bộ lại key — các bảng giá dùng key khác nhau (vd 6m vs 6m_hv vs 6m_flash)
 
@@ -681,9 +729,11 @@ function paymentCardHtml(){
   // khi đã chọn đúng gói 6/12 tháng. Khối này hiện NGAY TỪ ĐẦU, không phụ thuộc gói đang chọn — không
   // áp cho học viên (đã loại ở decorateEarlyBird()/isInEarlyBirdWindow() phía server, giữ nhất quán).
   const earlyBirdLabel = !isStudent ? earlyBirdTimeLeftLabel(p) : null;
+  const urgencyLabel = !isStudent ? expiredUrgencyTimeLeftLabel(p) : null;
 
   return `
     <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
+    ${urgencyLabel ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">🔥 Ưu đãi giảm 10% gói 6/12 tháng — còn <span style="font-variant-numeric:tabular-nums;">${esc(urgencyLabel)}</span> là hết</div>` : ''}
     ${earlyBirdLabel ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdLabel)} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
     <div class="hint-box" style="margin-bottom:12px;line-height:1.7;">
       💡 <b>Đặc biệt Kho Content và Kho Hook viral</b> — nơi giúp bạn viết content dễ dàng từ các content đang có tín hiệu tốt trên thị trường.<br><br>
@@ -697,21 +747,26 @@ function paymentCardHtml(){
         // đang được giảm bao nhiêu mà không cần bấm chọn mới thấy, tăng cảm giác "hời" ngay từ cái
         // nhìn đầu tiên.
         const originalPlan = pl.flash ? REGULAR_PLANS.find(r => r.key === pl.key.replace('_flash',''))
+          : pl.urgent ? REGULAR_PLANS.find(r => r.key === pl.key.replace('_urgent',''))
           : pl.key.endsWith('_ref') ? REGULAR_PLANS.find(r => r.key === pl.key.replace('_ref','')) : null;
         const priceHtml = originalPlan
           ? `<s style="opacity:.65;font-weight:400;">${originalPlan.amount.toLocaleString('vi-VN')}đ</s> ${pl.amount.toLocaleString('vi-VN')}đ`
           : `${pl.amount.toLocaleString('vi-VN')}đ`;
-        // Tag đỏ "FLASH SALE" kiểu app bán hàng — nổi bật hơn hẳn emoji 🔥 đứng trước chữ, giúp
-        // phân biệt ngay gói ưu đãi có thời hạn với gói giá thường trong danh sách (theo phản hồi
-        // chị Quỳnh 2026-08-20). Gắn theo pl.flash (đúng ngữ nghĩa "đang giảm giá có hạn"), không
-        // gắn theo pl.recommended (khái niệm khác — gói được đề xuất, có thể không phải flash sale).
+        // Tag đỏ "FLASH SALE"/"ƯU ĐÃI 15 PHÚT" kiểu app bán hàng — nổi bật hơn hẳn emoji 🔥 đứng
+        // trước chữ, giúp phân biệt ngay gói ưu đãi có thời hạn với gói giá thường trong danh sách
+        // (theo phản hồi chị Quỳnh 2026-08-20, áp lại cho ưu đãi 15 phút 2026-09-17). Gắn theo
+        // pl.flash/pl.urgent (đúng ngữ nghĩa "đang giảm giá có hạn"), không gắn theo pl.recommended
+        // (khái niệm khác — gói được đề xuất, có thể không phải ưu đãi có hạn).
         const flashTag = pl.flash ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">FLASH SALE</span>` : '';
-        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${flashTag}${esc(pl.label)} — ${priceHtml}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+        const urgentTag = pl.urgent ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">ƯU ĐÃI 15 PHÚT</span>` : '';
+        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${flashTag}${urgentTag}${esc(pl.label)} — ${priceHtml}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
       }
+      const urgentPlans = plans.filter(pl => pl.urgent);
       const flashPlans = plans.filter(pl => pl.flash);
-      const basePlans = plans.filter(pl => !pl.flash);
+      const basePlans = plans.filter(pl => !pl.flash && !pl.urgent);
       return `
         <div class="chips" id="plan-chips">
+          ${urgentPlans.map(chipHtml).join('')}
           ${flashPlans.map(chipHtml).join('')}
           ${flashPlans.length ? `<div style="flex-basis:100%;font-size:12px;color:var(--ink-soft);margin:4px 2px 0;">— Sau ngày 20/8, chỉ còn giá thường bên dưới —</div>` : ''}
           ${basePlans.map(chipHtml).join('')}
@@ -740,6 +795,10 @@ function paymentCardHtml(){
     `}
   `;
 }
+// Giữ 1 interval duy nhất cho đồng hồ đếm ngược ưu đãi 15 phút — mỗi lần bindPaymentCard() chạy lại
+// (redraw) phải huỷ interval cũ trước khi (có thể) đặt lại, tránh cộng dồn nhiều interval cùng gọi
+// redraw() một lúc (mỗi lần vẽ lại đều gọi bindPaymentCard() lại từ đầu).
+let paymentCountdownInterval = null;
 // redraw: hàm vẽ lại màn hình đang gọi (khác nhau giữa renderExpiredScreen và module Nâng Cấp)
 function bindPaymentCard(root, redraw){
   root.querySelectorAll('[data-plan]').forEach(el=>{
@@ -755,6 +814,10 @@ function bindPaymentCard(root, redraw){
       } catch(e){}
     };
   });
+  if(paymentCountdownInterval){ clearInterval(paymentCountdownInterval); paymentCountdownInterval = null; }
+  if(isInExpiredUrgencyWindow(AppState.profile)){
+    paymentCountdownInterval = setInterval(redraw, 1000);
+  }
 }
 
 // Chỉ dành cho khách ĐÃ TRẢ PHÍ (has_paid) — trần 200 lượt/tháng đã đủ rộng cho use-case bình
