@@ -7,6 +7,10 @@
 // Đúng số tài khoản/tên chủ TK đang dùng ở nhan-hieu/js/app-shell.js (PAYMENT_BANK) — KHÔNG được
 // đổi khác, vì SePay chỉ theo dõi đúng 1 tài khoản Vietinbank này cho toàn bộ hệ sinh thái HIỂU.
 const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
+// Giữ 1 interval duy nhất cho đồng hồ đếm ngược ưu đãi 15 phút — mỗi lần render() chạy lại (vào lại
+// trang này) phải huỷ interval cũ trước, tránh cộng dồn nhiều interval cùng gọi draw() lên 1 container
+// đã không còn trong DOM nữa (giống pattern paymentCountdownInterval ở nhan-hieu/js/app-shell.js).
+let countdownInterval = null;
 
 const PLANS = [
   { key:'1m', label:'Theo tháng', amount:499000 },
@@ -23,6 +27,29 @@ const PLANS_REFERRAL = [
   { key:'6m_ref', label:'6 tháng (giá giới thiệu)', amount:2116000, recommended:true, note:'Giảm 15% nhờ qua link giới thiệu — còn 2.116.000đ so với giá thường 2.490.000đ.' },
   { key:'12m_ref', label:'12 tháng (giá giới thiệu)', amount:3392000, note:'Giảm 15% nhờ qua link giới thiệu — còn 3.392.000đ so với giá thường 3.990.000đ.' },
 ];
+// Ưu đãi "15 phút" ngay khi vừa hết hạn (2026-09-17, áp lại y hệt nhan-hieu theo yêu cầu chị Quỳnh
+// "làm tương tự cho tất cả các app") — giảm 10%, CHỈ áp gói 6/12 tháng, không áp cho người đang có
+// giá giới thiệu (đã giảm 15% riêng, không cộng dồn — xem currentPlans() bên dưới). Cửa sổ 15 phút
+// tính thẳng từ crm_access_until (dữ liệu server có sẵn), không lưu thêm cột/localStorage riêng.
+// Khớp CRM_AMOUNT_TO_DAYS ở api/sepay-webhook.js.
+const EXPIRED_URGENCY_WINDOW_MINUTES = 15;
+const EXPIRED_URGENCY_PLANS = [
+  { key:'6m_urgent', label:'6 tháng — Ưu đãi 15 phút', amount:2241000, note:'⏰ Giảm 10% so với giá thường (2.490.000đ) — chỉ hiện trong 15 phút kể từ lúc hết hạn.', recommended:true, urgent:true },
+  { key:'12m_urgent', label:'12 tháng — Ưu đãi 15 phút', amount:3591000, note:'⏰ Giảm 10% so với giá thường (3.990.000đ) — chỉ hiện trong 15 phút kể từ lúc hết hạn.', recommended:true, urgent:true },
+];
+function isInExpiredUrgencyWindow(profile){
+  if(!profile || !profile.crm_access_until) return false;
+  const elapsedMs = Date.now() - new Date(profile.crm_access_until).getTime();
+  return elapsedMs > 0 && elapsedMs <= EXPIRED_URGENCY_WINDOW_MINUTES * 60000;
+}
+function expiredUrgencySecondsLeft(profile){
+  if(!profile || !profile.crm_access_until) return null;
+  const elapsedMs = Date.now() - new Date(profile.crm_access_until).getTime();
+  const totalMs = EXPIRED_URGENCY_WINDOW_MINUTES * 60000;
+  if(elapsedMs <= 0 || elapsedMs >= totalMs) return null;
+  return Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000));
+}
+
 // Ưu đãi "mua sớm trong ngày đầu tiên đăng ký" (2026-09-07, "bên xây nhân hiệu có gì bên này có
 // đó" — tặng giống hệt nhan-hieu: 6 tháng +1 tháng, 12 tháng +2 tháng) — PHẢI khớp tay
 // EARLY_BIRD_WINDOW_DAYS/EARLY_BIRD_BONUS_DAYS_BY_PLAN ở api/sepay-webhook.js (nơi THỰC SỰ cộng
@@ -56,8 +83,17 @@ function decorateEarlyBird(plans, profile){
   });
 }
 function currentPlans(ctx){
-  const base = (ctx.profile && ctx.profile.referred_by_ref_code) ? PLANS_REFERRAL : PLANS;
-  return decorateEarlyBird(base, ctx.profile);
+  const p = ctx.profile;
+  const isReferral = !!(p && p.referred_by_ref_code);
+  const base = isReferral ? PLANS_REFERRAL : PLANS;
+  // Ưu đãi 15 phút KHÔNG áp cho người đang có giá giới thiệu (đã giảm 15% riêng, chồng thêm ưu đãi
+  // 15 phút là 2 lớp giảm giá cho 1 nhóm khách quá đông — bài học từ nhan-hieu, áp thẳng ở đây ngay
+  // từ đầu). Khi đang hiện, BỎ HẲN 2 dòng "6 tháng"/"12 tháng" giá thường khỏi danh sách — giá gốc đã
+  // tự hiện gạch ngang trong chip ưu đãi rồi, giữ cả 2 gây rối mắt (bài học từ nhan-hieu).
+  const withUrgency = (!isReferral && isInExpiredUrgencyWindow(p))
+    ? [...EXPIRED_URGENCY_PLANS, ...base.filter(pl => !EXPIRED_URGENCY_PLANS.some(u => u.key.replace('_urgent','') === pl.key))]
+    : base;
+  return decorateEarlyBird(withUrgency, p);
 }
 
 // Nhãn "rẻ hơn X đ (~Y%)" cho gói 6/12 tháng — so với mua LẺ THEO THÁNG (giá 1m) nhân lên đúng số
@@ -87,6 +123,7 @@ const TOPUP_PACKS = [
 ];
 
 function render(container, ctx){
+  if(countdownInterval){ clearInterval(countdownInterval); countdownInterval = null; }
   const plans = currentPlans(ctx);
   const state = {
     loading:true, refCode:null, selectedPlanKey: (plans.find(p=>p.recommended)||plans[0]).key, checking:false, checkedOnce:false, error:'',
@@ -191,11 +228,40 @@ function render(container, ctx){
       ${(!canTopup || state.tab==='goi') ? `
       <div class="card" style="max-width:460px;margin-top:16px;">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
+        ${(()=>{
+          // Đồng hồ đếm ngược tách riêng hẳn thành 1 khối to, nền số gần đen tương phản với dòng
+          // chữ nhãn màu đỏ phía trên (áp lại đúng bản đã chỉnh cho nhan-hieu sau 2 lần góp ý chị
+          // Quỳnh 2026-09-17: "phải là 1 ô to đùng riêng" + "cùng màu thế thì ko nổi").
+          const urgencySeconds = plans.some(pl => pl.urgent) ? expiredUrgencySecondsLeft(p) : null;
+          if(urgencySeconds == null) return '';
+          const mm = Math.floor(urgencySeconds / 60), ss = urgencySeconds % 60;
+          const digitBox = (n)=>`<div style="background:var(--ink);color:#fff;font-family:'Playfair Display',serif;font-weight:900;font-size:32px;line-height:1;padding:8px 14px;border-radius:10px;font-variant-numeric:tabular-nums;min-width:50px;">${String(n).padStart(2,'0')}</div>`;
+          return `
+            <div style="background:linear-gradient(135deg, rgba(166,70,46,.10), rgba(166,70,46,.18));border:1.5px solid var(--danger);border-radius:14px;padding:14px 16px;margin-bottom:12px;text-align:center;">
+              <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:10px;">🔥 Ưu đãi giảm 10% gói 6/12 tháng sắp hết!</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+                ${digitBox(mm)}
+                <div style="font-size:26px;font-weight:900;color:var(--danger);">:</div>
+                ${digitBox(ss)}
+              </div>
+              <div style="display:flex;justify-content:center;gap:24px;margin-top:5px;">
+                <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Phút</span>
+                <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Giây</span>
+              </div>
+            </div>`;
+        })()}
         ${earlyBirdTimeLeftLabel(p) ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdTimeLeftLabel(p))} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
         <div class="chips" id="plan-chips">
           ${plans.map(pl => {
             const savings = planSavingsLabel(pl);
-            return `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${esc(pl.label)} — ${pl.amount.toLocaleString('vi-VN')}đ${pl.recommended?` <span style="opacity:.72;font-size:11.5px;">(khuyên dùng)</span>`:''}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+            // Chip ưu đãi 15 phút: tag đỏ + giá gốc gạch ngang ngay trong chip, cùng cách làm đã áp
+            // cho nhan-hieu (chipHtml ở app-shell.js).
+            const originalPlan = pl.urgent ? PLANS.find(r => r.key === pl.key.replace('_urgent','')) : null;
+            const priceHtml = originalPlan
+              ? `<s style="opacity:.65;font-weight:400;">${originalPlan.amount.toLocaleString('vi-VN')}đ</s> ${pl.amount.toLocaleString('vi-VN')}đ`
+              : `${pl.amount.toLocaleString('vi-VN')}đ`;
+            const urgentTag = pl.urgent ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">ƯU ĐÃI 15 PHÚT</span>` : '';
+            return `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${urgentTag}${esc(pl.label)} — ${priceHtml}${pl.recommended?` <span style="opacity:.72;font-size:11.5px;">(khuyên dùng)</span>`:''}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
           }).join('')}
         </div>
         ${plan.note ? `<div class="hint-box" style="margin-top:10px;">🎉 ${esc(plan.note)}</div>` : ''}
@@ -308,6 +374,11 @@ function render(container, ctx){
 
   draw();
   boot();
+  // Dựa vào plans (đã qua currentPlans() — nơi duy nhất quyết định ai thấy ưu đãi 15 phút, loại cả
+  // người đang có giá giới thiệu) thay vì tự gọi lại isInExpiredUrgencyWindow() trần ở đây.
+  if(plans.some(pl => pl.urgent)){
+    countdownInterval = setInterval(draw, 1000);
+  }
 }
 
 window.Modules = window.Modules || {};

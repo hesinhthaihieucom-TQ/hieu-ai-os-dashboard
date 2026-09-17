@@ -190,6 +190,12 @@ const CRM_AMOUNT_TO_DAYS = {
   424000: 30,    // 1 tháng, giá giới thiệu
   2116000: 180,  // 6 tháng, giá giới thiệu (giảm 15% so 2.490.000đ — KHÁC số của nhan-hieu vì giá gốc 6 tháng khác nhau)
   3392000: 365,  // 1 năm, giá giới thiệu
+  // Ưu đãi "15 phút" ngay khi vừa hết hạn (2026-09-17, áp lại y hệt nhan-hieu — xem
+  // EXPIRED_URGENCY_PLANS/isInExpiredUrgencyWindow() ở tro-ly-crm/js/nang-cap.js). Được PHÉP trùng
+  // số với nhan-hieu (3591000 trùng nguyên) vì tiền tố CRM đã phân biệt sản phẩm trước khi so số
+  // tiền, giống mọi số khác trong bảng này.
+  2241000: 180,  // 6 tháng, ưu đãi 15 phút (giảm 10% so với giá thường 2.490.000đ)
+  3591000: 365,  // 1 năm, ưu đãi 15 phút (giảm 10% so với giá thường 3.990.000đ)
 };
 // Số tiền coi là "đã mua giá giới thiệu" — khớp 1 trong 3 số này thì mới kích hoạt thưởng cho
 // referrer (không tính khi mua "Mua thêm lượt" hay các số tiền khác).
