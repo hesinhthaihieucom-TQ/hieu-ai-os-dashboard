@@ -70,6 +70,14 @@ b, strong{ color:var(--white); }
 .lp-hero-trust{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:24px; font-size:13.5px; color:var(--gray); }
 .lp-hero-trust-item b{ color:var(--gold); font-family:'Playfair Display',serif; font-size:15.5px; }
 .lp-hero-trust-sep{ width:4px; height:4px; border-radius:50%; background:var(--gray2); flex-shrink:0; }
+/* Đồng hồ đếm ngược giữ giá 199k (chị Quỳnh chốt 2026-09-17: 60 phút kể từ lúc khách THẬT SỰ vào
+   trang lần đầu — mốc giờ lưu localStorage, không reset khi tải lại trang, xem script cuối trang).
+   Sau khi hết giờ, giá đổi thật (không phải chỉ đổi số hiển thị) vì AMOUNT dùng để sinh mã QR cũng
+   đọc từ cùng 1 hàm tcLpActivePrice() — tránh kiểu đếm ngược giả chỉ đổi chữ mà giá thật không đổi,
+   dễ mất uy tín nếu khách phát hiện ra. */
+.lp-countdown{ display:inline-block; font-size:13.5px; font-weight:600; color:var(--gold-light); background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); border-radius:999px; padding:8px 16px; margin:14px 0; }
+.lp-countdown b{ color:#fff; }
+.tc-lp-countdown-time{ font-family:'Playfair Display',serif; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; }
 
 /* ===== Sections ===== */
 .lp-section{ padding:36px 0; border-top:1px solid var(--line); }
