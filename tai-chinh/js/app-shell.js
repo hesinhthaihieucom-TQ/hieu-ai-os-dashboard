@@ -138,12 +138,15 @@ function tcPriceAnchorHtml(profile){
   // thấy "299k"). Không tự hết hạn theo ngày như 3 mức kia — đây là ưu đãi CỐ ĐỊNH cho đúng nguồn
   // landing page, không phụ thuộc lúc nào họ bấm vào.
   if(tcHasLpPromo()){
-    const urgencyActive = tcLpPromoUrgencyActive();
-    const price = urgencyActive ? TC_LP_PROMO_AMOUNT : TC_PRICE_TIER_1;
+    // Chị Quỳnh chốt 2026-09-17: hết giờ ưu đãi thì lặng lẽ hiện đúng giá 299k, KHÔNG thông báo
+    // "đã hết giờ/đã hết ưu đãi" — tránh cảm giác tiêu cực khiến khách thấy đã lỡ mất mà bỏ đi, thay
+    // vào đó vẫn giữ đúng 1 giọng điệu tích cực dù đang ở mức giá nào trong 2 mức (199k lúc còn hạn,
+    // 299k sau khi hết hạn — cả 2 đều rẻ hơn giá chuẩn 999k thật, không có gì phải giấu).
+    const price = tcLpPromoUrgencyActive() ? TC_LP_PROMO_AMOUNT : TC_PRICE_TIER_1;
     return `
       <div style="text-align:center;font-size:20px;color:var(--ink-soft);text-decoration:line-through;line-height:1.3;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</div>
       <div style="text-align:center;font-size:24px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${price.toLocaleString('vi-VN')}đ</div>
-      <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">${urgencyActive ? '🎁 Giá ưu đãi riêng từ Landing Page — tiết kiệm ' + (TC_PRICE_TIER_3-price).toLocaleString('vi-VN') + 'đ' : '⏰ Đã hết giờ ưu đãi 199k — vẫn còn ưu đãi riêng ' + price.toLocaleString('vi-VN') + 'đ, tiết kiệm ' + (TC_PRICE_TIER_3-price).toLocaleString('vi-VN') + 'đ'}</div>
+      <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Giá ưu đãi riêng từ Landing Page — tiết kiệm ${(TC_PRICE_TIER_3-price).toLocaleString('vi-VN')}đ</div>
     `;
   }
   const price = tcCurrentPrice(profile);

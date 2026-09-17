@@ -336,7 +336,11 @@
       <input class="lp-signup-input" id="lp-su-pass" type="password" placeholder="Ít nhất 6 ký tự">
       <div id="lp-signup-error" class="lp-signup-error" hidden></div>
       <button class="lp-cta" id="lp-su-submit" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Xác nhận thông tin — lấy mã QR →</button>
-      <div class="lp-shot-cap" style="margin-top:14px;">Chưa chắc chắn? <a href="../index.html?promo=lp199k#thiet-lap-nhanh">Làm bài Chấm Điểm Nghiệp Tiền miễn phí trước</a>, không cần tài khoản.</div>
+      <div style="text-align:center;margin-top:16px;">
+        <div class="lp-shot-cap" style="margin-bottom:10px;">Chưa chắc chắn?</div>
+        <a class="lp-cta-secondary" href="../index.html?promo=lp199k#thiet-lap-nhanh">📊 Làm bài Chấm Điểm Nghiệp Tiền miễn phí trước →</a>
+        <div class="lp-shot-cap" style="margin-top:10px;">Không cần tài khoản · Ưu đãi vẫn được giữ khi bạn quay lại đăng ký</div>
+      </div>
     </div>
 
     <div class="lp-signup-card" id="lp-payment-wrap" hidden>
@@ -385,7 +389,11 @@
     <div class="lp-countdown tc-lp-countdown-wrap">⏰ Giá <span class="tc-lp-price">199.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">60:00</span></div>
     <a class="lp-cta" href="#dang-ky">Đăng ký ngay — mở khoá <span class="tc-lp-price">199.000đ</span> →</a>
     <div class="lp-cta-note">Trọn đời · Thanh toán 1 lần duy nhất · Không ràng buộc</div>
-    <div class="lp-shot-cap" style="margin-top:16px;">Vẫn còn lăn tăn? <a href="../index.html?promo=lp199k#thiet-lap-nhanh">Làm bài Chấm Điểm Nghiệp Tiền miễn phí</a> — không cần tài khoản, ưu đãi vẫn được giữ khi bạn quay lại đăng ký.</div>
+    <div style="text-align:center;margin-top:20px;">
+      <div class="lp-shot-cap" style="margin-bottom:10px;">Vẫn còn lăn tăn?</div>
+      <a class="lp-cta-secondary" href="../index.html?promo=lp199k#thiet-lap-nhanh">📊 Làm bài Chấm Điểm Nghiệp Tiền miễn phí →</a>
+      <div class="lp-shot-cap" style="margin-top:10px;">Không cần tài khoản · Ưu đãi vẫn được giữ khi bạn quay lại đăng ký</div>
+    </div>
   </section>
 
 </div>
@@ -426,12 +434,11 @@
   function tick() {
     const msLeft = deadline - Date.now();
     if (msLeft <= 0) {
-      document.querySelectorAll('.tc-lp-countdown-wrap').forEach(el => {
-        // Bản gọn (.lp-countdown-sm ở thanh sticky) không đủ chỗ cho câu dài — dùng thông báo ngắn hơn.
-        el.innerHTML = el.classList.contains('lp-countdown-sm')
-          ? '🔒 Đã lên giá: <b>' + fmtVnd(REGULAR_PRICE) + '</b>'
-          : 'Đã hết ưu đãi — giá hiện tại: <b>' + fmtVnd(REGULAR_PRICE) + '</b>';
-      });
+      // Chị Quỳnh chốt 2026-09-17: hết giờ thì cứ lặng lẽ hiện giá 299k thật ở mọi chỗ vốn đã gắn
+      // .tc-lp-price (qua updatePriceUI() bên dưới) — KHÔNG thông báo "đã hết ưu đãi/đã lên giá" nữa,
+      // tránh cảm giác tiêu cực khiến khách bỏ đi vì nghĩ đã lỡ mất cơ hội. Ẩn hẳn khối đếm ngược thay
+      // vì đổi chữ, vì đến lúc này không còn gì để đếm ngược nữa.
+      document.querySelectorAll('.tc-lp-countdown-wrap').forEach(el => { el.style.display = 'none'; });
       updatePriceUI();
       clearInterval(timer);
       return;

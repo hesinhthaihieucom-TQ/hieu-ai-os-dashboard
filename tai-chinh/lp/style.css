@@ -61,6 +61,16 @@ b, strong{ color:var(--white); }
   transition:opacity .12s ease, transform .12s ease; box-shadow:0 6px 20px rgba(227,168,59,.25);
 }
 .lp-cta:hover{ opacity:.92; transform:translateY(-1px); }
+/* Nút phụ "làm bài Chấm Điểm Nghiệp Tiền miễn phí" cho người chưa sẵn sàng đăng ký ngay (chị Quỳnh
+   2026-09-17: bản trước chỉ là 1 dòng chữ nhỏ màu xám, "chưa thấy có chỗ" — nâng hẳn lên thành nút
+   bấm thật, viền vàng, KHÔNG tô đặc để vẫn rõ ràng là lựa chọn PHỤ, không cạnh tranh với nút chính). */
+.lp-cta-secondary{
+  display:inline-block; appearance:none; cursor:pointer; text-decoration:none;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:15px; padding:13px 26px;
+  border-radius:999px; border:1.5px solid rgba(240,194,75,.5); background:rgba(240,194,75,.07);
+  color:var(--gold-light); transition:background .12s ease, transform .12s ease;
+}
+.lp-cta-secondary:hover{ background:rgba(240,194,75,.16); transform:translateY(-1px); }
 .lp-cta-note{ margin-top:12px; font-size:12.5px; color:var(--gray2); }
 .lp-cta-wrap{ margin:26px 0; }
 /* Nhịp sáng nhẹ liên tục hút mắt về nút CTA chính trong hero — chỉ dùng ở ĐÚNG 1 nút quan trọng
