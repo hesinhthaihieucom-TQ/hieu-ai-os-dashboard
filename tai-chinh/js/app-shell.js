@@ -34,6 +34,22 @@ const TC_LP_PROMO_AMOUNT = 199000;
 function tcHasLpPromo(){
   try { return localStorage.getItem(TC_LP_PROMO_STORAGE_KEY) === '1'; } catch(e){ return false; }
 }
+// Đồng bộ đồng hồ đếm ngược 60 phút với ladipage (chị Quỳnh chốt 2026-09-17: "làm bài Chấm Điểm
+// Nghiệp Tiền rồi quay lại đăng ký thì giá cũng phải hết hạn giống hệt bên ladipage, không được để
+// đi đường vòng qua bài test thì thoải mái không bị thúc giục"). Đọc lại ĐÚNG key
+// "tc_lp_deadline_ts" mà tai-chinh/lp/index.html đã set — không tạo key riêng, vì ladipage và app
+// này cùng 1 origin (cùng domain hesinhthaihieu.com hoặc cùng domain Vercel) nên localStorage vốn đã
+// dùng chung, khỏi cần truyền mốc giờ qua URL. Không có mốc giờ (vd tài khoản có promo từ trước khi
+// tính năng này tồn tại, hoặc chưa từng thật sự ghé ladipage) → coi như đã hết hạn, an toàn hơn là
+// mặc định còn hạn cho mọi người.
+const TC_LP_DEADLINE_KEY = 'tc_lp_deadline_ts';
+function tcLpPromoUrgencyActive(){
+  try {
+    const deadline = parseInt(localStorage.getItem(TC_LP_DEADLINE_KEY), 10);
+    if(!deadline || isNaN(deadline)) return false;
+    return Date.now() < deadline;
+  } catch(e){ return false; }
+}
 //
 // Thu phí (2026-08-23, theo yêu cầu chị Quỳnh; SỬA 2026-08-24 — bỏ hẳn 14 ngày dùng thử): freemium,
 // KHÔNG phải all-or-nothing như nhan-hieu. Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng luôn FREE mãi mãi
@@ -107,7 +123,10 @@ function tcNextTierPrice(profile){
 // không thì về đúng 3 mức tiêu chuẩn tcCurrentPrice(). Dùng hàm này ở MỌI nơi hiện/thu tiền thay vì
 // gọi thẳng tcCurrentPrice(), để không sót chỗ nào vẫn hiện giá tiêu chuẩn cho người có khuyến mãi.
 function tcActivePrice(profile){
-  return tcHasLpPromo() ? TC_LP_PROMO_AMOUNT : tcCurrentPrice(profile);
+  if(!tcHasLpPromo()) return tcCurrentPrice(profile);
+  // Hết 60 phút kể từ lúc vào ladipage → về đúng giá TC_PRICE_TIER_1 (299k, mốc giá THẬT app đang
+  // bán sẵn cho ngày 0-15) thay vì giữ mãi 199k — xem tcLpPromoUrgencyActive() ở trên.
+  return tcLpPromoUrgencyActive() ? TC_LP_PROMO_AMOUNT : TC_PRICE_TIER_1;
 }
 // Khối giá DÙNG CHUNG ở MỌI nơi mời nâng cấp (2026-08-26, góp ý Quỳnh: "hiển thị đều cho người ta
 // thấy được cái sự rẻ của bắt đầu ngay với 299k") — gạch ngang giá chuẩn 999k bên cạnh giá hiện tại +
@@ -119,10 +138,12 @@ function tcPriceAnchorHtml(profile){
   // thấy "299k"). Không tự hết hạn theo ngày như 3 mức kia — đây là ưu đãi CỐ ĐỊNH cho đúng nguồn
   // landing page, không phụ thuộc lúc nào họ bấm vào.
   if(tcHasLpPromo()){
+    const urgencyActive = tcLpPromoUrgencyActive();
+    const price = urgencyActive ? TC_LP_PROMO_AMOUNT : TC_PRICE_TIER_1;
     return `
       <div style="text-align:center;font-size:20px;color:var(--ink-soft);text-decoration:line-through;line-height:1.3;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</div>
-      <div style="text-align:center;font-size:24px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${TC_LP_PROMO_AMOUNT.toLocaleString('vi-VN')}đ</div>
-      <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Giá ưu đãi riêng từ Landing Page — tiết kiệm ${(TC_PRICE_TIER_3-TC_LP_PROMO_AMOUNT).toLocaleString('vi-VN')}đ</div>
+      <div style="text-align:center;font-size:24px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${price.toLocaleString('vi-VN')}đ</div>
+      <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">${urgencyActive ? '🎁 Giá ưu đãi riêng từ Landing Page — tiết kiệm ' + (TC_PRICE_TIER_3-price).toLocaleString('vi-VN') + 'đ' : '⏰ Đã hết giờ ưu đãi 199k — vẫn còn ưu đãi riêng ' + price.toLocaleString('vi-VN') + 'đ, tiết kiệm ' + (TC_PRICE_TIER_3-price).toLocaleString('vi-VN') + 'đ'}</div>
     `;
   }
   const price = tcCurrentPrice(profile);
