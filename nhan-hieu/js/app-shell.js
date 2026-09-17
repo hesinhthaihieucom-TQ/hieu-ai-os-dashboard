@@ -283,19 +283,22 @@ function decorateEarlyBird(plans, profile){
 function currentPaymentPlans(){
   const p = AppState.profile;
   const isStudent = !!(p && p.is_student);
-  const base = isStudent
-    ? buildStudentPlans(p)
-    // Chỉ hiện giá giới thiệu nếu CHƯA từng dùng ưu đãi này lần nào (referral_discount_used) — chị
-    // Quỳnh chốt 2026-09-16: ưu đãi 15% chỉ áp dụng đúng 1 lần đăng ký/mua đầu tiên, các lần gia hạn
-    // sau đó về giá thường dù referred_by_ref_code không đổi (xem cờ này ở schema_core.sql).
-    : (p && p.referred_by_ref_code && !p.referral_discount_used) ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS;
+  // Chỉ hiện giá giới thiệu nếu CHƯA từng dùng ưu đãi này lần nào (referral_discount_used) — chị
+  // Quỳnh chốt 2026-09-16: ưu đãi 15% chỉ áp dụng đúng 1 lần đăng ký/mua đầu tiên, các lần gia hạn
+  // sau đó về giá thường dù referred_by_ref_code không đổi (xem cờ này ở schema_core.sql).
+  const isReferralEligible = !isStudent && !!(p && p.referred_by_ref_code && !p.referral_discount_used);
+  const base = isStudent ? buildStudentPlans(p) : (isReferralEligible ? REFERRAL_REGULAR_PLANS : REGULAR_PLANS);
   // "cái ưu đãi đều sẽ ko áp dụng cho học viên nha" (chị Quỳnh 2026-09-07) — flash-sale trước đây
   // KHÔNG loại trừ học viên (chỉ referral/early-bird đã loại) — hiện tại vô hại vì FLASH_SALE_CUTOFF
   // đã qua (isFlashSaleActive() luôn false), nhưng vẫn là lỗ hổng thật nếu sau này mở lại 1 đợt flash-
   // sale khác bằng cách đổi lại cutoff. Loại hẳn học viên khỏi CẢ 3 loại ưu đãi (flash-sale/referral/
   // early-bird) — giá học viên đã là mức giảm riêng, không cộng dồn thêm ưu đãi nào khác.
   const withFlash = (!isStudent && isFlashSaleActive()) ? [...FLASH_SALE_PLANS, ...base] : base;
-  const withUrgency = (!isStudent && isInExpiredUrgencyWindow(p)) ? [...EXPIRED_URGENCY_PLANS, ...withFlash] : withFlash;
+  // Ưu đãi 15 phút KHÔNG áp cho người đang được giá giới thiệu (chị Quỳnh 2026-09-17: "có nên tính
+  // cho những người được người khác giới thiệu ko? ko đâu nhỉ, vì nếu thế thì nhiều quá") — họ đã có
+  // sẵn mức giảm 15% riêng, cộng thêm ưu đãi 15 phút nữa là 2 lớp giảm giá chồng lên 1 nhóm khách quá
+  // đông (ai cũng có thể vào bằng link giới thiệu), không phải trường hợp hiếm/khẩn cấp thật sự nữa.
+  const withUrgency = (!isStudent && !isReferralEligible && isInExpiredUrgencyWindow(p)) ? [...EXPIRED_URGENCY_PLANS, ...withFlash] : withFlash;
   return isStudent ? withUrgency : decorateEarlyBird(withUrgency, p);
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
@@ -729,11 +732,35 @@ function paymentCardHtml(){
   // khi đã chọn đúng gói 6/12 tháng. Khối này hiện NGAY TỪ ĐẦU, không phụ thuộc gói đang chọn — không
   // áp cho học viên (đã loại ở decorateEarlyBird()/isInEarlyBirdWindow() phía server, giữ nhất quán).
   const earlyBirdLabel = !isStudent ? earlyBirdTimeLeftLabel(p) : null;
-  const urgencyLabel = !isStudent ? expiredUrgencyTimeLeftLabel(p) : null;
+  // Dựa thẳng vào plans thay vì tự tính lại điều kiện học viên/giới thiệu ở đây — currentPaymentPlans()
+  // đã là nơi duy nhất quyết định ai được thấy ưu đãi 15 phút (loại cả học viên lẫn người đang có giá
+  // giới thiệu, xem comment ở đó), tránh 2 nơi có thể lệch nhau nếu sau này đổi điều kiện.
+  const urgencySeconds = plans.some(pl => pl.urgent) ? expiredUrgencySecondsLeft(p) : null;
+
+  // Đồng hồ đếm ngược tách riêng hẳn thành 1 khối to (chị Quỳnh 2026-09-17: "phần thời gian tính giờ
+  // nó phải là 1 ô to đùng riêng, để nó riêng hẳn ra cho dễ nhìn") — 2 ô số lớn phút/giây kiểu đồng
+  // hồ đếm ngược thật, tách khỏi dòng chữ nhãn phía trên, thay vì nhét chung 1 dòng như bản cũ. Cùng
+  // ngôn ngữ thiết kế "to hẳn lên" đã áp cho đồng hồ đếm ngược 199k bên Sổ Dòng Tiền (nền đỏ cảnh
+  // báo, số cỡ lớn font Playfair Display, tabular-nums).
+  const urgencyMin = urgencySeconds != null ? Math.floor(urgencySeconds / 60) : null;
+  const urgencySec = urgencySeconds != null ? urgencySeconds % 60 : null;
+  const urgencyDigitBox = (n)=>`<div style="background:var(--danger);color:#fff;font-family:'Playfair Display',serif;font-weight:900;font-size:32px;line-height:1;padding:8px 14px;border-radius:10px;font-variant-numeric:tabular-nums;min-width:50px;">${String(n).padStart(2,'0')}</div>`;
 
   return `
     <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
-    ${urgencyLabel ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">🔥 Ưu đãi giảm 10% gói 6/12 tháng — còn <span style="font-variant-numeric:tabular-nums;">${esc(urgencyLabel)}</span> là hết</div>` : ''}
+    ${urgencySeconds != null ? `
+    <div style="background:linear-gradient(135deg, rgba(166,70,46,.10), rgba(166,70,46,.18));border:1.5px solid var(--danger);border-radius:14px;padding:14px 16px;margin-bottom:12px;text-align:center;">
+      <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:10px;">🔥 Ưu đãi giảm 10% gói 6/12 tháng sắp hết!</div>
+      <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+        ${urgencyDigitBox(urgencyMin)}
+        <div style="font-size:26px;font-weight:900;color:var(--danger);">:</div>
+        ${urgencyDigitBox(urgencySec)}
+      </div>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:5px;">
+        <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Phút</span>
+        <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Giây</span>
+      </div>
+    </div>` : ''}
     ${earlyBirdLabel ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdLabel)} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
     <div class="hint-box" style="margin-bottom:12px;line-height:1.7;">
       💡 <b>Đặc biệt Kho Content và Kho Hook viral</b> — nơi giúp bạn viết content dễ dàng từ các content đang có tín hiệu tốt trên thị trường.<br><br>
