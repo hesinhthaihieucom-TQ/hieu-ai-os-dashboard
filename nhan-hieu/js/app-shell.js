@@ -617,7 +617,7 @@ async function maybeShowPushPrompt(){
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
-      await callApi('/api/push-subscribe', newSub.toJSON());
+      await callApi('/api/push-subscribe', { ...newSub.toJSON(), app: 'nhan-hieu' });
       close(); markPushPromptSeen();
     } catch(e){
       errorEl.textContent = e.message || 'Không bật được thông báo — thử lại giúp mình.';

@@ -407,7 +407,7 @@ async function maybeShowTcPushPrompt(){
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
-      await callApi('/api/push-subscribe', newSub.toJSON());
+      await callApi('/api/push-subscribe', { ...newSub.toJSON(), app: 'tai-chinh' });
       close(); markTcPushPromptSeen();
     } catch(e){
       errorEl.textContent = e.message || 'Không bật được thông báo — thử lại giúp mình.';

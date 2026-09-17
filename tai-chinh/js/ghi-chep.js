@@ -100,7 +100,7 @@ function render(container, ctx){
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
-      await callApi('/api/push-subscribe', sub.toJSON());
+      await callApi('/api/push-subscribe', { ...sub.toJSON(), app: 'tai-chinh' });
       state.pushSubscribed = true;
     } catch(e){
       state.pushError = e.message || 'Không bật được thông báo — thử lại giúp mình.';

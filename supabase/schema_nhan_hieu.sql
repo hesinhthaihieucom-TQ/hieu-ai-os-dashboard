@@ -486,6 +486,16 @@ drop policy if exists "push_subscriptions_owner_all" on push_subscriptions;
 create policy "push_subscriptions_owner_all" on push_subscriptions for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- BUG THẬT phát hiện 2026-09-17 (chị Quỳnh: "bật app crm xong thông báo ở app xây nhân hiệu lại bị
+-- thành là crm thông báo") — bảng này dùng CHUNG cho cả hệ sinh thái nhưng KHÔNG có cột phân biệt
+-- app, nên 1 user bật thông báo ở 2 app (cùng 1 user_id) sẽ có 2 dòng, và sendPushToUser() (xem
+-- api/_lib/push.js) trước đây gửi CẢ payload của app A lẫn app B tới TẤT CẢ endpoint của user đó —
+-- ví dụ nhắc follow khách CRM lại hiện lên trên thiết bị đã cài Xây Nhân Hiệu. Thêm cột "app" để lọc
+-- đúng theo từng app khi gửi — dòng cũ (tạo trước ngày này) sẽ có app=NULL, không khớp app nào nên
+-- tạm ngừng nhận thông báo cho tới khi user bấm lại "Bật thông báo" 1 lần (không có cách nào suy
+-- ngược app cũ từ dữ liệu hiện có).
+alter table push_subscriptions add column if not exists app text;
+
 -- Đánh dấu đã gửi thông báo cho đúng 1 sự kiện cụ thể (vd "lich:<entry_id>" hoặc
 -- "daybai:<entry_id>:3h") — cron chạy mỗi 15 phút nên PHẢI chống gửi trùng, unique (user_id,
 -- event_key) là cách chống trùng đơn giản nhất, không cần lock/queue phức tạp. Chỉ service_role

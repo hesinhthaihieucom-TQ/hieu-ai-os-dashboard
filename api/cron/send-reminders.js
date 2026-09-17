@@ -83,7 +83,7 @@ async function checkLichDangBai() {
       title: 'Đến giờ đăng bài rồi',
       body: entry.title ? `"${entry.title}" đang chờ bạn đăng.` : 'Có bài đã lên lịch cần đăng ngay bây giờ.',
       url: './#lich-dang',
-    });
+    }, 'nhan-hieu');
     if (result.sent) count++;
   }
   return count;
@@ -104,7 +104,7 @@ async function checkDayBaiCheckpoints() {
           title: `Đã đăng được ${milestone} giờ`,
           body: row.title ? `Vào Đẩy Bài kiểm tra view bài "${row.title}" đã đạt mốc nào chưa.` : 'Vào Đẩy Bài kiểm tra view đã đạt mốc nào chưa.',
           url: './#day-bai',
-        });
+        }, 'nhan-hieu');
         if (result.sent) count++;
       }
     }
@@ -125,7 +125,7 @@ async function checkRecordingSchedule() {
       title: 'Đến giờ công việc content rồi',
       body: row.title ? `"${row.title}" đã đến giờ.` : 'Đã đến lịch công việc content bạn đặt.',
       url: './#lich-dang',
-    });
+    }, 'nhan-hieu');
     if (result.sent) count++;
   }
   return count;
@@ -152,7 +152,7 @@ async function checkNewSignups() {
         title: 'Có người đăng ký mới',
         body: `${who} vừa tạo tài khoản — vào Quản trị để xem.`,
         url: './#quan-tri-hub',
-      });
+      }, 'nhan-hieu');
       if (result.sent) count++;
     }
   }
@@ -163,12 +163,16 @@ async function checkNewSignups() {
 // chị Quỳnh: "trên app của khách cũng hiện thông báo") — khác checkNewSignups() ở trên (chỉ báo
 // admin), cái này báo TẤT CẢ user, nên lấy thẳng danh sách user_id có trong push_subscriptions thay
 // vì quét toàn bộ profiles — ai chưa từng bật thông báo thì không có bản ghi, tự động bỏ qua, không
-// tốn công gọi notifyOnce cho người chắc chắn không nhận được gì.
+// tốn công gọi notifyOnce cho người chắc chắn không nhận được gì. feature_announcements ở đây là
+// bảng RIÊNG của nhan-hieu (mỗi app có bảng thông báo tính năng của riêng mình — tai_chinh_feature_
+// announcements, crm_feature_announcements...) nên PHẢI lọc push_subscriptions theo app='nhan-hieu'
+// (2026-09-17, xem BUG THẬT ở schema_nhan_hieu.sql) — không thì user chỉ dùng CRM/sức khỏe cũng bị
+// nhận nhầm thông báo tính năng mới của Xây Nhân Hiệu.
 async function checkNewAnnouncements() {
   const windowStartIso = new Date(Date.now() - WINDOW_MINUTES * 60000).toISOString();
   const [annResp, subsResp] = await Promise.all([
     supabaseAdmin(`feature_announcements?created_at=gte.${encodeURIComponent(windowStartIso)}&select=id,title,body,created_at&order=created_at.asc`),
-    supabaseAdmin(`push_subscriptions?select=user_id`),
+    supabaseAdmin(`push_subscriptions?app=eq.nhan-hieu&select=user_id`),
   ]);
   const announcements = annResp.ok ? await annResp.json() : [];
   if (!announcements.length) return 0;
@@ -183,7 +187,7 @@ async function checkNewAnnouncements() {
         title: '🎉 Tính năng mới: ' + ann.title,
         body: ann.body,
         url: './#trang-chu',
-      });
+      }, 'nhan-hieu');
       if (result.sent) count++;
     }
   }
@@ -209,7 +213,7 @@ async function checkTrialEnding() {
       title: 'Dùng thử sắp hết hạn',
       body: 'Còn khoảng 24 giờ nữa là hết hạn dùng thử — nâng cấp ngay để không bị gián đoạn.',
       url: './#nang-cap',
-    });
+    }, 'nhan-hieu');
     if (result.sent) count++;
   }
 
@@ -224,7 +228,7 @@ async function checkTrialEnding() {
       title: 'Dùng thử đã kết thúc',
       body: '7 ngày dùng thử đã hết — nâng cấp ngay để tiếp tục dùng app.',
       url: './#nang-cap',
-    });
+    }, 'nhan-hieu');
     if (result.sent) count++;
   }
 
@@ -259,7 +263,7 @@ async function checkAutoFillNudge() {
       title: 'Thử để AI viết luôn cả tuần content cho bạn',
       body: 'Bạn đã làm xong Định Vị — vào Lịch Đăng Bài bấm "AI tự viết + xếp cả tuần" để AI viết bài hoàn chỉnh, xếp thẳng vào lịch.',
       url: './#lich-dang',
-    });
+    }, 'nhan-hieu');
     if (result.sent) count++;
   }
   return count;
@@ -296,7 +300,7 @@ async function checkCrmFollowReminders() {
       title: n > 1 ? `Có ${n} khách cần follow hôm nay` : 'Có 1 khách cần follow hôm nay',
       body: 'Vào Trợ Lý AI Tư Vấn & CRM để xem và follow đúng lúc.',
       url: './#trang-chu',
-    });
+    }, 'tro-ly-crm');
     if (result.sent) count++;
   }
   return count;
@@ -343,7 +347,7 @@ async function checkSucKhoeDailyTip() {
       title: '🌿 Bản tin sức khỏe hôm nay: ' + entry.issue_name,
       body: teaser || 'Xem ngay trong Thư Viện Sức Khỏe.',
       url: './#thu-vien-suc-khoe',
-    });
+    }, 'suc-khoe');
     if (result.sent) count++;
   }
   return count;
@@ -369,7 +373,7 @@ async function checkSucKhoeProductReminders() {
       title: '⏰ Đến giờ dùng ' + productName,
       body: `Đã đến giờ bạn đặt để dùng ${productName} — xem cách dùng trong Lịch Trình Của Bạn.`,
       url: './#lich-trinh',
-    });
+    }, 'suc-khoe');
     if (result.sent) count++;
   }
   return count;
@@ -394,7 +398,7 @@ async function checkSucKhoePackageDailyReminder() {
       title: '⏰ Đến giờ chăm sóc cơ thể hôm nay',
       body: `Xem lịch trình sản phẩm hôm nay của gói "${pkgName}".`,
       url: './#lich-trinh',
-    });
+    }, 'suc-khoe');
     if (result.sent) count++;
   }
   return count;
@@ -429,7 +433,7 @@ async function checkSucKhoeWeighInReminder() {
       title: '📏 Đến lịch cân đo tuần này',
       body: 'Đã 1 tuần rồi — vào Theo Dõi Sức Khỏe Theo Tuần cập nhật số đo mới nhất của bạn.',
       url: './#theo-doi-tuan',
-    });
+    }, 'suc-khoe');
     if (result.sent) count++;
   }
   return count;
@@ -458,7 +462,7 @@ async function checkTaiChinhLogReminder() {
         title: '📒 Ghi thu chi hôm nay chưa?',
         body: 'Chỉ mất 30 giây — dòng tiền hôm nay là dữ liệu cho Điểm Nghiệp tuần này.',
         url: './#ghi-chep',
-      });
+      }, 'tai-chinh');
       if (result.sent) count++;
     }
   }
@@ -470,7 +474,7 @@ async function checkTaiChinhLogReminder() {
         title: '📒 Ghi thu chi cả tuần này',
         body: 'Ghi bù từng ngày cũng được — chọn lại ngày ở mỗi dòng khi ghi.',
         url: './#ghi-chep',
-      });
+      }, 'tai-chinh');
       if (result.sent) count++;
     }
   }
@@ -504,7 +508,7 @@ async function checkTcPriceTierDeadline() {
         title: `⏰ Còn ${TC_PRICE_DEADLINE_REMIND_DAYS_BEFORE} ngày là hết giá ưu đãi`,
         body: `Giá Sổ Dòng Tiền Tâm Thức sẽ tự động tăng lên ${tier.nextPrice.toLocaleString('vi-VN')}đ — mở khoá TRỌN ĐỜI ngay để giữ giá đang có.`,
         url: './#nang-cap',
-      });
+      }, 'tai-chinh');
       if (result.sent) count++;
     }
   }

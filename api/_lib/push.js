@@ -19,12 +19,19 @@ function ensureVapid() {
   return true;
 }
 
-// Gửi cho TẤT CẢ thiết bị đã đăng ký của 1 user (họ có thể cài trên nhiều máy). Endpoint hết hạn/
+// Gửi cho TẤT CẢ thiết bị đã đăng ký của 1 user cho ĐÚNG 1 app (họ có thể đã bật thông báo ở nhiều
+// app khác nhau, mỗi app có dòng riêng trong push_subscriptions từ 2026-09-17 — xem BUG THẬT ở
+// schema_nhan_hieu.sql: trước đây không lọc theo app nên bật thông báo CRM lại đẩy luôn nội dung đó
+// sang thiết bị đã cài Xây Nhân Hiệu). "app" là bắt buộc trừ khi gọi rõ ràng không cần lọc (ví dụ
+// api/test-push.js muốn gửi thử tới MỌI thiết bị của user, không riêng app nào). Endpoint hết hạn/
 // bị thu hồi (410 Gone hoặc 404) thì tự xoá khỏi push_subscriptions luôn — không để rác tồn lại
 // khiến cron cứ thử gửi lại mãi mỗi lần chạy.
-async function sendPushToUser(userId, payload) {
+async function sendPushToUser(userId, payload, app) {
   if (!ensureVapid()) return { sent: 0, reason: 'vapid_not_configured' };
-  const resp = await supabaseAdmin(`push_subscriptions?user_id=eq.${userId}`);
+  const query = app
+    ? `push_subscriptions?user_id=eq.${userId}&app=eq.${encodeURIComponent(app)}`
+    : `push_subscriptions?user_id=eq.${userId}`;
+  const resp = await supabaseAdmin(query);
   const subs = resp.ok ? await resp.json() : [];
   let sent = 0;
   for (const sub of subs) {
@@ -60,9 +67,11 @@ async function markNotified(userId, eventKey) {
 }
 
 // Gộp 3 bước trên: kiểm tra chưa gửi → gửi → đánh dấu đã gửi. Dùng chung cho mọi loại nhắc ở cron.
-async function notifyOnce(userId, eventKey, payload) {
+// "app" PHẢI truyền đúng key của app đang gửi nhắc (vd 'tro-ly-crm', 'suc-khoe'...) để lọc đúng thiết
+// bị, xem sendPushToUser() ở trên.
+async function notifyOnce(userId, eventKey, payload, app) {
   if (await alreadyNotified(userId, eventKey)) return { skipped: true };
-  const result = await sendPushToUser(userId, payload);
+  const result = await sendPushToUser(userId, payload, app);
   if (result.sent > 0) await markNotified(userId, eventKey);
   return result;
 }
