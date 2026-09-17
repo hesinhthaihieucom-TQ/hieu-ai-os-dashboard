@@ -66,6 +66,14 @@
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {
+      "source": "/san-pham-so/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/san-pham-so/manifest.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
       "source": "/suc-khoe/js/:path*",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },

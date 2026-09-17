@@ -165,17 +165,22 @@ function extractCrmRefCode(content) {
 }
 
 // Sản Phẩm Số — GÓI THÁNG riêng (2026-09-01, chị Quỳnh: "e vẫn thu phí người dùng là 599k cho app
-// này 1 tháng"), KHÁC HẲN nhánh SPS ở trên (đơn mua lẻ 1 sản phẩm, không có profile) — đây là gói
-// thuê bao gắn với 1 profile (giống crm_ref_code), dùng cột riêng profiles.sps_ref_code/sps_has_paid/
-// sps_access_until. Tiền tố "SPUP" (Sản Phẩm Số Upgrade) CỐ Ý không bắt đầu bằng "SPS" — mã bắt đầu
-// "SPS..." đã bị regex extractProductOrderRefCode ở trên "vồ" mất trước khi tới được đây.
+// này 1 tháng"; đổi xuống 499.000đ/tháng 2026-09-17 — chị Quỳnh chốt đồng bộ giá với Xây Nhân Hiệu
+// và Trợ Lý CRM, cả 3 app đều 499k/tháng cho dễ nhớ, margin vẫn rất khoẻ ở mức giá này), KHÁC HẲN
+// nhánh SPS ở trên (đơn mua lẻ 1 sản phẩm, không có profile) — đây là gói thuê bao gắn với 1 profile
+// (giống crm_ref_code), dùng cột riêng profiles.sps_ref_code/sps_has_paid/sps_access_until. Tiền tố
+// "SPUP" (Sản Phẩm Số Upgrade) CỐ Ý không bắt đầu bằng "SPS" — mã bắt đầu "SPS..." đã bị regex
+// extractProductOrderRefCode ở trên "vồ" mất trước khi tới được đây.
 function extractSpsSubRefCode(content) {
   const m = /SPUP[A-Z0-9]{6}/i.exec(content || '');
   return m ? m[0].toUpperCase() : null;
 }
-// Chỉ 1 gói (599.000đ/tháng) — chưa có gói 6/12 tháng hay "mua thêm lượt" (thêm sau nếu Quỳnh cần).
+// Chỉ 1 gói (499.000đ/tháng) — chưa có gói 6/12 tháng hay "mua thêm lượt" (thêm sau nếu Quỳnh cần).
+// 499000 CŨNG là số tiền gói tháng của Xây Nhân Hiệu (AMOUNT_TO_DAYS) và Trợ Lý CRM
+// (CRM_AMOUNT_TO_DAYS) — AN TOÀN trùng số vì nhánh spsSubRefCode đã tách biệt hoàn toàn theo tiền tố
+// "SPUP" trước khi so số tiền, không có rủi ro đụng độ (đúng nguyên tắc đã áp dụng cho CRM_AMOUNT_TO_DAYS).
 const SPS_SUB_AMOUNT_TO_DAYS = {
-  599000: 30,
+  499000: 30,
 };
 const CRM_AMOUNT_TO_DAYS = {
   499000: 30,    // 1 tháng

@@ -579,3 +579,99 @@ create view digital_products_public as
   left join profiles p on p.id = dp.owner_id
   where dp.status = 'published';
 grant select on digital_products_public to anon, authenticated;
+
+-- ============================================================
+-- 30. NGƯỜI BÁN TỰ KẾT NỐI SEPAY RIÊNG (2026-09-07). Quỳnh phát hiện MỌI đơn hàng của MỌI người bán
+-- đang tự động về thẳng tài khoản Vietinbank cá nhân của chính Quỳnh (PAYMENT_BANK hard-code ở
+-- san-pham-so/p/script.js) — không có cách nào người bán KHÁC nhận tiền của họ vào tài khoản của họ.
+-- Chốt hướng "tự động đầy đủ, tự kết nối như Heyzine" (KHÁC SePay Bank Hub — Bank Hub cần chính Quỳnh
+-- có hợp đồng đối tác trả phí với SePay để nhúng OTP ngay trong app; hướng này để MỖI người bán tự
+-- đăng ký 1 tài khoản SePay ĐỘC LẬP của riêng họ tại sepay.vn, tự liên kết ngân hàng trong dashboard
+-- SePay của họ, tự tạo 1 Webhook trỏ về api/san-pham-so-seller-webhook.js — giống hệt cách người bán
+-- tự đăng ký Heyzine free rồi dán API key/client_id vào app ở mục 25, KHÔNG đụng gì tới
+-- app-shell.js/nang-cap.js hay luồng PAYMENT_BANK chung hiện có).
+-- BIN số (không phải tên ngân hàng dạng chữ) để tránh rủi ro gõ sai tên làm hỏng QR thật — đã xác nhận
+-- img.vietqr.io/image/<BIN>-<account>-<template>.png chấp nhận BIN chuẩn NAPAS. Giới hạn đúng 11 ngân
+-- hàng SePay hỗ trợ kết nối thật (xem san-pham-so/js/tai-khoan.js SEPAY_BANKS) — ngoài danh sách này
+-- SePay không tự phát hiện giao dịch được, không có ý nghĩa cho seller kết nối.
+-- sps_seller_webhook_secret: MỖI người bán 1 secret RIÊNG tự sinh (KHÔNG dùng 1 API Key cố định dùng
+-- chung cho mọi người bán — cân nhắc lại sau khi viết xong: 1 secret chung phải hiện cho MỌI người bán
+-- xem để tự dán vào SePay của họ, rò rỉ 1 người là lộ hết, ai biết được secret + biết 1 ref_code đơn
+-- hàng nào đó (tự bấm mua sẽ có ngay, không cần trả tiền) + biết số TK người bán đó (vốn công khai trên
+-- QR) là giả được webhook đánh dấu "đã thanh toán" cho BẤT KỲ sản phẩm nào của BẤT KỲ ai. Secret RIÊNG
+-- từng người thu hẹp phạm vi rò rỉ chỉ còn đúng 1 người bán đó, tự sinh 1 lần trong RPC bên dưới (giữ
+-- nguyên khi họ sửa lại thông tin ngân hàng sau này, không đổi mỗi lần lưu) — webhook dùng chính secret
+-- này để XÁC ĐỊNH LUÔN người bán nào gọi tới (khỏi cần đoán qua accountNumber), rồi vẫn đối chiếu thêm
+-- accountNumber + ref_code + số tiền cho chắc trước khi đánh dấu đã thanh toán.
+-- unique trên sps_seller_bank_account: chặn 2 người bán khác nhau cùng khai 1 số TK (vô tình hoặc cố ý
+-- dùng nhầm TK của người khác).
+-- CHƯA kết nối (bin/account rỗng) -> đơn hàng vẫn xử lý y hệt trước giờ qua api/sepay-webhook.js, tiền
+-- vẫn về TK Quỳnh, không đổi hành vi mặc định — tính năng này opt-in hoàn toàn theo từng người bán.
+alter table profiles add column if not exists sps_seller_bank_bin text;
+alter table profiles add column if not exists sps_seller_bank_account text unique;
+alter table profiles add column if not exists sps_seller_bank_account_name text;
+alter table profiles add column if not exists sps_seller_webhook_secret text unique;
+
+create or replace function public.update_sps_seller_bank_info(p_bin text, p_account text, p_account_name text)
+returns text as $$
+declare
+  v_secret text;
+begin
+  select sps_seller_webhook_secret into v_secret from public.profiles where id = auth.uid();
+  if v_secret is null then
+    v_secret := encode(gen_random_bytes(20), 'hex');
+  end if;
+  update public.profiles set sps_seller_bank_bin = p_bin, sps_seller_bank_account = p_account,
+    sps_seller_bank_account_name = p_account_name, sps_seller_webhook_secret = v_secret where id = auth.uid();
+  return v_secret;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.update_sps_seller_bank_info(text, text, text) to authenticated;
+
+-- case_study_images ĐỔI SHAPE item [{url,caption}] -> [{url,name,caption}] (Quỳnh: "case study tốt
+-- nhất là nên cho điền thông tin cả thông tin ngoài tải ảnh") — thêm "name" (tên khách hàng), không
+-- đổi kiểu cột (vẫn jsonb), không phá dữ liệu item cũ (đọc name ra rỗng, vẫn hiện đúng như trước).
+-- Không cần lệnh SQL nào ở đây — chỉ đổi Ở CODE (tao-landing-page.js/p/script.js) cách đọc/ghi field
+-- bên trong jsonb, đúng quy ước "field tuỳ chọn bên trong 1 cột jsonb đã có" như nhom/hidden_sections.
+
+-- ============================================================
+-- 31. GIÁ TRỊ THEO TỪNG MỤC + LIÊN HỆ HỖ TRỢ (2026-09-07). Quỳnh: "Những cái mục như giá trị tham
+-- khảo ko phải ghi như thế... check lại cách các ladipage e gửi trình bày giá". Đọc lại trực tiếp
+-- teedoo.io/san-pham/ai-lam-giau (mẫu gốc của template "sach"): giá trị tham khảo KHÔNG phải 1 số
+-- người bán tự gõ, mà là 1 DANH SÁCH từng mục kèm giá riêng ("Sách AI Affiliate 349.000đ", "50+ Prompt
+-- 499.000đ", "Khoá học 2.000.000đ", "Cộng đồng: Vô giá"...) rồi TỰ CỘNG ra "Tổng giá trị", đối lập với
+-- "Bạn chỉ trả" — đáng tin hơn hẳn 1 con số trần không giải thích. value_stack_items: [{ten, gia}],
+-- "gia" để trống = hiện "Vô giá" thay vì số. reference_price (cột cũ) vẫn giữ nguyên, tự động = tổng
+-- value_stack_items khi người bán dùng danh sách mới — sản phẩm cũ chưa có value_stack_items vẫn hiện
+-- đúng như trước (không phá dữ liệu, chỉ thêm cách nhập MỚI tốt hơn, không bắt buộc đổi ngay).
+--
+-- sps_seller_contact_zalo: cùng lúc phát hiện thiếu hẳn chỗ điền thông tin liên hệ của CHÍNH người bán
+-- (Quỳnh: "thiếu hoàn toàn chỗ điền thông tin của người dùng cũng là chủ ladipage") — đối chiếu cả 2
+-- trang mẫu thật đều có số Zalo hỗ trợ ngay dưới form đặt hàng (teedoo.io: "Nếu gặp lỗi khi đặt hàng
+-- vui lòng liên hệ Zalo 0327.881.784"; 30ngaytamlinhtaichinh.netlify.app: nút "Liên hệ trợ lý qua
+-- Zalo"). Dùng chung cho MỌI sản phẩm của 1 người bán (giống sps_seller_photo_url), không phải riêng
+-- từng landing page.
+alter table digital_products add column if not exists value_stack_items jsonb;
+alter table profiles add column if not exists sps_seller_contact_zalo text;
+
+create or replace function public.update_sps_seller_contact(p_contact_zalo text)
+returns void as $$
+begin
+  update public.profiles set sps_seller_contact_zalo = p_contact_zalo where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.update_sps_seller_contact(text) to authenticated;
+
+drop view if exists digital_products_public;
+create view digital_products_public as
+  select dp.id, dp.slug, dp.title, dp.description, dp.cover_image_url, dp.price, dp.dinh_dang, dp.webinar_datetime,
+         dp.landing_page_content, dp.landing_page_template, dp.case_study_images,
+         p.sps_seller_photo_url as seller_photo_url, p.full_name as seller_name, dp.bonus_items, dp.guarantee_text, dp.reference_price,
+         (select count(*)::int from digital_product_orders o where o.product_id = dp.id and o.status = 'paid') as paid_count,
+         dp.team_members, dp.stat_items, dp.metric_items, dp.event_info_items, dp.scarcity_text, dp.proof_images,
+         p.sps_seller_bank_bin as seller_bank_bin, p.sps_seller_bank_account as seller_bank_account, p.sps_seller_bank_account_name as seller_bank_account_name,
+         dp.value_stack_items, p.sps_seller_contact_zalo as seller_contact_zalo
+  from digital_products dp
+  left join profiles p on p.id = dp.owner_id
+  where dp.status = 'published';
+grant select on digital_products_public to anon, authenticated;

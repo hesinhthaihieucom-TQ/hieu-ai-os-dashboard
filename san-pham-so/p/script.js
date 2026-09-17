@@ -9,6 +9,15 @@ const SUPABASE_ANON_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';
 // cho mọi sản phẩm trong hệ sinh thái HIỂU (xem CLAUDE.md). Đổi 1 chỗ thì phải đổi cả 2.
 const PAYMENT_BANK = { code: 'vietinbank', account: '199339288888', accountName: 'LE TU QUYNH' };
 
+// 11 ngân hàng SePay hỗ trợ kết nối tự động thật (2026-09-07, xem schema_san_pham_so.sql mục 30) —
+// PHẢI khớp SEPAY_BANKS ở san-pham-so/js/tai-khoan.js, chỉ dùng để DỊCH bin (số) người bán đã tự
+// kết nối ra tên ngân hàng hiển thị cho khách mua, đổi 1 chỗ thì phải đổi cả 2.
+const SEPAY_BANKS_BY_BIN = {
+  '970436': 'Vietcombank', '970418': 'BIDV', '970415': 'VietinBank', '970422': 'MBBank',
+  '970416': 'ACB', '970432': 'VPBank', '970423': 'TPBank', '970403': 'Sacombank',
+  '970426': 'MSB', '970448': 'OCB', '970452': 'KienLongBank',
+};
+
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
@@ -325,8 +334,22 @@ async function checkOrder(refCode) {
   return data;
 }
 
-function qrUrl(amount, content) {
-  return `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(content)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`;
+// bank: {code, account, accountName} — CỐ Ý nhận tham số thay vì đọc thẳng PAYMENT_BANK toàn cục
+// (2026-09-07, xem resolveSellerBank() bên dưới) để mỗi sản phẩm dùng đúng tài khoản của người bán đã
+// tự kết nối, mặc định vẫn PAYMENT_BANK (Quỳnh) khi người bán CHƯA kết nối — không đổi hành vi cũ.
+function qrUrl(bank, amount, content) {
+  return `https://img.vietqr.io/image/${bank.code}-${bank.account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(content)}&accountName=${encodeURIComponent(bank.accountName)}`;
+}
+
+// Trả về tài khoản THẬT sẽ nhận tiền cho sản phẩm này — của người bán nếu họ đã tự kết nối SePay
+// riêng (seller_bank_bin/account/account_name trên digital_products_public, xem schema mục 30), mặc
+// định PAYMENT_BANK (Quỳnh) nếu chưa. Đơn hàng dùng tài khoản người bán sẽ được webhook riêng
+// (api/san-pham-so-seller-webhook.js) xác nhận, không phải api/sepay-webhook.js chung.
+function resolveSellerBank(product) {
+  if (product.seller_bank_bin && product.seller_bank_account && product.seller_bank_account_name) {
+    return { code: product.seller_bank_bin, account: product.seller_bank_account, accountName: product.seller_bank_account_name, isSeller: true };
+  }
+  return { code: PAYMENT_BANK.code, account: PAYMENT_BANK.account, accountName: PAYMENT_BANK.accountName, isSeller: false };
 }
 
 // Landing page ĐẦY ĐỦ (san-pham-so/js/tao-landing-page.js, AI viết) — CHỈ hiện khi người bán đã tạo,
@@ -433,11 +456,15 @@ function landingPageIntroHtml(product, lp, template) {
     ? `<div class="lp-section">${eyebrow('Hiệu quả thật')}<h2 class="lp-h2">Chỉ số trước/sau</h2>${template === 'quynh' ? metricBarsHtml : (radarHtml || `<div class="lp-metric-list">${metricRowsHtml}</div>`)}</div>` : '';
   // "chuyengia" gắn thêm nhãn "KẾT QUẢ THỰC TẾ" trên mỗi ảnh (đúng khối lưới ảnh case study ở
   // aichuyengia.topexpert.vn) — vẫn CÙNG DỮ LIỆU case_study_images đã có, không cần trường mới.
+  // "name" (tên khách hàng, tách riêng khỏi "caption"/kết quả — 2026-09-07, Quỳnh: "case study tốt
+  // nhất là nên cho điền thông tin cả thông tin ngoài tải ảnh") — tuỳ chọn, item cũ không có vẫn hiện
+  // đúng như trước (chỉ caption).
   const caseStudyHtml = Array.isArray(product.case_study_images) && product.case_study_images.length
     ? `<div class="lp-section">${eyebrow('Người dùng nói gì')}<h2 class="lp-h2">Kết quả thực tế</h2><div class="lp-case-studies">${product.case_study_images.map(c => `
         <div class="lp-case-study-item">
           <img src="${esc(c.url)}" alt="">
           ${template === 'chuyengia' ? `<div class="lp-case-badge">Kết quả thực tế</div>` : ''}
+          ${c.name ? `<div class="lp-case-study-name">${esc(c.name)}</div>` : ''}
           ${c.caption ? `<div class="lp-case-study-caption">${esc(c.caption)}</div>` : ''}
         </div>
       `).join('')}</div></div>` : '';
@@ -456,13 +483,26 @@ function landingPageIntroHtml(product, lp, template) {
   const bonusListHtml = template === 'sach'
     ? `<div class="lp-bonus-box">${(product.bonus_items || []).map(b => `<div class="lp-bonus-row">🎁 ${esc(b)}</div>`).join('')}</div>`
     : `<ul class="lp-list">${(product.bonus_items || []).map(b => `<li>${esc(b)}</li>`).join('')}</ul>`;
-  // "sach" thêm dòng "Tổng giá trị / Bạn chỉ trả" ngay dưới hộp ưu đãi (đúng khối value-stack ở
-  // teedoo.io) — TÁI DÙNG reference_price đã có (giá trị tham khảo người bán tự nhập), không bịa giá
-  // trị riêng cho từng ưu đãi (bonus_items chỉ là chữ, không có giá từng món).
-  const valueStackHtml = template === 'sach' && product.reference_price && Number(product.reference_price) > Number(product.price)
-    ? `<div class="lp-value-stack"><div>Tổng giá trị<span>${Number(product.reference_price).toLocaleString('vi-VN')}đ</span></div><div class="lp-value-stack-final">Bạn chỉ trả<span>${Number(product.price).toLocaleString('vi-VN')}đ</span></div></div>` : '';
-  const bonusHtml = Array.isArray(product.bonus_items) && product.bonus_items.length
-    ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2>${bonusListHtml}${valueStackHtml}</div>` : '';
+  // Khối "Bạn nhận được gì" — TỪNG MỤC kèm giá riêng, tự cộng ra "Tổng giá trị" đối lập "Bạn chỉ trả"
+  // (2026-09-07, đọc lại đúng teedoo.io/san-pham/ai-lam-giau: "Sách 349.000đ + 50+ Prompt 499.000đ +
+  // Khoá học 2.000.000đ + Cộng đồng: Vô giá = Tổng giá trị 3.148.000đ" — KHÔNG phải 1 số trần người bán
+  // tự gõ như trước, Quỳnh: "giá trị tham khảo ko phải ghi như thế"). Mở rộng dùng CẢ 4 mẫu (trước chỉ
+  // "sach") vì đây là kỹ thuật chốt sale chung, không riêng gì 1 mẫu. value_stack_items là dữ liệu MỚI
+  // (mục 5 tao-landing-page.js) — sản phẩm cũ chỉ có reference_price phẳng (chưa từng dùng danh sách
+  // mới) vẫn hiện đúng bản 2 dòng như trước, không mất dữ liệu.
+  const valueStackItemsHtml = Array.isArray(product.value_stack_items) && product.value_stack_items.length
+    ? product.value_stack_items.map(v => `<div class="lp-value-stack-item"><span>${esc(v.ten || '')}</span><span>${(v.gia === '' || v.gia == null) ? 'Vô giá' : Number(v.gia).toLocaleString('vi-VN') + 'đ'}</span></div>`).join('') : '';
+  const valueStackTotalComputed = Array.isArray(product.value_stack_items) && product.value_stack_items.length
+    ? product.value_stack_items.reduce((sum, v) => sum + ((v.gia === '' || v.gia == null) ? 0 : Number(v.gia) || 0), 0)
+    : Number(product.reference_price) || 0;
+  const valueStackHtml = valueStackTotalComputed > Number(product.price)
+    ? `<div class="lp-value-stack">${valueStackItemsHtml}<div>Tổng giá trị<span>${valueStackTotalComputed.toLocaleString('vi-VN')}đ</span></div><div class="lp-value-stack-final">Bạn chỉ trả<span>${Number(product.price).toLocaleString('vi-VN')}đ</span></div></div>` : '';
+  // valueStackHtml PHẢI hiện được dù bonus_items (chữ tự do) rỗng — bug thật phát hiện lúc test: trước
+  // đây cả khối bị gộp chung 1 điều kiện theo bonus_items.length, người bán chỉ dùng mục 5 (giá trị
+  // theo từng mục) mà KHÔNG viết thêm ưu đãi tặng kèm dạng chữ thì "Tổng giá trị" biến mất hoàn toàn.
+  const hasBonusList = Array.isArray(product.bonus_items) && product.bonus_items.length;
+  const bonusHtml = (hasBonusList || valueStackHtml)
+    ? `<div class="lp-section">${eyebrow('Đặc quyền đi kèm')}<h2 class="lp-h2">Ưu đãi tặng kèm</h2>${hasBonusList ? bonusListHtml : ''}${valueStackHtml}</div>` : '';
   // Bảng so sánh 3 cột "Tự mày mò / Khoá học online / Sản phẩm này" (chỉ "sach", đúng khối "So sánh"
   // ở teedoo.io) — 2 cột đầu là khung tham chiếu CHUNG của ngành (không gán cho đối thủ cụ thể nào),
   // cột cuối dùng ĐÚNG dữ liệu thật của sản phẩm (giá, số phần trong chương trình, có ưu đãi hay
@@ -665,11 +705,19 @@ function renderProduct(product, order) {
     // liên hệ lại được nếu cần. Email vẫn giữ tuỳ chọn như cũ (không cần để tải được — trang này tự
     // hiện link ngay khi thanh toán khớp, không phải gửi qua email).
     const buyLabel = lp && lp.cta_text ? esc(lp.cta_text) : 'Mua ngay';
+    // Số Zalo hỗ trợ (2026-09-07, Quỳnh: "thiếu hoàn toàn chỗ điền thông tin của người dùng cũng là
+    // chủ ladipage" — đối chiếu teedoo.io/san-pham/ai-lam-giau: "⚠️ Nếu gặp lỗi khi đặt hàng vui lòng
+    // liên hệ Zalo ... để được hỗ trợ ngay", đặt ngay dưới nút mua) — người bán tự điền, để trống thì
+    // không hiện gì (product.seller_contact_zalo, dùng chung mọi sản phẩm, xem schema mục 31).
+    const sellerContactHtml = product.seller_contact_zalo
+      ? `<div style="font-size:12.5px;color:var(--ink-soft);text-align:center;margin-top:10px;">⚠️ Gặp lỗi khi đặt hàng? Liên hệ Zalo <a href="https://zalo.me/${esc(String(product.seller_contact_zalo).replace(/\D/g, ''))}" target="_blank" rel="noopener" style="color:var(--accent);">${esc(product.seller_contact_zalo)}</a> để được hỗ trợ ngay.</div>`
+      : '';
     buyHtml = `
       <input id="buyer-name" type="text" placeholder="Họ và tên *">
       <input id="buyer-phone" type="tel" placeholder="Số điện thoại *">
       <input id="buyer-email" type="email" placeholder="Email (không bắt buộc — để nhận lại link nếu mất)">
       <button class="btn" id="buy-btn">${buyLabel} — ${Number(product.price).toLocaleString('vi-VN')}đ</button>
+      ${sellerContactHtml}
     `;
   } else if (order.status === 'paid') {
     // Giao hàng ĐÚNG THEO LOẠI (2026-09-01): mini_course trả về NHIỀU bài học (danh sách link), các
@@ -697,12 +745,14 @@ function renderProduct(product, order) {
     `;
   } else {
     const transferContent = `SEVQR ${order.ref_code}`;
+    const sellerBank = resolveSellerBank(product);
+    const bankDisplayName = sellerBank.isSeller ? (SEPAY_BANKS_BY_BIN[sellerBank.code] || sellerBank.code) : 'Vietinbank';
     buyHtml = `
-      <div class="qr-wrap"><img src="${qrUrl(order.amount, transferContent)}" alt="Mã VietQR"></div>
+      <div class="qr-wrap"><img src="${qrUrl(sellerBank, order.amount, transferContent)}" alt="Mã VietQR"></div>
       <div class="pay-info">
-        <div><b>Ngân hàng:</b> Vietinbank</div>
-        <div><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)}</div>
-        <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
+        <div><b>Ngân hàng:</b> ${esc(bankDisplayName)}</div>
+        <div><b>Số tài khoản:</b> ${esc(sellerBank.account)}</div>
+        <div><b>Chủ tài khoản:</b> ${esc(sellerBank.accountName)}</div>
         <div><b>Số tiền:</b> ${Number(order.amount).toLocaleString('vi-VN')}đ</div>
         <div><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span class="mono">${esc(transferContent)}</span></div>
       </div>
@@ -716,6 +766,11 @@ function renderProduct(product, order) {
   // thanh toán của đúng sản phẩm này qua digital_products_public), không phải AI/hệ thống tự bịa.
   const referencePriceHtml = product.reference_price && Number(product.reference_price) > Number(product.price)
     ? `<span style="text-decoration:line-through;color:var(--ink-soft);font-size:15px;margin-right:8px;">${Number(product.reference_price).toLocaleString('vi-VN')}đ</span>` : '';
+  // Huy hiệu "-X%" cạnh giá gốc gạch ngang (2026-09-07, Quỳnh: "giá tiền thì nên có gợi ý giá gốc và
+  // giá giảm... nghệ thuật chốt sale") — tính thẳng từ 2 số THẬT đã có (reference_price/price), không
+  // phải số bịa. Làm tròn xuống (VD 32.7% -> "-32%") để không bao giờ nói giảm NHIỀU HƠN thực tế.
+  const discountBadgeHtml = product.reference_price && Number(product.reference_price) > Number(product.price)
+    ? `<span style="display:inline-block;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:8px;vertical-align:middle;">-${Math.floor((1 - Number(product.price) / Number(product.reference_price)) * 100)}%</span>` : '';
   const soldCountHtml = product.paid_count > 0
     ? `<div style="font-size:12.5px;color:var(--ink-soft);margin:-10px 0 16px;">🎉 Đã có ${product.paid_count} người mua sản phẩm này</div>` : '';
   // Cam kết — TRƯỚC ĐÂY hardcode cho mọi sản phẩm (rủi ro hứa hộ người bán điều họ không đồng ý),
@@ -784,7 +839,7 @@ function renderProduct(product, order) {
         ${eventInfoHtml}
         ${countdownHtml(lpTemplate, order, 'buy')}
         <div class="${(lpTemplate === 'quynh' || lpTemplate === 'chuyengia') ? 'lp-price-card' : ''}">
-          <div class="price">${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
+          <div class="price">${discountBadgeHtml}${referencePriceHtml}${Number(product.price).toLocaleString('vi-VN')}đ</div>
           ${priceCardBulletsHtml}
         </div>
         ${soldCountHtml}

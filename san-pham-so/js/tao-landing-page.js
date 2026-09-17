@@ -57,6 +57,67 @@ function normalizeTemplate(t) {
   return 'quynh';
 }
 
+// 11 ngân hàng SePay hỗ trợ kết nối tự động thật (2026-09-07, xem schema_san_pham_so.sql mục 30) —
+// PHẢI khớp SEPAY_BANKS ở san-pham-so/js/tai-khoan.js / SEPAY_BANKS_BY_BIN ở san-pham-so/p/script.js,
+// đổi 1 chỗ thì phải đổi cả 3.
+const SEPAY_BANKS = [
+  { bin: '970436', name: 'Vietcombank' }, { bin: '970418', name: 'BIDV' }, { bin: '970415', name: 'VietinBank' },
+  { bin: '970422', name: 'MBBank' }, { bin: '970416', name: 'ACB' }, { bin: '970432', name: 'VPBank' },
+  { bin: '970423', name: 'TPBank' }, { bin: '970403', name: 'Sacombank' }, { bin: '970426', name: 'MSB' },
+  { bin: '970448', name: 'OCB' }, { bin: '970452', name: 'KienLongBank' },
+];
+const SELLER_WEBHOOK_URL = 'https://hieu-ai-os-dashboard.vercel.app/api/san-pham-so-seller-webhook';
+
+// Tổng giá trị = cộng đúng những mục CÓ số (gia == null/'' -> "Vô giá", không tính vào tổng) — dùng cả
+// lúc hiện live trong editor lẫn lúc tính reference_price để lưu (xem valueStackItems, mục 31 schema).
+function valueStackTotal(state) {
+  return state.valueStackItems.reduce((sum, v) => sum + (v.gia === '' || v.gia == null ? 0 : Number(v.gia) || 0), 0);
+}
+
+// Câu lệnh (prompt) để người bán tự viết nội dung landing page bằng Claude thay vì dùng nút "AI viết
+// landing page" có sẵn (2026-09-17, Quỳnh: "hướng dẫn ng dùng nếu ko dùng app thì làm ladipgae như
+// nào") — dành cho người hết lượt AI hoặc muốn tự viết theo cách riêng. Cấu trúc 14 bước hỏi + 12
+// phần viết ra KHỚP ĐÚNG với cấu trúc landingPageIntroHtml()/TOOL_LANDING_PAGE (api/_lib/landing-page-schema.js)
+// để nội dung dán vào manualEditFieldsHtml() bên dưới đúng chuẩn, không lệch cấu trúc.
+const DIY_CLAUDE_PROMPT = `Bạn là chuyên gia viết landing page bán hàng tiếng Việt. Nhiệm vụ: giúp tôi tạo NỘI DUNG ĐẦY ĐỦ cho 1 trang landing page bán 1 sản phẩm số (ebook, khoá học online, template, coaching, cộng đồng trả phí, hoặc webinar).
+
+QUY TẮC LÀM VIỆC:
+- Hỏi tôi TỪNG BƯỚC MỘT theo đúng thứ tự dưới đây, chờ tôi trả lời xong bước này mới hỏi bước tiếp theo — KHÔNG hỏi dồn hết 1 lần.
+- Nếu tôi trả lời "không có" hoặc để trống 1 mục, bỏ qua mục đó khi viết, không tự bịa thông tin giả.
+- Toàn bộ văn phong: gần gũi, xưng "tôi/bạn" hoặc theo đúng cách tôi tự giới thiệu, không sáo rỗng, không hứa hẹn phóng đại (không viết "cam kết thu nhập", "chắc chắn thành công" trừ khi tôi tự nói rõ tôi muốn cam kết gì).
+
+CÁC BƯỚC HỎI (theo đúng thứ tự):
+1. Tên sản phẩm, giá bán, và mô tả ngắn (1-2 câu) sản phẩm này giúp được gì.
+2. Đối tượng khách hàng: họ là ai, đang gặp vấn đề/nỗi đau cụ thể gì (hỏi 3-5 vấn đề cụ thể, càng chi tiết càng tốt — tránh chung chung).
+3. Giải pháp/chương trình: nội dung sản phẩm gồm những phần/chặng nào (liệt kê từng phần + mô tả ngắn).
+4. Kết quả khách đạt được sau khi dùng sản phẩm (liệt kê 3-6 kết quả cụ thể, đo lường được nếu có).
+5. Câu chuyện cá nhân của tôi (người bán) — vì sao tôi làm sản phẩm này, tôi từng gặp vấn đề gì giống khách hàng không.
+6. Case study/kết quả THẬT của khách cũ (nếu có) — tên khách + kết quả cụ thể của từng người (không bịa nếu tôi chưa có).
+7. Sản phẩm này phù hợp với ai / không phù hợp với ai.
+8. Ưu đãi tặng kèm (nếu có) — liệt kê từng món quà tặng kèm khi mua.
+9. Giá trị theo từng mục: liệt kê TỪNG THỨ khách nhận được kèm giá trị quy đổi riêng (VD: "Ebook chính: 300.000đ", "Bonus X: 150.000đ", "Cộng đồng hỗ trợ: Vô giá") — để tôi tính tổng giá trị rồi đối lập với giá bán thật, KHÔNG dùng 1 con số "giá trị tham khảo" mơ hồ không giải thích.
+10. Cam kết với khách (hoàn tiền, bảo hành...) — nếu không có thì bỏ qua, không tự bịa.
+11. Số lượng có hạn/thời hạn ưu đãi (nếu có thật) — không bịa số giả tạo cảm giác khan hiếm ảo.
+12. 4-6 câu hỏi thường gặp (FAQ) khách hay hỏi trước khi mua + câu trả lời.
+13. Thông tin liên hệ hỗ trợ: số Zalo/điện thoại để khách nhắn nếu gặp lỗi lúc mua.
+14. Câu kêu gọi hành động (nút mua) — muốn ghi gì trên nút (VD: "Mua ngay", "Đăng ký ngay", "Giữ chỗ ngay").
+
+SAU KHI HỎI XONG HẾT 14 BƯỚC, viết lại toàn bộ landing page theo đúng cấu trúc sau (đúng thứ tự):
+1. Hook — 1 câu mở đầu gây chú ý ngay, nêu đúng lợi ích/chuyển đổi chính (không phải tên sản phẩm).
+2. Vấn đề — mở đầu 1 đoạn ngắn đồng cảm với khách, sau đó liệt kê từng vấn đề cụ thể (mỗi vấn đề 1 tên ngắn + mô tả).
+3. Chương trình/giải pháp — liệt kê từng phần theo chương trình đã hỏi ở bước 3.
+4. Kết quả đạt được — liệt kê ngắn gọn, dễ quét mắt.
+5. Case study thật (nếu có).
+6. Lời nhắn cá nhân — đoạn văn giọng cá nhân từ câu chuyện đã hỏi ở bước 5.
+7. Về người bán — 1 đoạn giới thiệu ngắn.
+8. Phù hợp với ai.
+9. Ưu đãi tặng kèm + bảng giá trị từng mục + tổng giá trị + giá bán thật + số tiền tiết kiệm được.
+10. Cam kết (nếu có).
+11. FAQ.
+12. Nút kêu gọi hành động + dòng liên hệ Zalo hỗ trợ ngay bên dưới.
+
+Bắt đầu bằng cách hỏi tôi bước 1.`;
+
 function newProductForm() {
   return { title: '', price: '', description: '', deliverableType: 'file', externalLink: '', fileStoragePath: null, fileName: null, fileUploading: false, error: null, saving: false };
 }
@@ -65,15 +126,25 @@ function render(container) {
   const state = {
     screen: 'list', products: [], loading: true, selected: null, content: null, template: 'quynh',
     caseStudies: [], bonusItems: [], referencePrice: '', guaranteeText: '', caseStudyUploading: false, sellerPhotoUploading: false,
-    proofImages: [], proofUploading: false,
+    proofImages: [], proofUploading: false, valueStackItems: [],
+    sellerContactZalo: (currentProfile && currentProfile.sps_seller_contact_zalo) || '', sellerZaloSaving: false, sellerZaloSaved: false,
     teamMembers: [], statItems: [], metricItems: [], eventInfoItems: [], scarcityText: '', teamPhotoUploadingIndex: null,
-    generating: false, saving: false, error: null, showManualEdit: false,
+    generating: false, saving: false, error: null, showManualEdit: false, showDiyClaude: false,
     // Tạo nhanh 1 sản phẩm NGAY TẠI ĐÂY (2026-09-02, Quỳnh: "người dùng không cần làm bước 1-2-3
     // cũng có thể làm trực tiếp landing page, với người đã có sẵn 1 sản phẩm chỉ cần trang landing
     // page để bán") — không bắt buộc phải vòng qua "Sản phẩm của tôi"/Chọn Loại/Viết Nội Dung trước.
     // Chỉ đủ trường tối thiểu để bán được (tên/giá/mô tả + 1 file hoặc 1 link) — sản phẩm tạo ra vẫn
     // nằm chung ở "Sản phẩm của tôi", có thể vào đó bổ sung thêm sau (ảnh bìa, loại chi tiết...).
     showQuickCreate: false, quickCreate: newProductForm(),
+    // Kết nối SePay riêng NHÚNG THẲNG vào workflow tạo landing page (2026-09-07, Quỳnh: "cái phần kết
+    // nối sepay cũng nằm trong workflow làm ladipage luôn, giống cách mình hướng dẫn họ kết nối
+    // heyzine á") — cùng field/RPC với san-pham-so/js/tai-khoan.js (update_sps_seller_bank_info), chỉ
+    // khác chỗ đặt (ngay trong màn này, không cần rời sang "Tài khoản"). KHÔNG bắt buộc như Heyzine
+    // (chưa kết nối vẫn bán được bình thường, tiền chỉ đơn giản về TK chung của Quỳnh).
+    sellerBankBin: (currentProfile && currentProfile.sps_seller_bank_bin) || '',
+    sellerBankAccount: (currentProfile && currentProfile.sps_seller_bank_account) || '',
+    sellerBankAccountName: (currentProfile && currentProfile.sps_seller_bank_account_name) || '',
+    sellerBankSaving: false, sellerBankSaved: false, sellerBankError: null, sellerBankFormOpen: false,
   };
   boot();
 
@@ -225,6 +296,12 @@ function render(container) {
             <span class="btn-ghost btn btn-sm" id="lp-seller-photo-btn">${state.sellerPhotoUploading ? 'Đang tải…' : (photoUrl ? 'Đổi ảnh' : 'Tải ảnh lên')}</span>
           </div>
         </div>
+        <label style="margin-top:14px;font-size:12.5px;font-weight:400;">Số Zalo hỗ trợ khách (dùng chung cho mọi sản phẩm — hiện ngay dưới form đặt hàng, để khách liên hệ nếu gặp lỗi khi mua) — không bắt buộc</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="lp-seller-zalo" type="text" value="${esc(state.sellerContactZalo)}" placeholder="VD: 0987654321" style="flex:1;">
+          <button class="btn btn-sm" id="lp-seller-zalo-save" ${state.sellerZaloSaving ? 'disabled' : ''}>${state.sellerZaloSaving ? 'Đang lưu…' : 'Lưu'}</button>
+        </div>
+        ${state.sellerZaloSaved ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">✓ Đã lưu.</div>` : ''}
       </div>
       <div class="card" style="margin-top:10px;">
         <label style="margin-bottom:10px;display:block;">3. Ảnh case study THẬT cho sản phẩm này (khách/học viên thật đã dùng, tối đa ${MAX_CASE_STUDIES} ảnh) — không bắt buộc</label>
@@ -232,7 +309,8 @@ function render(container) {
           ${state.caseStudies.map((c, i) => `
             <div style="width:130px;">
               <img src="${esc(c.url)}" style="width:130px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;">
-              <input type="text" data-cs-caption="${i}" value="${esc(c.caption || '')}" placeholder="VD: Chị Lan — kết quả sau 3 tháng" style="margin-top:4px;font-size:12px;padding:6px 8px;">
+              <input type="text" data-cs-name="${i}" value="${esc(c.name || '')}" placeholder="Tên khách hàng, VD: Chị Lan" style="margin-top:4px;font-size:12px;padding:6px 8px;">
+              <input type="text" data-cs-caption="${i}" value="${esc(c.caption || '')}" placeholder="Kết quả đạt được, VD: Giảm 5kg sau 2 tháng" style="margin-top:4px;font-size:12px;padding:6px 8px;">
               <span class="btn-ghost btn btn-sm" data-cs-remove="${i}" style="color:var(--danger);display:block;margin-top:4px;text-align:center;">Xoá</span>
             </div>
           `).join('')}
@@ -247,10 +325,18 @@ function render(container) {
         <textarea id="lp-bonus" rows="3" placeholder="VD: Tặng kèm Sổ tay PDF&#10;VD: Vào nhóm Zalo hỗ trợ riêng">${esc(state.bonusItems.join('\n'))}</textarea>
       </div>
       <div class="card" style="margin-top:10px;">
-        <label style="margin-bottom:10px;display:block;">5. Giá trị tham khảo + cam kết với khách (tuỳ chọn, do bạn tự nhập)</label>
-        <label style="font-size:12.5px;font-weight:400;">Giá trị tham khảo (hiện gạch ngang cạnh giá bán, VD giá gốc/giá trị quy đổi)</label>
-        <input id="lp-reference-price" type="number" value="${esc(state.referencePrice)}" placeholder="VD: 590000">
-        <label style="margin-top:10px;font-size:12.5px;font-weight:400;">Cam kết với khách (VD hoàn tiền) — để trống nếu không muốn hứa gì</label>
+        <label style="margin-bottom:4px;display:block;">5. Giá trị theo từng mục (tuỳ chọn — liệt kê những gì khách nhận được kèm giá riêng, app tự cộng ra "Tổng giá trị" đối lập với giá bán, kiểu VD: Sách 349.000đ + Prompt 499.000đ + Cộng đồng: Vô giá = Tổng giá trị)</label>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">Để trống ô "Giá" của 1 mục = hiện "Vô giá" thay vì số.</div>
+        ${state.valueStackItems.map((v, i) => `
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <input type="text" data-vs-ten="${i}" value="${esc(v.ten || '')}" placeholder="VD: Sách AI Affiliate 2026" style="flex:1.6;">
+            <input type="number" data-vs-gia="${i}" value="${v.gia == null ? '' : esc(v.gia)}" placeholder="Giá (để trống = Vô giá)" style="flex:1;">
+            <span class="btn-ghost btn btn-sm" data-vs-remove="${i}" style="color:var(--danger);">Xoá</span>
+          </div>
+        `).join('')}
+        <span class="btn-ghost btn btn-sm" id="lp-vs-add">+ Thêm mục giá trị</span>
+        ${state.valueStackItems.length ? `<div id="lp-vs-total" style="margin-top:10px;font-size:13.5px;font-weight:600;">Tổng giá trị: ${valueStackTotal(state).toLocaleString('vi-VN')}đ</div>` : ''}
+        <label style="margin-top:14px;font-size:12.5px;font-weight:400;">Cam kết với khách (VD hoàn tiền) — để trống nếu không muốn hứa gì</label>
         <input id="lp-guarantee" type="text" value="${esc(state.guaranteeText)}" placeholder="VD: Hoàn tiền 100% nếu không hài lòng trong 7 ngày">
       </div>
       <div class="card" style="margin-top:10px;">
@@ -333,6 +419,108 @@ function render(container) {
     `;
   }
 
+  // Cùng phong cách widget kết nối Heyzine nhúng thẳng ở chon-loai.js/xay-dung-noi-dung.js — thu gọn
+  // form nhập liệu còn 1 dòng ✓ khi đã kết nối, mở đủ form khi chưa (KHÔNG bắt buộc, có thể bỏ qua và
+  // bán bình thường). Khối URL Webhook + API Key hiện ĐỘC LẬP với form — LUÔN hiện khi đã có secret
+  // (kể cả sau khi form đã thu gọn), không nằm lồng bên trong form — nếu không, vừa bấm "Lưu kết nối"
+  // xong là card lập tức thu gọn qua nhánh ✓, làm mất luôn 2 giá trị người bán đang cần copy sang SePay
+  // (bug thật phát hiện lúc test — xem lại phải giữ HIỆN LUÔN, không ẩn theo trạng thái đã kết nối hay
+  // chưa). "Sửa lại" mở lại form khi cần đổi ngân hàng/số TK. Các bước cụ thể (menu/nút thật trong
+  // dashboard SePay, xem docs.sepay.vn) — CÙNG MỨC CHI TIẾT với hướng dẫn Heyzine, mỗi dòng 1 thao tác.
+  function sellerBankInlineHtml() {
+    const p = currentProfile || {};
+    const connected = !!(p.sps_seller_bank_bin && p.sps_seller_bank_account);
+    const showForm = !connected || state.sellerBankFormOpen;
+    const connectedHintHtml = connected
+      ? `<div class="hint-box" style="margin-top:10px;">✓ Tiền bán hàng đang về thẳng ${esc(SEPAY_BANKS.find(b => b.bin === p.sps_seller_bank_bin)?.name || '')} — ${esc(p.sps_seller_bank_account)} của bạn. <span style="cursor:pointer;color:var(--accent);text-decoration:underline;" id="lp-seller-bank-edit-toggle">${state.sellerBankFormOpen ? 'Thu gọn' : 'Sửa lại'}</span></div>`
+      : '';
+    const formHtml = showForm ? `
+      <div class="card" style="margin-top:10px;">
+        <h2 style="font-size:14px;margin-bottom:6px;">💳 Nhận tiền trực tiếp về tài khoản của bạn (không bắt buộc)</h2>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Kết nối để tiền khách mua tự động về THẲNG tài khoản của bạn.</div>
+        <div class="hint-box" style="margin-bottom:10px;">
+          <b>Bước 1 — liên kết ngân hàng trên SePay:</b>
+          <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+            <li>Đăng ký tài khoản <b style="color:var(--accent);">SePay</b> miễn phí tại <a href="https://sepay.vn" target="_blank" rel="noopener">sepay.vn</a>.</li>
+            <li>Vào mục <b style="color:var(--accent);">"Ngân hàng"</b> ở menu bên trái → bấm <b style="color:var(--accent);">"+ Kết nối tài khoản"</b> góc trên bên phải.</li>
+            <li>Chọn đúng ngân hàng, điền Số tài khoản + Tên chủ tài khoản, làm theo hướng dẫn SePay hiện ra để hoàn tất.</li>
+            <li>Quay lại đây, chọn ngân hàng + điền số TK/tên chủ TK bên dưới, bấm "Lưu kết nối".</li>
+          </ol>
+        </div>
+        <label style="font-size:12.5px;">Ngân hàng</label>
+        <select id="lp-seller-bank">
+          <option value="">— Chọn ngân hàng —</option>
+          ${SEPAY_BANKS.map(b => `<option value="${b.bin}" ${state.sellerBankBin === b.bin ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}
+        </select>
+        <label style="margin-top:8px;font-size:12.5px;">Số tài khoản</label>
+        <input id="lp-seller-bank-account" type="text" value="${esc(state.sellerBankAccount)}" placeholder="Số tài khoản ngân hàng của bạn">
+        <label style="margin-top:8px;font-size:12.5px;">Tên chủ tài khoản</label>
+        <input id="lp-seller-bank-name" type="text" value="${esc(state.sellerBankAccountName)}" placeholder="VD: NGUYEN VAN A (không dấu, in hoa)">
+        ${state.sellerBankError ? `<div class="error-box" style="margin-top:8px;">${esc(state.sellerBankError)}</div>` : ''}
+        <div class="btn-row">
+          <button class="btn btn-sm" id="lp-seller-bank-save" ${state.sellerBankSaving ? 'disabled' : ''}>${state.sellerBankSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
+        </div>
+      </div>
+    ` : '';
+    const webhookHtml = p.sps_seller_webhook_secret ? `
+      <div class="hint-box" style="margin-top:10px;">
+        <b>Bước 2 — tạo Webhook trong SePay:</b>
+        <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+          <li>Vào mục <b style="color:var(--accent);">"Lập trình & Tích hợp"</b> ở menu bên trái → chọn <b style="color:var(--accent);">"Tích hợp WebHooks"</b>.</li>
+          <li>Bấm <b style="color:var(--accent);">"+ Thêm webhook"</b> góc trên bên phải.</li>
+          <li>Đặt tên bất kỳ, chọn loại sự kiện <b style="color:var(--accent);">"Có tiền vào"</b> (không chọn "Cả hai").</li>
+          <li>Dán URL bên dưới vào ô "nhập URL nhận webhook".</li>
+          <li>Ở Phương thức xác thực chọn <b style="color:var(--accent);">"API Key"</b>, dán API Key bên dưới vào ô hiện ra.</li>
+          <li>Bấm <b style="color:var(--accent);">"Thêm"</b> để hoàn tất.</li>
+        </ol>
+        <div style="font-size:12.5px;margin-top:8px;"><b>URL Webhook:</b> <span class="mono" style="font-size:11.5px;">${esc(SELLER_WEBHOOK_URL)}</span></div>
+        <div style="font-size:12.5px;margin-top:4px;"><b>API Key:</b> <span class="mono" style="font-size:11.5px;">${esc(p.sps_seller_webhook_secret)}</span></div>
+      </div>
+    ` : '';
+    return `${connectedHintHtml}${formHtml}${webhookHtml}`;
+  }
+
+  // "Không muốn dùng AI có sẵn? Tự viết bằng Claude" — thu gọn mặc định, dành cho người hết lượt AI
+  // hoặc muốn tự viết theo cách riêng (2026-09-17). Bảng ánh xạ "dán vào đâu" khớp đúng nhãn từng ô
+  // trong manualEditFieldsHtml() bên dưới để người dùng dán đúng chỗ, không đoán mò.
+  function diyClaudeHtml() {
+    return `
+      <div class="card" style="margin-top:10px;">
+        <span class="btn-ghost btn btn-sm" id="lp-toggle-diy-btn">${state.showDiyClaude ? '▲ Ẩn hướng dẫn tự viết bằng Claude' : '❓ Không muốn dùng AI có sẵn? Tự viết bằng Claude'}</span>
+        ${state.showDiyClaude ? `
+          <div style="margin-top:12px;">
+            <div class="hint-box">
+              <b>Cách dùng:</b>
+              <ol style="margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+                <li>Vào <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> → đăng ký/đăng nhập.</li>
+                <li>Dán toàn bộ câu lệnh bên dưới vào ô nhập tin nhắn, bấm gửi.</li>
+                <li>Claude hỏi lần lượt 14 câu — trả lời từng câu như nhắn tin bình thường.</li>
+                <li>Trả lời hết, Claude tự viết ra toàn bộ nội dung — quay lại đây, bấm <b>"✨ Tạo Landing Page bằng AI"</b> ở dưới 1 lần (bắt buộc, dù không dùng nội dung AI viết, để mở được ô tự sửa chữ), rồi mở <b>"✏️ Chỉnh sửa nội dung chữ"</b>, dán từng phần Claude viết vào đúng ô theo bảng dưới đây.</li>
+              </ol>
+            </div>
+            <textarea readonly rows="6" style="font-size:12px;font-family:'IBM Plex Mono',monospace;" onclick="this.select()">${esc(DIY_CLAUDE_PROMPT)}</textarea>
+            <div class="btn-row" style="margin-top:8px;"><span class="btn-ghost btn btn-sm" id="lp-copy-diy-prompt">Sao chép câu lệnh</span></div>
+            <div class="hint-box" style="margin-top:10px;">
+              <b>Dán vào đâu:</b>
+              <table style="width:100%;font-size:12.5px;border-collapse:collapse;margin-top:6px;">
+                <tr><td style="padding:3px 0;">1. Hook</td><td style="padding:3px 0;"><b>Hook (tiêu đề chính)</b></td></tr>
+                <tr><td style="padding:3px 0;">2. Vấn đề</td><td style="padding:3px 0;"><b>Vấn đề — mở đầu</b> + <b>Vấn đề — chi tiết</b></td></tr>
+                <tr><td style="padding:3px 0;">3. Chương trình</td><td style="padding:3px 0;"><b>Lộ trình / chương trình</b></td></tr>
+                <tr><td style="padding:3px 0;">4. Kết quả</td><td style="padding:3px 0;"><b>Kết quả đạt được</b></td></tr>
+                <tr><td style="padding:3px 0;">6. Lời nhắn cá nhân</td><td style="padding:3px 0;"><b>Lời nhắn của bạn</b></td></tr>
+                <tr><td style="padding:3px 0;">7. Về người bán</td><td style="padding:3px 0;"><b>Về người bán</b></td></tr>
+                <tr><td style="padding:3px 0;">8. Phù hợp với ai</td><td style="padding:3px 0;"><b>Phù hợp với ai</b></td></tr>
+                <tr><td style="padding:3px 0;">11. FAQ</td><td style="padding:3px 0;"><b>Câu hỏi thường gặp (FAQ)</b></td></tr>
+                <tr><td style="padding:3px 0;">12. Nút CTA</td><td style="padding:3px 0;"><b>Nút kêu gọi hành động (CTA)</b></td></tr>
+              </table>
+              <div style="margin-top:8px;color:var(--ink-soft);">Phần 5 (case study), 9 (ưu đãi/giá trị), 10 (cam kết), 13 (Zalo) không nằm trong ô chữ — điền tay ở các mục 2-5 phía trên khung này.</div>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
   function editHtml() {
     const p = state.selected;
     const c = state.content;
@@ -343,8 +531,12 @@ function render(container) {
     return `
       <h2>${esc(p.title)}</h2>
       <div class="btn-row"><span class="btn-ghost btn btn-sm" id="lp-back-btn">← Chọn sản phẩm khác</span></div>
+      <div class="hint-box">
+        <b>Thanh toán + thông tin khách hoạt động thế nào?</b> Khách bấm mua trên trang landing page sẽ tự điền Họ tên/SĐT/Email, quét mã QR chuyển khoản — hệ thống TỰ ĐỘNG xác nhận đã thanh toán trong vài giây, không cần bạn làm gì. Tiền về tài khoản chung nếu bạn chưa kết nối SePay riêng bên dưới, hoặc về thẳng tài khoản của bạn nếu đã kết nối. Xem lại danh sách khách đã mua + thông tin liên hệ của họ bất cứ lúc nào ở mục <b>"📦 Đơn hàng của tôi"</b> trong menu bên trái.
+      </div>
       ${templatePickerHtml()}
       ${assetsHtml()}
+      ${sellerBankInlineHtml()}
       <div class="card" style="margin-top:10px;">
         <label style="margin-bottom:10px;display:block;">9. AI viết landing page</label>
         <button class="btn" id="lp-generate-btn" ${state.generating ? 'disabled' : ''}>${state.generating ? 'Đang viết…' : (hasContent ? '🔄 Viết lại bằng AI (4 lượt)' : '✨ Tạo Landing Page bằng AI (4 lượt)')}</button>
@@ -352,6 +544,7 @@ function render(container) {
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         ${hasContent ? `<div class="btn-row" style="margin-top:12px;">${publicLinkHtml}</div>` : ''}
       </div>
+      ${diyClaudeHtml()}
       ${hasContent ? `
         <div class="card" style="margin-top:10px;">
           <span class="btn-ghost btn btn-sm" id="lp-toggle-manual-btn">${state.showManualEdit ? '▲ Ẩn chỉnh sửa nội dung chữ' : '✏️ Chỉnh sửa nội dung chữ (không bắt buộc)'}</span>
@@ -451,6 +644,7 @@ function render(container) {
     state.proofImages = Array.isArray(p.proof_images) ? [...p.proof_images] : [];
     state.bonusItems = Array.isArray(p.bonus_items) ? [...p.bonus_items] : [];
     state.referencePrice = p.reference_price || '';
+    state.valueStackItems = Array.isArray(p.value_stack_items) ? [...p.value_stack_items] : [];
     state.guaranteeText = p.guarantee_text || '';
     state.teamMembers = Array.isArray(p.team_members) ? [...p.team_members] : [];
     state.statItems = Array.isArray(p.stat_items) ? [...p.stat_items] : [];
@@ -546,6 +740,35 @@ function render(container) {
 
     container.querySelector('#lp-back-btn').onclick = () => { state.screen = 'list'; draw(); };
 
+    const bankEditToggle = container.querySelector('#lp-seller-bank-edit-toggle');
+    if (bankEditToggle) bankEditToggle.onclick = () => { state.sellerBankFormOpen = !state.sellerBankFormOpen; draw(); };
+    const bankSelectEl = container.querySelector('#lp-seller-bank');
+    if (bankSelectEl) bankSelectEl.onchange = () => { state.sellerBankBin = bankSelectEl.value; };
+    const bankAccountEl = container.querySelector('#lp-seller-bank-account');
+    if (bankAccountEl) bankAccountEl.oninput = () => { state.sellerBankAccount = bankAccountEl.value; };
+    const bankNameEl = container.querySelector('#lp-seller-bank-name');
+    if (bankNameEl) bankNameEl.oninput = () => { state.sellerBankAccountName = bankNameEl.value; };
+    const bankSaveBtn = container.querySelector('#lp-seller-bank-save');
+    if (bankSaveBtn) bankSaveBtn.onclick = async () => {
+      state.sellerBankError = null;
+      if (!state.sellerBankBin || !state.sellerBankAccount.trim() || !state.sellerBankAccountName.trim()) {
+        state.sellerBankError = 'Cần chọn ngân hàng + nhập đủ số tài khoản và tên chủ tài khoản.'; draw(); return;
+      }
+      state.sellerBankSaving = true; draw();
+      const { data, error } = await supabaseClient.rpc('update_sps_seller_bank_info', {
+        p_bin: state.sellerBankBin, p_account: state.sellerBankAccount.trim(), p_account_name: state.sellerBankAccountName.trim(),
+      });
+      state.sellerBankSaving = false;
+      if (error) { state.sellerBankError = error.message; }
+      else if (currentProfile) {
+        currentProfile.sps_seller_bank_bin = state.sellerBankBin;
+        currentProfile.sps_seller_bank_account = state.sellerBankAccount.trim();
+        currentProfile.sps_seller_bank_account_name = state.sellerBankAccountName.trim();
+        currentProfile.sps_seller_webhook_secret = data;
+      }
+      draw();
+    };
+
     container.querySelectorAll('[data-lp-pick-template]').forEach(el => {
       el.onclick = () => { state.template = el.getAttribute('data-lp-pick-template'); draw(); };
     });
@@ -574,6 +797,41 @@ function render(container) {
       draw();
     };
 
+    const sellerZaloEl = container.querySelector('#lp-seller-zalo');
+    if (sellerZaloEl) sellerZaloEl.oninput = () => { state.sellerContactZalo = sellerZaloEl.value; };
+    const sellerZaloSaveBtn = container.querySelector('#lp-seller-zalo-save');
+    if (sellerZaloSaveBtn) sellerZaloSaveBtn.onclick = async () => {
+      state.sellerZaloSaved = false;
+      state.sellerZaloSaving = true; draw();
+      const { error } = await supabaseClient.rpc('update_sps_seller_contact', { p_contact_zalo: state.sellerContactZalo.trim() || null });
+      state.sellerZaloSaving = false;
+      if (error) { state.error = error.message; }
+      else {
+        if (currentProfile) currentProfile.sps_seller_contact_zalo = state.sellerContactZalo.trim() || null;
+        state.sellerZaloSaved = true;
+      }
+      draw();
+    };
+
+    const vsAddBtn = container.querySelector('#lp-vs-add');
+    if (vsAddBtn) vsAddBtn.onclick = () => { state.valueStackItems.push({ ten: '', gia: '' }); draw(); };
+    container.querySelectorAll('[data-vs-ten]').forEach(el => {
+      el.oninput = () => { state.valueStackItems[Number(el.getAttribute('data-vs-ten'))].ten = el.value; };
+    });
+    container.querySelectorAll('[data-vs-gia]').forEach(el => {
+      // KHÔNG gọi draw() ở đây — draw() vẽ lại toàn bộ innerHTML, xoá mất ô đang gõ dở khiến con trỏ bị
+      // đẩy về cuối/mất focus sau MỖI ký tự gõ (lỗi thật đã gặp ở chon-loai.js/fb-title trước đây).
+      // Patch thẳng nội dung "Tổng giá trị" thay vì draw() lại toàn form.
+      el.oninput = () => {
+        state.valueStackItems[Number(el.getAttribute('data-vs-gia'))].gia = el.value;
+        const totalEl = container.querySelector('#lp-vs-total');
+        if (totalEl) totalEl.textContent = `Tổng giá trị: ${valueStackTotal(state).toLocaleString('vi-VN')}đ`;
+      };
+    });
+    container.querySelectorAll('[data-vs-remove]').forEach(el => {
+      el.onclick = () => { state.valueStackItems.splice(Number(el.getAttribute('data-vs-remove')), 1); draw(); };
+    });
+
     const caseStudyBtn = container.querySelector('#lp-case-study-btn');
     const caseStudyInput = container.querySelector('#lp-case-study-input');
     if (caseStudyBtn) caseStudyBtn.onclick = () => caseStudyInput.click();
@@ -583,13 +841,16 @@ function render(container) {
       state.caseStudyUploading = true; state.error = null; draw();
       try {
         const dataUrl = await compressImageToDataUrl(file, 900, 0.75);
-        state.caseStudies.push({ url: dataUrl, caption: '' });
+        state.caseStudies.push({ url: dataUrl, name: '', caption: '' });
       } catch (e) {
         state.error = e.message || 'Tải ảnh thất bại — thử lại giúp mình.';
       }
       state.caseStudyUploading = false;
       draw();
     };
+    container.querySelectorAll('[data-cs-name]').forEach(el => {
+      el.oninput = () => { state.caseStudies[Number(el.getAttribute('data-cs-name'))].name = el.value; };
+    });
     container.querySelectorAll('[data-cs-caption]').forEach(el => {
       el.oninput = () => { state.caseStudies[Number(el.getAttribute('data-cs-caption'))].caption = el.value; };
     });
@@ -622,8 +883,6 @@ function render(container) {
 
     const bonusEl = container.querySelector('#lp-bonus');
     if (bonusEl) bonusEl.oninput = () => { state.bonusItems = bonusEl.value.split('\n').map(s => s.trim()).filter(Boolean); };
-    const referencePriceEl = container.querySelector('#lp-reference-price');
-    if (referencePriceEl) referencePriceEl.oninput = () => { state.referencePrice = referencePriceEl.value; };
     const guaranteeEl = container.querySelector('#lp-guarantee');
     if (guaranteeEl) guaranteeEl.oninput = () => { state.guaranteeText = guaranteeEl.value; };
 
@@ -710,7 +969,7 @@ function render(container) {
         // AI viết chữ — AI viết xong tự PATCH landing_page_content luôn
         // (api/san-pham-so-tao-landing-page.js), không cần bấm "Lưu" riêng cho luồng chính (Quỳnh:
         // "90% chỉ là tải thông tin lên thôi").
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null, proof_images: state.proofImages });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: valueStackTotal(state) > 0 ? valueStackTotal(state) : (Number(state.referencePrice) || null), value_stack_items: state.valueStackItems, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null, proof_images: state.proofImages });
         const data = await callApi('api/san-pham-so-tao-landing-page', { product_id: state.selected.id, template: state.template }, 180000);
         state.content = { ...newContent(), ...data.result };
         state.selected.landing_page_content = state.content;
@@ -718,7 +977,8 @@ function render(container) {
         state.selected.case_study_images = state.caseStudies;
         state.selected.bonus_items = state.bonusItems;
         state.selected.guarantee_text = state.guaranteeText || null;
-        state.selected.reference_price = Number(state.referencePrice) || null;
+        state.selected.reference_price = valueStackTotal(state) > 0 ? valueStackTotal(state) : (Number(state.referencePrice) || null);
+        state.selected.value_stack_items = state.valueStackItems;
         state.selected.team_members = state.teamMembers;
         state.selected.stat_items = state.statItems;
         state.selected.metric_items = state.metricItems;
@@ -729,6 +989,11 @@ function render(container) {
       state.generating = false;
       draw();
     };
+
+    const toggleDiyBtn = container.querySelector('#lp-toggle-diy-btn');
+    if (toggleDiyBtn) toggleDiyBtn.onclick = () => { state.showDiyClaude = !state.showDiyClaude; draw(); };
+    const copyDiyBtn = container.querySelector('#lp-copy-diy-prompt');
+    if (copyDiyBtn) copyDiyBtn.onclick = () => { navigator.clipboard.writeText(DIY_CLAUDE_PROMPT); };
 
     const toggleManualBtn = container.querySelector('#lp-toggle-manual-btn');
     if (toggleManualBtn) toggleManualBtn.onclick = () => { state.showManualEdit = !state.showManualEdit; draw(); };
@@ -804,13 +1069,14 @@ function render(container) {
     if (saveBtn) saveBtn.onclick = async () => {
       state.saving = true; state.error = null; draw();
       try {
-        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: Number(state.referencePrice) || null, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null, proof_images: state.proofImages });
+        await callApi('api/san-pham-so-product', { action: 'update_landing_page', id: state.selected.id, landing_page_content: state.content, landing_page_template: state.template, case_study_images: state.caseStudies, bonus_items: state.bonusItems, guarantee_text: state.guaranteeText || null, reference_price: valueStackTotal(state) > 0 ? valueStackTotal(state) : (Number(state.referencePrice) || null), value_stack_items: state.valueStackItems, team_members: state.teamMembers, stat_items: state.statItems, metric_items: state.metricItems, event_info_items: state.eventInfoItems, scarcity_text: state.scarcityText || null, proof_images: state.proofImages });
         state.selected.landing_page_content = state.content;
         state.selected.landing_page_template = state.template;
         state.selected.case_study_images = state.caseStudies;
         state.selected.bonus_items = state.bonusItems;
         state.selected.guarantee_text = state.guaranteeText || null;
-        state.selected.reference_price = Number(state.referencePrice) || null;
+        state.selected.reference_price = valueStackTotal(state) > 0 ? valueStackTotal(state) : (Number(state.referencePrice) || null);
+        state.selected.value_stack_items = state.valueStackItems;
         state.selected.team_members = state.teamMembers;
         state.selected.stat_items = state.statItems;
         state.selected.metric_items = state.metricItems;

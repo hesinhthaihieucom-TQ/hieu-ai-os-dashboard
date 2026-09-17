@@ -29,14 +29,16 @@ function currentRouteFromHash() {
 
 // ============================================================
 // Gói riêng Sản Phẩm Số (2026-09-01) — TÁCH BIỆT hoàn toàn khỏi Xây Nhân Hiệu (dù đăng nhập chung 1
-// tài khoản), xem api/_lib/sps-ai-quota.js + schema_san_pham_so.sql. Chỉ 1 gói: 599.000đ/tháng.
+// tài khoản), xem api/_lib/sps-ai-quota.js + schema_san_pham_so.sql. Chỉ 1 gói: 499.000đ/tháng (đổi
+// từ 599.000đ ngày 2026-09-17 — chị Quỳnh chốt đồng bộ giá với Xây Nhân Hiệu/Trợ Lý CRM, cả 3 app
+// cùng 499k/tháng cho dễ nhớ; margin vẫn rất khoẻ ở mức giá này, xem api/sepay-webhook.js SPS_SUB_AMOUNT_TO_DAYS).
 // PAYMENT_BANK/mẫu QR/quy ước "SEVQR <mã>" port nguyên xi từ nhan-hieu/js/app-shell.js — cùng tài
 // khoản ngân hàng của Quỳnh dùng chung cho mọi sản phẩm trong hệ sinh thái này.
 // ============================================================
 const PAYMENT_BANK = { code: 'vietinbank', account: '199339288888', accountName: 'LE TU QUYNH' };
 const SPS_TRIAL_AI_LIMIT = 20;
 const SPS_PAID_MONTHLY_AI_LIMIT = 240;
-const SPS_PLAN = { label: '1 tháng', amount: 599000, days: 30 };
+const SPS_PLAN = { label: '1 tháng', amount: 499000, days: 30 };
 
 function spsPaidMonthlyUsage(p) {
   const sameMonth = p.sps_paid_ai_month === currentCycleKey(p.created_at);
@@ -307,7 +309,7 @@ async function boot() {
   // Cần thêm role/created_at/sps_* so với bản trước (chỉ id,full_name) — role để nhận diện admin
   // (không giới hạn lượt), created_at để tính đúng chu kỳ 30 ngày (currentCycleKey), sps_* để hiện
   // đúng số lượt còn lại + trạng thái gói riêng của Sản Phẩm Số (xem spsQuotaHint()).
-  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,role,created_at,sps_has_paid,sps_access_until,sps_trial_ai_uses,sps_trial_ai_limit,sps_paid_ai_uses,sps_paid_ai_month,sps_paid_ai_bonus,sps_ref_code,sps_review_prompt_dismissed,sps_seller_photo_url,sps_heyzine_api_key,sps_heyzine_client_id').eq('id', currentUser.id).maybeSingle();
+  const { data: profile } = await supabaseClient.from('profiles').select('id,full_name,role,created_at,sps_has_paid,sps_access_until,sps_trial_ai_uses,sps_trial_ai_limit,sps_paid_ai_uses,sps_paid_ai_month,sps_paid_ai_bonus,sps_ref_code,sps_review_prompt_dismissed,sps_seller_photo_url,sps_heyzine_api_key,sps_heyzine_client_id,sps_seller_bank_bin,sps_seller_bank_account,sps_seller_bank_account_name,sps_seller_webhook_secret,sps_seller_contact_zalo').eq('id', currentUser.id).maybeSingle();
   currentProfile = profile;
   renderShell(profile);
   await loadSpsReviewPromptEligibility();

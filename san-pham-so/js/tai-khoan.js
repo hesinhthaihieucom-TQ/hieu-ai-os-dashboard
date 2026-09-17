@@ -19,6 +19,18 @@ const PIXABAY_MUSIC_LIST_HTML = `
   </ul>
 `;
 
+// 11 ngân hàng SePay hỗ trợ kết nối tự động thật (2026-09-07, xem schema_san_pham_so.sql mục 30) —
+// PHẢI khớp SEPAY_BANKS_BY_BIN ở san-pham-so/p/script.js, đổi 1 chỗ thì phải đổi cả 2.
+const SEPAY_BANKS = [
+  { bin: '970436', name: 'Vietcombank' }, { bin: '970418', name: 'BIDV' }, { bin: '970415', name: 'VietinBank' },
+  { bin: '970422', name: 'MBBank' }, { bin: '970416', name: 'ACB' }, { bin: '970432', name: 'VPBank' },
+  { bin: '970423', name: 'TPBank' }, { bin: '970403', name: 'Sacombank' }, { bin: '970426', name: 'MSB' },
+  { bin: '970448', name: 'OCB' }, { bin: '970452', name: 'KienLongBank' },
+];
+// URL webhook cố định người bán tự dán vào SePay dashboard của họ (xem api/san-pham-so-seller-webhook.js)
+// — domain Vercel gốc, KHÔNG qua Cloudflare Worker (webhook là server-to-server, không cần domain đẹp).
+const SELLER_WEBHOOK_URL = 'https://hieu-ai-os-dashboard.vercel.app/api/san-pham-so-seller-webhook';
+
 function render(container) {
   const p0 = currentProfile || {};
   const state = {
@@ -29,6 +41,13 @@ function render(container) {
     // mục 25). Không kết nối thì vẫn dùng tài khoản chung như trước, không bắt buộc.
     heyzineApiKey: p0.sps_heyzine_api_key || '', heyzineClientId: p0.sps_heyzine_client_id || '',
     heyzineSaving: false, heyzineSaved: false, heyzineError: null,
+    // Kết nối SePay riêng (2026-09-07) — người bán tự đăng ký SePay ĐỘC LẬP của họ, tự liên kết ngân
+    // hàng + tạo Webhook trong dashboard SePay của họ, dán số TK/ngân hàng vào đây để tiền của HỌ về
+    // thẳng tài khoản của HỌ (không phải tài khoản Quỳnh) — xem schema_san_pham_so.sql mục 30. Không
+    // kết nối thì đơn hàng vẫn về tài khoản chung của Quỳnh như trước, không bắt buộc.
+    sellerBankBin: p0.sps_seller_bank_bin || '', sellerBankAccount: p0.sps_seller_bank_account || '',
+    sellerBankAccountName: p0.sps_seller_bank_account_name || '',
+    sellerBankSaving: false, sellerBankSaved: false, sellerBankError: null,
   };
   draw();
 
@@ -94,6 +113,64 @@ function render(container) {
       </div>
 
       <div class="card">
+        <h2 style="font-size:16px;margin-bottom:6px;">💳 Nhận tiền trực tiếp về tài khoản của bạn</h2>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Kết nối để tiền khách mua sản phẩm của bạn tự động về THẲNG tài khoản ngân hàng của bạn — không cần ai xác nhận tay.</div>
+        ${(p.sps_seller_bank_bin && p.sps_seller_bank_account) ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đang nhận tiền trực tiếp về ${esc(SEPAY_BANKS.find(b => b.bin === p.sps_seller_bank_bin)?.name || '')} — ${esc(p.sps_seller_bank_account)}.</div>` : ''}
+        <div class="hint-box" style="margin-bottom:12px;">
+          <b>Bước 1 — đăng ký + liên kết ngân hàng của bạn trên SePay:</b>
+          <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+            <li>Đăng ký tài khoản <b style="color:var(--accent);">SePay</b> miễn phí tại <a href="https://sepay.vn" target="_blank" rel="noopener">sepay.vn</a> (tài khoản của riêng bạn).</li>
+            <li>Đăng nhập dashboard SePay, vào mục <b style="color:var(--accent);">"Ngân hàng"</b> ở menu bên trái → bấm nút <b style="color:var(--accent);">"+ Kết nối tài khoản"</b> góc trên bên phải.</li>
+            <li>Chọn đúng ngân hàng của bạn, điền <b style="color:var(--accent);">Số tài khoản</b> + <b style="color:var(--accent);">Tên chủ tài khoản</b>, làm theo đúng hướng dẫn SePay hiện ra trên màn hình đó để hoàn tất (mỗi ngân hàng có 1 bước xác nhận riêng, SePay tự dẫn bạn qua từng bước, không cần nhập mật khẩu ngân hàng).</li>
+            <li>Thấy ngân hàng hiện trong mục "Ngân hàng" là đã kết nối xong — quay lại đây làm Bước 2.</li>
+          </ol>
+        </div>
+        <label>Ngân hàng</label>
+        <select id="tk-seller-bank">
+          <option value="">— Chọn ngân hàng —</option>
+          ${SEPAY_BANKS.map(b => `<option value="${b.bin}" ${state.sellerBankBin === b.bin ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}
+        </select>
+        <label style="margin-top:10px;">Số tài khoản</label>
+        <input id="tk-seller-bank-account" type="text" value="${esc(state.sellerBankAccount)}" placeholder="Số tài khoản ngân hàng của bạn (đúng số vừa liên kết ở SePay)">
+        <label style="margin-top:10px;">Tên chủ tài khoản</label>
+        <input id="tk-seller-bank-name" type="text" value="${esc(state.sellerBankAccountName)}" placeholder="VD: NGUYEN VAN A (không dấu, in hoa theo ngân hàng)">
+        ${state.sellerBankError ? `<div class="error-box" style="margin-top:10px;">${esc(state.sellerBankError)}</div>` : ''}
+        ${state.sellerBankSaved ? `<div class="hint-box" style="margin-top:10px;">✓ Đã lưu — làm tiếp Bước 2 bên dưới để hoàn tất kết nối.</div>` : ''}
+        <div class="btn-row">
+          <button class="btn" id="tk-save-seller-bank" ${state.sellerBankSaving ? 'disabled' : ''}>${state.sellerBankSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
+          ${(p.sps_seller_bank_bin && p.sps_seller_bank_account) ? `<span class="btn-ghost btn" id="tk-disconnect-seller-bank">Ngắt kết nối</span>` : ''}
+        </div>
+        ${(p.sps_seller_bank_bin && p.sps_seller_bank_account) ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Ngắt kết nối sẽ khiến đơn hàng MỚI không còn tự động chuyển thẳng về tài khoản này nữa — đơn cũ không ảnh hưởng.</div>` : ''}
+        ${p.sps_seller_webhook_secret ? `
+          <div class="hint-box" style="margin-top:14px;">
+            <b>Bước 2 — tạo Webhook trong SePay (sau khi đã Lưu kết nối ở trên):</b>
+            <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+              <li>Trong dashboard SePay, vào mục <b style="color:var(--accent);">"Lập trình & Tích hợp"</b> ở menu bên trái → chọn <b style="color:var(--accent);">"Tích hợp WebHooks"</b>.</li>
+              <li>Bấm nút <b style="color:var(--accent);">"+ Thêm webhook"</b> góc trên bên phải.</li>
+              <li>Đặt tên bất kỳ (VD "Sản Phẩm Số"), ở mục loại sự kiện chọn đúng <b style="color:var(--accent);">"Có tiền vào"</b> (KHÔNG chọn "Cả hai" hay "Có tiền ra").</li>
+              <li>Dán đúng URL bên dưới vào ô "nhập URL nhận webhook".</li>
+              <li>Ở mục Phương thức xác thực, chọn <b style="color:var(--accent);">"API Key"</b>, dán đúng API Key bên dưới vào ô hiện ra.</li>
+              <li>Bấm <b style="color:var(--accent);">"Thêm"</b> để hoàn tất — vậy là xong, không cần làm lại lần nào nữa.</li>
+            </ol>
+            <div style="margin-top:10px;">
+              <label style="font-size:12.5px;font-weight:400;">URL Webhook</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" readonly value="${esc(SELLER_WEBHOOK_URL)}" style="flex:1;font-size:12.5px;" onclick="this.select()" id="tk-webhook-url-input">
+                <span class="btn-ghost btn btn-sm" id="tk-copy-webhook-url">Sao chép</span>
+              </div>
+            </div>
+            <div style="margin-top:8px;">
+              <label style="font-size:12.5px;font-weight:400;">API Key — RIÊNG của bạn, không chia sẻ cho ai</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" readonly value="${esc(p.sps_seller_webhook_secret)}" style="flex:1;font-size:12.5px;" onclick="this.select()" id="tk-webhook-secret-input">
+                <span class="btn-ghost btn btn-sm" id="tk-copy-webhook-secret">Sao chép</span>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="card">
         <h2 style="font-size:16px;margin-bottom:10px;">Đổi mật khẩu</h2>
         <label>Mật khẩu mới</label>
         <input id="tk-pass" type="password" value="${esc(state.newPassword)}" placeholder="Ít nhất 6 ký tự">
@@ -137,6 +214,50 @@ function render(container) {
       }
       draw();
     };
+    const bankSelectEl = container.querySelector('#tk-seller-bank');
+    bankSelectEl.onchange = () => { state.sellerBankBin = bankSelectEl.value; };
+    const bankAccountEl = container.querySelector('#tk-seller-bank-account');
+    bankAccountEl.oninput = () => { state.sellerBankAccount = bankAccountEl.value; };
+    const bankNameEl = container.querySelector('#tk-seller-bank-name');
+    bankNameEl.oninput = () => { state.sellerBankAccountName = bankNameEl.value; };
+    container.querySelector('#tk-save-seller-bank').onclick = async () => {
+      state.sellerBankSaved = false; state.sellerBankError = null;
+      if (!state.sellerBankBin || !state.sellerBankAccount.trim() || !state.sellerBankAccountName.trim()) {
+        state.sellerBankError = 'Cần chọn ngân hàng + nhập đủ số tài khoản và tên chủ tài khoản.'; draw(); return;
+      }
+      state.sellerBankSaving = true; draw();
+      const { data, error } = await supabaseClient.rpc('update_sps_seller_bank_info', {
+        p_bin: state.sellerBankBin, p_account: state.sellerBankAccount.trim(), p_account_name: state.sellerBankAccountName.trim(),
+      });
+      state.sellerBankSaving = false;
+      if (error) { state.sellerBankError = error.message; }
+      else {
+        if (currentProfile) {
+          currentProfile.sps_seller_bank_bin = state.sellerBankBin;
+          currentProfile.sps_seller_bank_account = state.sellerBankAccount.trim();
+          currentProfile.sps_seller_bank_account_name = state.sellerBankAccountName.trim();
+          currentProfile.sps_seller_webhook_secret = data;
+        }
+        state.sellerBankSaved = true;
+      }
+      draw();
+    };
+    const disconnectBankBtn = container.querySelector('#tk-disconnect-seller-bank');
+    if (disconnectBankBtn) disconnectBankBtn.onclick = async () => {
+      state.sellerBankSaving = true; draw();
+      const { error } = await supabaseClient.rpc('update_sps_seller_bank_info', { p_bin: null, p_account: null, p_account_name: null });
+      state.sellerBankSaving = false;
+      if (error) { state.sellerBankError = error.message; }
+      else {
+        if (currentProfile) { currentProfile.sps_seller_bank_bin = null; currentProfile.sps_seller_bank_account = null; currentProfile.sps_seller_bank_account_name = null; }
+        state.sellerBankBin = ''; state.sellerBankAccount = ''; state.sellerBankAccountName = ''; state.sellerBankSaved = false;
+      }
+      draw();
+    };
+    const copyUrlBtn = container.querySelector('#tk-copy-webhook-url');
+    if (copyUrlBtn) copyUrlBtn.onclick = () => { navigator.clipboard.writeText(SELLER_WEBHOOK_URL); };
+    const copySecretBtn = container.querySelector('#tk-copy-webhook-secret');
+    if (copySecretBtn) copySecretBtn.onclick = () => { navigator.clipboard.writeText(currentProfile.sps_seller_webhook_secret || ''); };
     const passEl = container.querySelector('#tk-pass');
     passEl.oninput = () => { state.newPassword = passEl.value; };
     const passConfirmEl = container.querySelector('#tk-pass-confirm');

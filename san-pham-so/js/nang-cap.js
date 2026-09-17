@@ -1,4 +1,4 @@
-// Sản Phẩm Số — "🔥 Nâng cấp / Mua gói": gói RIÊNG của Sản Phẩm Số (599.000đ/tháng), TÁCH BIỆT hoàn
+// Sản Phẩm Số — "🔥 Nâng cấp / Mua gói": gói RIÊNG của Sản Phẩm Số (499.000đ/tháng), TÁCH BIỆT hoàn
 // toàn khỏi gói Xây Nhân Hiệu — xem giải thích đầy đủ ở san-pham-so/js/app-shell.js (spsPaymentCardHtml
 // và các hàm sps* xung quanh nó). Y hệt khung nhan-hieu/js/nang-cap.js: chỉ hiện card chọn gói + QR,
 // mọi logic thật (mã ref, QR, đối chiếu) nằm ở app-shell.js để dùng chung được ở nơi khác nếu cần.
