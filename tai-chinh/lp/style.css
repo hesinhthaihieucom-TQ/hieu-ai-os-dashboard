@@ -40,7 +40,11 @@ b, strong{ color:var(--white); }
   display:inline-block; font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:11px; letter-spacing:2px; text-transform:uppercase;
   color:var(--gold); background:rgba(240,194,75,.1); border:1px solid rgba(240,194,75,.35); border-radius:999px; padding:6px 14px; margin-bottom:16px;
 }
-.lp-hero-quote{ font-family:'Playfair Display',serif; font-style:italic; font-weight:700; font-size:18px; color:var(--gold-light); margin-bottom:14px; }
+/* Câu "khơi nỗi đau" — chị Quỳnh phản hồi 2026-09-17 bản trước quá thiên giải pháp, mất hẳn câu chạm
+   đúng cảm giác thật khách hàng đang có TRƯỚC KHI thấy giải pháp (nguyên tắc Nỗi đau → Giải pháp) —
+   đặt NGAY ĐẦU, nổi bật hơn cả câu trích dẫn cũ vì đây là câu quyết định khách có thấy "đúng là
+   mình" hay không trong 3 giây đầu tiên. */
+.lp-hero-pain{ font-size:19px; font-weight:600; color:var(--white); line-height:1.5; max-width:460px; margin:0 auto 18px; }
 .lp-hero h1{ font-size:clamp(30px,6.5vw,44px); font-weight:700; line-height:1.24; margin-bottom:18px; }
 .lp-hero h1 .gold{ color:var(--gold); }
 /* Câu mô tả rút còn ĐÚNG 1 câu ngắn (chị Quỳnh phản hồi 2026-09-16/17: kiểu 3 cụm + dấu xuống dòng
