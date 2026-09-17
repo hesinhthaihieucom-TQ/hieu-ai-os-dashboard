@@ -445,6 +445,10 @@ function render(container, ctx){
       return `
       <div class="section" id="post-card-${p.id}">
         ${isEditing ? '' : `<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-post="${p.id}" ${state.selectedPosts.has(p.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--danger);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3></label>`}
+        ${isEditing ? '' : `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <span class="btn-ghost btn btn-sm" data-copy-value="${esc(p.title||'')}">📋 Copy tiêu đề</span>
+          <span class="btn-ghost btn btn-sm" data-copy-value="${esc(p.content||'')}">📋 Copy bài</span>
+        </div>`}
         ${isEditing ? '' : (p.posted ? postMetricsHtml(p) : '')}
         ${isEditing ? editPostHtml(p) : titleOnlyBodyHtml('post:'+p.id, p.content)}
         ${isEditing ? '' : postOptionsPanelHtml(p)}
