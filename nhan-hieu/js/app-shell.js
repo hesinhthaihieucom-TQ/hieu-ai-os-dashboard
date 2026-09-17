@@ -298,7 +298,13 @@ function currentPaymentPlans(){
   // cho những người được người khác giới thiệu ko? ko đâu nhỉ, vì nếu thế thì nhiều quá") — họ đã có
   // sẵn mức giảm 15% riêng, cộng thêm ưu đãi 15 phút nữa là 2 lớp giảm giá chồng lên 1 nhóm khách quá
   // đông (ai cũng có thể vào bằng link giới thiệu), không phải trường hợp hiếm/khẩn cấp thật sự nữa.
-  const withUrgency = (!isStudent && !isReferralEligible && isInExpiredUrgencyWindow(p)) ? [...EXPIRED_URGENCY_PLANS, ...withFlash] : withFlash;
+  // Khi ưu đãi 15 phút đang hiện, BỎ HẲN gói 6/12 tháng giá thường khỏi danh sách thay vì hiện song
+  // song 2 dòng "6 tháng" (1 giá thường, 1 giá ưu đãi) — chị Quỳnh 2026-09-17: "sao lại có 2 bảng giá
+  // rối mắt thế". Gói ưu đãi đã tự hiện giá gốc gạch ngang ngay trong chip của nó (xem chipHtml),
+  // không cần giữ lại bản giá thường riêng để so sánh nữa. Gói 1 tháng không có ưu đãi nên vẫn giữ.
+  const withUrgency = (!isStudent && !isReferralEligible && isInExpiredUrgencyWindow(p))
+    ? [...EXPIRED_URGENCY_PLANS, ...withFlash.filter(pl => !EXPIRED_URGENCY_PLANS.some(u => u.key.replace('_urgent','') === pl.key))]
+    : withFlash;
   return isStudent ? withUrgency : decorateEarlyBird(withUrgency, p);
 }
 // Cách tính "rẻ hơn" KHÁC NHAU theo từng gói học viên:
@@ -744,7 +750,10 @@ function paymentCardHtml(){
   // báo, số cỡ lớn font Playfair Display, tabular-nums).
   const urgencyMin = urgencySeconds != null ? Math.floor(urgencySeconds / 60) : null;
   const urgencySec = urgencySeconds != null ? urgencySeconds % 60 : null;
-  const urgencyDigitBox = (n)=>`<div style="background:var(--danger);color:#fff;font-family:'Playfair Display',serif;font-weight:900;font-size:32px;line-height:1;padding:8px 14px;border-radius:10px;font-variant-numeric:tabular-nums;min-width:50px;">${String(n).padStart(2,'0')}</div>`;
+  // Nền ô số đổi sang gần đen (var(--ink)) thay vì cùng màu đỏ với dòng chữ nhãn phía trên (chị
+  // Quỳnh 2026-09-17: "cái ô thời gian với cái chữ cùng màu thế thì hình như ko nổi thì phải") — đen
+  // trên nền đỏ nhạt tạo tương phản mạnh, ô số nổi bật hẳn lên thay vì chìm vào cùng tông đỏ.
+  const urgencyDigitBox = (n)=>`<div style="background:var(--ink);color:#fff;font-family:'Playfair Display',serif;font-weight:900;font-size:32px;line-height:1;padding:8px 14px;border-radius:10px;font-variant-numeric:tabular-nums;min-width:50px;">${String(n).padStart(2,'0')}</div>`;
 
   return `
     <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
