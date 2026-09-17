@@ -325,6 +325,7 @@
     <div class="lp-eyebrow-label" style="text-align:center;">Đăng ký &amp; thanh toán</div>
     <h2 class="lp-h2 lp-h2-center">Điền thông tin —<br><span class="gold">lấy mã QR ngay</span></h2>
     <div class="lp-h2-bar"></div>
+    <div class="lp-countdown tc-lp-countdown-wrap">⏰ Giá <span class="tc-lp-price">199.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">60:00</span></div>
 
     <div class="lp-signup-card" id="lp-signup-form-wrap">
       <label class="lp-signup-label">Họ và tên *</label>
@@ -381,6 +382,7 @@
   </section>
 
   <section class="lp-final">
+    <div class="lp-countdown tc-lp-countdown-wrap">⏰ Giá <span class="tc-lp-price">199.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">60:00</span></div>
     <a class="lp-cta" href="#dang-ky">Đăng ký ngay — mở khoá <span class="tc-lp-price">199.000đ</span> →</a>
     <div class="lp-cta-note">Trọn đời · Thanh toán 1 lần duy nhất · Không ràng buộc</div>
   </section>
@@ -390,6 +392,7 @@
 <footer class="lp-footer">Bản quyền thuộc về Hệ Sinh Thái HIỂU — Sổ Dòng Tiền Tâm Thức (Lê Tú Quỳnh)</footer>
 
 <div class="lp-sticky">
+  <div class="lp-countdown-sm tc-lp-countdown-wrap">⏰ Giá <span class="tc-lp-price">199.000đ</span> còn <span class="tc-lp-countdown-time">60:00</span></div>
   <a class="lp-cta" href="#dang-ky">Đăng ký ngay — <span class="tc-lp-price">199.000đ</span> →</a>
 </div>
 
@@ -423,7 +426,10 @@
     const msLeft = deadline - Date.now();
     if (msLeft <= 0) {
       document.querySelectorAll('.tc-lp-countdown-wrap').forEach(el => {
-        el.innerHTML = 'Đã hết ưu đãi — giá hiện tại: <b>' + fmtVnd(REGULAR_PRICE) + '</b>';
+        // Bản gọn (.lp-countdown-sm ở thanh sticky) không đủ chỗ cho câu dài — dùng thông báo ngắn hơn.
+        el.innerHTML = el.classList.contains('lp-countdown-sm')
+          ? '🔒 Đã lên giá: <b>' + fmtVnd(REGULAR_PRICE) + '</b>'
+          : 'Đã hết ưu đãi — giá hiện tại: <b>' + fmtVnd(REGULAR_PRICE) + '</b>';
       });
       updatePriceUI();
       clearInterval(timer);

@@ -75,9 +75,24 @@ b, strong{ color:var(--white); }
    Sau khi hết giờ, giá đổi thật (không phải chỉ đổi số hiển thị) vì AMOUNT dùng để sinh mã QR cũng
    đọc từ cùng 1 hàm tcLpActivePrice() — tránh kiểu đếm ngược giả chỉ đổi chữ mà giá thật không đổi,
    dễ mất uy tín nếu khách phát hiện ra. */
-.lp-countdown{ display:inline-block; font-size:13.5px; font-weight:600; color:var(--gold-light); background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); border-radius:999px; padding:8px 16px; margin:14px 0; }
+/* To hẳn lên + có mặt ở MỌI điểm chốt quan trọng (chị Quỳnh phản hồi 2026-09-17: bản trước bé quá,
+   không đủ nổi bật) — nền đỏ cảnh báo, số đếm ngược cỡ lớn, nhịp sáng liên tục hút mắt suốt trang. */
+.lp-countdown{
+  display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; text-align:center;
+  font-size:15.5px; font-weight:700; color:#fff; max-width:520px; margin:20px auto;
+  background:linear-gradient(135deg, rgba(239,68,68,.28), rgba(153,27,27,.4));
+  border:1.5px solid rgba(248,113,113,.65); border-radius:16px; padding:16px 22px;
+  animation: lpCountdownPulse 2s ease-in-out infinite;
+}
+@keyframes lpCountdownPulse{ 0%,100%{ box-shadow:0 0 18px rgba(239,68,68,.25); } 50%{ box-shadow:0 0 38px rgba(239,68,68,.55); } }
 .lp-countdown b{ color:#fff; }
-.tc-lp-countdown-time{ font-family:'Playfair Display',serif; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; }
+.tc-lp-countdown-time{
+  font-family:'Playfair Display',serif; font-weight:900; font-size:28px; color:#fff; line-height:1;
+  background:rgba(0,0,0,.4); padding:5px 14px; border-radius:10px; font-variant-numeric:tabular-nums; letter-spacing:.5px;
+}
+/* Bản gọn cho thanh sticky cuối màn hình — không đủ chỗ cho bản to, nhưng vẫn phải thấy rõ số đếm. */
+.lp-countdown-sm{ display:flex; align-items:center; justify-content:center; gap:6px; font-size:11.5px; font-weight:700; color:#FCA5A5; margin-bottom:6px; }
+.lp-countdown-sm .tc-lp-countdown-time{ font-size:14px; font-weight:800; padding:2px 9px; border-radius:7px; background:rgba(239,68,68,.3); }
 
 /* ===== Sections ===== */
 .lp-section{ padding:36px 0; border-top:1px solid var(--line); }
@@ -257,7 +272,9 @@ b, strong{ color:var(--white); }
 .lp-footer{ text-align:center; padding:26px 20px 20px; font-size:12px; color:var(--gray2); }
 
 /* Thanh CTA cố định dưới màn hình — đúng bố cục mẫu (sticky bottom bar) */
-.lp-sticky{ position:fixed; left:0; right:0; bottom:0; z-index:50; background:rgba(10,10,10,.92); backdrop-filter:blur(6px); border-top:1px solid var(--line); padding:10px 16px; display:flex; justify-content:center; }
+/* Đổi sang xếp dọc (đếm ngược trên, nút dưới) thay vì cùng hàng ngang — cùng hàng bị chật, chữ đếm
+   ngược vỡ dòng khi hết ưu đãi (thông báo dài hơn số đếm bình thường), xem .lp-countdown-sm. */
+.lp-sticky{ position:fixed; left:0; right:0; bottom:0; z-index:50; background:rgba(10,10,10,.92); backdrop-filter:blur(6px); border-top:1px solid var(--line); padding:8px 16px 10px; display:flex; flex-direction:column; align-items:center; gap:4px; }
 .lp-sticky .lp-cta{ width:100%; max-width:420px; text-align:center; padding:14px 20px; font-size:15.5px; }
 
 @media (max-width:520px){
