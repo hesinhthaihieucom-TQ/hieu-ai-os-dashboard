@@ -40,15 +40,14 @@ b, strong{ color:var(--white); }
   display:inline-block; font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:11px; letter-spacing:2px; text-transform:uppercase;
   color:var(--gold); background:rgba(240,194,75,.1); border:1px solid rgba(240,194,75,.35); border-radius:999px; padding:6px 14px; margin-bottom:16px;
 }
+.lp-hero-quote{ font-family:'Playfair Display',serif; font-style:italic; font-weight:700; font-size:18px; color:var(--gold-light); margin-bottom:14px; }
 .lp-hero h1{ font-size:clamp(30px,6.5vw,44px); font-weight:700; line-height:1.24; margin-bottom:18px; }
 .lp-hero h1 .gold{ color:var(--gold); }
-.lp-hero .sub{ font-size:16.5px; color:var(--gray); line-height:1.7; max-width:540px; margin:0 auto 28px; }
-/* .sub-br: 3 dấu xuống dòng chủ động chỉ đẹp khi mỗi cụm ý vừa đúng 1 dòng (đủ rộng, ví dụ máy tính) —
-   trên điện thoại (màn hẹp hơn 520px) mỗi cụm đó tự nó ĐÃ đủ dài để browser tự xuống dòng thêm 1 lần
-   nữa, cộng dấu xuống dòng chủ động thành ra vỡ ra 6 dòng có dòng mồ côi rất ngắn ("An,", "mỗi ngày!")
-   nhìn rối (chị Quỳnh phản hồi 2026-09-16, thấy trên điện thoại thật) — tắt hẳn dấu xuống dòng chủ
-   động ở màn hẹp, để trình duyệt tự xuống dòng tự nhiên, đều và gọn hơn hẳn. */
-@media (max-width:600px){ .sub-br{ display:none; } }
+/* Câu mô tả rút còn ĐÚNG 1 câu ngắn (chị Quỳnh phản hồi 2026-09-16/17: kiểu 3 cụm + dấu xuống dòng
+   chủ động trước đây liên tục vỡ dòng mồ côi trên điện thoại thật dù đã test kỹ trên nhiều kích
+   thước máy ảo) — 1 câu ngắn thì browser tự xuống dòng ở bất kỳ độ rộng nào cũng gọn, không cần
+   can thiệp bằng <br> nữa, triệt tiêu hẳn lớp lỗi này thay vì vá thêm media query. */
+.lp-hero .sub{ font-size:16.5px; color:var(--gray); line-height:1.7; max-width:480px; margin:0 auto 28px; }
 .lp-hero .tagline{ font-style:italic; color:var(--white); }
 
 .lp-cta{
@@ -60,6 +59,13 @@ b, strong{ color:var(--white); }
 .lp-cta:hover{ opacity:.92; transform:translateY(-1px); }
 .lp-cta-note{ margin-top:12px; font-size:12.5px; color:var(--gray2); }
 .lp-cta-wrap{ margin:26px 0; }
+/* Nhịp sáng nhẹ liên tục hút mắt về nút CTA chính trong hero — chỉ dùng ở ĐÚNG 1 nút quan trọng
+   nhất trang (không lặp lại ở các nút CTA phụ khác) để không mất tác dụng vì lạm dụng. */
+@keyframes lpCtaPulse{ 0%,100%{ box-shadow:0 6px 20px rgba(227,168,59,.25); } 50%{ box-shadow:0 8px 34px rgba(240,194,75,.55); } }
+.lp-cta-pulse{ animation:lpCtaPulse 2.4s ease-in-out infinite; }
+.lp-hero-trust{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:24px; font-size:13.5px; color:var(--gray); }
+.lp-hero-trust-item b{ color:var(--gold); font-family:'Playfair Display',serif; font-size:15.5px; }
+.lp-hero-trust-sep{ width:4px; height:4px; border-radius:50%; background:var(--gray2); flex-shrink:0; }
 
 /* ===== Sections ===== */
 .lp-section{ padding:36px 0; border-top:1px solid var(--line); }
