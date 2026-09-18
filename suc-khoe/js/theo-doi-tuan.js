@@ -90,7 +90,7 @@ const SK_ABSOLUTE_CONCERN = {
 
 (function(){
 function render(container, ctx){
-  const state = { loading:true, week:0, weekAuto:true, metrics:{}, photos:{}, saving:false, products:[], justSaved:false, deselected:new Set() };
+  const state = { loading:true, week:0, weekAuto:true, metrics:{}, photos:{}, saving:false, products:[], justSaved:false, deselected:new Set(), quantities:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -527,14 +527,14 @@ function render(container, ctx){
         // chị Quỳnh: "các phần nào có sản phẩm cũng phải làm tương tự") — dùng chung
         // skProductOrderRowHtml (checkbox, ảnh to, công dụng, mở full) + thanh tổng + quà tặng.
         const cartChosen = products.filter(p=>!state.deselected.has(p.id));
-        const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
-        const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+        const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0)*(state.quantities[p.id]||1),0);
+        const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0)*(state.quantities[p.id]||1),0);
         const gift = skOrderGift(cartTotal, cartChosen.length);
         return `
         <div class="hint-box" style="margin-top:16px;margin-bottom:10px;">
           Chỉ số ${flags.map(f=>esc(f.label)).join(', ')} đang ở mức cần chú ý — dưới đây là sản phẩm Unicity liên quan tới nhóm này.
         </div>
-        ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
+        ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
         <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
             <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
@@ -585,6 +585,20 @@ function render(container, ctx){
         draw();
       };
     });
+    container.querySelectorAll('[data-qty-dec]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-dec');
+        state.quantities[id] = Math.max(1, (state.quantities[id]||1)-1);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-qty-inc]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-inc');
+        state.quantities[id] = (state.quantities[id]||1)+1;
+        draw();
+      };
+    });
     const toggleAllBtn = container.querySelector('#sk-toggle-all-flagged');
     if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
       const ids = recommendedProducts().products.map(p=>p.id);
@@ -595,7 +609,7 @@ function render(container, ctx){
     };
     const orderBtn = container.querySelector('#sk-order-flagged');
     if(orderBtn) orderBtn.onclick = ()=>{
-      const chosen = recommendedProducts().products.filter(p=>!state.deselected.has(p.id));
+      const chosen = recommendedProducts().products.filter(p=>!state.deselected.has(p.id)).map(p=>({ ...p, _qty: state.quantities[p.id]||1 }));
       openOrderModal(ctx, chosen);
     };
   }

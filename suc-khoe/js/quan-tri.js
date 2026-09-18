@@ -964,7 +964,10 @@ function renderDonHang(container, ctx){
             </select>
           </div>
           <div style="font-size:13.5px;margin-top:10px;line-height:1.7;">
-            ${items.map(it=>`${esc(it.name)} — ${Number(it.price||0).toLocaleString('vi-VN')}đ`).join('<br>')}
+            ${items.map(it=>{
+              const qty = it.qty||1;
+              return `${esc(it.name)}${qty>1?` × ${qty}`:''} — ${(Number(it.price||0)*qty).toLocaleString('vi-VN')}đ`;
+            }).join('<br>')}
           </div>
           <div style="font-size:13.5px;margin-top:8px;">
             <b>Tổng: ${Number(o.total_amount||0).toLocaleString('vi-VN')}đ</b> · ${o.total_pv||0} PV

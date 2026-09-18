@@ -201,10 +201,14 @@ function openOrderModal(ctx, products){
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
 
+  // 2026-09-19, chị Quỳnh: "cho chọn số lượng từng sản phẩm đi. ví dụ mua 2-3 hộp" — products truyền
+  // vào modal đã mang sẵn p._qty (do trang gốc gắn theo state.quantities trước khi mở modal, xem
+  // san-pham.js/kiem-tra-suc-khoe.js/thu-vien-suc-khoe.js/theo-doi-tuan.js). Mặc định 1 nếu thiếu.
+  function qtyOf(p){ return p._qty || 1; }
   function totals(){
     const chosen = products.filter(p=>selected.has(p.id));
-    const total = chosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
-    const pv = chosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    const total = chosen.reduce((s,p)=>s+Number(p.retail_price||0)*qtyOf(p),0);
+    const pv = chosen.reduce((s,p)=>s+Number(p.pv||0)*qtyOf(p),0);
     return { chosen, total, pv, gift: skOrderGift(total, chosen.length) };
   }
 
@@ -228,18 +232,29 @@ function openOrderModal(ctx, products){
           // rớt mất ảnh/lý do đã thấy ở danh sách gốc. Dùng lại skProductNoteFallback (giống
           // skProductOrderRowHtml) để khách vẫn nhận ra đúng sản phẩm, không cần thoát ra xem lại.
           const note = skProductNoteFallback(p);
+          const q = qtyOf(p);
+          const unitPrice = Number(p.retail_price||0);
           return `
-          <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;">
-            <input type="checkbox" data-order-item="${esc(p.id)}" ${selected.has(p.id)?'checked':''} style="margin-top:3px;flex-shrink:0;">
-            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:13.5px;font-weight:600;">${esc(p.name)}</span>
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;">${Number(p.retail_price||0).toLocaleString('vi-VN')}đ</span>
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
+            <label style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;cursor:pointer;">
+              <input type="checkbox" data-order-item="${esc(p.id)}" ${selected.has(p.id)?'checked':''} style="margin-top:3px;flex-shrink:0;">
+              ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                  <span style="font-size:13.5px;font-weight:600;">${esc(p.name)}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;">${(unitPrice*q).toLocaleString('vi-VN')}đ</span>
+                </div>
+                ${note ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
               </div>
-              ${note ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
-            </div>
-          </label>
+            </label>
+            ${selected.has(p.id) ? `
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:3px;">
+                <span data-order-qty-dec="${esc(p.id)}" style="width:24px;height:24px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">−</span>
+                <span style="min-width:18px;text-align:center;font-size:13px;font-weight:700;">${q}</span>
+                <span data-order-qty-inc="${esc(p.id)}" style="width:24px;height:24px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">+</span>
+              </div>
+            ` : ''}
+          </div>
         `;}).join('')}
       </div>
       <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:6px;">
@@ -299,6 +314,20 @@ function openOrderModal(ctx, products){
         renderCard();
       };
     });
+    overlay.querySelectorAll('[data-order-qty-dec]').forEach(el=>{
+      el.onclick = ()=>{
+        const p = products.find(x=>x.id===el.getAttribute('data-order-qty-dec'));
+        if(p) p._qty = Math.max(1, qtyOf(p)-1);
+        renderCard();
+      };
+    });
+    overlay.querySelectorAll('[data-order-qty-inc]').forEach(el=>{
+      el.onclick = ()=>{
+        const p = products.find(x=>x.id===el.getAttribute('data-order-qty-inc'));
+        if(p) p._qty = qtyOf(p)+1;
+        renderCard();
+      };
+    });
     // Bấm cả khung màu (2026-09-05, chị Quỳnh: trước dùng chấm radio nhỏ khó thấy là bấm để CHỌN —
     // bỏ hẳn radio, thay bằng dấu ✓ to + chữ "Đã chọn"/"Bấm để chọn" rõ ràng hơn). Ảnh bên trong khung
     // có handler zoom riêng (stopPropagation) nên bấm ảnh chỉ phóng to, không chọn nhầm màu khác.
@@ -328,7 +357,7 @@ function openOrderModal(ctx, products){
     const { chosen, total, pv, gift } = totals();
     const { error } = await ctx.supabase.from('sk_orders').insert({
       user_id: ctx.user.id,
-      items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0) })),
+      items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0), qty:qtyOf(p) })),
       total_amount: total, total_pv: pv, gift: gift ? gift.key : null,
       gift_color: (gift && gift.needsColor) ? giftColor : null,
       shipping_name: name, shipping_phone: phone, shipping_address: address,
@@ -445,21 +474,39 @@ function skProductNoteFallback(p){
   return p._note || p.short_description || null;
 }
 
-function skProductOrderRowHtml(p, checked){
+// 2026-09-19, chị Quỳnh: "hiện nếu ko chọn thì các sản phẩm bị làm mờ, e muốn nó k bị mờ mà vẫn hiện
+// rõ, chẳng qua nếu chọn thì khung của sản phẩm đó sẽ chuyển sang màu khác thui" — bỏ hẳn
+// opacity khi bỏ chọn (đọc được đầy đủ dù không mua), đổi bằng viền+nền đổi màu khi ĐÃ chọn thay vì
+// làm mờ khi CHƯA chọn. "cho chọn số lượng từng sản phẩm... ví dụ mua 2-3 hộp" — thêm bộ đếm số lượng
+// (chỉ hiện khi đã chọn, vì chưa chọn thì số lượng không có ý nghĩa) — nhân vào giá/PV hiển thị ngay
+// tại dòng này; qty mặc định 1 nếu trang gọi hàm chưa truyền (giữ tương thích ngược).
+function skProductOrderRowHtml(p, checked, qty){
   const note = skProductNoteFallback(p);
+  const q = qty || 1;
+  const unitPrice = Number(p.retail_price||0);
+  const unitPv = Number(p.pv||0);
   return `
-    <div class="section" style="background:#fff;display:flex;gap:14px;align-items:flex-start;${checked?'':'opacity:.55;'}">
+    <div class="section" style="display:flex;gap:14px;align-items:flex-start;border:1.5px solid ${checked?'var(--accent)':'var(--line)'};background:${checked?'#eef6f0':'#fff'};">
       <input type="checkbox" data-cart-toggle="${esc(p.id)}" ${checked?'checked':''} style="width:20px;height:20px;flex-shrink:0;margin-top:3px;cursor:pointer;accent-color:var(--accent);">
       ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
       <div style="flex:1;min-width:0;">
         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
           <div style="font-weight:700;font-size:14px;">${esc(p.name)}${p._priority ? ` <span style="font-size:10.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}</div>
           <div style="text-align:right;white-space:nowrap;">
-            ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
-            ${p.pv!=null ? `<div style="font-size:11px;color:var(--ink-soft);">${p.pv} PV</div>` : ''}
+            ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${(unitPrice*q).toLocaleString('vi-VN')}đ${q>1?`<span style="font-weight:400;color:var(--ink-soft);"> (${unitPrice.toLocaleString('vi-VN')}đ × ${q})</span>`:''}</div>` : ''}
+            ${p.pv!=null ? `<div style="font-size:11px;color:var(--ink-soft);">${unitPv*q} PV</div>` : ''}
           </div>
         </div>
         ${note ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
+        ${checked ? `
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+            <span style="font-size:12.5px;color:var(--ink-soft);">Số lượng:</span>
+            <span data-qty-dec="${esc(p.id)}" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">−</span>
+            <span style="min-width:22px;text-align:center;font-weight:700;font-size:13.5px;">${q}</span>
+            <span data-qty-inc="${esc(p.id)}" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">+</span>
+            <span style="font-size:12px;color:var(--ink-soft);">hộp</span>
+          </div>
+        ` : ''}
         <details style="margin-top:6px;">
           <summary style="cursor:pointer;font-size:12.5px;color:var(--accent);list-style:none;">Xem đầy đủ công dụng →</summary>
           <div style="margin-top:10px;">${skProductDetailHtml(p)}</div>

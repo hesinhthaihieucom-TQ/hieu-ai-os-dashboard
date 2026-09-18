@@ -6,7 +6,7 @@
 // thanh cố định cuối trang — xem cùng logic ở kiem-tra-suc-khoe.js.
 (function(){
 function render(container, ctx){
-  const state = { loading:true, entries:[], productById:{}, q:'', deselected:new Set() };
+  const state = { loading:true, entries:[], productById:{}, q:'', deselected:new Set(), quantities:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -56,8 +56,8 @@ function render(container, ctx){
     const list = filtered();
     const visibleProducts = allVisibleProducts(list);
     const cartChosen = visibleProducts.filter(p=>!state.deselected.has(p.id));
-    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
-    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0)*(state.quantities[p.id]||1),0);
+    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0)*(state.quantities[p.id]||1),0);
     const gift = skOrderGift(cartTotal, cartChosen.length);
     return `
       <div class="page-head">
@@ -78,7 +78,7 @@ function render(container, ctx){
             ${products.length>0 ? `
               <div style="margin-top:14px;">
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:10px;">✨ Sản phẩm Unicity phù hợp — lý do vì sao từng sản phẩm hỗ trợ đúng vấn đề này:</div>
-                ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
+                ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
               </div>
             ` : ''}
           </div>
@@ -119,6 +119,20 @@ function render(container, ctx){
         draw();
       };
     });
+    container.querySelectorAll('[data-qty-dec]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-dec');
+        state.quantities[id] = Math.max(1, (state.quantities[id]||1)-1);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-qty-inc]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-inc');
+        state.quantities[id] = (state.quantities[id]||1)+1;
+        draw();
+      };
+    });
     container.querySelectorAll('[data-zoom]').forEach(el=>{
       el.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); openImageLightbox(el.getAttribute('data-zoom'), ''); };
     });
@@ -132,7 +146,7 @@ function render(container, ctx){
     };
     const orderBtn = container.querySelector('#tv-order');
     if(orderBtn) orderBtn.onclick = ()=>{
-      const chosen = allVisibleProducts(filtered()).filter(p=>!state.deselected.has(p.id));
+      const chosen = allVisibleProducts(filtered()).filter(p=>!state.deselected.has(p.id)).map(p=>({ ...p, _qty: state.quantities[p.id]||1 }));
       openOrderModal(ctx, chosen);
     };
   }

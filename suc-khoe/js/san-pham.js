@@ -18,7 +18,7 @@ const SK_PRODUCT_CATEGORIES = [
 // chiều "đã bỏ") — đúng quy ước chung đã chốt cho mọi trang có gợi ý/danh sách sản phẩm.
 (function(){
 function render(container, ctx){
-  const state = { loading:true, products:[], tab:'all', deselected:new Set() };
+  const state = { loading:true, products:[], tab:'all', deselected:new Set(), quantities:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -45,8 +45,8 @@ function render(container, ctx){
     // Tổng đơn hàng luôn tính trên TOÀN BỘ sản phẩm đã chọn (không chỉ tab đang xem) — đổi tab chỉ
     // để duyệt/lọc, không làm mất lựa chọn đã chọn ở tab khác.
     const cartChosen = state.products.filter(p=>!state.deselected.has(p.id));
-    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
-    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0)*(state.quantities[p.id]||1),0);
+    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0)*(state.quantities[p.id]||1),0);
     const gift = skOrderGift(cartTotal, cartChosen.length);
     return `
       <div class="page-head">
@@ -63,7 +63,7 @@ function render(container, ctx){
       </div>
 
       ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">${state.products.length===0 ? 'Chưa có sản phẩm nào — chị Quỳnh sẽ thêm sớm.' : 'Chưa có sản phẩm nào ở nhánh này.'}</div>` : ''}
-      ${list.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
+      ${list.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
 
       ${state.products.length>0 ? `
         <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
@@ -91,6 +91,20 @@ function render(container, ctx){
         draw();
       };
     });
+    container.querySelectorAll('[data-qty-dec]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-dec');
+        state.quantities[id] = Math.max(1, (state.quantities[id]||1)-1);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-qty-inc]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-inc');
+        state.quantities[id] = (state.quantities[id]||1)+1;
+        draw();
+      };
+    });
     const toggleAllBtn = container.querySelector('#sp-toggle-all');
     if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
       const ids = state.products.map(p=>p.id);
@@ -101,7 +115,7 @@ function render(container, ctx){
     };
     const orderBtn = container.querySelector('#sp-order');
     if(orderBtn) orderBtn.onclick = ()=>{
-      openOrderModal(ctx, state.products.filter(p=>!state.deselected.has(p.id)));
+      openOrderModal(ctx, state.products.filter(p=>!state.deselected.has(p.id)).map(p=>({ ...p, _qty: state.quantities[p.id]||1 })));
     };
   }
 

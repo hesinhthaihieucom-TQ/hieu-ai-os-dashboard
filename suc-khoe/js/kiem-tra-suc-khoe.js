@@ -52,7 +52,7 @@ function render(container, ctx){
   // renderGuestCheckScreen). isGuest quyết định lưu vào Supabase (đã đăng nhập) hay localStorage tạm
   // (chưa đăng nhập, xem util.js saveGuestCheckinDraft) — không mất công khách tick lại khi đăng ký.
   const isGuest = !ctx.user;
-  const state = { loading:true, tab:'check', insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set(), history:[], savingHistory:false };
+  const state = { loading:true, tab:'check', insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set(), quantities:{}, history:[], savingHistory:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -221,8 +221,8 @@ function render(container, ctx){
     const libMatches = hasAny ? matchedLibraryEntries() : [];
     const productMatches = hasAny ? matchedProducts() : [];
     const cartChosen = productMatches.filter(p=>!state.deselected.has(p.id));
-    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0),0);
-    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0),0);
+    const cartTotal = cartChosen.reduce((s,p)=>s+Number(p.retail_price||0)*(state.quantities[p.id]||1),0);
+    const cartPv = cartChosen.reduce((s,p)=>s+Number(p.pv||0)*(state.quantities[p.id]||1),0);
     const gift = skOrderGift(cartTotal, cartChosen.length);
     return `
       <div class="page-head">
@@ -321,7 +321,7 @@ function render(container, ctx){
       ${productMatches.length>0 ? `
         <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Sản phẩm Unicity phù hợp với bạn</h2></div>
         <p style="font-size:13.5px;color:var(--ink-soft);margin:-8px 0 14px;line-height:1.6;">✨ Dựa trên các dấu hiệu bạn vừa chọn, đây là những sản phẩm Unicity phù hợp nhất để hỗ trợ đúng vấn đề của bạn ngay từ hôm nay — xem lý do vì sao từng sản phẩm được đề xuất bên dưới, tất cả đã được chọn sẵn trong đơn, bạn có thể bỏ bớt nếu muốn.</p>
-        ${productMatches.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id))).join('')}
+        ${productMatches.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
 
         <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -361,6 +361,20 @@ function render(container, ctx){
         draw();
       };
     });
+    container.querySelectorAll('[data-qty-dec]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-dec');
+        state.quantities[id] = Math.max(1, (state.quantities[id]||1)-1);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-qty-inc]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-inc');
+        state.quantities[id] = (state.quantities[id]||1)+1;
+        draw();
+      };
+    });
     const toggleAllBtn = container.querySelector('#sk-toggle-all');
     if(toggleAllBtn) toggleAllBtn.onclick = ()=>{
       const ids = matchedProducts().map(p=>p.id);
@@ -370,7 +384,7 @@ function render(container, ctx){
       draw();
     };
     const orderBtn = container.querySelector('#sk-order-matched');
-    if(orderBtn) orderBtn.onclick = ()=>{ openOrderModal(ctx, matchedProducts().filter(p=>!state.deselected.has(p.id))); };
+    if(orderBtn) orderBtn.onclick = ()=>{ openOrderModal(ctx, matchedProducts().filter(p=>!state.deselected.has(p.id)).map(p=>({ ...p, _qty: state.quantities[p.id]||1 }))); };
   }
 
   draw();
