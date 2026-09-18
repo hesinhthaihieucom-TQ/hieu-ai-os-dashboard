@@ -8,6 +8,7 @@ const SK_PRODUCT_CATEGORIES = [
   { key:'tang_de_khang', label:'Tăng đề kháng' },
   { key:'lam_dep_da', label:'Làm đẹp da' },
   { key:'xuong_khop', label:'Xương khớp' },
+  { key:'my_pham', label:'Mỹ phẩm' },
 ];
 
 // 2026-09-05, chị Quỳnh: "phần sản phẩm ở mục sản phẩm unicity cũng phải làm tương tự như phần sản
@@ -29,7 +30,12 @@ function render(container, ctx){
   }
 
   function filtered(){
-    if(state.tab==='all') return state.products;
+    if(state.tab==='all'){
+      // 2026-09-18, chị Quỳnh: "e muốn danh sách các sản phẩm mỹ phẩm sẽ ở dưới cùng" — tab "Tất cả"
+      // vẫn giữ nguyên thứ tự A-Z cũ (từ query .order('name')), chỉ đẩy riêng nhóm mỹ phẩm xuống
+      // cuối danh sách. Array.sort ổn định (stable) nên thứ tự trong từng nhóm không bị xáo trộn.
+      return [...state.products].sort((a,b)=>(a.category==='my_pham'?1:0) - (b.category==='my_pham'?1:0));
+    }
     return state.products.filter(p=>p.category===state.tab);
   }
 

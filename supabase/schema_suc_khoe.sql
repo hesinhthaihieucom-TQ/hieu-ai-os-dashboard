@@ -177,7 +177,18 @@ alter table sk_products add column if not exists category text;
 -- if not exists" bỏ qua toàn bộ khi cột đã có sẵn, ràng buộc cũ sẽ không được cập nhật nếu chỉ sửa ở đó.
 alter table sk_products drop constraint if exists sk_products_category_check;
 alter table sk_products add constraint sk_products_category_check
-  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da','xuong_khop'));
+  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da','xuong_khop','my_pham'));
+-- Thêm nhánh "Mỹ phẩm" (2026-09-18, chị Quỳnh: "e muốn danh sách các sản phẩm mỹ phẩm sẽ ở dưới
+-- cùng") — trước đây nhóm Neigene Evolution (mỹ phẩm thật) bị để category=null LẪN với vài sản phẩm
+-- khác cũng null nhưng không phải mỹ phẩm (BioReiShi Coffee, Bios Life Mannos — chỉ vì không có trong
+-- Sổ Tay, xem seed_sk_products_v2_category_benefits.sql), nên không thể dùng "category is null" để
+-- lọc đúng mỹ phẩm. Gán riêng category='my_pham' cho đúng 7 sản phẩm dòng Neigene Evolution + Unicity
+-- Daily Suncare (kem chống nắng — cũng là mỹ phẩm/chăm sóc da, không phải TPCN uống).
+update sk_products set category='my_pham' where name in (
+  'Neigene Evolution Expert Ampoule','Neigene Evolution Head To Toe Oil','Neigene Evolution Intense Care',
+  'Neigene Evolution Makeup Remover Oil','Neigene Evolution Foaming Cleanser','Neigene Evolution Rich Care',
+  'Neigene Evolution Toning Lotion','Unicity Daily Suncare'
+);
 -- Nội dung chi tiết dạng nhiều mục (2026-08-30, chị Quỳnh phản hồi "benefits" 1 đoạn text là hời hợt,
 -- cần bố cục rõ theo mục như 1 chuyên gia bán hàng trình bày, xem thêm mới hiện ra) — mảng jsonb
 -- [{title, body}], mỗi phần tử là 1 mục có tiêu đề riêng (vd "Công dụng theo nhãn đăng ký", "Thành
@@ -201,7 +212,7 @@ create table if not exists sk_product_combos (
 );
 alter table sk_product_combos drop constraint if exists sk_product_combos_category_check;
 alter table sk_product_combos add constraint sk_product_combos_category_check
-  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da','xuong_khop'));
+  check (category in ('thai_doc','giam_mo','tang_de_khang','lam_dep_da','xuong_khop','my_pham'));
 alter table sk_product_combos enable row level security;
 drop policy if exists "sk_product_combos_read" on sk_product_combos;
 create policy "sk_product_combos_read" on sk_product_combos for select using (auth.role() = 'authenticated');

@@ -221,14 +221,26 @@ function openOrderModal(ctx, products){
     const { chosen, total, pv, gift } = totals();
     return `
       <div style="font-weight:700;font-size:16px;margin-bottom:14px;">Đặt hàng</div>
-      <div style="max-height:38vh;overflow-y:auto;margin-bottom:14px;">
-        ${products.map(p=>`
-          <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;">
-            <input type="checkbox" data-order-item="${esc(p.id)}" ${selected.has(p.id)?'checked':''}>
-            <span style="flex:1;font-size:13.5px;">${esc(p.name)}</span>
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;">${Number(p.retail_price||0).toLocaleString('vi-VN')}đ</span>
+      <div style="max-height:44vh;overflow-y:auto;margin-bottom:14px;">
+        ${products.map(p=>{
+          // 2026-09-18, chị Quỳnh: "khi bấm vào đặt hàng thì danh sách sản phẩm trong list đặt hàng
+          // vẫn phải đủ hình và công dụng ngắn gọn" — trước đây modal Đặt Hàng chỉ hiện tên + giá,
+          // rớt mất ảnh/lý do đã thấy ở danh sách gốc. Dùng lại skProductNoteFallback (giống
+          // skProductOrderRowHtml) để khách vẫn nhận ra đúng sản phẩm, không cần thoát ra xem lại.
+          const note = skProductNoteFallback(p);
+          return `
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;">
+            <input type="checkbox" data-order-item="${esc(p.id)}" ${selected.has(p.id)?'checked':''} style="margin-top:3px;flex-shrink:0;">
+            ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:13.5px;font-weight:600;">${esc(p.name)}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;">${Number(p.retail_price||0).toLocaleString('vi-VN')}đ</span>
+              </div>
+              ${note ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
+            </div>
           </label>
-        `).join('')}
+        `;}).join('')}
       </div>
       <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:6px;">
         <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ</span>
