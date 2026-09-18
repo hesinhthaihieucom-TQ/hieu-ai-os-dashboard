@@ -194,10 +194,19 @@ function skGiftPreviewHtml(gift){
   `;
 }
 
+// 2026-09-19, chị Quỳnh: "với mục đặt hàng phải có thanh toán luôn chứ" — trước đây đặt hàng chỉ gửi
+// yêu cầu, chị tự liên hệ thu tiền, không hiện cách thanh toán ngay tại chỗ. Chốt mức "hiện QR chuyển
+// khoản ngay sau khi đặt, chị vẫn tự xác nhận thủ công" (không tự động đối chiếu như gói thành viên
+// nhan-hieu/tai-chinh — đơn ở đây SỐ TIỀN THAY ĐỔI theo từng đơn/số lượng, không cố định theo gói nên
+// chưa gắn được vào api/sepay-webhook.js hiện có, vốn chỉ khớp theo bảng giá cố định). Cùng 1 tài
+// khoản VietinBank của chị Quỳnh đã dùng chung toàn hệ sinh thái — KHÔNG tự đổi số tài khoản ở đây.
+const SK_PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
+
 function openOrderModal(ctx, products){
   const selected = new Set(products.map(p=>p.id));
   const formValues = { name: (ctx.profile && ctx.profile.full_name) || '', phone:'', address:'' };
   let giftColor = SK_LIPSTICK_COLORS[0].key;
+  let orderResult = null; // { id, total } — set sau khi submit() thành công, dùng để dựng QR thanh toán.
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
 
@@ -214,12 +223,32 @@ function openOrderModal(ctx, products){
 
   function bodyHtml(step, err){
     if(step==='done'){
+      // 2026-09-19, chị Quỳnh: "với mục đặt hàng phải có thanh toán luôn chứ" — hiện QR VietinBank
+      // đúng SỐ TIỀN đơn vừa đặt, nội dung CK gắn mã đơn (8 ký tự đầu id, đủ để chị đối chiếu bằng mắt
+      // trong sao kê) — chị vẫn tự xác nhận thủ công ở Quản Trị > Đơn Hàng sau khi nhận được tiền.
+      const orderCode = orderResult ? orderResult.id.slice(0,8).toUpperCase() : '';
+      const amount = orderResult ? orderResult.total : 0;
+      const transferContent = `DH ${orderCode}`;
+      const qrUrl = orderResult
+        ? `https://img.vietqr.io/image/${SK_PAYMENT_BANK.code}-${SK_PAYMENT_BANK.account}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(SK_PAYMENT_BANK.accountName)}`
+        : null;
       return `
         <div style="text-align:center;padding:10px 0;">
           <div style="font-size:38px;margin-bottom:10px;">✅</div>
           <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Đã gửi yêu cầu đặt hàng</div>
-          <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:18px;">Chị Quỳnh sẽ liên hệ bạn qua số điện thoại đã để lại để xác nhận và giao hàng.</div>
-          <button class="btn btn-sm" data-order-close="1">Đóng</button>
+          <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:18px;">Quét mã bên dưới để thanh toán ngay — chị Quỳnh sẽ xác nhận và liên hệ giao hàng sau khi nhận được tiền.</div>
+          ${qrUrl ? `
+            <img src="${qrUrl}" alt="Mã VietQR" style="max-width:240px;width:100%;border-radius:12px;border:1px solid var(--line);">
+            <div style="margin-top:14px;font-size:13.5px;line-height:1.8;text-align:left;">
+              <div><b>Ngân hàng:</b> VietinBank</div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(SK_PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(SK_PAYMENT_BANK.account)}">Copy</span></div>
+              <div><b>Chủ tài khoản:</b> ${esc(SK_PAYMENT_BANK.accountName)}</div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${amount}">Copy</span></div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK:</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft,#eef6f0);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+            </div>
+            <div class="hint-box" style="margin-top:14px;text-align:left;">Ghi kèm nội dung <b>${esc(transferContent)}</b> giúp chị Quỳnh đối chiếu đúng đơn nhanh hơn — không bắt buộc tuyệt đối, có thể chuyển khoản rồi liên hệ trực tiếp nếu quên.</div>
+          ` : ''}
+          <button class="btn btn-sm" style="margin-top:16px;" data-order-close="1">Đóng</button>
         </div>`;
     }
     const { chosen, total, pv, gift } = totals();
@@ -305,6 +334,16 @@ function openOrderModal(ctx, products){
     if(step==='done'){
       const closeBtn = overlay.querySelector('[data-order-close]');
       if(closeBtn) closeBtn.onclick = close;
+      overlay.querySelectorAll('[data-copy-value]').forEach(el=>{
+        el.onclick = async ()=>{
+          try{
+            await navigator.clipboard.writeText(el.getAttribute('data-copy-value'));
+            const old = el.textContent;
+            el.textContent = 'Đã copy ✓';
+            setTimeout(()=>{ el.textContent = old; }, 1500);
+          } catch(e){}
+        };
+      });
       return;
     }
     overlay.querySelectorAll('[data-order-item]').forEach(el=>{
@@ -355,14 +394,15 @@ function openOrderModal(ctx, products){
     const address = formValues.address.trim();
     if(!name || !phone || !address){ renderCard(null, 'Vui lòng điền đủ tên, số điện thoại và địa chỉ.'); return; }
     const { chosen, total, pv, gift } = totals();
-    const { error } = await ctx.supabase.from('sk_orders').insert({
+    const { data, error } = await ctx.supabase.from('sk_orders').insert({
       user_id: ctx.user.id,
       items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0), qty:qtyOf(p) })),
       total_amount: total, total_pv: pv, gift: gift ? gift.key : null,
       gift_color: (gift && gift.needsColor) ? giftColor : null,
       shipping_name: name, shipping_phone: phone, shipping_address: address,
-    });
+    }).select('id').single();
     if(error){ renderCard(null, 'Lỗi khi gửi đơn: ' + error.message); return; }
+    orderResult = { id: data.id, total };
     renderCard('done');
   }
 
