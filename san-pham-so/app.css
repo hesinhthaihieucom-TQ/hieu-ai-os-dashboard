@@ -78,6 +78,12 @@ h1,h2{ font-family:'Playfair Display',serif; margin:0 0 12px; }
 /* ===== Màn đăng nhập (ngoài app-layout, giữ layout riêng căn giữa hẹp) ===== */
 .wrap{ max-width:640px; margin:0 auto; padding:32px 16px 60px; }
 
+/* Copy nguyên từ nhan-hieu/style.css (2026-09-18) — thêm màn Đăng ký cho người chưa có tài khoản
+   Xây Nhân Hiệu, xem renderLogin() ở app-shell.js. */
+.auth-tabs{ display:flex; gap:8px; margin-bottom:10px; justify-content:center; }
+.auth-tab{ padding:8px 16px; border-radius:999px; font-size:13px; cursor:pointer; color:var(--ink-soft); }
+.auth-tab.active{ background:var(--accent-soft); color:var(--accent); font-weight:600; }
+
 .loading{ text-align:center; padding:60px 0; color:var(--ink-soft); }
 .spinner{ width:28px; height:28px; border:3px solid var(--line); border-top-color:var(--accent); border-radius:50%; margin:0 auto; animation:spin .8s linear infinite; }
 @keyframes spin{ to{ transform:rotate(360deg); } }

@@ -207,34 +207,76 @@ function maybeShowSpsReviewPrompt() {
   };
 }
 
-function renderLogin(err) {
+// Đăng nhập/Đăng ký chung 1 màn, 2 tab — tài khoản tạo ở đây LÀ tài khoản Xây Nhân Hiệu thật (cùng
+// bảng profiles/auth.users), không phải tài khoản riêng của San Phẩm Số (2026-09-18, Quỳnh: "cho nút
+// đăng ký cho người dùng chưa có tài khoản app xây nhân hiệu" — trước đây màn này chỉ có đăng nhập,
+// người chưa có tài khoản không có lối vào). Bớt hẳn 2 phần đặc thù của nhan-hieu/js/app-shell.js
+// (chip "đã học khoá chưa", đồng bộ lead sang Brevo) vì không liên quan tới ngữ cảnh Sản Phẩm Số —
+// is_student mặc định false qua handle_new_user() (coalesce an toàn, xem schema_core.sql), không bắt
+// buộc phải hỏi ở đây.
+let spsAuthMode = 'login';
+let spsAuthFields = { name: '', email: '', pass: '', passConfirm: '' };
+
+function renderLogin(err, successMsg) {
   const app = document.getElementById('app');
+  const isLogin = spsAuthMode === 'login';
   app.innerHTML = `
     <div class="wrap" style="max-width:400px;">
       <h1 style="text-align:center;">Sản Phẩm Số</h1>
+      <div class="auth-tabs">
+        <div class="auth-tab ${isLogin ? 'active' : ''}" data-auth-mode="login">Đăng nhập</div>
+        <div class="auth-tab ${!isLogin ? 'active' : ''}" data-auth-mode="signup">Đăng ký</div>
+      </div>
       <div class="card">
+        ${!isLogin ? `<label>Họ tên</label><input id="af-name" type="text" placeholder="Tên của bạn" value="${esc(spsAuthFields.name)}">` : ''}
         <label>Email</label>
-        <input id="login-email" type="email" placeholder="ban@email.com">
+        <input id="af-email" type="email" placeholder="ban@email.com" value="${esc(spsAuthFields.email)}">
         <label>Mật khẩu</label>
-        <input id="login-pass" type="password" placeholder="Mật khẩu">
+        <input id="af-pass" type="password" placeholder="${isLogin ? 'Mật khẩu' : 'Ít nhất 6 ký tự'}" value="${esc(spsAuthFields.pass)}">
+        ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(spsAuthFields.passConfirm)}">` : ''}
         <div class="btn-row" style="justify-content:center;">
-          <button class="btn btn-full" id="login-btn">Đăng nhập</button>
+          <button class="btn btn-full" id="af-submit">${isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}</button>
         </div>
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
-        <div class="hint-box">Dùng đúng email/mật khẩu tài khoản Xây Nhân Hiệu — không cần tạo tài khoản mới ở đây.</div>
+        ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+        <div class="hint-box">Tài khoản dùng chung với Xây Nhân Hiệu (cùng 1 hồ sơ) — ${isLogin ? 'đã có tài khoản Xây Nhân Hiệu thì đăng nhập thẳng ở đây, không cần tạo mới.' : 'tạo mới ở đây cũng dùng đăng nhập được bên Xây Nhân Hiệu.'}</div>
       </div>
     </div>
   `;
-  const passEl = document.getElementById('login-pass');
-  passEl.onkeydown = (e) => { if (e.key === 'Enter') document.getElementById('login-btn').click(); };
-  document.getElementById('login-btn').onclick = async () => {
-    const email = document.getElementById('login-email').value.trim();
+  app.querySelectorAll('[data-auth-mode]').forEach(el => {
+    el.onclick = () => { spsAuthMode = el.getAttribute('data-auth-mode'); renderLogin(); };
+  });
+  const nameEl = document.getElementById('af-name');
+  if (nameEl) nameEl.oninput = () => { spsAuthFields.name = nameEl.value; };
+  const emailEl = document.getElementById('af-email');
+  emailEl.oninput = () => { spsAuthFields.email = emailEl.value; };
+  const passEl = document.getElementById('af-pass');
+  passEl.oninput = () => { spsAuthFields.pass = passEl.value; };
+  const confirmEl = document.getElementById('af-pass-confirm');
+  if (confirmEl) confirmEl.oninput = () => { spsAuthFields.passConfirm = confirmEl.value; };
+  passEl.onkeydown = (e) => { if (e.key === 'Enter' && isLogin) document.getElementById('af-submit').click(); };
+
+  document.getElementById('af-submit').onclick = async () => {
+    const email = emailEl.value.trim();
     const pass = passEl.value;
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true; btn.textContent = 'Đang đăng nhập…';
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
-    if (error) { renderLogin(error.message); return; }
-    boot();
+    const btn = document.getElementById('af-submit');
+    if (isLogin) {
+      btn.disabled = true; btn.textContent = 'Đang đăng nhập…';
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+      if (error) { renderLogin(error.message); return; }
+      boot();
+    } else {
+      if (!email) { renderLogin('Vui lòng nhập email.'); return; }
+      if (pass.length < 6) { renderLogin('Mật khẩu cần ít nhất 6 ký tự.'); return; }
+      if (pass !== confirmEl.value) { renderLogin('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+      btn.disabled = true; btn.textContent = 'Đang tạo tài khoản…';
+      const full_name = nameEl.value.trim();
+      const { error } = await supabaseClient.auth.signUp({ email, password: pass, options: { data: { full_name } } });
+      if (error) { renderLogin(error.message); return; }
+      spsAuthMode = 'login';
+      spsAuthFields = { name: '', email, pass: '', passConfirm: '' };
+      renderLogin(null, 'Đăng ký thành công! Nếu tài khoản cần xác nhận email, kiểm tra hộp thư rồi quay lại đăng nhập bằng email/mật khẩu vừa tạo.');
+    }
   };
 }
 
