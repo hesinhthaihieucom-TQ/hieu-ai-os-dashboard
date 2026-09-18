@@ -74,12 +74,15 @@ function valueStackTotal(state) {
   return state.valueStackItems.reduce((sum, v) => sum + (v.gia === '' || v.gia == null ? 0 : Number(v.gia) || 0), 0);
 }
 
-// Câu lệnh (prompt) để người bán tự viết nội dung landing page bằng Claude thay vì dùng nút "AI viết
-// landing page" có sẵn (2026-09-17, Quỳnh: "hướng dẫn ng dùng nếu ko dùng app thì làm ladipgae như
-// nào") — dành cho người hết lượt AI hoặc muốn tự viết theo cách riêng. Cấu trúc 14 bước hỏi + 12
-// phần viết ra KHỚP ĐÚNG với cấu trúc landingPageIntroHtml()/TOOL_LANDING_PAGE (api/_lib/landing-page-schema.js)
-// để nội dung dán vào manualEditFieldsHtml() bên dưới đúng chuẩn, không lệch cấu trúc.
-const DIY_CLAUDE_PROMPT = `Bạn là chuyên gia viết landing page bán hàng tiếng Việt. Nhiệm vụ: giúp tôi tạo NỘI DUNG ĐẦY ĐỦ cho 1 trang landing page bán 1 sản phẩm số (ebook, khoá học online, template, coaching, cộng đồng trả phí, hoặc webinar).
+// Câu lệnh (prompt) để người bán tự làm TOÀN BỘ landing page bằng Claude — KHÔNG dùng app này tí nào
+// (2026-09-18, Quỳnh: "phần hướng dẫn là dùng claude hoàn toàn, ko dùng app tí nào luôn") — dành cho
+// người muốn hoàn toàn độc lập, không phụ thuộc app/domain của Quỳnh. Dùng claude.ai bản thường (viết
+// prompt yêu cầu Claude XUẤT BẢN thành 1 trang web sống qua Artifacts) — KHÔNG cần Claude Code (công cụ
+// dòng lệnh, đòi hỏi kỹ thuật, không phù hợp khách không rành công nghệ). Thanh toán KHÔNG có backend
+// tự động đứng sau (trang độc lập, không có server) nên QR chỉ hiện tĩnh qua img.vietqr.io (API công
+// khai, không cần đăng nhập) và xác nhận đã chuyển khoản là THỦ CÔNG qua Zalo — giống đúng cách
+// 30ngaytamlinhtaichinh.netlify.app (mẫu gốc của Quỳnh) vận hành trước khi có app này.
+const DIY_CLAUDE_PROMPT = `Bạn là chuyên gia viết landing page bán hàng tiếng Việt. Nhiệm vụ: viết 1 trang landing page HOÀN CHỈNH (thiết kế đẹp, có màu sắc, bố cục rõ ràng, xem tốt trên điện thoại) bán 1 sản phẩm số (ebook, khoá học online, template, coaching, cộng đồng trả phí, hoặc webinar), rồi XUẤT BẢN thành 1 trang web sống để tôi có link chia sẻ ngay trong cuộc trò chuyện này — tôi KHÔNG dùng app nào khác, mọi thứ làm trong Claude.
 
 QUY TẮC LÀM VIỆC:
 - Hỏi tôi TỪNG BƯỚC MỘT theo đúng thứ tự dưới đây, chờ tôi trả lời xong bước này mới hỏi bước tiếp theo — KHÔNG hỏi dồn hết 1 lần.
@@ -101,8 +104,9 @@ CÁC BƯỚC HỎI (theo đúng thứ tự):
 12. 4-6 câu hỏi thường gặp (FAQ) khách hay hỏi trước khi mua + câu trả lời.
 13. Thông tin liên hệ hỗ trợ: số Zalo/điện thoại để khách nhắn nếu gặp lỗi lúc mua.
 14. Câu kêu gọi hành động (nút mua) — muốn ghi gì trên nút (VD: "Mua ngay", "Đăng ký ngay", "Giữ chỗ ngay").
+15. Thông tin nhận thanh toán: tên ngân hàng (VD: Vietcombank, VietinBank, MBBank...), số tài khoản, tên chủ tài khoản (đúng như ngân hàng ghi, không dấu, in hoa).
 
-SAU KHI HỎI XONG HẾT 14 BƯỚC, viết lại toàn bộ landing page theo đúng cấu trúc sau (đúng thứ tự):
+SAU KHI HỎI XONG HẾT 15 BƯỚC, tạo 1 trang web HTML hoàn chỉnh rồi XUẤT BẢN NGAY (đừng chỉ đưa code, hãy thực sự publish để tôi có link) theo đúng cấu trúc sau (đúng thứ tự, thiết kế đẹp — không phải danh sách chữ suông):
 1. Hook — 1 câu mở đầu gây chú ý ngay, nêu đúng lợi ích/chuyển đổi chính (không phải tên sản phẩm).
 2. Vấn đề — mở đầu 1 đoạn ngắn đồng cảm với khách, sau đó liệt kê từng vấn đề cụ thể (mỗi vấn đề 1 tên ngắn + mô tả).
 3. Chương trình/giải pháp — liệt kê từng phần theo chương trình đã hỏi ở bước 3.
@@ -114,7 +118,9 @@ SAU KHI HỎI XONG HẾT 14 BƯỚC, viết lại toàn bộ landing page theo �
 9. Ưu đãi tặng kèm + bảng giá trị từng mục + tổng giá trị + giá bán thật + số tiền tiết kiệm được.
 10. Cam kết (nếu có).
 11. FAQ.
-12. Nút kêu gọi hành động + dòng liên hệ Zalo hỗ trợ ngay bên dưới.
+12. Khối THANH TOÁN: hiện rõ ràng, dễ đọc, dễ copy — Ngân hàng, Số tài khoản, Tên chủ tài khoản, Số tiền cần chuyển, Nội dung chuyển khoản gợi ý (VD: tên sản phẩm viết tắt) — dùng đúng thông tin đã hỏi ở bước 15 (KHÔNG chèn ảnh QR từ link bên ngoài — ảnh từ domain khác thường bị chặn khi trang được xuất bản qua Artifacts, dùng chữ rõ ràng để khách tự nhập vào app ngân hàng của họ là chắc chắn nhất).
+    Kèm dòng chữ: "Chuyển khoản xong, chụp lại màn hình gửi qua Zalo [số Zalo bước 13] kèm họ tên để nhận sản phẩm ngay" (vì trang này không tự động xác nhận thanh toán được — phải xác nhận tay qua Zalo).
+13. Nút kêu gọi hành động (cuộn xuống đúng khối thanh toán) + dòng liên hệ Zalo hỗ trợ ngay bên dưới.
 
 Bắt đầu bằng cách hỏi tôi bước 1.`;
 
@@ -486,34 +492,22 @@ function render(container) {
   function diyClaudeHtml() {
     return `
       <div class="card" style="margin-top:10px;">
-        <span class="btn-ghost btn btn-sm" id="lp-toggle-diy-btn">${state.showDiyClaude ? '▲ Ẩn hướng dẫn tự viết bằng Claude' : '❓ Không muốn dùng AI có sẵn? Tự viết bằng Claude'}</span>
+        <span class="btn-ghost btn btn-sm" id="lp-toggle-diy-btn">${state.showDiyClaude ? '▲ Ẩn hướng dẫn tự làm bằng Claude' : '❓ Không muốn dùng app này? Tự làm hoàn toàn bằng Claude'}</span>
         ${state.showDiyClaude ? `
           <div style="margin-top:12px;">
             <div class="hint-box">
-              <b>Cách dùng:</b>
+              <b>Cách dùng (làm 100% trên Claude, không cần quay lại app này):</b>
               <ol style="margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
-                <li>Vào <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> → đăng ký/đăng nhập.</li>
+                <li>Vào <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> → đăng ký/đăng nhập (miễn phí).</li>
                 <li>Dán toàn bộ câu lệnh bên dưới vào ô nhập tin nhắn, bấm gửi.</li>
-                <li>Claude hỏi lần lượt 14 câu — trả lời từng câu như nhắn tin bình thường.</li>
-                <li>Trả lời hết, Claude tự viết ra toàn bộ nội dung — quay lại đây, bấm <b>"✨ Tạo Landing Page bằng AI"</b> ở dưới 1 lần (bắt buộc, dù không dùng nội dung AI viết, để mở được ô tự sửa chữ), rồi mở <b>"✏️ Chỉnh sửa nội dung chữ"</b>, dán từng phần Claude viết vào đúng ô theo bảng dưới đây.</li>
+                <li>Claude hỏi lần lượt 15 câu (gồm cả thông tin ngân hàng nhận tiền) — trả lời từng câu như nhắn tin bình thường.</li>
+                <li>Trả lời hết, Claude tự viết trang bán hàng VÀ tự xuất bản (publish) ngay trong cuộc trò chuyện — bạn nhận được 1 link chia sẻ được luôn, gửi cho khách là xong.</li>
               </ol>
             </div>
             <textarea readonly rows="6" style="font-size:12px;font-family:'IBM Plex Mono',monospace;" onclick="this.select()">${esc(DIY_CLAUDE_PROMPT)}</textarea>
             <div class="btn-row" style="margin-top:8px;"><span class="btn-ghost btn btn-sm" id="lp-copy-diy-prompt">Sao chép câu lệnh</span></div>
             <div class="hint-box" style="margin-top:10px;">
-              <b>Dán vào đâu:</b>
-              <table style="width:100%;font-size:12.5px;border-collapse:collapse;margin-top:6px;">
-                <tr><td style="padding:3px 0;">1. Hook</td><td style="padding:3px 0;"><b>Hook (tiêu đề chính)</b></td></tr>
-                <tr><td style="padding:3px 0;">2. Vấn đề</td><td style="padding:3px 0;"><b>Vấn đề — mở đầu</b> + <b>Vấn đề — chi tiết</b></td></tr>
-                <tr><td style="padding:3px 0;">3. Chương trình</td><td style="padding:3px 0;"><b>Lộ trình / chương trình</b></td></tr>
-                <tr><td style="padding:3px 0;">4. Kết quả</td><td style="padding:3px 0;"><b>Kết quả đạt được</b></td></tr>
-                <tr><td style="padding:3px 0;">6. Lời nhắn cá nhân</td><td style="padding:3px 0;"><b>Lời nhắn của bạn</b></td></tr>
-                <tr><td style="padding:3px 0;">7. Về người bán</td><td style="padding:3px 0;"><b>Về người bán</b></td></tr>
-                <tr><td style="padding:3px 0;">8. Phù hợp với ai</td><td style="padding:3px 0;"><b>Phù hợp với ai</b></td></tr>
-                <tr><td style="padding:3px 0;">11. FAQ</td><td style="padding:3px 0;"><b>Câu hỏi thường gặp (FAQ)</b></td></tr>
-                <tr><td style="padding:3px 0;">12. Nút CTA</td><td style="padding:3px 0;"><b>Nút kêu gọi hành động (CTA)</b></td></tr>
-              </table>
-              <div style="margin-top:8px;color:var(--ink-soft);">Phần 5 (case study), 9 (ưu đãi/giá trị), 10 (cam kết), 13 (Zalo) không nằm trong ô chữ — điền tay ở các mục 2-5 phía trên khung này.</div>
+              <b>Lưu ý về thanh toán:</b> trang này không gắn với app, KHÔNG tự động biết khi nào khách đã chuyển khoản (không có "bộ não" xử lý đơn hàng đứng sau như app), và không hiện được mã QR quét (ảnh từ link ngoài hay bị chặn trên trang Claude xuất bản) — chỉ hiện rõ số tài khoản/tên/số tiền để khách tự nhập vào app ngân hàng. Khách chuyển khoản xong phải tự nhắn Zalo báo cho bạn để bạn gửi sản phẩm tay — không tự động 100% như dùng app.
             </div>
           </div>
         ` : ''}
