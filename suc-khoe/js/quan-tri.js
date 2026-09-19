@@ -921,7 +921,8 @@ const SK_ORDER_GIFT_LABELS = { binh_lac:'🎁 Bình lắc', binh_lac_son:'🎁 B
 const SK_GIFT_COLOR_LABELS = { '503':'#503 Hồng Seoul', '505':'#505 Cam Cà Rốt' };
 
 function renderDonHang(container, ctx){
-  const state = { loading:true, orders:[], profileById:{}, busyId:null };
+  const state = { loading:true, orders:[], profileById:{}, busyId:null,
+    showCreate:false, allProducts:[], productsLoaded:false, createForm:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -929,7 +930,10 @@ function renderDonHang(container, ctx){
     state.loading = true; draw();
     const { data: orders } = await ctx.supabase.from('sk_orders').select('*').order('created_at', { ascending:false }).limit(200);
     state.orders = orders || [];
-    const userIds = [...new Set(state.orders.map(o=>o.user_id))];
+    // 2026-09-19, chị Quỳnh: đơn tạo tay cho khách CHƯA đăng ký có user_id = null (xem
+    // schema_suc_khoe.sql: alter column user_id drop not null) — lọc null ra trước khi .in(), nếu
+    // không Supabase trả lỗi "invalid input syntax" vì null không hợp lệ trong mảng so khớp id.
+    const userIds = [...new Set(state.orders.map(o=>o.user_id).filter(Boolean))];
     if(userIds.length>0){
       const { data: profiles } = await ctx.supabase.from('profiles').select('id,email,full_name').in('id', userIds);
       (profiles||[]).forEach(p=>{ state.profileById[p.id] = p; });
@@ -946,52 +950,207 @@ function renderDonHang(container, ctx){
     await load();
   }
 
-  function html(){
-    if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
-    if(state.orders.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào.</div>`;
-    return state.orders.map(o=>{
-      const profile = state.profileById[o.user_id] || {};
-      const items = Array.isArray(o.items) ? o.items : [];
-      return `
-        <div class="section">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
-            <div>
-              <div style="font-weight:600;font-size:14px;">${esc(profile.full_name||'(chưa đặt tên)')}</div>
-              <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(profile.email||'')} · ${esc(new Date(o.created_at).toLocaleString('vi-VN'))}</div>
+  // 2026-09-19, chị Quỳnh: "e muốn có thêm 1 mục... quản lý đơn hàng của e vì có thể sẽ có khách họ
+  // ko đăng ký vào sử dụng app thì e vẫn muốn quản lý được đơn hàng" — form tạo đơn TAY cho khách bán
+  // trực tiếp ngoài app (Zalo/điện thoại...), không bắt buộc có tài khoản. Tìm khách CÓ SẴN tài khoản
+  // là TUỲ CHỌN (gắn đúng user_id nếu tìm thấy, để sau này khách đăng nhập vẫn thấy lại đơn của mình
+  // ở "Sản phẩm"/lịch sử) — để trống thì lưu như khách vãng lai (user_id null).
+  async function openCreateForm(){
+    state.showCreate = true;
+    state.createForm = { name:'', phone:'', address:'', note:'', customerId:null, customerName:'',
+      customerQuery:'', customerResults:[], searching:false, selected:{}, saving:false };
+    draw();
+    if(!state.productsLoaded){
+      const { data } = await ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits').order('name', { ascending:true });
+      state.allProducts = data || [];
+      state.productsLoaded = true;
+      draw();
+    }
+  }
+  function closeCreateForm(){ state.showCreate = false; state.createForm = null; draw(); }
+
+  async function searchCreateCustomer(){
+    const f = state.createForm;
+    const q = f.customerQuery.trim();
+    if(!q){ f.customerResults = []; draw(); return; }
+    f.searching = true; draw();
+    const { data } = await ctx.supabase.from('profiles').select('id,email,full_name').or(`email.ilike.%${q}%,full_name.ilike.%${q}%`).limit(10);
+    f.customerResults = data || [];
+    f.searching = false;
+    draw();
+  }
+  function pickCreateCustomer(p){
+    const f = state.createForm;
+    f.customerId = p.id; f.customerName = p.full_name || p.email || '(chưa đặt tên)';
+    f.customerQuery = ''; f.customerResults = [];
+    draw();
+  }
+
+  function createTotals(){
+    const f = state.createForm;
+    const chosen = state.allProducts.filter(p=>f.selected[p.id]!==undefined);
+    const total = chosen.reduce((s,p)=>s+Number(p.retail_price||0)*(f.selected[p.id]||1),0);
+    const pv = chosen.reduce((s,p)=>s+Number(p.pv||0)*(f.selected[p.id]||1),0);
+    return { chosen, total, pv };
+  }
+
+  async function submitCreate(){
+    const f = state.createForm;
+    const name = f.name.trim(), phone = f.phone.trim(), address = f.address.trim();
+    if(!name || !phone || !address){ alert('Vui lòng nhập đủ tên, số điện thoại, địa chỉ giao hàng.'); return; }
+    const { chosen, total, pv } = createTotals();
+    if(chosen.length===0){ alert('Chọn ít nhất 1 sản phẩm.'); return; }
+    f.saving = true; draw();
+    const { error } = await ctx.supabase.from('sk_orders').insert({
+      user_id: f.customerId || null,
+      items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0), qty:f.selected[p.id]||1 })),
+      total_amount: total, total_pv: pv,
+      shipping_name: name, shipping_phone: phone, shipping_address: address,
+      note: f.note.trim() || null,
+      status: 'cho_xac_nhan',
+    });
+    f.saving = false;
+    if(error){ alert('Không tạo được đơn: ' + error.message); draw(); return; }
+    closeCreateForm();
+    await load();
+  }
+
+  function createFormHtml(){
+    const f = state.createForm;
+    const { chosen, total, pv } = createTotals();
+    return `
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:12px;">Tạo đơn hàng thủ công</h3>
+        <div class="hint-box" style="margin-bottom:14px;">Dùng cho khách chị bán trực tiếp (Zalo/điện thoại...), chưa từng vào app. Nếu khách đã có tài khoản, tìm và gắn đúng người để họ thấy lại đơn khi đăng nhập — không tìm thấy/để trống vẫn tạo được đơn bình thường.</div>
+
+        <div class="field"><label>Khách hàng đã có tài khoản (không bắt buộc)</label>
+          ${f.customerId ? `
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13.5px;font-weight:600;">✓ ${esc(f.customerName)}</span>
+              <span class="btn-ghost btn btn-sm" id="dh-clear-customer">Bỏ chọn</span>
             </div>
-            <select data-order-status="${esc(o.id)}" ${state.busyId===o.id?'disabled':''}>
-              ${Object.keys(SK_ORDER_STATUS_LABELS).map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${esc(SK_ORDER_STATUS_LABELS[k])}</option>`).join('')}
-            </select>
-          </div>
-          <div style="font-size:13.5px;margin-top:10px;line-height:1.7;">
-            ${items.map(it=>{
-              const qty = it.qty||1;
-              return `${esc(it.name)}${qty>1?` × ${qty}`:''} — ${(Number(it.price||0)*qty).toLocaleString('vi-VN')}đ`;
-            }).join('<br>')}
-          </div>
-          <div style="font-size:13.5px;margin-top:8px;">
-            <b>Tổng: ${Number(o.total_amount||0).toLocaleString('vi-VN')}đ</b> · ${o.total_pv||0} PV
-            ${o.gift ? ` · ${esc(SK_ORDER_GIFT_LABELS[o.gift]||o.gift)}` : ''}
-            ${o.gift_color ? ` (màu son: ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||o.gift_color)})` : ''}
-          </div>
-          ${o.gift ? `
-            <div style="display:flex;gap:8px;margin-top:8px;">
-              <img src="${esc(SK_GIFT_SHAKER_IMAGE)}" alt="Bình lắc" title="Bình lắc" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">
-              ${o.gift_color ? `<img src="${esc((SK_LIPSTICK_COLORS.find(c=>c.key===o.gift_color)||{}).image)}" alt="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" title="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">` : ''}
+          ` : `
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="dh-customer-search" placeholder="Tìm theo email hoặc tên..." value="${esc(f.customerQuery)}" style="margin:0;flex:1;">
+              <button class="btn btn-sm" id="dh-customer-search-btn" ${f.searching?'disabled':''}>${f.searching?'Đang tìm…':'Tìm'}</button>
             </div>
-          ` : ''}
-          <div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">
-            Giao tới: ${esc(o.shipping_name)} · ${esc(o.shipping_phone)}<br>${esc(o.shipping_address)}
-            ${o.note ? `<br>Ghi chú: ${esc(o.note)}` : ''}
-          </div>
+            ${f.customerResults.length>0 ? f.customerResults.map(p=>`
+              <div data-pick-customer="${esc(p.id)}" style="padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px;">${esc(p.full_name||'(chưa đặt tên)')} — ${esc(p.email||'')}</div>
+            `).join('') : ''}
+          `}
         </div>
-      `;
-    }).join('');
+
+        <div class="field" style="margin-top:12px;"><label>Tên người nhận</label><input type="text" id="dh-name" value="${esc(f.name)}"></div>
+        <div class="field" style="margin-top:12px;"><label>Số điện thoại</label><input type="text" id="dh-phone" value="${esc(f.phone)}"></div>
+        <div class="field" style="margin-top:12px;"><label>Địa chỉ giao hàng</label><textarea id="dh-address" style="min-height:60px;">${esc(f.address)}</textarea></div>
+        <div class="field" style="margin-top:12px;"><label>Ghi chú (không bắt buộc)</label><input type="text" id="dh-note" value="${esc(f.note)}" placeholder="VD: tặng kèm son màu 503..."></div>
+
+        <div style="margin-top:16px;font-weight:700;font-size:13.5px;">Chọn sản phẩm</div>
+        <div style="max-height:50vh;overflow-y:auto;margin-top:8px;">
+          ${state.allProducts.length===0 ? `<div class="loading"><div class="spinner"></div></div>` :
+            state.allProducts.map(p=>skProductOrderRowHtml(p, f.selected[p.id]!==undefined, f.selected[p.id]||1)).join('')}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-top:14px;">
+          <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ · ${pv} PV</span>
+        </div>
+        <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
+          <button class="btn btn-sm" id="dh-create-submit" ${f.saving?'disabled':''}>${f.saving?'Đang lưu…':'Tạo đơn'}</button>
+          <span class="btn-ghost btn btn-sm" id="dh-create-cancel">Huỷ</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function html(){
+    return `
+      ${state.showCreate ? createFormHtml() : `<button class="btn btn-sm" id="dh-create-open" style="margin-bottom:20px;">+ Tạo đơn hàng thủ công</button>`}
+      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
+        state.orders.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào.</div>` :
+        state.orders.map(o=>{
+          const profile = o.user_id ? (state.profileById[o.user_id] || {}) : null;
+          const items = Array.isArray(o.items) ? o.items : [];
+          return `
+            <div class="section">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+                <div>
+                  <div style="font-weight:600;font-size:14px;">${profile ? esc(profile.full_name||'(chưa đặt tên)') : `👤 ${esc(o.shipping_name)}`}${!profile ? ` <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">(khách ngoài app)</span>` : ''}</div>
+                  <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${profile ? esc(profile.email||'') + ' · ' : ''}${esc(new Date(o.created_at).toLocaleString('vi-VN'))}</div>
+                </div>
+                <select data-order-status="${esc(o.id)}" ${state.busyId===o.id?'disabled':''}>
+                  ${Object.keys(SK_ORDER_STATUS_LABELS).map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${esc(SK_ORDER_STATUS_LABELS[k])}</option>`).join('')}
+                </select>
+              </div>
+              <div style="font-size:13.5px;margin-top:10px;line-height:1.7;">
+                ${items.map(it=>{
+                  const qty = it.qty||1;
+                  return `${esc(it.name)}${qty>1?` × ${qty}`:''} — ${(Number(it.price||0)*qty).toLocaleString('vi-VN')}đ`;
+                }).join('<br>')}
+              </div>
+              <div style="font-size:13.5px;margin-top:8px;">
+                <b>Tổng: ${Number(o.total_amount||0).toLocaleString('vi-VN')}đ</b> · ${o.total_pv||0} PV
+                ${o.gift ? ` · ${esc(SK_ORDER_GIFT_LABELS[o.gift]||o.gift)}` : ''}
+                ${o.gift_color ? ` (màu son: ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||o.gift_color)})` : ''}
+              </div>
+              ${o.gift ? `
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                  <img src="${esc(SK_GIFT_SHAKER_IMAGE)}" alt="Bình lắc" title="Bình lắc" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">
+                  ${o.gift_color ? `<img src="${esc((SK_LIPSTICK_COLORS.find(c=>c.key===o.gift_color)||{}).image)}" alt="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" title="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">` : ''}
+                </div>
+              ` : ''}
+              <div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">
+                Giao tới: ${esc(o.shipping_name)} · ${esc(o.shipping_phone)}<br>${esc(o.shipping_address)}
+                ${o.note ? `<br>Ghi chú: ${esc(o.note)}` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')
+      )}
+    `;
   }
 
   function bind(){
     container.querySelectorAll('[data-order-status]').forEach(el=>{
       el.onchange = (e)=>updateStatus(el.getAttribute('data-order-status'), e.target.value);
+    });
+    const createOpenBtn = container.querySelector('#dh-create-open'); if(createOpenBtn) createOpenBtn.onclick = openCreateForm;
+    const createCancelBtn = container.querySelector('#dh-create-cancel'); if(createCancelBtn) createCancelBtn.onclick = closeCreateForm;
+    const createSubmitBtn = container.querySelector('#dh-create-submit'); if(createSubmitBtn) createSubmitBtn.onclick = submitCreate;
+    if(!state.createForm) return;
+    const f = state.createForm;
+    const nameEl = container.querySelector('#dh-name'); if(nameEl) nameEl.oninput = (e)=>{ f.name = e.target.value; };
+    const phoneEl = container.querySelector('#dh-phone'); if(phoneEl) phoneEl.oninput = (e)=>{ f.phone = e.target.value; };
+    const addressEl = container.querySelector('#dh-address'); if(addressEl) addressEl.oninput = (e)=>{ f.address = e.target.value; };
+    const noteEl = container.querySelector('#dh-note'); if(noteEl) noteEl.oninput = (e)=>{ f.note = e.target.value; };
+    const customerSearchEl = container.querySelector('#dh-customer-search'); if(customerSearchEl) customerSearchEl.oninput = (e)=>{ f.customerQuery = e.target.value; };
+    const customerSearchBtn = container.querySelector('#dh-customer-search-btn'); if(customerSearchBtn) customerSearchBtn.onclick = searchCreateCustomer;
+    const clearCustomerBtn = container.querySelector('#dh-clear-customer'); if(clearCustomerBtn) clearCustomerBtn.onclick = ()=>{ f.customerId = null; f.customerName = ''; draw(); };
+    container.querySelectorAll('[data-pick-customer]').forEach(el=>{
+      el.onclick = ()=>{
+        const p = f.customerResults.find(r=>r.id===el.getAttribute('data-pick-customer'));
+        if(p) pickCreateCustomer(p);
+      };
+    });
+    container.querySelectorAll('[data-cart-toggle]').forEach(el=>{
+      el.onchange = (e)=>{
+        const id = el.getAttribute('data-cart-toggle');
+        if(e.target.checked) f.selected[id] = f.selected[id]||1; else delete f.selected[id];
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-qty-dec]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-dec');
+        f.selected[id] = Math.max(1, (f.selected[id]||1)-1);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-qty-inc]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-qty-inc');
+        f.selected[id] = (f.selected[id]||1)+1;
+        draw();
+      };
     });
   }
 

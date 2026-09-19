@@ -292,7 +292,7 @@ alter table sk_products add column if not exists pv numeric;
 -- lắc; ≥5 triệu: tặng thêm son Hàn) — admin xem cột này để biết cần gói kèm quà gì khi giao.
 create table if not exists sk_orders (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
   items jsonb not null default '[]'::jsonb,
   total_amount numeric not null default 0,
   total_pv numeric not null default 0,
@@ -304,6 +304,12 @@ create table if not exists sk_orders (
   status text not null default 'cho_xac_nhan' check (status in ('cho_xac_nhan','da_xac_nhan','da_giao','huy')),
   created_at timestamptz not null default now()
 );
+-- 2026-09-19, chị Quỳnh: "e muốn có thêm 1 mục... quản lý đơn hàng của e vì có thể sẽ có khách họ ko
+-- đăng ký vào sử dụng app thì e vẫn muốn quản lý được đơn hàng" — admin cần tạo đơn cho khách CHƯA có
+-- tài khoản (bán trực tiếp ngoài app), không có user_id thật để gán. Bỏ NOT NULL (ALTER riêng vì
+-- "create table if not exists" không đụng bảng đã tồn tại) — sk_orders_admin_all (is_admin()) đã cho
+-- phép admin insert/update mọi dòng nên không cần policy mới.
+alter table sk_orders alter column user_id drop not null;
 alter table sk_orders enable row level security;
 drop policy if exists "sk_orders_owner_read_insert" on sk_orders;
 create policy "sk_orders_owner_read_insert" on sk_orders for select using (auth.uid() = user_id);
