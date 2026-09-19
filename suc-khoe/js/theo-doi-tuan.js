@@ -122,7 +122,7 @@ function render(container, ctx){
   async function load(){
     const [{ data: row }, { data: products }] = await Promise.all([
       ctx.supabase.from('sk_weekly_logs').select('metrics,photos').eq('user_id', ctx.user.id).maybeSingle(),
-      ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url').not('category', 'is', null),
+      ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,pv,short_description,image_url').not('category', 'is', null),
     ]);
     state.metrics = (row && row.metrics) || {};
     state.photos = (row && row.photos) || {};

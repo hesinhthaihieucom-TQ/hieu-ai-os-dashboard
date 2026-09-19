@@ -1,4 +1,5 @@
--- SCHEMA — HIỂU ĐỂ KHOẺ MẠNH (suc-khoe/). Cần chạy schema_core.sql trước (bảng profiles + is_admin()).
+-- SCHEMA — HIỂU ĐỂ KHỎE (suc-khoe/, đổi tên 2026-09-19 từ "Hiểu Để Khoẻ Mạnh"). Cần chạy
+-- schema_core.sql trước (bảng profiles + is_admin()).
 -- Tách từ schema_full.sql (2026-08-30) — nội dung giống hệt phần "18. HIỂU ĐỂ KHOẺ MẠNH" trong file
 -- cũ, không đổi gì. Đây là bản MỚI NHẤT, thay thế các file seed_sk_*/schema_suc_khoe_patch1.sql lẻ
 -- trước đó — từ nay chỉ cần chạy file này cho mọi thay đổi schema của app sức khỏe.
@@ -275,14 +276,35 @@ create policy "sk_library_entries_read" on sk_library_entries for select using (
 drop policy if exists "sk_library_entries_admin_write" on sk_library_entries;
 create policy "sk_library_entries_admin_write" on sk_library_entries for all using (is_admin()) with check (is_admin());
 
+-- 2026-09-19: sk_products.cost_price (giá vốn, thêm bên dưới) là dữ liệu KINH DOANH NHẠY CẢM — RLS
+-- chỉ chặn được theo DÒNG, không chặn được theo CỘT, nên "using (true)" như trước (mở công khai để
+-- khách chưa đăng nhập xem được sản phẩm) sẽ vô tình cho phép BẤT KỲ ai gọi thẳng API (không chỉ qua
+-- giao diện admin) đọc được cost_price qua select=cost_price. Thắt lại: bảng GỐC chỉ admin đọc được
+-- trực tiếp; mọi nơi khác (khách đã đăng nhập, khách chưa đăng nhập) đọc qua VIEW
+-- sk_products_public bên dưới — view này KHÔNG có cột cost_price nên không thể lộ ra ngoài dù ai gọi
+-- API theo cách nào. Đổi mọi query sản phẩm ở các trang khách hàng (san-pham.js, kiem-tra-suc-khoe.js,
+-- thu-vien-suc-khoe.js, theo-doi-tuan.js, lich-trinh.js) sang sk_products_public — quan-tri.js
+-- (admin) vẫn dùng thẳng sk_products để có đủ cột kể cả cost_price.
 drop policy if exists "sk_products_read" on sk_products;
-create policy "sk_products_read" on sk_products for select using (true);
+create policy "sk_products_read" on sk_products for select using (is_admin());
 drop policy if exists "sk_products_admin_write" on sk_products;
 create policy "sk_products_admin_write" on sk_products for all using (is_admin()) with check (is_admin());
 
 -- Điểm PV chính thức theo bảng giá Unicity (2026-08-30, chị Quỳnh gửi bảng PV riêng cho bán lẻ) —
 -- dùng để tích PV/tháng cho khách (200pv → lì xì, 500pv → quyền lợi VIP kinh doanh, xem sk_orders).
 alter table sk_products add column if not exists pv numeric;
+
+-- Giá vốn/giá sỉ (2026-09-19, chị Quỳnh: "cho e cái thống kê doanh số và lãi lẻ") — "lãi lẻ" = giá
+-- bán lẻ trừ giá vốn, cần biết đúng giá chị nhập/mua từ Unicity mới tính được, KHÔNG suy ra được từ
+-- dữ liệu sẵn có. Null cho tới khi admin nhập ở Quản Trị > Sản Phẩm — thống kê tự bỏ qua lãi lẻ của
+-- sản phẩm nào chưa có giá vốn (hiện rõ "chưa nhập giá vốn" thay vì tính sai thành 0đ lãi).
+alter table sk_products add column if not exists cost_price numeric;
+
+drop view if exists sk_products_public;
+create view sk_products_public as
+  select id, name, category, retail_price, pv, short_description, image_url, detail_sections, benefits
+  from sk_products;
+grant select on sk_products_public to anon, authenticated;
 
 -- Đặt hàng từ app (2026-08-30, chị Quỳnh yêu cầu "cho khách bấm chọn sản phẩm... đến mục thanh toán
 -- luôn") — CHỈ thu thông tin đơn hàng + địa chỉ giao, KHÔNG có thanh toán tự động (chị Quỳnh chốt:

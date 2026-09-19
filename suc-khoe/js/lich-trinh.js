@@ -48,7 +48,7 @@ function render(container, ctx){
         packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
         packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
         ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
-        ctx.supabase.from('sk_products').select('id,name,image_url,retail_price,detail_sections,short_description'),
+        ctx.supabase.from('sk_products_public').select('id,name,image_url,retail_price,detail_sections,short_description'),
         ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
         ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
         ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),

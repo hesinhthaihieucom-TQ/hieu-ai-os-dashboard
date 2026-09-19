@@ -11,7 +11,7 @@ self.addEventListener('fetch', (event) => {
 // gửi từ server luôn là JSON { title, body, url }, xem api/_lib/push.js. Icon dùng logo sẵn có, app
 // này chưa có icon-192 riêng như nhan-hieu.
 self.addEventListener('push', (event) => {
-  let data = { title: 'Hiểu Để Khoẻ Mạnh', body: 'Bạn có 1 thông báo mới.' };
+  let data = { title: 'Hiểu để Khỏe', body: 'Bạn có 1 thông báo mới.' };
   try { if (event.data) data = { ...data, ...event.data.json() }; } catch (e) {}
   event.waitUntil(
     self.registration.showNotification(data.title, {

@@ -26,7 +26,7 @@ function maybeShowInstallPrompt(){
   overlay.innerHTML = `
     <div style="max-width:360px;width:100%;background:#fff;border-radius:16px;padding:26px 24px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
       <img src="assets/logo-hieu-manh.png" alt="" style="width:56px;height:56px;border-radius:14px;margin-bottom:14px;">
-      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Cài Hiểu Để Khoẻ Mạnh lên màn hình chính?</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Cài Hiểu để Khỏe lên màn hình chính?</div>
       ${ios ? `
         <div style="font-size:13.5px;color:#5B5F55;line-height:1.7;margin-bottom:18px;">Mở nhanh như 1 app riêng, không cần mở trình duyệt trước:<br>
           Bấm nút <b>Chia sẻ</b> (hình vuông có mũi tên đi lên) ở thanh dưới Safari → chọn <b>"Thêm vào MH chính"</b>.

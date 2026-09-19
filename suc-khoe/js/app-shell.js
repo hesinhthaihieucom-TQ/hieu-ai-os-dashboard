@@ -1,6 +1,7 @@
 // Rút gọn từ tai-chinh/js/app-shell.js — CHỈ giữ routing + đăng nhập/đăng ký Supabase Auth + sidebar.
-// Tên sản phẩm: "HIỂU ĐỂ KHOẺ MẠNH" (khớp tên app hiện có ở hieu-de-khoe-manh.vercel.app mà chị
-// Quỳnh dùng làm ví dụ, 2026-08-26) — đây là BỘ KHUNG ban đầu, chưa có thanh toán/khoá tính năng như
+// Tên sản phẩm: "Hiểu để Khỏe" (đổi tên 2026-09-19 từ "Hiểu Để Khoẻ Mạnh", chị Quỳnh chốt gọn hơn —
+// tên gốc khớp tên app hieu-de-khoe-manh.vercel.app mà chị Quỳnh dùng làm ví dụ, 2026-08-26) — đây là
+// BỘ KHUNG ban đầu, chưa có thanh toán/khoá tính năng như
 // nhan-hieu/tai-chinh: mọi khách đăng ký xong vào được hết các mục, GÓI đang dùng (nếu có) do admin
 // gán tay qua Quản Trị > Thành viên. Không có freemium/premium/referral/review-prompt ở bản khung
 // này — thêm sau nếu chị Quỳnh cần, giữ file này gọn để dễ đọc lúc mới dựng khung. Thông báo đẩy
@@ -175,7 +176,7 @@ function renderAuthScreen(err, successMsg){
   root.innerHTML = `
     <div class="auth-shell">
       <img src="assets/logo-hieu-manh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
-      <h1>HIỂU ĐỂ KHOẺ MẠNH</h1>
+      <h1>HIỂU ĐỂ KHỎE</h1>
       <div class="sub">Kiểm tra & theo dõi sức khỏe mỗi tuần<br>Lịch trình đồng hành cùng bạn<br>Thư viện tra cứu sức khỏe<br><span class="sub-brand">Hệ sinh thái Hiểu</span></div>
       <div class="auth-tabs">
         <div class="auth-tab ${isLogin?'active':''}" data-mode="login">Đăng nhập</div>
@@ -243,14 +244,14 @@ function renderApp(){
   root.innerHTML = `
     <div class="topbar-mobile">
       <span class="menu-toggle" id="menu-toggle-btn">☰</span>
-      <span class="topbar-title">HIỂU ĐỂ KHOẺ MẠNH</span>
+      <span class="topbar-title">HIỂU ĐỂ KHỎE</span>
     </div>
     <div class="app-layout">
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">
         <div class="sidebar-brand" id="sidebar-brand-home" style="cursor:pointer;">
           <img src="assets/logo-hieu-manh.png" class="brand-logo" alt="" onerror="this.style.display='none'">
-          <div class="brand-text">HIỂU ĐỂ<br>KHOẺ MẠNH<small>Hệ sinh thái HIỂU</small></div>
+          <div class="brand-text">HIỂU ĐỂ<br>KHỎE<small>Hệ sinh thái HIỂU</small></div>
         </div>
         <div class="sidebar-nav" id="sidebar-nav"></div>
         <div class="sidebar-foot">

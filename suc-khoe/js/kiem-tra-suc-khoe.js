@@ -62,7 +62,7 @@ function render(container, ctx){
       // catalog dùng chung (đã mở đọc công khai, xem schema_suc_khoe.sql) + khôi phục nháp đã tick.
       const [{ data: entries }, { data: products }] = await Promise.all([
         ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
-        ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
+        ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
       ]);
       state.products = products || [];
       state.libraryEntries = entries || [];
@@ -79,7 +79,7 @@ function render(container, ctx){
     const [{ data: row }, { data: entries }, { data: products }, { data: history }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
-      ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
+      ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits'),
       ctx.supabase.from('sk_health_checkin_history').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(20),
     ]);
     state.products = products || [];

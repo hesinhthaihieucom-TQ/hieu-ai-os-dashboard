@@ -8,7 +8,7 @@
 // Định Vị 12h mà chưa thử "AI tự viết + xếp cả tuần" (checkAutoFillNudge, thêm 29/8 — tối ưu chuyển
 // đổi dùng thử → mua gói), (6) khách CRM (Trợ Lý AI Tư Vấn & CRM) đến hạn/quá hạn follow hôm nay
 // (checkCrmFollowReminders, thêm 29/8 — "AI có tự đặt lịch thông báo đến ngày follow khách được
-// không", theo yêu cầu chị Quỳnh), (7) bản tin sức khỏe mỗi ngày cho khách app Hiểu Để Khoẻ Mạnh đã
+// không", theo yêu cầu chị Quỳnh), (7) bản tin sức khỏe mỗi ngày cho khách app Hiểu để Khỏe đã
 // được gán gói (checkSucKhoeDailyTip, thêm 31/8 theo yêu cầu chị Quỳnh), (8) nhắc ghi thu chi cho
 // khách Sổ Dòng Tiền Tâm Thức, tuỳ tần suất họ tự chọn — hằng ngày 20h hoặc hằng tuần Chủ Nhật 19h
 // (checkTaiChinhLogReminder, thêm 1/9 — chị Quỳnh phản ánh khách vào từ link Facebook làm xong bài
@@ -306,7 +306,7 @@ async function checkCrmFollowReminders() {
   return count;
 }
 
-// Bản tin sức khỏe mỗi ngày (Hiểu Để Khoẻ Mạnh, suc-khoe/, 2026-08-31 — chị Quỳnh: "làm cái bản tin
+// Bản tin sức khỏe mỗi ngày (Hiểu để Khỏe, suc-khoe/, 2026-08-31 — chị Quỳnh: "làm cái bản tin
 // về sức khỏe mỗi ngày gửi thông báo cho người dùng mỗi ngày") — mỗi ngày lấy 1 mục trong
 // sk_library_entries làm nội dung, XOAY VÒNG theo số ngày (không ngẫu nhiên — ngẫu nhiên thật dễ lặp
 // liên tiếp gây nhàm, xoay vòng đảm bảo dàn đều hết nội dung thư viện), dẫn thẳng vào Thư Viện Sức

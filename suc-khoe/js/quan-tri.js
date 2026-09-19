@@ -13,6 +13,7 @@ function render(container, ctx){
         <div class="chip ${hubState.tab==='goi'?'selected':''}" data-hub-tab="goi">Gói & Lịch Trình</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành Viên</div>
         <div class="chip ${hubState.tab==='donhang'?'selected':''}" data-hub-tab="donhang">Đơn Hàng</div>
+        <div class="chip ${hubState.tab==='thongke'?'selected':''}" data-hub-tab="thongke">Thống Kê</div>
         <div class="chip ${hubState.tab==='cauchuyen'?'selected':''}" data-hub-tab="cauchuyen">Câu Chuyện Thành Công</div>
       </div>
       <div id="qt-hub-sub"></div>
@@ -25,6 +26,7 @@ function render(container, ctx){
     else if(hubState.tab === 'sanpham') renderSanPham(sub, ctx);
     else if(hubState.tab === 'goi') renderGoiLichTrinh(sub, ctx);
     else if(hubState.tab === 'donhang') renderDonHang(sub, ctx);
+    else if(hubState.tab === 'thongke') renderThongKe(sub, ctx);
     else if(hubState.tab === 'cauchuyen') renderCauChuyen(sub, ctx);
     else renderThanhVien(sub, ctx);
   }
@@ -205,11 +207,11 @@ function renderSanPham(container, ctx){
     return list;
   }
 
-  function newForm(){ return { id:null, name:'', short_description:'', benefits:'', retail_price:'', image_url:'', detail_sections:[], usageAudience:'', usageInstruction:'' }; }
+  function newForm(){ return { id:null, name:'', short_description:'', benefits:'', retail_price:'', cost_price:'', image_url:'', detail_sections:[], usageAudience:'', usageInstruction:'' }; }
   function openNew(){ state.form = newForm(); draw(); }
   function openEdit(p){
     state.form = {
-      ...p, retail_price: p.retail_price ?? '',
+      ...p, retail_price: p.retail_price ?? '', cost_price: p.cost_price ?? '',
       usageAudience: findSectionBody(p.detail_sections, /đối tượng/i),
       usageInstruction: findSectionBody(p.detail_sections, /cách dùng/i),
     };
@@ -226,6 +228,7 @@ function renderSanPham(container, ctx){
       name: state.form.name.trim(), short_description: state.form.short_description.trim()||null,
       benefits: state.form.benefits.trim()||null,
       retail_price: state.form.retail_price===''? null : Number(state.form.retail_price),
+      cost_price: state.form.cost_price===''? null : Number(state.form.cost_price),
       image_url: state.form.image_url.trim()||null,
       detail_sections: sections,
     };
@@ -253,6 +256,7 @@ function renderSanPham(container, ctx){
           <div class="field" style="margin-top:12px;"><label>Mô tả ngắn</label><textarea id="sp-desc">${esc(state.form.short_description)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Công dụng</label><textarea id="sp-benefits">${esc(state.form.benefits)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Giá bán lẻ (đ)</label><input type="number" id="sp-price" value="${esc(state.form.retail_price)}"></div>
+          <div class="field" style="margin-top:12px;"><label>Giá vốn / giá sỉ (đ) — dùng để tính lãi lẻ ở Thống Kê</label><input type="number" id="sp-cost-price" value="${esc(state.form.cost_price)}" placeholder="Giá chị nhập/mua từ Unicity"></div>
           <div class="field" style="margin-top:12px;"><label>Link ảnh (URL)</label><input type="text" id="sp-image" value="${esc(state.form.image_url)}" placeholder="https://..."></div>
           <div class="field" style="margin-top:12px;"><label>Đối tượng sử dụng</label><textarea id="sp-usage-audience" placeholder="VD: Người trưởng thành, không dùng cho phụ nữ mang thai...">${esc(state.form.usageAudience)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Cách dùng (Hướng dẫn sử dụng)</label><textarea id="sp-usage-instruction" placeholder="VD: Uống 1 viên/lần, 2 lần/ngày trước bữa ăn 30 phút...">${esc(state.form.usageInstruction)}</textarea></div>
@@ -287,6 +291,7 @@ function renderSanPham(container, ctx){
     const descEl = container.querySelector('#sp-desc'); if(descEl) descEl.oninput = (e)=>{ state.form.short_description = e.target.value; };
     const benefitsEl = container.querySelector('#sp-benefits'); if(benefitsEl) benefitsEl.oninput = (e)=>{ state.form.benefits = e.target.value; };
     const priceEl = container.querySelector('#sp-price'); if(priceEl) priceEl.oninput = (e)=>{ state.form.retail_price = e.target.value; };
+    const costPriceEl = container.querySelector('#sp-cost-price'); if(costPriceEl) costPriceEl.oninput = (e)=>{ state.form.cost_price = e.target.value; };
     const imageEl = container.querySelector('#sp-image'); if(imageEl) imageEl.oninput = (e)=>{ state.form.image_url = e.target.value; };
     const usageAudienceEl = container.querySelector('#sp-usage-audience'); if(usageAudienceEl) usageAudienceEl.oninput = (e)=>{ state.form.usageAudience = e.target.value; };
     const usageInstructionEl = container.querySelector('#sp-usage-instruction'); if(usageInstructionEl) usageInstructionEl.oninput = (e)=>{ state.form.usageInstruction = e.target.value; };
@@ -1152,6 +1157,127 @@ function renderDonHang(container, ctx){
         draw();
       };
     });
+  }
+
+  load();
+}
+
+// ===== Tab "Thống Kê" — doanh số & lãi lẻ theo tháng (2026-09-19, chị Quỳnh: "cho e cái thống kê
+// doanh số và lãi lẻ kiểu bảng tài chính 1 cách chuyên nghiệp á"). "Lãi lẻ" = giá bán lẻ trừ giá vốn
+// (sk_products.cost_price, admin tự nhập ở tab Sản Phẩm — KHÔNG suy ra được từ dữ liệu sẵn có). Chỉ
+// tính doanh số/lãi lẻ trên đơn ĐÃ XÁC NHẬN/ĐÃ GIAO (status) — "chờ xác nhận" hiện riêng vì chưa chắc
+// chốt được, "đã huỷ" bỏ hẳn. Giá vốn lấy CURRENT sk_products.cost_price tại thời điểm xem báo cáo
+// (không snapshot lúc đặt hàng vì customer-facing product query không được phép đọc cost_price —
+// xem san-pham.js — nên đổi giá vốn sẽ áp dụng lùi lại cả đơn cũ, chấp nhận được vì giá vốn ít đổi).
+function renderThongKe(container, ctx){
+  const state = { loading:true, orders:[], costByProduct:{} };
+
+  function draw(){ container.innerHTML = html(); }
+
+  async function load(){
+    state.loading = true; draw();
+    const [{ data: orders }, { data: products }] = await Promise.all([
+      ctx.supabase.from('sk_orders').select('items,total_amount,total_pv,status,created_at').order('created_at', { ascending:false }).limit(2000),
+      ctx.supabase.from('sk_products').select('id,cost_price'),
+    ]);
+    state.orders = orders || [];
+    state.costByProduct = {};
+    (products||[]).forEach(p=>{ state.costByProduct[p.id] = p.cost_price; });
+    state.loading = false;
+    draw();
+  }
+
+  function monthKey(iso){ return iso.slice(0,7); }
+  function monthLabel(key){ const [y,m] = key.split('-'); return `Tháng ${Number(m)}/${y}`; }
+
+  function buildReport(){
+    const counted = state.orders.filter(o=>o.status==='da_xac_nhan' || o.status==='da_giao');
+    const pending = state.orders.filter(o=>o.status==='cho_xac_nhan');
+    const byMonth = {};
+    let missingCost = false;
+    counted.forEach(o=>{
+      const key = monthKey(o.created_at);
+      if(!byMonth[key]) byMonth[key] = { key, orderCount:0, revenue:0, profit:0, pv:0 };
+      const m = byMonth[key];
+      m.orderCount += 1;
+      m.revenue += Number(o.total_amount||0);
+      m.pv += Number(o.total_pv||0);
+      (Array.isArray(o.items) ? o.items : []).forEach(it=>{
+        const cost = state.costByProduct[it.product_id];
+        if(cost==null){ missingCost = true; return; }
+        m.profit += (Number(it.price||0) - Number(cost)) * (it.qty||1);
+      });
+    });
+    const months = Object.values(byMonth).sort((a,b)=> b.key.localeCompare(a.key));
+    const totals = months.reduce((s,m)=>({ orderCount:s.orderCount+m.orderCount, revenue:s.revenue+m.revenue, profit:s.profit+m.profit, pv:s.pv+m.pv }), { orderCount:0, revenue:0, profit:0, pv:0 });
+    const pendingTotal = pending.reduce((s,o)=>s+Number(o.total_amount||0), 0);
+    return { months, totals, missingCost, pendingCount:pending.length, pendingTotal };
+  }
+
+  function html(){
+    if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
+    const { months, totals, missingCost, pendingCount, pendingTotal } = buildReport();
+    return `
+      <div class="page-head"><h1 style="font-size:19px;">Thống Kê Doanh Số & Lãi Lẻ</h1><p>Chỉ tính đơn đã xác nhận/đã giao — đơn chờ xác nhận và đơn đã huỷ không tính vào đây.</p></div>
+
+      <div class="card" style="margin-bottom:20px;display:flex;gap:24px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng doanh số</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);">${totals.revenue.toLocaleString('vi-VN')}đ</div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng lãi lẻ</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:#1f9d63;">${totals.profit.toLocaleString('vi-VN')}đ</div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng đơn</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;">${totals.orderCount}</div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng PV</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;">${totals.pv}</div>
+        </div>
+      </div>
+
+      ${missingCost ? `<div class="hint-box" style="margin-bottom:16px;">⚠️ Một số sản phẩm trong các đơn chưa có "Giá vốn" — lãi lẻ ở đây CHƯA đầy đủ. Vào Quản Trị &gt; Sản Phẩm nhập giá vốn cho từng sản phẩm để lãi lẻ tính đúng.</div>` : ''}
+      ${pendingCount>0 ? `<div class="hint-box" style="margin-bottom:16px;">📋 Còn ${pendingCount} đơn đang chờ xác nhận, tổng giá trị ${pendingTotal.toLocaleString('vi-VN')}đ — chưa tính vào thống kê bên trên.</div>` : ''}
+
+      ${months.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào đã xác nhận/đã giao.</div>` : `
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--line);">
+                <th style="text-align:left;padding:10px 8px;">Tháng</th>
+                <th style="text-align:right;padding:10px 8px;">Số đơn</th>
+                <th style="text-align:right;padding:10px 8px;">Doanh số</th>
+                <th style="text-align:right;padding:10px 8px;">Lãi lẻ</th>
+                <th style="text-align:right;padding:10px 8px;">PV</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${months.map(m=>`
+                <tr style="border-bottom:1px solid var(--line);">
+                  <td style="padding:10px 8px;font-weight:600;">${esc(monthLabel(m.key))}</td>
+                  <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;">${m.orderCount}</td>
+                  <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;color:var(--accent);">${m.revenue.toLocaleString('vi-VN')}đ</td>
+                  <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;color:#1f9d63;">${m.profit.toLocaleString('vi-VN')}đ</td>
+                  <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;">${m.pv}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr style="border-top:2px solid var(--line);font-weight:700;">
+                <td style="padding:10px 8px;">Tổng cộng</td>
+                <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;">${totals.orderCount}</td>
+                <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;color:var(--accent);">${totals.revenue.toLocaleString('vi-VN')}đ</td>
+                <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;color:#1f9d63;">${totals.profit.toLocaleString('vi-VN')}đ</td>
+                <td style="text-align:right;padding:10px 8px;font-family:'IBM Plex Mono',monospace;">${totals.pv}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      `}
+    `;
   }
 
   load();

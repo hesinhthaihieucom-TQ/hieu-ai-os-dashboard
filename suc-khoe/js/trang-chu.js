@@ -46,7 +46,7 @@ function render(container, ctx){
     return `
       <div class="page-head">
         <h1>Chào ${esc(name || 'bạn')} 👋</h1>
-        <p>Hiểu Để Khoẻ Mạnh — đồng hành cùng bạn theo dõi sức khỏe mỗi tuần.</p>
+        <p>Hiểu để Khỏe — đồng hành cùng bạn theo dõi sức khỏe mỗi tuần.</p>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `

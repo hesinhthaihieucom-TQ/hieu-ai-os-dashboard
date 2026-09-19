@@ -15,7 +15,7 @@ function render(container, ctx){
     state.entries = entries || [];
     const productIds = [...new Set(state.entries.flatMap(e=>e.related_product_ids||[]))];
     if(productIds.length>0){
-      const { data: products } = await ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits').in('id', productIds);
+      const { data: products } = await ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits').in('id', productIds);
       (products||[]).forEach(p=>{ state.productById[p.id] = p; });
     }
     state.loading = false;
