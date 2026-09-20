@@ -27,8 +27,10 @@ function render(container, ctx){
     // dùng select('*') ở đây nữa vì trang này khách hàng thường xem được (RLS sk_products mở công
     // khai), select('*') sẽ vô tình trả luôn giá vốn cho phía client dù không hiện ra màn hình, khách
     // rành kỹ thuật vẫn xem được qua tab Network của trình duyệt.
-    const { data } = await ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits').order('name', { ascending:true });
-    state.products = data || [];
+    const { data } = await ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,npp_price,pv,short_description,image_url,detail_sections,benefits').order('name', { ascending:true });
+    // 2026-09-19, chị Quỳnh: "có khách e muốn để cho giá NPP vì đã dùng lâu" — swap ngay lúc load(),
+    // xem skApplyNppPricing (util.js).
+    state.products = skApplyNppPricing(data || [], ctx.profile);
     state.loading = false;
     draw();
   }

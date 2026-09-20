@@ -1,19 +1,24 @@
-// Quản Trị — Thư Viện + Sản Phẩm + Gói & Lịch Trình + Thành Viên. Route này chỉ hiện trong sidebar
-// khi profiles.role==='admin' (xem app-shell.js NAV, cờ adminOnly) — nhưng RLS ở Supabase (is_admin())
-// mới là chốt chặn thật, ẩn sidebar chỉ để đỡ rối giao diện cho user thường.
+// Quản Trị — Thư Viện + Gói & Lịch Trình + Thành Viên + Đơn Hàng + Báo Cáo Doanh Thu + Câu Chuyện
+// Thành Công. Route này chỉ hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js NAV, cờ
+// adminOnly) — nhưng RLS ở Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ rối giao
+// diện cho user thường.
+// 2026-09-20, chị Quỳnh: "mục sản phẩm trong quản trị bỏ đi... có mục sản phẩm trong taskbar là đc
+// rồi" — bỏ hẳn tab CRUD sản phẩm (renderSanPham vẫn còn trong file, chỉ không route tới nữa — chị
+// chấp nhận đánh đổi: từ nay sửa tên/giá/ảnh/công dụng sản phẩm phải nhờ sửa bằng SQL, không còn form
+// trên giao diện). "Sản Phẩm Unicity" khách hàng vẫn xem được bình thường ở sidebar chính (san-pham.js,
+// CHỈ XEM, không sửa được).
 (function(){
 function render(container, ctx){
   const hubState = { tab:'thuvien' };
   function drawHub(){
     container.innerHTML = `
-      <div class="page-head"><h1>Quản Trị</h1><p>Quản lý Thư Viện Sức Khỏe, Sản Phẩm Unicity, Gói & Lịch Trình, và gán gói/điểm cho thành viên.</p></div>
+      <div class="page-head"><h1>Quản Trị</h1><p>Quản lý Thư Viện Sức Khỏe, Gói & Lịch Trình, thành viên, đơn hàng và báo cáo doanh thu.</p></div>
       <div class="chips" style="margin-bottom:18px;">
         <div class="chip ${hubState.tab==='thuvien'?'selected':''}" data-hub-tab="thuvien">Thư Viện</div>
-        <div class="chip ${hubState.tab==='sanpham'?'selected':''}" data-hub-tab="sanpham">Sản Phẩm</div>
         <div class="chip ${hubState.tab==='goi'?'selected':''}" data-hub-tab="goi">Gói & Lịch Trình</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành Viên</div>
         <div class="chip ${hubState.tab==='donhang'?'selected':''}" data-hub-tab="donhang">Đơn Hàng</div>
-        <div class="chip ${hubState.tab==='thongke'?'selected':''}" data-hub-tab="thongke">Thống Kê</div>
+        <div class="chip ${hubState.tab==='baocao'?'selected':''}" data-hub-tab="baocao">Báo Cáo Doanh Thu</div>
         <div class="chip ${hubState.tab==='cauchuyen'?'selected':''}" data-hub-tab="cauchuyen">Câu Chuyện Thành Công</div>
       </div>
       <div id="qt-hub-sub"></div>
@@ -23,10 +28,9 @@ function render(container, ctx){
     });
     const sub = container.querySelector('#qt-hub-sub');
     if(hubState.tab === 'thuvien') renderThuVien(sub, ctx);
-    else if(hubState.tab === 'sanpham') renderSanPham(sub, ctx);
     else if(hubState.tab === 'goi') renderGoiLichTrinh(sub, ctx);
     else if(hubState.tab === 'donhang') renderDonHang(sub, ctx);
-    else if(hubState.tab === 'thongke') renderThongKe(sub, ctx);
+    else if(hubState.tab === 'baocao') renderThongKe(sub, ctx);
     else if(hubState.tab === 'cauchuyen') renderCauChuyen(sub, ctx);
     else renderThanhVien(sub, ctx);
   }
@@ -470,7 +474,7 @@ function renderThanhVien(container, ctx){
       // Chỉ lấy người ĐÃ TỪNG vào app suc-khoe (sk_first_visited_at chỉ set ở loadProfile() của
       // suc-khoe/js/app-shell.js) — profiles là bảng CHUNG giữa mọi app, không lọc sẽ lẫn người chỉ
       // dùng nhan-hieu/tai-chinh/san-pham-so.
-      ctx.supabase.from('profiles').select('id,email,full_name,role,sk_package_id,sk_package_started_at,sk_first_visited_at,sk_daily_schedule_override').not('sk_first_visited_at', 'is', null).order('sk_first_visited_at', { ascending:false }).limit(200),
+      ctx.supabase.from('profiles').select('id,email,full_name,role,sk_package_id,sk_package_started_at,sk_first_visited_at,sk_daily_schedule_override,sk_is_npp').not('sk_first_visited_at', 'is', null).order('sk_first_visited_at', { ascending:false }).limit(200),
       ctx.supabase.from('sk_packages').select('id,name'),
       ctx.supabase.from('sk_products').select('id,name').order('name', { ascending:true }),
     ]);
@@ -495,6 +499,22 @@ function renderThanhVien(container, ctx){
       state.scheduleItemsByPackage[packageId] = data || [];
     }
     draw();
+  }
+
+  // 2026-09-19, chị Quỳnh: "có khách e muốn để cho giá NPP vì đã dùng lâu thì làm như nào?" — bật cờ
+  // profiles.sk_is_npp cho ĐÚNG khách đó, mọi trang khách hàng tự đổi sang npp_price (nếu sản phẩm có
+  // giá riêng) ngay lần load kế tiếp — xem skApplyNppPricing (util.js).
+  async function toggleNpp(userId, checked){
+    state.busyId = userId; draw();
+    const { error } = await ctx.supabase.from('profiles').update({ sk_is_npp: checked }).eq('id', userId);
+    state.busyId = null;
+    if(error){ alert('Không cập nhật được: ' + error.message); draw(); return; }
+    const row = state.rows.find(r=>r.id===userId); if(row) row.sk_is_npp = checked;
+    const anyRow = state.anyResults.find(r=>r.id===userId); if(anyRow) anyRow.sk_is_npp = checked;
+    draw();
+  }
+  function nppToggleHtml(userId, checked){
+    return `<label style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;"><input type="checkbox" data-toggle-npp="${userId}" ${checked?'checked':''} style="width:auto;margin:0;">🏷️ Giá NPP</label>`;
   }
 
   function packageSchedulePreviewHtml(userId, packageId){
@@ -678,7 +698,7 @@ function renderThanhVien(container, ctx){
     const q = state.anyQuery.trim();
     if(!q){ state.anySearched = true; state.anyResults = []; draw(); return; }
     state.anySearching = true; state.anySearched = true; draw();
-    const { data } = await ctx.supabase.from('profiles').select('id,email,full_name,sk_package_id,sk_daily_schedule_override')
+    const { data } = await ctx.supabase.from('profiles').select('id,email,full_name,sk_package_id,sk_daily_schedule_override,sk_is_npp')
       .or(`email.ilike.%${q}%,full_name.ilike.%${q}%`).limit(20);
     state.anyResults = data || [];
     state.anySearching = false;
@@ -764,6 +784,7 @@ function renderThanhVien(container, ctx){
                   <option value="">— Chưa gán gói —</option>
                   ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
                 </select>
+                ${nppToggleHtml(r.id, r.sk_is_npp)}
                 ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
                 ${dailyScheduleEditHtml(r.id, r.sk_daily_schedule_override)}
                 ${customerProductsPickerHtml(r.id)}
@@ -788,6 +809,7 @@ function renderThanhVien(container, ctx){
               ${state.packages.map(p=>`<option value="${p.id}" ${r.sk_package_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
             </select>
             <span class="btn-ghost btn btn-sm" data-add-points="${r.id}">+ Ghi điểm/hoa hồng</span>
+            ${nppToggleHtml(r.id, r.sk_is_npp)}
             ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
             ${dailyScheduleEditHtml(r.id, r.sk_daily_schedule_override)}
             ${customerProductsPickerHtml(r.id)}
@@ -856,6 +878,9 @@ function renderThanhVien(container, ctx){
         const row = state.rows.find(r=>r.id===userId) || state.anyResults.find(r=>r.id===userId);
         openDailyScheduleEdit(userId, row ? row.sk_daily_schedule_override : null);
       };
+    });
+    container.querySelectorAll('[data-toggle-npp]').forEach(el=>{
+      el.onchange = (e)=>toggleNpp(el.getAttribute('data-toggle-npp'), e.target.checked);
     });
     container.querySelectorAll('[data-ds-field]').forEach(el=>{
       el.oninput = (e)=>{
@@ -955,6 +980,18 @@ function renderDonHang(container, ctx){
     await load();
   }
 
+  // 2026-09-19, chị Quỳnh: "cho e được xóa đơn hàng nếu nhầm" — xoá HẲN (không có trạng thái "đã
+  // xoá" riêng, khác "Đã huỷ" — Đã huỷ vẫn giữ lại lịch sử, Xoá dùng cho đơn tạo/nhập nhầm không cần
+  // lưu vết). Xác nhận trước vì không hoàn tác được.
+  async function deleteOrder(orderId){
+    if(!(await confirmModal('Xoá hẳn đơn hàng này? Không thể hoàn tác.'))) return;
+    state.busyId = orderId; draw();
+    const { error } = await ctx.supabase.from('sk_orders').delete().eq('id', orderId);
+    state.busyId = null;
+    if(error){ alert('Không xoá được: ' + error.message); return; }
+    await load();
+  }
+
   // 2026-09-19, chị Quỳnh: "e muốn có thêm 1 mục... quản lý đơn hàng của e vì có thể sẽ có khách họ
   // ko đăng ký vào sử dụng app thì e vẫn muốn quản lý được đơn hàng" — form tạo đơn TAY cho khách bán
   // trực tiếp ngoài app (Zalo/điện thoại...), không bắt buộc có tài khoản. Tìm khách CÓ SẴN tài khoản
@@ -963,10 +1000,10 @@ function renderDonHang(container, ctx){
   async function openCreateForm(){
     state.showCreate = true;
     state.createForm = { name:'', phone:'', address:'', note:'', customerId:null, customerName:'',
-      customerQuery:'', customerResults:[], searching:false, selected:{}, saving:false };
+      customerQuery:'', customerResults:[], searching:false, selected:{}, saving:false, useNpp:false };
     draw();
     if(!state.productsLoaded){
-      const { data } = await ctx.supabase.from('sk_products').select('id,name,category,retail_price,pv,short_description,image_url,detail_sections,benefits').order('name', { ascending:true });
+      const { data } = await ctx.supabase.from('sk_products').select('id,name,category,retail_price,npp_price,pv,short_description,image_url,detail_sections,benefits').order('name', { ascending:true });
       state.allProducts = data || [];
       state.productsLoaded = true;
       draw();
@@ -991,25 +1028,37 @@ function renderDonHang(container, ctx){
     draw();
   }
 
+  // 2026-09-19, chị Quỳnh: "có khách e muốn để cho giá NPP" — cho admin BẬT TAY giá NPP cho đúng đơn
+  // này (không phụ thuộc khách có được gắn cờ sk_is_npp hay không, vì đơn tay có thể là khách vãng
+  // lai không có tài khoản để gắn cờ) — swap retail_price→npp_price ngay tại danh sách hiển thị/tính
+  // tiền, giống hệt cách skApplyNppPricing làm ở các trang khách hàng.
+  function createDisplayProducts(){
+    const f = state.createForm;
+    if(!f.useNpp) return state.allProducts;
+    return state.allProducts.map(p => p.npp_price!=null ? { ...p, retail_price:p.npp_price } : p);
+  }
+
   function createTotals(){
     const f = state.createForm;
-    const chosen = state.allProducts.filter(p=>f.selected[p.id]!==undefined);
-    const total = chosen.reduce((s,p)=>s+Number(p.retail_price||0)*(f.selected[p.id]||1),0);
+    const products = createDisplayProducts();
+    const chosen = products.filter(p=>f.selected[p.id]!==undefined);
+    const subtotal = chosen.reduce((s,p)=>s+Number(p.retail_price||0)*(f.selected[p.id]||1),0);
     const pv = chosen.reduce((s,p)=>s+Number(p.pv||0)*(f.selected[p.id]||1),0);
-    return { chosen, total, pv };
+    const surcharge = skOrderSurcharge(subtotal);
+    return { chosen, subtotal, surcharge, total:subtotal+surcharge, pv };
   }
 
   async function submitCreate(){
     const f = state.createForm;
     const name = f.name.trim(), phone = f.phone.trim(), address = f.address.trim();
     if(!name || !phone || !address){ alert('Vui lòng nhập đủ tên, số điện thoại, địa chỉ giao hàng.'); return; }
-    const { chosen, total, pv } = createTotals();
+    const { chosen, surcharge, total, pv } = createTotals();
     if(chosen.length===0){ alert('Chọn ít nhất 1 sản phẩm.'); return; }
     f.saving = true; draw();
     const { error } = await ctx.supabase.from('sk_orders').insert({
       user_id: f.customerId || null,
       items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0), qty:f.selected[p.id]||1 })),
-      total_amount: total, total_pv: pv,
+      total_amount: total, surcharge_amount: surcharge, total_pv: pv,
       shipping_name: name, shipping_phone: phone, shipping_address: address,
       note: f.note.trim() || null,
       status: 'cho_xac_nhan',
@@ -1022,7 +1071,7 @@ function renderDonHang(container, ctx){
 
   function createFormHtml(){
     const f = state.createForm;
-    const { chosen, total, pv } = createTotals();
+    const { chosen, subtotal, surcharge, total, pv } = createTotals();
     return `
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:12px;">Tạo đơn hàng thủ công</h3>
@@ -1049,14 +1098,23 @@ function renderDonHang(container, ctx){
         <div class="field" style="margin-top:12px;"><label>Số điện thoại</label><input type="text" id="dh-phone" value="${esc(f.phone)}"></div>
         <div class="field" style="margin-top:12px;"><label>Địa chỉ giao hàng</label><textarea id="dh-address" style="min-height:60px;">${esc(f.address)}</textarea></div>
         <div class="field" style="margin-top:12px;"><label>Ghi chú (không bắt buộc)</label><input type="text" id="dh-note" value="${esc(f.note)}" placeholder="VD: tặng kèm son màu 503..."></div>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dh-use-npp" ${f.useNpp?'checked':''} style="width:auto;margin:0;">🏷️ Áp dụng giá NPP cho đơn này</label>
 
         <div style="margin-top:16px;font-weight:700;font-size:13.5px;">Chọn sản phẩm</div>
         <div style="max-height:50vh;overflow-y:auto;margin-top:8px;">
           ${state.allProducts.length===0 ? `<div class="loading"><div class="spinner"></div></div>` :
-            state.allProducts.map(p=>skProductOrderRowHtml(p, f.selected[p.id]!==undefined, f.selected[p.id]||1)).join('')}
+            createDisplayProducts().map(p=>skProductOrderRowHtml(p, f.selected[p.id]!==undefined, f.selected[p.id]||1)).join('')}
         </div>
 
-        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-top:14px;">
+        <div style="font-size:13px;display:flex;justify-content:space-between;margin-top:14px;color:var(--ink-soft);">
+          <span>Tiền hàng</span><span>${subtotal.toLocaleString('vi-VN')}đ</span>
+        </div>
+        ${surcharge>0 ? `
+          <div style="font-size:13px;display:flex;justify-content:space-between;color:var(--ink-soft);">
+            <span>Phụ phí đơn trên ${SK_ORDER_SURCHARGE_TIERS.find(t=>subtotal>t.min).min.toLocaleString('vi-VN')}đ</span><span>+${surcharge.toLocaleString('vi-VN')}đ</span>
+          </div>
+        ` : ''}
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-top:6px;">
           <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ · ${pv} PV</span>
         </div>
         <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
@@ -1082,9 +1140,12 @@ function renderDonHang(container, ctx){
                   <div style="font-weight:600;font-size:14px;">${profile ? esc(profile.full_name||'(chưa đặt tên)') : `👤 ${esc(o.shipping_name)}`}${!profile ? ` <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">(khách ngoài app)</span>` : ''}</div>
                   <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${profile ? esc(profile.email||'') + ' · ' : ''}${esc(new Date(o.created_at).toLocaleString('vi-VN'))}</div>
                 </div>
-                <select data-order-status="${esc(o.id)}" ${state.busyId===o.id?'disabled':''}>
-                  ${Object.keys(SK_ORDER_STATUS_LABELS).map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${esc(SK_ORDER_STATUS_LABELS[k])}</option>`).join('')}
-                </select>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <select data-order-status="${esc(o.id)}" ${state.busyId===o.id?'disabled':''}>
+                    ${Object.keys(SK_ORDER_STATUS_LABELS).map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${esc(SK_ORDER_STATUS_LABELS[k])}</option>`).join('')}
+                  </select>
+                  <span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-order-delete="${esc(o.id)}">Xoá</span>
+                </div>
               </div>
               <div style="font-size:13.5px;margin-top:10px;line-height:1.7;">
                 ${items.map(it=>{
@@ -1094,6 +1155,7 @@ function renderDonHang(container, ctx){
               </div>
               <div style="font-size:13.5px;margin-top:8px;">
                 <b>Tổng: ${Number(o.total_amount||0).toLocaleString('vi-VN')}đ</b> · ${o.total_pv||0} PV
+                ${Number(o.surcharge_amount||0)>0 ? ` (đã gồm phụ phí ${Number(o.surcharge_amount).toLocaleString('vi-VN')}đ)` : ''}
                 ${o.gift ? ` · ${esc(SK_ORDER_GIFT_LABELS[o.gift]||o.gift)}` : ''}
                 ${o.gift_color ? ` (màu son: ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||o.gift_color)})` : ''}
               </div>
@@ -1115,6 +1177,9 @@ function renderDonHang(container, ctx){
   }
 
   function bind(){
+    container.querySelectorAll('[data-order-delete]').forEach(el=>{
+      el.onclick = ()=>deleteOrder(el.getAttribute('data-order-delete'));
+    });
     container.querySelectorAll('[data-order-status]').forEach(el=>{
       el.onchange = (e)=>updateStatus(el.getAttribute('data-order-status'), e.target.value);
     });
@@ -1127,6 +1192,7 @@ function renderDonHang(container, ctx){
     const phoneEl = container.querySelector('#dh-phone'); if(phoneEl) phoneEl.oninput = (e)=>{ f.phone = e.target.value; };
     const addressEl = container.querySelector('#dh-address'); if(addressEl) addressEl.oninput = (e)=>{ f.address = e.target.value; };
     const noteEl = container.querySelector('#dh-note'); if(noteEl) noteEl.oninput = (e)=>{ f.note = e.target.value; };
+    const useNppEl = container.querySelector('#dh-use-npp'); if(useNppEl) useNppEl.onchange = (e)=>{ f.useNpp = e.target.checked; draw(); };
     const customerSearchEl = container.querySelector('#dh-customer-search'); if(customerSearchEl) customerSearchEl.oninput = (e)=>{ f.customerQuery = e.target.value; };
     const customerSearchBtn = container.querySelector('#dh-customer-search-btn'); if(customerSearchBtn) customerSearchBtn.onclick = searchCreateCustomer;
     const clearCustomerBtn = container.querySelector('#dh-clear-customer'); if(clearCustomerBtn) clearCustomerBtn.onclick = ()=>{ f.customerId = null; f.customerName = ''; draw(); };
@@ -1170,14 +1236,17 @@ function renderDonHang(container, ctx){
 // (không snapshot lúc đặt hàng vì customer-facing product query không được phép đọc cost_price —
 // xem san-pham.js — nên đổi giá vốn sẽ áp dụng lùi lại cả đơn cũ, chấp nhận được vì giá vốn ít đổi).
 function renderThongKe(container, ctx){
-  const state = { loading:true, orders:[], costByProduct:{} };
+  // 2026-09-20, chị Quỳnh: "phần thống kê ko ghi thống kê mà ghi báo cáo doanh thu chẳng hạn và có
+  // thời gian cụ thể" — đổi tên hiển thị (tab + tiêu đề) thành "Báo Cáo Doanh Thu" + thêm bộ lọc từ
+  // ngày/đến ngày để xem đúng khoảng thời gian cần, không chỉ xem gộp tất cả.
+  const state = { loading:true, orders:[], costByProduct:{}, dateFrom:'', dateTo:'' };
 
-  function draw(){ container.innerHTML = html(); }
+  function draw(){ container.innerHTML = html(); bind(); }
 
   async function load(){
     state.loading = true; draw();
     const [{ data: orders }, { data: products }] = await Promise.all([
-      ctx.supabase.from('sk_orders').select('items,total_amount,total_pv,status,created_at').order('created_at', { ascending:false }).limit(2000),
+      ctx.supabase.from('sk_orders').select('items,total_amount,total_pv,surcharge_amount,status,created_at').order('created_at', { ascending:false }).limit(2000),
       ctx.supabase.from('sk_products').select('id,cost_price'),
     ]);
     state.orders = orders || [];
@@ -1190,9 +1259,17 @@ function renderThongKe(container, ctx){
   function monthKey(iso){ return iso.slice(0,7); }
   function monthLabel(key){ const [y,m] = key.split('-'); return `Tháng ${Number(m)}/${y}`; }
 
+  function inRange(iso){
+    const d = iso.slice(0,10);
+    if(state.dateFrom && d < state.dateFrom) return false;
+    if(state.dateTo && d > state.dateTo) return false;
+    return true;
+  }
+
   function buildReport(){
-    const counted = state.orders.filter(o=>o.status==='da_xac_nhan' || o.status==='da_giao');
-    const pending = state.orders.filter(o=>o.status==='cho_xac_nhan');
+    const inWindow = state.orders.filter(o=>inRange(o.created_at));
+    const counted = inWindow.filter(o=>o.status==='da_xac_nhan' || o.status==='da_giao');
+    const pending = inWindow.filter(o=>o.status==='cho_xac_nhan');
     const byMonth = {};
     let missingCost = false;
     counted.forEach(o=>{
@@ -1201,6 +1278,9 @@ function renderThongKe(container, ctx){
       const m = byMonth[key];
       m.orderCount += 1;
       m.revenue += Number(o.total_amount||0);
+      // Phụ phí (surcharge_amount) là lợi nhuận THUẦN, không gắn với giá vốn sản phẩm nào — cộng
+      // thẳng vào lãi lẻ (2026-09-19, xem SK_ORDER_SURCHARGE_TIERS ở util.js).
+      m.profit += Number(o.surcharge_amount||0);
       m.pv += Number(o.total_pv||0);
       (Array.isArray(o.items) ? o.items : []).forEach(it=>{
         const cost = state.costByProduct[it.product_id];
@@ -1218,7 +1298,13 @@ function renderThongKe(container, ctx){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
     const { months, totals, missingCost, pendingCount, pendingTotal } = buildReport();
     return `
-      <div class="page-head"><h1 style="font-size:19px;">Thống Kê Doanh Số & Lãi Lẻ</h1><p>Chỉ tính đơn đã xác nhận/đã giao — đơn chờ xác nhận và đơn đã huỷ không tính vào đây.</p></div>
+      <div class="page-head"><h1 style="font-size:19px;">Báo Cáo Doanh Thu</h1><p>Chỉ tính đơn đã xác nhận/đã giao — đơn chờ xác nhận và đơn đã huỷ không tính vào đây.</p></div>
+
+      <div class="card" style="margin-bottom:16px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="field" style="margin:0;"><label>Từ ngày</label><input type="date" id="bc-date-from" value="${esc(state.dateFrom)}"></div>
+        <div class="field" style="margin:0;"><label>Đến ngày</label><input type="date" id="bc-date-to" value="${esc(state.dateTo)}"></div>
+        ${(state.dateFrom || state.dateTo) ? `<span class="btn-ghost btn btn-sm" id="bc-date-clear">Xoá lọc — xem tất cả</span>` : ''}
+      </div>
 
       <div class="card" style="margin-bottom:20px;display:flex;gap:24px;flex-wrap:wrap;">
         <div>
@@ -1239,7 +1325,7 @@ function renderThongKe(container, ctx){
         </div>
       </div>
 
-      ${missingCost ? `<div class="hint-box" style="margin-bottom:16px;">⚠️ Một số sản phẩm trong các đơn chưa có "Giá vốn" — lãi lẻ ở đây CHƯA đầy đủ. Vào Quản Trị &gt; Sản Phẩm nhập giá vốn cho từng sản phẩm để lãi lẻ tính đúng.</div>` : ''}
+      ${missingCost ? `<div class="hint-box" style="margin-bottom:16px;">⚠️ Một số sản phẩm trong các đơn chưa có "Giá vốn" — lãi lẻ ở đây CHƯA đầy đủ. Nhắn giá vốn từng sản phẩm để cập nhật (mục Sản Phẩm không còn form sửa trên giao diện).</div>` : ''}
       ${pendingCount>0 ? `<div class="hint-box" style="margin-bottom:16px;">📋 Còn ${pendingCount} đơn đang chờ xác nhận, tổng giá trị ${pendingTotal.toLocaleString('vi-VN')}đ — chưa tính vào thống kê bên trên.</div>` : ''}
 
       ${months.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào đã xác nhận/đã giao.</div>` : `
@@ -1278,6 +1364,12 @@ function renderThongKe(container, ctx){
         </div>
       `}
     `;
+  }
+
+  function bind(){
+    const fromEl = container.querySelector('#bc-date-from'); if(fromEl) fromEl.onchange = (e)=>{ state.dateFrom = e.target.value; draw(); };
+    const toEl = container.querySelector('#bc-date-to'); if(toEl) toEl.onchange = (e)=>{ state.dateTo = e.target.value; draw(); };
+    const clearEl = container.querySelector('#bc-date-clear'); if(clearEl) clearEl.onclick = ()=>{ state.dateFrom=''; state.dateTo=''; draw(); };
   }
 
   load();

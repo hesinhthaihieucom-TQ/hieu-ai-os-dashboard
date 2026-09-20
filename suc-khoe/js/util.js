@@ -202,6 +202,35 @@ function skGiftPreviewHtml(gift){
 // khoản VietinBank của chị Quỳnh đã dùng chung toàn hệ sinh thái — KHÔNG tự đổi số tài khoản ở đây.
 const SK_PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 
+// 2026-09-19, chị Quỳnh: "cho e giá tất cả các đơn của khách nào mà trên 2triệu đều auto tự cộng
+// thêm 100k, trên 5tr tự động cộng thêm 200k. trên 10tr tự động cộng thêm 500k, trên 20tr tự động
+// cộng thêm 1tr, trên 30tr tự động cộng thêm 2tr, trên 40tr tự động cộng thêm 3tr" — phụ phí tự động
+// theo mốc TỔNG TIỀN HÀNG (subtotal, TRƯỚC khi cộng phụ phí — tránh tự nhảy mốc vì chính phụ phí vừa
+// cộng vào). Chỉ mốc CAO NHẤT khách đạt được mới tính (không cộng dồn nhiều mốc), "trên X" = tổng tiền
+// PHẢI LỚN HƠN X (không tính bằng X). Sắp giảm dần để tìm đúng mốc cao nhất trước.
+const SK_ORDER_SURCHARGE_TIERS = [
+  { min: 40000000, add: 3000000 },
+  { min: 30000000, add: 2000000 },
+  { min: 20000000, add: 1000000 },
+  { min: 10000000, add: 500000 },
+  { min: 5000000, add: 200000 },
+  { min: 2000000, add: 100000 },
+];
+function skOrderSurcharge(subtotal){
+  const tier = SK_ORDER_SURCHARGE_TIERS.find(t => subtotal > t.min);
+  return tier ? tier.add : 0;
+}
+
+// 2026-09-19, chị Quỳnh: "có khách e muốn để cho giá NPP vì đã dùng lâu thì làm như nào?" — cờ
+// profiles.sk_is_npp (admin bật ở Quản Trị > Thành Viên) khiến khách đó thấy sk_products.npp_price
+// (nếu sản phẩm có giá riêng) THAY CHO retail_price ở khắp nơi — swap NGAY lúc load() sản phẩm để
+// mọi logic tính giá/PV/giỏ hàng phía sau (đã viết cho retail_price) tự động đúng, không cần sửa gì
+// thêm. _npp đánh dấu để UI có thể hiện "Giá NPP" nếu cần, không bắt buộc dùng.
+function skApplyNppPricing(products, profile){
+  if(!profile || !profile.sk_is_npp) return products;
+  return products.map(p => p.npp_price!=null ? { ...p, retail_price:p.npp_price, _npp:true } : p);
+}
+
 function openOrderModal(ctx, products){
   const selected = new Set(products.map(p=>p.id));
   const formValues = { name: (ctx.profile && ctx.profile.full_name) || '', phone:'', address:'' };
@@ -216,9 +245,13 @@ function openOrderModal(ctx, products){
   function qtyOf(p){ return p._qty || 1; }
   function totals(){
     const chosen = products.filter(p=>selected.has(p.id));
-    const total = chosen.reduce((s,p)=>s+Number(p.retail_price||0)*qtyOf(p),0);
+    const subtotal = chosen.reduce((s,p)=>s+Number(p.retail_price||0)*qtyOf(p),0);
     const pv = chosen.reduce((s,p)=>s+Number(p.pv||0)*qtyOf(p),0);
-    return { chosen, total, pv, gift: skOrderGift(total, chosen.length) };
+    // Quà tặng vẫn tính theo TIỀN HÀNG (subtotal), không tính luôn phụ phí — 2 mốc số riêng biệt, dù
+    // trùng số tròn (2tr/5tr) chỉ là trùng hợp từ 2 lần chị Quỳnh chốt khác nhau.
+    const surcharge = skOrderSurcharge(subtotal);
+    const total = subtotal + surcharge;
+    return { chosen, subtotal, surcharge, total, pv, gift: skOrderGift(subtotal, chosen.length) };
   }
 
   function bodyHtml(step, err){
@@ -251,7 +284,7 @@ function openOrderModal(ctx, products){
           <button class="btn btn-sm" style="margin-top:16px;" data-order-close="1">Đóng</button>
         </div>`;
     }
-    const { chosen, total, pv, gift } = totals();
+    const { chosen, subtotal, surcharge, total, pv, gift } = totals();
     return `
       <div style="font-weight:700;font-size:16px;margin-bottom:14px;">Đặt hàng</div>
       <div style="max-height:44vh;overflow-y:auto;margin-bottom:14px;">
@@ -286,6 +319,14 @@ function openOrderModal(ctx, products){
           </div>
         `;}).join('')}
       </div>
+      <div style="font-size:13.5px;display:flex;justify-content:space-between;margin-bottom:4px;color:var(--ink-soft);">
+        <span>Tiền hàng</span><span>${subtotal.toLocaleString('vi-VN')}đ</span>
+      </div>
+      ${surcharge>0 ? `
+        <div style="font-size:13.5px;display:flex;justify-content:space-between;margin-bottom:4px;color:var(--ink-soft);">
+          <span>Phụ phí đơn trên ${SK_ORDER_SURCHARGE_TIERS.find(t=>subtotal>t.min).min.toLocaleString('vi-VN')}đ</span><span>+${surcharge.toLocaleString('vi-VN')}đ</span>
+        </div>
+      ` : ''}
       <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:6px;">
         <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ</span>
       </div>
@@ -393,11 +434,11 @@ function openOrderModal(ctx, products){
     const phone = formValues.phone.trim();
     const address = formValues.address.trim();
     if(!name || !phone || !address){ renderCard(null, 'Vui lòng điền đủ tên, số điện thoại và địa chỉ.'); return; }
-    const { chosen, total, pv, gift } = totals();
+    const { chosen, surcharge, total, pv, gift } = totals();
     const { data, error } = await ctx.supabase.from('sk_orders').insert({
       user_id: ctx.user.id,
       items: chosen.map(p=>({ product_id:p.id, name:p.name, price:Number(p.retail_price||0), pv:Number(p.pv||0), qty:qtyOf(p) })),
-      total_amount: total, total_pv: pv, gift: gift ? gift.key : null,
+      total_amount: total, surcharge_amount: surcharge, total_pv: pv, gift: gift ? gift.key : null,
       gift_color: (gift && gift.needsColor) ? giftColor : null,
       shipping_name: name, shipping_phone: phone, shipping_address: address,
     }).select('id').single();

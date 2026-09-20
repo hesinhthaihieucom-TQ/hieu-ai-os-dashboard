@@ -345,6 +345,32 @@ create policy "sk_orders_admin_all" on sk_orders for all using (is_admin()) with
 -- gift = 'binh_lac_son', null với đơn không có quà son.
 alter table sk_orders add column if not exists gift_color text check (gift_color in ('503','505'));
 
+-- 2026-09-19, chị Quỳnh: "cho e giá tất cả các đơn của khách nào mà trên 2triệu đều auto tự cộng
+-- thêm 100k..." — phụ phí tự động cộng theo mốc tổng tiền đơn (xem SK_ORDER_SURCHARGE_TIERS,
+-- util.js). Lưu lại RIÊNG số tiền phụ phí đã cộng (không chỉ gộp vào total_amount) để Đơn Hàng/Báo
+-- Cáo Doanh Thu hiện tách bạch được đâu là tiền hàng, đâu là phụ phí — total_amount VẪN là tổng cuối
+-- cùng khách phải trả (tiền hàng + phụ phí), giữ đúng ý nghĩa cũ để không phải sửa lại chỗ nào đang
+-- dùng total_amount.
+alter table sk_orders add column if not exists surcharge_amount numeric not null default 0;
+
+-- Giá NPP (Nhà Phân Phối) cho khách đã dùng lâu (2026-09-19, chị Quỳnh: "có khách e muốn để cho giá
+-- NPP vì đã dùng lâu") — cờ TRÊN TỪNG KHÁCH (không phải theo gói/sản phẩm), admin bật ở Quản Trị >
+-- Thành Viên. Khách được bật cờ này thấy giá sk_products.npp_price (nếu sản phẩm có) THAY CHO
+-- retail_price ở mọi nơi hiện giá — xem cách các trang khách hàng tự đổi giá lúc load() sản phẩm.
+alter table profiles add column if not exists sk_is_npp boolean not null default false;
+
+-- Giá NPP riêng của từng sản phẩm (null = sản phẩm đó chưa có giá NPP riêng, khách NPP vẫn thấy
+-- retail_price như bình thường cho đúng sản phẩm này) — admin nhập ở Quản Trị > Sản Phẩm.
+alter table sk_products add column if not exists npp_price numeric;
+-- Cập nhật lại view công khai để có thêm npp_price (KHÔNG phải dữ liệu nhạy cảm như cost_price — đây
+-- vẫn là giá BÁN cho khách, chỉ là 1 mức giá khác retail_price, nên an toàn hiện cho mọi khách hàng
+-- xem qua view này, không cần giấu như cost_price).
+drop view if exists sk_products_public;
+create view sk_products_public as
+  select id, name, category, retail_price, npp_price, pv, short_description, image_url, detail_sections, benefits
+  from sk_products;
+grant select on sk_products_public to anon, authenticated;
+
 -- Câu Chuyện Thành Công — mục RIÊNG (2026-08-31, chị Quỳnh: "để 1 mục riêng", không gộp vào Thư Viện
 -- Sức Khỏe) hiển thị case khách chuyển hoá thật (ảnh trước/sau + câu chuyện) cho MỌI khách xem, khác
 -- crm_case_studies bên tro-ly-crm/ (đó là kho RIÊNG TƯ của từng user để AI lấy gửi khi tư vấn, cái
