@@ -11,40 +11,43 @@ const ORIGIN_HOST = 'hieu-ai-os-dashboard.vercel.app';
 // 2026-09-21 — chị Quỳnh báo "app load chậm": TRƯỚC ĐÂY mọi request (kể cả ảnh/CSS/JS/font tĩnh,
 // nội dung không đổi giữa các lần) đều bị ép cacheTtl:0 + "no-cache, must-revalidate" — nghĩa là
 // installer/browser/CDN Cloudflare KHÔNG BAO GIỜ được phép dùng thẳng bản đã lưu, luôn phải đi 1
-// vòng thật tới tận Vercel để xác nhận lại trước khi hiện, dù file y hệt lần trước. Đo thử thấy mỗi
-// vòng đó tốn ~80-200ms — cộng dồn hàng chục ảnh/CSS/JS trên 1 trang là chậm thấy rõ. KHÔNG PHẢI do
+// vòng thật tới tận Vercel để xác nhận lại trước khi hiện, dù file y hệt lần trước. KHÔNG PHẢI do
 // gói Vercel chưa nâng cấp — thuần tuý là cấu hình cache của worker này quá chặt.
-// Sửa: CHỈ ảnh/font/media (nội dung không đổi trong file cũ, đổi ảnh mới luôn đặt tên file mới —
-// đúng quy ước đang dùng, xem nhan-hieu/assets/ladipage/) được cache 1 giờ ở CDN Cloudflare + trình
-// duyệt — đủ để những lần tải lại/chuyển trang trong lúc đang xem không phải đi vòng qua Vercel nữa.
-// CỐ TÌNH KHÔNG cache .css/.js — 2 loại này bị sửa & deploy liên tục trong quy trình làm việc thật
-// (nhiều lần mỗi buổi), tên file không đổi giữa các lần sửa, nên cache dài dễ khiến khách vẫn thấy
-// code cũ/lỗi ngay sau khi vừa sửa xong — coi như thà chấp nhận chậm hơn 1 chút để luôn đúng bản mới
-// nhất. Trang HTML vẫn giữ nguyên "no-cache, must-revalidate" như cũ — luôn tải bản mới nhất, để sửa
-// nội dung xong là thấy ngay không cần đợi cache hết hạn.
+// Bước 1 (cùng ngày): cache ảnh/font/media 1 giờ. Đo lại sau khi thêm defer cho <script> ở các app
+// (xem nhan-hieu/index.html) thì lộ ra vấn đề LỚN HƠN: mỗi file .js RIÊNG LẺ vẫn mất 350-750ms vì
+// route qua Vercel mỗi lần (đã đo bằng fetch trực tiếp 1 file, không tính mạng congest) — vì CSS/JS
+// khi đó vẫn bị loại khỏi cache hoàn toàn. Với ~30 file JS mỗi trang, đây mới là nút thắt thật sự.
+// Bước 2: cho CSS/JS cache NGẮN (60 giây) thay vì 0 — đánh đổi hợp lý: trong lúc đang sửa code thử
+// đi thử lại (vài giây/lần) vẫn có thể dính cache cũ tối đa 60s (bấm hard-refresh nếu cần thấy ngay),
+// nhưng khách bình thường lướt nhiều trang trong 1 phiên sẽ không phải trả phí round-trip Vercel cho
+// từng file JS ở mỗi trang. Ảnh/font vẫn giữ 1 giờ (đổi tên file mới khi thay, không cần lo cache cũ).
+// Trang HTML vẫn giữ nguyên "no-cache, must-revalidate" — luôn tải bản mới nhất ngay lập tức.
 const STATIC_ASSET_RE = /\.(png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|mp4|webm|pdf)$/i;
 const STATIC_ASSET_TTL_SECONDS = 3600;
+const CODE_ASSET_RE = /\.(css|js|mjs)$/i;
+const CODE_ASSET_TTL_SECONDS = 60;
 
 async function proxyToOrigin(request, targetUrl) {
   const headers = new Headers(request.headers);
   headers.set('host', ORIGIN_HOST);
 
-  const isStatic = STATIC_ASSET_RE.test(new URL(targetUrl).pathname);
+  const pathname = new URL(targetUrl).pathname;
+  const isStatic = STATIC_ASSET_RE.test(pathname);
+  const isCode = !isStatic && CODE_ASSET_RE.test(pathname);
+  const ttl = isStatic ? STATIC_ASSET_TTL_SECONDS : isCode ? CODE_ASSET_TTL_SECONDS : 0;
 
   const originResp = await fetch(targetUrl, {
     method: request.method,
     headers,
     body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
     redirect: 'manual',
-    cf: isStatic
-      ? { cacheTtl: STATIC_ASSET_TTL_SECONDS, cacheEverything: true }
-      : { cacheTtl: 0, cacheEverything: false },
+    cf: ttl > 0 ? { cacheTtl: ttl, cacheEverything: true } : { cacheTtl: 0, cacheEverything: false },
   });
 
   const respHeaders = new Headers(originResp.headers);
   respHeaders.set(
     'Cache-Control',
-    isStatic ? `public, max-age=${STATIC_ASSET_TTL_SECONDS}` : 'no-cache, must-revalidate'
+    ttl > 0 ? `public, max-age=${ttl}` : 'no-cache, must-revalidate'
   );
 
   return new Response(originResp.body, {
