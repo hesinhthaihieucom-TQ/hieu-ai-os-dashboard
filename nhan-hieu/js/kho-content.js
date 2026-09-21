@@ -682,7 +682,7 @@ function render(container, ctx){
     return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'content_bank_personal', items.map(b=>b.id)) + items.map(b=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
-        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}</h3></label>
+        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}${b.share_status==='approved'?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã lên Kho chung</span>`:b.share_status==='pending'?` <span style="color:var(--gold);font-size:12px;font-weight:600;vertical-align:middle;">Đang chờ duyệt lên Kho chung</span>`:''}</h3></label>
         ${contentBodyHtml('personal:'+b.id, b.content)}
         ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
         ${khoToiOptionsPanelHtml(b)}
@@ -723,13 +723,13 @@ function render(container, ctx){
         ${state.promoteErrorFor===b.id?`<div class="error-box">${esc(state.promoteError)}</div>`:''}
         ${writeActionHtml('personal:'+b.id)}
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--line);">
-          ${b.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
-            :b.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>'
-            // "bài trong kho của tôi cũng phải có nút bấm đóng góp vào kho viral chứ" (chị Quỳnh
-            // 2026-09-07) — trước đây CHỈ có 1 lần mời đóng góp NGAY LÚC THÊM mục mới (nếu tự đánh dấu
-            // "content viral tôi sưu tầm") — bấm "Không, giữ riêng" hoặc bỏ qua thì VĨNH VIỄN không còn
-            // cách nào đóng góp lại nữa. Giờ luôn có nút này cho MỌI mục chưa từng gửi (share_status
-            // rỗng), không cần đã đánh dấu viral từ đầu.
+          ${(b.share_status==='pending'||b.share_status==='approved')?'<span></span>'
+            // "bài nào ở kho của tôi đã đề xuất lên kho chung xong và được duyệt thì phải hiển thị là
+            // đã lên kho Content chung" (chị Quỳnh 2026-09-21) — trạng thái pending/approved giờ hiện
+            // NGAY cạnh tiêu đề (flat, không cần bấm Tuỳ chọn mới thấy — xem đoạn render <h3> ở trên),
+            // nên bỏ khỏi đây để khỏi lặp lại 2 lần. Nút "Đóng góp vào Kho Viral" (chị Quỳnh 2026-09-07)
+            // vẫn giữ nguyên ở đây cho mục CHƯA từng gửi (share_status rỗng) LẪN mục đã bị từ chối
+            // (rejected — cho phép gửi lại), không đổi hành vi cũ.
             :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${b.id}">Đóng góp vào Kho Viral</span>`}
           <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
         </div>
