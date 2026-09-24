@@ -276,7 +276,6 @@ function render(container, ctx){
           </div>
         `).join('')}
       ` : ''}
-      ${regimenHtml()}
       ${state.items.length>0 ? `
         <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Mốc theo ngày (đã hoàn thành ${doneCount}/${state.items.length})</h2></div>
         ${state.items.map(item=>{
