@@ -1,20 +1,20 @@
-// Quản Trị — Thư Viện + Gói & Lịch Trình + Thành Viên + Đơn Hàng + Báo Cáo Doanh Thu + Câu Chuyện
-// Thành Công. Route này chỉ hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js NAV, cờ
-// adminOnly) — nhưng RLS ở Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ rối giao
-// diện cho user thường.
-// 2026-09-20, chị Quỳnh: "mục sản phẩm trong quản trị bỏ đi... có mục sản phẩm trong taskbar là đc
-// rồi" — bỏ hẳn tab CRUD sản phẩm (renderSanPham vẫn còn trong file, chỉ không route tới nữa — chị
-// chấp nhận đánh đổi: từ nay sửa tên/giá/ảnh/công dụng sản phẩm phải nhờ sửa bằng SQL, không còn form
-// trên giao diện). "Sản Phẩm Unicity" khách hàng vẫn xem được bình thường ở sidebar chính (san-pham.js,
-// CHỈ XEM, không sửa được).
+// Quản Trị — Thư Viện + Sản Phẩm + Gói & Lịch Trình + Thành Viên + Đơn Hàng + Báo Cáo Doanh Thu + Câu
+// Chuyện Thành Công. Route này chỉ hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js
+// NAV, cờ adminOnly) — nhưng RLS ở Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ
+// rối giao diện cho user thường.
+// 2026-09-20, chị Quỳnh: "mục sản phẩm trong quản trị bỏ đi" — đã bỏ tab này, nhưng 2026-09-24 chị
+// phản hồi lại "sao bỏ cả tab sản phẩm ở mục kiểm tra sức khỏe luôn vậy" — hoá ra bỏ tab CRUD sản
+// phẩm làm mất luôn cách sửa/thêm sản phẩm cho CẢ APP (không phải chỉ ảnh hưởng riêng 1 chỗ), kể cả
+// sản phẩm đang gợi ý ở Kiểm Tra Sức Khỏe — không phải ý chị muốn khi đồng ý bỏ. Phục hồi lại tab này.
 (function(){
 function render(container, ctx){
   const hubState = { tab:'thuvien' };
   function drawHub(){
     container.innerHTML = `
-      <div class="page-head"><h1>Quản Trị</h1><p>Quản lý Thư Viện Sức Khỏe, Gói & Lịch Trình, thành viên, đơn hàng và báo cáo doanh thu.</p></div>
+      <div class="page-head"><h1>Quản Trị</h1><p>Quản lý Thư Viện Sức Khỏe, Sản Phẩm Unicity, Gói & Lịch Trình, thành viên, đơn hàng và báo cáo doanh thu.</p></div>
       <div class="chips" style="margin-bottom:18px;">
         <div class="chip ${hubState.tab==='thuvien'?'selected':''}" data-hub-tab="thuvien">Thư Viện</div>
+        <div class="chip ${hubState.tab==='sanpham'?'selected':''}" data-hub-tab="sanpham">Sản Phẩm</div>
         <div class="chip ${hubState.tab==='goi'?'selected':''}" data-hub-tab="goi">Gói & Lịch Trình</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành Viên</div>
         <div class="chip ${hubState.tab==='donhang'?'selected':''}" data-hub-tab="donhang">Đơn Hàng</div>
@@ -28,6 +28,7 @@ function render(container, ctx){
     });
     const sub = container.querySelector('#qt-hub-sub');
     if(hubState.tab === 'thuvien') renderThuVien(sub, ctx);
+    else if(hubState.tab === 'sanpham') renderSanPham(sub, ctx);
     else if(hubState.tab === 'goi') renderGoiLichTrinh(sub, ctx);
     else if(hubState.tab === 'donhang') renderDonHang(sub, ctx);
     else if(hubState.tab === 'baocao') renderThongKe(sub, ctx);
@@ -211,11 +212,11 @@ function renderSanPham(container, ctx){
     return list;
   }
 
-  function newForm(){ return { id:null, name:'', short_description:'', benefits:'', retail_price:'', cost_price:'', image_url:'', detail_sections:[], usageAudience:'', usageInstruction:'' }; }
+  function newForm(){ return { id:null, name:'', short_description:'', benefits:'', retail_price:'', cost_price:'', npp_price:'', image_url:'', detail_sections:[], usageAudience:'', usageInstruction:'' }; }
   function openNew(){ state.form = newForm(); draw(); }
   function openEdit(p){
     state.form = {
-      ...p, retail_price: p.retail_price ?? '', cost_price: p.cost_price ?? '',
+      ...p, retail_price: p.retail_price ?? '', cost_price: p.cost_price ?? '', npp_price: p.npp_price ?? '',
       usageAudience: findSectionBody(p.detail_sections, /đối tượng/i),
       usageInstruction: findSectionBody(p.detail_sections, /cách dùng/i),
     };
@@ -233,6 +234,7 @@ function renderSanPham(container, ctx){
       benefits: state.form.benefits.trim()||null,
       retail_price: state.form.retail_price===''? null : Number(state.form.retail_price),
       cost_price: state.form.cost_price===''? null : Number(state.form.cost_price),
+      npp_price: state.form.npp_price===''? null : Number(state.form.npp_price),
       image_url: state.form.image_url.trim()||null,
       detail_sections: sections,
     };
@@ -260,7 +262,8 @@ function renderSanPham(container, ctx){
           <div class="field" style="margin-top:12px;"><label>Mô tả ngắn</label><textarea id="sp-desc">${esc(state.form.short_description)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Công dụng</label><textarea id="sp-benefits">${esc(state.form.benefits)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Giá bán lẻ (đ)</label><input type="number" id="sp-price" value="${esc(state.form.retail_price)}"></div>
-          <div class="field" style="margin-top:12px;"><label>Giá vốn / giá sỉ (đ) — dùng để tính lãi lẻ ở Thống Kê</label><input type="number" id="sp-cost-price" value="${esc(state.form.cost_price)}" placeholder="Giá chị nhập/mua từ Unicity"></div>
+          <div class="field" style="margin-top:12px;"><label>Giá vốn / giá sỉ (đ) — dùng để tính lãi lẻ ở Báo Cáo Doanh Thu</label><input type="number" id="sp-cost-price" value="${esc(state.form.cost_price)}" placeholder="Giá chị nhập/mua từ Unicity"></div>
+          <div class="field" style="margin-top:12px;"><label>Giá NPP (đ) — hiện cho khách được bật "Giá NPP" ở Thành Viên</label><input type="number" id="sp-npp-price" value="${esc(state.form.npp_price)}" placeholder="Để trống nếu sản phẩm này chưa có giá NPP riêng"></div>
           <div class="field" style="margin-top:12px;"><label>Link ảnh (URL)</label><input type="text" id="sp-image" value="${esc(state.form.image_url)}" placeholder="https://..."></div>
           <div class="field" style="margin-top:12px;"><label>Đối tượng sử dụng</label><textarea id="sp-usage-audience" placeholder="VD: Người trưởng thành, không dùng cho phụ nữ mang thai...">${esc(state.form.usageAudience)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Cách dùng (Hướng dẫn sử dụng)</label><textarea id="sp-usage-instruction" placeholder="VD: Uống 1 viên/lần, 2 lần/ngày trước bữa ăn 30 phút...">${esc(state.form.usageInstruction)}</textarea></div>
@@ -296,6 +299,7 @@ function renderSanPham(container, ctx){
     const benefitsEl = container.querySelector('#sp-benefits'); if(benefitsEl) benefitsEl.oninput = (e)=>{ state.form.benefits = e.target.value; };
     const priceEl = container.querySelector('#sp-price'); if(priceEl) priceEl.oninput = (e)=>{ state.form.retail_price = e.target.value; };
     const costPriceEl = container.querySelector('#sp-cost-price'); if(costPriceEl) costPriceEl.oninput = (e)=>{ state.form.cost_price = e.target.value; };
+    const nppPriceEl = container.querySelector('#sp-npp-price'); if(nppPriceEl) nppPriceEl.oninput = (e)=>{ state.form.npp_price = e.target.value; };
     const imageEl = container.querySelector('#sp-image'); if(imageEl) imageEl.oninput = (e)=>{ state.form.image_url = e.target.value; };
     const usageAudienceEl = container.querySelector('#sp-usage-audience'); if(usageAudienceEl) usageAudienceEl.oninput = (e)=>{ state.form.usageAudience = e.target.value; };
     const usageInstructionEl = container.querySelector('#sp-usage-instruction'); if(usageInstructionEl) usageInstructionEl.oninput = (e)=>{ state.form.usageInstruction = e.target.value; };
@@ -1325,7 +1329,7 @@ function renderThongKe(container, ctx){
         </div>
       </div>
 
-      ${missingCost ? `<div class="hint-box" style="margin-bottom:16px;">⚠️ Một số sản phẩm trong các đơn chưa có "Giá vốn" — lãi lẻ ở đây CHƯA đầy đủ. Nhắn giá vốn từng sản phẩm để cập nhật (mục Sản Phẩm không còn form sửa trên giao diện).</div>` : ''}
+      ${missingCost ? `<div class="hint-box" style="margin-bottom:16px;">⚠️ Một số sản phẩm trong các đơn chưa có "Giá vốn" — lãi lẻ ở đây CHƯA đầy đủ. Vào Quản Trị &gt; Sản Phẩm nhập giá vốn cho từng sản phẩm để lãi lẻ tính đúng.</div>` : ''}
       ${pendingCount>0 ? `<div class="hint-box" style="margin-bottom:16px;">📋 Còn ${pendingCount} đơn đang chờ xác nhận, tổng giá trị ${pendingTotal.toLocaleString('vi-VN')}đ — chưa tính vào thống kê bên trên.</div>` : ''}
 
       ${months.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào đã xác nhận/đã giao.</div>` : `
