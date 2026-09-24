@@ -18,7 +18,7 @@ const SK_PRODUCT_CATEGORIES = [
 // chiều "đã bỏ") — đúng quy ước chung đã chốt cho mọi trang có gợi ý/danh sách sản phẩm.
 (function(){
 function render(container, ctx){
-  const state = { loading:true, products:[], tab:'all', deselected:new Set(), quantities:{} };
+  const state = { loading:true, products:[], productsError:'', tab:'all', deselected:new Set(), quantities:{} };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -27,7 +27,12 @@ function render(container, ctx){
     // dùng select('*') ở đây nữa vì trang này khách hàng thường xem được (RLS sk_products mở công
     // khai), select('*') sẽ vô tình trả luôn giá vốn cho phía client dù không hiện ra màn hình, khách
     // rành kỹ thuật vẫn xem được qua tab Network của trình duyệt.
-    const { data } = await ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,npp_price,pv,short_description,image_url,detail_sections,benefits').order('name', { ascending:true });
+    const { data, error } = await ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,npp_price,pv,short_description,image_url,detail_sections,benefits').order('name', { ascending:true });
+    // 2026-09-24, chị Quỳnh báo mục sản phẩm gợi ý ở Kiểm Tra Sức Khỏe biến mất — nguyên nhân là
+    // sk_products_public lỗi ÂM THẦM (chưa chạy schema_suc_khoe.sql mới nhất tạo view này) nên danh
+    // sách sản phẩm luôn rỗng, không có gì hiện ra mà cũng không báo lỗi gì. Lưu lại lỗi để báo rõ ở
+    // trang này luôn, phòng khi cùng nguyên nhân.
+    state.productsError = error ? error.message : '';
     // 2026-09-19, chị Quỳnh: "có khách e muốn để cho giá NPP vì đã dùng lâu" — swap ngay lúc load(),
     // xem skApplyNppPricing (util.js).
     state.products = skApplyNppPricing(data || [], ctx.profile);
@@ -68,7 +73,8 @@ function render(container, ctx){
         ${SK_PRODUCT_CATEGORIES.map(c=>`<div class="chip ${state.tab===c.key?'selected':''}" data-tab="${c.key}">${esc(c.label)}</div>`).join('')}
       </div>
 
-      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">${state.products.length===0 ? 'Chưa có sản phẩm nào — chị Quỳnh sẽ thêm sớm.' : 'Chưa có sản phẩm nào ở nhánh này.'}</div>` : ''}
+      ${state.productsError ? `<div class="error-box" style="margin-bottom:16px;">Không tải được danh sách sản phẩm: ${esc(state.productsError)} — cần chạy lại file schema_suc_khoe.sql mới nhất.</div>` : ''}
+      ${list.length===0 && !state.productsError ? `<div style="color:var(--ink-soft);font-size:14px;">${state.products.length===0 ? 'Chưa có sản phẩm nào — chị Quỳnh sẽ thêm sớm.' : 'Chưa có sản phẩm nào ở nhánh này.'}</div>` : ''}
       ${list.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
 
       ${state.products.length>0 ? `

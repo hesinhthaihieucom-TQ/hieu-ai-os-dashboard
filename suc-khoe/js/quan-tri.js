@@ -1,20 +1,21 @@
-// Quản Trị — Thư Viện + Sản Phẩm + Gói & Lịch Trình + Thành Viên + Đơn Hàng + Báo Cáo Doanh Thu + Câu
-// Chuyện Thành Công. Route này chỉ hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js
-// NAV, cờ adminOnly) — nhưng RLS ở Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ
-// rối giao diện cho user thường.
-// 2026-09-20, chị Quỳnh: "mục sản phẩm trong quản trị bỏ đi" — đã bỏ tab này, nhưng 2026-09-24 chị
-// phản hồi lại "sao bỏ cả tab sản phẩm ở mục kiểm tra sức khỏe luôn vậy" — hoá ra bỏ tab CRUD sản
-// phẩm làm mất luôn cách sửa/thêm sản phẩm cho CẢ APP (không phải chỉ ảnh hưởng riêng 1 chỗ), kể cả
-// sản phẩm đang gợi ý ở Kiểm Tra Sức Khỏe — không phải ý chị muốn khi đồng ý bỏ. Phục hồi lại tab này.
+// Quản Trị — Thư Viện + Gói & Lịch Trình + Thành Viên + Đơn Hàng + Báo Cáo Doanh Thu + Câu Chuyện
+// Thành Công. Route này chỉ hiện trong sidebar khi profiles.role==='admin' (xem app-shell.js NAV, cờ
+// adminOnly) — nhưng RLS ở Supabase (is_admin()) mới là chốt chặn thật, ẩn sidebar chỉ để đỡ rối giao
+// diện cho user thường.
+// 2026-09-20, chị Quỳnh: "mục sản phẩm trong quản trị bỏ đi" — bỏ tab CRUD sản phẩm (renderSanPham
+// vẫn còn trong file, chỉ không route tới nữa). 2026-09-24: chị tưởng nhầm việc này ảnh hưởng tới
+// Kiểm Tra Sức Khỏe nên bảo phục hồi lại, sau khi em giải thích rõ (bỏ tab này chỉ mất chỗ SỬA sản
+// phẩm trên giao diện — không đụng gì tới trang Kiểm Tra Sức Khỏe) chị xác nhận CHỐT LẠI Ý BAN ĐẦU:
+// vẫn bỏ tab này — sửa tên/giá/ảnh/công dụng/giá vốn/giá NPP sản phẩm từ nay nhờ sửa bằng SQL. Trang
+// "Sản Phẩm Unicity" khách hàng (sidebar chính) không đổi, vẫn xem được bình thường.
 (function(){
 function render(container, ctx){
   const hubState = { tab:'thuvien' };
   function drawHub(){
     container.innerHTML = `
-      <div class="page-head"><h1>Quản Trị</h1><p>Quản lý Thư Viện Sức Khỏe, Sản Phẩm Unicity, Gói & Lịch Trình, thành viên, đơn hàng và báo cáo doanh thu.</p></div>
+      <div class="page-head"><h1>Quản Trị</h1><p>Quản lý Thư Viện Sức Khỏe, Gói & Lịch Trình, thành viên, đơn hàng và báo cáo doanh thu.</p></div>
       <div class="chips" style="margin-bottom:18px;">
         <div class="chip ${hubState.tab==='thuvien'?'selected':''}" data-hub-tab="thuvien">Thư Viện</div>
-        <div class="chip ${hubState.tab==='sanpham'?'selected':''}" data-hub-tab="sanpham">Sản Phẩm</div>
         <div class="chip ${hubState.tab==='goi'?'selected':''}" data-hub-tab="goi">Gói & Lịch Trình</div>
         <div class="chip ${hubState.tab==='thanhvien'?'selected':''}" data-hub-tab="thanhvien">Thành Viên</div>
         <div class="chip ${hubState.tab==='donhang'?'selected':''}" data-hub-tab="donhang">Đơn Hàng</div>
@@ -28,7 +29,6 @@ function render(container, ctx){
     });
     const sub = container.querySelector('#qt-hub-sub');
     if(hubState.tab === 'thuvien') renderThuVien(sub, ctx);
-    else if(hubState.tab === 'sanpham') renderSanPham(sub, ctx);
     else if(hubState.tab === 'goi') renderGoiLichTrinh(sub, ctx);
     else if(hubState.tab === 'donhang') renderDonHang(sub, ctx);
     else if(hubState.tab === 'baocao') renderThongKe(sub, ctx);

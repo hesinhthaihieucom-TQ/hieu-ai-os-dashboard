@@ -52,7 +52,7 @@ function render(container, ctx){
   // renderGuestCheckScreen). isGuest quyết định lưu vào Supabase (đã đăng nhập) hay localStorage tạm
   // (chưa đăng nhập, xem util.js saveGuestCheckinDraft) — không mất công khách tick lại khi đăng ký.
   const isGuest = !ctx.user;
-  const state = { loading:true, tab:'check', insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], deselected:new Set(), quantities:{}, history:[], savingHistory:false };
+  const state = { loading:true, tab:'check', insulin:[], toxin:[], metabolic:[], libraryEntries:[], products:[], productsError:'', deselected:new Set(), quantities:{}, history:[], savingHistory:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -60,10 +60,15 @@ function render(container, ctx){
     if(isGuest){
       // Không có user_id nên bỏ qua 2 bảng riêng-theo-khách (sk_health_checkins/history) — chỉ tải
       // catalog dùng chung (đã mở đọc công khai, xem schema_suc_khoe.sql) + khôi phục nháp đã tick.
-      const [{ data: entries }, { data: products }] = await Promise.all([
+      const [{ data: entries }, { data: products, error: productsErr }] = await Promise.all([
         ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
         ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,npp_price,pv,short_description,image_url,detail_sections,benefits'),
       ]);
+      // 2026-09-24, chị Quỳnh báo "mục sản phẩm gợi ý ko còn ở tại mục kiểm tra sức khỏe nữa" — nguyên
+      // nhân thật: query sk_products_public LỖI ÂM THẦM (chưa chạy schema_suc_khoe.sql mới nhất tạo
+      // view này) nên products luôn rỗng, "Sản phẩm Unicity phù hợp với bạn" không có gì để hiện — mất
+      // hẳn cả mục chứ không phải bị ẩn. Lưu lại lỗi để báo rõ thay vì im lặng mất mục như trước.
+      state.productsError = productsErr ? productsErr.message : '';
       state.products = skApplyNppPricing(products || [], ctx.profile);
       state.libraryEntries = entries || [];
       const draft = loadGuestCheckinDraft();
@@ -76,12 +81,13 @@ function render(container, ctx){
       draw();
       return;
     }
-    const [{ data: row }, { data: entries }, { data: products }, { data: history }] = await Promise.all([
+    const [{ data: row }, { data: entries }, { data: products, error: productsErr }, { data: history }] = await Promise.all([
       ctx.supabase.from('sk_health_checkins').select('*').eq('user_id', ctx.user.id).maybeSingle(),
       ctx.supabase.from('sk_library_entries').select('id,issue_name,causes,symptoms,remedies,related_product_ids,product_notes').order('issue_name', { ascending:true }),
       ctx.supabase.from('sk_products_public').select('id,name,category,retail_price,npp_price,pv,short_description,image_url,detail_sections,benefits'),
       ctx.supabase.from('sk_health_checkin_history').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(20),
     ]);
+    state.productsError = productsErr ? productsErr.message : '';
     state.products = skApplyNppPricing(products || [], ctx.profile);
     if(row){
       state.insulin = row.survey_insulin || [];
@@ -317,6 +323,8 @@ function render(container, ctx){
           </details>
         `).join('')}
       ` : ''}
+
+      ${state.productsError ? `<div class="error-box" style="margin-top:20px;">Không tải được danh sách sản phẩm gợi ý: ${esc(state.productsError)} — cần chạy lại file schema_suc_khoe.sql mới nhất.</div>` : ''}
 
       ${productMatches.length>0 ? `
         <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Sản phẩm Unicity phù hợp với bạn</h2></div>
