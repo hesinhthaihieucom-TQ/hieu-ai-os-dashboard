@@ -316,15 +316,31 @@ function renderSanPham(container, ctx){
 }
 
 // ===== Tab "Gói & Lịch Trình" — CRUD sk_packages + sk_package_schedule_items =====
+// 2026-09-25, chị Quỳnh vào tab này hỏi "ở cái mục lịch trình này sao ko hiện lịch để mình chỉnh
+// sửa" — đúng là trước đây tab NÀY chỉ CRUD được sk_package_schedule_items ("Mốc theo ngày", mục PHỤ,
+// gần như trống ở mọi gói), còn nội dung lịch trình THẬT khách thấy mỗi ngày (sk_packages.
+// regimen_sections — Sáng/Trưa/Tối dùng sản phẩm gì, hướng dẫn ra sao) trước giờ CHỈ sửa được qua
+// việc chị gửi nội dung, em viết file SQL, chị chạy tay ở Supabase — không có chỗ nào trong app tự
+// sửa trực tiếp được. Sau khi chị nói "từ giờ phải làm các lịch trình cho nó chuẩn vì cái đó quan
+// trọng nhất", thêm hẳn 1 khối sửa trực tiếp regimen_sections ở đây (regimenEditorHtml) — sửa xong
+// bấm Lưu là khách thấy ngay, không cần qua SQL nữa. Giữ NGUYÊN cấu trúc dữ liệu gốc (mảng "khung giờ"
+// tự do, mỗi khung có time_label + note + danh sách sản phẩm) thay vì ép cứng về đúng 3 khung Sáng/
+// Trưa/Tối, vì dữ liệu thật đang có nhiều khung nhỏ hơn (VD "Giữa buổi sáng" tách riêng "Buổi sáng
+// ngay sau khi ngủ dậy") — ép về 3 khung sẽ làm mất chi tiết đang có.
 function renderGoiLichTrinh(container, ctx){
-  const state = { packages:[], selectedPackageId:null, items:[], newPackageName:'', newPackageDesc:'', savingPackage:false, itemForm:null, savingItem:false };
+  const state = { packages:[], allProducts:[], selectedPackageId:null, items:[], newPackageName:'', newPackageDesc:'', savingPackage:false, itemForm:null, savingItem:false, regimenForm:null, regimenSaving:false };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
   async function loadPackages(){
-    const { data } = await ctx.supabase.from('sk_packages').select('*').order('created_at', { ascending:false });
+    const [{ data }, { data: products }] = await Promise.all([
+      ctx.supabase.from('sk_packages').select('*').order('created_at', { ascending:false }),
+      ctx.supabase.from('sk_products').select('id,name').order('name', { ascending:true }),
+    ]);
     state.packages = data || [];
+    state.allProducts = products || [];
     if(!state.selectedPackageId && state.packages.length>0) state.selectedPackageId = state.packages[0].id;
+    loadRegimenForm();
     draw();
     if(state.selectedPackageId) await loadItems();
   }
@@ -333,6 +349,75 @@ function renderGoiLichTrinh(container, ctx){
     const { data } = await ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', state.selectedPackageId).order('day_offset', { ascending:true });
     state.items = data || [];
     draw();
+  }
+
+  // Deep clone để sửa nháp không đụng vào state.packages gốc — chỉ ghi thật khi bấm Lưu.
+  function loadRegimenForm(){
+    const pkg = state.packages.find(p=>p.id===state.selectedPackageId);
+    state.regimenForm = pkg ? JSON.parse(JSON.stringify(pkg.regimen_sections || [])) : null;
+  }
+
+  function addRegimenSection(){
+    state.regimenForm.push({ time_label:'', note:'', steps:[] });
+    draw();
+  }
+  function removeRegimenSection(idx){
+    state.regimenForm.splice(idx, 1);
+    draw();
+  }
+  function addRegimenStep(secIdx){
+    state.regimenForm[secIdx].steps.push({ product_name:'', instruction:'', priority:false });
+    draw();
+  }
+  function removeRegimenStep(secIdx, stepIdx){
+    state.regimenForm[secIdx].steps.splice(stepIdx, 1);
+    draw();
+  }
+
+  async function saveRegimen(){
+    state.regimenSaving = true; draw();
+    const { error } = await ctx.supabase.from('sk_packages').update({ regimen_sections: state.regimenForm }).eq('id', state.selectedPackageId);
+    state.regimenSaving = false;
+    if(error){ alert('Không lưu được lịch trình: ' + error.message); draw(); return; }
+    const pkg = state.packages.find(p=>p.id===state.selectedPackageId);
+    if(pkg) pkg.regimen_sections = JSON.parse(JSON.stringify(state.regimenForm));
+    draw();
+  }
+
+  function regimenEditorHtml(){
+    if(!state.regimenForm) return '';
+    return `
+      <div class="card" style="margin-bottom:20px;">
+        <div style="font-weight:700;font-size:16px;margin-bottom:4px;">📅 Lịch trình hằng ngày — nội dung khách thấy mỗi ngày</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Đây là lịch trình THẬT khách thấy ở "Lịch Trình Của Bạn" (khác với "Mốc theo ngày" ở dưới, mục phụ ít dùng). Tên khung giờ nên chứa đúng chữ "sáng"/"trưa"/"tối" để tự xếp đúng chỗ — khung nào không chứa chữ nào trong 3 chữ đó sẽ rơi vào mục "Khác trong ngày".</div>
+        ${state.regimenForm.map((sec, secIdx)=>`
+          <div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+              <input type="text" data-regimen-label="${secIdx}" value="${esc(sec.time_label||'')}" placeholder="VD: Buổi sáng ngay sau khi ngủ dậy" style="flex:1;margin:0;">
+              <span data-regimen-remove-section="${secIdx}" style="color:var(--danger);cursor:pointer;font-size:14.5px;flex-shrink:0;">✕ Xoá khung</span>
+            </div>
+            <textarea data-regimen-note="${secIdx}" placeholder="Ghi chú thêm cho khung này (không bắt buộc)" style="min-height:40px;margin-bottom:8px;">${esc(sec.note||'')}</textarea>
+            ${(sec.steps||[]).map((step, stepIdx)=>`
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
+                <select data-regimen-product="${secIdx}|${stepIdx}" style="width:auto;min-width:140px;margin:0;">
+                  <option value="">— Chọn sản phẩm —</option>
+                  ${state.allProducts.map(prod=>`<option value="${esc(prod.name)}" ${step.product_name===prod.name?'selected':''}>${esc(prod.name)}</option>`).join('')}
+                </select>
+                <input type="text" data-regimen-instruction="${secIdx}|${stepIdx}" value="${esc(step.instruction||'')}" placeholder="Hướng dẫn dùng, VD: Pha 1 gói với 250ml nước..." style="flex:1;min-width:220px;margin:0;">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12.5px;white-space:nowrap;margin:0;"><input type="checkbox" data-regimen-priority="${secIdx}|${stepIdx}" ${step.priority?'checked':''} style="width:auto;margin:0;">Ưu tiên</label>
+                <span data-regimen-remove-step="${secIdx}|${stepIdx}" style="color:var(--danger);cursor:pointer;font-size:14.5px;">✕</span>
+              </div>
+            `).join('')}
+            <span class="btn-ghost btn btn-sm" data-regimen-add-step="${secIdx}">+ Thêm sản phẩm vào khung này</span>
+          </div>
+        `).join('')}
+        ${state.regimenForm.length===0 ? `<div style="color:var(--ink-soft);font-size:14.5px;margin-bottom:12px;">Gói này chưa có lịch trình hằng ngày nào.</div>` : ''}
+        <div class="btn-row" style="justify-content:flex-start;">
+          <span class="btn-ghost btn btn-sm" id="gt-regimen-add-section">+ Thêm khung giờ mới</span>
+          <button class="btn btn-sm" id="gt-regimen-save" ${state.regimenSaving?'disabled':''}>${state.regimenSaving?'Đang lưu…':'Lưu lịch trình'}</button>
+        </div>
+      </div>
+    `;
   }
 
   async function addPackage(){
@@ -400,6 +485,10 @@ function renderGoiLichTrinh(container, ctx){
           <span class="btn-ghost btn btn-sm" style="color:var(--danger);margin-top:8px;display:inline-block;" data-remove-package="${state.selectedPackageId}">Xoá gói này</span>
         </div>
 
+        ${regimenEditorHtml()}
+
+        <div class="page-head" style="margin-bottom:10px;"><h2 style="font-size:16px;">Mốc theo ngày của gói (mục phụ, không bắt buộc)</h2></div>
+
         ${state.itemForm ? `
           <div class="card" style="margin-bottom:16px;">
             <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);">Ngày thứ (tính từ lúc bắt đầu gói)</label>
@@ -439,7 +528,46 @@ function renderGoiLichTrinh(container, ctx){
     const descEl = container.querySelector('#gt-new-desc'); if(descEl) descEl.oninput = (e)=>{ state.newPackageDesc = e.target.value; };
     const addBtn = container.querySelector('#gt-add-package'); if(addBtn) addBtn.onclick = addPackage;
     container.querySelectorAll('[data-select-package]').forEach(el=>{
-      el.onclick = ()=>{ state.selectedPackageId = el.getAttribute('data-select-package'); state.itemForm = null; draw(); loadItems(); };
+      el.onclick = ()=>{ state.selectedPackageId = el.getAttribute('data-select-package'); state.itemForm = null; loadRegimenForm(); draw(); loadItems(); };
+    });
+
+    const addSectionBtn = container.querySelector('#gt-regimen-add-section'); if(addSectionBtn) addSectionBtn.onclick = addRegimenSection;
+    const saveRegimenBtn = container.querySelector('#gt-regimen-save'); if(saveRegimenBtn) saveRegimenBtn.onclick = saveRegimen;
+    container.querySelectorAll('[data-regimen-label]').forEach(el=>{
+      el.oninput = (e)=>{ state.regimenForm[Number(el.getAttribute('data-regimen-label'))].time_label = e.target.value; };
+    });
+    container.querySelectorAll('[data-regimen-note]').forEach(el=>{
+      el.oninput = (e)=>{ state.regimenForm[Number(el.getAttribute('data-regimen-note'))].note = e.target.value; };
+    });
+    container.querySelectorAll('[data-regimen-remove-section]').forEach(el=>{
+      el.onclick = ()=>removeRegimenSection(Number(el.getAttribute('data-regimen-remove-section')));
+    });
+    container.querySelectorAll('[data-regimen-add-step]').forEach(el=>{
+      el.onclick = ()=>addRegimenStep(Number(el.getAttribute('data-regimen-add-step')));
+    });
+    container.querySelectorAll('[data-regimen-product]').forEach(el=>{
+      el.onchange = (e)=>{
+        const [secIdx, stepIdx] = el.getAttribute('data-regimen-product').split('|').map(Number);
+        state.regimenForm[secIdx].steps[stepIdx].product_name = e.target.value;
+      };
+    });
+    container.querySelectorAll('[data-regimen-instruction]').forEach(el=>{
+      el.oninput = (e)=>{
+        const [secIdx, stepIdx] = el.getAttribute('data-regimen-instruction').split('|').map(Number);
+        state.regimenForm[secIdx].steps[stepIdx].instruction = e.target.value;
+      };
+    });
+    container.querySelectorAll('[data-regimen-priority]').forEach(el=>{
+      el.onchange = (e)=>{
+        const [secIdx, stepIdx] = el.getAttribute('data-regimen-priority').split('|').map(Number);
+        state.regimenForm[secIdx].steps[stepIdx].priority = e.target.checked;
+      };
+    });
+    container.querySelectorAll('[data-regimen-remove-step]').forEach(el=>{
+      el.onclick = ()=>{
+        const [secIdx, stepIdx] = el.getAttribute('data-regimen-remove-step').split('|').map(Number);
+        removeRegimenStep(secIdx, stepIdx);
+      };
     });
     const removePkgBtn = container.querySelector('[data-remove-package]');
     if(removePkgBtn) removePkgBtn.onclick = ()=>removePackage(removePkgBtn.getAttribute('data-remove-package'));
