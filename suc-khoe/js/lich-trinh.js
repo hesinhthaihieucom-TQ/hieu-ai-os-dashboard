@@ -147,8 +147,11 @@ function render(container, ctx){
     // safe_instruction/state.healthLevel vẫn giữ nguyên trong DB/code (không xoá dữ liệu), chỉ không
     // dùng để đổi hiển thị ở đây nữa — dễ bật lại nếu sau này chị đổi ý.
     const shownInstruction = step.instruction;
+    // 2026-09-25: bỏ margin âm bào ra mép thẻ (từng cần khi step nằm trực tiếp trong .card) — giờ mỗi
+    // nhóm step nằm trong 1 khối nền trắng RIÊNG (xem slot() ở dailyScheduleHtml), padding/viền tự lo
+    // trong khối đó nên step chỉ cần đệm ngang bình thường + gạch dưới ngăn cách các sản phẩm.
     return `
-      <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;margin:0 -14px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;border-radius:8px;':''}">
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;':''}">
         ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
         <div style="flex:1;min-width:0;">
           ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;">${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</div>` : ''}
@@ -213,39 +216,56 @@ function render(container, ctx){
     const overrideProductsFor = (key) => override && override[key] && Array.isArray(override[key].products) ? override[key].products : null;
     const anyPriority = ['sang','trua','toi'].some(k=>(overrideProductsFor(k)||[]).some(p=>p.priority))
       || state.regimenSections.some(sec=>(sec.steps||[]).some(st=>st.priority));
+    // 2026-09-25, chị Quỳnh gửi ảnh: "làm thế nào để các mục sáng trưa tối trông nó phải dễ nhìn...
+    // ko bị lẫn lộn" — trước đây 3 khung chỉ cách nhau 1 gạch mờ, chữ "Uống/Ăn" và các dòng sản phẩm
+    // xếp liền không phân biệt được đâu là lời khuyên chung, đâu là sản phẩm cụ thể. Giờ mỗi khung
+    // Sáng/Trưa/Tối là 1 khối MÀU RIÊNG (viền trái + nền nhạt theo đúng "vibe" thời điểm — vàng ấm
+    // buổi sáng, cam nắng trưa, tím đêm), và sản phẩm cụ thể được tách vào 1 khối nền trắng RIÊNG bên
+    // trong (có tiêu đề "🍽️ Sản phẩm dùng lúc này") thay vì trộn chung với dòng Uống/Ăn.
+    const SK_TIMESLOT_STYLE = {
+      sang: { color:'#c07a1f', bg:'#fff8ec', bd:'#f2dfb0' },
+      trua: { color:'#e8643c', bg:'#fff4ee', bd:'#f3c9b0' },
+      toi:  { color:'#5b5fc4', bg:'#f2f1fb', bd:'#cfceef' },
+    };
     const slot = (label, icon, key, data, secs) => {
       const overrideProducts = overrideProductsFor(key);
+      const steps = overrideProducts && overrideProducts.length>0 ? overrideProducts.map(regimenStepHtml).join('') : regimenSectionsHtml(secs);
+      const hasSteps = (overrideProducts && overrideProducts.length>0) || secs.some(sec=>(sec.steps||[]).length>0 || sec.note);
+      const st = SK_TIMESLOT_STYLE[key];
       return `
-      <div style="padding:10px 0;border-bottom:1px solid var(--line);">
-        <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${icon} ${esc(label)}</div>
+      <div style="border-left:4px solid ${st.color};background:${st.bg};border:1px solid ${st.bd};border-left-width:4px;border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div style="font-weight:700;font-size:14.5px;color:${st.color};margin-bottom:8px;">${icon} ${esc(label)}</div>
         ${data ? `
-          <div style="font-size:13px;line-height:1.7;"><b>Uống:</b> ${esc(data.uong)}</div>
-          <div style="font-size:13px;line-height:1.7;"><b>Ăn:</b> ${esc(data.an)}</div>
+          <div style="font-size:13.5px;line-height:1.8;"><b>Uống:</b> ${esc(data.uong)}</div>
+          <div style="font-size:13.5px;line-height:1.8;"><b>Ăn:</b> ${esc(data.an)}</div>
         ` : ''}
-        ${overrideProducts && overrideProducts.length>0 ? overrideProducts.map(regimenStepHtml).join('') : regimenSectionsHtml(secs)}
+        ${hasSteps ? `
+          <div style="font-size:11.5px;font-weight:700;color:${st.color};text-transform:uppercase;letter-spacing:.04em;margin:${data?'12px':'0'} 0 6px;">🍽️ Sản phẩm dùng lúc này</div>
+          <div style="background:#fff;border-radius:8px;overflow:hidden;">${steps}</div>
+        ` : ''}
       </div>
     `;};
     return `
       <div class="card" style="margin-bottom:18px;">
         ${skSectionHeaderHtml(headerLabel, color, '📅')}
-        <div class="hint-box" style="margin-bottom:6px;">${esc(subtitle)}</div>
+        <div class="hint-box" style="margin-bottom:14px;">${esc(subtitle)}</div>
         ${slot('Sáng', '🌅', 'sang', s && s.sang, buckets.sang)}
         ${slot('Trưa', '☀️', 'trua', s && s.trua, buckets.trua)}
         ${slot('Tối', '🌙', 'toi', s && s.toi, buckets.toi)}
         ${buckets.khac.length>0 ? `
-          <div style="padding:10px 0;border-bottom:1px solid var(--line);">
-            <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">⏰ Khác trong ngày</div>
-            ${regimenSectionsHtml(buckets.khac)}
+          <div style="border-left:4px solid var(--ink-soft);background:var(--surface-soft,#f5f5f5);border-radius:10px;padding:14px;margin-bottom:14px;">
+            <div style="font-weight:700;font-size:14.5px;margin-bottom:8px;">⏰ Khác trong ngày</div>
+            <div style="background:#fff;border-radius:8px;overflow:hidden;">${regimenSectionsHtml(buckets.khac)}</div>
           </div>
         ` : ''}
         ${s ? `
-          <div style="padding-top:10px;">
-            <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">🏃 Tập luyện</div>
-            <div style="font-size:13px;line-height:1.7;"><b>Giờ tập:</b> ${esc(s.tap.gio)}</div>
-            <div style="font-size:13px;line-height:1.7;"><b>Bài tập:</b> ${esc(s.tap.bai)}</div>
+          <div style="border-left:4px solid #1f9d63;background:#eef6f0;border-radius:10px;padding:14px;">
+            <div style="font-weight:700;font-size:14.5px;color:#1f9d63;margin-bottom:8px;">🏃 Tập luyện</div>
+            <div style="font-size:13.5px;line-height:1.8;"><b>Giờ tập:</b> ${esc(s.tap.gio)}</div>
+            <div style="font-size:13.5px;line-height:1.8;"><b>Bài tập:</b> ${esc(s.tap.bai)}</div>
           </div>
         ` : ''}
-        ${anyPriority ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">⭐ = sản phẩm nên ưu tiên mua trước nếu chưa mua trọn bộ.</div>` : ''}
+        ${anyPriority ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:10px;">⭐ = sản phẩm nên ưu tiên mua trước nếu chưa mua trọn bộ.</div>` : ''}
       </div>
     `;
   }
