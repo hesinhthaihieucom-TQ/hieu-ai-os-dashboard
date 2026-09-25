@@ -16,7 +16,7 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .loading{ text-align:center; padding:60px 0; color:var(--ink-soft); }
 .card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:26px 24px; box-shadow:0 1px 2px rgba(30,36,32,.03); }
 .cover{ width:100%; border-radius:12px; margin-bottom:18px; display:block; object-fit:cover; max-height:280px; }
-.desc{ color:var(--ink-soft); font-size:14.5px; white-space:pre-line; margin:0 0 16px; }
+.desc{ color:var(--ink-soft); font-size:16px; white-space:pre-line; margin:0 0 16px; }
 .price{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; color:var(--accent); margin-bottom:20px; }
 /* LƯU Ý: selector trước đây là ".buy-area input[type=\"email\"]" nhưng KHÔNG CÓ phần tử nào mang
    class "buy-area" cả (wrapper thật là #buy-area-anchor, xem renderProduct() ở script.js) — rule cũ
@@ -24,30 +24,30 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
    đúng selector + áp cho CẢ 3 ô (họ tên/SĐT/email, thêm 2026-09-05) thay vì chỉ email. */
 #buy-area-anchor input{
   width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px;
-  font-size:14.5px; font-family:'Be Vietnam Pro',sans-serif; background:#FDFCF8; color:var(--ink);
+  font-size:16px; font-family:'Be Vietnam Pro',sans-serif; background:#FDFCF8; color:var(--ink);
   margin-bottom:12px;
 }
 #buy-area-anchor input:focus{ outline:none; border-color:var(--accent); }
 .btn{
   display:inline-block; width:100%; text-align:center; appearance:none; border:none; cursor:pointer;
-  font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:15px; padding:14px 26px;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:16.5px; padding:14px 26px;
   border-radius:999px; background:var(--accent); color:#fff; text-decoration:none;
   transition:opacity .12s ease;
 }
 .btn:disabled{ background:var(--line); color:var(--ink-soft); cursor:not-allowed; }
 .qr-wrap{ text-align:center; margin-bottom:16px; }
 .qr-wrap img{ max-width:240px; width:100%; border-radius:12px; border:1px solid var(--line); }
-.pay-info{ font-size:13.5px; line-height:1.8; margin-bottom:14px; }
+.pay-info{ font-size:15px; line-height:1.8; margin-bottom:14px; }
 .mono{ font-family:'IBM Plex Mono',monospace; background:var(--accent-soft); padding:2px 8px; border-radius:6px; }
-.hint-box{ background:var(--accent-soft); border:1px solid var(--line); color:var(--accent); padding:14px 16px; border-radius:10px; font-size:13.5px; line-height:1.6; margin-bottom:14px; }
-.error-box{ background:#FBEAE5; border:1px solid var(--danger); color:var(--danger); padding:14px 16px; border-radius:10px; font-size:13.5px; line-height:1.6; margin-bottom:14px; }
-.poll-status{ text-align:center; font-size:12.5px; color:var(--ink-soft); }
+.hint-box{ background:var(--accent-soft); border:1px solid var(--line); color:var(--accent); padding:14px 16px; border-radius:10px; font-size:15px; line-height:1.6; margin-bottom:14px; }
+.error-box{ background:#FBEAE5; border:1px solid var(--danger); color:var(--danger); padding:14px 16px; border-radius:10px; font-size:15px; line-height:1.6; margin-bottom:14px; }
+.poll-status{ text-align:center; font-size:14px; color:var(--ink-soft); }
 
 /* Thanh mua dính đáy khi cuộn (2026-09-03) — sibling của .wrap, không phải con, nên tự mang
    [data-lp-template] riêng để đổi màu đúng theo mẫu đang chọn. */
 .sticky-buy-bar{ position:fixed; left:0; right:0; bottom:0; z-index:50; background:var(--panel); border-top:1px solid var(--line); box-shadow:0 -2px 10px rgba(30,36,32,.08); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
 .sticky-buy-bar[hidden]{ display:none; }
-.sticky-buy-price{ font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--accent); font-size:15px; white-space:nowrap; }
+.sticky-buy-price{ font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--accent); font-size:16.5px; white-space:nowrap; }
 .sticky-buy-bar .btn{ width:auto; padding:11px 22px; white-space:nowrap; }
 .sticky-buy-bar[data-lp-template="video"]{ background:#12121C; border-top-color:#2A2A3A; }
 .sticky-buy-bar[data-lp-template="video"] .sticky-buy-price{ color:#EC1E79; }
@@ -63,28 +63,28 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
    nền tối, không lặp lại lỗi kế thừa đã gặp trước đây. */
 .lp-hero-identity{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
 .lp-hero-avatar{ width:44px; height:44px; border-radius:999px; object-fit:cover; flex:0 0 auto; border:1px solid var(--line); }
-.lp-hero-identity-name{ font-weight:700; font-size:14.5px; }
+.lp-hero-identity-name{ font-weight:700; font-size:16px; }
 
 /* Landing page đầy đủ (AI viết, san-pham-so/js/tao-landing-page.js) — chỉ hiện khi có landing_page_content. */
-.lp-hook{ font-family:'Playfair Display',serif; font-size:19px; font-weight:700; color:var(--accent); margin-bottom:6px; line-height:1.35; }
+.lp-hook{ font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--accent); margin-bottom:6px; line-height:1.35; }
 .lp-section{ margin:22px 0; padding-top:18px; border-top:1px solid var(--line); }
-.lp-h2{ font-family:'Playfair Display',serif; font-size:18px; margin:0 0 10px; }
-.lp-body{ color:var(--ink-soft); font-size:14.5px; line-height:1.7; white-space:pre-line; margin:0; }
-.lp-list{ margin:0; padding-left:20px; color:var(--ink-soft); font-size:14.5px; line-height:1.8; }
+.lp-h2{ font-family:'Playfair Display',serif; font-size:19px; margin:0 0 10px; }
+.lp-body{ color:var(--ink-soft); font-size:16px; line-height:1.7; white-space:pre-line; margin:0; }
+.lp-list{ margin:0; padding-left:20px; color:var(--ink-soft); font-size:16px; line-height:1.8; }
 .lp-list li{ margin-bottom:4px; }
 .lp-faq{ display:flex; flex-direction:column; gap:8px; }
 .lp-faq-item{ border:1px solid var(--line); border-radius:10px; padding:12px 16px; background:#FDFCF8; }
-.lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:14.5px; }
+.lp-faq-item summary{ cursor:pointer; font-weight:600; font-size:16px; }
 .lp-faq-item[open] summary{ margin-bottom:8px; }
-.lp-faq-answer{ color:var(--ink-soft); font-size:14px; line-height:1.6; white-space:pre-line; }
+.lp-faq-answer{ color:var(--ink-soft); font-size:15.5px; line-height:1.6; white-space:pre-line; }
 
 /* Ảnh THẬT do người bán tự tải lên (2026-09-02, xem tao-landing-page.js) — case study/kết quả thực
    tế + ảnh cá nhân trong "Về người bán". Khác hẳn nội dung chữ AI viết. */
 .lp-case-studies{ display:flex; gap:12px; overflow-x:auto; padding-bottom:4px; }
 .lp-case-study-item{ flex:0 0 auto; width:180px; }
 .lp-case-study-item img{ width:100%; height:130px; object-fit:cover; border-radius:10px; border:1px solid var(--line); display:block; }
-.lp-case-study-name{ font-size:13.5px; font-weight:600; margin-top:6px; line-height:1.3; }
-.lp-case-study-caption{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; line-height:1.4; }
+.lp-case-study-name{ font-size:15px; font-weight:600; margin-top:6px; line-height:1.3; }
+.lp-case-study-caption{ font-size:14px; color:var(--ink-soft); margin-top:2px; line-height:1.4; }
 .lp-seller{ display:flex; align-items:flex-start; gap:14px; }
 .lp-seller-photo{ width:56px; height:56px; border-radius:999px; object-fit:cover; flex:0 0 auto; border:1px solid var(--line); }
 
@@ -92,46 +92,46 @@ h1{ font-family:'Playfair Display',serif; margin:0 0 12px; font-size:26px; }
 .lp-stat-bar{ display:flex; gap:18px; margin-top:14px; flex-wrap:wrap; }
 .lp-stat-item{ flex:1; min-width:80px; text-align:center; }
 .lp-stat-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:var(--accent); }
-.lp-stat-label{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+.lp-stat-label{ font-size:13px; color:var(--ink-soft); margin-top:2px; }
 .lp-team-grid{ display:flex; flex-direction:column; gap:14px; }
 .lp-team-card{ text-align:center; padding:14px; border:1px solid var(--line); border-radius:12px; }
 .lp-team-photo{ width:64px; height:64px; border-radius:999px; object-fit:cover; margin:0 auto 8px; display:block; }
-.lp-team-name{ font-weight:700; font-size:14.5px; }
-.lp-team-role{ font-size:12px; color:var(--accent); margin-top:2px; }
-.lp-team-bio{ font-size:12.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
+.lp-team-name{ font-weight:700; font-size:16px; }
+.lp-team-role{ font-size:13.5px; color:var(--accent); margin-top:2px; }
+.lp-team-bio{ font-size:14px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
 @media (min-width:720px){ .lp-team-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; } }
 
 /* Chỉ số trước/sau (2026-09-03, số liệu cụ thể người bán tự nhập — xem tao-landing-page.js). */
 .lp-metric-list{ display:flex; flex-direction:column; gap:10px; margin-top:14px; }
 .lp-metric-row{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; flex-wrap:wrap; }
-.lp-metric-label{ flex:1; min-width:130px; font-size:13px; font-weight:600; }
-.lp-metric-before{ font-size:13px; color:var(--ink-soft); text-decoration:line-through; }
+.lp-metric-label{ flex:1; min-width:130px; font-size:14.5px; font-weight:600; }
+.lp-metric-before{ font-size:14.5px; color:var(--ink-soft); text-decoration:line-through; }
 .lp-metric-arrow{ color:var(--accent); font-weight:700; }
-.lp-metric-after{ font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--accent); font-size:14px; }
+.lp-metric-after{ font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--accent); font-size:15.5px; }
 
 /* Vấn đề có tên riêng + lộ trình theo chặng + lời nhắn cá nhân (2026-09-02, làm sâu hơn theo landing
    page thật Quỳnh tham khảo — xem api/_lib/landing-page-schema.js). */
 .lp-problem-grid{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
 .lp-problem-item{ background:var(--accent-soft); border-radius:10px; padding:12px 14px; }
-.lp-problem-ten{ font-weight:700; color:var(--accent); font-size:13.5px; margin-bottom:3px; }
-.lp-problem-mota{ color:var(--ink-soft); font-size:13.5px; line-height:1.55; }
+.lp-problem-ten{ font-weight:700; color:var(--accent); font-size:15px; margin-bottom:3px; }
+.lp-problem-mota{ color:var(--ink-soft); font-size:15px; line-height:1.55; }
 .lp-program-list{ display:flex; flex-direction:column; gap:12px; }
 .lp-program-item{ display:flex; gap:12px; align-items:flex-start; }
-.lp-program-num{ flex:0 0 auto; width:26px; height:26px; border-radius:999px; background:var(--accent); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; }
-.lp-program-ten{ font-weight:600; font-size:14px; margin-bottom:2px; }
-.lp-program-mota{ color:var(--ink-soft); font-size:13.5px; line-height:1.5; }
-.lp-letter{ background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:16px 18px; color:var(--ink); font-size:14.5px; line-height:1.7; font-style:italic; white-space:pre-line; }
+.lp-program-num{ flex:0 0 auto; width:26px; height:26px; border-radius:999px; background:var(--accent); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:center; }
+.lp-program-ten{ font-weight:600; font-size:15.5px; margin-bottom:2px; }
+.lp-program-mota{ color:var(--ink-soft); font-size:15px; line-height:1.5; }
+.lp-letter{ background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:16px 18px; color:var(--ink); font-size:16px; line-height:1.7; font-style:italic; white-space:pre-line; }
 
 /* Nhãn nhỏ viết hoa phía trên tiêu đề từng phần (kiểu "BÓC TRẦN SỰ THẬT" ở trang gốc của Quỳnh,
    2026-09-03) — mặc định dùng cho mẫu "quynh", ẩn ở các mẫu khác (landingPageIntroHtml chỉ render nó
    khi template==='quynh'). */
-.lp-eyebrow{ font-size:11.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+.lp-eyebrow{ font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
 
 /* Dải "cách mua" 3 bước (chỉ "quynh", xem threeStepHtml() ở script.js — mô tả đúng luồng mua thật
    tự động của app, không phải quy trình thủ công cần nhắn Zalo như trang tham khảo). */
 .lp-3step{ display:flex; gap:10px; margin-bottom:14px; }
-.lp-3step-item{ flex:1; text-align:center; font-size:12px; color:var(--ink-soft); }
-.lp-3step-num{ width:26px; height:26px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-weight:700; display:flex; align-items:center; justify-content:center; margin:0 auto 6px; font-family:'IBM Plex Mono',monospace; font-size:13px; }
+.lp-3step-item{ flex:1; text-align:center; font-size:13.5px; color:var(--ink-soft); }
+.lp-3step-num{ width:26px; height:26px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-weight:700; display:flex; align-items:center; justify-content:center; margin:0 auto 6px; font-family:'IBM Plex Mono',monospace; font-size:14.5px; }
 
 /* Hero riêng NGOÀI .card (chỉ mẫu "video"/"sach" dùng — xem BANNER_TEMPLATES ở script.js) — 1 khối
    màu riêng phía trên, tách biệt khỏi nội dung chi tiết bên dưới, giống bố cục hero thật của các
@@ -196,8 +196,8 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .wrap[data-lp-template="video"] .lp-hero-banner .mono{ background:#EC1E79; color:#fff; }
 .wrap[data-lp-template="video"] .lp-hero-banner h1{ font-family:'Be Vietnam Pro',sans-serif; color:#fff; font-size:27px; font-weight:800; }
 .wrap[data-lp-template="video"] .lp-hero-banner .desc{ color:#C9C6D4; }
-.wrap[data-lp-template="video"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#EC1E79; font-size:15px; text-transform:uppercase; font-weight:700; letter-spacing:.04em; }
-.wrap[data-lp-template="video"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; color:#EC1E79; font-size:19px; font-weight:800; }
+.wrap[data-lp-template="video"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#EC1E79; font-size:16.5px; text-transform:uppercase; font-weight:700; letter-spacing:.04em; }
+.wrap[data-lp-template="video"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; color:#EC1E79; font-size:20px; font-weight:800; }
 .wrap[data-lp-template="video"] .price{ color:#EC1E79; font-size:25px; }
 .wrap[data-lp-template="video"] .btn{ background:#EC1E79; font-weight:700; }
 .wrap[data-lp-template="video"] .hint-box{ background:#FDEAF2; border-color:#F9C4DB; color:#B3115C; }
@@ -205,7 +205,7 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .wrap[data-lp-template="video"] .lp-problem-item{ background:transparent; border-radius:0; padding:0 0 0 46px; position:relative; }
 .wrap[data-lp-template="video"] .lp-problem-item::before{ counter-increment:vidproblem; content:counter(vidproblem, decimal-leading-zero); position:absolute; left:0; top:-3px; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:700; color:#EC1E79; opacity:.55; }
 .wrap[data-lp-template="video"] .lp-problem-ten{ color:#EC1E79; }
-.wrap[data-lp-template="video"] .lp-program-num{ background:#EC1E79; width:auto; height:auto; border-radius:6px; padding:4px 10px; font-size:11px; letter-spacing:.03em; }
+.wrap[data-lp-template="video"] .lp-program-num{ background:#EC1E79; width:auto; height:auto; border-radius:6px; padding:4px 10px; font-size:12.5px; letter-spacing:.03em; }
 .wrap[data-lp-template="video"] .lp-letter{ background:#FDEAF2; border-left-color:#EC1E79; font-style:normal; }
 
 /* Nav dính đầu trang + dải chữ chạy ngang — CHỈ mẫu "video" render ra 2 khối này (xem
@@ -213,20 +213,20 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
    [data-lp-template] ở đây. */
 .lp-sticky-nav{ background:#0C0C14; border-bottom:1px solid #2A2A3A; padding:12px 20px; display:flex; gap:16px; align-items:center; overflow-x:auto; scrollbar-width:none; }
 .lp-sticky-nav::-webkit-scrollbar{ display:none; }
-.lp-sticky-nav a{ color:#C9C6D4; text-decoration:none; font-size:13px; font-weight:600; white-space:nowrap; flex:0 0 auto; }
+.lp-sticky-nav a{ color:#C9C6D4; text-decoration:none; font-size:14.5px; font-weight:600; white-space:nowrap; flex:0 0 auto; }
 .lp-sticky-nav a.lp-nav-cta{ background:#EC1E79; color:#fff; padding:7px 16px; border-radius:999px; margin-left:auto; }
 @media (min-width:720px){ .lp-sticky-nav{ justify-content:center; } }
 .lp-ticker{ background:#EC1E79; overflow:hidden; padding:8px 0; }
-.lp-ticker-track{ display:inline-flex; gap:10px; white-space:nowrap; animation:lp-ticker-scroll 22s linear infinite; color:#fff; font-size:12.5px; font-weight:600; }
+.lp-ticker-track{ display:inline-flex; gap:10px; white-space:nowrap; animation:lp-ticker-scroll 22s linear infinite; color:#fff; font-size:14px; font-weight:600; }
 .lp-ticker-dot{ opacity:.6; }
 @keyframes lp-ticker-scroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
 
 /* Bảng so sánh "chưa có hệ thống / có hệ thống" (chỉ "video", xem comparisonTableHtml() ở script.js). */
 .lp-compare{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#2A2A3A; border-radius:10px; overflow:hidden; margin-top:12px; }
-.lp-compare-head{ padding:10px 12px; font-weight:700; font-size:12px; text-align:center; }
+.lp-compare-head{ padding:10px 12px; font-weight:700; font-size:13.5px; text-align:center; }
 .lp-compare-head.lp-compare-bad{ background:#241318; color:#F1A7C0; }
 .lp-compare-head.lp-compare-good{ background:#1A2418; color:#9FE0A0; }
-.lp-compare-cell{ padding:10px 12px; font-size:12.5px; background:#12121C; line-height:1.4; }
+.lp-compare-cell{ padding:10px 12px; font-size:14px; background:#12121C; line-height:1.4; }
 .lp-compare-cell.lp-compare-bad{ color:#C9A0AE; }
 .lp-compare-cell.lp-compare-good{ color:#BFE0BF; }
 
@@ -235,7 +235,7 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .wrap[data-lp-template="sach"] .lp-hero-banner .mono{ background:#F5B942; color:#0B0B10; }
 .wrap[data-lp-template="sach"] .lp-hero-banner h1{ font-family:'Playfair Display',serif; color:#fff; font-size:27px; }
 .wrap[data-lp-template="sach"] .lp-hero-banner .desc{ color:#B9B4A6; }
-.wrap[data-lp-template="sach"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#F5B942; font-size:14px; text-transform:uppercase; font-weight:700; letter-spacing:.08em; }
+.wrap[data-lp-template="sach"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#F5B942; font-size:15.5px; text-transform:uppercase; font-weight:700; letter-spacing:.08em; }
 .wrap[data-lp-template="sach"] .lp-h2{ font-family:'Playfair Display',serif; color:#0B0B10; }
 .wrap[data-lp-template="sach"] .price{ color:#0B0B10; font-weight:700; }
 .wrap[data-lp-template="sach"] .btn{ background:#0B0B10; color:#F5B942; font-weight:700; }
@@ -247,17 +247,17 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 
 /* Mục lục nhóm theo PHẦN (chỉ "sach", khi chuong_trinh có trường "nhom" — đúng khối "MỤC LỤC" ở
    teedoo.io, xem chuongTrinhGroupedHtml ở script.js, 2026-09-07). */
-.lp-mucluc-group-title{ font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; color:#F5B942; margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid #2A2410; }
+.lp-mucluc-group-title{ font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:14px; letter-spacing:.04em; text-transform:uppercase; color:#F5B942; margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid #2A2410; }
 .lp-mucluc-group-title:first-child{ margin-top:0; }
 .lp-mucluc-group{ display:flex; flex-direction:column; gap:8px; }
-.lp-mucluc-item{ display:flex; justify-content:space-between; gap:10px; padding:10px 12px; background:#17140A; border-radius:8px; font-size:13px; }
+.lp-mucluc-item{ display:flex; justify-content:space-between; gap:10px; padding:10px 12px; background:#17140A; border-radius:8px; font-size:14.5px; }
 .lp-mucluc-item-ten{ font-weight:600; color:#F3EFE3; flex:0 0 auto; }
 .lp-mucluc-item-mota{ color:#B9B4A6; text-align:right; }
-@media (min-width:640px){ .lp-mucluc-item{ font-size:13.5px; } }
+@media (min-width:640px){ .lp-mucluc-item{ font-size:15px; } }
 
 /* Hộp ưu đãi có viền + icon (chỉ "sach", xem bonusListHtml trong landingPageIntroHtml() ở script.js). */
 .lp-bonus-box{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
-.lp-bonus-row{ background:#FBF3DD; border:1px solid #F0DDA0; border-radius:8px; padding:10px 14px; font-size:13.5px; color:#5A4308; }
+.lp-bonus-row{ background:#FBF3DD; border:1px solid #F0DDA0; border-radius:8px; padding:10px 14px; font-size:15px; color:#5A4308; }
 
 /* Dòng "Tổng giá trị/Bạn chỉ trả" + bảng so sánh 2 cột (chỉ "sach" — đúng khối value-stack + "So
    sánh" ở teedoo.io, xem valueStackHtml/soSanh3ColHtml ở script.js, 2026-09-07). Khung vàng nổi trên
@@ -266,26 +266,26 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 /* Theme-aware qua var(--accent)/var(--accent-soft) (khác nhau theo [data-lp-template], xem đầu file)
    thay vì màu vàng cố định — 2026-09-07 mở rộng dùng cho CẢ 4 mẫu (trước chỉ "sach"), xem valueStackHtml. */
 .lp-value-stack{ margin-top:12px; border:1px solid var(--accent); border-radius:10px; padding:12px 14px; background:var(--accent-soft); }
-.lp-value-stack > div{ display:flex; justify-content:space-between; font-size:13.5px; color:var(--ink-soft); margin-bottom:4px; }
+.lp-value-stack > div{ display:flex; justify-content:space-between; font-size:15px; color:var(--ink-soft); margin-bottom:4px; }
 .lp-value-stack > div span{ text-decoration:line-through; }
 .lp-value-stack > div.lp-value-stack-item{ text-decoration:none; }
 .lp-value-stack > div.lp-value-stack-item span{ text-decoration:none; }
-.lp-value-stack > div.lp-value-stack-final{ font-weight:700; font-size:17px; color:var(--accent); margin-bottom:0; padding-top:6px; border-top:1px solid var(--accent); }
+.lp-value-stack > div.lp-value-stack-final{ font-weight:700; font-size:18px; color:var(--accent); margin-bottom:0; padding-top:6px; border-top:1px solid var(--accent); }
 .lp-value-stack > div.lp-value-stack-final span{ text-decoration:none; }
 .lp-compare3{ display:grid; grid-template-columns:88px 1fr 1fr; gap:1px; background:#2A2410; border-radius:10px; overflow:hidden; margin-top:12px; }
-.lp-compare3-head{ padding:10px 8px; font-weight:700; font-size:11.5px; text-align:center; background:#17140F; color:#B9B4A6; }
+.lp-compare3-head{ padding:10px 8px; font-weight:700; font-size:13px; text-align:center; background:#17140F; color:#B9B4A6; }
 .lp-compare3-head-final{ color:#F5B942; }
-.lp-compare3-label{ padding:10px 8px; font-size:11px; font-weight:600; background:#0B0B10; color:#8A8371; display:flex; align-items:center; }
-.lp-compare3-cell{ padding:10px 8px; font-size:11.5px; background:#0B0B10; color:#8A8371; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.35; }
+.lp-compare3-label{ padding:10px 8px; font-size:12.5px; font-weight:600; background:#0B0B10; color:#8A8371; display:flex; align-items:center; }
+.lp-compare3-cell{ padding:10px 8px; font-size:13px; background:#0B0B10; color:#8A8371; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.35; }
 .lp-compare3-cell-final{ color:#F5B942; font-weight:600; }
 
 /* "chuyengia" — nền trắng sạch + tím/indigo, không hero riêng (giữ trong .card như mẫu gốc), thẻ
    "PHẦN" viền rõ cho chương trình, kiểu chuyên nghiệp/coach. */
 .wrap[data-lp-template="chuyengia"] .card{ border-color:#E4E1F5; }
 .wrap[data-lp-template="chuyengia"] .mono{ background:#EEEAFB; color:#6C4CE0; }
-.wrap[data-lp-template="chuyengia"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#6C4CE0; font-size:15px; font-weight:700; }
+.wrap[data-lp-template="chuyengia"] .lp-hook{ font-family:'Be Vietnam Pro',sans-serif; color:#6C4CE0; font-size:16.5px; font-weight:700; }
 .wrap[data-lp-template="chuyengia"] h1{ font-family:'Be Vietnam Pro',sans-serif; font-weight:800; }
-.wrap[data-lp-template="chuyengia"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; color:#6C4CE0; font-weight:800; font-size:18px; }
+.wrap[data-lp-template="chuyengia"] .lp-h2{ font-family:'Be Vietnam Pro',sans-serif; color:#6C4CE0; font-weight:800; font-size:19px; }
 .wrap[data-lp-template="chuyengia"] .price{ color:#6C4CE0; font-size:26px; }
 .wrap[data-lp-template="chuyengia"] .btn{ background:#6C4CE0; font-weight:700; }
 .wrap[data-lp-template="chuyengia"] .hint-box{ background:#EEEAFB; border-color:#D9D2F5; color:#6C4CE0; }
@@ -293,7 +293,7 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .wrap[data-lp-template="chuyengia"] .lp-problem-ten{ color:#6C4CE0; }
 .wrap[data-lp-template="chuyengia"] .lp-program-list{ gap:14px; }
 .wrap[data-lp-template="chuyengia"] .lp-program-item{ border:1px solid #E4E1F5; border-radius:12px; padding:14px; }
-.wrap[data-lp-template="chuyengia"] .lp-program-num{ background:#6C4CE0; border-radius:6px; width:auto; height:auto; padding:4px 10px; font-size:11px; letter-spacing:.03em; }
+.wrap[data-lp-template="chuyengia"] .lp-program-num{ background:#6C4CE0; border-radius:6px; width:auto; height:auto; padding:4px 10px; font-size:12.5px; letter-spacing:.03em; }
 .wrap[data-lp-template="chuyengia"] .lp-letter{ background:#EEEAFB; border-left-color:#6C4CE0; font-style:normal; }
 .wrap[data-lp-template="chuyengia"] .lp-faq-item{ border-color:#E4E1F5; }
 /* Bảng so sánh "chưa có hệ thống/đã làm chủ AI" (chỉ "chuyengia" — dùng chung comparisonTableHtml()
@@ -324,14 +324,14 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .wrap[data-lp-template="chuyengia"] .lp-case-studies{ display:grid; grid-template-columns:1fr; gap:14px; }
 .wrap[data-lp-template="chuyengia"] .lp-case-study-item{ width:auto; }
 .wrap[data-lp-template="chuyengia"] .lp-case-study-item img{ height:180px; }
-.lp-case-badge{ display:inline-block; margin-top:8px; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#6C4CE0; background:#EEEAFB; padding:3px 10px; border-radius:999px; }
+.lp-case-badge{ display:inline-block; margin-top:8px; font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#6C4CE0; background:#EEEAFB; padding:3px 10px; border-radius:999px; }
 @media (min-width:640px){
   .wrap[data-lp-template="chuyengia"] .lp-case-studies{ grid-template-columns:1fr 1fr; }
   .wrap[data-lp-template="chuyengia"] .lp-case-study-item:first-child{ grid-column:1 / -1; }
   .wrap[data-lp-template="chuyengia"] .lp-case-study-item:first-child img{ height:280px; }
 }
 .lp-radar{ width:100%; max-width:340px; display:block; margin:8px auto; }
-.lp-countdown{ background:#2A1A55; color:#fff; text-align:center; font-weight:700; font-size:13.5px; padding:11px 14px; border-radius:10px; margin-bottom:14px; }
+.lp-countdown{ background:#2A1A55; color:#fff; text-align:center; font-weight:700; font-size:15px; padding:11px 14px; border-radius:10px; margin-bottom:14px; }
 .lp-countdown .mono{ background:transparent; color:#F5C242; padding:0; }
 
 /* Khung lịch học/sự kiện + thẻ giá có gạch đầu dòng + dòng cảnh báo số chỗ có hạn (chỉ "quynh", xem
@@ -339,12 +339,12 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
    30ngaytamlinhtaichinh.netlify.app, 2026-09-07). Không set màu riêng — kế thừa đúng theme tối đã fix
    (color:var(--ink) ở khối màu "quynh"), tự đúng màu trên nền đen. */
 .lp-event-info{ border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; flex-direction:column; gap:10px; }
-.lp-event-info-item{ display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--ink-soft); }
+.lp-event-info-item{ display:flex; gap:10px; align-items:flex-start; font-size:14.5px; color:var(--ink-soft); }
 .lp-event-info-icon{ flex:0 0 auto; }
 .lp-price-card{ border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
 .lp-price-card .price{ margin-bottom:10px; }
-.lp-price-card-bullets{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--ink-soft); }
-.lp-scarcity{ font-size:12px; color:var(--ink-soft); text-align:center; margin-top:10px; }
+.lp-price-card-bullets{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; font-size:14.5px; color:var(--ink-soft); }
+.lp-scarcity{ font-size:13.5px; color:var(--ink-soft); text-align:center; margin-top:10px; }
 /* "sach" hiện đồng hồ TRONG hero đen/vàng (đúng teedoo.io) — đổi nền tím sang viền vàng gold khớp
    theme, thay vì lặp lại đúng màu tím dùng cho "chuyengia". */
 .wrap[data-lp-template="sach"] .lp-countdown{ background:rgba(245,185,66,.12); border:1px solid #F5B942; color:#F5B942; margin:14px 0 0; }
@@ -356,12 +356,12 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .lp-ba-col{ border-radius:10px; padding:14px; }
 .lp-ba-before{ background:#F7F5F5; }
 .lp-ba-after{ background:#EEEAFB; }
-.lp-ba-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; color:var(--ink-soft); }
+.lp-ba-label{ font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; color:var(--ink-soft); }
 .lp-ba-after .lp-ba-label{ color:#6C4CE0; }
-.lp-ba-col p{ font-size:13px; color:var(--ink-soft); line-height:1.5; margin:0; }
-.lp-ba-col ul{ margin:0; padding-left:18px; font-size:13px; color:#4A3D8F; }
+.lp-ba-col p{ font-size:14.5px; color:var(--ink-soft); line-height:1.5; margin:0; }
+.lp-ba-col ul{ margin:0; padding-left:18px; font-size:14.5px; color:#4A3D8F; }
 .lp-result-grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:4px; }
-.lp-result-card{ border:1px solid #E4E1F5; border-radius:10px; padding:12px 14px; font-size:13.5px; color:var(--ink); background:#FAF9FE; }
+.lp-result-card{ border:1px solid #E4E1F5; border-radius:10px; padding:12px 14px; font-size:15px; color:var(--ink); background:#FAF9FE; }
 
 /* Lưới thẻ kết quả có icon (chỉ "quynh" — đúng khối "Điều bạn làm được" ở 30ngaytamlinhtaichinh.
    netlify.app, xem ketQuaGridQuynhHtml ở script.js). Không set màu riêng — kế thừa đúng theme tối của
@@ -369,13 +369,13 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 .lp-result-grid-quynh{ grid-template-columns:1fr 1fr; gap:12px; }
 .lp-result-card-quynh{ border:1px solid var(--line); background:var(--accent-soft); border-radius:12px; padding:16px; text-align:center; }
 .lp-result-icon{ font-size:24px; margin-bottom:8px; }
-.lp-result-text{ font-size:13.5px; line-height:1.5; }
+.lp-result-text{ font-size:15px; line-height:1.5; }
 @media (max-width:539px){ .lp-result-grid-quynh{ grid-template-columns:1fr; } }
 .lp-hero-price-box{ display:flex; align-items:center; gap:10px; background:#EEEAFB; border:1px solid #D9D2F5; border-radius:12px; padding:12px 16px; margin:14px 0; cursor:pointer; }
 .lp-hero-price-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:#6C4CE0; }
 .lp-hero-price-box{ display:flex; align-items:center; gap:10px; background:#EEEAFB; border:1px solid #D9D2F5; border-radius:12px; padding:12px 16px; margin:14px 0; cursor:pointer; }
 .lp-hero-price-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:20px; color:#6C4CE0; }
-.lp-hero-price-cta{ margin-left:auto; font-size:12.5px; font-weight:700; color:#6C4CE0; }
+.lp-hero-price-cta{ margin-left:auto; font-size:14px; font-weight:700; color:#6C4CE0; }
 
 /* "quynh" — làm lại ĐÚNG màu đen/vàng gold thật của 30ngaytamlinhtaichinh.netlify.app (2026-09-05,
    Quỳnh gửi ảnh chụp trang thật + yêu cầu làm "y hệt cả bố cục" — trước đây mẫu này chỉ mượn vài chi
@@ -406,34 +406,34 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
 /* Vòng tròn bước đăng ký to hơn cho "quynh" (đúng cỡ trong ảnh chụp trang gốc) — nội dung chữ ở bước
    3 GIỮ NGUYÊN "Nhận ngay, tự động" (xem threeStepHtml() ở script.js — Quỳnh xác nhận giữ tự động
    100%, không thêm bước nhắn Zalo như trang tham khảo, chỉ đổi cỡ/màu cho khớp bố cục thật). */
-.wrap[data-lp-template="quynh"] .lp-3step-num{ width:34px; height:34px; font-size:14px; background:var(--accent); color:#0D0C0A; }
+.wrap[data-lp-template="quynh"] .lp-3step-num{ width:34px; height:34px; font-size:15.5px; background:var(--accent); color:#0D0C0A; }
 
 /* "Trước & sau" dạng THANH MÀU (chỉ "quynh", xem metricBarHtml() ở script.js) — khác hẳn .lp-metric-row
    (dạng chữ có mũi tên, dùng cho 3 mẫu kia): 2 thanh ngang mỗi chỉ số, thanh "trước" dài màu đỏ trầm,
    thanh "sau" ngắn hơn màu vàng gold — ĐÚNG kiểu minh hoạ TRỰC QUAN ở trang gốc (before/after ở đó
    cũng là tỉ lệ minh hoạ cố định, không phải biểu đồ số liệu chính xác — vì before/after là CHỮ tự do
    người bán gõ, VD "Rất cao"/"Trung bình", không phải số để tính tỉ lệ thật). */
-.lp-metricbar-legend{ display:flex; gap:18px; margin:10px 0 14px; font-size:12px; color:var(--ink-soft); }
+.lp-metricbar-legend{ display:flex; gap:18px; margin:10px 0 14px; font-size:13.5px; color:var(--ink-soft); }
 .lp-metricbar-legend span{ display:flex; align-items:center; gap:6px; }
 .lp-metricbar-legend i{ width:10px; height:10px; border-radius:999px; display:inline-block; }
 .lp-metricbar-legend i.lp-dot-before{ background:#A6462E; }
 .lp-metricbar-legend i.lp-dot-after{ background:var(--accent); }
 .lp-metricbar-list{ display:flex; flex-direction:column; gap:18px; }
-.lp-metricbar-label{ font-size:13.5px; font-weight:600; margin-bottom:8px; }
+.lp-metricbar-label{ font-size:15px; font-weight:600; margin-bottom:8px; }
 .lp-metricbar-track{ background:var(--accent-soft); border-radius:999px; margin-bottom:6px; overflow:hidden; }
 /* display:block BẮT BUỘC — .lp-metricbar-fill là <span> (inline mặc định), width:% KHÔNG áp dụng
    được trên phần tử inline (trình duyệt lặng lẽ bỏ qua, không báo lỗi gì) — đây chính là lỗi Quỳnh
    thấy "chữ mờ mờ bên dưới bị ghi đè": track nền màu hiện full-width phía sau, còn fill (chưa có
    width thật) chỉ ôm sát vừa đủ chữ ở bên trái, trông như 2 lớp chữ đè lên nhau thay vì 1 thanh dài
    85%/38% như ý định. */
-.lp-metricbar-fill{ display:block; padding:6px 14px; font-size:12px; font-weight:700; white-space:nowrap; border-radius:999px; box-sizing:border-box; }
+.lp-metricbar-fill{ display:block; padding:6px 14px; font-size:13.5px; font-weight:700; white-space:nowrap; border-radius:999px; box-sizing:border-box; }
 .lp-metricbar-fill.lp-metricbar-before{ width:85%; background:#4A241C; color:#E3A594; }
 .lp-metricbar-fill.lp-metricbar-after{ width:38%; background:var(--accent); color:#0D0C0A; }
 
 /* "Phù hợp với ai" dạng CHIP bo tròn (chỉ "quynh", xem phuHopHtml trong script.js) — thay cho danh
    sách gạch đầu dòng dùng ở 3 mẫu kia, đúng dải chip ngang ở trang gốc. */
 .lp-fit-chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
-.lp-fit-chip{ border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-size:13px; color:var(--ink); }
+.lp-fit-chip{ border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-size:14.5px; color:var(--ink); }
 
 /* Ảnh người bán TO + khung riêng + thanh số liệu dạng LƯỚI Ô VUÔNG (chỉ "quynh", xem founderPhotoHtml/
    statBarHtml trong script.js) — đúng khối "Hành trình của chính [Tên]" ở trang gốc (ảnh lớn căn giữa
@@ -469,14 +469,14 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
   .wrap[data-lp-template="quynh"] #buy-area-anchor{ grid-area:buy; position:sticky; top:24px; align-self:start; }
   .wrap[data-lp-template="quynh"] #lp-sec-faq{ grid-area:faq; margin-top:8px; }
   .wrap[data-lp-template="quynh"] h1{ font-size:30px; }
-  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:18px; }
+  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:19px; }
   .wrap[data-lp-template="quynh"] .lp-stat-grid{ grid-template-columns:repeat(2,1fr); gap:14px; }
   .wrap[data-lp-template="quynh"] .lp-case-studies{ grid-template-columns:repeat(2,1fr); }
 }
 @media (min-width:1100px){
   .wrap[data-lp-template="quynh"] .card{ padding:44px 48px; grid-template-columns:1fr 320px; column-gap:40px; }
   .wrap[data-lp-template="quynh"] h1{ font-size:32px; }
-  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:19px; }
+  .wrap[data-lp-template="quynh"] .lp-hook{ font-size:20px; }
 }
 
 /* Bố cục MÁY TÍNH riêng cho "chuyengia" (2026-09-06, cùng lý do đã sửa cho "quynh" ở trên — Quỳnh:
@@ -488,6 +488,6 @@ body:has(.wrap[data-lp-template="sach"]){ background:#0B0B10; }
   .wrap[data-lp-template="chuyengia"]{ max-width:960px; }
   .wrap[data-lp-template="chuyengia"] .card{ padding:40px 48px; }
   .wrap[data-lp-template="chuyengia"] h1{ font-size:34px; }
-  .wrap[data-lp-template="chuyengia"] .lp-hook{ font-size:17px; }
+  .wrap[data-lp-template="chuyengia"] .lp-hook{ font-size:18px; }
   .wrap[data-lp-template="chuyengia"] .lp-hero-top .cover{ height:300px; }
 }

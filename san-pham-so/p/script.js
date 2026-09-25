@@ -675,7 +675,7 @@ function renderProduct(product, order) {
   // Nhãn loại + ngày giờ webinar (nếu có) lộ công khai TRƯỚC khi mua — giúp khách biết rõ mình sắp
   // mua dạng gì (2026-09-01, xem digital_products_public trong schema_san_pham_so.sql).
   const dinhDangBadgeHtml = product.dinh_dang && DINH_DANG_LABEL[product.dinh_dang]
-    ? `<div class="mono" style="display:inline-block;background:var(--accent-soft,#E7F0EC);color:var(--accent,#2F6F62);padding:3px 10px;border-radius:999px;font-size:12px;margin-bottom:8px;">${esc(DINH_DANG_LABEL[product.dinh_dang])}</div>`
+    ? `<div class="mono" style="display:inline-block;background:var(--accent-soft,#E7F0EC);color:var(--accent,#2F6F62);padding:3px 10px;border-radius:999px;font-size:13.5px;margin-bottom:8px;">${esc(DINH_DANG_LABEL[product.dinh_dang])}</div>`
     : '';
   const webinarPreHtml = product.dinh_dang === 'webinar' && product.webinar_datetime
     ? `<div class="hint-box" style="margin-bottom:12px;">🗓️ Diễn ra: <b>${esc(formatWebinarDatetime(product.webinar_datetime))}</b></div>`
@@ -710,7 +710,7 @@ function renderProduct(product, order) {
     // liên hệ Zalo ... để được hỗ trợ ngay", đặt ngay dưới nút mua) — người bán tự điền, để trống thì
     // không hiện gì (product.seller_contact_zalo, dùng chung mọi sản phẩm, xem schema mục 31).
     const sellerContactHtml = product.seller_contact_zalo
-      ? `<div style="font-size:12.5px;color:var(--ink-soft);text-align:center;margin-top:10px;">⚠️ Gặp lỗi khi đặt hàng? Liên hệ Zalo <a href="https://zalo.me/${esc(String(product.seller_contact_zalo).replace(/\D/g, ''))}" target="_blank" rel="noopener" style="color:var(--accent);">${esc(product.seller_contact_zalo)}</a> để được hỗ trợ ngay.</div>`
+      ? `<div style="font-size:14px;color:var(--ink-soft);text-align:center;margin-top:10px;">⚠️ Gặp lỗi khi đặt hàng? Liên hệ Zalo <a href="https://zalo.me/${esc(String(product.seller_contact_zalo).replace(/\D/g, ''))}" target="_blank" rel="noopener" style="color:var(--accent);">${esc(product.seller_contact_zalo)}</a> để được hỗ trợ ngay.</div>`
       : '';
     buyHtml = `
       <input id="buyer-name" type="text" placeholder="Họ và tên *">
@@ -765,14 +765,14 @@ function renderProduct(product, order) {
   // CẢ 2 đều là dữ liệu THẬT (giá tham khảo do người bán tự nhập, số người mua đếm thẳng từ đơn đã
   // thanh toán của đúng sản phẩm này qua digital_products_public), không phải AI/hệ thống tự bịa.
   const referencePriceHtml = product.reference_price && Number(product.reference_price) > Number(product.price)
-    ? `<span style="text-decoration:line-through;color:var(--ink-soft);font-size:15px;margin-right:8px;">${Number(product.reference_price).toLocaleString('vi-VN')}đ</span>` : '';
+    ? `<span style="text-decoration:line-through;color:var(--ink-soft);font-size:16.5px;margin-right:8px;">${Number(product.reference_price).toLocaleString('vi-VN')}đ</span>` : '';
   // Huy hiệu "-X%" cạnh giá gốc gạch ngang (2026-09-07, Quỳnh: "giá tiền thì nên có gợi ý giá gốc và
   // giá giảm... nghệ thuật chốt sale") — tính thẳng từ 2 số THẬT đã có (reference_price/price), không
   // phải số bịa. Làm tròn xuống (VD 32.7% -> "-32%") để không bao giờ nói giảm NHIỀU HƠN thực tế.
   const discountBadgeHtml = product.reference_price && Number(product.reference_price) > Number(product.price)
-    ? `<span style="display:inline-block;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:8px;vertical-align:middle;">-${Math.floor((1 - Number(product.price) / Number(product.reference_price)) * 100)}%</span>` : '';
+    ? `<span style="display:inline-block;background:var(--accent);color:#fff;font-size:13.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:8px;vertical-align:middle;">-${Math.floor((1 - Number(product.price) / Number(product.reference_price)) * 100)}%</span>` : '';
   const soldCountHtml = product.paid_count > 0
-    ? `<div style="font-size:12.5px;color:var(--ink-soft);margin:-10px 0 16px;">🎉 Đã có ${product.paid_count} người mua sản phẩm này</div>` : '';
+    ? `<div style="font-size:14px;color:var(--ink-soft);margin:-10px 0 16px;">🎉 Đã có ${product.paid_count} người mua sản phẩm này</div>` : '';
   // Cam kết — TRƯỚC ĐÂY hardcode cho mọi sản phẩm (rủi ro hứa hộ người bán điều họ không đồng ý),
   // giờ CHỈ hiện khi người bán tự viết (guarantee_text null = không hiện gì, không phải lỗi).
   const guaranteeHtml = product.guarantee_text
