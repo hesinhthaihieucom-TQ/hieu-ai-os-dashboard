@@ -119,13 +119,13 @@ function render(container, ideaRow) {
   function introHtml() {
     return `
       <div class="card">
-        <h2 style="font-size:18px;">Trước khi viết: bạn có sẵn tài liệu gì không?</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — nếu chưa có, AI sẽ tự tổng hợp kiến thức nền giúp bạn trước khi viết.</div>
+        <h2 style="font-size:19px;">Trước khi viết: bạn có sẵn tài liệu gì không?</h2>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — nếu chưa có, AI sẽ tự tổng hợp kiến thức nền giúp bạn trước khi viết.</div>
         ${taiLieuUploadHtml()}
         <label style="margin-top:14px;">Ghi chú thêm (tuỳ chọn)</label>
         <textarea id="xdnd-tailieu" rows="3" placeholder="VD: điều bạn muốn AI đặc biệt lưu ý khi viết...">${esc(state.taiLieu)}</textarea>
         <label style="margin-top:14px;">Giọng văn</label>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Áp dụng nhất quán cho mọi phần sẽ viết — chọn 1 lần ở đây.</div>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;">Áp dụng nhất quán cho mọi phần sẽ viết — chọn 1 lần ở đây.</div>
         <div class="chips">${GIONG_VAN_OPTIONS.map(o => `<div class="chip ${state.giongVan === o ? 'selected' : ''}" data-giongvan="${esc(o)}">${esc(o)}</div>`).join('')}</div>
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         <div class="btn-row"><button class="btn" id="xdnd-outline2-btn" ${state.materialUploading ? 'disabled' : ''}>Xây outline chi tiết → (3 lượt AI)</button></div>
@@ -143,7 +143,7 @@ function render(container, ideaRow) {
     return `
       <label>Tài liệu (PDF)</label>
       <input id="xdnd-material-file" type="file" accept="application/pdf">
-      <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+      <div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
       ${state.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(state.materialUploadError)}</div>` : ''}
     `;
   }
@@ -163,8 +163,8 @@ function render(container, ideaRow) {
     const isCustom = state.themeUseCustomColor;
     return `
       <div class="card">
-        <h2 style="font-size:16px;">🎨 Bìa & màu sắc</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 phong cách màu — áp dụng cho cả bìa lẫn toàn bộ nội dung bên trong khi xuất PDF.</div>
+        <h2 style="font-size:17px;">🎨 Bìa & màu sắc</h2>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 phong cách màu — áp dụng cho cả bìa lẫn toàn bộ nội dung bên trong khi xuất PDF.</div>
         <div class="chips">
           ${EBOOK_THEME_PRESETS.map(p => `
             <div class="chip ${!isCustom && th.accent === p.accent && th.bg === p.bg ? 'selected' : ''}" data-theme-preset="${p.key}" style="display:inline-flex;align-items:center;gap:6px;">
@@ -188,7 +188,7 @@ function render(container, ideaRow) {
         ${coverModeExtraHtml()}
         ${state.themeError ? `<div class="error-box" style="margin-top:10px;">${esc(state.themeError)}</div>` : ''}
         <div style="margin-top:14px;">
-          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Xem trước thật (bìa + 1 trang mẫu):</div>
+          <div style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;">Xem trước thật (bìa + 1 trang mẫu):</div>
           ${previewFrameHtml()}
         </div>
       </div>
@@ -210,7 +210,7 @@ function render(container, ideaRow) {
         <div style="margin-top:10px;">
           ${th.coverImageDataUrl ? `<img src="${esc(th.coverImageDataUrl)}" style="max-width:140px;border-radius:8px;display:block;margin-bottom:8px;border:1px solid var(--line);">` : ''}
           <input id="xdnd-cover-upload" type="file" accept="image/*">
-          <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${state.coverUploading ? 'Đang xử lý ảnh…' : ''}</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">${state.coverUploading ? 'Đang xử lý ảnh…' : ''}</div>
         </div>
       `;
     }
@@ -218,7 +218,7 @@ function render(container, ideaRow) {
   }
 
   function previewFrameHtml() {
-    if (state.previewLoading) return `<div style="font-size:12.5px;color:var(--ink-soft);">Đang dựng bản xem trước…</div>`;
+    if (state.previewLoading) return `<div style="font-size:14px;color:var(--ink-soft);">Đang dựng bản xem trước…</div>`;
     if (!state.previewPdfBase64) return `<span class="btn-ghost btn btn-sm" id="xdnd-preview-btn">🔍 Xem trước</span>`;
     return `<iframe id="xdnd-preview-frame" src="about:blank" style="width:100%;max-width:280px;height:396px;border:1px solid var(--line);border-radius:8px;display:block;"></iframe>`;
   }
@@ -342,7 +342,7 @@ function render(container, ideaRow) {
   function heyzineSoundGuideHtml() {
     return `
       <div class="hint-box" style="margin-top:10px;">🎵 Muốn thêm nhạc nền/tiếng lật trang cho cuốn này?
-      <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+      <ol style="margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.7;">
         <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa xuất → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
         <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền). 5 bài gợi ý có sẵn (Pixabay, MIỄN PHÍ, KHÔNG cần mua, KHÔNG cần ghi nguồn) — bấm 1 bài, bấm nút <b style="color:var(--accent);">"Download"</b> màu xanh trên trang đó để tải MP3 về máy, rồi tải chính file đó lên "Background Audio":
           ${PIXABAY_MUSIC_LIST_HTML}
@@ -371,18 +371,18 @@ function render(container, ideaRow) {
     }
     return `
       <div class="card" style="margin-top:10px;">
-        <h2 style="font-size:14px;margin-bottom:6px;">🔗 Bắt buộc kết nối Heyzine riêng trước khi xuất</h2>
+        <h2 style="font-size:15.5px;margin-bottom:6px;">🔗 Bắt buộc kết nối Heyzine riêng trước khi xuất</h2>
         <div class="hint-box" style="margin-bottom:10px;">
-          <ol style="margin:0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+          <ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.7;">
             <li>Mở <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a> — hoặc vào heyzine.com, bấm icon <b style="color:var(--accent);">☰</b> (menu) góc trên bên trái → chọn <b style="color:var(--accent);">API</b>.</li>
             <li>Chưa có tài khoản: bấm <b style="color:var(--accent);">"register"</b> (Đăng ký). Đã có: bấm <b style="color:var(--accent);">"Login"</b> (Đăng nhập) — miễn phí.</li>
             <li>Đăng nhập xong, trang hiện 2 ô <b style="color:var(--accent);">"This is your Client Id:"</b> (Client ID của bạn) và <b style="color:var(--accent);">"This is your API key:"</b> (API Key của bạn) — không cần bấm icon con mắt để xem, bấm thẳng nút <b style="color:var(--accent);">"Copy"</b> (Sao chép) từng ô là được.</li>
             <li>Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây xuất ebook luôn không cần mở tab khác.</li>
           </ol>
         </div>
-        <label style="font-size:12.5px;">Client ID</label>
+        <label style="font-size:14px;">Client ID</label>
         <input id="xdnd-heyzine-client" type="text" value="${esc(state.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
-        <label style="margin-top:8px;font-size:12.5px;">API Key</label>
+        <label style="margin-top:8px;font-size:14px;">API Key</label>
         <input id="xdnd-heyzine-key" type="password" value="${esc(state.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
         ${state.heyzineError ? `<div class="error-box" style="margin-top:8px;">${esc(state.heyzineError)}</div>` : ''}
         <div class="btn-row">
@@ -423,7 +423,7 @@ function render(container, ideaRow) {
     if (state.ebookResult) {
       return `
         <div class="card">
-          <h2 style="font-size:16px;">📖 Ebook đã xuất</h2>
+          <h2 style="font-size:17px;">📖 Ebook đã xuất</h2>
           ${state.ebookResult.thumbnail ? `<img src="${esc(state.ebookResult.thumbnail)}" style="max-width:140px;border-radius:8px;margin-bottom:10px;display:block;border:1px solid var(--line);">` : ''}
           ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
           <div class="btn-row" style="margin-top:0;">
@@ -438,11 +438,11 @@ function render(container, ideaRow) {
     }
     return `
       <div class="card">
-        <h2 style="font-size:16px;">📖 Xuất thành Ebook</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Đóng gói toàn bộ nội dung đã viết thành file PDF, tự động biến thành sách lật đẹp (Heyzine).</div>
+        <h2 style="font-size:17px;">📖 Xuất thành Ebook</h2>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">Đóng gói toàn bộ nội dung đã viết thành file PDF, tự động biến thành sách lật đẹp (Heyzine).</div>
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         ${heyzineInlineHtml()}
-        ${!connected ? `<div style="font-size:12px;color:var(--ink-soft);margin:8px 0;">⬆️ Kết nối Heyzine ở trên trước đã, nút bên dưới mới bấm được.</div>` : ''}
+        ${!connected ? `<div style="font-size:13.5px;color:var(--ink-soft);margin:8px 0;">⬆️ Kết nối Heyzine ở trên trước đã, nút bên dưới mới bấm được.</div>` : ''}
         <button class="btn" id="xdnd-export-ebook-btn" ${connected ? '' : 'disabled'} style="margin-top:${connected ? '0' : '4px'};">📖 Xuất thành Ebook (PDF + sách lật)</button>
       </div>
     `;
@@ -459,8 +459,8 @@ function render(container, ideaRow) {
     const doneCount = sections.filter((_, i) => lessons[i]).length;
     return `
       <div class="card">
-        <h2 style="font-size:16px;">🎓 Xuất từng bài học (PDF)</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Khoá học nhiều bài — mỗi phần trong outline xuất thành 1 file PDF riêng, có link tải riêng cho từng bài. Bài nào viết xong bản nháp mới xuất được bài đó (tránh xuất nhầm outline thô).</div>
+        <h2 style="font-size:17px;">🎓 Xuất từng bài học (PDF)</h2>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">Khoá học nhiều bài — mỗi phần trong outline xuất thành 1 file PDF riêng, có link tải riêng cho từng bài. Bài nào viết xong bản nháp mới xuất được bài đó (tránh xuất nhầm outline thô).</div>
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
         ${sections.map((s, i) => {
           const l = lessons[i];
@@ -468,14 +468,14 @@ function render(container, ideaRow) {
           const written = !!state.sections[i];
           return `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
-              <div style="font-size:13.5px;">${esc(s.kind)} · ${esc(s.tieu_de)}</div>
+              <div style="font-size:15px;">${esc(s.kind)} · ${esc(s.tieu_de)}</div>
               <div class="btn-row" style="margin:0;">
                 ${l ? `<a class="btn-ghost btn btn-sm" href="${esc(l.link)}" target="_blank" rel="noopener">Xem file</a>` : ''}
                 ${isExporting
                   ? `<span class="btn-ghost btn btn-sm" style="opacity:.6;">Đang xuất…</span>`
                   : written
                     ? `<span class="btn-ghost btn btn-sm" ${exporting != null ? 'style="opacity:.4;pointer-events:none;"' : ''} data-export-lesson="${i}">${l ? 'Xuất lại' : 'Xuất PDF'}</span>`
-                    : `<span style="font-size:12px;color:var(--ink-soft);">Viết bài này trước đã</span>`}
+                    : `<span style="font-size:13.5px;color:var(--ink-soft);">Viết bài này trước đã</span>`}
               </div>
             </div>
           `;
@@ -492,13 +492,13 @@ function render(container, ideaRow) {
       return `<div class="hint-box">🔍 Khi đã viết xong bản nháp cho TẤT CẢ các phần, bạn có thể "Duyệt tổng thể" để AI kiểm tra mạch lạc, trùng lặp giữa các phần.</div>`;
     }
     if (state.tongDuyetLoading) {
-      return `<div class="card"><h2 style="font-size:16px;margin-bottom:10px;">🔍 Đang duyệt tổng thể…</h2><button class="btn" id="xdnd-tong-duyet-btn" disabled>Đang duyệt tổng thể 0%</button></div>`;
+      return `<div class="card"><h2 style="font-size:17px;margin-bottom:10px;">🔍 Đang duyệt tổng thể…</h2><button class="btn" id="xdnd-tong-duyet-btn" disabled>Đang duyệt tổng thể 0%</button></div>`;
     }
     if (!state.tongDuyetResult) {
       return `
         <div class="card">
-          <h2 style="font-size:16px;">🔍 Duyệt tổng thể sản phẩm</h2>
-          <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">AI đọc lại toàn bộ nội dung đã viết, kiểm tra mạch lạc, trùng lặp giữa các phần, và có giữ đúng lời hứa outline không.</div>
+          <h2 style="font-size:17px;">🔍 Duyệt tổng thể sản phẩm</h2>
+          <div style="font-size:15px;color:var(--ink-soft);margin-bottom:10px;">AI đọc lại toàn bộ nội dung đã viết, kiểm tra mạch lạc, trùng lặp giữa các phần, và có giữ đúng lời hứa outline không.</div>
           ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
           <button class="btn" id="xdnd-tong-duyet-btn">🔍 Duyệt tổng thể (2 lượt AI)</button>
         </div>
@@ -507,8 +507,8 @@ function render(container, ideaRow) {
     const r = state.tongDuyetResult;
     return `
       <div class="card">
-        <h2 style="font-size:16px;">🔍 Kết quả duyệt tổng thể</h2>
-        <div style="font-size:13.5px;margin-bottom:10px;">${r.mach_lac ? '✅ Mạch lạc' : '⚠️ Chưa thật mạch lạc'} · ${r.giu_dung_loi_hua_outline ? '✅ Đúng lời hứa outline' : '⚠️ Chưa đúng lời hứa outline'}</div>
+        <h2 style="font-size:17px;">🔍 Kết quả duyệt tổng thể</h2>
+        <div style="font-size:15px;margin-bottom:10px;">${r.mach_lac ? '✅ Mạch lạc' : '⚠️ Chưa thật mạch lạc'} · ${r.giu_dung_loi_hua_outline ? '✅ Đúng lời hứa outline' : '⚠️ Chưa đúng lời hứa outline'}</div>
         ${r.nhan_xet_tong_quan ? `<div class="hint-box">${esc(r.nhan_xet_tong_quan)}</div>` : ''}
         ${(r.trung_lap || []).length ? `<div class="error-box"><b>Chỗ bị lặp ý:</b><ul style="margin:6px 0 0;padding-left:18px;">${r.trung_lap.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(r.cho_thieu_lien_ket || []).length ? `<div class="error-box"><b>Chỗ chuyển phần bị cộc:</b><ul style="margin:6px 0 0;padding-left:18px;">${r.cho_thieu_lien_ket.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
@@ -532,7 +532,7 @@ function render(container, ideaRow) {
         <h2>${esc(idea.ten_san_pham)}</h2>
         <span class="btn-ghost btn btn-sm" id="xdnd-luu-tam-btn" style="white-space:nowrap;">💾 Lưu tạm, bắt đầu sản phẩm khác</span>
       </div>
-      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
+      <div style="font-size:15px;color:var(--ink-soft);margin-bottom:14px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
       ${sections.map((s, i) => {
         const st = state.sections[i];
         const status = st ? st.status : null;
@@ -542,15 +542,15 @@ function render(container, ideaRow) {
         return `
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-              <div style="font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">${esc(s.kind)}</div>
+              <div style="font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">${esc(s.kind)}</div>
               <span class="btn-ghost btn btn-sm" data-edit-outline-section="${i}">✏️ Sửa</span>
             </div>
-            <h2 style="font-size:16px;margin-bottom:6px;">${esc(s.tieu_de)}</h2>
-            <div style="font-size:13.5px;margin-bottom:8px;"><b>Kết quả đạt được:</b> ${esc(s.ket_qua_cu_the)}</div>
-            <ul style="margin:0 0 10px;padding-left:20px;font-size:13px;color:var(--ink-soft);">${(s.noi_dung_con || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul>
+            <h2 style="font-size:17px;margin-bottom:6px;">${esc(s.tieu_de)}</h2>
+            <div style="font-size:15px;margin-bottom:8px;"><b>Kết quả đạt được:</b> ${esc(s.ket_qua_cu_the)}</div>
+            <ul style="margin:0 0 10px;padding-left:20px;font-size:14.5px;color:var(--ink-soft);">${(s.noi_dung_con || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul>
             <div class="btn-row" style="margin-top:0;align-items:center;">
               <span class="btn-ghost btn btn-sm" data-open-section="${i}">${btnLabel}</span>
-              ${st && st.used_web_search ? `<span style="font-size:12px;color:var(--ink-soft);">🔍 Có dùng nguồn web</span>` : ''}
+              ${st && st.used_web_search ? `<span style="font-size:13.5px;color:var(--ink-soft);">🔍 Có dùng nguồn web</span>` : ''}
             </div>
           </div>
         `;
@@ -565,7 +565,7 @@ function render(container, ideaRow) {
     const f = state.editOutlineForm;
     return `
       <div class="card">
-        <h2 style="font-size:18px;">Sửa phần outline</h2>
+        <h2 style="font-size:19px;">Sửa phần outline</h2>
         <label>Tiêu đề</label>
         <input id="xdnd-edit-tieude" type="text" value="${esc(f.tieu_de)}">
         <label>Kết quả cụ thể</label>
@@ -585,8 +585,8 @@ function render(container, ideaRow) {
     const s = flattenSections(state.outline2)[state.activeIndex];
     return `
       <div class="card">
-        <h2 style="font-size:16px;">Bắt đầu viết — ${esc(s.tieu_de)}</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">AI cần tổng hợp kiến thức nền trước khi viết phần này. Chọn nguồn kiến thức:</div>
+        <h2 style="font-size:17px;">Bắt đầu viết — ${esc(s.tieu_de)}</h2>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:10px;">AI cần tổng hợp kiến thức nền trước khi viết phần này. Chọn nguồn kiến thức:</div>
         <div class="btn-row">
           <button class="btn" id="xdnd-start-normal-btn">✍️ Viết luôn (kiến thức sẵn có của AI)</button>
           <span class="btn-ghost btn" id="xdnd-start-websearch-btn">🔍 Tìm thêm từ web trước (phát sinh phí tìm kiếm)</span>
@@ -610,15 +610,15 @@ function render(container, ideaRow) {
     return `
       <div class="hint-box">
         <b>🖼️ Ảnh minh hoạ gợi ý</b>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--panel);padding:10px;border-radius:6px;margin:8px 0;white-space:pre-wrap;border:1px solid var(--line);">${esc(prompt)}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;background:var(--panel);padding:10px;border-radius:6px;margin:8px 0;white-space:pre-wrap;border:1px solid var(--line);">${esc(prompt)}</div>
         <div class="btn-row" style="margin:0 0 8px;">
           <span class="btn-ghost btn btn-sm" data-copy-illustration-prompt="${esc(prompt)}">Copy prompt</span>
           <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Mở ChatGPT →</a>
         </div>
-        <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;">Dán prompt vào ChatGPT để tạo ảnh, rồi tải ảnh kết quả lên đây — ảnh sẽ tự chèn vào đúng phần này khi xuất PDF.</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:8px;">Dán prompt vào ChatGPT để tạo ảnh, rồi tải ảnh kết quả lên đây — ảnh sẽ tự chèn vào đúng phần này khi xuất PDF.</div>
         ${imageUrl ? `<img src="${esc(imageUrl)}" style="max-width:160px;border-radius:8px;display:block;margin-bottom:8px;border:1px solid var(--line);">` : ''}
         <input id="xdnd-illustration-upload" type="file" accept="image/*">
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${state.illustrationUploading ? 'Đang xử lý ảnh…' : ''}</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">${state.illustrationUploading ? 'Đang xử lý ảnh…' : ''}</div>
       </div>
     `;
   }
@@ -653,7 +653,7 @@ function render(container, ideaRow) {
 
   function personalPerspectiveHintHtml() {
     if (getMaterialPath()) {
-      return `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>`;
+      return `<div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">Sửa trực tiếp nếu muốn bổ sung quan điểm/kinh nghiệm cá nhân — bấm "Lưu chỉnh sửa" để giữ lại.</div>`;
     }
     return `<div class="hint-box" style="margin-bottom:6px;">✍️ Bổ sung góc nhìn cá nhân là BẮT BUỘC — nội dung này được AI viết hoàn toàn từ kiến thức chung, dù chỉ 1-2 câu từ trải nghiệm thật của bạn cũng tạo khác biệt lớn hơn nhiều. Sửa trực tiếp vào ô bên dưới rồi bấm "Lưu chỉnh sửa".</div>`;
   }
@@ -662,9 +662,9 @@ function render(container, ideaRow) {
     const s = state.sections[state.activeIndex];
     return `
       <div class="card">
-        <h2 style="font-size:16px;">Bản nháp — ${esc(flattenSections(state.outline2)[state.activeIndex].tieu_de)}</h2>
+        <h2 style="font-size:17px;">Bản nháp — ${esc(flattenSections(state.outline2)[state.activeIndex].tieu_de)}</h2>
         ${personalPerspectiveHintHtml()}
-        <textarea id="xdnd-draft-textarea" rows="14" style="font-size:14.5px;">${esc(s.viet.noi_dung)}</textarea>
+        <textarea id="xdnd-draft-textarea" rows="14" style="font-size:16px;">${esc(s.viet.noi_dung)}</textarea>
         <div class="hint-box"><b>Ví dụ:</b> ${esc(s.viet.vi_du)}</div>
         <div class="hint-box"><b>Bài tập:</b> ${esc(s.viet.bai_tap)}</div>
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
@@ -699,13 +699,13 @@ function render(container, ideaRow) {
     return `
       <div class="card">
         ${justFinishedAll ? `<div class="hint-box">🎉 Đã viết xong bản final cho TẤT CẢ các phần! Quay lại outline để xuất thành Ebook.</div>` : ''}
-        <h2 style="font-size:16px;">Kết quả kiểm tra chất lượng</h2>
-        <ul style="margin:0 0 12px;padding-left:20px;font-size:13.5px;">
+        <h2 style="font-size:17px;">Kết quả kiểm tra chất lượng</h2>
+        <ul style="margin:0 0 12px;padding-left:20px;font-size:15px;">
           ${items.map(([k, label]) => `<li>${c[k] ? '✅' : '⚠️'} ${label}</li>`).join('')}
         </ul>
         ${s.review.gop_y ? `<div class="hint-box"><b>Góp ý:</b> ${esc(s.review.gop_y)}</div>` : ''}
         <div style="margin-top:10px;">${personalPerspectiveHintHtml()}</div>
-        <textarea id="xdnd-final-textarea" rows="14" style="font-size:14.5px;">${esc(s.review.ban_da_chinh || s.viet.noi_dung)}</textarea>
+        <textarea id="xdnd-final-textarea" rows="14" style="font-size:16px;">${esc(s.review.ban_da_chinh || s.viet.noi_dung)}</textarea>
         ${(s.viet.tom_tat_3_y && s.viet.tom_tat_3_y.length) ? `<div class="hint-box"><b>3 điều cần nhớ:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.viet.tom_tat_3_y.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.nguon_tham_khao && s.nghien_cuu.nguon_tham_khao.length) ? `<div class="hint-box"><b>🔍 Nguồn tham khảo:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.nguon_tham_khao.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
         ${(s.nghien_cuu && s.nghien_cuu.khoang_trong_thi_truong && s.nghien_cuu.khoang_trong_thi_truong.length) ? `<div class="hint-box"><b>📊 Khoảng trống thị trường:</b><ul style="margin:6px 0 0;padding-left:18px;">${s.nghien_cuu.khoang_trong_thi_truong.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}

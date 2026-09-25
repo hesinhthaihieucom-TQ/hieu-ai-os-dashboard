@@ -203,7 +203,7 @@ function render(container, profile) {
     const info = DINH_DANG_INFO[value];
     if (!info) return '';
     return `
-      <div class="hint-box" style="margin-top:8px;margin-bottom:0;font-size:12.5px;">
+      <div class="hint-box" style="margin-top:8px;margin-bottom:0;font-size:14px;">
         <div>🧩 <b>Cần chuẩn bị:</b> ${esc(info.can_chuan_bi)}</div>
         <div style="margin-top:4px;">🎁 <b>Người mua nhận được:</b> ${esc(info.nguoi_mua_nhan)}</div>
       </div>
@@ -216,7 +216,7 @@ function render(container, profile) {
     const info = DINH_DANG_INFO[value];
     if (!info) return '';
     return `
-      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:13px;line-height:1.6;">
+      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:14.5px;line-height:1.6;">
         <div style="margin-bottom:8px;"><b style="color:var(--accent);">Là gì:</b> ${esc(info.la_gi)}</div>
         <div style="margin-bottom:8px;"><b style="color:var(--accent);">Ưu điểm:</b> ${esc(info.uu_diem)}</div>
         <div style="margin-bottom:8px;"><b style="color:var(--accent);">Thách thức:</b> ${esc(info.thach_thuc)}</div>
@@ -233,14 +233,14 @@ function render(container, profile) {
       <h2>Chọn loại sản phẩm số</h2>
       <div class="hint-box">Dành cho người ĐÃ biết chủ đề/đối tượng muốn nhắm tới, chỉ cần chốt định dạng. Nếu chưa có ý tưởng gì cả, dùng "🧭 Tìm Sản Phẩm Phù Hợp" ở mục 1 sẽ hợp hơn.</div>
       <div class="card" style="margin-bottom:14px;">
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">📎 Đã có sẵn file PDF (tài liệu, hoặc sản phẩm đã viết xong)? Tải lên đây trước — dù chọn loại nào ở dưới hoặc để AI gợi ý, file này sẽ được dùng luôn, không cần tải lại.</div>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:8px;">📎 Đã có sẵn file PDF (tài liệu, hoặc sản phẩm đã viết xong)? Tải lên đây trước — dù chọn loại nào ở dưới hoặc để AI gợi ý, file này sẽ được dùng luôn, không cần tải lại.</div>
         <input id="pt-file-input" type="file" accept="application/pdf">
-        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${state.form.materialUploading ? 'Đang tải lên…' : (state.form.materialFileName ? `📎 ${esc(state.form.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file — không bắt buộc.')}</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${state.form.materialUploading ? 'Đang tải lên…' : (state.form.materialFileName ? `📎 ${esc(state.form.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file — không bắt buộc.')}</div>
         ${state.form.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(state.form.materialUploadError)}</div>` : ''}
         ${state.form.materialFileName ? `<div class="hint-box" style="margin-top:10px;">👇 Xong rồi — giờ cuộn xuống <b>chọn 1 loại sản phẩm</b> ở danh sách bên dưới (hoặc bấm "AI gợi ý loại phù hợp"), file này sẽ tự động được dùng.</div>` : ''}
       </div>
       <div class="card" style="margin-bottom:14px;">
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">${state.form.materialFileName ? `Đã có file <b>${esc(state.form.materialFileName)}</b> — AI sẽ đọc thẳng file này để gợi ý, không cần nhập gì thêm.` : 'Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.'}</div>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:10px;">${state.form.materialFileName ? `Đã có file <b>${esc(state.form.materialFileName)}</b> — AI sẽ đọc thẳng file này để gợi ý, không cần nhập gì thêm.` : 'Chưa chắc nên chọn loại nào? Để AI gợi ý dựa trên chủ đề/đối tượng bạn nhắm tới.'}</div>
         ${state.aiSuggestError ? `<div class="error-box" style="margin-bottom:10px;">${esc(state.aiSuggestError)}</div>` : ''}
         <button class="btn" id="pt-ai-btn">🤖 Để AI gợi ý loại phù hợp (1 lượt AI)</button>
       </div>
@@ -250,12 +250,12 @@ function render(container, profile) {
         <div class="card" style="margin-bottom:10px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
             <span style="font-size:22px;line-height:1;">${DINH_DANG_ICON[o.value] || ''}</span>
-            <h2 style="font-size:18px;color:var(--accent);margin:0;">${esc(o.label)}</h2>
+            <h2 style="font-size:19px;color:var(--accent);margin:0;">${esc(o.label)}</h2>
           </div>
-          <div style="font-size:13.5px;color:var(--ink);margin-bottom:2px;">${esc((DINH_DANG_INFO[o.value] || {}).khi_nao || '')}</div>
+          <div style="font-size:15px;color:var(--ink);margin-bottom:2px;">${esc((DINH_DANG_INFO[o.value] || {}).khi_nao || '')}</div>
           ${dinhDangInfoHtml(o.value)}
           <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span data-pt-toggle="${esc(o.value)}" style="cursor:pointer;color:var(--accent);font-size:13px;text-decoration:underline;">${expanded ? '▲ Ẩn bớt' : '🔍 Tìm hiểu thêm'}</span>
+            <span data-pt-toggle="${esc(o.value)}" style="cursor:pointer;color:var(--accent);font-size:14.5px;text-decoration:underline;">${expanded ? '▲ Ẩn bớt' : '🔍 Tìm hiểu thêm'}</span>
             <button class="btn btn-sm" data-pt-choose="${esc(o.value)}">Chọn loại này →</button>
           </div>
           ${expanded ? dinhDangDetailHtml(o.value) : ''}
@@ -289,13 +289,13 @@ function render(container, profile) {
       <h2>📘 Ebook</h2>
       <div class="hint-box">Ebook trong app này luôn giao hàng dạng sách lật (Heyzine) — khách xem trực tiếp trên trình duyệt, không phải tải file thô về.</div>
       <div class="card" style="margin-bottom:10px;">
-        <h2 style="font-size:16px;">✨ AI viết nội dung mới</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">${hasUploaded ? `Sẽ dùng file <b>${esc(state.form.materialFileName)}</b> đã tải làm nguồn tham khảo để AI viết nội dung mới bám sát nó.` : 'Chưa có sẵn nội dung — để AI giúp dựng outline rồi viết từng phần, sau đó tự xuất thành sách lật.'}</div>
+        <h2 style="font-size:17px;">✨ AI viết nội dung mới</h2>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:10px;">${hasUploaded ? `Sẽ dùng file <b>${esc(state.form.materialFileName)}</b> đã tải làm nguồn tham khảo để AI viết nội dung mới bám sát nó.` : 'Chưa có sẵn nội dung — để AI giúp dựng outline rồi viết từng phần, sau đó tự xuất thành sách lật.'}</div>
         <button class="btn" id="ef-ai-btn">Tiếp tục với AI →</button>
       </div>
       <div class="card">
-        <h2 style="font-size:16px;">📖 Đã có sẵn file PDF hoàn chỉnh</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">${hasUploaded ? `Dùng thẳng file <b>${esc(state.form.materialFileName)}</b> đã tải — biến ngay thành sách lật, không qua AI, không tốn lượt.` : 'Đã viết xong nội dung — chỉ cần biến ngay thành sách lật, không qua AI, không tốn lượt.'}</div>
+        <h2 style="font-size:17px;">📖 Đã có sẵn file PDF hoàn chỉnh</h2>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:10px;">${hasUploaded ? `Dùng thẳng file <b>${esc(state.form.materialFileName)}</b> đã tải — biến ngay thành sách lật, không qua AI, không tốn lượt.` : 'Đã viết xong nội dung — chỉ cần biến ngay thành sách lật, không qua AI, không tốn lượt.'}</div>
         <button class="btn-ghost btn" id="ef-flipbook-btn">${hasUploaded ? 'Dùng file này, tạo sách lật →' : 'Tải PDF lên, tạo sách lật →'}</button>
       </div>
       <div class="btn-row"><span class="btn-ghost btn btn-sm" id="ef-back-btn">← Chọn loại khác</span></div>
@@ -340,7 +340,7 @@ function render(container, profile) {
   function heyzineSoundGuideHtml() {
     return `
       <div class="hint-box" style="margin-top:10px;">🎵 Muốn thêm nhạc nền/tiếng lật trang cho cuốn này?
-      <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+      <ol style="margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.7;">
         <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa tạo → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
         <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền). 5 bài gợi ý có sẵn (Pixabay, MIỄN PHÍ, KHÔNG cần mua, KHÔNG cần ghi nguồn) — bấm 1 bài, bấm nút <b style="color:var(--accent);">"Download"</b> màu xanh trên trang đó để tải MP3 về máy, rồi tải chính file đó lên "Background Audio":
           ${PIXABAY_MUSIC_LIST_HTML}
@@ -369,18 +369,18 @@ function render(container, profile) {
     }
     return `
       <div class="card" style="margin-top:12px;">
-        <h2 style="font-size:14px;margin-bottom:6px;">🔗 Bắt buộc kết nối Heyzine riêng trước khi tạo</h2>
+        <h2 style="font-size:15.5px;margin-bottom:6px;">🔗 Bắt buộc kết nối Heyzine riêng trước khi tạo</h2>
         <div class="hint-box" style="margin-bottom:10px;">
-          <ol style="margin:0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+          <ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.7;">
             <li>Mở <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a> — hoặc vào heyzine.com, bấm icon <b style="color:var(--accent);">☰</b> (menu) góc trên bên trái → chọn <b style="color:var(--accent);">API</b>.</li>
             <li>Chưa có tài khoản: bấm <b style="color:var(--accent);">"register"</b> (Đăng ký). Đã có: bấm <b style="color:var(--accent);">"Login"</b> (Đăng nhập) — miễn phí.</li>
             <li>Đăng nhập xong, trang hiện 2 ô <b style="color:var(--accent);">"This is your Client Id:"</b> (Client ID của bạn) và <b style="color:var(--accent);">"This is your API key:"</b> (API Key của bạn) — không cần bấm icon con mắt để xem, bấm thẳng nút <b style="color:var(--accent);">"Copy"</b> (Sao chép) từng ô là được.</li>
             <li>Dán vào 2 ô dưới rồi bấm "Lưu kết nối", quay lại đây tạo sách lật luôn không cần mở tab khác.</li>
           </ol>
         </div>
-        <label style="font-size:12.5px;">Client ID</label>
+        <label style="font-size:14px;">Client ID</label>
         <input id="fb-heyzine-client" type="text" value="${esc(f.heyzineClientId)}" placeholder="Dán Client ID từ Heyzine">
-        <label style="margin-top:8px;font-size:12.5px;">API Key</label>
+        <label style="margin-top:8px;font-size:14px;">API Key</label>
         <input id="fb-heyzine-key" type="password" value="${esc(f.heyzineApiKey)}" placeholder="Dán API Key từ Heyzine">
         ${f.heyzineError ? `<div class="error-box" style="margin-top:8px;">${esc(f.heyzineError)}</div>` : ''}
         <div class="btn-row">
@@ -402,10 +402,10 @@ function render(container, profile) {
         <input id="fb-title" type="text" value="${esc(f.title)}" placeholder="VD: 21 Ngày Chuyển Nghiệp Tài Chính">
         <label style="margin-top:14px;">File PDF</label>
         <input id="fb-file" type="file" accept="application/pdf">
-        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
         ${f.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(f.materialUploadError)}</div>` : ''}
         ${f.error ? `<div class="error-box" style="margin-top:10px;">${esc(f.error)}</div>` : ''}
-        ${!connected ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:10px;">⬆️ Kết nối Heyzine ở trên trước đã, nút bên dưới mới bấm được.</div>` : ''}
+        ${!connected ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:10px;">⬆️ Kết nối Heyzine ở trên trước đã, nút bên dưới mới bấm được.</div>` : ''}
         <div class="btn-row">
           <span class="btn-ghost btn" id="fb-back-btn">← Quay lại</span>
           <button class="btn" id="fb-generate-btn" ${(!connected || !f.materialPath || !f.title.trim() || f.generating) ? 'disabled' : ''}>${f.generating ? 'Đang tạo sách lật…' : '📖 Tạo sách lật'}</button>
@@ -413,7 +413,7 @@ function render(container, profile) {
       </div>
       ${f.result ? `
         <div class="card">
-          <h2 style="font-size:16px;">✅ Sách lật đã tạo xong</h2>
+          <h2 style="font-size:17px;">✅ Sách lật đã tạo xong</h2>
           ${f.result.thumbnail ? `<img src="${esc(f.result.thumbnail)}" style="max-width:140px;border-radius:8px;margin-bottom:10px;display:block;border:1px solid var(--line);">` : ''}
           <div class="btn-row" style="margin-top:0;">
             <a class="btn-ghost btn" href="${esc(f.result.heyzineUrl)}" target="_blank" rel="noopener">Xem thử sách lật →</a>
@@ -530,7 +530,7 @@ function render(container, profile) {
     const f = state.form;
     return `
       <h2>Gợi ý cho bạn</h2>
-      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">${(f.chuDe || f.doiTuong) ? `Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b>` : `Dựa trên file <b>${esc(f.materialFileName)}</b> đã tải lên.`}</div>
+      <div style="font-size:15px;color:var(--ink-soft);margin-bottom:14px;">${(f.chuDe || f.doiTuong) ? `Chủ đề: <b>${esc(f.chuDe)}</b> · Đối tượng: <b>${esc(f.doiTuong)}</b>` : `Dựa trên file <b>${esc(f.materialFileName)}</b> đã tải lên.`}</div>
       ${(f.aiSuggestions || []).map(s => {
         const opt = DINH_DANG_OPTIONS.find(o => o.value === s.dinh_dang);
         const expanded = !!state.expandedTypes[s.dinh_dang];
@@ -538,12 +538,12 @@ function render(container, profile) {
           <div class="card" style="margin-bottom:10px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
               <span style="font-size:22px;line-height:1;">${DINH_DANG_ICON[s.dinh_dang] || ''}</span>
-              <h2 style="font-size:18px;color:var(--accent);margin:0;">${esc(opt ? opt.label : s.dinh_dang)}</h2>
+              <h2 style="font-size:19px;color:var(--accent);margin:0;">${esc(opt ? opt.label : s.dinh_dang)}</h2>
             </div>
-            <div style="font-size:13.5px;color:var(--ink);margin-bottom:2px;">${esc(s.ly_do)}</div>
+            <div style="font-size:15px;color:var(--ink);margin-bottom:2px;">${esc(s.ly_do)}</div>
             ${dinhDangInfoHtml(s.dinh_dang)}
             <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-              <span data-pt-toggle="${esc(s.dinh_dang)}" style="cursor:pointer;color:var(--accent);font-size:13px;text-decoration:underline;">${expanded ? '▲ Ẩn bớt' : '🔍 Tìm hiểu thêm'}</span>
+              <span data-pt-toggle="${esc(s.dinh_dang)}" style="cursor:pointer;color:var(--accent);font-size:14.5px;text-decoration:underline;">${expanded ? '▲ Ẩn bớt' : '🔍 Tìm hiểu thêm'}</span>
               <button class="btn btn-sm" data-ai-choose="${esc(s.dinh_dang)}">Chọn loại này →</button>
             </div>
             ${expanded ? dinhDangDetailHtml(s.dinh_dang) : ''}
@@ -567,7 +567,7 @@ function render(container, profile) {
     return `
       <h2>Chi tiết sản phẩm</h2>
       <div class="card">
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Loại đã chọn: <b>${esc(opt ? opt.label : f.dinhDang)}</b> — <span id="cl-change-type-btn" style="cursor:pointer;text-decoration:underline;">Đổi loại khác</span></div>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:14px;">Loại đã chọn: <b>${esc(opt ? opt.label : f.dinhDang)}</b> — <span id="cl-change-type-btn" style="cursor:pointer;text-decoration:underline;">Đổi loại khác</span></div>
 
         <label>Ngành/lĩnh vực</label>
         <div class="chips">
@@ -583,7 +583,7 @@ function render(container, profile) {
 
         <label style="margin-top:14px;">Tài liệu (PDF, tuỳ chọn — nếu có sẵn, AI sẽ bám sát nội dung thật trong đó để VIẾT NỘI DUNG MỚI, không phải đăng nguyên file này lên bán)</label>
         <input id="cl-file-input" type="file" accept="application/pdf">
-        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${f.materialUploading ? 'Đang tải lên…' : (f.materialFileName ? `📎 ${esc(f.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
         ${f.materialUploadError ? `<div class="error-box" style="margin-top:6px;">${esc(f.materialUploadError)}</div>` : ''}
         <div class="hint-box" style="margin-top:10px;">📦 File này đã HOÀN CHỈNH, sẵn sàng bán ngay, không cần AI viết thêm? Khỏi cần tải lên đây — vào thẳng <a href="#san-pham">"🛒 Sản phẩm của tôi"</a>, tải file lên là xong.</div>
 
@@ -600,15 +600,15 @@ function render(container, profile) {
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-          <h2 style="font-size:18px;">${esc(p.ten_san_pham)}</h2>
+          <h2 style="font-size:19px;">${esc(p.ten_san_pham)}</h2>
           <span class="btn-ghost btn btn-sm" id="cl-edit-btn">✏️ Sửa</span>
         </div>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:10px;">
           <b>Đối tượng:</b> ${esc(p.doi_tuong)} · <b>Định dạng:</b> ${esc(p.dinh_dang)} · <b>Độ dài:</b> ${esc(p.do_dai_uoc_luong)}
         </div>
-        <div style="font-size:13.5px;white-space:pre-line;margin-bottom:12px;">${esc(p.ly_do)}</div>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:6px;"><b>Outline cấp 1:</b></div>
-        <ol style="margin:0 0 12px;padding-left:20px;font-size:13.5px;">${(p.outline_cap_1 || []).map(o => `<li>${esc(o)}</li>`).join('')}</ol>
+        <div style="font-size:15px;white-space:pre-line;margin-bottom:12px;">${esc(p.ly_do)}</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:6px;"><b>Outline cấp 1:</b></div>
+        <ol style="margin:0 0 12px;padding-left:20px;font-size:15px;">${(p.outline_cap_1 || []).map(o => `<li>${esc(o)}</li>`).join('')}</ol>
         <button class="btn" id="cl-choose-btn">Bắt đầu xây nội dung →</button>
       </div>
     `;
@@ -618,7 +618,7 @@ function render(container, profile) {
     const p = state.editForm;
     return `
       <div class="card">
-        <h2 style="font-size:18px;">Sửa outline</h2>
+        <h2 style="font-size:19px;">Sửa outline</h2>
         <label>Tên sản phẩm</label>
         <input id="edit-ten" type="text" value="${esc(p.ten_san_pham)}">
         <label>Đối tượng</label>

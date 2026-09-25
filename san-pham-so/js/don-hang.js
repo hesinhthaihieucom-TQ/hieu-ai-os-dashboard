@@ -34,12 +34,12 @@ function render(container) {
         <div class="card" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <b>${esc((o.digital_products && o.digital_products.title) || 'Sản phẩm đã xoá')}</b>
-            <span style="font-size:12.5px;white-space:nowrap;">${statusLabel(o)}</span>
+            <span style="font-size:14px;white-space:nowrap;">${statusLabel(o)}</span>
           </div>
-          <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">
+          <div style="color:var(--ink-soft);font-size:15px;margin-top:4px;">
             ${Number(o.amount).toLocaleString('vi-VN')}đ · ${esc(o.buyer_name || '(chưa có tên)')}${o.buyer_phone ? ` · ${esc(o.buyer_phone)}` : ''}${o.buyer_email ? ` · ${esc(o.buyer_email)}` : ''}
           </div>
-          <div style="color:var(--ink-soft);font-size:12px;margin-top:2px;">
+          <div style="color:var(--ink-soft);font-size:13.5px;margin-top:2px;">
             Đặt lúc: ${new Date(o.created_at).toLocaleString('vi-VN')}${o.paid_at ? ` · Thanh toán lúc: ${new Date(o.paid_at).toLocaleString('vi-VN')}` : ''}
           </div>
         </div>

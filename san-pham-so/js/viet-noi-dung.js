@@ -41,9 +41,9 @@ function render(container) {
     const themLabel = phuongAnList.length > 1 ? ` (+${phuongAnList.length - 1} phương án khác)` : '';
     return `
       <div class="card" data-continue-pending="1" style="cursor:pointer;border-style:dashed;">
-        <div style="font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">🔍 Đang cân nhắc — chưa chọn phương án</div>
+        <div style="font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">🔍 Đang cân nhắc — chưa chọn phương án</div>
         <b>${esc(tenHienThi)}${esc(themLabel)}</b>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">Tiếp tục ở ${tuChonLoai ? '🗂️ Chọn Loại Sản Phẩm Số' : '🧭 Tìm Sản Phẩm Phù Hợp'} →</div>
+        <div style="font-size:14px;color:var(--ink-soft);margin-top:4px;">Tiếp tục ở ${tuChonLoai ? '🗂️ Chọn Loại Sản Phẩm Số' : '🧭 Tìm Sản Phẩm Phù Hợp'} →</div>
       </div>
     `;
   }
@@ -54,7 +54,7 @@ function render(container) {
       return `
         <h2>Viết Nội Dung</h2>
         <div class="card" style="text-align:center;padding:36px 24px;">
-          <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:16px;">Chưa có ý tưởng nào đang viết dở — chốt 1 ý tưởng ở bước trước để bắt đầu viết nội dung.</div>
+          <div style="font-size:16px;color:var(--ink-soft);margin-bottom:16px;">Chưa có ý tưởng nào đang viết dở — chốt 1 ý tưởng ở bước trước để bắt đầu viết nội dung.</div>
           <div class="btn-row" style="justify-content:center;">
             <span class="btn" id="vnd-goto-tim-btn" style="display:inline-block;width:auto;padding:12px 24px;">🧭 Tìm Sản Phẩm Phù Hợp</span>
             <span class="btn-ghost btn" id="vnd-goto-chon-btn" style="display:inline-block;width:auto;padding:12px 24px;">🗂️ Chọn Loại Sản Phẩm Số</span>
@@ -72,7 +72,7 @@ function render(container) {
         return `
           <div class="card" data-continue="${i}" style="cursor:pointer;">
             <b>${esc(idea.ten_san_pham)}</b>
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
+            <div style="font-size:14px;color:var(--ink-soft);margin-top:4px;">${esc(idea.doi_tuong)} · ${esc(idea.dinh_dang)}</div>
           </div>
         `;
       }).join('')}

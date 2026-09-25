@@ -40,18 +40,18 @@ function render(container) {
     return `
       <div class="card" style="margin-bottom:14px;">
         <div style="font-size:22px;font-weight:700;color:var(--accent);">${s.totalRevenue.toLocaleString('vi-VN')}đ</div>
-        <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">Tổng doanh thu đã thanh toán · ${s.paidCount}/${s.totalCount} đơn đã thanh toán · mọi người bán.</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-top:2px;">Tổng doanh thu đã thanh toán · ${s.paidCount}/${s.totalCount} đơn đã thanh toán · mọi người bán.</div>
       </div>
       ${orders.length === 0 ? `<div class="hint-box">Chưa có đơn hàng nào.</div>` : orders.map(o => `
         <div class="card" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <b>${esc(o.productTitle || 'Sản phẩm đã xoá')}</b>
-            <span style="font-size:12.5px;white-space:nowrap;">${o.status === 'paid' ? '✅ Đã thanh toán' : '⏳ Chờ thanh toán'}</span>
+            <span style="font-size:14px;white-space:nowrap;">${o.status === 'paid' ? '✅ Đã thanh toán' : '⏳ Chờ thanh toán'}</span>
           </div>
-          <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">
+          <div style="color:var(--ink-soft);font-size:15px;margin-top:4px;">
             ${Number(o.amount).toLocaleString('vi-VN')}đ · Người bán: ${esc(o.sellerName || '(không rõ)')} · ${esc(o.buyerName || '(chưa có tên)')}${o.buyerPhone ? ` · ${esc(o.buyerPhone)}` : ''}${o.buyerEmail ? ` · ${esc(o.buyerEmail)}` : ''}
           </div>
-          <div style="color:var(--ink-soft);font-size:12px;margin-top:2px;">
+          <div style="color:var(--ink-soft);font-size:13.5px;margin-top:2px;">
             Đặt lúc: ${new Date(o.createdAt).toLocaleString('vi-VN')}${o.paidAt ? ` · Thanh toán lúc: ${new Date(o.paidAt).toLocaleString('vi-VN')}` : ''}
           </div>
         </div>
@@ -63,14 +63,14 @@ function render(container) {
     if (state.loading && !state.products) return `<div class="loading"><div class="spinner"></div></div>`;
     const products = state.products || [];
     return `
-      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">${products.length} sản phẩm, mọi người bán.</div>
+      <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">${products.length} sản phẩm, mọi người bán.</div>
       ${products.map(p => `
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-            <h2 style="font-size:16px;margin-bottom:4px;">${esc(p.title)}</h2>
-            <span style="font-size:11.5px;padding:2px 8px;border-radius:4px;background:${p.status === 'published' ? 'var(--accent-soft)' : '#EEE'};color:${p.status === 'published' ? 'var(--accent)' : '#888'};">${p.status === 'published' ? 'Đã đăng' : 'Nháp'}</span>
+            <h2 style="font-size:17px;margin-bottom:4px;">${esc(p.title)}</h2>
+            <span style="font-size:13px;padding:2px 8px;border-radius:4px;background:${p.status === 'published' ? 'var(--accent-soft)' : '#EEE'};color:${p.status === 'published' ? 'var(--accent)' : '#888'};">${p.status === 'published' ? 'Đã đăng' : 'Nháp'}</span>
           </div>
-          <div style="font-size:13px;color:var(--ink-soft);">Người bán: ${esc(p.ownerName || '(không rõ)')} · ${Number(p.price).toLocaleString('vi-VN')}đ · ${esc(new Date(p.created_at).toLocaleDateString('vi-VN'))}</div>
+          <div style="font-size:14.5px;color:var(--ink-soft);">Người bán: ${esc(p.ownerName || '(không rõ)')} · ${Number(p.price).toLocaleString('vi-VN')}đ · ${esc(new Date(p.created_at).toLocaleDateString('vi-VN'))}</div>
         </div>
       `).join('') || `<div class="hint-box">Chưa có sản phẩm nào.</div>`}
     `;
@@ -85,10 +85,10 @@ function render(container) {
       ${reviews.map(r => `
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;">
-            <b style="font-size:14px;">${esc(r.display_name || '(ẩn danh)')}</b>
-            <span style="font-size:11.5px;padding:2px 8px;border-radius:4px;background:${r.approved ? 'var(--accent-soft)' : '#EEE'};color:${r.approved ? 'var(--accent)' : '#888'};">${r.approved ? 'Đã duyệt' : 'Chờ duyệt'}</span>
+            <b style="font-size:15.5px;">${esc(r.display_name || '(ẩn danh)')}</b>
+            <span style="font-size:13px;padding:2px 8px;border-radius:4px;background:${r.approved ? 'var(--accent-soft)' : '#EEE'};color:${r.approved ? 'var(--accent)' : '#888'};">${r.approved ? 'Đã duyệt' : 'Chờ duyệt'}</span>
           </div>
-          <div style="font-size:13.5px;white-space:pre-line;margin-bottom:10px;">${esc(r.comment)}</div>
+          <div style="font-size:15px;white-space:pre-line;margin-bottom:10px;">${esc(r.comment)}</div>
           <div class="btn-row">
             ${r.approved
               ? `<span class="btn-ghost btn btn-sm" data-qt-unapprove="${r.id}">Ẩn khỏi công khai</span>`

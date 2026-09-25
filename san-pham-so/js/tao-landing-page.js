@@ -185,9 +185,9 @@ function render(container) {
           <iframe src="p/?demo=1&tpl=${t.value}" style="width:700px;height:550px;border:none;transform:scale(0.4);transform-origin:top left;pointer-events:none;" tabindex="-1" title="${esc(t.label)}"></iframe>
         </div>
         <div style="padding:10px 12px;">
-          <div style="font-size:13.5px;font-weight:600;">${selected ? '✓ ' : ''}${esc(t.label)}</div>
-          <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${esc(t.desc)}</div>
-          <a data-lp-view-full href="p/?demo=1&tpl=${t.value}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12.5px;color:var(--accent);text-decoration:underline;">🔍 Xem đầy đủ →</a>
+          <div style="font-size:15px;font-weight:600;">${selected ? '✓ ' : ''}${esc(t.label)}</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);margin-top:2px;">${esc(t.desc)}</div>
+          <a data-lp-view-full href="p/?demo=1&tpl=${t.value}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:14px;color:var(--accent);text-decoration:underline;">🔍 Xem đầy đủ →</a>
         </div>
       </div>
     `;
@@ -208,8 +208,8 @@ function render(container) {
     const f = state.quickCreate;
     return `
       <div class="card">
-        <h2 style="font-size:16px;margin-bottom:10px;">Tạo nhanh sản phẩm để bán</h2>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Chỉ cần đủ thông tin để bán — có thể vào "Sản phẩm của tôi" bổ sung thêm sau (ảnh bìa, loại chi tiết...).</div>
+        <h2 style="font-size:17px;margin-bottom:10px;">Tạo nhanh sản phẩm để bán</h2>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:12px;">Chỉ cần đủ thông tin để bán — có thể vào "Sản phẩm của tôi" bổ sung thêm sau (ảnh bìa, loại chi tiết...).</div>
         <label>Tên sản phẩm</label>
         <input id="qc-title" type="text" value="${esc(f.title)}" placeholder="VD: Ebook 21 Ngày Giải Nghiệp Tiền Bạc">
 
@@ -226,7 +226,7 @@ function render(container) {
         </div>
         ${f.deliverableType === 'file' ? `
           <input id="qc-file-input" type="file" style="margin-top:10px;">
-          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.fileUploading ? 'Đang tải lên…' : (f.fileName ? `📎 ${esc(f.fileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+          <div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${f.fileUploading ? 'Đang tải lên…' : (f.fileName ? `📎 ${esc(f.fileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
         ` : `
           <input id="qc-link" type="text" value="${esc(f.externalLink)}" placeholder="https://..." style="margin-top:10px;">
         `}
@@ -249,7 +249,7 @@ function render(container) {
         <h2>Tạo Landing Page</h2>
         ${templateShowcaseHtml()}
         <div class="card" style="text-align:center;padding:36px 24px;">
-          <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:16px;">Đã có sẵn 1 sản phẩm muốn bán? Tạo nhanh ngay đây, không cần qua bước nào khác.</div>
+          <div style="font-size:16px;color:var(--ink-soft);margin-bottom:16px;">Đã có sẵn 1 sản phẩm muốn bán? Tạo nhanh ngay đây, không cần qua bước nào khác.</div>
           <span class="btn" id="lp-quick-create-btn" style="display:inline-block;width:auto;padding:12px 24px;">🛒 Tạo nhanh sản phẩm</span>
         </div>
       `;
@@ -264,9 +264,9 @@ function render(container) {
         <div class="card" data-pick-product="${p.id}" style="cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <b>${esc(p.title)}</b>
-            <span style="font-size:12px;color:var(--ink-soft);">${p.landing_page_content ? '✅ Đã có landing page' : 'Chưa có landing page'}</span>
+            <span style="font-size:13.5px;color:var(--ink-soft);">${p.landing_page_content ? '✅ Đã có landing page' : 'Chưa có landing page'}</span>
           </div>
-          <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">${(p.price || 0).toLocaleString('vi-VN')}đ</div>
+          <div style="color:var(--ink-soft);font-size:15px;margin-top:4px;">${(p.price || 0).toLocaleString('vi-VN')}đ</div>
         </div>
       `).join('')}
     `;
@@ -302,12 +302,12 @@ function render(container) {
             <span class="btn-ghost btn btn-sm" id="lp-seller-photo-btn">${state.sellerPhotoUploading ? 'Đang tải…' : (photoUrl ? 'Đổi ảnh' : 'Tải ảnh lên')}</span>
           </div>
         </div>
-        <label style="margin-top:14px;font-size:12.5px;font-weight:400;">Số Zalo hỗ trợ khách (dùng chung cho mọi sản phẩm — hiện ngay dưới form đặt hàng, để khách liên hệ nếu gặp lỗi khi mua) — không bắt buộc</label>
+        <label style="margin-top:14px;font-size:14px;font-weight:400;">Số Zalo hỗ trợ khách (dùng chung cho mọi sản phẩm — hiện ngay dưới form đặt hàng, để khách liên hệ nếu gặp lỗi khi mua) — không bắt buộc</label>
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="lp-seller-zalo" type="text" value="${esc(state.sellerContactZalo)}" placeholder="VD: 0987654321" style="flex:1;">
           <button class="btn btn-sm" id="lp-seller-zalo-save" ${state.sellerZaloSaving ? 'disabled' : ''}>${state.sellerZaloSaving ? 'Đang lưu…' : 'Lưu'}</button>
         </div>
-        ${state.sellerZaloSaved ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">✓ Đã lưu.</div>` : ''}
+        ${state.sellerZaloSaved ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">✓ Đã lưu.</div>` : ''}
       </div>
       <div class="card" style="margin-top:10px;">
         <label style="margin-bottom:10px;display:block;">3. Ảnh case study THẬT cho sản phẩm này (khách/học viên thật đã dùng, tối đa ${MAX_CASE_STUDIES} ảnh) — không bắt buộc</label>
@@ -315,8 +315,8 @@ function render(container) {
           ${state.caseStudies.map((c, i) => `
             <div style="width:130px;">
               <img src="${esc(c.url)}" style="width:130px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;">
-              <input type="text" data-cs-name="${i}" value="${esc(c.name || '')}" placeholder="Tên khách hàng, VD: Chị Lan" style="margin-top:4px;font-size:12px;padding:6px 8px;">
-              <input type="text" data-cs-caption="${i}" value="${esc(c.caption || '')}" placeholder="Kết quả đạt được, VD: Giảm 5kg sau 2 tháng" style="margin-top:4px;font-size:12px;padding:6px 8px;">
+              <input type="text" data-cs-name="${i}" value="${esc(c.name || '')}" placeholder="Tên khách hàng, VD: Chị Lan" style="margin-top:4px;font-size:13.5px;padding:6px 8px;">
+              <input type="text" data-cs-caption="${i}" value="${esc(c.caption || '')}" placeholder="Kết quả đạt được, VD: Giảm 5kg sau 2 tháng" style="margin-top:4px;font-size:13.5px;padding:6px 8px;">
               <span class="btn-ghost btn btn-sm" data-cs-remove="${i}" style="color:var(--danger);display:block;margin-top:4px;text-align:center;">Xoá</span>
             </div>
           `).join('')}
@@ -332,7 +332,7 @@ function render(container) {
       </div>
       <div class="card" style="margin-top:10px;">
         <label style="margin-bottom:4px;display:block;">5. Giá trị theo từng mục (tuỳ chọn — liệt kê những gì khách nhận được kèm giá riêng, app tự cộng ra "Tổng giá trị" đối lập với giá bán, kiểu VD: Sách 349.000đ + Prompt 499.000đ + Cộng đồng: Vô giá = Tổng giá trị)</label>
-        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">Để trống ô "Giá" của 1 mục = hiện "Vô giá" thay vì số.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">Để trống ô "Giá" của 1 mục = hiện "Vô giá" thay vì số.</div>
         ${state.valueStackItems.map((v, i) => `
           <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
             <input type="text" data-vs-ten="${i}" value="${esc(v.ten || '')}" placeholder="VD: Sách AI Affiliate 2026" style="flex:1.6;">
@@ -341,8 +341,8 @@ function render(container) {
           </div>
         `).join('')}
         <span class="btn-ghost btn btn-sm" id="lp-vs-add">+ Thêm mục giá trị</span>
-        ${state.valueStackItems.length ? `<div id="lp-vs-total" style="margin-top:10px;font-size:13.5px;font-weight:600;">Tổng giá trị: ${valueStackTotal(state).toLocaleString('vi-VN')}đ</div>` : ''}
-        <label style="margin-top:14px;font-size:12.5px;font-weight:400;">Cam kết với khách (VD hoàn tiền) — để trống nếu không muốn hứa gì</label>
+        ${state.valueStackItems.length ? `<div id="lp-vs-total" style="margin-top:10px;font-size:15px;font-weight:600;">Tổng giá trị: ${valueStackTotal(state).toLocaleString('vi-VN')}đ</div>` : ''}
+        <label style="margin-top:14px;font-size:14px;font-weight:400;">Cam kết với khách (VD hoàn tiền) — để trống nếu không muốn hứa gì</label>
         <input id="lp-guarantee" type="text" value="${esc(state.guaranteeText)}" placeholder="VD: Hoàn tiền 100% nếu không hài lòng trong 7 ngày">
       </div>
       <div class="card" style="margin-top:10px;">
@@ -411,7 +411,7 @@ function render(container) {
           ${state.proofImages.map((c, i) => `
             <div style="width:130px;">
               <img src="${esc(c.url)}" style="width:130px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;">
-              <input type="text" data-proof-caption="${i}" value="${esc(c.caption || '')}" placeholder="VD: Buổi đào tạo tháng 6" style="margin-top:4px;font-size:12px;padding:6px 8px;">
+              <input type="text" data-proof-caption="${i}" value="${esc(c.caption || '')}" placeholder="VD: Buổi đào tạo tháng 6" style="margin-top:4px;font-size:13.5px;padding:6px 8px;">
               <span class="btn-ghost btn btn-sm" data-proof-remove="${i}" style="color:var(--danger);display:block;margin-top:4px;text-align:center;">Xoá</span>
             </div>
           `).join('')}
@@ -442,25 +442,25 @@ function render(container) {
       : '';
     const formHtml = showForm ? `
       <div class="card" style="margin-top:10px;">
-        <h2 style="font-size:14px;margin-bottom:6px;">💳 Nhận tiền trực tiếp về tài khoản của bạn (không bắt buộc)</h2>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Kết nối để tiền khách mua tự động về THẲNG tài khoản của bạn.</div>
+        <h2 style="font-size:15.5px;margin-bottom:6px;">💳 Nhận tiền trực tiếp về tài khoản của bạn (không bắt buộc)</h2>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Kết nối để tiền khách mua tự động về THẲNG tài khoản của bạn.</div>
         <div class="hint-box" style="margin-bottom:10px;">
           <b>Bước 1 — liên kết ngân hàng trên SePay:</b>
-          <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+          <ol style="margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.7;">
             <li>Đăng ký tài khoản <b style="color:var(--accent);">SePay</b> miễn phí tại <a href="https://sepay.vn" target="_blank" rel="noopener">sepay.vn</a>.</li>
             <li>Vào mục <b style="color:var(--accent);">"Ngân hàng"</b> ở menu bên trái → bấm <b style="color:var(--accent);">"+ Kết nối tài khoản"</b> góc trên bên phải.</li>
             <li>Chọn đúng ngân hàng, điền Số tài khoản + Tên chủ tài khoản, làm theo hướng dẫn SePay hiện ra để hoàn tất.</li>
             <li>Quay lại đây, chọn ngân hàng + điền số TK/tên chủ TK bên dưới, bấm "Lưu kết nối".</li>
           </ol>
         </div>
-        <label style="font-size:12.5px;">Ngân hàng</label>
+        <label style="font-size:14px;">Ngân hàng</label>
         <select id="lp-seller-bank">
           <option value="">— Chọn ngân hàng —</option>
           ${SEPAY_BANKS.map(b => `<option value="${b.bin}" ${state.sellerBankBin === b.bin ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}
         </select>
-        <label style="margin-top:8px;font-size:12.5px;">Số tài khoản</label>
+        <label style="margin-top:8px;font-size:14px;">Số tài khoản</label>
         <input id="lp-seller-bank-account" type="text" value="${esc(state.sellerBankAccount)}" placeholder="Số tài khoản ngân hàng của bạn">
-        <label style="margin-top:8px;font-size:12.5px;">Tên chủ tài khoản</label>
+        <label style="margin-top:8px;font-size:14px;">Tên chủ tài khoản</label>
         <input id="lp-seller-bank-name" type="text" value="${esc(state.sellerBankAccountName)}" placeholder="VD: NGUYEN VAN A (không dấu, in hoa)">
         ${state.sellerBankError ? `<div class="error-box" style="margin-top:8px;">${esc(state.sellerBankError)}</div>` : ''}
         <div class="btn-row">
@@ -471,7 +471,7 @@ function render(container) {
     const webhookHtml = p.sps_seller_webhook_secret ? `
       <div class="hint-box" style="margin-top:10px;">
         <b>Bước 2 — tạo Webhook trong SePay:</b>
-        <ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.7;">
+        <ol style="margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.7;">
           <li>Vào mục <b style="color:var(--accent);">"Lập trình & Tích hợp"</b> ở menu bên trái → chọn <b style="color:var(--accent);">"Tích hợp WebHooks"</b>.</li>
           <li>Bấm <b style="color:var(--accent);">"+ Thêm webhook"</b> góc trên bên phải.</li>
           <li>Đặt tên bất kỳ, chọn loại sự kiện <b style="color:var(--accent);">"Có tiền vào"</b> (không chọn "Cả hai").</li>
@@ -479,8 +479,8 @@ function render(container) {
           <li>Ở Phương thức xác thực chọn <b style="color:var(--accent);">"API Key"</b>, dán API Key bên dưới vào ô hiện ra.</li>
           <li>Bấm <b style="color:var(--accent);">"Thêm"</b> để hoàn tất.</li>
         </ol>
-        <div style="font-size:12.5px;margin-top:8px;"><b>URL Webhook:</b> <span class="mono" style="font-size:11.5px;">${esc(SELLER_WEBHOOK_URL)}</span></div>
-        <div style="font-size:12.5px;margin-top:4px;"><b>API Key:</b> <span class="mono" style="font-size:11.5px;">${esc(p.sps_seller_webhook_secret)}</span></div>
+        <div style="font-size:14px;margin-top:8px;"><b>URL Webhook:</b> <span class="mono" style="font-size:13px;">${esc(SELLER_WEBHOOK_URL)}</span></div>
+        <div style="font-size:14px;margin-top:4px;"><b>API Key:</b> <span class="mono" style="font-size:13px;">${esc(p.sps_seller_webhook_secret)}</span></div>
       </div>
     ` : '';
     return `${connectedHintHtml}${formHtml}${webhookHtml}`;
@@ -497,14 +497,14 @@ function render(container) {
           <div style="margin-top:12px;">
             <div class="hint-box">
               <b>Cách dùng (làm 100% trên Claude, không cần quay lại app này):</b>
-              <ol style="margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+              <ol style="margin:6px 0 0;padding-left:20px;font-size:14.5px;line-height:1.7;">
                 <li>Vào <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> → đăng ký/đăng nhập (miễn phí).</li>
                 <li>Dán toàn bộ câu lệnh bên dưới vào ô nhập tin nhắn, bấm gửi.</li>
                 <li>Claude hỏi lần lượt 15 câu (gồm cả thông tin ngân hàng nhận tiền) — trả lời từng câu như nhắn tin bình thường.</li>
                 <li>Trả lời hết, Claude tự viết trang bán hàng VÀ tự xuất bản (publish) ngay trong cuộc trò chuyện — bạn nhận được 1 link chia sẻ được luôn, gửi cho khách là xong.</li>
               </ol>
             </div>
-            <textarea readonly rows="6" style="font-size:12px;font-family:'IBM Plex Mono',monospace;" onclick="this.select()">${esc(DIY_CLAUDE_PROMPT)}</textarea>
+            <textarea readonly rows="6" style="font-size:13.5px;font-family:'IBM Plex Mono',monospace;" onclick="this.select()">${esc(DIY_CLAUDE_PROMPT)}</textarea>
             <div class="btn-row" style="margin-top:8px;"><span class="btn-ghost btn btn-sm" id="lp-copy-diy-prompt">Sao chép câu lệnh</span></div>
             <div class="hint-box" style="margin-top:10px;">
               <b>Lưu ý về thanh toán:</b> trang này không gắn với app, KHÔNG tự động biết khi nào khách đã chuyển khoản (không có "bộ não" xử lý đơn hàng đứng sau như app), và không hiện được mã QR quét (ảnh từ link ngoài hay bị chặn trên trang Claude xuất bản) — chỉ hiện rõ số tài khoản/tên/số tiền để khách tự nhập vào app ngân hàng. Khách chuyển khoản xong phải tự nhắn Zalo báo cho bạn để bạn gửi sản phẩm tay — không tự động 100% như dùng app.
@@ -521,7 +521,7 @@ function render(container) {
     const hasContent = !!(p.landing_page_content);
     const publicLinkHtml = p.status === 'published'
       ? `<a class="btn-ghost btn btn-sm" href="p/?slug=${esc(p.slug)}" target="_blank" rel="noopener">Xem trang thật →</a>`
-      : `<span style="font-size:12.5px;color:var(--ink-soft);">Xuất bản sản phẩm ở "Sản phẩm của tôi" để xem trang thật.</span>`;
+      : `<span style="font-size:14px;color:var(--ink-soft);">Xuất bản sản phẩm ở "Sản phẩm của tôi" để xem trang thật.</span>`;
     return `
       <h2>${esc(p.title)}</h2>
       <div class="btn-row"><span class="btn-ghost btn btn-sm" id="lp-back-btn">← Chọn sản phẩm khác</span></div>
@@ -555,7 +555,7 @@ function render(container) {
           <div style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;">
             <input type="text" data-${tenAttr}="${i}" value="${esc(it.ten || '')}" placeholder="${esc(tenPlaceholder)}" style="margin-bottom:6px;font-weight:600;">
             <textarea data-${moTaAttr}="${i}" rows="2" placeholder="${esc(moTaPlaceholder)}">${esc(it.mo_ta || '')}</textarea>
-            ${nhomAttr ? `<input type="text" data-${nhomAttr}="${i}" value="${esc(it.nhom || '')}" placeholder="Tên nhóm lớn chứa phần này (không bắt buộc, VD: Phần 1: Tư duy)" style="margin-top:6px;font-size:12.5px;">` : ''}
+            ${nhomAttr ? `<input type="text" data-${nhomAttr}="${i}" value="${esc(it.nhom || '')}" placeholder="Tên nhóm lớn chứa phần này (không bắt buộc, VD: Phần 1: Tư duy)" style="margin-top:6px;font-size:14px;">` : ''}
             <span class="btn-ghost btn btn-sm" data-${removeAttr}="${i}" style="color:var(--danger);margin-top:6px;">Xoá</span>
           </div>
         `).join('')}

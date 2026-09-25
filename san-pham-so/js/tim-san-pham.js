@@ -128,13 +128,13 @@ function render(container, profile) {
     return `
       <div class="card">
         <h2 style="font-size:22px;margin-bottom:6px;">🧭 Tìm sản phẩm phù hợp</h2>
-        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:18px;">Trả lời 11 câu hỏi ngắn, AI sẽ gợi ý 2-3 sản phẩm số phù hợp với bạn kèm outline sẵn.</div>
+        <div style="font-size:15.5px;color:var(--ink-soft);margin-bottom:18px;">Trả lời 11 câu hỏi ngắn, AI sẽ gợi ý 2-3 sản phẩm số phù hợp với bạn kèm outline sẵn.</div>
 
         <div style="border:1px dashed var(--line);border-radius:10px;padding:16px;background:var(--accent-soft);">
-          <label style="margin-top:0;font-size:13.5px;">📚 Đã có sẵn tài liệu/kiến thức? Tải lên đây</label>
-          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — AI sẽ đọc tài liệu CÙNG VỚI câu trả lời của bạn để đề xuất sát hơn.</div>
+          <label style="margin-top:0;font-size:15px;">📚 Đã có sẵn tài liệu/kiến thức? Tải lên đây</label>
+          <div style="font-size:14px;color:var(--ink-soft);margin-bottom:8px;">Không bắt buộc — AI sẽ đọc tài liệu CÙNG VỚI câu trả lời của bạn để đề xuất sát hơn.</div>
           <input id="tsp-intro-file-input" type="file" accept="application/pdf">
-          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
+          <div style="font-size:14px;color:var(--ink-soft);margin-top:6px;">${state.materialUploading ? 'Đang tải lên…' : (state.materialFileName ? `📎 ${esc(state.materialFileName)} — đã tải lên ✓` : 'Chưa chọn file.')}</div>
           ${state.materialUploadError ? `<div class="error-box" style="margin-top:6px;margin-bottom:0;">${esc(state.materialUploadError)}</div>` : ''}
         </div>
 
@@ -142,7 +142,7 @@ function render(container, profile) {
           <button class="btn btn-full" id="tsp-intro-start-btn" ${state.materialUploading ? 'disabled' : ''}>Bắt đầu →</button>
         </div>
       </div>
-      <div style="font-size:12.5px;color:var(--ink-soft);text-align:center;line-height:1.7;margin-top:2px;">
+      <div style="font-size:14px;color:var(--ink-soft);text-align:center;line-height:1.7;margin-top:2px;">
         Đã biết rõ chủ đề/đối tượng, chỉ cần chọn định dạng? <a href="#chon-loai">🗂️ Chọn Loại Sản Phẩm Số</a> sẽ nhanh hơn.<br>
         File đã HOÀN CHỈNH, sẵn sàng bán ngay? Vào thẳng <a href="#san-pham">🛒 Sản phẩm của tôi</a>, không cần qua bước này.
       </div>
@@ -156,7 +156,7 @@ function render(container, profile) {
       <div class="progress-bar">
         ${GROUPS.map((g, i) => `<div class="progress-seg ${i < groupIndex ? 'done' : i === groupIndex ? 'current' : ''}"></div>`).join('')}
       </div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Câu ${state.qIndex + 1}/${QUESTIONS.length} — ${esc(GROUPS[groupIndex].title)}</div>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;">Câu ${state.qIndex + 1}/${QUESTIONS.length} — ${esc(GROUPS[groupIndex].title)}</div>
     `;
   }
 
@@ -174,7 +174,7 @@ function render(container, profile) {
       const savedSuggestion = state.suggestionsByQ[q.id];
       inputHtml = `
         <textarea id="tsp-input" rows="4" placeholder="${esc(q.placeholder || '')}">${esc(val || '')}</textarea>
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">💡 Bí ý tưởng hoặc chưa biết trả lời cụ thể thế nào? Bấm "Xem gợi ý" để AI đưa 3 ví dụ đúng mức độ chi tiết cần có — không phải để copy nguyên văn, chỉ để dễ hình dung rồi viết câu trả lời thật của riêng bạn.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">💡 Bí ý tưởng hoặc chưa biết trả lời cụ thể thế nào? Bấm "Xem gợi ý" để AI đưa 3 ví dụ đúng mức độ chi tiết cần có — không phải để copy nguyên văn, chỉ để dễ hình dung rồi viết câu trả lời thật của riêng bạn.</div>
         <div class="btn-row" style="margin-top:6px;">
           <span class="btn-ghost btn btn-sm" id="tsp-suggest-btn" ${(state.suggestLoading || suggestUsed) ? 'style="opacity:.5;pointer-events:none;"' : ''}>${state.suggestLoading ? 'Đang tạo gợi ý…' : '💡 Xem gợi ý'}</span>
         </div>
@@ -206,8 +206,8 @@ function render(container, profile) {
     return `
       ${progressHtml()}
       <div class="card">
-        <h2 style="font-size:18px;">${esc(q.q)}</h2>
-        ${q.helper ? `<div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">${esc(q.helper)}</div>` : ''}
+        <h2 style="font-size:19px;">${esc(q.q)}</h2>
+        ${q.helper ? `<div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">${esc(q.helper)}</div>` : ''}
         ${inputHtml}
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}
         <div class="btn-row">
@@ -222,15 +222,15 @@ function render(container, profile) {
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-          <h2 style="font-size:18px;">${esc(p.ten_san_pham)}</h2>
+          <h2 style="font-size:19px;">${esc(p.ten_san_pham)}</h2>
           <span class="btn-ghost btn btn-sm" data-edit-phuong-an="${i}">✏️ Tự sửa</span>
         </div>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:10px;">
           <b>Đối tượng:</b> ${esc(p.doi_tuong)} · <b>Định dạng:</b> ${esc(p.dinh_dang)} · <b>Độ dài:</b> ${esc(p.do_dai_uoc_luong)}
         </div>
-        <div style="font-size:13.5px;white-space:pre-line;margin-bottom:12px;">${esc(p.ly_do)}</div>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:6px;"><b>Outline cấp 1:</b></div>
-        <ol style="margin:0 0 12px;padding-left:20px;font-size:13.5px;">${(p.outline_cap_1 || []).map(o => `<li>${esc(o)}</li>`).join('')}</ol>
+        <div style="font-size:15px;white-space:pre-line;margin-bottom:12px;">${esc(p.ly_do)}</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:6px;"><b>Outline cấp 1:</b></div>
+        <ol style="margin:0 0 12px;padding-left:20px;font-size:15px;">${(p.outline_cap_1 || []).map(o => `<li>${esc(o)}</li>`).join('')}</ol>
         <button class="btn" data-choose-phuong-an="${i}">Chọn phương án này →</button>
       </div>
     `;
@@ -240,7 +240,7 @@ function render(container, profile) {
     const p = state.editForm;
     return `
       <div class="card">
-        <h2 style="font-size:18px;">Sửa phương án</h2>
+        <h2 style="font-size:19px;">Sửa phương án</h2>
         <label>Tên sản phẩm</label>
         <input id="edit-ten" type="text" value="${esc(p.ten_san_pham)}">
         <label>Đối tượng</label>
@@ -262,7 +262,7 @@ function render(container, profile) {
     if (!r.du_lieu_du_manh) {
       return `
         <div class="card">
-          <h2 style="font-size:18px;">Chưa đủ chắc để chốt</h2>
+          <h2 style="font-size:19px;">Chưa đủ chắc để chốt</h2>
           <div class="hint-box" style="margin-top:8px;">${esc(r.canh_bao)}</div>
           <div class="btn-row"><span class="btn-ghost btn" id="tsp-redo-btn">Quay lại chỉnh sửa câu trả lời</span></div>
         </div>

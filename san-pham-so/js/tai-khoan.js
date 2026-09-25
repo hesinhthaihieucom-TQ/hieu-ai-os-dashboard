@@ -59,26 +59,26 @@ function render(container) {
     return `
       <h2>Tài khoản</h2>
       <div class="card">
-        <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${esc(p.full_name || 'Chưa đặt tên')}</div>
-        <div style="font-size:13px;color:var(--ink-soft);">Sửa tên/ảnh đại diện ở mục Tài khoản bên Xây Nhân Hiệu (dùng chung 1 hồ sơ).</div>
+        <div style="font-size:16.5px;font-weight:600;margin-bottom:4px;">${esc(p.full_name || 'Chưa đặt tên')}</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);">Sửa tên/ảnh đại diện ở mục Tài khoản bên Xây Nhân Hiệu (dùng chung 1 hồ sơ).</div>
       </div>
 
       <div class="card">
-        <h2 style="font-size:16px;margin-bottom:10px;">Lượt AI Sản Phẩm Số</h2>
-        <div style="font-size:13.5px;margin-bottom:10px;">${spsQuotaHint()}</div>
+        <h2 style="font-size:17px;margin-bottom:10px;">Lượt AI Sản Phẩm Số</h2>
+        <div style="font-size:15px;margin-bottom:10px;">${spsQuotaHint()}</div>
         ${p.sps_has_paid
-          ? `<div style="font-size:13px;color:var(--ink-soft);">Gói đang hoạt động${p.sps_access_until ? `, hết hạn <b>${esc(new Date(p.sps_access_until).toLocaleDateString('vi-VN'))}</b>` : ''}.</div>`
-          : `<div style="font-size:13px;color:var(--ink-soft);">Đang dùng thử — chưa mua gói riêng của Sản Phẩm Số.</div>`}
+          ? `<div style="font-size:14.5px;color:var(--ink-soft);">Gói đang hoạt động${p.sps_access_until ? `, hết hạn <b>${esc(new Date(p.sps_access_until).toLocaleDateString('vi-VN'))}</b>` : ''}.</div>`
+          : `<div style="font-size:14.5px;color:var(--ink-soft);">Đang dùng thử — chưa mua gói riêng của Sản Phẩm Số.</div>`}
         <div class="btn-row"><span class="btn-ghost btn btn-sm" id="tk-go-nangcap">🔥 Nâng cấp / Mua gói →</span></div>
       </div>
 
       <div class="card">
-        <h2 style="font-size:16px;margin-bottom:6px;">📖 Kết nối Heyzine riêng (bắt buộc)</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Cần kết nối tài khoản Heyzine của riêng bạn (miễn phí) mới tạo được sách lật — mỗi người bán 1 tài khoản riêng để tự chỉnh nhạc nền/tiếng lật trang được sau này. Cũng kết nối được ngay tại màn "Chọn Loại Sản Phẩm Số" hoặc "Viết Nội Dung" lúc tạo sách lật, không nhất thiết phải vào đây trước.</div>
+        <h2 style="font-size:17px;margin-bottom:6px;">📖 Kết nối Heyzine riêng (bắt buộc)</h2>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">Cần kết nối tài khoản Heyzine của riêng bạn (miễn phí) mới tạo được sách lật — mỗi người bán 1 tài khoản riêng để tự chỉnh nhạc nền/tiếng lật trang được sau này. Cũng kết nối được ngay tại màn "Chọn Loại Sản Phẩm Số" hoặc "Viết Nội Dung" lúc tạo sách lật, không nhất thiết phải vào đây trước.</div>
         ${p.sps_heyzine_api_key && p.sps_heyzine_client_id ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đang dùng tài khoản Heyzine riêng của bạn.</div>` : ''}
         <div class="hint-box" style="margin-bottom:12px;">
           <b>Cách lấy API Key + Client ID (miễn phí, khoảng 1 phút):</b>
-          <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+          <ol style="margin:8px 0 0;padding-left:20px;font-size:14.5px;line-height:1.7;">
             <li>Mở <a href="https://heyzine.com/developers" target="_blank" rel="noopener">heyzine.com/developers</a> — hoặc vào heyzine.com, bấm icon <b style="color:var(--accent);">☰</b> (menu) góc trên bên trái → chọn <b style="color:var(--accent);">API</b>.</li>
             <li>Chưa có tài khoản: bấm <b style="color:var(--accent);">"register"</b> (Đăng ký). Đã có: bấm <b style="color:var(--accent);">"Login"</b> (Đăng nhập) — miễn phí.</li>
             <li>Đăng nhập xong, trang hiện 2 ô <b style="color:var(--accent);">"This is your Client Id:"</b> (Client ID của bạn) và <b style="color:var(--accent);">"This is your API key:"</b> (API Key của bạn) — không cần bấm icon con mắt để xem, bấm thẳng nút <b style="color:var(--accent);">"Copy"</b> (Sao chép) từng ô là được.</li>
@@ -95,13 +95,13 @@ function render(container) {
           <button class="btn" id="tk-save-heyzine" ${state.heyzineSaving ? 'disabled' : ''}>${state.heyzineSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
           ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<span class="btn-ghost btn" id="tk-disconnect-heyzine">Ngắt kết nối</span>` : ''}
         </div>
-        ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Ngắt kết nối sẽ khiến bạn KHÔNG tạo/xuất sách lật được nữa cho tới khi kết nối lại (đã bắt buộc với mọi người bán) — chỉ dùng khi muốn đổi sang tài khoản Heyzine khác.</div>` : ''}
+        ${(p.sps_heyzine_api_key && p.sps_heyzine_client_id) ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">Ngắt kết nối sẽ khiến bạn KHÔNG tạo/xuất sách lật được nữa cho tới khi kết nối lại (đã bắt buộc với mọi người bán) — chỉ dùng khi muốn đổi sang tài khoản Heyzine khác.</div>` : ''}
         <div class="hint-box" style="margin-top:12px;">
           <b>Sau khi kết nối, xuất ebook thế nào?</b> Không cần tự tay tải/upload gì lên Heyzine cả — vào <b>"Viết Nội Dung"</b>, chọn sản phẩm, bấm <b>"Xuất thành Ebook"</b> như bình thường, app sẽ TỰ ĐỘNG tạo sách lật NGAY TRONG tài khoản Heyzine của bạn.
         </div>
         <div class="hint-box" style="margin-top:10px;">
           <b>Thêm nhạc nền + tiếng lật trang:</b>
-          <ol style="margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+          <ol style="margin:6px 0 0;padding-left:20px;font-size:14.5px;line-height:1.7;">
             <li>Vào <a href="https://heyzine.com" target="_blank" rel="noopener">heyzine.com</a>, bấm <b style="color:var(--accent);">"Dashboard"</b> → mở đúng cuốn sách vừa tạo → bấm <b style="color:var(--accent);">"Edit"</b> (Chỉnh sửa).</li>
             <li>Thêm nhạc nền: cột <b>STYLE</b> bên trái → bấm <b style="color:var(--accent);">"Background Audio"</b> (Âm thanh nền). 5 bài gợi ý có sẵn (Pixabay, MIỄN PHÍ, KHÔNG cần mua, KHÔNG cần ghi nguồn) — bấm 1 bài, bấm nút <b style="color:var(--accent);">"Download"</b> màu xanh trên trang đó để tải MP3 về máy, rồi tải chính file đó lên "Background Audio":
               ${PIXABAY_MUSIC_LIST_HTML}
@@ -113,12 +113,12 @@ function render(container) {
       </div>
 
       <div class="card">
-        <h2 style="font-size:16px;margin-bottom:6px;">💳 Nhận tiền trực tiếp về tài khoản của bạn</h2>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Kết nối để tiền khách mua sản phẩm của bạn tự động về THẲNG tài khoản ngân hàng của bạn — không cần ai xác nhận tay.</div>
+        <h2 style="font-size:17px;margin-bottom:6px;">💳 Nhận tiền trực tiếp về tài khoản của bạn</h2>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">Kết nối để tiền khách mua sản phẩm của bạn tự động về THẲNG tài khoản ngân hàng của bạn — không cần ai xác nhận tay.</div>
         ${(p.sps_seller_bank_bin && p.sps_seller_bank_account) ? `<div class="hint-box" style="margin-bottom:10px;">✓ Đang nhận tiền trực tiếp về ${esc(SEPAY_BANKS.find(b => b.bin === p.sps_seller_bank_bin)?.name || '')} — ${esc(p.sps_seller_bank_account)}.</div>` : ''}
         <div class="hint-box" style="margin-bottom:12px;">
           <b>Bước 1 — đăng ký + liên kết ngân hàng của bạn trên SePay:</b>
-          <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+          <ol style="margin:8px 0 0;padding-left:20px;font-size:14.5px;line-height:1.7;">
             <li>Đăng ký tài khoản <b style="color:var(--accent);">SePay</b> miễn phí tại <a href="https://sepay.vn" target="_blank" rel="noopener">sepay.vn</a> (tài khoản của riêng bạn).</li>
             <li>Đăng nhập dashboard SePay, vào mục <b style="color:var(--accent);">"Ngân hàng"</b> ở menu bên trái → bấm nút <b style="color:var(--accent);">"+ Kết nối tài khoản"</b> góc trên bên phải.</li>
             <li>Chọn đúng ngân hàng của bạn, điền <b style="color:var(--accent);">Số tài khoản</b> + <b style="color:var(--accent);">Tên chủ tài khoản</b>, làm theo đúng hướng dẫn SePay hiện ra trên màn hình đó để hoàn tất (mỗi ngân hàng có 1 bước xác nhận riêng, SePay tự dẫn bạn qua từng bước, không cần nhập mật khẩu ngân hàng).</li>
@@ -140,11 +140,11 @@ function render(container) {
           <button class="btn" id="tk-save-seller-bank" ${state.sellerBankSaving ? 'disabled' : ''}>${state.sellerBankSaving ? 'Đang lưu…' : 'Lưu kết nối'}</button>
           ${(p.sps_seller_bank_bin && p.sps_seller_bank_account) ? `<span class="btn-ghost btn" id="tk-disconnect-seller-bank">Ngắt kết nối</span>` : ''}
         </div>
-        ${(p.sps_seller_bank_bin && p.sps_seller_bank_account) ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Ngắt kết nối sẽ khiến đơn hàng MỚI không còn tự động chuyển thẳng về tài khoản này nữa — đơn cũ không ảnh hưởng.</div>` : ''}
+        ${(p.sps_seller_bank_bin && p.sps_seller_bank_account) ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">Ngắt kết nối sẽ khiến đơn hàng MỚI không còn tự động chuyển thẳng về tài khoản này nữa — đơn cũ không ảnh hưởng.</div>` : ''}
         ${p.sps_seller_webhook_secret ? `
           <div class="hint-box" style="margin-top:14px;">
             <b>Bước 2 — tạo Webhook trong SePay (sau khi đã Lưu kết nối ở trên):</b>
-            <ol style="margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.7;">
+            <ol style="margin:8px 0 0;padding-left:20px;font-size:14.5px;line-height:1.7;">
               <li>Trong dashboard SePay, vào mục <b style="color:var(--accent);">"Lập trình & Tích hợp"</b> ở menu bên trái → chọn <b style="color:var(--accent);">"Tích hợp WebHooks"</b>.</li>
               <li>Bấm nút <b style="color:var(--accent);">"+ Thêm webhook"</b> góc trên bên phải.</li>
               <li>Đặt tên bất kỳ (VD "Sản Phẩm Số"), ở mục loại sự kiện chọn đúng <b style="color:var(--accent);">"Có tiền vào"</b> (KHÔNG chọn "Cả hai" hay "Có tiền ra").</li>
@@ -153,16 +153,16 @@ function render(container) {
               <li>Bấm <b style="color:var(--accent);">"Thêm"</b> để hoàn tất — vậy là xong, không cần làm lại lần nào nữa.</li>
             </ol>
             <div style="margin-top:10px;">
-              <label style="font-size:12.5px;font-weight:400;">URL Webhook</label>
+              <label style="font-size:14px;font-weight:400;">URL Webhook</label>
               <div style="display:flex;gap:8px;align-items:center;">
-                <input type="text" readonly value="${esc(SELLER_WEBHOOK_URL)}" style="flex:1;font-size:12.5px;" onclick="this.select()" id="tk-webhook-url-input">
+                <input type="text" readonly value="${esc(SELLER_WEBHOOK_URL)}" style="flex:1;font-size:14px;" onclick="this.select()" id="tk-webhook-url-input">
                 <span class="btn-ghost btn btn-sm" id="tk-copy-webhook-url">Sao chép</span>
               </div>
             </div>
             <div style="margin-top:8px;">
-              <label style="font-size:12.5px;font-weight:400;">API Key — RIÊNG của bạn, không chia sẻ cho ai</label>
+              <label style="font-size:14px;font-weight:400;">API Key — RIÊNG của bạn, không chia sẻ cho ai</label>
               <div style="display:flex;gap:8px;align-items:center;">
-                <input type="text" readonly value="${esc(p.sps_seller_webhook_secret)}" style="flex:1;font-size:12.5px;" onclick="this.select()" id="tk-webhook-secret-input">
+                <input type="text" readonly value="${esc(p.sps_seller_webhook_secret)}" style="flex:1;font-size:14px;" onclick="this.select()" id="tk-webhook-secret-input">
                 <span class="btn-ghost btn btn-sm" id="tk-copy-webhook-secret">Sao chép</span>
               </div>
             </div>
@@ -171,7 +171,7 @@ function render(container) {
       </div>
 
       <div class="card">
-        <h2 style="font-size:16px;margin-bottom:10px;">Đổi mật khẩu</h2>
+        <h2 style="font-size:17px;margin-bottom:10px;">Đổi mật khẩu</h2>
         <label>Mật khẩu mới</label>
         <input id="tk-pass" type="password" value="${esc(state.newPassword)}" placeholder="Ít nhất 6 ký tự">
         <label style="margin-top:10px;">Xác nhận mật khẩu mới</label>

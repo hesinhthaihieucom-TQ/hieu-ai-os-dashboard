@@ -169,7 +169,7 @@ function progressBarHtml(percent) {
   return `<div style="width:100%;max-width:280px;margin:0 auto;height:8px;border-radius:999px;background:var(--line);overflow:hidden;">
     <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:999px;"></div>
   </div>
-  <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);font-weight:600;">${Math.round(pct)}%</div>`;
+  <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--accent);font-weight:600;">${Math.round(pct)}%</div>`;
 }
 function animateProgressBar(el, estimatedSeconds) {
   if (!el) return () => {};

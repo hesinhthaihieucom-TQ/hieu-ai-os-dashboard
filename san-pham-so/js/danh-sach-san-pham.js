@@ -69,10 +69,10 @@ function render(container) {
   function emptyStateHtml() {
     return `
       <div class="card" style="text-align:center;padding:36px 24px;">
-        <h2 style="font-size:17px;margin-bottom:8px;">Chưa có sản phẩm nào</h2>
-        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:16px;">Đây là trang khách nhìn thấy để mua — quét mã VietQR chuyển khoản là khách tự động nhận link tải ngay, không cần bạn xác nhận tay, khách cũng không cần tạo tài khoản.</div>
+        <h2 style="font-size:18px;margin-bottom:8px;">Chưa có sản phẩm nào</h2>
+        <div style="font-size:15px;color:var(--ink-soft);margin-bottom:16px;">Đây là trang khách nhìn thấy để mua — quét mã VietQR chuyển khoản là khách tự động nhận link tải ngay, không cần bạn xác nhận tay, khách cũng không cần tạo tài khoản.</div>
         <button class="btn" id="sps-new-btn" style="display:inline-block;width:auto;padding:12px 24px;">+ Tạo sản phẩm mới</button>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-top:18px;">Chưa có nội dung sẵn sàng để bán? Để AI giúp tạo từ đầu ở <a href="#tao-ai" style="color:var(--accent);">🧭 Tìm Sản Phẩm Phù Hợp</a> hoặc <a href="#chon-loai" style="color:var(--accent);">🗂️ Chọn Loại Sản Phẩm Số</a>.</div>
+        <div style="font-size:14px;color:var(--ink-soft);margin-top:18px;">Chưa có nội dung sẵn sàng để bán? Để AI giúp tạo từ đầu ở <a href="#tao-ai" style="color:var(--accent);">🧭 Tìm Sản Phẩm Phù Hợp</a> hoặc <a href="#chon-loai" style="color:var(--accent);">🗂️ Chọn Loại Sản Phẩm Số</a>.</div>
       </div>
     `;
   }
@@ -94,8 +94,8 @@ function render(container) {
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
               <div>
                 <b>${esc(p.title)}</b>
-                <span style="margin-left:8px;font-size:12px;padding:2px 8px;border-radius:4px;background:${p.status === 'published' ? 'var(--accent-soft)' : '#EEE'};color:${p.status === 'published' ? 'var(--accent)' : '#888'};">${p.status === 'published' ? 'Đã đăng' : 'Nháp'}</span>
-                <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">${(p.price || 0).toLocaleString('vi-VN')}đ</div>
+                <span style="margin-left:8px;font-size:13.5px;padding:2px 8px;border-radius:4px;background:${p.status === 'published' ? 'var(--accent-soft)' : '#EEE'};color:${p.status === 'published' ? 'var(--accent)' : '#888'};">${p.status === 'published' ? 'Đã đăng' : 'Nháp'}</span>
+                <div style="color:var(--ink-soft);font-size:15px;margin-top:4px;">${(p.price || 0).toLocaleString('vi-VN')}đ</div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <span class="btn-ghost btn btn-sm" data-edit="${p.id}">Sửa</span>
@@ -104,7 +104,7 @@ function render(container) {
             </div>
             ${p.status === 'published' ? `
               <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span class="mono" style="font-size:12.5px;background:var(--accent-soft);padding:3px 8px;border-radius:6px;word-break:break-all;">${esc(publicLink(p.slug))}</span>
+                <span class="mono" style="font-size:14px;background:var(--accent-soft);padding:3px 8px;border-radius:6px;word-break:break-all;">${esc(publicLink(p.slug))}</span>
                 <span class="btn-ghost btn btn-sm" data-copy-link="${esc(publicLink(p.slug))}">Copy link</span>
               </div>
               <div style="margin-top:8px;">
@@ -156,7 +156,7 @@ function render(container) {
     return `
       <label style="margin-top:14px;">File sản phẩm (bắt buộc để đăng công khai, trừ khi đã có link ngoài bên dưới)</label>
       <input id="sps-file" type="file">
-      <div id="sps-file-status" style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${f.file_name ? `📎 ${esc(f.file_name)} — đã upload` : 'Chưa có file.'}</div>
+      <div id="sps-file-status" style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${f.file_name ? `📎 ${esc(f.file_name)} — đã upload` : 'Chưa có file.'}</div>
       <label style="margin-top:14px;">Hoặc link ngoài (sách lật Heyzine, Notion, Canva...)</label>
       <input id="sps-external-link" type="text" value="${esc(f.external_link || '')}" placeholder="https://heyzine.com/flip-book/...">
     `;
@@ -185,7 +185,7 @@ function render(container) {
         <input id="sps-cover" type="file" accept="image/*">
         ${f.cover_image_url ? `<img src="${f.cover_image_url}" style="max-width:160px;border-radius:8px;margin-top:8px;display:block;">` : ''}
         ${deliverableFieldsHtml(f)}
-        <label style="display:flex;align-items:center;gap:8px;margin-top:16px;cursor:pointer;font-size:13.5px;">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:16px;cursor:pointer;font-size:15px;">
           <input id="sps-published" type="checkbox" ${f.published ? 'checked' : ''}> Công khai (cho khách mua ngay)
         </label>
         ${state.error ? `<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>` : ''}

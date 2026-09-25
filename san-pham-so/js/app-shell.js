@@ -53,18 +53,18 @@ function spsQuotaHint() {
   if (p.role === 'admin') {
     const used = p.sps_has_paid ? spsPaidMonthlyUsage(p).used : (p.sps_trial_ai_uses || 0);
     const period = p.sps_has_paid ? 'tháng này' : 'trọn đời';
-    return `<span style="color:#8A8F82;font-size:12.5px;">🔥 Đã dùng ${used} lượt SPS (${period}) — không giới hạn</span>`;
+    return `<span style="color:#8A8F82;font-size:14px;">🔥 Đã dùng ${used} lượt SPS (${period}) — không giới hạn</span>`;
   }
   if (p.sps_has_paid) {
     const { used, limit } = spsPaidMonthlyUsage(p);
     const remaining = Math.max(0, limit - used);
     const color = remaining <= 10 ? 'var(--danger)' : '#9CA396';
-    return `<span style="color:${color};font-size:12.5px;">✨ Còn ${remaining}/${limit} lượt tháng này</span>`;
+    return `<span style="color:${color};font-size:14px;">✨ Còn ${remaining}/${limit} lượt tháng này</span>`;
   }
   const trialLimit = p.sps_trial_ai_limit || SPS_TRIAL_AI_LIMIT;
   const remaining = Math.max(0, trialLimit - (p.sps_trial_ai_uses || 0));
   const color = remaining <= 3 ? 'var(--danger)' : '#9CA396';
-  return `<span style="color:${color};font-size:12.5px;">🎁 Còn ${remaining}/${trialLimit} lượt dùng thử</span>`;
+  return `<span style="color:${color};font-size:14px;">🎁 Còn ${remaining}/${trialLimit} lượt dùng thử</span>`;
 }
 
 function spsHasActiveAccess() {
@@ -98,11 +98,11 @@ function spsPaymentCardHtml(refCode) {
     : null;
   return `
     <div class="card">
-      <h2 style="font-size:18px;">Gói Sản Phẩm Số — ${esc(plan.label)}</h2>
-      <div style="font-size:24px;font-weight:700;color:var(--accent);margin:6px 0 16px;">${plan.amount.toLocaleString('vi-VN')}đ<span style="font-size:13px;color:var(--ink-soft);font-weight:400;"> /${esc(plan.label)}</span></div>
+      <h2 style="font-size:19px;">Gói Sản Phẩm Số — ${esc(plan.label)}</h2>
+      <div style="font-size:24px;font-weight:700;color:var(--accent);margin:6px 0 16px;">${plan.amount.toLocaleString('vi-VN')}đ<span style="font-size:14.5px;color:var(--ink-soft);font-weight:400;"> /${esc(plan.label)}</span></div>
       ${qrUrl ? `
         <img src="${qrUrl}" style="max-width:260px;width:100%;display:block;margin:0 auto 16px;">
-        <div style="font-size:13.5px;line-height:2;">
+        <div style="font-size:15px;line-height:2;">
           <div>Ngân hàng: <b>VietinBank</b></div>
           <div>Số tài khoản: <b>${esc(PAYMENT_BANK.account)}</b> <span class="btn-ghost btn btn-sm" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
           <div>Chủ tài khoản: <b>${esc(PAYMENT_BANK.accountName)}</b></div>
@@ -162,13 +162,13 @@ function maybeShowSpsReviewPrompt() {
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Sản Phẩm Số 🎉</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${SPS_REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${SPS_REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái bạn thích nhất điều gì — làm sản phẩm nhanh hơn bao nhiêu, dễ bán hơn thế nào... Viết càng thật càng tốt.</div>
-      <textarea id="sps-rp-comment" placeholder="Ví dụ: Từ lúc chưa có ý tưởng gì tới lúc ra được sản phẩm hoàn chỉnh chỉ mất..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
-      <div id="sps-rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Sản Phẩm Số 🎉</div>
+      <div style="font-size:15px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${SPS_REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${SPS_REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái bạn thích nhất điều gì — làm sản phẩm nhanh hơn bao nhiêu, dễ bán hơn thế nào... Viết càng thật càng tốt.</div>
+      <textarea id="sps-rp-comment" placeholder="Ví dụ: Từ lúc chưa có ý tưởng gì tới lúc ra được sản phẩm hoàn chỉnh chỉ mất..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:15.5px;resize:vertical;"></textarea>
+      <div id="sps-rp-error" style="display:none;color:var(--danger,#A6462E);font-size:14px;margin-top:8px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
-        <span id="sps-rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
-        <button id="sps-rp-submit" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
+        <span id="sps-rp-skip" style="font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="sps-rp-submit" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
       </div>
     </div>
   `;
