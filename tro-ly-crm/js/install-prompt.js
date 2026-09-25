@@ -26,14 +26,14 @@ function maybeShowInstallPrompt(){
       <img src="icon-192.png" alt="" style="width:56px;height:56px;border-radius:14px;margin-bottom:14px;">
       <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Cài Trợ Lý AI Tư Vấn &amp; CRM lên màn hình chính?</div>
       ${ios ? `
-        <div style="font-size:13.5px;color:#5B5F55;line-height:1.7;margin-bottom:18px;">Mở nhanh như 1 app riêng, không cần mở trình duyệt trước — và bắt buộc phải cài kiểu này thì mới nhận được thông báo nhắc follow khách trên iPhone:<br>
+        <div style="font-size:15px;color:#5B5F55;line-height:1.7;margin-bottom:18px;">Mở nhanh như 1 app riêng, không cần mở trình duyệt trước — và bắt buộc phải cài kiểu này thì mới nhận được thông báo nhắc follow khách trên iPhone:<br>
           Bấm nút <b>Chia sẻ</b> (hình vuông có mũi tên đi lên) ở thanh dưới Safari → chọn <b>"Thêm vào MH chính"</b>.
         </div>
-        <button id="ip-dismiss" style="width:100%;background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:999px;padding:13px;font-size:14.5px;font-weight:600;cursor:pointer;">Đã hiểu</button>
+        <button id="ip-dismiss" style="width:100%;background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:999px;padding:13px;font-size:16px;font-weight:600;cursor:pointer;">Đã hiểu</button>
       ` : `
-        <div style="font-size:13.5px;color:#5B5F55;line-height:1.7;margin-bottom:18px;">Mở nhanh như 1 app riêng, nhận được thông báo nhắc follow khách — cài mất vài giây.</div>
-        <button id="ip-install" style="width:100%;background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:999px;padding:13px;font-size:14.5px;font-weight:600;cursor:pointer;margin-bottom:10px;">Cài đặt ngay</button>
-        <span id="ip-later" style="display:inline-block;font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <div style="font-size:15px;color:#5B5F55;line-height:1.7;margin-bottom:18px;">Mở nhanh như 1 app riêng, nhận được thông báo nhắc follow khách — cài mất vài giây.</div>
+        <button id="ip-install" style="width:100%;background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:999px;padding:13px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">Cài đặt ngay</button>
+        <span id="ip-later" style="display:inline-block;font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
       `}
     </div>
   `;
@@ -95,7 +95,7 @@ function maybeShowInAppBrowserBanner(){
 
   const banner = document.createElement('div');
   banner.id = 'iab-banner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#1E2420;color:#fff;padding:14px 16px;font-size:13px;line-height:1.6;box-shadow:0 2px 12px rgba(0,0,0,.3);';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#1E2420;color:#fff;padding:14px 16px;font-size:14.5px;line-height:1.6;box-shadow:0 2px 12px rgba(0,0,0,.3);';
   banner.innerHTML = `
     <div style="max-width:480px;margin:0 auto;">
       ⚠️ Bạn đang mở trong <b>${iab.label}</b> — trình duyệt này không lưu được app lên máy và không gửi được thông báo nhắc follow khách.<br>

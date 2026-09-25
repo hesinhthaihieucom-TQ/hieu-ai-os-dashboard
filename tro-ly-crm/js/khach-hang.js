@@ -465,9 +465,9 @@ function render(container, ctx){
       : `<input type="${type}" data-field="${key}" value="${esc(value)}" style="margin-top:6px;">`;
     const url = linkable ? normalizeUrl(value) : '';
     return `<div style="${full ? 'grid-column:1/-1;' : ''}">
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">${esc(label)}</label>
+      <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">${esc(label)}</label>
       ${inputHtml}
-      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Mở link</a>` : ''}
+      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:13.5px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Mở link</a>` : ''}
     </div>`;
   }
 
@@ -475,7 +475,7 @@ function render(container, ctx){
   // ngang nhiều cột) — mỗi thẻ chỉ tóm tắt đúng vài ý quan trọng nhất để lướt nhanh, bấm vào thẻ mở
   // ra đúng form chi tiết đầy đủ (detailHtml() bên dưới, đã có sẵn từ trước) để xem/sửa hết mọi field.
   function badgePill(text, bg, color){
-    return `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 10px;border-radius:999px;white-space:nowrap;background:${bg};color:${color};">${esc(text)}</span>`;
+    return `<span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;background:${bg};color:${color};">${esc(text)}</span>`;
   }
   function doNongBadge(v){
     if(!v) return '';
@@ -503,7 +503,7 @@ function render(container, ctx){
     return `
       <div class="list-item" data-open="${c.id}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0;${overdue?'border-color:var(--danger);':(dueToday?'border-color:var(--gold);':'')}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-          <div style="font-size:15.5px;font-weight:700;">${esc(c.ten_khach_hang)}</div>
+          <div style="font-size:17px;font-weight:700;">${esc(c.ten_khach_hang)}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;">
             ${c.nhanh==='D' ? badgePill('FORM-HD', '#EDE6F5', '#6B4FA0') : ''}
             ${giaiDoanBadge(c.giai_doan)}
@@ -511,10 +511,10 @@ function render(container, ctx){
           </div>
         </div>
         <div class="meta" style="margin-top:6px;margin-bottom:0;">${[c.kenh, c.leader_phu_trach, c.tinh_thanh].filter(Boolean).map(esc).join(' · ')}</div>
-        ${painOrNeed ? `<div style="font-size:13.5px;color:var(--ink);margin-top:8px;line-height:1.5;">${esc(truncate(painOrNeed,140))}</div>` : ''}
+        ${painOrNeed ? `<div style="font-size:15px;color:var(--ink);margin-top:8px;line-height:1.5;">${esc(truncate(painOrNeed,140))}</div>` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px;">
-          <div style="font-size:12px;font-family:'IBM Plex Mono',monospace;color:${overdue?'var(--danger)':(dueToday?'var(--gold)':'var(--ink-soft)')};">${followText}</div>
-          ${c.hanh_dong_tiep_theo ? `<div style="font-size:12px;color:var(--ink-soft);text-align:right;">→ ${esc(truncate(c.hanh_dong_tiep_theo,60))}</div>` : ''}
+          <div style="font-size:13.5px;font-family:'IBM Plex Mono',monospace;color:${overdue?'var(--danger)':(dueToday?'var(--gold)':'var(--ink-soft)')};">${followText}</div>
+          ${c.hanh_dong_tiep_theo ? `<div style="font-size:13.5px;color:var(--ink-soft);text-align:right;">→ ${esc(truncate(c.hanh_dong_tiep_theo,60))}</div>` : ''}
         </div>
       </div>
     `;
@@ -533,7 +533,7 @@ function render(container, ctx){
     return `<div class="section${opts.highlight ? ' highlight' : ''}" style="margin-top:14px;margin-bottom:0;padding:18px 20px;">
       <h3>${esc(title)}</h3>
       ${innerHtml}
-      ${opts.footnote ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${opts.footnote}</div>` : ''}
+      ${opts.footnote ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">${opts.footnote}</div>` : ''}
     </div>`;
   }
 
@@ -548,13 +548,13 @@ function render(container, ctx){
           <h3 style="margin-bottom:0;">📷 Cập nhật từ ảnh/ghi chú</h3>
           <span style="color:var(--ink-soft);">${u.expanded?'▾':'▸'}</span>
         </div>
-        ${!u.expanded ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Có ghi chú tay/form phân tích cũ về khách này? Chụp ảnh gửi để AI tự điền vào hồ sơ bên dưới — tính là 1 lần tiếp xúc với khách.</div>` : `
+        ${!u.expanded ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">Có ghi chú tay/form phân tích cũ về khách này? Chụp ảnh gửi để AI tự điền vào hồ sơ bên dưới — tính là 1 lần tiếp xúc với khách.</div>` : `
           <div style="margin-top:12px;">
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
               ${u.images.map((src,i)=>`
                 <div style="position:relative;width:80px;height:80px;">
                   <img src="${src}" data-un-zoom-img="${i}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;cursor:zoom-in;border:1px solid var(--line);">
-                  <span data-un-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
+                  <span data-un-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13.5px;cursor:pointer;">✕</span>
                 </div>
               `).join('')}
               ${u.images.length<MAX_IMAGES ? `<label style="width:80px;height:80px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:22px;">+<input type="file" accept="image/*" multiple id="un-file" style="display:none;"></label>` : ''}
@@ -594,7 +594,7 @@ function render(container, ctx){
                4-6 lần chạm khác ngày mới đủ để 1 khách chốt. -->
           <div class="hint-box" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;${touchOk ? '' : 'background:#FBF6E9;color:#8A5A00;border-color:#E9DEB8;'}">
             <span>🎯 Số lần tiếp xúc (ngày khác nhau): <b>${touchDays}/${TOUCHPOINT_TARGET}</b></span>
-            <span style="font-size:12px;">${touchOk ? 'Đủ ngưỡng thường chốt — ưu tiên chốt/đề nghị.' : 'Cần thêm follow — nguyên tắc: 4-6 lần chạm mới đủ để chốt.'}</span>
+            <span style="font-size:13.5px;">${touchOk ? 'Đủ ngưỡng thường chốt — ưu tiên chốt/đề nghị.' : 'Cần thêm follow — nguyên tắc: 4-6 lần chạm mới đủ để chốt.'}</span>
           </div>
 
           ${groupBlock('Thông tin cơ bản', `
@@ -605,12 +605,12 @@ function render(container, ctx){
               ${field('link_lien_he', 'Link liên hệ', f.link_lien_he, 'text', false, true)}
               ${field('tinh_thanh', 'Tỉnh/thành', f.tinh_thanh, 'text')}
               <div>
-                <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
+                <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
                 <input type="text" data-field="do_nong" value="${esc(f.do_nong)}" list="kh-do-nong-options" style="margin-top:6px;">
                 <datalist id="kh-do-nong-options">${doNongOptions.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
               </div>
               <div>
-                <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Giai đoạn</label>
+                <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Giai đoạn</label>
                 <input type="text" data-field="giai_doan" value="${esc(f.giai_doan)}" list="kh-giai-doan-options" style="margin-top:6px;">
                 <datalist id="kh-giai-doan-options">${giaiDoanOptions.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
               </div>
@@ -655,16 +655,16 @@ function render(container, ctx){
             <span class="btn-ghost btn btn-sm" style="color:var(--danger);${state.deleting ? 'opacity:.6;pointer-events:none;' : ''}" id="kh-detail-delete">${state.deleting ? 'Đang xoá…' : 'Xoá khách này'}</span>
           </div>
 
-          <div style="margin:26px 0 10px;"><h2 style="font-size:14px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);">Lịch sử tương tác</h2></div>
+          <div style="margin:26px 0 10px;"><h2 style="font-size:15.5px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);">Lịch sử tương tác</h2></div>
           ${d.loadingInteractions ? `<div class="loading"><div class="spinner"></div></div>` : (
-            d.interactions.length === 0 ? `<div style="color:var(--ink-soft);font-size:13.5px;">Chưa có tương tác nào được ghi lại.</div>` :
+            d.interactions.length === 0 ? `<div style="color:var(--ink-soft);font-size:15px;">Chưa có tương tác nào được ghi lại.</div>` :
             d.interactions.map(it => `
               <div class="list-item" style="cursor:default;">
                 <div class="txt">
                   <div class="meta">${[it.thoi_gian, it.kenh, it.ten_tuong_tac].filter(Boolean).map(esc).join(' · ')}</div>
                   ${it.noi_dung ? `<div>${esc(it.noi_dung)}</div>` : ''}
-                  ${it.ket_qua ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Kết quả: ${esc(it.ket_qua)}</div>` : ''}
-                  ${it.buoc_tiep_theo ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">Bước tiếp theo: ${esc(it.buoc_tiep_theo)}</div>` : ''}
+                  ${it.ket_qua ? `<div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">Kết quả: ${esc(it.ket_qua)}</div>` : ''}
+                  ${it.buoc_tiep_theo ? `<div style="font-size:14.5px;color:var(--ink-soft);margin-top:2px;">Bước tiếp theo: ${esc(it.buoc_tiep_theo)}</div>` : ''}
                 </div>
               </div>
             `).join('')
@@ -679,12 +679,12 @@ function render(container, ctx){
     return `
       <div class="section" style="margin-bottom:18px;padding:16px 18px;">
         <h3>📷 Tạo từ ảnh/ghi chú</h3>
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;margin-bottom:10px;">Chụp ảnh ghi chú/form đã có về khách này (hoặc gõ mô tả) — AI tự đọc tên + thông tin, tạo hồ sơ luôn, tính là 1 lần tiếp xúc.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-top:2px;margin-bottom:10px;">Chụp ảnh ghi chú/form đã có về khách này (hoặc gõ mô tả) — AI tự đọc tên + thông tin, tạo hồ sơ luôn, tính là 1 lần tiếp xúc.</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           ${p.images.map((src,i)=>`
             <div style="position:relative;width:70px;height:70px;">
               <img src="${src}" data-np-zoom-img="${i}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;cursor:zoom-in;border:1px solid var(--line);">
-              <span data-np-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;">✕</span>
+              <span data-np-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;cursor:pointer;">✕</span>
             </div>
           `).join('')}
           ${p.images.length<MAX_IMAGES ? `<label style="width:70px;height:70px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:20px;">+<input type="file" accept="image/*" multiple id="np-file" style="display:none;"></label>` : ''}
@@ -692,14 +692,14 @@ function render(container, ctx){
         ${!p.needsName ? `<textarea id="np-note" placeholder="Hoặc gõ tay thông tin đã biết về khách...">${esc(p.note)}</textarea>` : `
           <div class="hint-box" style="margin-top:0;">AI không đọc được tên khách — nhập giúp tên để tạo đúng hồ sơ.</div>
           <input type="text" id="np-manual-name" placeholder="VD: Chị Lan" value="${esc(p.manualName)}" style="margin-top:10px;">
-          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Mẹo: đặt trùng đúng tên tài khoản Facebook/Zalo khách đang dùng — lần sau gửi ảnh chat, AI sẽ tự khớp thẳng vào hồ sơ này.</div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Mẹo: đặt trùng đúng tên tài khoản Facebook/Zalo khách đang dùng — lần sau gửi ảnh chat, AI sẽ tự khớp thẳng vào hồ sơ này.</div>
         `}
         ${p.error ? `<div class="error-box" style="margin-top:8px;">${esc(p.error)}</div>` : ''}
         <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
           <button class="btn btn-sm" id="np-submit" ${p.submitting?'disabled':''}>${p.submitting?'Đang xử lý…':(p.needsName?'Xác nhận tên & tạo':'Tạo từ ảnh')}</button>
         </div>
       </div>
-      <div style="text-align:center;color:var(--ink-soft);font-size:12px;margin:16px 0;">— hoặc điền tay bên dưới —</div>
+      <div style="text-align:center;color:var(--ink-soft);font-size:13.5px;margin:16px 0;">— hoặc điền tay bên dưới —</div>
     `;
   }
 
@@ -714,24 +714,24 @@ function render(container, ctx){
           </div>
           ${newFromPhotoHtml()}
           ${state.newError ? `<div class="error-box">${esc(state.newError)}</div>` : ''}
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tên khách hàng *</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tên khách hàng *</label>
           <input type="text" data-new-field="ten_khach_hang" value="${esc(f.ten_khach_hang)}" placeholder="VD: Chị Lan">
-          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Nên đặt trùng đúng tên tài khoản mạng xã hội khách đang dùng (Facebook/Zalo) — sau này gửi ảnh chat, AI sẽ khớp thẳng vào đúng hồ sơ này thay vì đọc ra tên khác không nhận ra.</div>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Leader phụ trách</label>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Nên đặt trùng đúng tên tài khoản mạng xã hội khách đang dùng (Facebook/Zalo) — sau này gửi ảnh chat, AI sẽ khớp thẳng vào đúng hồ sơ này thay vì đọc ra tên khác không nhận ra.</div>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Leader phụ trách</label>
           <input type="text" data-new-field="leader_phu_trach" value="${esc(f.leader_phu_trach)}">
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Kênh</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Kênh</label>
           <input type="text" data-new-field="kenh" value="${esc(f.kenh)}" placeholder="VD: Facebook, Zalo...">
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Link liên hệ</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Link liên hệ</label>
           <input type="text" data-new-field="link_lien_he" value="${esc(f.link_lien_he)}">
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tỉnh/thành</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tỉnh/thành</label>
           <input type="text" data-new-field="tinh_thanh" value="${esc(f.tinh_thanh)}" placeholder="VD: Hà Nội, TP.HCM...">
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Độ nóng</label>
           <input type="text" data-new-field="do_nong" value="${esc(f.do_nong)}" list="kh-do-nong-options-new">
           <datalist id="kh-do-nong-options-new">${availableDoNong().map(v => `<option value="${esc(v)}">`).join('')}</datalist>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Giai đoạn</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Giai đoạn</label>
           <input type="text" data-new-field="giai_doan" value="${esc(f.giai_doan)}" list="kh-giai-doan-options-new">
           <datalist id="kh-giai-doan-options-new">${availableGiaiDoan().map(v => `<option value="${esc(v)}">`).join('')}</datalist>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Ngày follow tiếp</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Ngày follow tiếp</label>
           <input type="date" data-new-field="ngay_follow_tiep" value="${esc(f.ngay_follow_tiep)}">
           <div class="btn-row" style="justify-content:flex-start;margin-top:18px;">
             <button class="btn btn-sm" id="kh-new-create" ${state.creating ? 'disabled' : ''}>${state.creating ? 'Đang tạo…' : 'Tạo hồ sơ'}</button>
@@ -760,20 +760,20 @@ function render(container, ctx){
       </div>
 
       <div id="kh-push-card" class="card" style="margin-bottom:18px;padding:16px 18px;">
-        <div style="font-weight:600;font-size:14px;">🔔 Thông báo nhắc follow</div>
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Tự báo nếu có khách/đối tác đến hạn — không cần mở app kiểm tra tay. Trên iPhone cần "Thêm vào Màn hình chính" trước.</div>
+        <div style="font-weight:600;font-size:15.5px;">🔔 Thông báo nhắc follow</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-top:2px;">Tự báo nếu có khách/đối tác đến hạn — không cần mở app kiểm tra tay. Trên iPhone cần "Thêm vào Màn hình chính" trước.</div>
 
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px;">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);white-space:nowrap;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:14.5px;color:var(--ink-soft);white-space:nowrap;">
             Nhắc lúc
-            <input type="time" id="kh-reminder-time" value="${esc(state.reminderTime)}" ${state.savingReminderTime?'disabled':''} style="width:auto;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#FDFCF8;">
+            <input type="time" id="kh-reminder-time" value="${esc(state.reminderTime)}" ${state.savingReminderTime?'disabled':''} style="width:auto;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;background:#FDFCF8;">
           </label>
-          <span id="kh-reminder-saved" style="font-size:12px;color:var(--accent);font-weight:600;">${state.reminderTimeSaved?'Đã lưu ✓':''}</span>
+          <span id="kh-reminder-saved" style="font-size:13.5px;color:var(--accent);font-weight:600;">${state.reminderTimeSaved?'Đã lưu ✓':''}</span>
         </div>
 
         <div style="margin-top:12px;">
           ${!state.pushSupported ? `
-            <span style="font-size:12px;color:var(--ink-soft);">Không hỗ trợ trên thiết bị này</span>
+            <span style="font-size:13.5px;color:var(--ink-soft);">Không hỗ trợ trên thiết bị này</span>
           ` : state.pushSubscribed ? `
             <span class="btn-ghost btn btn-sm" data-action="disable-push" style="${state.pushBusy?'opacity:.6;pointer-events:none;':''}">${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</span>
           ` : `
@@ -802,7 +802,7 @@ function render(container, ctx){
       <div style="margin-top:22px;">
         ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
           list.length === 0
-            ? `<div style="color:var(--ink-soft);font-size:14px;">${state.customers.length === 0 ? 'Chưa có khách hàng nào — bấm "+ Thêm khách" để tạo hồ sơ đầu tiên.' : 'Không có khách nào ở mục này.'}</div>`
+            ? `<div style="color:var(--ink-soft);font-size:15.5px;">${state.customers.length === 0 ? 'Chưa có khách hàng nào — bấm "+ Thêm khách" để tạo hồ sơ đầu tiên.' : 'Không có khách nào ở mục này.'}</div>`
             : cardListHtml(list)
         )}
       </div>

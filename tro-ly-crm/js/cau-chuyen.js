@@ -277,11 +277,11 @@ function render(container, ctx){
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       <div class="section" style="cursor:pointer;" data-action="start">
         <h3>Trả lời từng câu hỏi (${QUESTIONS.length} câu)</h3>
-        <div class="body" style="color:var(--ink-soft);font-size:13.5px;">AI hỏi từng câu 1, bạn chỉ cần trả lời thật — mục nào chưa có thì để trống. Phù hợp nếu chưa biết bắt đầu kể từ đâu.</div>
+        <div class="body" style="color:var(--ink-soft);font-size:15px;">AI hỏi từng câu 1, bạn chỉ cần trả lời thật — mục nào chưa có thì để trống. Phù hợp nếu chưa biết bắt đầu kể từ đâu.</div>
       </div>
       <div class="section" style="cursor:pointer;" data-action="start-free">
         <h3>Tự viết câu chuyện của mình</h3>
-        <div class="body" style="color:var(--ink-soft);font-size:13.5px;">Viết tự do 1 đoạn kể lại hành trình của bạn theo đúng cách bạn muốn kể — phù hợp nếu bạn đã quen kể câu chuyện này rồi.</div>
+        <div class="body" style="color:var(--ink-soft);font-size:15px;">Viết tự do 1 đoạn kể lại hành trình của bạn theo đúng cách bạn muốn kể — phù hợp nếu bạn đã quen kể câu chuyện này rồi.</div>
       </div>
     `;
   }
@@ -295,11 +295,11 @@ function render(container, ctx){
       </div>
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên bạn</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên bạn</label>
         <input type="text" id="fw-ten" value="${esc(state.freeTen)}" placeholder="Để AI xưng hô đúng khi tư vấn thay bạn">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Số Zalo (không bắt buộc)</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Số Zalo (không bắt buộc)</label>
         <input type="text" id="fw-zalo" value="${esc(state.freeZalo)}">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện của bạn</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện của bạn</label>
         <textarea id="fw-story" style="min-height:260px;" placeholder="Viết tự do câu chuyện của bạn ở đây...">${esc(state.freeStory)}</textarea>
       </div>
       <div class="btn-row" style="justify-content:flex-start;">
@@ -334,17 +334,17 @@ function render(container, ctx){
       <div style="display:flex;gap:4px;margin-bottom:10px;margin-top:16px;flex-wrap:wrap;">
         ${GROUPS.map((g,i)=>`<span style="flex:1;min-width:8px;height:5px;border-radius:3px;background:${i<groupIndex?'var(--accent)':i===groupIndex?'var(--gold)':'var(--line)'};"></span>`).join('')}
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
         <span>${esc(GROUPS[groupIndex].title)}</span>
         <span>Câu ${state.qIndex+1}/${QUESTIONS.length}</span>
       </div>
       <div class="card">
-        <h2 style="font-size:19px;line-height:1.4;">${esc(q.label)}</h2>
-        ${q.hint?`<div style="margin-top:8px;font-size:13px;color:var(--ink-soft);line-height:1.5;">${esc(q.hint)}</div>`:''}
+        <h2 style="font-size:20px;line-height:1.4;">${esc(q.label)}</h2>
+        ${q.hint?`<div style="margin-top:8px;font-size:14.5px;color:var(--ink-soft);line-height:1.5;">${esc(q.hint)}</div>`:''}
         ${inputHtml}
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
-        ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
+        ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:15px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
         <button class="btn" data-action="next">${state.qIndex===QUESTIONS.length-1?'Hoàn tất':'Tiếp tục'}</button>
       </div>
     `;

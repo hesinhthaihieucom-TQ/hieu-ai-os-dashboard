@@ -54,21 +54,21 @@ function render(container, ctx){
     return `
       <div class="section" data-step-row="${i}" style="margin-bottom:8px;">
         <div style="display:flex;gap:8px;align-items:flex-start;">
-          <select data-step-key="${i}" style="flex:0 0 200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+          <select data-step-key="${i}" style="flex:0 0 200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;">
             <option value="">— Chọn mục trong app —</option>
             ${navOptions.map(n => `<option value="${esc(n.key)}" ${step.key===n.key?'selected':''}>${esc(n.title)}</option>`).join('')}
           </select>
           <input data-step-text="${i}" type="text" placeholder="Nói gì ở bước này..." value="${esc(step.text)}"
-            style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+            style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;">
           <span data-step-remove="${i}" class="btn-ghost btn btn-sm" style="color:var(--danger);white-space:nowrap;">Xoá</span>
         </div>
         <div style="margin-top:8px;display:flex;gap:10px;align-items:center;">
           ${step.img ? `
             <img src="${step.img}" style="max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--line);">
-            <span data-step-clear-img="${i}" style="color:var(--danger);font-size:12px;cursor:pointer;">Xoá ảnh</span>
+            <span data-step-clear-img="${i}" style="color:var(--danger);font-size:13.5px;cursor:pointer;">Xoá ảnh</span>
           ` : `
-            <label style="font-size:12px;color:var(--ink-soft);">Ảnh minh hoạ bước này (tuỳ chọn — hữu ích khi chỗ cần trỏ không phải mục sidebar):
-              <input type="file" accept="image/*" data-step-img="${i}" style="display:block;margin-top:4px;font-size:12px;">
+            <label style="font-size:13.5px;color:var(--ink-soft);">Ảnh minh hoạ bước này (tuỳ chọn — hữu ích khi chỗ cần trỏ không phải mục sidebar):
+              <input type="file" accept="image/*" data-step-img="${i}" style="display:block;margin-top:4px;font-size:13.5px;">
             </label>
           `}
         </div>
@@ -83,12 +83,12 @@ function render(container, ctx){
         <div class="field" style="margin-bottom:14px;">
           <label>Tiêu đề</label>
           <input id="tb-title" type="text" placeholder="VD: Mới: Hướng dẫn sử dụng chi tiết từng trang" value="${esc(state.title)}"
-            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
         </div>
         <div class="field" style="margin-bottom:18px;">
           <label>Nội dung</label>
           <textarea id="tb-body" rows="4" placeholder="Mô tả ngắn tính năng mới..."
-            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;resize:vertical;">${esc(state.body)}</textarea>
+            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;resize:vertical;">${esc(state.body)}</textarea>
         </div>
         <div class="field" style="margin-bottom:18px;">
           <label>Sticker</label>
@@ -109,14 +109,14 @@ function render(container, ctx){
           </button>
         </div>
       </div>
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Đã đăng gần đây</h2></div>
-      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa đăng thông báo nào.</div>` : ''}
+      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Đã đăng gần đây</h2></div>
+      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa đăng thông báo nào.</div>` : ''}
       ${state.list.map(a=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
           <div>
-            <div style="font-weight:600;font-size:14.5px;margin-bottom:4px;">${esc(a.emoji || '🎉')} ${esc(a.title)}</div>
-            <div style="font-size:13.5px;color:var(--ink-soft);white-space:pre-wrap;">${esc(a.body)}</div>
-            <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">
+            <div style="font-weight:600;font-size:16px;margin-bottom:4px;">${esc(a.emoji || '🎉')} ${esc(a.title)}</div>
+            <div style="font-size:15px;color:var(--ink-soft);white-space:pre-wrap;">${esc(a.body)}</div>
+            <div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">
               ${esc(new Date(a.created_at).toLocaleString('vi-VN'))}${a.steps && a.steps.length ? ` — ${a.steps.length} bước hướng dẫn` : ''}
             </div>
           </div>

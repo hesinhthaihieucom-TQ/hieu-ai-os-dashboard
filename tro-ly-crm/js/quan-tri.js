@@ -124,17 +124,17 @@ function render(container, ctx){
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:6px;">Doanh thu (đã khớp qua SePay)</h3>
         <div style="display:flex;gap:24px;flex-wrap:wrap;">
-          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.revenueTotal.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">tổng từ trước tới nay</div></div>
-          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.revenueThisMonth.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">tháng này</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.revenueTotal.toLocaleString('vi-VN')}đ</div><div style="font-size:13.5px;color:var(--ink-soft);">tổng từ trước tới nay</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.revenueThisMonth.toLocaleString('vi-VN')}đ</div><div style="font-size:13.5px;color:var(--ink-soft);">tháng này</div></div>
         </div>
       </div>
 
       ${state.referralPartners.length ? `
       <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
         <h3 style="margin-bottom:6px;">🌟 Hiểu Partner (≥ ${PARTNER_REFERRAL_THRESHOLD} người, cộng dồn mọi sản phẩm)</h3>
-        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Đủ ngưỡng để cân nhắc trả hoa hồng tiền mặt — tự nhắn/chuyển khoản tay, hệ thống không tự động chuyển tiền.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:12px;">Đủ ngưỡng để cân nhắc trả hoa hồng tiền mặt — tự nhắn/chuyển khoản tay, hệ thống không tự động chuyển tiền.</div>
         ${state.referralPartners.map(rp=>`
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;flex-wrap:wrap;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px;flex-wrap:wrap;">
             <span>${esc(rp.email)}${rp.fullName?` <span style="color:var(--ink-soft);">(${esc(rp.fullName)})</span>`:''}</span>
             <span><b style="color:var(--accent);">${rp.count}</b> người · đã tặng <b>${rp.luot}</b> lượt</span>
           </div>
@@ -144,12 +144,12 @@ function render(container, ctx){
 
       <div class="card" style="margin-bottom:20px;">
         <input id="q-search" type="text" placeholder="Tìm theo email hoặc tên..." value="${esc(state.q)}"
-          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
       </div>
 
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
 
-      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Không có kết quả.</div>` : ''}
+      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Không có kết quả.</div>` : ''}
 
       ${list.map(p=>{
         const st = statusOf(p);
@@ -159,31 +159,31 @@ function render(container, ctx){
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
             <div>
               <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}</h3>
-              <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
+              <div style="color:var(--ink-soft);font-size:14.5px;">${esc(p.full_name||'')}</div>
             </div>
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;
               background:${st.cls==='active'?'var(--accent-soft)':st.cls==='soon'?'#FBF6E9':st.cls==='expired'?'#FBEAE4':st.cls==='admin'?'#EDEAE0':'var(--line)'};
               color:${st.cls==='active'?'var(--accent)':st.cls==='soon'?'var(--gold)':st.cls==='expired'?'var(--danger)':'var(--ink-soft)'};">${esc(st.label)}</span>
           </div>
 
           ${p.role!=='admin' ? `
-            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:13px;">
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:14.5px;">
               <div><span style="color:var(--ink-soft);">Hạn dùng:</span> ${p.crm_access_until ? esc(new Date(p.crm_access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
               <div><span style="color:var(--ink-soft);">Gói gần nhất:</span> ${p.crm_plan_days ? `${p.crm_plan_days} ngày` : 'Chưa rõ'}</div>
               <div><span style="color:var(--ink-soft);">Lượt AI:</span> ${used}/${limit} lượt (tháng này)</div>
               <div><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.crm_has_paid?'💰 Đã trả phí':'Chưa trả phí'}
-                <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.crm_has_paid}">đổi</span></div>
+                <span style="text-decoration:underline;cursor:pointer;font-size:13.5px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.crm_has_paid}">đổi</span></div>
             </div>
 
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-top:14px;margin-bottom:6px;">Gia hạn thủ công</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-top:14px;margin-bottom:6px;">Gia hạn thủ công</div>
             <div class="btn-row" style="justify-content:flex-start;align-items:center;">
-              <input type="number" data-extend-days="${p.id}" placeholder="Số ngày, vd 30" style="width:130px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.extendDays[p.id]||'')}">
+              <input type="number" data-extend-days="${p.id}" placeholder="Số ngày, vd 30" style="width:130px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;" value="${esc(state.extendDays[p.id]||'')}">
               <button class="btn btn-sm" data-extend="${p.id}" ${state.busyId===p.id?'disabled':''}>Gia hạn</button>
               <button class="btn-ghost btn btn-sm" data-extend-quick="${p.id}|30" ${state.busyId===p.id?'disabled':''}>+30</button>
               <button class="btn-ghost btn btn-sm" data-extend-quick="${p.id}|180" ${state.busyId===p.id?'disabled':''}>+180</button>
               <button class="btn-ghost btn btn-sm" data-extend-quick="${p.id}|365" ${state.busyId===p.id?'disabled':''}>+365</button>
             </div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Gia hạn từ hạn dùng hiện tại nếu còn hạn, ngược lại tính từ hôm nay — tự bật "đã trả phí" luôn.</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Gia hạn từ hạn dùng hiện tại nếu còn hạn, ngược lại tính từ hôm nay — tự bật "đã trả phí" luôn.</div>
           ` : ''}
         </div>
       `;}).join('')}

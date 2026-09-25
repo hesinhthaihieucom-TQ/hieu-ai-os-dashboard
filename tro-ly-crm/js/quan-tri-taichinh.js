@@ -110,23 +110,23 @@ function render(container, ctx){
       <div class="page-head"><h1>Tài chính</h1><p>Doanh thu, chi phí AI ước tính, và lợi nhuận — tổng quan và theo từng tháng.</p></div>
 
       <div class="source-grid" style="margin-bottom:12px;">
-        <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueTotal.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
-        <div class="source-card"><div class="ic" style="font-size:18px;">${state.revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:19px;">${state.revenueTotal.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
+        <div class="source-card"><div class="ic" style="font-size:19px;">${state.revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
       </div>
 
       <div class="source-grid" style="margin-bottom:8px;">
-        <div class="source-card"><div class="ic" style="font-size:16px;">${state.totalLuot.toLocaleString('vi-VN')}</div><div class="label">Tổng lượt đang dùng tháng này (trừ admin)</div></div>
-        <div class="source-card"><div class="ic" style="font-size:16px;">~${estCost.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính chi phí AI</div></div>
-        <div class="source-card"><div class="ic" style="font-size:16px;color:${estProfit>=0?'var(--accent)':'var(--danger)'};">~${estProfit.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lợi nhuận</div></div>
+        <div class="source-card"><div class="ic" style="font-size:17px;">${state.totalLuot.toLocaleString('vi-VN')}</div><div class="label">Tổng lượt đang dùng tháng này (trừ admin)</div></div>
+        <div class="source-card"><div class="ic" style="font-size:17px;">~${estCost.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính chi phí AI</div></div>
+        <div class="source-card"><div class="ic" style="font-size:17px;color:${estProfit>=0?'var(--accent)':'var(--danger)'};">~${estProfit.toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lợi nhuận</div></div>
       </div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:24px;">Ước tính dùng giá trung bình ~${RATE_PER_LUOT.toLocaleString('vi-VN')}đ/lượt-trọng-số so với <b>Tổng doanh thu</b> ở trên. Không chính xác 100% như xem trên Anthropic Console, chỉ để theo dõi xu hướng nhanh.</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:24px;">Ước tính dùng giá trung bình ~${RATE_PER_LUOT.toLocaleString('vi-VN')}đ/lượt-trọng-số so với <b>Tổng doanh thu</b> ở trên. Không chính xác 100% như xem trên Anthropic Console, chỉ để theo dõi xu hướng nhanh.</div>
 
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo từng tháng</div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:10px;">Cột "Doanh thu" ở bảng này là doanh thu <b>phân bổ</b> theo số tháng gói bao phủ (khác "Doanh thu tháng này" ở thẻ trên — đó là tiền thực nhận trong tháng).</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo từng tháng</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Cột "Doanh thu" ở bảng này là doanh thu <b>phân bổ</b> theo số tháng gói bao phủ (khác "Doanh thu tháng này" ở thẻ trên — đó là tiền thực nhận trong tháng).</div>
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
-      ${state.monthlyRows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có dữ liệu.</div>` : `
+      ${state.monthlyRows.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có dữ liệu.</div>` : `
       <div class="card" style="overflow-x:auto;padding:0;">
-        <table style="width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;">
+        <table style="width:100%;border-collapse:collapse;font-size:15px;white-space:nowrap;">
           <thead>
             <tr style="text-align:left;border-bottom:1px solid var(--line);">
               <th style="padding:10px 14px;">Tháng</th>
@@ -139,7 +139,7 @@ function render(container, ctx){
           <tbody>
             ${state.monthlyRows.map(row => `
               <tr style="border-bottom:1px solid var(--line);">
-                <td style="padding:10px 14px;font-weight:600;">${esc(row.month)}${row.month < LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(chưa có log lượt)</span>` : ''}</td>
+                <td style="padding:10px 14px;font-weight:600;">${esc(row.month)}${row.month < LOG_START.slice(0,7) ? ` <span style="font-weight:400;color:var(--ink-soft);font-size:12.5px;">(chưa có log lượt)</span>` : ''}</td>
                 <td style="padding:10px 14px;">${row.revenue.toLocaleString('vi-VN')}đ</td>
                 <td style="padding:10px 14px;">${row.luot.toLocaleString('vi-VN')}</td>
                 <td style="padding:10px 14px;">${row.cost.toLocaleString('vi-VN')}đ</td>
@@ -151,11 +151,11 @@ function render(container, ctx){
       </div>
       `}
 
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:28px 0 10px;">Tổng lượt đã dùng theo từng người (từ ${esc(LOG_START)})</div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:10px;">Chỉ tính được từ ${esc(LOG_START)} trở đi (trước đó chưa ghi log chi tiết) — dùng làm cơ sở tham khảo chi phí/tiền cho từng người.</div>
-      ${state.userTotals.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có dữ liệu.</div>` : `
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:28px 0 10px;">Tổng lượt đã dùng theo từng người (từ ${esc(LOG_START)})</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Chỉ tính được từ ${esc(LOG_START)} trở đi (trước đó chưa ghi log chi tiết) — dùng làm cơ sở tham khảo chi phí/tiền cho từng người.</div>
+      ${state.userTotals.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có dữ liệu.</div>` : `
       <div class="card" style="overflow-x:auto;padding:0;">
-        <table style="width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;">
+        <table style="width:100%;border-collapse:collapse;font-size:15px;white-space:nowrap;">
           <thead>
             <tr style="text-align:left;border-bottom:1px solid var(--line);">
               <th style="padding:10px 14px;">Người dùng</th>

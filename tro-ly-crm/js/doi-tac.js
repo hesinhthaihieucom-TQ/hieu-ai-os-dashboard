@@ -192,14 +192,14 @@ function render(container, ctx){
       : `<input type="${type}" data-field="${key}" value="${esc(value)}" style="margin-top:6px;">`;
     const url = linkable ? normalizeUrl(value) : '';
     return `<div style="${full ? 'grid-column:1/-1;' : ''}">
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">${esc(label)}</label>
+      <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">${esc(label)}</label>
       ${inputHtml}
-      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Mở link</a>` : ''}
+      ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:13.5px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Mở link</a>` : ''}
     </div>`;
   }
 
   function badgePill(text, bg, color){
-    return `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 10px;border-radius:999px;white-space:nowrap;background:${bg};color:${color};">${esc(text)}</span>`;
+    return `<span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;background:${bg};color:${color};">${esc(text)}</span>`;
   }
 
   function trangThaiBadge(v){
@@ -219,12 +219,12 @@ function render(container, ctx){
     return `
       <div class="list-item" data-open="${p.id}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0;${needsCoaching(p)?'border-color:var(--danger);':''}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-          <div style="font-size:15.5px;font-weight:700;">${esc(p.ten_khach_hang)}</div>
+          <div style="font-size:17px;font-weight:700;">${esc(p.ten_khach_hang)}</div>
           ${trangThaiBadge(p.doi_tac_trang_thai)}
         </div>
         <div class="meta" style="margin-top:6px;margin-bottom:0;">${[p.kenh, p.leader_phu_trach, p.tinh_thanh].filter(Boolean).map(esc).join(' · ')}</div>
-        <div style="font-size:13.5px;color:var(--ink);margin-top:8px;line-height:1.5;">Tuần ${p.doi_tac_tuan_hien_tai || 1}/8 — ${esc(tuan.chu_de)}</div>
-        ${p.doi_tac_hanh_dong_ho_tro ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">→ ${esc(truncate(p.doi_tac_hanh_dong_ho_tro,80))}</div>` : ''}
+        <div style="font-size:15px;color:var(--ink);margin-top:8px;line-height:1.5;">Tuần ${p.doi_tac_tuan_hien_tai || 1}/8 — ${esc(tuan.chu_de)}</div>
+        ${p.doi_tac_hanh_dong_ho_tro ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;">→ ${esc(truncate(p.doi_tac_hanh_dong_ho_tro,80))}</div>` : ''}
       </div>
     `;
   }
@@ -234,7 +234,7 @@ function render(container, ctx){
     return `<div class="section${opts.highlight ? ' highlight' : ''}" style="margin-top:14px;margin-bottom:0;padding:18px 20px;">
       <h3>${esc(title)}</h3>
       ${innerHtml}
-      ${opts.footnote ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${opts.footnote}</div>` : ''}
+      ${opts.footnote ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">${opts.footnote}</div>` : ''}
     </div>`;
   }
 
@@ -268,22 +268,22 @@ function render(container, ctx){
           ${groupBlock(`Huấn luyện đối tác — Tuần ${soTuan}/8`, `
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 14px;">
               <div>
-                <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tuần hiện tại (1-8)</label>
+                <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tuần hiện tại (1-8)</label>
                 <input type="number" min="1" max="8" data-field="doi_tac_tuan_hien_tai" value="${esc(String(soTuan))}" style="margin-top:6px;">
               </div>
               <div>
-                <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Điểm tuần (0-100, không bắt buộc)</label>
+                <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Điểm tuần (0-100, không bắt buộc)</label>
                 <input type="number" min="0" max="100" data-field="doi_tac_diem_tuan" value="${esc(f.doi_tac_diem_tuan)}" style="margin-top:6px;">
               </div>
               <div>
-                <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Trạng thái nhịp</label>
+                <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Trạng thái nhịp</label>
                 <input type="text" data-field="doi_tac_trang_thai" value="${esc(f.doi_tac_trang_thai)}" list="dt-trang-thai-options" style="margin-top:6px;">
                 <datalist id="dt-trang-thai-options">${TRANG_THAI_DOI_TAC_BASE.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
               </div>
             </div>
             <details style="margin-top:14px;">
-              <summary style="cursor:pointer;font-weight:600;font-size:13.5px;color:var(--accent);">📖 Nội dung tuần ${soTuan}: ${esc(tuan.chu_de)}</summary>
-              <div style="font-size:13px;color:var(--ink);line-height:1.7;margin-top:10px;">
+              <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--accent);">📖 Nội dung tuần ${soTuan}: ${esc(tuan.chu_de)}</summary>
+              <div style="font-size:14.5px;color:var(--ink);line-height:1.7;margin-top:10px;">
                 <div><b>Học:</b> ${esc(tuan.hoc)}</div>
                 <div style="margin-top:8px;"><b>Thực hành:</b> ${esc(tuan.thuc_hanh)}</div>
                 <div style="margin-top:8px;"><b>Kết quả kỳ vọng:</b> ${esc(tuan.ket_qua)}</div>
@@ -303,9 +303,9 @@ function render(container, ctx){
             <span class="btn-ghost btn btn-sm" style="color:var(--danger);${state.deleting ? 'opacity:.6;pointer-events:none;' : ''}" id="dt-detail-delete">${state.deleting ? 'Đang xoá…' : 'Xoá hẳn'}</span>
           </div>
 
-          <div style="margin:26px 0 10px;"><h2 style="font-size:14px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);">Lịch sử tương tác</h2></div>
+          <div style="margin:26px 0 10px;"><h2 style="font-size:15.5px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);">Lịch sử tương tác</h2></div>
           ${d.loadingInteractions ? `<div class="loading"><div class="spinner"></div></div>` : (
-            d.interactions.length === 0 ? `<div style="color:var(--ink-soft);font-size:13.5px;">Chưa có tương tác nào được ghi lại.</div>` :
+            d.interactions.length === 0 ? `<div style="color:var(--ink-soft);font-size:15px;">Chưa có tương tác nào được ghi lại.</div>` :
             d.interactions.map(it => `
               <div class="list-item" style="cursor:default;">
                 <div class="txt">
@@ -340,7 +340,7 @@ function render(container, ctx){
       <div style="margin-top:22px;">
         ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
           list.length === 0
-            ? `<div style="color:var(--ink-soft);font-size:14px;">${state.partners.length === 0 ? 'Chưa có đối tác nào — chuyển khách sang đối tác từ mục Khách Hàng.' : 'Không có đối tác nào ở mục này.'}</div>`
+            ? `<div style="color:var(--ink-soft);font-size:15.5px;">${state.partners.length === 0 ? 'Chưa có đối tác nào — chuyển khách sang đối tác từ mục Khách Hàng.' : 'Không có đối tác nào ở mục này.'}</div>`
             : list.map(partnerCardHtml).join('')
         )}
       </div>

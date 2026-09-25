@@ -327,7 +327,7 @@ function render(container, ctx){
 
       <div class="section" style="cursor:pointer;" data-toggle-sanpham="1">
         <h3>Thông tin sản phẩm/dịch vụ đang tư vấn ${state.showSanPham?'▾':'▸'}</h3>
-        ${!state.showSanPham ? `<div class="body" style="color:var(--ink-soft);font-size:13px;">${state.sanPhamText ? 'Đã có thông tin — bấm để xem/sửa.' : 'Chưa có — bấm để dán tên gói/giá/link (AI chỉ dùng đúng thông tin ở đây, không tự bịa giá).'}</div>` : ''}
+        ${!state.showSanPham ? `<div class="body" style="color:var(--ink-soft);font-size:14.5px;">${state.sanPhamText ? 'Đã có thông tin — bấm để xem/sửa.' : 'Chưa có — bấm để dán tên gói/giá/link (AI chỉ dùng đúng thông tin ở đây, không tự bịa giá).'}</div>` : ''}
       </div>
       ${state.showSanPham ? `
         <div class="card" style="margin-top:-10px;margin-bottom:20px;">
@@ -342,13 +342,13 @@ function render(container, ctx){
         </div>
       ` : `
         <div class="card" style="margin-bottom:20px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Khách mới nhắn tới — chọn nhánh để xem sổ tay từng bước (không tốn lượt AI)</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Khách mới nhắn tới — chọn nhánh để xem sổ tay từng bước (không tốn lượt AI)</label>
           <div class="chips" style="margin-top:0;">
             ${Object.keys(NHANH_GUIDES).map(k=>`<div class="chip ${state.guideNhanh===k?'selected':''}" data-pick-guide-nhanh="${k}">${esc(NHANH_GUIDES[k].label)}</div>`).join('')}
           </div>
           ${state.guideNhanh ? `
             <div style="margin-top:14px;">
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn đúng tình huống của khách này</label>
+              <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn đúng tình huống của khách này</label>
               <div class="chips" style="margin-top:0;">
                 ${NHANH_GUIDES[state.guideNhanh].groups.map(g=>`<div class="chip ${state.guideGroup===g.key?'selected':''}" data-pick-guide-group="${g.key}">${esc(g.label)}</div>`).join('')}
               </div>
@@ -365,7 +365,7 @@ function render(container, ctx){
                 const caseImages = (s.dynamic === 'case' && !isCaseEmpty) ? caseStepContent(state.caseStudies, group.caseNhom).images : [];
                 return `
                 <div style="border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;">
-                  <div data-toggle-guide-step="${i}" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--ink);">
+                  <div data-toggle-guide-step="${i}" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--ink);">
                     <span>${esc(s.title)}</span>
                     <span style="color:var(--ink-soft);flex-shrink:0;">${state.expandedSteps.has(i)?'▾':'▸'}</span>
                   </div>
@@ -384,38 +384,38 @@ function render(container, ctx){
                           <span class="btn-ghost btn btn-sm" data-copy-guide-step="${i}">Sao chép</span>
                         </div>
                       `}
-                      ${s.tip ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5;">💡 ${esc(s.tip)}</div>` : ''}
+                      ${s.tip ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;">💡 ${esc(s.tip)}</div>` : ''}
                     </div>
                   ` : ''}
                 </div>
               `;}).join('')}
-              <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">Nhắn qua lại trực tiếp với khách theo đúng các bước trên trước — xong rồi mới chụp gộp cả đoạn (tối đa ${MAX_IMAGES} ảnh) gửi 1 lần cho AI phân tích, không cần gọi AI sau mỗi câu hỏi.</div>
+              <div style="font-size:13px;color:var(--ink-soft);margin-top:10px;">Nhắn qua lại trực tiếp với khách theo đúng các bước trên trước — xong rồi mới chụp gộp cả đoạn (tối đa ${MAX_IMAGES} ảnh) gửi 1 lần cho AI phân tích, không cần gọi AI sau mỗi câu hỏi.</div>
             </div>
           ` : ''}
         </div>
       `}
 
       <div class="card" style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa ${MAX_IMAGES} ảnh) — gộp nhiều tin lại rồi gửi 1 lần cho đỡ tốn lượt</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;">Ảnh chụp đoạn chat (tối đa ${MAX_IMAGES} ảnh) — gộp nhiều tin lại rồi gửi 1 lần cho đỡ tốn lượt</label>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           ${state.images.map((src,i)=>`
             <div style="position:relative;width:90px;height:90px;">
               <img src="${src}" data-zoom-img="${i}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;cursor:zoom-in;border:1px solid var(--line);">
-              <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
+              <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13.5px;cursor:pointer;">✕</span>
             </div>
           `).join('')}
           ${state.images.length<MAX_IMAGES ? `<label id="tv-file-label" style="width:90px;height:90px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:24px;">+<input type="file" accept="image/*" multiple id="tv-file" style="display:none;"></label>` : ''}
         </div>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mô tả/ghi chú thêm ${state.images.length?'(không bắt buộc nếu đã có ảnh)':''}</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mô tả/ghi chú thêm ${state.images.length?'(không bắt buộc nếu đã có ảnh)':''}</label>
         <textarea id="tv-note" placeholder="VD: khách hỏi giá gói 1 tháng, có vẻ đang phân vân...">${esc(state.note)}</textarea>
       </div>
 
       ${state.needsName ? `
         <div class="card" style="margin-bottom:20px;">
           <div class="hint-box" style="margin-top:0;">AI không đọc được tên khách trong ảnh/mô tả — nhập giúp tên khách hàng để lưu đúng hồ sơ.</div>
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tên khách hàng</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tên khách hàng</label>
           <input type="text" id="tv-manual-name" placeholder="VD: Chị Lan" value="${esc(state.manualName)}">
-          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Mẹo: đặt trùng đúng tên tài khoản Facebook/Zalo khách đang dùng — lần sau gửi ảnh chat, AI sẽ tự khớp thẳng vào hồ sơ này.</div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Mẹo: đặt trùng đúng tên tài khoản Facebook/Zalo khách đang dùng — lần sau gửi ảnh chat, AI sẽ tự khớp thẳng vào hồ sơ này.</div>
         </div>
       ` : ''}
 
@@ -436,7 +436,7 @@ function render(container, ctx){
       <div class="page-divider" style="margin:32px 0 20px;"></div>
       <div class="section highlight">
         <h3>Câu nên nhắn ngay</h3>
-        <div class="body" style="font-size:16px;font-weight:600;">${esc(a.cau_hoi_cau_chot)}</div>
+        <div class="body" style="font-size:17px;font-weight:600;">${esc(a.cau_hoi_cau_chot)}</div>
         <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
           <span class="btn-ghost btn btn-sm" id="tv-copy">Sao chép</span>
         </div>

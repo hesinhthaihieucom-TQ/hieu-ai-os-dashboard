@@ -123,7 +123,7 @@ function render(container, ctx){
         <div class="txt">
           <div class="meta">${esc(nhomLabel(item.nhom))}</div>
           <div style="font-weight:600;">${esc(item.tieu_de || 'Case study')}</div>
-          <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">${esc((item.noi_dung||'').slice(0,100))}${(item.noi_dung||'').length>100?'…':''}</div>
+          <div style="font-size:14.5px;color:var(--ink-soft);margin-top:2px;">${esc((item.noi_dung||'').slice(0,100))}${(item.noi_dung||'').length>100?'…':''}</div>
         </div>
       </div>
     `;
@@ -165,22 +165,22 @@ function render(container, ctx){
             <span id="cs-form-close" style="cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;">✕</span>
           </div>
           ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhóm</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhóm</label>
           <select id="cs-nhom" style="margin-top:6px;">
             <option value="" ${!f.nhom?'selected':''}>✨ Để AI tự phân loại</option>
             ${NHOM_OPTIONS.map(n=>`<option value="${n.key}" ${f.nhom===n.key?'selected':''}>${esc(n.label)}</option>`).join('')}
           </select>
-          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Không chắc nên xếp vào nhóm nào cũng được — để trống, AI sẽ đọc câu chuyện và tự xếp nhóm khi lưu.</div>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tiêu đề ngắn</label>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Không chắc nên xếp vào nhóm nào cũng được — để trống, AI sẽ đọc câu chuyện và tự xếp nhóm khi lưu.</div>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tiêu đề ngắn</label>
           <input type="text" id="cs-tieu-de" value="${esc(f.tieu_de)}" placeholder="VD: Chị Lan — giảm 5kg sau 30 ngày">
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Câu chuyện của case này</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Câu chuyện của case này</label>
           <textarea id="cs-noi-dung" style="min-height:140px;" placeholder="Trước đây thế nào, đã dùng giải pháp gì, kết quả ra sao...">${esc(f.noi_dung)}</textarea>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Hình ảnh (tối đa ${MAX_IMAGES})</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Hình ảnh (tối đa ${MAX_IMAGES})</label>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
             ${f.hinh_anh.map((src,i)=>`
               <div style="position:relative;width:80px;height:80px;">
                 <img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
-                <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
+                <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13.5px;cursor:pointer;">✕</span>
               </div>
             `).join('')}
             ${f.hinh_anh.length<MAX_IMAGES ? `<label style="width:80px;height:80px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:22px;">+<input type="file" accept="image/*" multiple id="cs-file" style="display:none;"></label>` : ''}
@@ -214,7 +214,7 @@ function render(container, ctx){
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
         list.length === 0
-          ? `<div style="color:var(--ink-soft);font-size:14px;">${state.items.length===0 ? 'Chưa có case study nào — bấm "+ Thêm case study" để lưu case đầu tiên.' : 'Không có case nào ở nhóm này.'}</div>`
+          ? `<div style="color:var(--ink-soft);font-size:15.5px;">${state.items.length===0 ? 'Chưa có case study nào — bấm "+ Thêm case study" để lưu case đầu tiên.' : 'Không có case nào ở nhóm này.'}</div>`
           : list.map(itemCardHtml).join('')
       )}
 

@@ -41,7 +41,7 @@ function confirmModal(message, confirmLabel){
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.innerHTML = `
       <div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.4);text-align:center;" onclick="event.stopPropagation();">
-        <div style="font-size:15px;line-height:1.6;color:var(--ink);margin-bottom:20px;">${esc(message)}</div>
+        <div style="font-size:16.5px;line-height:1.6;color:var(--ink);margin-bottom:20px;">${esc(message)}</div>
         <div style="display:flex;gap:10px;justify-content:center;">
           <span class="btn-ghost btn btn-sm" data-confirm-cancel="1">Huỷ</span>
           <button class="btn btn-sm" style="background:var(--danger);" data-confirm-ok="1">${esc(confirmLabel||'Xác nhận xoá')}</button>

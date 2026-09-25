@@ -227,7 +227,7 @@ function render(container, ctx){
 
       ${(!canTopup || state.tab==='goi') ? `
       <div class="card" style="max-width:460px;margin-top:16px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Chọn gói muốn mua</label>
         ${(()=>{
           // Đồng hồ đếm ngược tách riêng hẳn thành 1 khối to, nền số gần đen tương phản với dòng
           // chữ nhãn màu đỏ phía trên (áp lại đúng bản đã chỉnh cho nhan-hieu sau 2 lần góp ý chị
@@ -238,19 +238,19 @@ function render(container, ctx){
           const digitBox = (n)=>`<div style="background:var(--ink);color:#fff;font-family:'Playfair Display',serif;font-weight:900;font-size:32px;line-height:1;padding:8px 14px;border-radius:10px;font-variant-numeric:tabular-nums;min-width:50px;">${String(n).padStart(2,'0')}</div>`;
           return `
             <div style="background:linear-gradient(135deg, rgba(166,70,46,.10), rgba(166,70,46,.18));border:1.5px solid var(--danger);border-radius:14px;padding:14px 16px;margin-bottom:12px;text-align:center;">
-              <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:10px;">🔥 Ưu đãi giảm 10% gói 6/12 tháng sắp hết!</div>
+              <div style="font-size:14.5px;font-weight:700;color:var(--danger);margin-bottom:10px;">🔥 Ưu đãi giảm 10% gói 6/12 tháng sắp hết!</div>
               <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
                 ${digitBox(mm)}
                 <div style="font-size:26px;font-weight:900;color:var(--danger);">:</div>
                 ${digitBox(ss)}
               </div>
               <div style="display:flex;justify-content:center;gap:24px;margin-top:5px;">
-                <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Phút</span>
-                <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Giây</span>
+                <span style="min-width:50px;font-size:11.5px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Phút</span>
+                <span style="min-width:50px;font-size:11.5px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Giây</span>
               </div>
             </div>`;
         })()}
-        ${earlyBirdTimeLeftLabel(p) ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdTimeLeftLabel(p))} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
+        ${earlyBirdTimeLeftLabel(p) ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:14.5px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdTimeLeftLabel(p))} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
         <div class="chips" id="plan-chips">
           ${plans.map(pl => {
             const savings = planSavingsLabel(pl);
@@ -260,8 +260,8 @@ function render(container, ctx){
             const priceHtml = originalPlan
               ? `<s style="opacity:.65;font-weight:400;">${originalPlan.amount.toLocaleString('vi-VN')}đ</s> ${pl.amount.toLocaleString('vi-VN')}đ`
               : `${pl.amount.toLocaleString('vi-VN')}đ`;
-            const urgentTag = pl.urgent ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">ƯU ĐÃI 15 PHÚT</span>` : '';
-            return `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${urgentTag}${esc(pl.label)} — ${priceHtml}${pl.recommended?` <span style="opacity:.72;font-size:11.5px;">(khuyên dùng)</span>`:''}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+            const urgentTag = pl.urgent ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">ƯU ĐÃI 15 PHÚT</span>` : '';
+            return `<div class="chip ${pl.key===state.selectedPlanKey?'selected':''}" data-plan="${pl.key}">${urgentTag}${esc(pl.label)} — ${priceHtml}${pl.recommended?` <span style="opacity:.72;font-size:13px;">(khuyên dùng)</span>`:''}${savings?` <span style="opacity:.72;font-size:13px;">(${savings})</span>`:''}</div>`;
           }).join('')}
         </div>
         ${plan.note ? `<div class="hint-box" style="margin-top:10px;">🎉 ${esc(plan.note)}</div>` : ''}
@@ -270,15 +270,15 @@ function render(container, ctx){
           <div style="text-align:center;margin-top:18px;">
             <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
             <div style="margin-top:8px;">
-              <a href="${qrUrl}" download="vietqr-thanh-toan.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
+              <a href="${qrUrl}" download="vietqr-thanh-toan.png" target="_blank" rel="noopener" style="font-size:14px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
             </div>
           </div>
-          <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+          <div style="margin-top:14px;font-size:15px;line-height:1.7;">
             <div><b>Ngân hàng:</b> Vietinbank</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
             <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${plan.amount}">Copy</span></div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${plan.amount}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
           </div>
           <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu thì ngân hàng mới báo về hệ thống được) — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác.</div>
         ` : `
@@ -288,7 +288,7 @@ function render(container, ctx){
         <div class="btn-row" style="justify-content:flex-start;margin-top:18px;">
           <button class="btn btn-sm" id="crm-recheck" ${state.checking?'disabled':''}>${state.checking?'Đang kiểm tra…':'Tôi đã chuyển khoản — kiểm tra lại'}</button>
         </div>
-        ${state.checkedOnce && !state.checking ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">Nếu chưa thấy cập nhật, đợi thêm 1-2 phút rồi bấm lại — nếu vẫn chưa thấy sau vài phút, báo lại để kích hoạt tay.</div>` : ''}
+        ${state.checkedOnce && !state.checking ? `<div style="font-size:14px;color:var(--ink-soft);margin-top:8px;">Nếu chưa thấy cập nhật, đợi thêm 1-2 phút rồi bấm lại — nếu vẫn chưa thấy sau vài phút, báo lại để kích hoạt tay.</div>` : ''}
       </div>
       ` : ''}
 
@@ -309,28 +309,28 @@ function render(container, ctx){
       : null;
     return `
       <div class="card" style="max-width:460px;margin-top:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Mua thêm lượt AI</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Mua thêm lượt AI</label>
         <div class="hint-box" style="margin-bottom:12px;">Tháng này bạn đã dùng <b>${used}/${limit} lượt</b>. Nếu cần dùng nhiều hơn mức bình thường, mua thêm lượt dùng ngay trong tháng, không cần chờ đầu tháng sau. Mua càng nhiều, giá/lượt càng rẻ.</div>
         <div class="chips" id="topup-chips">
           ${TOPUP_PACKS.map(pk => {
             const pricePerLuot = pk.amount / pk.luot;
             const basePricePerLuot = TOPUP_PACKS[0].amount / TOPUP_PACKS[0].luot;
             const pct = Math.round((1 - pricePerLuot/basePricePerLuot) * 100);
-            return `<div class="chip ${pk.key===state.selectedTopupKey?'selected':''}" data-topup="${pk.key}">+${pk.luot} lượt — ${pk.amount.toLocaleString('vi-VN')}đ${pct>0?` <span style="opacity:.72;font-size:11.5px;">(giảm ${pct}%)</span>`:''}</div>`;
+            return `<div class="chip ${pk.key===state.selectedTopupKey?'selected':''}" data-topup="${pk.key}">+${pk.luot} lượt — ${pk.amount.toLocaleString('vi-VN')}đ${pct>0?` <span style="opacity:.72;font-size:13px;">(giảm ${pct}%)</span>`:''}</div>`;
           }).join('')}
         </div>
 
         ${topupQrUrl ? `
           <div style="text-align:center;margin-top:18px;">
             <img src="${topupQrUrl}" alt="Mã VietQR mua thêm lượt" style="max-width:220px;width:100%;border-radius:12px;border:1px solid var(--line);">
-            <div style="margin-top:8px;"><a href="${topupQrUrl}" download="vietqr-mua-them-luot.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a></div>
+            <div style="margin-top:8px;"><a href="${topupQrUrl}" download="vietqr-mua-them-luot.png" target="_blank" rel="noopener" style="font-size:14px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a></div>
           </div>
-          <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+          <div style="margin-top:14px;font-size:15px;line-height:1.7;">
             <div><b>Ngân hàng:</b> Vietinbank</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
             <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${pack.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${pack.amount}">Copy</span></div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${pack.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${pack.amount}">Copy</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
           </div>
           <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> — lượt được cộng thẳng trong vài phút, dùng được ngay, không ảnh hưởng tới hạn gói đang có.</div>
         ` : `
@@ -340,7 +340,7 @@ function render(container, ctx){
         <div class="btn-row" style="justify-content:flex-start;margin-top:18px;">
           <button class="btn btn-sm" id="crm-topup-recheck" ${state.topupChecking?'disabled':''}>${state.topupChecking?'Đang kiểm tra…':'Tôi đã chuyển khoản — kiểm tra lại'}</button>
         </div>
-        ${state.topupCheckedOnce && !state.topupChecking ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">Nếu chưa thấy cập nhật, đợi thêm 1-2 phút rồi bấm lại — nếu vẫn chưa thấy sau vài phút, báo lại để cộng tay.</div>` : ''}
+        ${state.topupCheckedOnce && !state.topupChecking ? `<div style="font-size:14px;color:var(--ink-soft);margin-top:8px;">Nếu chưa thấy cập nhật, đợi thêm 1-2 phút rồi bấm lại — nếu vẫn chưa thấy sau vài phút, báo lại để cộng tay.</div>` : ''}
       </div>
     `;
   }

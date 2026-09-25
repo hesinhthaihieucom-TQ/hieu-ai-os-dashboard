@@ -95,8 +95,8 @@ function render(container, ctx){
       <div class="source-card" data-open-guide="1" style="text-align:left;display:flex;align-items:center;gap:14px;margin-bottom:20px;cursor:pointer;">
         <div class="ic" style="margin-bottom:0;">📘</div>
         <div>
-          <div class="label" style="font-size:14.5px;">Hướng dẫn sử dụng</div>
-          <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Xem chi tiết cách dùng từng mục — Tư Vấn AI, Khách Hàng, Đối Tác, Case Study, Câu Chuyện, thông báo...</div>
+          <div class="label" style="font-size:16px;">Hướng dẫn sử dụng</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);margin-top:2px;">Xem chi tiết cách dùng từng mục — Tư Vấn AI, Khách Hàng, Đối Tác, Case Study, Câu Chuyện, thông báo...</div>
         </div>
       </div>
 
@@ -137,13 +137,13 @@ function render(container, ctx){
         ` : ''}
       `}
 
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Bắt đầu từ đâu</h2></div>
+      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">Bắt đầu từ đâu</h2></div>
       <div class="source-grid" style="margin-bottom:24px;">
         ${QUICK_LINKS.map(l=>`
           <div class="source-card" data-goto="${l.key}">
             <div class="ic">${l.icon}</div>
             <div class="label">${esc(l.label)}</div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">${esc(l.desc)}</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(l.desc)}</div>
           </div>
         `).join('')}
       </div>
@@ -158,14 +158,14 @@ function render(container, ctx){
     const alreadyRewarded = !!(ctx.profile && ctx.profile.crm_review_reward_given);
     return `
       <div style="margin-top:28px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Đánh giá từ mọi người</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Đánh giá từ mọi người</h3>
         <div class="card" style="margin-bottom:16px;background:var(--accent-soft);border:1px solid var(--accent);">
           ${state.reviewJustSubmitted
-            ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
+            ? `<div style="color:var(--accent);font-weight:600;font-size:15.5px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
             : `
-            ${!alreadyRewarded ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:10px;">🎁 Tặng ngay ${REVIEW_REWARD_LUOT} lượt AI miễn phí khi viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên!</div>` : ''}
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoe trải nghiệm của bạn — kể thoải mái 3-5 điều bạn thích nhất</label>
-            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">Tư vấn nhanh hơn bao nhiêu, khách hàng có bị bỏ sót follow không, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt.</div>
+            ${!alreadyRewarded ? `<div style="font-size:16.5px;font-weight:700;color:var(--danger);margin-bottom:10px;">🎁 Tặng ngay ${REVIEW_REWARD_LUOT} lượt AI miễn phí khi viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên!</div>` : ''}
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoe trải nghiệm của bạn — kể thoải mái 3-5 điều bạn thích nhất</label>
+            <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">Tư vấn nhanh hơn bao nhiêu, khách hàng có bị bỏ sót follow không, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt.</div>
             <textarea id="rv-comment" placeholder="Ví dụ: 1. Tư vấn nhanh hơn hẳn, không còn quên follow khách 2. AI đọc ảnh chat và tự lưu hồ sơ khách chính xác 3. Sổ tay tư vấn giúp mình biết nên hỏi gì tiếp theo..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
             ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
             <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
@@ -173,12 +173,12 @@ function render(container, ctx){
             </div>
           `}
         </div>
-        ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải…</div>`
-          : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào được duyệt.</div>`
+        ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:15.5px;">Đang tải…</div>`
+          : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có đánh giá nào được duyệt.</div>`
           : (state.showAllReviews ? state.reviews : state.reviews.slice(0, REVIEWS_COLLAPSED_COUNT)).map(r=>`
             <div class="section">
               <div class="body" style="white-space:pre-wrap;">${esc(r.comment)}</div>
-              <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
             </div>
           `).join('')}
         ${!state.showAllReviews && state.reviews.length > REVIEWS_COLLAPSED_COUNT ? `
@@ -194,7 +194,7 @@ function render(container, ctx){
     return `
       <details class="kt-section" style="margin-bottom:10px;">
         <summary class="kt-summary">${icon} ${esc(title)}</summary>
-        <div style="margin-top:10px;font-size:13.5px;line-height:1.7;color:var(--ink);">${bodyHtml}</div>
+        <div style="margin-top:10px;font-size:15px;line-height:1.7;color:var(--ink);">${bodyHtml}</div>
       </details>
     `;
   }

@@ -91,11 +91,11 @@ function sidebarFootHtml(){
   const initial = name.charAt(0).toUpperCase();
   const avatarHtml = (p && p.avatar_url)
     ? `<img src="${p.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
-    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${esc(initial)}</div>`;
+    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15.5px;flex-shrink:0;">${esc(initial)}</div>`;
   return `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       ${avatarHtml}
-      <div style="min-width:0;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+      <div style="min-width:0;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
     </div>
     ${crmQuotaHint()}
   `;
@@ -156,12 +156,12 @@ function maybeShowReviewPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Trợ Lý AI Tư Vấn &amp; CRM 🎉</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${CRM_REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${CRM_REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái 3-5 điều bạn thích nhất — tư vấn nhanh hơn bao nhiêu, đỡ quên follow khách thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần...</div>
-      <textarea id="rp-comment" placeholder="Ví dụ: 1. Tư vấn nhanh hơn hẳn, không còn quên follow khách 2. AI đọc ảnh chat và tự lưu hồ sơ khách chính xác 3. Sổ tay tư vấn giúp mình biết nên hỏi gì tiếp theo..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
-      <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Trợ Lý AI Tư Vấn &amp; CRM 🎉</div>
+      <div style="font-size:15px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${CRM_REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${CRM_REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái 3-5 điều bạn thích nhất — tư vấn nhanh hơn bao nhiêu, đỡ quên follow khách thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần...</div>
+      <textarea id="rp-comment" placeholder="Ví dụ: 1. Tư vấn nhanh hơn hẳn, không còn quên follow khách 2. AI đọc ảnh chat và tự lưu hồ sơ khách chính xác 3. Sổ tay tư vấn giúp mình biết nên hỏi gì tiếp theo..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:15.5px;resize:vertical;"></textarea>
+      <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:14px;margin-top:8px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
-        <span id="rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <span id="rp-skip" style="font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
         <button id="rp-submit" class="btn btn-sm">Gửi đánh giá</button>
       </div>
     </div>
@@ -299,7 +299,7 @@ function renderAuthScreen(err, successMsg){
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
       </div>
-      <p class="cta-note" style="text-align:center;color:var(--ink-soft);font-size:12.5px;margin-top:18px;">Đã có tài khoản Xây Nhân Hiệu? Đăng nhập đúng email/mật khẩu đó — hồ sơ câu chuyện của bạn sẽ tự dùng lại ở đây.</p>
+      <p class="cta-note" style="text-align:center;color:var(--ink-soft);font-size:14px;margin-top:18px;">Đã có tài khoản Xây Nhân Hiệu? Đăng nhập đúng email/mật khẩu đó — hồ sơ câu chuyện của bạn sẽ tự dùng lại ở đây.</p>
     </div>
   `;
 

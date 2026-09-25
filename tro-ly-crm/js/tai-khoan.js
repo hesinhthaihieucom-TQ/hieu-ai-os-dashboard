@@ -122,15 +122,15 @@ function render(container, ctx){
             ? `<img src="${state.avatarPreview}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;">`
             : `<div style="width:72px;height:72px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;">${esc((state.fullName||'?').charAt(0).toUpperCase())}</div>`}
           <div>
-            <input type="file" accept="image/*" id="tk-avatar-upload" style="font-size:13px;">
-            ${state.avatarSaving?`<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Đang lưu…</div>`:''}
+            <input type="file" accept="image/*" id="tk-avatar-upload" style="font-size:14.5px;">
+            ${state.avatarSaving?`<div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">Đang lưu…</div>`:''}
           </div>
         </div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Email</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Email</label>
         <input type="text" value="${esc((ctx.user && ctx.user.email) || '')}" disabled style="background:var(--bg);color:var(--ink-soft);">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Họ tên</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Họ tên</label>
         <input type="text" id="tk-name" value="${esc(state.fullName)}" placeholder="Tên của bạn">
 
         <button class="btn" style="margin-top:14px;" id="tk-save-name" ${state.savingName?'disabled':''}>${state.savingName?'Đang lưu…':'Lưu tên'}</button>
@@ -139,10 +139,10 @@ function render(container, ctx){
 
       <div class="section">
         <h3>Đổi mật khẩu</h3>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới</label>
         <input type="password" id="tk-new-pass" value="${esc(state.newPass)}" placeholder="Ít nhất 6 ký tự">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Xác nhận mật khẩu mới</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Xác nhận mật khẩu mới</label>
         <input type="password" id="tk-confirm-pass" value="${esc(state.confirmPass)}" placeholder="Nhập lại mật khẩu mới">
 
         ${state.passError ? `<div class="error-box">${esc(state.passError)}</div>` : ''}
@@ -154,23 +154,23 @@ function render(container, ctx){
         <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
         <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — bạn bè bấm vào đăng ký sẽ được <b>giảm 15%</b> khi mua gói, còn bạn được <b>tặng lượt AI</b> tương đương 15% giá trị đơn hàng của họ ngay khi họ thanh toán thành công lần đầu${ctx.profile&&ctx.profile.is_vip_partner?' (VIP Partner: 25%)':''}.<br><br>🌟 Giới thiệu thành công từ <b>${PARTNER_REFERRAL_THRESHOLD} người trở lên</b> — cộng dồn cả Xây Nhân Hiệu, Sổ Dòng Tiền Tâm Thức lẫn app này — bạn sẽ được coi là <b>Hiểu Partner</b> của hệ sinh thái — từ đó thay vì tặng lượt AI, bạn sẽ được thưởng bằng <b>hoa hồng tiền mặt</b> — liên hệ để nhận sau khi đạt mốc.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg);color:var(--ink);" onclick="this.select()">
+          <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;background:var(--bg);color:var(--ink);" onclick="this.select()">
           <button class="btn btn-sm" id="tk-copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>
         </div>
         <div style="display:flex;gap:24px;margin-top:14px;flex-wrap:wrap;">
-          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.hieuPartnerCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công (mọi sản phẩm)</div></div>
-          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralLuotEarned}</div><div style="font-size:12px;color:var(--ink-soft);">lượt AI đã được tặng (app này)</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.hieuPartnerCount}</div><div style="font-size:13.5px;color:var(--ink-soft);">người đã giới thiệu thành công (mọi sản phẩm)</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralLuotEarned}</div><div style="font-size:13.5px;color:var(--ink-soft);">lượt AI đã được tặng (app này)</div></div>
         </div>
         ${state.hieuPartnerCount >= PARTNER_REFERRAL_THRESHOLD
-          ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:13px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái! Liên hệ để nhận hoa hồng tiền mặt.</div>`
-          : `<div style="margin-top:12px;font-size:12.5px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - state.hieuPartnerCount}</b> người nữa để trở thành Hiểu Partner 🌟</div>`}
+          ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:14.5px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái! Liên hệ để nhận hoa hồng tiền mặt.</div>`
+          : `<div style="margin-top:12px;font-size:14px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - state.hieuPartnerCount}</b> người nữa để trở thành Hiểu Partner 🌟</div>`}
         ${ctx.profile&&ctx.profile.is_vip_partner
-          ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:13px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
-          : `<div style="margin-top:10px;font-size:12.5px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
+          ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:14.5px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
+          : `<div style="margin-top:10px;font-size:14px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
       </div>
 
       <div class="btn-row" style="justify-content:flex-start;margin-top:8px;">
-        <span class="signout" id="tk-signout-btn" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
+        <span class="signout" id="tk-signout-btn" style="cursor:pointer;color:var(--ink-soft);font-size:14.5px;">Đăng xuất</span>
       </div>
     `;
   }

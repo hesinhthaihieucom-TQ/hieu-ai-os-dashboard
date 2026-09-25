@@ -42,11 +42,11 @@
     overlay.innerHTML = `
       <div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:28px 26px;box-shadow:0 16px 44px rgba(0,0,0,.3);text-align:center;">
         <div style="font-size:40px;margin-bottom:10px;">${ann.emoji || '🎉'}</div>
-        <h2 style="font-family:'Playfair Display',serif;font-size:19px;margin-bottom:10px;color:#1E2420;">${esc(ann.title)}</h2>
-        <div style="font-size:14px;line-height:1.7;color:#5B5F55;white-space:pre-wrap;text-align:left;">${esc(ann.body)}</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:10px;color:#1E2420;">${esc(ann.title)}</h2>
+        <div style="font-size:15.5px;line-height:1.7;color:#5B5F55;white-space:pre-wrap;text-align:left;">${esc(ann.body)}</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:22px;">
-          ${hasSteps ? `<span id="crm-ann-tour" style="cursor:pointer;font-weight:600;font-size:14px;color:#fff;background:var(--accent,#2F6F62);padding:12px;border-radius:999px;">Xem hướng dẫn →</span>` : ''}
-          <span id="crm-ann-close" style="cursor:pointer;font-size:13.5px;color:${hasSteps?'#9CA396':'#fff'};${hasSteps?'':'font-weight:600;background:var(--accent,#2F6F62);padding:12px;border-radius:999px;'}">${hasSteps ? 'Để sau' : 'Đã hiểu'}</span>
+          ${hasSteps ? `<span id="crm-ann-tour" style="cursor:pointer;font-weight:600;font-size:15.5px;color:#fff;background:var(--accent,#2F6F62);padding:12px;border-radius:999px;">Xem hướng dẫn →</span>` : ''}
+          <span id="crm-ann-close" style="cursor:pointer;font-size:15px;color:${hasSteps?'#9CA396':'#fff'};${hasSteps?'':'font-weight:600;background:var(--accent,#2F6F62);padding:12px;border-radius:999px;'}">${hasSteps ? 'Để sau' : 'Đã hiểu'}</span>
         </div>
       </div>
     `;
