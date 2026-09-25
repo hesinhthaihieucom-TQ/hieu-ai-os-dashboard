@@ -148,6 +148,12 @@ function skLatestBmiCategoryFromMetrics(metrics){
 // tính ở Theo Dõi Tuần, không hỏi thêm khách câu nào mới). Nội dung là kiến thức dinh dưỡng/vận động
 // CHUNG (không gắn sản phẩm/không phải công dụng TPCN). Đặt ở util.js (không phải lich-trinh.js) để
 // quan-tri.js cũng dùng được làm bản nháp khi admin tuỳ chỉnh lịch trình riêng cho 1 khách.
+// 2026-09-25, chị Quỳnh: "sao cái lịch buổi tối lại có ăn nhẹ trước vậy, check lại cái lịch trình e
+// gửi" — khối này (kiến thức CHUNG) hiện cùng lúc với đúng lịch trình sản phẩm chị gửi (regimen_
+// sections, xem seed_sk_packages_*.sql — LUÔN ghi "Bữa tối: ăn bình thường theo quy tắc nắm bàn
+// tay"), nhưng chữ "toi.an" ở đây trước đó lại viết "ăn nhẹ hơn/ăn nhẹ" — 2 dòng hiện chung 1 khối
+// Tối nói ngược nhau (nhẹ vs bình thường). Sửa lại khớp đúng "ăn bình thường theo quy tắc nắm bàn
+// tay" như lịch trình thật, chỉ giữ phần khung giờ/nhóm thực phẩm (không phải từ lịch trình chị gửi).
 const SK_DAILY_SCHEDULE_BY_BMI = {
   gay: {
     label:'Thiếu cân — cần tăng cân lành mạnh & tăng cơ',
@@ -160,14 +166,14 @@ const SK_DAILY_SCHEDULE_BY_BMI = {
     label:'Bình thường — duy trì vóc dáng hiện tại',
     sang: { uong:'1 cốc nước ấm ngay khi thức dậy.', an:'Ăn sáng đầy đủ, cân bằng theo quy tắc bàn tay (tinh bột GI thấp + đạm + rau).' },
     trua: { uong:'Uống đủ nước trước bữa.', an:'Theo tỉ lệ 4-3-2-1: rau xanh nhiều nhất — đạm — tinh bột — chất béo.' },
-    toi: { uong:'Nước ấm hoặc trà thảo mộc, hạn chế đồ uống có đường.', an:'Ăn nhẹ hơn bữa trưa, ưu tiên đạm + rau, giảm tinh bột, ăn trước 20h và cách giờ ngủ ít nhất 2-3 tiếng.' },
+    toi: { uong:'Nước ấm hoặc trà thảo mộc, hạn chế đồ uống có đường.', an:'Ăn bình thường theo quy tắc nắm bàn tay (xem mục Ăn Uống), ưu tiên đạm + rau, ăn trước 20h và cách giờ ngủ ít nhất 2-3 tiếng.' },
     tap: { gio:'Sáng sớm hoặc chiều tối, tuỳ lịch cá nhân', bai:'30 phút/buổi, 3-4 buổi/tuần — kết hợp cardio nhẹ (đi bộ nhanh, đạp xe) + vận động linh hoạt để duy trì thể lực.' },
   },
   thua_can: {
     label:'Thừa cân/Béo phì — cần giảm mỡ',
     sang: { uong:'1 cốc nước ấm, có thể thêm nước chanh ấm KHÔNG đường.', an:'Đủ đạm + rau, giảm tinh bột tinh chế (tránh xôi/bánh ngọt) — theo đúng nhịp 4-4-12 đã có.' },
     trua: { uong:'Uống đủ nước trước bữa 30 phút để giảm cảm giác đói giả.', an:'Rau xanh nhiều nhất (tỉ lệ 4-3-2-1), đạm nạc, tinh bột GI thấp lượng vừa phải, hạn chế đồ chiên rán.' },
-    toi: { uong:'Nước ấm/trà thảo mộc không đường.', an:'Ăn nhẹ, ưu tiên rau + đạm, giảm tối đa tinh bột (tránh nhóm GI cao buổi tối), ăn trước 19-20h, giữ khoảng nhịn đêm 12 tiếng.' },
+    toi: { uong:'Nước ấm/trà thảo mộc không đường.', an:'Ăn bình thường theo quy tắc nắm bàn tay, ưu tiên rau + đạm, giảm tối đa tinh bột (tránh nhóm GI cao buổi tối), ăn trước 19-20h, giữ khoảng nhịn đêm 12 tiếng.' },
     tap: { gio:'Sáng sớm (trước ăn sáng, nếu thể lực cho phép) hoặc chiều tối', bai:'30-45 phút/buổi, 4-5 buổi/tuần — kết hợp cardio (đi bộ nhanh, đạp xe, bơi) + bài tập toàn thân nhẹ, tăng dần cường độ theo thời gian.' },
   },
 };
