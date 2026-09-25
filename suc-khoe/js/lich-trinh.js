@@ -430,6 +430,7 @@ function render(container, ctx){
 - 1 nắm tay = Tinh bột (cơm, khoai, ngũ cốc...)
 - 1 ngón tay cái = Chất béo (dầu ăn, bơ, các loại hạt...)
 👉 Chia đĩa ăn theo tỉ lệ 4-3-2-1: Rau xanh (nhiều nhất) — Đạm — Tinh bột — Chất béo.`)}
+        <img src="assets/dia-an-4-3-2-1.jpg" alt="Ví dụ chia đĩa ăn theo tỉ lệ 4-3-2-1" style="width:100%;max-width:320px;border-radius:12px;margin-top:12px;display:block;">
       </div>
 
       ${nutritionCalcHtml()}
