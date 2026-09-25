@@ -154,24 +154,31 @@ function skLatestBmiCategoryFromMetrics(metrics){
 // tay"), nhưng chữ "toi.an" ở đây trước đó lại viết "ăn nhẹ hơn/ăn nhẹ" — 2 dòng hiện chung 1 khối
 // Tối nói ngược nhau (nhẹ vs bình thường). Sửa lại khớp đúng "ăn bình thường theo quy tắc nắm bàn
 // tay" như lịch trình thật, chỉ giữ phần khung giờ/nhóm thực phẩm (không phải từ lịch trình chị gửi).
+// Sau đó chị Quỳnh nói thêm: "từ giờ phải làm các lịch trình cho nó chuẩn vì cái đó quan trọng
+// nhất" — chủ động rà lại toàn bộ, phát hiện thêm 1 chỗ SAI NẶNG HƠN: lịch trình thật ghi rõ "Ăn
+// sáng bằng sản phẩm: Bữa lỏng" (bữa sáng được THAY HẲN bằng ly LC+Lifiber pha lỏng, xem seed_sk_
+// packages_safe_dosing_v1.sql), nhưng "sang.an" ở cả 3 mốc BMI trước đó vẫn ghi cứng "ăn no đủ 3
+// nhóm.../trứng, bánh mì..." — mâu thuẫn thẳng với việc bữa sáng đã bị thay bằng bữa lỏng. Sửa lại
+// thành 2 nhánh rõ ràng: ngày CÓ dùng sản phẩm thay bữa sáng thì theo đúng hướng dẫn sản phẩm (không
+// ăn thêm), ngày KHÔNG dùng mới áp dụng gợi ý ăn sáng thường như cũ.
 const SK_DAILY_SCHEDULE_BY_BMI = {
   gay: {
     label:'Thiếu cân — cần tăng cân lành mạnh & tăng cơ',
-    sang: { uong:'1 cốc nước ấm ngay khi thức dậy, có thể thêm 1 ly sữa/sinh tố năng lượng cao (chuối, bơ, yến mạch, sữa nguyên kem).', an:'Ăn no đủ 3 nhóm: tinh bột + đạm + chất béo tốt — VD trứng, bánh mì nguyên cám, bơ đậu phộng, sữa chua Hy Lạp.' },
+    sang: { uong:'1 cốc nước ấm ngay khi thức dậy, có thể thêm 1 ly sữa/sinh tố năng lượng cao (chuối, bơ, yến mạch, sữa nguyên kem).', an:'Nếu hôm đó dùng sản phẩm thay bữa sáng (xem "Sản phẩm dùng lúc này" bên dưới) thì theo đúng hướng dẫn đó, không ăn thêm. Ngày không dùng sản phẩm: ăn no đủ 3 nhóm — tinh bột + đạm + chất béo tốt, VD trứng, bánh mì nguyên cám, bơ đậu phộng, sữa chua Hy Lạp.' },
     trua: { uong:'Uống đủ nước trước bữa 30 phút.', an:'Ăn đủ no, đạm NHIỀU HƠN quy tắc bàn tay thông thường (thêm nửa lòng bàn tay đạm), đủ tinh bột, thêm 1 phần chất béo tốt (dầu ô liu, quả bơ).' },
     toi: { uong:'Nước ấm hoặc trà thảo mộc.', an:'Không bỏ bữa tối — vẫn đủ đạm, có thể thêm bữa phụ nhẹ (sữa, các loại hạt) trước ngủ nếu đói.' },
     tap: { gio:'Chiều hoặc tối (17h-19h)', bai:'Tập kháng lực nhẹ (tạ tay/dây kháng lực) 2-3 buổi/tuần — ưu tiên xây cơ, KHÔNG tập cardio cường độ cao kéo dài (dễ đốt thêm năng lượng cần cho tăng cân).' },
   },
   can_doi: {
     label:'Bình thường — duy trì vóc dáng hiện tại',
-    sang: { uong:'1 cốc nước ấm ngay khi thức dậy.', an:'Ăn sáng đầy đủ, cân bằng theo quy tắc bàn tay (tinh bột GI thấp + đạm + rau).' },
+    sang: { uong:'1 cốc nước ấm ngay khi thức dậy.', an:'Nếu hôm đó dùng sản phẩm thay bữa sáng (xem "Sản phẩm dùng lúc này" bên dưới) thì theo đúng hướng dẫn đó, không ăn thêm. Ngày không dùng sản phẩm: ăn sáng đầy đủ, cân bằng theo quy tắc bàn tay (tinh bột GI thấp + đạm + rau).' },
     trua: { uong:'Uống đủ nước trước bữa.', an:'Theo tỉ lệ 4-3-2-1: rau xanh nhiều nhất — đạm — tinh bột — chất béo.' },
     toi: { uong:'Nước ấm hoặc trà thảo mộc, hạn chế đồ uống có đường.', an:'Ăn bình thường theo quy tắc nắm bàn tay (xem mục Ăn Uống), ưu tiên đạm + rau, ăn trước 20h và cách giờ ngủ ít nhất 2-3 tiếng.' },
     tap: { gio:'Sáng sớm hoặc chiều tối, tuỳ lịch cá nhân', bai:'30 phút/buổi, 3-4 buổi/tuần — kết hợp cardio nhẹ (đi bộ nhanh, đạp xe) + vận động linh hoạt để duy trì thể lực.' },
   },
   thua_can: {
     label:'Thừa cân/Béo phì — cần giảm mỡ',
-    sang: { uong:'1 cốc nước ấm, có thể thêm nước chanh ấm KHÔNG đường.', an:'Đủ đạm + rau, giảm tinh bột tinh chế (tránh xôi/bánh ngọt) — theo đúng nhịp 4-4-12 đã có.' },
+    sang: { uong:'1 cốc nước ấm, có thể thêm nước chanh ấm KHÔNG đường.', an:'Nếu hôm đó dùng sản phẩm thay bữa sáng (xem "Sản phẩm dùng lúc này" bên dưới) thì theo đúng hướng dẫn đó, không ăn thêm. Ngày không dùng sản phẩm: đủ đạm + rau, giảm tinh bột tinh chế (tránh xôi/bánh ngọt) — theo đúng nhịp 4-4-12 đã có.' },
     trua: { uong:'Uống đủ nước trước bữa 30 phút để giảm cảm giác đói giả.', an:'Rau xanh nhiều nhất (tỉ lệ 4-3-2-1), đạm nạc, tinh bột GI thấp lượng vừa phải, hạn chế đồ chiên rán.' },
     toi: { uong:'Nước ấm/trà thảo mộc không đường.', an:'Ăn bình thường theo quy tắc nắm bàn tay, ưu tiên rau + đạm, giảm tối đa tinh bột (tránh nhóm GI cao buổi tối), ăn trước 19-20h, giữ khoảng nhịn đêm 12 tiếng.' },
     tap: { gio:'Sáng sớm (trước ăn sáng, nếu thể lực cho phép) hoặc chiều tối', bai:'30-45 phút/buổi, 4-5 buổi/tuần — kết hợp cardio (đi bộ nhanh, đạp xe, bơi) + bài tập toàn thân nhẹ, tăng dần cường độ theo thời gian.' },
