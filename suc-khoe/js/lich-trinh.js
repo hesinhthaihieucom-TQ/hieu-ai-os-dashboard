@@ -156,12 +156,14 @@ function render(container, ctx){
     // trong khối đó nên step chỉ cần đệm ngang bình thường + gạch dưới ngăn cách các sản phẩm.
     // 2026-09-25, chị Quỳnh: "chưa thấy hình bữa ăn này" — step không gắn sản phẩm (product_name rỗng,
     // VD "Bữa tối: ăn bình thường theo quy tắc nắm bàn tay") trước đây chỉ hiện icon 🍽️ chung chung.
-    // Dùng luôn ảnh đĩa ăn 4-3-2-1 thật (vừa thêm ở mục Ăn Uống) cho đúng loại step này — minh hoạ
-    // trực quan đúng ý "quy tắc nắm bàn tay" đang nhắc tới, không phải icon vô nghĩa nữa.
+    // Dùng luôn ảnh đĩa ăn thật (mục Ăn Uống) cho đúng loại step này — minh hoạ trực quan đúng ý "quy
+    // tắc nắm bàn tay" đang nhắc tới, không phải icon vô nghĩa nữa. Ảnh đổi lại lần 2 cùng ngày — chị
+    // gửi ảnh đĩa ăn thực tế (cơm gạo lứt đen + thịt heo/trứng + bông cải/ớt chuông, kèm gói Bios Life
+    // C) thay cho ảnh viết tay minh hoạ ban đầu, "đẹp mắt" và đúng đời thực hơn.
     return `
       <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;':''}">
         ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">`
-          : !step.product_name ? `<img src="assets/dia-an-4-3-2-1.jpg" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">`
+          : !step.product_name ? `<img src="assets/dia-an-vi-du-thuc-te.jpg" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">`
           : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:19px;">🍽️</div>`}
         <div style="flex:1;min-width:0;">
           ${step.product_name ? `<div style="font-weight:700;font-size:15px;">${esc(step.product_name)}${isPriority ? ` <span style="font-size:11.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</div>` : ''}
@@ -436,7 +438,8 @@ function render(container, ctx){
 - 1 nắm tay = Tinh bột (cơm, khoai, ngũ cốc...)
 - 1 ngón tay cái = Chất béo (dầu ăn, bơ, các loại hạt...)
 👉 Chia đĩa ăn theo tỉ lệ 4-3-2-1: Rau xanh (nhiều nhất) — Đạm — Tinh bột — Chất béo.`)}
-        <img src="assets/dia-an-4-3-2-1.jpg" alt="Ví dụ chia đĩa ăn theo tỉ lệ 4-3-2-1" style="width:100%;max-width:320px;border-radius:12px;margin-top:12px;display:block;">
+        <img src="assets/dia-an-vi-du-thuc-te.jpg" alt="Ví dụ đĩa ăn thực tế theo tỉ lệ 4-3-2-1" style="width:100%;max-width:320px;border-radius:12px;margin-top:12px;display:block;">
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:6px;">Ví dụ: bông cải xanh + ớt chuông (rau xanh, nhiều nhất) — thịt heo + trứng (đạm) — cơm gạo lứt đen (tinh bột), dùng kèm sản phẩm Bios Life C.</div>
       </div>
 
       ${nutritionCalcHtml()}
