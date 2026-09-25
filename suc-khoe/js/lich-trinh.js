@@ -140,18 +140,19 @@ function render(container, ctx){
   function regimenStepHtml(step){
     const p = step.product_name ? state.productByName[step.product_name] : null;
     const isPriority = !!step.priority;
-    // Liều theo phác đồ combo (mặc định) hay theo đúng nhãn công bố (2026-09-05, chị Quỳnh: "người
-    // bình thường thì theo phác đồ của em, người có vấn đề sức khỏe nặng theo nhãn") — CHỈ áp dụng khi
-    // Kiểm Tra Sức Khỏe của khách ở mức "Cao" VÀ step này có ghi liều nhãn riêng (safe_instruction).
-    const usingSafe = state.healthLevel==='Cao' && step.safe_instruction;
-    const shownInstruction = usingSafe ? step.safe_instruction : step.instruction;
+    // 2026-09-25, chị Quỳnh: "lịch trình dùng là theo lịch trình e gửi chứ ko phải theo nhãn sản
+    // phẩm rồi" — HUỶ quyết định trước đó (2026-09-05, "người bình thường theo phác đồ của em, người
+    // có vấn đề sức khỏe nặng theo nhãn"): LUÔN hiện đúng instruction theo phác đồ combo chị gửi, bất
+    // kể mức Kiểm Tra Sức Khỏe — không tự chuyển sang safe_instruction (liều nhãn) nữa. Cột
+    // safe_instruction/state.healthLevel vẫn giữ nguyên trong DB/code (không xoá dữ liệu), chỉ không
+    // dùng để đổi hiển thị ở đây nữa — dễ bật lại nếu sau này chị đổi ý.
+    const shownInstruction = step.instruction;
     return `
       <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;margin:0 -14px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;border-radius:8px;':''}">
         ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
         <div style="flex:1;min-width:0;">
           ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;">${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</div>` : ''}
           <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
-          ${usingSafe ? `<div style="font-size:11.5px;color:#c0392b;margin-top:4px;">⚠️ Dùng đúng liều theo nhãn công bố — kết quả Kiểm Tra Sức Khỏe của bạn ở mức Cao nên ưu tiên an toàn hơn phác đồ thường.</div>` : ''}
         </div>
       </div>
     `;
