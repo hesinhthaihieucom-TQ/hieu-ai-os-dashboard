@@ -48,7 +48,10 @@ function render(container, ctx){
         packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
         packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
         ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
-        ctx.supabase.from('sk_products_public').select('id,name,image_url,retail_price,npp_price,detail_sections,short_description'),
+        // 2026-09-25, chị Quỳnh: "ko để giá sản phẩm ở mục lịch trình" — trang này chỉ hướng dẫn sử
+        // dụng, không phải trang đặt hàng, nên bỏ hẳn retail_price/npp_price khỏi query (không còn
+        // chỗ nào trong file này hiển thị giá nữa).
+        ctx.supabase.from('sk_products_public').select('id,name,image_url,detail_sections,short_description'),
         ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
         ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
         ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
@@ -62,7 +65,7 @@ function render(container, ctx){
       // Khỏe (không tự suy diễn "an toàn" hay "nặng" khi chưa có dữ liệu, mặc định dùng phác đồ như cũ).
       state.healthLevel = checkin ? skComputeHealthLevel(checkin.survey_insulin, checkin.survey_toxin, checkin.survey_metabolic).level : null;
       state.bmiCategory = skLatestBmiCategoryFromMetrics(weeklyLog && weeklyLog.metrics);
-      const allProducts = skApplyNppPricing(products || [], ctx.profile);
+      const allProducts = products || [];
       allProducts.forEach(p=>{ state.productByName[p.name] = p; });
       const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
       state.customerProducts = allProducts.filter(p=>reminderByProductId[p.id]!==undefined)
@@ -146,7 +149,7 @@ function render(container, ctx){
       <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;margin:0 -14px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;border-radius:8px;':''}">
         ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
         <div style="flex:1;min-width:0;">
-          ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</span>${p && p.retail_price!=null ? `<span style="font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</span>` : ''}</div>` : ''}
+          ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;">${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</div>` : ''}
           <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
           ${usingSafe ? `<div style="font-size:11.5px;color:#c0392b;margin-top:4px;">⚠️ Dùng đúng liều theo nhãn công bố — kết quả Kiểm Tra Sức Khỏe của bạn ở mức Cao nên ưu tiên an toàn hơn phác đồ thường.</div>` : ''}
         </div>
@@ -246,10 +249,21 @@ function render(container, ctx){
     `;
   }
 
+  // 2026-09-25, chị Quỳnh gửi ảnh thấy "Aloe Vera" hiện 2 LẦN trên cùng trang (1 lần trong lịch
+  // trình/hướng dẫn dùng của gói, 1 lần nữa ở "Sản phẩm bạn đang dùng") rồi hỏi "cái này sao lại có
+  // mục sản phẩm ơe đây" — đúng là trùng lặp thật: sk_customer_products (gán RIÊNG, có thể trùng với
+  // sản phẩm đã có sẵn trong regimen_sections của gói) không lọc bớt sản phẩm nào gói đã hiện rồi. Lọc
+  // ra khỏi "Sản phẩm bạn đang dùng" những sản phẩm ĐÃ xuất hiện trong lịch trình gói ở trên, tránh
+  // hiện trùng + 2 ô giờ nhắc khác nhau cho cùng 1 sản phẩm.
+  function customerProductsNotInRegimen(){
+    const regimenNames = new Set(state.regimenSections.flatMap(sec=>(sec.steps||[]).map(s=>s.product_name).filter(Boolean)));
+    return state.customerProducts.filter(p=>!regimenNames.has(p.name));
+  }
+
   function sanPhamTab(){
     const doneCount = state.items.filter(i=>state.doneIds.has(i.id)).length;
+    const customerProductsToShow = customerProductsNotInRegimen();
     return `
-      ${dailyScheduleHtml()}
       ${state.packageName ? `
         <div class="card" style="margin-bottom:18px;">
           ${skSectionHeaderHtml('Giờ nhắc mỗi ngày của bạn', '#7c6bd4', '⏰')}
@@ -257,16 +271,14 @@ function render(container, ctx){
           <input type="time" id="lt-package-reminder" value="${esc((ctx.profile && ctx.profile.sk_reminder_time) || '')}" style="width:auto;margin:0;">
         </div>
       ` : ''}
-      ${state.customerProducts.length>0 ? `
+      ${dailyScheduleHtml()}
+      ${customerProductsToShow.length>0 ? `
         <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Sản phẩm bạn đang dùng</h2></div>
-        ${state.customerProducts.map(p=>`
+        ${customerProductsToShow.map(p=>`
           <div class="card" style="margin-bottom:16px;display:flex;gap:14px;align-items:flex-start;">
             ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:9px;flex-shrink:0;">` : ''}
             <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
-                ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
-              </div>
+              <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
               <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
                 <label style="font-size:12.5px;color:var(--ink-soft);margin:0;">⏰ Giờ nhắc dùng:</label>
                 <input type="time" data-customer-product-reminder="${p.id}" value="${esc(p._reminderTime||'')}" style="width:auto;margin:0;">
