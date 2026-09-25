@@ -521,15 +521,21 @@ function renderThanhVien(container, ctx){
     return `<label style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;"><input type="checkbox" data-toggle-npp="${userId}" ${checked?'checked':''} style="width:auto;margin:0;">🏷️ Giá NPP</label>`;
   }
 
+  // 2026-09-25, chị Quỳnh hỏi "cái lịch trình ở đây là như nào??" — tên "Lịch trình gói này" dễ nhầm
+  // với "✏️ Sửa lịch trình 1 ngày" ngay bên cạnh (2 thứ KHÁC NHAU: cái này là sk_package_schedule_items
+  // — mốc mua/dùng theo NGÀY THỨ MẤY, VD "Ngày 5: bắt đầu X", sửa ở tab "Gói & Lịch Trình" — khác hẳn
+  // "Lịch trình 1 ngày" sáng/trưa/tối, sửa ở sk_daily_schedule_override). Đổi tên rõ hơn — "Mốc theo
+  // ngày" — để không lẫn với "lịch trình 1 ngày" nữa. Phần lớn các gói hiện chưa có mục nào (chỉ mới
+  // seed regimen_sections — nội dung khách thấy hằng ngày — chưa từng thêm mốc theo ngày này).
   function packageSchedulePreviewHtml(userId, packageId){
     if(!packageId) return '';
     return `
-      <span class="btn-ghost btn btn-sm" data-toggle-schedule="${userId}|${packageId}">📋 Lịch trình gói này</span>
+      <span class="btn-ghost btn btn-sm" data-toggle-schedule="${userId}|${packageId}">📋 Mốc theo ngày của gói</span>
       ${state.scheduleFor===userId ? `
         <div class="card" style="margin-top:10px;width:100%;">
           ${!state.scheduleItemsByPackage[packageId] ? `<div class="loading"><div class="spinner"></div></div>` : (
             state.scheduleItemsByPackage[packageId].length===0
-              ? `<div style="color:var(--ink-soft);font-size:12.5px;">Gói "${esc(packageName(packageId))}" chưa có mục lịch trình nào — vào tab "Gói & Lịch Trình" để thêm.</div>`
+              ? `<div style="color:var(--ink-soft);font-size:12.5px;">Gói "${esc(packageName(packageId))}" chưa có mốc theo ngày nào (VD "Ngày 5: bắt đầu dùng X") — đây là mục RIÊNG, khác với nội dung khách thấy hằng ngày ở "Lịch Trình Của Bạn". Không bắt buộc phải có — vào tab "Gói & Lịch Trình" nếu muốn thêm.</div>`
               : state.scheduleItemsByPackage[packageId].map(item=>`
                 <div style="padding:8px 0;border-bottom:1px solid var(--line);">
                   <div class="meta">Ngày ${item.day_offset}</div>
