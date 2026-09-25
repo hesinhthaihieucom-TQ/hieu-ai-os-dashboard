@@ -64,7 +64,7 @@ function render(container, ctx){
         <h1>Sản Phẩm Unicity</h1>
         <p>Bấm "Xem đầy đủ công dụng" để xem thành phần, cơ chế tác động và cách dùng.</p>
       </div>
-      <div style="font-size:12.5px;color:var(--ink-soft);background:var(--surface-soft,#f5f5f5);border-radius:10px;padding:10px 14px;margin-bottom:16px;line-height:1.6;">
+      <div style="font-size:14px;color:var(--ink-soft);background:var(--surface-soft,#f5f5f5);border-radius:10px;padding:10px 14px;margin-bottom:16px;line-height:1.6;">
         Thông tin thành phần dưới đây chỉ mang tính tham khảo, không phải là công dụng đã được kiểm chứng của sản phẩm và không thay thế tư vấn y tế. Thực phẩm bảo vệ sức khỏe không phải là thuốc, không có tác dụng thay thế thuốc chữa bệnh.
       </div>
 
@@ -74,13 +74,13 @@ function render(container, ctx){
       </div>
 
       ${state.productsError ? `<div class="error-box" style="margin-bottom:16px;">Không tải được danh sách sản phẩm: ${esc(state.productsError)} — cần chạy lại file schema_suc_khoe.sql mới nhất.</div>` : ''}
-      ${list.length===0 && !state.productsError ? `<div style="color:var(--ink-soft);font-size:14px;">${state.products.length===0 ? 'Chưa có sản phẩm nào — chị Quỳnh sẽ thêm sớm.' : 'Chưa có sản phẩm nào ở nhánh này.'}</div>` : ''}
+      ${list.length===0 && !state.productsError ? `<div style="color:var(--ink-soft);font-size:15.5px;">${state.products.length===0 ? 'Chưa có sản phẩm nào — chị Quỳnh sẽ thêm sớm.' : 'Chưa có sản phẩm nào ở nhánh này.'}</div>` : ''}
       ${list.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
 
       ${state.products.length>0 ? `
         <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="font-size:15px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
             <div style="display:flex;gap:8px;">
               <span class="btn-ghost btn btn-sm" id="sp-toggle-all">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
               <button class="btn btn-sm" id="sp-order" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>

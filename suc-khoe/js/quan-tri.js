@@ -101,20 +101,20 @@ function renderThuVien(container, ctx){
           <div class="field" style="margin-top:12px;"><label>Biểu hiện</label><textarea id="tv-symptoms">${esc(state.form.symptoms)}</textarea></div>
           <div class="field" style="margin-top:12px;"><label>Cách xử lý</label><textarea id="tv-remedies">${esc(state.form.remedies)}</textarea></div>
           <div class="field" style="margin-top:12px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Sản phẩm liên quan</label>
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Sản phẩm liên quan</label>
             <div class="chips">${state.products.map(p=>`<div class="chip ${state.form.related_product_ids.includes(p.id)?'selected':''}" data-toggle-product="${p.id}">${esc(p.name)}</div>`).join('')}</div>
           </div>
           ${state.form.related_product_ids.length>0 ? `
             <div class="field" style="margin-top:14px;">
-              <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Công dụng nổi bật riêng cho từng sản phẩm (hiện ở Kiểm Tra Sức Khỏe/Thư Viện Sức Khỏe — nói về THÀNH PHẦN, không nói sản phẩm "chữa"). Đánh dấu tối đa 2-3 sản phẩm "Nên dùng trước" mỗi mục.</label>
+              <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Công dụng nổi bật riêng cho từng sản phẩm (hiện ở Kiểm Tra Sức Khỏe/Thư Viện Sức Khỏe — nói về THÀNH PHẦN, không nói sản phẩm "chữa"). Đánh dấu tối đa 2-3 sản phẩm "Nên dùng trước" mỗi mục.</label>
               ${state.form.related_product_ids.map(pid=>{
                 const p = state.products.find(x=>x.id===pid);
                 const pn = state.form.product_notes[pid] || { note:'', priority:false };
                 return `
                   <div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;">
-                    <div style="font-weight:600;font-size:13.5px;margin-bottom:6px;">${esc(p ? p.name : pid)}</div>
+                    <div style="font-weight:600;font-size:15px;margin-bottom:6px;">${esc(p ? p.name : pid)}</div>
                     <textarea data-note-product="${pid}" placeholder="VD: Chlorophyll được biết đến với vai trò chống oxy hóa, hỗ trợ gan..." style="min-height:60px;">${esc(pn.note||'')}</textarea>
-                    <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;cursor:pointer;">
+                    <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:14.5px;cursor:pointer;">
                       <input type="checkbox" data-priority-product="${pid}" ${pn.priority?'checked':''}> ⭐ Nên dùng trước
                     </label>
                   </div>
@@ -131,14 +131,14 @@ function renderThuVien(container, ctx){
 
       ${state.list.map(e=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-          <div style="font-weight:600;font-size:14.5px;">${esc(e.issue_name)}</div>
+          <div style="font-weight:600;font-size:16px;">${esc(e.issue_name)}</div>
           <div style="display:flex;gap:8px;flex-shrink:0;">
             <span class="btn-ghost btn btn-sm" data-edit="${e.id}">Sửa</span>
             <span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-remove="${e.id}">Xoá</span>
           </div>
         </div>
       `).join('')}
-      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có mục nào.</div>` : ''}
+      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có mục nào.</div>` : ''}
     `;
   }
 
@@ -277,8 +277,8 @@ function renderSanPham(container, ctx){
       ${state.list.map(p=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
           <div>
-            <div style="font-weight:600;font-size:14.5px;">${esc(p.name)}</div>
-            ${p.retail_price!=null ? `<div style="font-size:13px;color:var(--ink-soft);">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
+            <div style="font-weight:600;font-size:16px;">${esc(p.name)}</div>
+            ${p.retail_price!=null ? `<div style="font-size:14.5px;color:var(--ink-soft);">${Number(p.retail_price).toLocaleString('vi-VN')}đ</div>` : ''}
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0;">
             <span class="btn-ghost btn btn-sm" data-edit="${p.id}">Sửa</span>
@@ -286,7 +286,7 @@ function renderSanPham(container, ctx){
           </div>
         </div>
       `).join('')}
-      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có sản phẩm nào.</div>` : ''}
+      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có sản phẩm nào.</div>` : ''}
     `;
   }
 
@@ -380,13 +380,13 @@ function renderGoiLichTrinh(container, ctx){
   function html(){
     return `
       <div class="card" style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);">Thêm gói mới</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);">Thêm gói mới</label>
         <input type="text" id="gt-new-name" value="${esc(state.newPackageName)}" placeholder="Tên gói, VD: Detox 30 ngày">
         <textarea id="gt-new-desc" placeholder="Mô tả ngắn (không bắt buộc)">${esc(state.newPackageDesc)}</textarea>
         <button class="btn btn-sm" style="margin-top:10px;" id="gt-add-package" ${state.savingPackage?'disabled':''}>${state.savingPackage?'Đang lưu…':'Thêm gói'}</button>
       </div>
 
-      ${state.packages.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có gói nào.</div>` : `
+      ${state.packages.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có gói nào.</div>` : `
         <div class="chips" style="margin-bottom:20px;">
           ${state.packages.map(p=>`<div class="chip ${state.selectedPackageId===p.id?'selected':''}" data-select-package="${p.id}">${esc(p.name)}</div>`).join('')}
         </div>
@@ -396,17 +396,17 @@ function renderGoiLichTrinh(container, ctx){
         const pkg = state.packages.find(p=>p.id===state.selectedPackageId);
         return `
         <div class="page-head" style="margin-bottom:10px;">
-          <h2 style="font-size:17px;">Lịch trình — ${esc(pkg ? pkg.name : '')}</h2>
+          <h2 style="font-size:18px;">Lịch trình — ${esc(pkg ? pkg.name : '')}</h2>
           <span class="btn-ghost btn btn-sm" style="color:var(--danger);margin-top:8px;display:inline-block;" data-remove-package="${state.selectedPackageId}">Xoá gói này</span>
         </div>
 
         ${state.itemForm ? `
           <div class="card" style="margin-bottom:16px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);">Ngày thứ (tính từ lúc bắt đầu gói)</label>
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);">Ngày thứ (tính từ lúc bắt đầu gói)</label>
             <input type="number" id="gt-item-offset" value="${esc(state.itemForm.day_offset)}">
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tiêu đề</label>
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tiêu đề</label>
             <input type="text" id="gt-item-title" value="${esc(state.itemForm.title)}" placeholder="VD: Bắt đầu uống Bios Life mỗi sáng">
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Mô tả</label>
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Mô tả</label>
             <textarea id="gt-item-desc">${esc(state.itemForm.description)}</textarea>
             <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
               <button class="btn btn-sm" id="gt-item-save" ${state.savingItem?'disabled':''}>${state.savingItem?'Đang lưu…':'Lưu'}</button>
@@ -419,8 +419,8 @@ function renderGoiLichTrinh(container, ctx){
           <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <div>
               <div class="meta">Ngày ${item.day_offset}</div>
-              <div style="font-weight:600;font-size:14px;">${esc(item.title)}</div>
-              ${item.description ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(item.description)}</div>` : ''}
+              <div style="font-weight:600;font-size:15.5px;">${esc(item.title)}</div>
+              ${item.description ? `<div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${esc(item.description)}</div>` : ''}
             </div>
             <div style="display:flex;gap:8px;flex-shrink:0;">
               <span class="btn-ghost btn btn-sm" data-edit-item="${item.id}">Sửa</span>
@@ -428,7 +428,7 @@ function renderGoiLichTrinh(container, ctx){
             </div>
           </div>
         `).join('')}
-        ${state.items.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Gói này chưa có mục lịch trình nào.</div>` : ''}
+        ${state.items.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Gói này chưa có mục lịch trình nào.</div>` : ''}
       `;
       })() : ''}
     `;
@@ -518,7 +518,7 @@ function renderThanhVien(container, ctx){
     draw();
   }
   function nppToggleHtml(userId, checked){
-    return `<label style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;"><input type="checkbox" data-toggle-npp="${userId}" ${checked?'checked':''} style="width:auto;margin:0;">🏷️ Giá NPP</label>`;
+    return `<label style="display:inline-flex;align-items:center;gap:5px;font-size:14px;cursor:pointer;"><input type="checkbox" data-toggle-npp="${userId}" ${checked?'checked':''} style="width:auto;margin:0;">🏷️ Giá NPP</label>`;
   }
 
   // 2026-09-25, chị Quỳnh hỏi "cái lịch trình ở đây là như nào??" — tên "Lịch trình gói này" dễ nhầm
@@ -535,12 +535,12 @@ function renderThanhVien(container, ctx){
         <div class="card" style="margin-top:10px;width:100%;">
           ${!state.scheduleItemsByPackage[packageId] ? `<div class="loading"><div class="spinner"></div></div>` : (
             state.scheduleItemsByPackage[packageId].length===0
-              ? `<div style="color:var(--ink-soft);font-size:12.5px;">Gói "${esc(packageName(packageId))}" chưa có mốc theo ngày nào (VD "Ngày 5: bắt đầu dùng X") — đây là mục RIÊNG, khác với nội dung khách thấy hằng ngày ở "Lịch Trình Của Bạn". Không bắt buộc phải có — vào tab "Gói & Lịch Trình" nếu muốn thêm.</div>`
+              ? `<div style="color:var(--ink-soft);font-size:14px;">Gói "${esc(packageName(packageId))}" chưa có mốc theo ngày nào (VD "Ngày 5: bắt đầu dùng X") — đây là mục RIÊNG, khác với nội dung khách thấy hằng ngày ở "Lịch Trình Của Bạn". Không bắt buộc phải có — vào tab "Gói & Lịch Trình" nếu muốn thêm.</div>`
               : state.scheduleItemsByPackage[packageId].map(item=>`
                 <div style="padding:8px 0;border-bottom:1px solid var(--line);">
                   <div class="meta">Ngày ${item.day_offset}</div>
-                  <div style="font-weight:600;font-size:13px;">${esc(item.title)}</div>
-                  ${item.description ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(item.description)}</div>` : ''}
+                  <div style="font-weight:600;font-size:14.5px;">${esc(item.title)}</div>
+                  ${item.description ? `<div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${esc(item.description)}</div>` : ''}
                 </div>
               `).join('')
           )}
@@ -610,7 +610,7 @@ function renderThanhVien(container, ctx){
           const val = path.split('.').reduce((o,k)=>o[k], f);
           return `
             <div class="field" style="margin-top:8px;">
-              <label style="font-size:12px;">${esc(label)}</label>
+              <label style="font-size:13.5px;">${esc(label)}</label>
               ${isTextarea ? `<textarea data-ds-field="${path}" style="min-height:44px;">${esc(val)}</textarea>` : `<input type="text" data-ds-field="${path}" value="${esc(val)}">`}
             </div>
           `;
@@ -623,7 +623,7 @@ function renderThanhVien(container, ctx){
           const products = f[slotKey].products || [];
           return `
             <div style="margin-top:6px;">
-              <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;">Sản phẩm dùng vào ${esc(slotLabel)} (để trống = dùng theo lịch chung của gói)</div>
+              <div style="font-size:13px;color:var(--ink-soft);margin-bottom:4px;">Sản phẩm dùng vào ${esc(slotLabel)} (để trống = dùng theo lịch chung của gói)</div>
               ${products.map((p,i)=>`
                 <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
                   <select data-ds-product="${slotKey}|${i}" style="width:auto;min-width:140px;margin:0;">
@@ -631,8 +631,8 @@ function renderThanhVien(container, ctx){
                     ${state.allProducts.map(prod=>`<option value="${esc(prod.name)}" ${p.product_name===prod.name?'selected':''}>${esc(prod.name)}</option>`).join('')}
                   </select>
                   <input type="text" data-ds-product-instruction="${slotKey}|${i}" value="${esc(p.instruction||'')}" placeholder="Liều dùng/hướng dẫn, VD: 1 viên trước ăn 30 phút" style="flex:1;min-width:180px;margin:0;">
-                  <label style="display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap;margin:0;"><input type="checkbox" data-ds-product-priority="${slotKey}|${i}" ${p.priority?'checked':''} style="width:auto;margin:0;">Ưu tiên</label>
-                  <span data-ds-product-remove="${slotKey}|${i}" style="color:var(--danger);cursor:pointer;font-size:13px;">✕</span>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:12.5px;white-space:nowrap;margin:0;"><input type="checkbox" data-ds-product-priority="${slotKey}|${i}" ${p.priority?'checked':''} style="width:auto;margin:0;">Ưu tiên</label>
+                  <span data-ds-product-remove="${slotKey}|${i}" style="color:var(--danger);cursor:pointer;font-size:14.5px;">✕</span>
                 </div>
               `).join('')}
               <span class="btn-ghost btn btn-sm" data-ds-product-add="${slotKey}">+ Thêm sản phẩm</span>
@@ -641,23 +641,23 @@ function renderThanhVien(container, ctx){
         };
         return `
           <div class="card" style="margin-top:10px;width:100%;">
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">
+            <div style="font-size:14px;color:var(--ink-soft);margin-bottom:8px;">
               ${currentOverride ? 'Khách này đang dùng lịch trình TUỲ CHỈNH riêng.' : `Chưa tuỳ chỉnh — bản nháp bên dưới lấy theo BMI mốc gần nhất của khách${state.dailyScheduleBmiLabel ? ` (${esc(state.dailyScheduleBmiLabel)})` : ' (chưa có số liệu, để trống)'}.`}
             </div>
             ${field('label', 'Tên lịch trình (hiện cho khách thấy)')}
-            <div style="font-weight:700;font-size:13px;margin-top:12px;">🌅 Sáng</div>
+            <div style="font-weight:700;font-size:14.5px;margin-top:12px;">🌅 Sáng</div>
             ${field('sang.uong', 'Uống', true)}
             ${field('sang.an', 'Ăn', true)}
             ${productStepsEditor('sang', 'buổi Sáng')}
-            <div style="font-weight:700;font-size:13px;margin-top:12px;">☀️ Trưa</div>
+            <div style="font-weight:700;font-size:14.5px;margin-top:12px;">☀️ Trưa</div>
             ${field('trua.uong', 'Uống', true)}
             ${field('trua.an', 'Ăn', true)}
             ${productStepsEditor('trua', 'buổi Trưa')}
-            <div style="font-weight:700;font-size:13px;margin-top:12px;">🌙 Tối</div>
+            <div style="font-weight:700;font-size:14.5px;margin-top:12px;">🌙 Tối</div>
             ${field('toi.uong', 'Uống', true)}
             ${field('toi.an', 'Ăn', true)}
             ${productStepsEditor('toi', 'buổi Tối')}
-            <div style="font-weight:700;font-size:13px;margin-top:12px;">🏃 Tập luyện</div>
+            <div style="font-weight:700;font-size:14.5px;margin-top:12px;">🏃 Tập luyện</div>
             ${field('tap.gio', 'Giờ tập')}
             ${field('tap.bai', 'Bài tập', true)}
             <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
@@ -758,9 +758,9 @@ function renderThanhVien(container, ctx){
       ${state.customerProductsFor===userId ? `
         <div class="card" style="margin-top:10px;width:100%;">
           ${state.customerProductIds===null ? `<div class="loading"><div class="spinner"></div></div>` : `
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Tick đúng sản phẩm khách đang dùng (không cần khớp Combo nào) — Lịch Trình Của Bạn của khách sẽ hiện đúng hướng dẫn sử dụng của các sản phẩm này. Khách tự đặt giờ nhắc riêng ở Lịch Trình Của Bạn, không đặt ở đây.</div>
+            <div style="font-size:14px;color:var(--ink-soft);margin-bottom:8px;">Tick đúng sản phẩm khách đang dùng (không cần khớp Combo nào) — Lịch Trình Của Bạn của khách sẽ hiện đúng hướng dẫn sử dụng của các sản phẩm này. Khách tự đặt giờ nhắc riêng ở Lịch Trình Của Bạn, không đặt ở đây.</div>
             <div class="chips">${state.allProducts.map(p=>`<div class="chip ${state.customerProductIds.has(p.id)?'selected':''}" data-toggle-customer-product="${userId}|${p.id}">${esc(p.name)}</div>`).join('')}</div>
-            <div style="margin-top:10px;font-size:12.5px;font-weight:700;color:${state.customerProductIds.size>0?'var(--accent)':'var(--ink-soft)'};">
+            <div style="margin-top:10px;font-size:14px;font-weight:700;color:${state.customerProductIds.size>0?'var(--accent)':'var(--ink-soft)'};">
               ${state.customerProductIds.size>0 ? `✓ Đã lưu ${state.customerProductIds.size} sản phẩm — đã cập nhật vào Lịch Trình của khách ngay khi bấm tick, không cần bấm gì thêm.` : 'Chưa chọn sản phẩm nào.'}
             </div>
           `}
@@ -783,12 +783,12 @@ function renderThanhVien(container, ctx){
         </div>
         ${state.anySearched && !state.anySearching ? (
           state.anyResults.length===0
-            ? `<div style="color:var(--ink-soft);font-size:13.5px;margin-top:10px;">Không tìm thấy tài khoản nào khớp — khách cần tự đăng ký tài khoản trước (ở bất kỳ app nào trong hệ sinh thái Hiểu) thì mới gán gói được.</div>`
+            ? `<div style="color:var(--ink-soft);font-size:15px;margin-top:10px;">Không tìm thấy tài khoản nào khớp — khách cần tự đăng ký tài khoản trước (ở bất kỳ app nào trong hệ sinh thái Hiểu) thì mới gán gói được.</div>`
             : state.anyResults.map(r=>`
               <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;margin-top:10px;">
                 <div>
-                  <div style="font-weight:600;font-size:13.5px;">${esc(r.full_name||'(chưa đặt tên)')}</div>
-                  <div style="font-size:12.5px;color:var(--ink-soft);">${esc(r.email||'')} · Gói hiện tại: ${esc(packageName(r.sk_package_id) || 'chưa có')}</div>
+                  <div style="font-weight:600;font-size:15px;">${esc(r.full_name||'(chưa đặt tên)')}</div>
+                  <div style="font-size:14px;color:var(--ink-soft);">${esc(r.email||'')} · Gói hiện tại: ${esc(packageName(r.sk_package_id) || 'chưa có')}</div>
                 </div>
                 <select data-assign="${r.id}" ${state.busyId===r.id?'disabled':''} style="margin:0;width:auto;min-width:160px;">
                   <option value="">— Chưa gán gói —</option>
@@ -808,9 +808,9 @@ function renderThanhVien(container, ctx){
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
             <div>
-              <div style="font-weight:600;font-size:14px;">${esc(r.full_name||'(chưa đặt tên)')} ${r.role==='admin'?'<span style="font-size:11px;color:var(--gold);">Admin</span>':''}</div>
-              <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(r.email||'')}</div>
-              <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Gói hiện tại: ${esc(packageName(r.sk_package_id) || 'chưa có')}</div>
+              <div style="font-weight:600;font-size:15.5px;">${esc(r.full_name||'(chưa đặt tên)')} ${r.role==='admin'?'<span style="font-size:12.5px;color:var(--gold);">Admin</span>':''}</div>
+              <div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${esc(r.email||'')}</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">Gói hiện tại: ${esc(packageName(r.sk_package_id) || 'chưa có')}</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">
@@ -826,15 +826,15 @@ function renderThanhVien(container, ctx){
           </div>
           ${state.pointsFormFor===r.id ? `
             <div class="card" style="margin-top:12px;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);">Tháng (YYYY-MM)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);">Tháng (YYYY-MM)</label>
               <input type="text" id="pf-month" value="${esc(state.pointsForm.month)}">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Điểm</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Điểm</label>
               <input type="number" id="pf-points" value="${esc(state.pointsForm.points)}">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Giá trị mua (đ)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Giá trị mua (đ)</label>
               <input type="number" id="pf-purchase" value="${esc(state.pointsForm.purchase_amount)}">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Hoa hồng (đ)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Hoa hồng (đ)</label>
               <input type="number" id="pf-commission" value="${esc(state.pointsForm.commission)}">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Ghi chú</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Ghi chú</label>
               <input type="text" id="pf-note" value="${esc(state.pointsForm.note)}">
               <div class="btn-row" style="justify-content:flex-start;margin-top:12px;">
                 <button class="btn btn-sm" data-submit-points="${r.id}" ${state.busyId===r.id?'disabled':''}>Lưu</button>
@@ -844,7 +844,7 @@ function renderThanhVien(container, ctx){
           ` : ''}
         </div>
       `).join('')}
-      ${!state.loading && filtered.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Không có kết quả.</div>` : ''}
+      ${!state.loading && filtered.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Không có kết quả.</div>` : ''}
     `;
   }
 
@@ -1090,7 +1090,7 @@ function renderDonHang(container, ctx){
         <div class="field"><label>Khách hàng đã có tài khoản (không bắt buộc)</label>
           ${f.customerId ? `
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:13.5px;font-weight:600;">✓ ${esc(f.customerName)}</span>
+              <span style="font-size:15px;font-weight:600;">✓ ${esc(f.customerName)}</span>
               <span class="btn-ghost btn btn-sm" id="dh-clear-customer">Bỏ chọn</span>
             </div>
           ` : `
@@ -1099,7 +1099,7 @@ function renderDonHang(container, ctx){
               <button class="btn btn-sm" id="dh-customer-search-btn" ${f.searching?'disabled':''}>${f.searching?'Đang tìm…':'Tìm'}</button>
             </div>
             ${f.customerResults.length>0 ? f.customerResults.map(p=>`
-              <div data-pick-customer="${esc(p.id)}" style="padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px;">${esc(p.full_name||'(chưa đặt tên)')} — ${esc(p.email||'')}</div>
+              <div data-pick-customer="${esc(p.id)}" style="padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14.5px;">${esc(p.full_name||'(chưa đặt tên)')} — ${esc(p.email||'')}</div>
             `).join('') : ''}
           `}
         </div>
@@ -1108,23 +1108,23 @@ function renderDonHang(container, ctx){
         <div class="field" style="margin-top:12px;"><label>Số điện thoại</label><input type="text" id="dh-phone" value="${esc(f.phone)}"></div>
         <div class="field" style="margin-top:12px;"><label>Địa chỉ giao hàng</label><textarea id="dh-address" style="min-height:60px;">${esc(f.address)}</textarea></div>
         <div class="field" style="margin-top:12px;"><label>Ghi chú (không bắt buộc)</label><input type="text" id="dh-note" value="${esc(f.note)}" placeholder="VD: tặng kèm son màu 503..."></div>
-        <label style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dh-use-npp" ${f.useNpp?'checked':''} style="width:auto;margin:0;">🏷️ Áp dụng giá NPP cho đơn này</label>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:14.5px;cursor:pointer;"><input type="checkbox" id="dh-use-npp" ${f.useNpp?'checked':''} style="width:auto;margin:0;">🏷️ Áp dụng giá NPP cho đơn này</label>
 
-        <div style="margin-top:16px;font-weight:700;font-size:13.5px;">Chọn sản phẩm</div>
+        <div style="margin-top:16px;font-weight:700;font-size:15px;">Chọn sản phẩm</div>
         <div style="max-height:50vh;overflow-y:auto;margin-top:8px;">
           ${state.allProducts.length===0 ? `<div class="loading"><div class="spinner"></div></div>` :
             createDisplayProducts().map(p=>skProductOrderRowHtml(p, f.selected[p.id]!==undefined, f.selected[p.id]||1)).join('')}
         </div>
 
-        <div style="font-size:13px;display:flex;justify-content:space-between;margin-top:14px;color:var(--ink-soft);">
+        <div style="font-size:14.5px;display:flex;justify-content:space-between;margin-top:14px;color:var(--ink-soft);">
           <span>Tiền hàng</span><span>${subtotal.toLocaleString('vi-VN')}đ</span>
         </div>
         ${surcharge>0 ? `
-          <div style="font-size:13px;display:flex;justify-content:space-between;color:var(--ink-soft);">
+          <div style="font-size:14.5px;display:flex;justify-content:space-between;color:var(--ink-soft);">
             <span>Phụ phí đơn trên ${SK_ORDER_SURCHARGE_TIERS.find(t=>subtotal>t.min).min.toLocaleString('vi-VN')}đ</span><span>+${surcharge.toLocaleString('vi-VN')}đ</span>
           </div>
         ` : ''}
-        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-top:6px;">
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16.5px;margin-top:6px;">
           <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ · ${pv} PV</span>
         </div>
         <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
@@ -1139,7 +1139,7 @@ function renderDonHang(container, ctx){
     return `
       ${state.showCreate ? createFormHtml() : `<button class="btn btn-sm" id="dh-create-open" style="margin-bottom:20px;">+ Tạo đơn hàng thủ công</button>`}
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
-        state.orders.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào.</div>` :
+        state.orders.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có đơn hàng nào.</div>` :
         state.orders.map(o=>{
           const profile = o.user_id ? (state.profileById[o.user_id] || {}) : null;
           const items = Array.isArray(o.items) ? o.items : [];
@@ -1147,8 +1147,8 @@ function renderDonHang(container, ctx){
             <div class="section">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
                 <div>
-                  <div style="font-weight:600;font-size:14px;">${profile ? esc(profile.full_name||'(chưa đặt tên)') : `👤 ${esc(o.shipping_name)}`}${!profile ? ` <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">(khách ngoài app)</span>` : ''}</div>
-                  <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${profile ? esc(profile.email||'') + ' · ' : ''}${esc(new Date(o.created_at).toLocaleString('vi-VN'))}</div>
+                  <div style="font-weight:600;font-size:15.5px;">${profile ? esc(profile.full_name||'(chưa đặt tên)') : `👤 ${esc(o.shipping_name)}`}${!profile ? ` <span style="font-size:12.5px;font-weight:400;color:var(--ink-soft);">(khách ngoài app)</span>` : ''}</div>
+                  <div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${profile ? esc(profile.email||'') + ' · ' : ''}${esc(new Date(o.created_at).toLocaleString('vi-VN'))}</div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;">
                   <select data-order-status="${esc(o.id)}" ${state.busyId===o.id?'disabled':''}>
@@ -1157,13 +1157,13 @@ function renderDonHang(container, ctx){
                   <span class="btn-ghost btn btn-sm" style="color:var(--danger);" data-order-delete="${esc(o.id)}">Xoá</span>
                 </div>
               </div>
-              <div style="font-size:13.5px;margin-top:10px;line-height:1.7;">
+              <div style="font-size:15px;margin-top:10px;line-height:1.7;">
                 ${items.map(it=>{
                   const qty = it.qty||1;
                   return `${esc(it.name)}${qty>1?` × ${qty}`:''} — ${(Number(it.price||0)*qty).toLocaleString('vi-VN')}đ`;
                 }).join('<br>')}
               </div>
-              <div style="font-size:13.5px;margin-top:8px;">
+              <div style="font-size:15px;margin-top:8px;">
                 <b>Tổng: ${Number(o.total_amount||0).toLocaleString('vi-VN')}đ</b> · ${o.total_pv||0} PV
                 ${Number(o.surcharge_amount||0)>0 ? ` (đã gồm phụ phí ${Number(o.surcharge_amount).toLocaleString('vi-VN')}đ)` : ''}
                 ${o.gift ? ` · ${esc(SK_ORDER_GIFT_LABELS[o.gift]||o.gift)}` : ''}
@@ -1175,7 +1175,7 @@ function renderDonHang(container, ctx){
                   ${o.gift_color ? `<img src="${esc((SK_LIPSTICK_COLORS.find(c=>c.key===o.gift_color)||{}).image)}" alt="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" title="Son ${esc(SK_GIFT_COLOR_LABELS[o.gift_color]||'')}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">` : ''}
                 </div>
               ` : ''}
-              <div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">
+              <div style="font-size:14.5px;color:var(--ink-soft);margin-top:8px;">
                 Giao tới: ${esc(o.shipping_name)} · ${esc(o.shipping_phone)}<br>${esc(o.shipping_address)}
                 ${o.note ? `<br>Ghi chú: ${esc(o.note)}` : ''}
               </div>
@@ -1308,7 +1308,7 @@ function renderThongKe(container, ctx){
     if(state.loading) return `<div class="loading"><div class="spinner"></div></div>`;
     const { months, totals, missingCost, pendingCount, pendingTotal } = buildReport();
     return `
-      <div class="page-head"><h1 style="font-size:19px;">Báo Cáo Doanh Thu</h1><p>Chỉ tính đơn đã xác nhận/đã giao — đơn chờ xác nhận và đơn đã huỷ không tính vào đây.</p></div>
+      <div class="page-head"><h1 style="font-size:20px;">Báo Cáo Doanh Thu</h1><p>Chỉ tính đơn đã xác nhận/đã giao — đơn chờ xác nhận và đơn đã huỷ không tính vào đây.</p></div>
 
       <div class="card" style="margin-bottom:16px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
         <div class="field" style="margin:0;"><label>Từ ngày</label><input type="date" id="bc-date-from" value="${esc(state.dateFrom)}"></div>
@@ -1318,19 +1318,19 @@ function renderThongKe(container, ctx){
 
       <div class="card" style="margin-bottom:20px;display:flex;gap:24px;flex-wrap:wrap;">
         <div>
-          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng doanh số</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng doanh số</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);">${totals.revenue.toLocaleString('vi-VN')}đ</div>
         </div>
         <div>
-          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng lãi lẻ</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng lãi lẻ</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:#1f9d63;">${totals.profit.toLocaleString('vi-VN')}đ</div>
         </div>
         <div>
-          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng đơn</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng đơn</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;">${totals.orderCount}</div>
         </div>
         <div>
-          <div style="font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng PV</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">Tổng PV</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;">${totals.pv}</div>
         </div>
       </div>
@@ -1338,9 +1338,9 @@ function renderThongKe(container, ctx){
       ${missingCost ? `<div class="hint-box" style="margin-bottom:16px;">⚠️ Một số sản phẩm trong các đơn chưa có "Giá vốn" — lãi lẻ ở đây CHƯA đầy đủ. Vào Quản Trị &gt; Sản Phẩm nhập giá vốn cho từng sản phẩm để lãi lẻ tính đúng.</div>` : ''}
       ${pendingCount>0 ? `<div class="hint-box" style="margin-bottom:16px;">📋 Còn ${pendingCount} đơn đang chờ xác nhận, tổng giá trị ${pendingTotal.toLocaleString('vi-VN')}đ — chưa tính vào thống kê bên trên.</div>` : ''}
 
-      ${months.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đơn hàng nào đã xác nhận/đã giao.</div>` : `
+      ${months.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có đơn hàng nào đã xác nhận/đã giao.</div>` : `
         <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+          <table style="width:100%;border-collapse:collapse;font-size:15px;">
             <thead>
               <tr style="border-bottom:2px solid var(--line);">
                 <th style="text-align:left;padding:10px 8px;">Tháng</th>
@@ -1467,8 +1467,8 @@ function renderCauChuyen(container, ctx){
       <div class="section" style="display:flex;gap:12px;align-items:flex-start;">
         ${item.images && item.images[0] ? `<img src="${item.images[0]}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;">${esc(item.display_name)}${catLabel ? ` <span style="font-size:11.5px;font-weight:400;color:var(--ink-soft);">· ${esc(catLabel)}</span>` : ''}</div>
-          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc((item.story||'').slice(0,140))}${(item.story||'').length>140?'…':''}</div>
+          <div style="font-weight:700;">${esc(item.display_name)}${catLabel ? ` <span style="font-size:13px;font-weight:400;color:var(--ink-soft);">· ${esc(catLabel)}</span>` : ''}</div>
+          <div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${esc((item.story||'').slice(0,140))}${(item.story||'').length>140?'…':''}</div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
           <span class="btn-ghost btn btn-sm" data-edit="${item.id}">Sửa</span>
@@ -1484,25 +1484,25 @@ function renderCauChuyen(container, ctx){
       <div id="cc-form-overlay" style="position:fixed;inset:0;z-index:9998;background:rgba(20,24,20,.6);display:flex;justify-content:center;padding:24px 16px;overflow-y:auto;">
         <div data-modal-box style="background:#fff;border-radius:14px;max-width:520px;width:100%;padding:26px 24px;box-shadow:0 12px 40px rgba(0,0,0,.4);height:fit-content;margin:0 auto;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;">
-            <h2 style="font-size:18px;">${f.id ? 'Sửa câu chuyện' : 'Thêm câu chuyện'}</h2>
+            <h2 style="font-size:19px;">${f.id ? 'Sửa câu chuyện' : 'Thêm câu chuyện'}</h2>
             <span id="cc-form-close" style="cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;">✕</span>
           </div>
           ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tên hiển thị</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Tên hiển thị</label>
           <input type="text" id="cc-name" value="${esc(f.display_name)}" placeholder="Tên thật hoặc viết tắt, tuỳ khách đồng ý">
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhánh liên quan (không bắt buộc)</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Nhánh liên quan (không bắt buộc)</label>
           <select id="cc-category">
             <option value="" ${!f.category?'selected':''}>— Chung, không gắn nhánh —</option>
             ${SK_PRODUCT_CATEGORIES.map(c=>`<option value="${c.key}" ${f.category===c.key?'selected':''}>${esc(c.label)}</option>`).join('')}
           </select>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Câu chuyện</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Câu chuyện</label>
           <textarea id="cc-story" style="min-height:140px;" placeholder="Trước đây thế nào, đã dùng sản phẩm/gói gì, kết quả ra sao...">${esc(f.story)}</textarea>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Hình ảnh (tối đa ${CAU_CHUYEN_MAX_IMAGES})</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:12px;">Hình ảnh (tối đa ${CAU_CHUYEN_MAX_IMAGES})</label>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
             ${f.images.map((src,i)=>`
               <div style="position:relative;width:80px;height:80px;">
                 <img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
-                <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;">✕</span>
+                <span data-remove-img="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13.5px;cursor:pointer;">✕</span>
               </div>
             `).join('')}
             ${f.images.length<CAU_CHUYEN_MAX_IMAGES ? `<label style="width:80px;height:80px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:22px;">+<input type="file" accept="image/*" multiple id="cc-file" style="display:none;"></label>` : ''}
@@ -1523,7 +1523,7 @@ function renderCauChuyen(container, ctx){
       </div>
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (
         state.items.length === 0
-          ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có câu chuyện nào — bấm "+ Thêm câu chuyện" để thêm case đầu tiên.</div>`
+          ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có câu chuyện nào — bấm "+ Thêm câu chuyện" để thêm case đầu tiên.</div>`
           : state.items.map(itemRowHtml).join('')
       )}
       ${state.showForm ? formHtml() : ''}

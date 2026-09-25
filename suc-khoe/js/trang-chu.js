@@ -77,13 +77,13 @@ function render(container, ctx){
         </div>
       `}
 
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Bắt đầu từ đâu</h2></div>
+      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">Bắt đầu từ đâu</h2></div>
       <div class="source-grid">
         ${QUICK_LINKS.map(l=>`
           <div class="source-card" data-goto="${l.key}">
             <div class="ic">${l.icon}</div>
             <div class="label">${esc(l.label)}</div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">${esc(l.desc)}</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(l.desc)}</div>
           </div>
         `).join('')}
       </div>

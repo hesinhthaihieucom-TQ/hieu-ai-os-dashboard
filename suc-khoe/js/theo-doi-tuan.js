@@ -168,9 +168,9 @@ function render(container, ctx){
     const photos = state.photos[week] || [];
     return `
       <div class="card" style="margin-bottom:18px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px;">📸 Ảnh tiến trình — ${esc(SK_WEEK_NAMES[week])}</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px;">📸 Ảnh tiến trình — ${esc(SK_WEEK_NAMES[week])}</h3>
         <details style="margin-bottom:14px;">
-          <summary style="cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600;">🖼️ Xem hướng dẫn cách chụp</summary>
+          <summary style="cursor:pointer;font-size:14px;color:var(--accent);font-weight:600;">🖼️ Xem hướng dẫn cách chụp</summary>
           <div style="margin-top:10px;padding:14px;background:var(--surface-soft,#f5f5f5);border-radius:10px;">
             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
               ${[
@@ -180,11 +180,11 @@ function render(container, ctx){
               ].map(([src,caption])=>`
                 <div style="width:110px;text-align:center;">
                   <img src="${src}" data-zoom="${src}" style="width:110px;height:110px;object-fit:cover;border-radius:10px;cursor:zoom-in;">
-                  <div style="font-size:10.5px;color:var(--ink-soft);line-height:1.5;margin-top:6px;">${esc(caption)}</div>
+                  <div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:6px;">${esc(caption)}</div>
                 </div>
               `).join('')}
             </div>
-            <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.8;">
+            <div style="font-size:13px;color:var(--ink-soft);line-height:1.8;">
               — Chụp đủ <b>3 mặt</b>: trước, nghiêng, sau<br>
               — Phông nền sạch sẽ, ít đồ vật xung quanh<br>
               — Mặc đồ tập hở bụng/tay/vai để nhìn rõ dáng<br>
@@ -197,7 +197,7 @@ function render(container, ctx){
           ${photos.map((src,i)=>`
             <div style="position:relative;width:84px;height:84px;">
               <img src="${esc(src)}" data-zoom="${esc(src)}" style="width:84px;height:84px;object-fit:cover;border-radius:10px;cursor:zoom-in;">
-              <span data-remove-photo="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</span>
+              <span data-remove-photo="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;font-size:13.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</span>
             </div>
           `).join('')}
           ${photos.length<SK_WEEK_MAX_PHOTOS ? `
@@ -206,7 +206,7 @@ function render(container, ctx){
             </label>
           ` : ''}
         </div>
-        <div style="font-size:11px;opacity:.6;margin-top:8px;">Tối đa ${SK_WEEK_MAX_PHOTOS} ảnh/mốc. Ảnh được lưu cùng lúc bấm nút "Lưu ${esc(SK_WEEK_NAMES[week])}" bên dưới.</div>
+        <div style="font-size:12.5px;opacity:.6;margin-top:8px;">Tối đa ${SK_WEEK_MAX_PHOTOS} ảnh/mốc. Ảnh được lưu cùng lúc bấm nút "Lưu ${esc(SK_WEEK_NAMES[week])}" bên dưới.</div>
       </div>
     `;
   }
@@ -264,7 +264,7 @@ function render(container, ctx){
         <rect x="${waxX}" y="${waxY}" width="${waxW}" height="${waxH}" rx="6" fill="${dim(tinh)?'#6b6558':'#F7F4EC'}" stroke="#d8cfb8" stroke-width="1.5" opacity="${dim(tinh)?0.5:1}"/>
         <rect x="${waxX-14}" y="200" width="${waxW+28}" height="10" rx="3" fill="#3a2f22"/>
       </svg>
-      <div style="display:flex;justify-content:space-around;font-size:11px;opacity:.75;margin-top:6px;flex-wrap:wrap;gap:4px;">
+      <div style="display:flex;justify-content:space-around;font-size:12.5px;opacity:.75;margin-top:6px;flex-wrap:wrap;gap:4px;">
         <span>🕯️ Tinh = sáp nến</span><span>🔥 Khí = ngọn lửa</span><span>✨ Thần = ánh sáng toả ra</span>
       </div>
     `;
@@ -277,7 +277,7 @@ function render(container, ctx){
   function skBodyMeasureGuideHtml(){
     return `
       <details style="margin-bottom:14px;">
-        <summary style="cursor:pointer;font-size:12.5px;color:var(--accent,#e8643c);font-weight:600;">🖼️ Xem hình minh hoạ vị trí đo</summary>
+        <summary style="cursor:pointer;font-size:14px;color:var(--accent,#e8643c);font-weight:600;">🖼️ Xem hình minh hoạ vị trí đo</summary>
         <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:12px;padding:16px;background:var(--surface-soft,#f5f5f5);border-radius:10px;">
           <svg viewBox="0 0 120 260" style="width:110px;height:auto;flex-shrink:0;">
             <ellipse cx="60" cy="24" rx="16" ry="18" fill="none" stroke="currentColor" stroke-width="2" opacity=".55"/>
@@ -289,7 +289,7 @@ function render(container, ctx){
             <line x1="38" y1="178" x2="82" y2="178" stroke="var(--accent,#e8643c)" stroke-width="1.5" stroke-dasharray="3 2"/>
             <line x1="41" y1="215" x2="79" y2="215" stroke="var(--accent,#e8643c)" stroke-width="1.5" stroke-dasharray="3 2"/>
           </svg>
-          <div style="display:flex;flex-direction:column;gap:14px;font-size:11.5px;color:var(--ink-soft);min-width:140px;">
+          <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--ink-soft);min-width:140px;">
             <div>— <b>Vòng eo</b>: ngang rốn, thả lỏng bụng</div>
             <div>— <b>Bụng (dưới rốn)</b>: đo ở điểm to nhất, thường thấp hơn rốn 3-5cm</div>
             <div>— <b>Mông</b>: ngang điểm nhô nhất của mông</div>
@@ -298,7 +298,7 @@ function render(container, ctx){
             <div>— <b>Ngực/Bắp tay</b>: ngang nách, qua điểm nhô nhất của ngực</div>
           </div>
         </div>
-        <div style="font-size:11px;opacity:.6;margin-top:6px;">Đo cùng 1 thời điểm trong ngày (khuyên buổi sáng, chưa ăn) và cùng tư thế mỗi tuần để số liệu so sánh chính xác.</div>
+        <div style="font-size:12.5px;opacity:.6;margin-top:6px;">Đo cùng 1 thời điểm trong ngày (khuyên buổi sáng, chưa ăn) và cùng tư thế mỗi tuần để số liệu so sánh chính xác.</div>
       </details>
     `;
   }
@@ -453,9 +453,9 @@ function render(container, ctx){
       <div class="chips" style="margin-bottom:8px;">
         ${SK_WEEK_NAMES.map((w,i)=>`<div class="chip ${state.week===i?'selected':''}" data-week="${i}" style="position:relative;">${esc(w)}${i===autoWeek?' <span style="opacity:.7;">●</span>':''}</div>`).join('')}
       </div>
-      ${weekDateRange(state.week) ? `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">● Theo lịch gói: ${weekDateRange(state.week)}</div>` : ''}
+      ${weekDateRange(state.week) ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">● Theo lịch gói: ${weekDateRange(state.week)}</div>` : ''}
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-        <label style="font-size:12.5px;color:var(--ink-soft);">📅 Ngày đo thực tế:</label>
+        <label style="font-size:14px;color:var(--ink-soft);">📅 Ngày đo thực tế:</label>
         <input type="date" data-metric="_ngaydo" value="${esc(getVal('_ngaydo', state.week))}">
       </div>
 
@@ -463,13 +463,13 @@ function render(container, ctx){
         const d = weeklyDiagnosis();
         return `
         <div class="card" style="margin-bottom:18px;border:1px solid ${d.bd};background:${d.bg};">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:${d.color};margin-bottom:6px;">Kết quả chẩn đoán — ${esc(SK_WEEK_NAMES[state.week])}</div>
-          <div style="font-size:19px;font-weight:700;color:${d.color};margin-bottom:14px;">${esc(d.level)}</div>
-          <ul style="margin:0 0 16px;padding-left:20px;font-size:14px;line-height:1.8;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:${d.color};margin-bottom:6px;">Kết quả chẩn đoán — ${esc(SK_WEEK_NAMES[state.week])}</div>
+          <div style="font-size:20px;font-weight:700;color:${d.color};margin-bottom:14px;">${esc(d.level)}</div>
+          <ul style="margin:0 0 16px;padding-left:20px;font-size:15.5px;line-height:1.8;">
             ${d.problems.map(p=>`<li style="margin-bottom:8px;">${esc(p)}</li>`).join('')}
           </ul>
-          <div style="margin-bottom:12px;">${skSectionHeaderHtml('Ảnh hưởng hiện tại', '#e8643c', '⚡')}<div style="font-size:14px;line-height:1.8;">${esc(d.impact)}</div></div>
-          <div>${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:14px;line-height:1.8;">${esc(d.future)}</div></div>
+          <div style="margin-bottom:12px;">${skSectionHeaderHtml('Ảnh hưởng hiện tại', '#e8643c', '⚡')}<div style="font-size:15.5px;line-height:1.8;">${esc(d.impact)}</div></div>
+          <div>${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:15.5px;line-height:1.8;">${esc(d.future)}</div></div>
         </div>
       `;})() : `<div class="hint-box" style="margin-bottom:18px;">Chưa có dữ liệu cho mốc "${esc(SK_WEEK_NAMES[state.week])}" — nhập ít nhất 1 chỉ số bên dưới để xem kết quả chẩn đoán.</div>`}
 
@@ -478,18 +478,18 @@ function render(container, ctx){
         if(scores.every(s=>s.score==null)) return '';
         return `
         <div class="card" style="margin-bottom:18px;background:linear-gradient(135deg,#14201B,#1f2e26);color:#F7F4EC;">
-          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;opacity:.75;margin-bottom:14px;">🔮 Siêu Âm Năng Lượng — ${esc(SK_WEEK_NAMES[state.week])}</h3>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14px;text-transform:uppercase;letter-spacing:.06em;opacity:.75;margin-bottom:14px;">🔮 Siêu Âm Năng Lượng — ${esc(SK_WEEK_NAMES[state.week])}</h3>
           ${skCandleIllustrationHtml(scores)}
           <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;">
             ${scores.map(s=>`
               <div style="flex:1;min-width:100px;text-align:center;">
                 <div style="font-size:20px;">${s.icon}</div>
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;margin:4px 0;color:${s.score==null?'rgba(247,244,236,.4)':(s.score<=4?'#e8643c':'#F7F4EC')};">${s.score==null?'—':s.score}</div>
-                <div style="font-size:12px;opacity:.75;">${esc(s.label)}</div>
+                <div style="font-size:13.5px;opacity:.75;">${esc(s.label)}</div>
               </div>
             `).join('')}
           </div>
-          <div style="font-size:11.5px;opacity:.6;margin-top:12px;">Điền đủ các câu của mỗi trụ (Tinh dùng lại 4 câu ở "Yếu tố cuộc sống" phía dưới + 1 câu mới, Khí/Thần mỗi trụ 2 câu ở nhóm "Siêu Âm Năng Lượng") để ra điểm — điểm càng cao càng khoẻ.</div>
+          <div style="font-size:13px;opacity:.6;margin-top:12px;">Điền đủ các câu của mỗi trụ (Tinh dùng lại 4 câu ở "Yếu tố cuộc sống" phía dưới + 1 câu mới, Khí/Thần mỗi trụ 2 câu ở nhóm "Siêu Âm Năng Lượng") để ra điểm — điểm càng cao càng khoẻ.</div>
         </div>
       `;})()}
 
@@ -501,18 +501,18 @@ function render(container, ctx){
         const bmiCat = bmiCategory(bmi);
         return `
         <div class="card" style="margin-bottom:18px;">
-          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:${g.color};margin-bottom:14px;">${esc(g.title)}</h3>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:${g.color};margin-bottom:14px;">${esc(g.title)}</h3>
           ${isBodyGroup ? `
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface-soft,#f5f5f5);border-radius:10px;">
-              <span style="font-size:12.5px;color:var(--ink-soft);">BMI (tự tính từ chiều cao + cân nặng):</span>
-              ${bmi!=null ? `<b style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:${bmiCat.color};">${bmi}</b><span style="font-size:12.5px;font-weight:700;color:${bmiCat.color};">${esc(bmiCat.label)}</span>` : `<span style="font-size:12.5px;color:var(--ink-soft);">— (nhập đủ Chiều cao + Cân nặng để tính)</span>`}
+              <span style="font-size:14px;color:var(--ink-soft);">BMI (tự tính từ chiều cao + cân nặng):</span>
+              ${bmi!=null ? `<b style="font-family:'IBM Plex Mono',monospace;font-size:17px;color:${bmiCat.color};">${bmi}</b><span style="font-size:14px;font-weight:700;color:${bmiCat.color};">${esc(bmiCat.label)}</span>` : `<span style="font-size:14px;color:var(--ink-soft);">— (nhập đủ Chiều cao + Cân nặng để tính)</span>`}
             </div>
             ${skBodyMeasureGuideHtml()}
           ` : ''}
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
             ${g.items.map(([key,label,unit])=>`
               <div>
-                <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">${esc(label)}${unit?` (${esc(unit)})`:''}</label>
+                <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">${esc(label)}${unit?` (${esc(unit)})`:''}</label>
                 <input type="number" step="0.1" data-metric="${key}" value="${esc(getVal(key, state.week))}" placeholder="—">
               </div>
             `).join('')}
@@ -537,7 +537,7 @@ function render(container, ctx){
         ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
         <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="font-size:15px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
             <div style="display:flex;gap:8px;">
               <span class="btn-ghost btn btn-sm" id="sk-toggle-all-flagged">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
               <button class="btn btn-sm" id="sk-order-flagged" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>
@@ -548,7 +548,7 @@ function render(container, ctx){
       `;})() : ''}
 
       ${summary.length>0 ? `
-        <div class="page-head" style="margin:28px 0 12px;"><h2 style="font-size:17px;">So sánh Bắt đầu → Tuần 8</h2></div>
+        <div class="page-head" style="margin:28px 0 12px;"><h2 style="font-size:18px;">So sánh Bắt đầu → Tuần 8</h2></div>
         <div class="card">
           ${summary.map(s=>`
             <div class="list-item">

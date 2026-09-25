@@ -56,12 +56,12 @@ function render(container, ctx){
         <p>Điểm và hoa hồng được ghi nhận theo từng tháng khi bạn mua hàng.</p>
       </div>
 
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">PV tháng này (từ đơn đặt hàng qua app)</h2></div>
+      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">PV tháng này (từ đơn đặt hàng qua app)</h2></div>
       <div class="card" style="margin-bottom:24px;">
         <div style="font-size:28px;font-weight:700;color:var(--accent);font-family:'IBM Plex Mono',monospace;">${pvThisMonth} PV</div>
         ${reachedTier ? `<div class="hint-box" style="margin-top:10px;">🎉 Đã đạt mốc <b>${esc(reachedTier.label)}</b> — ${esc(reachedTier.desc)}</div>` : ''}
-        ${nextTier ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:10px;">Còn ${nextTier.pv - pvThisMonth} PV nữa để đạt "${esc(nextTier.label)}".</div>` : ''}
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:10px;">Chỉ tính đơn đã được xác nhận. Mốc thưởng: 200 PV → lì xì 200.000đ · 500 PV → quyền lợi VIP kinh doanh (10% hoa hồng khi giới thiệu).</div>
+        ${nextTier ? `<div style="font-size:14.5px;color:var(--ink-soft);margin-top:10px;">Còn ${nextTier.pv - pvThisMonth} PV nữa để đạt "${esc(nextTier.label)}".</div>` : ''}
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-top:10px;">Chỉ tính đơn đã được xác nhận. Mốc thưởng: 200 PV → lì xì 200.000đ · 500 PV → quyền lợi VIP kinh doanh (10% hoa hồng khi giới thiệu).</div>
       </div>
 
       <div class="source-grid" style="margin-bottom:24px;">
@@ -70,13 +70,13 @@ function render(container, ctx){
         <div class="source-card" style="cursor:default;"><div class="ic">${totalCommissionAllTime.toLocaleString('vi-VN')}đ</div><div class="label">Tổng hoa hồng đã nhận</div></div>
       </div>
 
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Lịch sử theo tháng</h2></div>
-      ${state.rows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có dữ liệu — điểm/hoa hồng sẽ hiện ở đây khi bạn có đơn hàng đầu tiên.</div>` : state.rows.map(r=>`
+      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">Lịch sử theo tháng</h2></div>
+      ${state.rows.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có dữ liệu — điểm/hoa hồng sẽ hiện ở đây khi bạn có đơn hàng đầu tiên.</div>` : state.rows.map(r=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
           <div>
             <div class="meta">${esc(r.month)}</div>
-            <div style="font-weight:600;font-size:14px;">${r.points} điểm · mua ${Number(r.purchase_amount).toLocaleString('vi-VN')}đ</div>
-            ${r.note ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${esc(r.note)}</div>` : ''}
+            <div style="font-weight:600;font-size:15.5px;">${r.points} điểm · mua ${Number(r.purchase_amount).toLocaleString('vi-VN')}đ</div>
+            ${r.note ? `<div style="font-size:14.5px;color:var(--ink-soft);margin-top:4px;">${esc(r.note)}</div>` : ''}
           </div>
           <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap;">${Number(r.commission).toLocaleString('vi-VN')}đ</div>
         </div>

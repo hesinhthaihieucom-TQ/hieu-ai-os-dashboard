@@ -49,7 +49,7 @@ function skStopPointOverlay(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#14201B;display:flex;align-items:center;justify-content:center;padding:24px;cursor:pointer;';
   overlay.innerHTML = `
     <div style="text-align:center;color:#F7F4EC;">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.12em;opacity:.7;margin-bottom:14px;">NHỊP DỪNG</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;letter-spacing:.12em;opacity:.7;margin-bottom:14px;">NHỊP DỪNG</div>
       <div style="font-size:22px;font-weight:700;line-height:1.6;">DỪNG LẠI<br>THỞ 3 NHỊP<br>CHỌN LẠI</div>
     </div>
   `;
@@ -66,7 +66,7 @@ function confirmModal(message, confirmLabel){
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.innerHTML = `
       <div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.4);text-align:center;" onclick="event.stopPropagation();">
-        <div style="font-size:15px;line-height:1.6;color:var(--ink);margin-bottom:20px;">${esc(message)}</div>
+        <div style="font-size:16.5px;line-height:1.6;color:var(--ink);margin-bottom:20px;">${esc(message)}</div>
         <div style="display:flex;gap:10px;justify-content:center;">
           <span class="btn-ghost btn btn-sm" data-confirm-cancel="1">Huỷ</span>
           <button class="btn btn-sm" style="background:var(--danger);" data-confirm-ok="1">${esc(confirmLabel||'Xác nhận xoá')}</button>
@@ -189,7 +189,7 @@ function skGiftPreviewHtml(gift){
   return `
     <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       ${previewImages.map(src=>`<img src="${esc(src)}" alt="" data-zoom="${esc(src)}" style="width:60px;height:60px;object-fit:cover;border-radius:9px;flex-shrink:0;cursor:zoom-in;">`).join('')}
-      <span style="font-size:13px;color:#e8643c;font-weight:700;">${esc(gift.label)}</span>
+      <span style="font-size:14.5px;color:#e8643c;font-weight:700;">${esc(gift.label)}</span>
     </div>
   `;
 }
@@ -268,16 +268,16 @@ function openOrderModal(ctx, products){
       return `
         <div style="text-align:center;padding:10px 0;">
           <div style="font-size:38px;margin-bottom:10px;">✅</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Đã gửi yêu cầu đặt hàng</div>
-          <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:18px;">Quét mã bên dưới để thanh toán ngay — chị Quỳnh sẽ xác nhận và liên hệ giao hàng sau khi nhận được tiền.</div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:8px;">Đã gửi yêu cầu đặt hàng</div>
+          <div style="font-size:15px;color:var(--ink-soft);line-height:1.6;margin-bottom:18px;">Quét mã bên dưới để thanh toán ngay — chị Quỳnh sẽ xác nhận và liên hệ giao hàng sau khi nhận được tiền.</div>
           ${qrUrl ? `
             <img src="${qrUrl}" alt="Mã VietQR" style="max-width:240px;width:100%;border-radius:12px;border:1px solid var(--line);">
-            <div style="margin-top:14px;font-size:13.5px;line-height:1.8;text-align:left;">
+            <div style="margin-top:14px;font-size:15px;line-height:1.8;text-align:left;">
               <div><b>Ngân hàng:</b> VietinBank</div>
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(SK_PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(SK_PAYMENT_BANK.account)}">Copy</span></div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(SK_PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(SK_PAYMENT_BANK.account)}">Copy</span></div>
               <div><b>Chủ tài khoản:</b> ${esc(SK_PAYMENT_BANK.accountName)}</div>
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${amount}">Copy</span></div>
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK:</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft,#eef6f0);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${amount}">Copy</span></div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK:</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft,#eef6f0);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
             </div>
             <div class="hint-box" style="margin-top:14px;text-align:left;">Ghi kèm nội dung <b>${esc(transferContent)}</b> giúp chị Quỳnh đối chiếu đúng đơn nhanh hơn — không bắt buộc tuyệt đối, có thể chuyển khoản rồi liên hệ trực tiếp nếu quên.</div>
           ` : ''}
@@ -286,7 +286,7 @@ function openOrderModal(ctx, products){
     }
     const { chosen, subtotal, surcharge, total, pv, gift } = totals();
     return `
-      <div style="font-weight:700;font-size:16px;margin-bottom:14px;">Đặt hàng</div>
+      <div style="font-weight:700;font-size:17px;margin-bottom:14px;">Đặt hàng</div>
       <div style="max-height:44vh;overflow-y:auto;margin-bottom:14px;">
         ${products.map(p=>{
           // 2026-09-18, chị Quỳnh: "khi bấm vào đặt hàng thì danh sách sản phẩm trong list đặt hàng
@@ -303,31 +303,31 @@ function openOrderModal(ctx, products){
               ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
               <div style="flex:1;min-width:0;">
                 <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                  <span style="font-size:13.5px;font-weight:600;">${esc(p.name)}</span>
-                  <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;">${(unitPrice*q).toLocaleString('vi-VN')}đ</span>
+                  <span style="font-size:15px;font-weight:600;">${esc(p.name)}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;white-space:nowrap;">${(unitPrice*q).toLocaleString('vi-VN')}đ</span>
                 </div>
-                ${note ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
+                ${note ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:2px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
               </div>
             </label>
             ${selected.has(p.id) ? `
               <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:3px;">
                 <span data-order-qty-dec="${esc(p.id)}" style="width:24px;height:24px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">−</span>
-                <span style="min-width:18px;text-align:center;font-size:13px;font-weight:700;">${q}</span>
+                <span style="min-width:18px;text-align:center;font-size:14.5px;font-weight:700;">${q}</span>
                 <span data-order-qty-inc="${esc(p.id)}" style="width:24px;height:24px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">+</span>
               </div>
             ` : ''}
           </div>
         `;}).join('')}
       </div>
-      <div style="font-size:13.5px;display:flex;justify-content:space-between;margin-bottom:4px;color:var(--ink-soft);">
+      <div style="font-size:15px;display:flex;justify-content:space-between;margin-bottom:4px;color:var(--ink-soft);">
         <span>Tiền hàng</span><span>${subtotal.toLocaleString('vi-VN')}đ</span>
       </div>
       ${surcharge>0 ? `
-        <div style="font-size:13.5px;display:flex;justify-content:space-between;margin-bottom:4px;color:var(--ink-soft);">
+        <div style="font-size:15px;display:flex;justify-content:space-between;margin-bottom:4px;color:var(--ink-soft);">
           <span>Phụ phí đơn trên ${SK_ORDER_SURCHARGE_TIERS.find(t=>subtotal>t.min).min.toLocaleString('vi-VN')}đ</span><span>+${surcharge.toLocaleString('vi-VN')}đ</span>
         </div>
       ` : ''}
-      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16.5px;margin-bottom:6px;">
         <span>Tổng cộng</span><span style="color:var(--accent);">${total.toLocaleString('vi-VN')}đ</span>
       </div>
       ${gift ? `
@@ -342,24 +342,24 @@ function openOrderModal(ctx, products){
                 const chosen = giftColor===c.key;
                 return `
                 <div data-gift-color-card="${esc(c.key)}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;border:2px solid ${chosen?'var(--accent)':'var(--line)'};border-radius:12px;padding:10px;cursor:pointer;background:${chosen?'#eef6f0':'#fff'};width:96px;">
-                  ${chosen ? `<div style="position:absolute;top:-9px;right:-9px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>` : ''}
+                  ${chosen ? `<div style="position:absolute;top:-9px;right:-9px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16.5px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>` : ''}
                   <img src="${esc(c.image)}" alt="" data-zoom="${esc(c.image)}" style="width:76px;height:76px;object-fit:cover;border-radius:9px;cursor:zoom-in;">
-                  <span style="font-size:12px;font-weight:600;text-align:center;">${esc(c.label)}</span>
-                  <span style="font-size:11px;font-weight:700;color:${chosen?'var(--accent)':'var(--ink-soft)'};">${chosen?'✓ Đã chọn':'Bấm để chọn'}</span>
+                  <span style="font-size:13.5px;font-weight:600;text-align:center;">${esc(c.label)}</span>
+                  <span style="font-size:12.5px;font-weight:700;color:${chosen?'var(--accent)':'var(--ink-soft)'};">${chosen?'✓ Đã chọn':'Bấm để chọn'}</span>
                 </div>
               `;}).join('')}
             </div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;">Bấm vào ảnh để xem to hơn — bấm vào khung màu để chọn.</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">Bấm vào ảnh để xem to hơn — bấm vào khung màu để chọn.</div>
           ` : ''}
         </div>
       ` : `<div style="height:14px;"></div>`}
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);">Họ tên người nhận</label>
+      <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);">Họ tên người nhận</label>
       <input type="text" id="order-name" placeholder="Tên người nhận hàng" value="${esc(formValues.name)}">
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Số điện thoại</label>
+      <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Số điện thoại</label>
       <input type="tel" id="order-phone" placeholder="09xxxxxxxx" value="${esc(formValues.phone)}">
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Địa chỉ giao hàng</label>
+      <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Địa chỉ giao hàng</label>
       <textarea id="order-address" placeholder="Số nhà, đường, phường/xã, tỉnh/thành..." style="min-height:60px;">${esc(formValues.address)}</textarea>
-      ${err ? `<div style="color:var(--danger);font-size:13px;margin-top:8px;">${esc(err)}</div>` : ''}
+      ${err ? `<div style="color:var(--danger);font-size:14.5px;margin-top:8px;">${esc(err)}</div>` : ''}
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
         <span class="btn-ghost btn btn-sm" data-order-cancel="1">Huỷ</span>
         <button class="btn btn-sm" data-order-submit="1" ${chosen.length===0?'disabled':''}>Gửi đặt hàng</button>
@@ -476,7 +476,7 @@ function skSectionMeta(title){
 // Header dạng dải màu (giống các ô tiêu đề vàng trong file hướng dẫn chị gửi) — dùng cho tiêu đề 1
 // mục nội dung dài (detail_sections, Thư Viện...).
 function skSectionHeaderHtml(title, color, icon){
-  return `<div style="display:inline-flex;align-items:center;gap:7px;background:${color}18;color:${color};border-radius:7px;padding:5px 12px;font-weight:700;font-size:12.5px;margin-bottom:10px;">${icon?`<span>${icon}</span>`:''}${esc(title||'')}</div>`;
+  return `<div style="display:inline-flex;align-items:center;gap:7px;background:${color}18;color:${color};border-radius:7px;padding:5px 12px;font-weight:700;font-size:14px;margin-bottom:10px;">${icon?`<span>${icon}</span>`:''}${esc(title||'')}</div>`;
 }
 
 // Cụm từ nói công dụng cụ thể (vd "giảm táo bón", "tăng cường hệ miễn dịch") được tô nổi bật — chị
@@ -528,16 +528,16 @@ function skRichBodyHtml(body){
 function skProductDetailHtml(p){
   const sections = Array.isArray(p.detail_sections) ? p.detail_sections : [];
   return `
-    ${p.short_description ? `<div style="font-size:14px;font-weight:600;line-height:1.6;">${esc(p.short_description)}</div>` : ''}
+    ${p.short_description ? `<div style="font-size:15.5px;font-weight:600;line-height:1.6;">${esc(p.short_description)}</div>` : ''}
     ${sections.map(sec=>{
       const meta = skSectionMeta(sec.title);
       return `
       <div style="margin-top:18px;border-left:3px solid ${meta.color};padding-left:14px;">
         ${skSectionHeaderHtml(sec.title, meta.color, meta.icon)}
-        <div style="font-size:13.5px;line-height:1.8;">${skRichBodyHtml(sec.body)}</div>
+        <div style="font-size:15px;line-height:1.8;">${skRichBodyHtml(sec.body)}</div>
       </div>
     `;}).join('')}
-    ${sections.length===0 && p.benefits ? `<div style="font-size:13.5px;line-height:1.8;margin-top:10px;">${skRichBodyHtml(p.benefits)}</div>` : ''}
+    ${sections.length===0 && p.benefits ? `<div style="font-size:15px;line-height:1.8;margin-top:10px;">${skRichBodyHtml(p.benefits)}</div>` : ''}
   `;
 }
 
@@ -572,24 +572,24 @@ function skProductOrderRowHtml(p, checked, qty){
       ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
       <div style="flex:1;min-width:0;">
         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-          <div style="font-weight:700;font-size:14px;">${esc(p.name)}${p._priority ? ` <span style="font-size:10.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}</div>
+          <div style="font-weight:700;font-size:15.5px;">${esc(p.name)}${p._priority ? ` <span style="font-size:12px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Nên dùng trước</span>` : ''}</div>
           <div style="text-align:right;white-space:nowrap;">
             ${p.retail_price!=null ? `<div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${(unitPrice*q).toLocaleString('vi-VN')}đ${q>1?`<span style="font-weight:400;color:var(--ink-soft);"> (${unitPrice.toLocaleString('vi-VN')}đ × ${q})</span>`:''}</div>` : ''}
-            ${p.pv!=null ? `<div style="font-size:11px;color:var(--ink-soft);">${unitPv*q} PV</div>` : ''}
+            ${p.pv!=null ? `<div style="font-size:12.5px;color:var(--ink-soft);">${unitPv*q} PV</div>` : ''}
           </div>
         </div>
-        ${note ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
+        ${note ? `<div style="font-size:14.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(note)}</div>` : ''}
         ${checked ? `
           <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-            <span style="font-size:12.5px;color:var(--ink-soft);">Số lượng:</span>
+            <span style="font-size:14px;color:var(--ink-soft);">Số lượng:</span>
             <span data-qty-dec="${esc(p.id)}" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">−</span>
-            <span style="min-width:22px;text-align:center;font-weight:700;font-size:13.5px;">${q}</span>
+            <span style="min-width:22px;text-align:center;font-weight:700;font-size:15px;">${q}</span>
             <span data-qty-inc="${esc(p.id)}" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;user-select:none;">+</span>
-            <span style="font-size:12px;color:var(--ink-soft);">hộp</span>
+            <span style="font-size:13.5px;color:var(--ink-soft);">hộp</span>
           </div>
         ` : ''}
         <details style="margin-top:6px;">
-          <summary style="cursor:pointer;font-size:12.5px;color:var(--accent);list-style:none;">Xem đầy đủ công dụng →</summary>
+          <summary style="cursor:pointer;font-size:14px;color:var(--accent);list-style:none;">Xem đầy đủ công dụng →</summary>
           <div style="margin-top:10px;">${skProductDetailHtml(p)}</div>
         </details>
       </div>
@@ -728,7 +728,7 @@ function categoryColor(name){
 // Biểu đồ cột xu hướng đơn giản (SVG thuần) — dùng ở Theo Dõi Sức Khỏe Theo Tuần để vẽ cân
 // nặng/năng lượng qua từng tuần. buckets: [{label, amount}], amount có thể = 0.
 function trendBarChartHtml(buckets, color){
-  if(buckets.length===0 || buckets.every(b=>b.amount<=0)) return `<div style="color:var(--ink-soft);font-size:13px;">Chưa có dữ liệu.</div>`;
+  if(buckets.length===0 || buckets.every(b=>b.amount<=0)) return `<div style="color:var(--ink-soft);font-size:14.5px;">Chưa có dữ liệu.</div>`;
   const w = 320, h = 170, padTop = 10, padBottom = 26, padSide = 8;
   const innerW = w - padSide*2, innerH = h - padTop - padBottom;
   const maxVal = Math.max(1, ...buckets.map(b=>b.amount));

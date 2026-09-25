@@ -26,10 +26,10 @@ function render(container, ctx){
           </div>
         ` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-          <div style="font-weight:700;font-size:15px;">${esc(item.display_name)}</div>
-          ${catLabel ? `<span style="font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-soft,rgba(31,157,99,.12));border-radius:6px;padding:3px 9px;">${esc(catLabel)}</span>` : ''}
+          <div style="font-weight:700;font-size:16.5px;">${esc(item.display_name)}</div>
+          ${catLabel ? `<span style="font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-soft,rgba(31,157,99,.12));border-radius:6px;padding:3px 9px;">${esc(catLabel)}</span>` : ''}
         </div>
-        <div style="font-size:13.5px;line-height:1.8;white-space:pre-line;">${esc(item.story)}</div>
+        <div style="font-size:15px;line-height:1.8;white-space:pre-line;">${esc(item.story)}</div>
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
           <span class="btn-ghost btn btn-sm" data-goto-sanpham="${item.category||''}">Xem sản phẩm liên quan →</span>
         </div>
@@ -45,7 +45,7 @@ function render(container, ctx){
         <p>Kết quả thật từ khách đã dùng sản phẩm Unicity — hình ảnh và câu chuyện được chính khách đồng ý chia sẻ.</p>
       </div>
       ${state.items.length===0
-        ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có câu chuyện nào — chị Quỳnh sẽ bổ sung sớm.</div>`
+        ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có câu chuyện nào — chị Quỳnh sẽ bổ sung sớm.</div>`
         : state.items.map(storyCardHtml).join('')}
     `;
   }

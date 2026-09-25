@@ -82,10 +82,10 @@ function render(container, ctx){
   function skProductUsageHtml(p){
     const sections = Array.isArray(p.detail_sections) ? p.detail_sections : [];
     const usage = sections.filter(s=>/đối tượng|cách dùng/i.test(s.title||''));
-    if(usage.length===0) return p.short_description ? `<div style="font-size:13px;color:var(--ink-soft);line-height:1.7;">${esc(p.short_description)}</div>` : '';
+    if(usage.length===0) return p.short_description ? `<div style="font-size:14.5px;color:var(--ink-soft);line-height:1.7;">${esc(p.short_description)}</div>` : '';
     return usage.map(sec=>{
       const meta = skSectionMeta(sec.title);
-      return `<div style="margin-top:8px;">${skSectionHeaderHtml(sec.title, meta.color, meta.icon)}<div style="font-size:13px;line-height:1.7;">${skRichBodyHtml(sec.body)}</div></div>`;
+      return `<div style="margin-top:8px;">${skSectionHeaderHtml(sec.title, meta.color, meta.icon)}<div style="font-size:14.5px;line-height:1.7;">${skRichBodyHtml(sec.body)}</div></div>`;
     }).join('');
   }
 
@@ -152,10 +152,10 @@ function render(container, ctx){
     // trong khối đó nên step chỉ cần đệm ngang bình thường + gạch dưới ngăn cách các sản phẩm.
     return `
       <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;':''}">
-        ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🍽️</div>`}
+        ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:19px;">🍽️</div>`}
         <div style="flex:1;min-width:0;">
-          ${step.product_name ? `<div style="font-weight:700;font-size:13.5px;">${esc(step.product_name)}${isPriority ? ` <span style="font-size:10px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</div>` : ''}
-          <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
+          ${step.product_name ? `<div style="font-weight:700;font-size:15px;">${esc(step.product_name)}${isPriority ? ` <span style="font-size:11.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</div>` : ''}
+          <div style="font-size:14.5px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
         </div>
       </div>
     `;
@@ -234,13 +234,13 @@ function render(container, ctx){
       const st = SK_TIMESLOT_STYLE[key];
       return `
       <div style="border-left:4px solid ${st.color};background:${st.bg};border:1px solid ${st.bd};border-left-width:4px;border-radius:10px;padding:14px;margin-bottom:14px;">
-        <div style="font-weight:700;font-size:14.5px;color:${st.color};margin-bottom:8px;">${icon} ${esc(label)}</div>
+        <div style="font-weight:700;font-size:16px;color:${st.color};margin-bottom:8px;">${icon} ${esc(label)}</div>
         ${data ? `
-          <div style="font-size:13.5px;line-height:1.8;"><b>Uống:</b> ${esc(data.uong)}</div>
-          <div style="font-size:13.5px;line-height:1.8;"><b>Ăn:</b> ${esc(data.an)}</div>
+          <div style="font-size:15px;line-height:1.8;"><b>Uống:</b> ${esc(data.uong)}</div>
+          <div style="font-size:15px;line-height:1.8;"><b>Ăn:</b> ${esc(data.an)}</div>
         ` : ''}
         ${hasSteps ? `
-          <div style="font-size:11.5px;font-weight:700;color:${st.color};text-transform:uppercase;letter-spacing:.04em;margin:${data?'12px':'0'} 0 6px;">🍽️ Sản phẩm dùng lúc này</div>
+          <div style="font-size:13px;font-weight:700;color:${st.color};text-transform:uppercase;letter-spacing:.04em;margin:${data?'12px':'0'} 0 6px;">🍽️ Sản phẩm dùng lúc này</div>
           <div style="background:#fff;border-radius:8px;overflow:hidden;">${steps}</div>
         ` : ''}
       </div>
@@ -254,18 +254,18 @@ function render(container, ctx){
         ${slot('Tối', '🌙', 'toi', s && s.toi, buckets.toi)}
         ${buckets.khac.length>0 ? `
           <div style="border-left:4px solid var(--ink-soft);background:var(--surface-soft,#f5f5f5);border-radius:10px;padding:14px;margin-bottom:14px;">
-            <div style="font-weight:700;font-size:14.5px;margin-bottom:8px;">⏰ Khác trong ngày</div>
+            <div style="font-weight:700;font-size:16px;margin-bottom:8px;">⏰ Khác trong ngày</div>
             <div style="background:#fff;border-radius:8px;overflow:hidden;">${regimenSectionsHtml(buckets.khac)}</div>
           </div>
         ` : ''}
         ${s ? `
           <div style="border-left:4px solid #1f9d63;background:#eef6f0;border-radius:10px;padding:14px;">
-            <div style="font-weight:700;font-size:14.5px;color:#1f9d63;margin-bottom:8px;">🏃 Tập luyện</div>
-            <div style="font-size:13.5px;line-height:1.8;"><b>Giờ tập:</b> ${esc(s.tap.gio)}</div>
-            <div style="font-size:13.5px;line-height:1.8;"><b>Bài tập:</b> ${esc(s.tap.bai)}</div>
+            <div style="font-weight:700;font-size:16px;color:#1f9d63;margin-bottom:8px;">🏃 Tập luyện</div>
+            <div style="font-size:15px;line-height:1.8;"><b>Giờ tập:</b> ${esc(s.tap.gio)}</div>
+            <div style="font-size:15px;line-height:1.8;"><b>Bài tập:</b> ${esc(s.tap.bai)}</div>
           </div>
         ` : ''}
-        ${anyPriority ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:10px;">⭐ = sản phẩm nên ưu tiên mua trước nếu chưa mua trọn bộ.</div>` : ''}
+        ${anyPriority ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:10px;">⭐ = sản phẩm nên ưu tiên mua trước nếu chưa mua trọn bộ.</div>` : ''}
       </div>
     `;
   }
@@ -288,20 +288,20 @@ function render(container, ctx){
       ${state.packageName ? `
         <div class="card" style="margin-bottom:18px;">
           ${skSectionHeaderHtml('Giờ nhắc mỗi ngày của bạn', '#7c6bd4', '⏰')}
-          <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 giờ trong ngày để nhận thông báo nhắc xem lịch trình gói "${esc(state.packageName)}" — tự chọn giờ phù hợp với bạn.</div>
+          <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 giờ trong ngày để nhận thông báo nhắc xem lịch trình gói "${esc(state.packageName)}" — tự chọn giờ phù hợp với bạn.</div>
           <input type="time" id="lt-package-reminder" value="${esc((ctx.profile && ctx.profile.sk_reminder_time) || '')}" style="width:auto;margin:0;">
         </div>
       ` : ''}
       ${dailyScheduleHtml()}
       ${customerProductsToShow.length>0 ? `
-        <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Sản phẩm bạn đang dùng</h2></div>
+        <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">Sản phẩm bạn đang dùng</h2></div>
         ${customerProductsToShow.map(p=>`
           <div class="card" style="margin-bottom:16px;display:flex;gap:14px;align-items:flex-start;">
             ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:9px;flex-shrink:0;">` : ''}
             <div style="flex:1;min-width:0;">
-              <div style="font-weight:700;font-size:14.5px;">${esc(p.name)}</div>
+              <div style="font-weight:700;font-size:16px;">${esc(p.name)}</div>
               <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                <label style="font-size:12.5px;color:var(--ink-soft);margin:0;">⏰ Giờ nhắc dùng:</label>
+                <label style="font-size:14px;color:var(--ink-soft);margin:0;">⏰ Giờ nhắc dùng:</label>
                 <input type="time" data-customer-product-reminder="${p.id}" value="${esc(p._reminderTime||'')}" style="width:auto;margin:0;">
               </div>
               ${skProductUsageHtml(p)}
@@ -310,7 +310,7 @@ function render(container, ctx){
         `).join('')}
       ` : ''}
       ${state.items.length>0 ? `
-        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Mốc theo ngày (đã hoàn thành ${doneCount}/${state.items.length})</h2></div>
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:18px;">Mốc theo ngày (đã hoàn thành ${doneCount}/${state.items.length})</h2></div>
         ${state.items.map(item=>{
           const isDone = state.doneIds.has(item.id);
           const date = targetDate(item.day_offset);
@@ -321,8 +321,8 @@ function render(container, ctx){
               </span>
               <div>
                 <div class="meta">${date ? esc(fmtDate(date)) : `Ngày ${item.day_offset}`}</div>
-                <div style="font-weight:600;font-size:14.5px;${isDone?'text-decoration:line-through;color:var(--ink-soft);':''}">${esc(item.title)}</div>
-                ${item.description ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">${esc(item.description)}</div>` : ''}
+                <div style="font-weight:600;font-size:16px;${isDone?'text-decoration:line-through;color:var(--ink-soft);':''}">${esc(item.title)}</div>
+                ${item.description ? `<div style="font-size:15px;color:var(--ink-soft);margin-top:4px;">${esc(item.description)}</div>` : ''}
               </div>
             </div>
           `;
@@ -336,9 +336,9 @@ function render(container, ctx){
       <details class="kt-section">
         <summary class="kt-summary" style="color:${t.color};">${esc(t.title)}</summary>
         <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-          <div><div style="background:#fdeee8;color:#c0392b;font-weight:700;font-size:12px;border-radius:6px;padding:4px 8px;margin-bottom:6px;text-align:center;">Cao (70+)</div><div style="font-size:12.5px;line-height:1.8;">${t.high.map(x=>esc(x)).join('<br>')}</div></div>
-          <div><div style="background:#fff7e6;color:#b8860b;font-weight:700;font-size:12px;border-radius:6px;padding:4px 8px;margin-bottom:6px;text-align:center;">Trung bình (56-69)</div><div style="font-size:12.5px;line-height:1.8;">${t.mid.map(x=>esc(x)).join('<br>')}</div></div>
-          <div><div style="background:#eef6f0;color:#1f9d63;font-weight:700;font-size:12px;border-radius:6px;padding:4px 8px;margin-bottom:6px;text-align:center;">Thấp (0-55)</div><div style="font-size:12.5px;line-height:1.8;">${t.low.map(x=>esc(x)).join('<br>')}</div></div>
+          <div><div style="background:#fdeee8;color:#c0392b;font-weight:700;font-size:13.5px;border-radius:6px;padding:4px 8px;margin-bottom:6px;text-align:center;">Cao (70+)</div><div style="font-size:14px;line-height:1.8;">${t.high.map(x=>esc(x)).join('<br>')}</div></div>
+          <div><div style="background:#fff7e6;color:#b8860b;font-weight:700;font-size:13.5px;border-radius:6px;padding:4px 8px;margin-bottom:6px;text-align:center;">Trung bình (56-69)</div><div style="font-size:14px;line-height:1.8;">${t.mid.map(x=>esc(x)).join('<br>')}</div></div>
+          <div><div style="background:#eef6f0;color:#1f9d63;font-weight:700;font-size:13.5px;border-radius:6px;padding:4px 8px;margin-bottom:6px;text-align:center;">Thấp (0-55)</div><div style="font-size:14px;line-height:1.8;">${t.low.map(x=>esc(x)).join('<br>')}</div></div>
         </div>
       </details>
     `;
@@ -367,11 +367,11 @@ function render(container, ctx){
         ${skSectionHeaderHtml('Tính nhu cầu Nước & Protein mỗi ngày', '#7c6bd4', '🥩')}
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
           <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Cân nặng hiện tại (kg)</label>
+            <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Cân nặng hiện tại (kg)</label>
             <input type="number" id="calc-weight" value="${esc(state.calcWeight)}" placeholder="VD: 60" style="width:110px;margin:0;">
           </div>
           <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu</label>
+            <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu</label>
             <select id="calc-goal" style="width:auto;margin:0;">
               <option value="duy_tri" ${state.calcGoal==='duy_tri'?'selected':''}>Duy trì (×1,5)</option>
               <option value="tang_co_giam_mo" ${state.calcGoal==='tang_co_giam_mo'?'selected':''}>Tăng cơ/giảm mỡ (×2,0-2,2)</option>
@@ -382,20 +382,20 @@ function render(container, ctx){
           <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:14px;">
             <div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);">${(waterTargetMl/1000).toFixed(1)} lít</div>
-              <div style="font-size:12px;color:var(--ink-soft);">Nước cần uống/ngày (~35ml × cân nặng)</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);">Nước cần uống/ngày (~35ml × cân nặng)</div>
             </div>
             <div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);">${proteinTarget}g</div>
-              <div style="font-size:12px;color:var(--ink-soft);">Protein cần/ngày</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);">Protein cần/ngày</div>
             </div>
           </div>
-          <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Tương đương khoảng (chọn 1 hoặc kết hợp nhiều loại):</div>
-          <div style="font-size:13px;color:var(--ink-soft);line-height:1.9;">
+          <div style="font-size:14.5px;font-weight:600;margin-bottom:6px;">Tương đương khoảng (chọn 1 hoặc kết hợp nhiều loại):</div>
+          <div style="font-size:14.5px;color:var(--ink-soft);line-height:1.9;">
             ${SK_PROTEIN_FOOD_REF.map(f=>`• ${Math.round(proteinTarget/f.per100g*100)}g ${esc(f.label)}`).join('<br>')}
             <br>• hoặc thêm 1 quả trứng (≈7g) / 1 gói LC (≈12g protein) cho tiện khi ăn ngoài.
           </div>
         ` : `<div class="hint-box">Nhập cân nặng để tính nhu cầu nước & protein mỗi ngày cho riêng bạn.</div>`}
-        <div style="font-size:11.5px;color:var(--ink-soft);margin-top:12px;">Công thức tham khảo chung, không thay thế tư vấn dinh dưỡng chuyên sâu — điều chỉnh theo mức vận động và tình trạng sức khỏe thực tế.</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:12px;">Công thức tham khảo chung, không thay thế tư vấn dinh dưỡng chuyên sâu — điều chỉnh theo mức vận động và tình trạng sức khỏe thực tế.</div>
       </div>
     `;
   }
@@ -430,7 +430,7 @@ function render(container, ctx){
 
       ${nutritionCalcHtml()}
 
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Bảng chỉ số đường huyết (GI) để chọn thực phẩm</h2></div>
+      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">Bảng chỉ số đường huyết (GI) để chọn thực phẩm</h2></div>
       <div class="hint-box" style="margin-bottom:14px;">Ưu tiên nhóm GI THẤP — TRUNG BÌNH, dùng có kiểm soát; hạn chế nhóm GI CAO, nhất là buổi tối. Không cần kiêng tuyệt đối, chỉ cần giảm dần và thay thế thông minh.</div>
       ${SK_GI_TABLES.map(giTableHtml).join('')}
     `;
@@ -470,7 +470,7 @@ function render(container, ctx){
 
       <div class="card" style="margin-top:18px;">
         ${skSectionHeaderHtml('Tìm năng lượng Xanh trong biến cố (Insight Overlay)', '#1f9d63', '🌱')}
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">Kể ngắn gọn 1 tình huống khó khăn bạn đang gặp — AI sẽ giúp bạn nhìn thấy điều đang được mở ra/dịch chuyển từ chính biến cố đó, không phải để thay thế tư vấn chuyên môn.</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:12px;">Kể ngắn gọn 1 tình huống khó khăn bạn đang gặp — AI sẽ giúp bạn nhìn thấy điều đang được mở ra/dịch chuyển từ chính biến cố đó, không phải để thay thế tư vấn chuyên môn.</div>
         <textarea id="tkt-insight-input" placeholder="VD: Con dâu tôi vừa dọn ra ở riêng sau mâu thuẫn với gia đình..." style="min-height:90px;" ${state.insightLoading?'disabled':''}>${esc(state.insightText)}</textarea>
         <button class="btn btn-sm" id="tkt-insight-submit" style="margin-top:10px;" ${state.insightLoading?'disabled':''}>${state.insightLoading?'Đang tìm…':'Tìm năng lượng Xanh'}</button>
         ${state.insightError ? `<div class="error-box" style="margin-top:10px;">${esc(state.insightError)}</div>` : ''}
@@ -517,7 +517,7 @@ function render(container, ctx){
     return `
       <div class="card" style="margin-bottom:18px;">
         ${skSectionHeaderHtml('Nhóm mới bắt đầu — áp dụng cho mọi tạng người', '#1f9d63', '🌱')}
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">Người mới, mẹ bỉm, người mệt, ngại vận động — ai cũng nên bắt đầu ở nhóm này trước khi tăng dần.</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:14px;">Người mới, mẹ bỉm, người mệt, ngại vận động — ai cũng nên bắt đầu ở nhóm này trước khi tăng dần.</div>
         ${skRichBodyHtml(`🎯 Mục tiêu:
 - Đánh thức cơ thể
 - Tạo thói quen
@@ -525,7 +525,7 @@ function render(container, ctx){
 ⏰ Tần suất: 3 buổi/tuần, 15-20 phút/buổi.
 📅 Lịch gợi ý: Thứ 2 — Thứ 4 — Thứ 6 (hoặc cách ngày, không cần đúng thứ).`)}
         <div style="margin-top:14px;">
-          <div style="font-weight:700;font-size:13.5px;margin-bottom:8px;">🧑‍🦰 Nội dung mỗi buổi</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:8px;">🧑‍🦰 Nội dung mỗi buổi</div>
           ${skRichBodyHtml(`1. Khởi động (5 phút): xoay cổ — vai — hông — gối; thở sâu, làm nóng nhẹ.
 2. Bài tập chính (10 phút): mỗi bài 30-40 giây, nghỉ 20-30 giây giữa các bài.
 3. Giãn cơ — thả lỏng (5 phút).`)}
@@ -538,10 +538,10 @@ function render(container, ctx){
       ${adv ? `
         <div class="card">
           ${skSectionHeaderHtml(`Khi đã quen tập — ${esc(adv.title)}`, adv.color, '💪')}
-          <div style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">Gợi ý riêng theo vóc dáng hiện tại của bạn (${esc(state.bmiCategory.label)}, theo BMI mốc gần nhất) — chỉ nên chuyển sang nhóm này sau khi đã quen với nhóm mới bắt đầu ở trên.</div>
+          <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:14px;">Gợi ý riêng theo vóc dáng hiện tại của bạn (${esc(state.bmiCategory.label)}, theo BMI mốc gần nhất) — chỉ nên chuyển sang nhóm này sau khi đã quen với nhóm mới bắt đầu ở trên.</div>
           ${skRichBodyHtml(`🎯 Mục tiêu:\n${adv.muctieu}\n⏰ Tần suất: ${adv.tanSuat}\n📅 Lịch gợi ý: ${adv.lich}`)}
           <div style="margin-top:14px;">
-            <div style="font-weight:700;font-size:13.5px;margin-bottom:8px;">🧑‍🦰 Nội dung mỗi buổi</div>
+            <div style="font-weight:700;font-size:15px;margin-bottom:8px;">🧑‍🦰 Nội dung mỗi buổi</div>
             ${skRichBodyHtml(adv.noiDung)}
           </div>
           <div class="hint-box" style="margin-top:14px;">⚠️ Lưu ý: ${esc(adv.luuY)}</div>

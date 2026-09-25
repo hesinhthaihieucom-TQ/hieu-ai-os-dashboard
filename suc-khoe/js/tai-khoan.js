@@ -120,10 +120,10 @@ function render(container, ctx){
 
       <div class="section">
         <h3>Thông tin cơ bản</h3>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Email</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Email</label>
         <input type="text" value="${esc((ctx.user && ctx.user.email) || '')}" disabled style="background:var(--bg);color:var(--ink-soft);">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Họ tên</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Họ tên</label>
         <input type="text" id="tk-name" value="${esc(state.fullName)}" placeholder="Tên của bạn">
 
         <button class="btn" style="margin-top:14px;" id="tk-save-name" ${state.savingName?'disabled':''}>${state.savingName?'Đang lưu…':'Lưu tên'}</button>
@@ -132,10 +132,10 @@ function render(container, ctx){
 
       <div class="section">
         <h3>Đổi mật khẩu</h3>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới</label>
         <input type="password" id="tk-new-pass" value="${esc(state.newPass)}" placeholder="Ít nhất 6 ký tự">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Xác nhận mật khẩu mới</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Xác nhận mật khẩu mới</label>
         <input type="password" id="tk-confirm-pass" value="${esc(state.confirmPass)}" placeholder="Nhập lại mật khẩu mới">
 
         ${state.passError ? `<div class="error-box">${esc(state.passError)}</div>` : ''}
@@ -157,14 +157,14 @@ function render(container, ctx){
         ${state.pushSupported ? `
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
             <span class="btn-ghost btn btn-sm" data-action="test-push" ${state.testPushBusy?'disabled':''}>${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Bấm để kiểm tra ngay thông báo có hoạt động không, không cần chờ đến giờ bản tin.</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Bấm để kiểm tra ngay thông báo có hoạt động không, không cần chờ đến giờ bản tin.</div>
             ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
           </div>
         ` : ''}
       </div>
 
       <div class="btn-row" style="justify-content:flex-start;margin-top:8px;">
-        <span class="signout" id="tk-signout-btn" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
+        <span class="signout" id="tk-signout-btn" style="cursor:pointer;color:var(--ink-soft);font-size:14.5px;">Đăng xuất</span>
       </div>
     `;
   }

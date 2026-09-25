@@ -65,19 +65,19 @@ function render(container, ctx){
         <p>Tra cứu vấn đề bạn đang gặp — nguyên nhân, biểu hiện, cách xử lý và sản phẩm Unicity có thể bổ trợ.</p>
       </div>
       <input type="text" id="tv-search" placeholder="Tìm theo tên vấn đề, biểu hiện..." value="${esc(state.q)}" style="margin-bottom:20px;">
-      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">${state.entries.length===0 ? 'Thư viện đang được xây dựng, chị Quỳnh sẽ bổ sung sớm.' : 'Không tìm thấy kết quả phù hợp.'}</div>` : ''}
+      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">${state.entries.length===0 ? 'Thư viện đang được xây dựng, chị Quỳnh sẽ bổ sung sớm.' : 'Không tìm thấy kết quả phù hợp.'}</div>` : ''}
       ${list.map(e=>{
         const products = entryProducts(e);
         return `
         <details class="kt-section">
           <summary class="kt-summary">${esc(e.issue_name)}</summary>
-          <div style="margin-top:12px;font-size:13.5px;line-height:1.8;">
+          <div style="margin-top:12px;font-size:15px;line-height:1.8;">
             ${e.causes ? `<div style="margin-bottom:16px;border-left:3px solid #c0392b;padding-left:14px;">${skSectionHeaderHtml('Nguyên nhân', '#c0392b', '🔍')}${skRichBodyHtml(e.causes)}</div>` : ''}
             ${e.symptoms ? `<div style="margin-bottom:16px;border-left:3px solid #e8643c;padding-left:14px;">${skSectionHeaderHtml('Biểu hiện', '#e8643c', '👁️')}${skRichBodyHtml(e.symptoms)}</div>` : ''}
             ${e.remedies ? `<div style="margin-bottom:16px;border-left:3px solid #1f9d63;padding-left:14px;">${skSectionHeaderHtml('Cách xử lý', '#1f9d63', '✅')}${skRichBodyHtml(e.remedies)}</div>` : ''}
             ${products.length>0 ? `
               <div style="margin-top:14px;">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:10px;">✨ Sản phẩm Unicity phù hợp — lý do vì sao từng sản phẩm hỗ trợ đúng vấn đề này:</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:10px;">✨ Sản phẩm Unicity phù hợp — lý do vì sao từng sản phẩm hỗ trợ đúng vấn đề này:</div>
                 ${products.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
               </div>
             ` : ''}
@@ -88,7 +88,7 @@ function render(container, ctx){
       ${visibleProducts.length>0 ? `
         <div style="position:sticky;bottom:14px;margin-top:20px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="font-size:15px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
             <div style="display:flex;gap:8px;">
               <span class="btn-ghost btn btn-sm" id="tv-toggle-all">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
               <button class="btn btn-sm" id="tv-order" ${cartChosen.length===0?'disabled':''}>Đặt hàng</button>

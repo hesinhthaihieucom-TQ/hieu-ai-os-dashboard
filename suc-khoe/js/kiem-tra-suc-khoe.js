@@ -261,8 +261,8 @@ function render(container, ctx){
           const ins = h.survey_insulin||[], tox = h.survey_toxin||[], met = h.survey_metabolic||[];
           return `
           <details class="kt-section">
-            <summary class="kt-summary">${esc(new Date(h.created_at).toLocaleDateString('vi-VN'))} — <b style="color:${color};">${esc(h.level)}</b> <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);">(điểm ${h.score})</span></summary>
-            <div style="margin-top:10px;font-size:13px;line-height:1.9;">
+            <summary class="kt-summary">${esc(new Date(h.created_at).toLocaleDateString('vi-VN'))} — <b style="color:${color};">${esc(h.level)}</b> <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink-soft);">(điểm ${h.score})</span></summary>
+            <div style="margin-top:10px;font-size:14.5px;line-height:1.9;">
               ${ins.length>0 ? `<div style="margin-bottom:10px;"><b>Dấu hiệu kháng insulin (${ins.length}):</b> ${ins.map(esc).join(', ')}</div>` : ''}
               ${tox.length>0 ? `<div style="margin-bottom:10px;"><b>Dấu hiệu tích tụ độc tố (${tox.length}):</b> ${tox.map(esc).join(', ')}</div>` : ''}
               ${met.length>0 ? `<div><b>Tiêu chí rối loạn chuyển hóa (${met.length}):</b> ${met.map(esc).join(', ')}</div>` : ''}
@@ -297,13 +297,13 @@ function render(container, ctx){
 
       ${r ? `
         <div class="card" style="margin-top:20px;border:1px solid ${r.bd};background:${r.bg};">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:${r.color};margin-bottom:6px;">Mức độ nguy cơ</div>
-          <div style="font-size:22px;font-weight:700;color:${r.color};margin-bottom:14px;">${esc(r.level)} <span style="font-size:14px;font-weight:400;color:var(--ink-soft);">(điểm ${r.score})</span></div>
-          <ul style="margin:0 0 16px;padding-left:20px;font-size:14px;line-height:1.8;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:${r.color};margin-bottom:6px;">Mức độ nguy cơ</div>
+          <div style="font-size:22px;font-weight:700;color:${r.color};margin-bottom:14px;">${esc(r.level)} <span style="font-size:15.5px;font-weight:400;color:var(--ink-soft);">(điểm ${r.score})</span></div>
+          <ul style="margin:0 0 16px;padding-left:20px;font-size:15.5px;line-height:1.8;">
             ${r.problems.map(p=>`<li style="margin-bottom:8px;">${esc(p)}</li>`).join('')}
           </ul>
-          <div style="margin-bottom:12px;">${skSectionHeaderHtml('Ảnh hưởng hiện tại', '#e8643c', '⚡')}<div style="font-size:14px;line-height:1.8;">${esc(r.impact)}</div></div>
-          <div style="margin-bottom:16px;">${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:14px;line-height:1.8;">${esc(r.future)}</div></div>
+          <div style="margin-bottom:12px;">${skSectionHeaderHtml('Ảnh hưởng hiện tại', '#e8643c', '⚡')}<div style="font-size:15.5px;line-height:1.8;">${esc(r.impact)}</div></div>
+          <div style="margin-bottom:16px;">${skSectionHeaderHtml('Nếu không thay đổi', '#c0392b', '⏳')}<div style="font-size:15.5px;line-height:1.8;">${esc(r.future)}</div></div>
           ${isGuest
             ? `<button class="btn btn-sm" id="sk-guest-signup">📝 Đăng ký miễn phí để lưu kết quả + nhận gợi ý sản phẩm phù hợp</button>`
             : `<button class="btn btn-sm" id="sk-save-history" ${state.savingHistory?'disabled':''}>${state.savingHistory?'Đang lưu…':'📌 Lưu mốc này vào lịch sử'}</button>`}
@@ -311,11 +311,11 @@ function render(container, ctx){
       ` : `<div class="hint-box" style="margin-top:20px;">Tick ít nhất 1 dấu hiệu ở trên để xem kết quả.</div>`}
 
       ${libMatches.length>0 ? `
-        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Tìm hiểu thêm các vấn đề bạn có thể mắc</h2></div>
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:18px;">Tìm hiểu thêm các vấn đề bạn có thể mắc</h2></div>
         ${libMatches.map(m=>`
           <details class="kt-section">
             <summary class="kt-summary">${esc(m.issue_name)}</summary>
-            <div style="margin-top:12px;font-size:13.5px;line-height:1.8;">
+            <div style="margin-top:12px;font-size:15px;line-height:1.8;">
               ${m.causes ? `<div style="margin-bottom:16px;border-left:3px solid #c0392b;padding-left:14px;">${skSectionHeaderHtml('Nguyên nhân', '#c0392b', '🔍')}${skRichBodyHtml(m.causes)}</div>` : ''}
               ${m.symptoms ? `<div style="margin-bottom:16px;border-left:3px solid #e8643c;padding-left:14px;">${skSectionHeaderHtml('Biểu hiện', '#e8643c', '👁️')}${skRichBodyHtml(m.symptoms)}</div>` : ''}
               ${m.remedies ? `<div style="border-left:3px solid #1f9d63;padding-left:14px;">${skSectionHeaderHtml('Cách xử lý', '#1f9d63', '✅')}${skRichBodyHtml(m.remedies)}</div>` : ''}
@@ -327,13 +327,13 @@ function render(container, ctx){
       ${state.productsError ? `<div class="error-box" style="margin-top:20px;">Không tải được danh sách sản phẩm gợi ý: ${esc(state.productsError)} — cần chạy lại file schema_suc_khoe.sql mới nhất.</div>` : ''}
 
       ${productMatches.length>0 ? `
-        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:17px;">Sản phẩm Unicity phù hợp với bạn</h2></div>
-        <p style="font-size:13.5px;color:var(--ink-soft);margin:-8px 0 14px;line-height:1.6;">✨ Dựa trên các dấu hiệu bạn vừa chọn, đây là những sản phẩm Unicity phù hợp nhất để hỗ trợ đúng vấn đề của bạn ngay từ hôm nay — xem lý do vì sao từng sản phẩm được đề xuất bên dưới, tất cả đã được chọn sẵn trong đơn, bạn có thể bỏ bớt nếu muốn.</p>
+        <div class="page-head" style="margin:24px 0 12px;"><h2 style="font-size:18px;">Sản phẩm Unicity phù hợp với bạn</h2></div>
+        <p style="font-size:15px;color:var(--ink-soft);margin:-8px 0 14px;line-height:1.6;">✨ Dựa trên các dấu hiệu bạn vừa chọn, đây là những sản phẩm Unicity phù hợp nhất để hỗ trợ đúng vấn đề của bạn ngay từ hôm nay — xem lý do vì sao từng sản phẩm được đề xuất bên dưới, tất cả đã được chọn sẵn trong đơn, bạn có thể bỏ bớt nếu muốn.</p>
         ${productMatches.map(p=>skProductOrderRowHtml(p, !state.deselected.has(p.id), state.quantities[p.id]||1)).join('')}
 
         <div style="position:sticky;bottom:14px;margin-top:16px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:13.5px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
+            <div style="font-size:15px;">Đơn hàng: <b>${cartChosen.length}</b> sản phẩm · ${cartPv} PV · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);">${cartTotal.toLocaleString('vi-VN')}đ</span></div>
             <div style="display:flex;gap:8px;">
               <span class="btn-ghost btn btn-sm" id="sk-toggle-all">${cartChosen.length>0 ? 'Bỏ chọn hết' : 'Chọn lại tất cả'}</span>
               ${isGuest

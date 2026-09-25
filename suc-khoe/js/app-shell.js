@@ -33,11 +33,11 @@ function sidebarFootHtml(){
   const initial = name.charAt(0).toUpperCase();
   const avatarHtml = (p && p.avatar_url)
     ? `<img src="${p.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
-    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${esc(initial)}</div>`;
+    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15.5px;flex-shrink:0;">${esc(initial)}</div>`;
   return `
     <div style="display:flex;align-items:center;gap:8px;">
       ${avatarHtml}
-      <div style="min-width:0;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+      <div style="min-width:0;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
     </div>
   `;
 }
@@ -151,7 +151,7 @@ function renderGuestCheckScreen(){
     <div style="max-width:720px;margin:0 auto;padding:24px 16px 60px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <img src="assets/logo-hieu-manh.png" alt="" style="height:34px;" onerror="this.style.display='none'">
-        <span id="guest-login-link" style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;">Đã có tài khoản? Đăng nhập</span>
+        <span id="guest-login-link" style="font-size:15px;color:var(--accent);cursor:pointer;font-weight:600;">Đã có tài khoản? Đăng nhập</span>
       </div>
       <div id="guest-check-mount"></div>
     </div>
@@ -193,7 +193,7 @@ function renderAuthScreen(err, successMsg){
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
       </div>
-      <div id="guest-back-link" style="margin-top:14px;font-size:13px;color:var(--ink-soft);cursor:pointer;">← Quay lại Kiểm Tra Sức Khỏe</div>
+      <div id="guest-back-link" style="margin-top:14px;font-size:14.5px;color:var(--ink-soft);cursor:pointer;">← Quay lại Kiểm Tra Sức Khỏe</div>
     </div>
   `;
 
