@@ -154,9 +154,15 @@ function render(container, ctx){
     // 2026-09-25: bỏ margin âm bào ra mép thẻ (từng cần khi step nằm trực tiếp trong .card) — giờ mỗi
     // nhóm step nằm trong 1 khối nền trắng RIÊNG (xem slot() ở dailyScheduleHtml), padding/viền tự lo
     // trong khối đó nên step chỉ cần đệm ngang bình thường + gạch dưới ngăn cách các sản phẩm.
+    // 2026-09-25, chị Quỳnh: "chưa thấy hình bữa ăn này" — step không gắn sản phẩm (product_name rỗng,
+    // VD "Bữa tối: ăn bình thường theo quy tắc nắm bàn tay") trước đây chỉ hiện icon 🍽️ chung chung.
+    // Dùng luôn ảnh đĩa ăn 4-3-2-1 thật (vừa thêm ở mục Ăn Uống) cho đúng loại step này — minh hoạ
+    // trực quan đúng ý "quy tắc nắm bàn tay" đang nhắc tới, không phải icon vô nghĩa nữa.
     return `
       <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line);${isPriority?'background:#fff8ec;':''}">
-        ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:19px;">🍽️</div>`}
+        ${p && p.image_url ? `<img src="${esc(p.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">`
+          : !step.product_name ? `<img src="assets/dia-an-4-3-2-1.jpg" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;">`
+          : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface-soft,#f5f5f5);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:19px;">🍽️</div>`}
         <div style="flex:1;min-width:0;">
           ${step.product_name ? `<div style="font-weight:700;font-size:15px;">${esc(step.product_name)}${isPriority ? ` <span style="font-size:11.5px;font-weight:700;color:#fff;background:#e8643c;border-radius:5px;padding:2px 6px;vertical-align:middle;">⭐ Ưu tiên mua trước</span>` : ''}</div>` : ''}
           <div style="font-size:14.5px;color:var(--ink-soft);margin-top:2px;line-height:1.6;">${esc(shownInstruction||'')}</div>
