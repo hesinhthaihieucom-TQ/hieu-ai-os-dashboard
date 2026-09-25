@@ -32,7 +32,7 @@ function confirmModal(message, confirmLabel){
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.innerHTML = `
       <div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.4);text-align:center;" onclick="event.stopPropagation();">
-        <div style="font-size:15px;line-height:1.6;color:var(--ink);margin-bottom:20px;">${esc(message)}</div>
+        <div style="font-size:16.5px;line-height:1.6;color:var(--ink);margin-bottom:20px;">${esc(message)}</div>
         <div style="display:flex;gap:10px;justify-content:center;">
           <span class="btn-ghost btn btn-sm" data-confirm-cancel="1">Huỷ</span>
           <button class="btn btn-sm" style="background:var(--danger);" data-confirm-ok="1">${esc(confirmLabel||'Xác nhận xoá')}</button>
@@ -57,12 +57,12 @@ function openTextModal(title, body, imageDataUrl){
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4);" onclick="event.stopPropagation();">
       <div style="padding:18px 20px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <h3 style="margin:0;font-size:16px;">${esc(title||'Bài viết')}</h3>
+        <h3 style="margin:0;font-size:17px;">${esc(title||'Bài viết')}</h3>
         <span data-close-text-modal="1" style="cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;">&times;</span>
       </div>
       <div style="padding:16px 20px;overflow-y:auto;">
         ${imageDataUrl?`<img src="${imageDataUrl}" alt="Ảnh AI tạo cho bài này" style="width:100%;border-radius:10px;margin-bottom:14px;display:block;">`:''}
-        <div style="white-space:pre-line;font-size:14.5px;line-height:1.7;">${esc(body||'')}</div>
+        <div style="white-space:pre-line;font-size:16px;line-height:1.7;">${esc(body||'')}</div>
       </div>
       <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-sm" data-copy-text-modal="1">Copy nội dung</button>
@@ -191,7 +191,7 @@ function collapsibleTextHtml(key, rawText, expandedIds, renderFn, maxLen){
   const needsToggle = text.length > preview.length;
   const shown = isExpanded ? text : preview;
   const toggle = needsToggle
-    ? `<span data-toggle-full="${esc(key)}" style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;">${isExpanded?'Thu gọn ↑':'Đọc thêm →'}</span>`
+    ? `<span data-toggle-full="${esc(key)}" style="display:inline-block;margin-top:6px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;">${isExpanded?'Thu gọn ↑':'Đọc thêm →'}</span>`
     : '';
   return `${renderFn(shown)}${toggle}`;
 }
@@ -287,7 +287,7 @@ function progressBarHtml(percent){
   return `<div style="width:100%;max-width:280px;margin:0 auto;height:8px;border-radius:999px;background:var(--line);overflow:hidden;">
     <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:999px;"></div>
   </div>
-  <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);font-weight:600;">${Math.round(pct)}%</div>`;
+  <div style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--accent);font-weight:600;">${Math.round(pct)}%</div>`;
 }
 function animateProgressBar(el, estimatedSeconds){
   if(!el) return ()=>{};

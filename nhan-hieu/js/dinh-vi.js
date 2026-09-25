@@ -143,11 +143,11 @@ function render(container, ctx){
       `;
     }
     return `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
-        <div><b>${esc(a.label)}</b>${a.kind!=='cong_dong'?` <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>`:''}${a.url?`<br><span style="color:var(--ink-soft);font-size:12px;">${esc(a.url)}</span>`:''}${a.cta_mau?`<br><span style="color:var(--ink-soft);font-size:12px;font-style:italic;">CTA mẫu: "${esc(a.cta_mau)}"</span>`:''}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px;">
+        <div><b>${esc(a.label)}</b>${a.kind!=='cong_dong'?` <span style="color:var(--ink-soft);">(${esc(ASSET_KINDS[a.kind]||a.kind||'')})</span>`:''}${a.url?`<br><span style="color:var(--ink-soft);font-size:13.5px;">${esc(a.url)}</span>`:''}${a.cta_mau?`<br><span style="color:var(--ink-soft);font-size:13.5px;font-style:italic;">CTA mẫu: "${esc(a.cta_mau)}"</span>`:''}</div>
         <div style="display:flex;gap:12px;">
-          <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-asset="${a.id}">Sửa</span>
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-asset="${a.id}">Xoá</span>
+          <span style="color:var(--accent);cursor:pointer;font-size:13.5px;" data-edit-asset="${a.id}">Sửa</span>
+          <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-del-asset="${a.id}">Xoá</span>
         </div>
       </div>
     `;
@@ -235,11 +235,11 @@ function render(container, ctx){
       <div class="btn-row" style="justify-content:center;align-items:center;margin-top:14px;">
         <button class="btn" data-action="view-results">Xem kết quả →</button>
         <button class="btn-ghost btn" data-action="redo-from-done" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':'Sửa lại câu trả lời'}</button>
-        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>`:''}
+        ${!state.reconstructingAnswers?`<span style="font-size:12.5px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>`:''}
       </div>
       ${state.error?`<div class="error-box" style="margin-top:14px;">${esc(state.error)}</div>`:''}
       <div style="text-align:center;margin-top:18px;">
-        <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Có bản kết quả Định Vị khác muốn dùng thay? Dán vào đây thay vì trả lời lại 16 câu →</span>
+        <span style="color:var(--ink-soft);font-size:15px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Có bản kết quả Định Vị khác muốn dùng thay? Dán vào đây thay vì trả lời lại 16 câu →</span>
       </div>
     `;
   }
@@ -248,7 +248,7 @@ function render(container, ctx){
     return `<div class="loading">
       ${state.error ? '' : (showWaitHint ? `<div id="progress-bar-el">${progressBarHtml(0)}</div>` : `<div class="spinner"></div>`)}
       <p style="margin-top:14px;">${esc(msg)}</p>
-      ${showWaitHint?`<p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">AI cần khoảng 1-2 phút để xử lý — đừng thoát trang, cứ để chờ nhé.</p>`:''}
+      ${showWaitHint?`<p style="color:var(--ink-soft);font-size:14.5px;margin-top:6px;">AI cần khoảng 1-2 phút để xử lý — đừng thoát trang, cứ để chờ nhé.</p>`:''}
       ${state.error?`<div class="error-box">${esc(state.error)}</div><div class="btn-row"><button class="btn" data-action="retry">Thử lại</button></div>`:''}
     </div>`;
   }
@@ -271,18 +271,18 @@ function render(container, ctx){
         <div class="tag">Bước 1 · Định Vị</div>
         <h1>Tìm ra định vị thương hiệu chuẩn nhất</h1>
         <p>Trả lời thật 16 câu hỏi trong 5 nhóm — mất khoảng 9-11 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>
-        <p style="color:var(--accent);font-size:13.5px;font-weight:600;margin-top:6px;">💡 Nên trả lời kỹ, thật ngay từ đầu — mỗi lần bấm "Sửa lại câu trả lời" để làm lại sẽ tính thêm 8 lượt AI trong số lượt dùng thử của bạn.</p>
+        <p style="color:var(--accent);font-size:15px;font-weight:600;margin-top:6px;">💡 Nên trả lời kỹ, thật ngay từ đầu — mỗi lần bấm "Sửa lại câu trả lời" để làm lại sẽ tính thêm 8 lượt AI trong số lượt dùng thử của bạn.</p>
       </div>
       <div class="source-grid">
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
       </div>
       <div class="btn-row" style="align-items:center;">
         <button class="btn" data-action="start" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':(hasSaved?'Sửa lại câu trả lời':'Bắt đầu')}</button>
-        ${!state.reconstructingAnswers?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>`:''}
+        ${!state.reconstructingAnswers?`<span style="font-size:12.5px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>`:''}
         ${hasSaved?`<button class="btn-ghost btn" data-action="view-saved">Xem định vị đã lưu</button>`:''}
       </div>
       <div style="text-align:center;margin-top:18px;">
-        <span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Đã có kết quả Định Vị rồi? Dán vào đây thay vì làm lại →</span>
+        <span style="color:var(--ink-soft);font-size:15px;cursor:pointer;text-decoration:underline;" data-action="go-paste">Đã có kết quả Định Vị rồi? Dán vào đây thay vì làm lại →</span>
       </div>
     `;
   }
@@ -297,7 +297,7 @@ function render(container, ctx){
       <div class="card">
         <textarea id="paste-input" style="min-height:260px;" placeholder="Dán nguyên văn kết quả định vị vào đây...">${esc(state.pasteText)}</textarea>
         <div class="btn-row">
-          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 6 lượt AI)</span>
+          <button class="btn" data-action="submit-paste" ${state.pasteLoading?'disabled':''}>${state.pasteLoading?'Đang xử lý…':'Xử lý kết quả đã dán'}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 6 lượt AI)</span>
           <button class="btn-ghost btn" data-action="back-to-intro">← Quay lại</button>
         </div>
         ${state.pasteError?`<div class="error-box">${esc(state.pasteError)}</div>`:''}
@@ -317,7 +317,7 @@ function render(container, ctx){
       const suggestUsed = (state.suggestCounts[q.id]||0) >= SUGGEST_LIMIT_PER_QUESTION;
       inputHtml = `<textarea id="qinput" placeholder="${esc(q.placeholder||'Trả lời thật, càng cụ thể càng tốt...')}">${esc(val||'')}</textarea>
         <div class="hint-box" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div style="font-size:12.5px;line-height:1.5;">✍️ Trả lời càng chi tiết, càng nhiều dữ liệu thật (mốc thời gian, con số, cảm xúc, tình huống cụ thể...) thì Định Vị và content sau này AI viết ra sẽ càng đúng, càng hay — đừng trả lời qua loa cho xong.</div>
+          <div style="font-size:14px;line-height:1.5;">✍️ Trả lời càng chi tiết, càng nhiều dữ liệu thật (mốc thời gian, con số, cảm xúc, tình huống cụ thể...) thì Định Vị và content sau này AI viết ra sẽ càng đúng, càng hay — đừng trả lời qua loa cho xong.</div>
           <button class="btn btn-sm" style="flex-shrink:0;" data-action="suggest" ${(state.suggestLoading||suggestUsed)?'disabled':''}>${state.suggestLoading?'Đang nghĩ ví dụ…':suggestUsed?'Đã xem gợi ý cho câu này':'💡 Xem gợi ý cụ thể'}</button>
         </div>`;
       if(state.suggestForQ===state.qIndex){
@@ -327,8 +327,8 @@ function render(container, ctx){
           suggestHtml = `<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
             ${state.suggestions.map((s,i)=>`
               <div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--accent-soft);">
-                <div style="font-size:13.5px;line-height:1.6;color:var(--ink);">${esc(s)}</div>
-                <span style="display:inline-block;margin-top:8px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-use-suggestion="${i}">Dùng làm gợi ý →</span>
+                <div style="font-size:15px;line-height:1.6;color:var(--ink);">${esc(s)}</div>
+                <span style="display:inline-block;margin-top:8px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-use-suggestion="${i}">Dùng làm gợi ý →</span>
               </div>
             `).join('')}
           </div>`;
@@ -346,25 +346,25 @@ function render(container, ctx){
       <div class="progress-groups" style="display:flex;gap:6px;margin-bottom:10px;">
         ${GROUPS.map((g,i)=>`<span style="flex:1;height:5px;border-radius:3px;background:${i<groupIndex?'var(--accent)':i===groupIndex?'var(--gold)':'var(--line)'};"></span>`).join('')}
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
         <span>NHÓM ${groupIndex+1}/5 · ${esc(GROUPS[groupIndex].title)}</span>
         <span>Câu ${state.qIndex+1}/${QUESTIONS.length}</span>
       </div>
       <div class="card">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold);margin-bottom:10px;">CÂU ${state.qIndex+1}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:var(--gold);margin-bottom:10px;">CÂU ${state.qIndex+1}</div>
         <h2 style="font-size:21px;line-height:1.4;">${esc(q.q)}</h2>
-        ${q.helper?`<div style="margin-top:10px;font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${esc(q.helper)}</div>`:''}
+        ${q.helper?`<div style="margin-top:10px;font-size:15px;color:var(--ink-soft);line-height:1.55;">${esc(q.helper)}</div>`:''}
         ${inputHtml}
         ${suggestHtml}
       </div>
       <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
-        ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
-        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:11px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>':''}
+        ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:15px;cursor:pointer;" data-action="back">← Câu trước</span>` : `<span></span>`}
+        <button class="btn" data-action="next" ${answered?'':'disabled'}>${state.qIndex===QUESTIONS.length-1?'Xem kết quả':'Tiếp tục'}</button>${state.qIndex===QUESTIONS.length-1?' <span style="font-size:12.5px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>':''}
       </div>
       ${state.qIndex < QUESTIONS.length-1 && quickStartReady(state.answers) ? `
       <div style="text-align:center;margin-top:16px;">
-        <span style="color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;" data-action="quick-finish">✋ Trả lời vậy đủ rồi, xem kết quả ngay →</span>
-        <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Bỏ qua các câu còn lại — kết quả sẽ chung chung hơn ở vài mục, nhưng sau đó tự sửa/bổ sung trực tiếp bất cứ mục nào cũng được, miễn phí, không tốn thêm lượt.</div>
+        <span style="color:var(--accent);font-size:14.5px;font-weight:600;cursor:pointer;" data-action="quick-finish">✋ Trả lời vậy đủ rồi, xem kết quả ngay →</span>
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Bỏ qua các câu còn lại — kết quả sẽ chung chung hơn ở vài mục, nhưng sau đó tự sửa/bổ sung trực tiếp bất cứ mục nào cũng được, miễn phí, không tốn thêm lượt.</div>
       </div>
       ` : ''}
     `;
@@ -409,7 +409,7 @@ function render(container, ctx){
     return `<div class="section${highlight?' highlight':''}">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <h3 style="margin-bottom:0;">${esc(field.title)}</h3>
-        ${!isEditing ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-edit-section="${fieldKey}">✏️ Sửa</span>` : ''}
+        ${!isEditing ? `<span style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-edit-section="${fieldKey}">✏️ Sửa</span>` : ''}
       </div>
       ${isEditing ? `
         <div style="margin-top:14px;">
@@ -418,10 +418,10 @@ function render(container, ctx){
           <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
             <button class="btn btn-sm" data-action="save-section" ${state.editSectionSaving?'disabled':''}>${state.editSectionSaving?'Đang lưu…':'Lưu'}</button>
             <span class="btn-ghost btn btn-sm" data-action="cancel-edit-section">Huỷ</span>
-            <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Miễn phí, không tốn lượt AI.</span>
+            <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">Miễn phí, không tốn lượt AI.</span>
           </div>
         </div>
-      ` : `<div style="margin-top:${highlight?'6':'10'}px;">${collapsibleTextHtml('sec:'+fieldKey, body, state.expandedIds, t=>`<div class="body"${serif?` style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;line-height:1.6;"`:''}>${escBold(breakSentences(t))}</div>`)}</div>`}
+      ` : `<div style="margin-top:${highlight?'6':'10'}px;">${collapsibleTextHtml('sec:'+fieldKey, body, state.expandedIds, t=>`<div class="body"${serif?` style="font-family:'Playfair Display',serif;font-size:19px;font-style:italic;line-height:1.6;"`:''}>${escBold(breakSentences(t))}</div>`)}</div>`}
     </div>`;
   }
   async function saveSection(){
@@ -505,34 +505,34 @@ function render(container, ctx){
       ${incompleteCount>0 ? `
       <div class="card" style="margin-bottom:14px;border-color:var(--gold);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap;">
-          <b style="font-size:13.5px;">📝 Định vị mới trả lời ${answeredCount}/${QUESTIONS.length} câu</b>
-          <span style="font-size:11px;color:var(--ink-soft);">${Math.round(answeredCount/QUESTIONS.length*100)}%</span>
+          <b style="font-size:15px;">📝 Định vị mới trả lời ${answeredCount}/${QUESTIONS.length} câu</b>
+          <span style="font-size:12.5px;color:var(--ink-soft);">${Math.round(answeredCount/QUESTIONS.length*100)}%</span>
         </div>
         <div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:10px;">
           <div style="height:100%;background:var(--gold);width:${Math.round(answeredCount/QUESTIONS.length*100)}%;"></div>
         </div>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Còn ${incompleteCount} câu chưa trả lời — AI càng hiểu bạn kỹ thì content viết ra sau này càng đúng chất giọng và câu chuyện thật của bạn. Trả lời tiếp lúc nào rảnh — không cần gõ lại các câu đã trả lời, nhưng khi bấm "Xem kết quả" ở cuối sẽ chạy lại AI để ra bản đầy đủ hơn (tính thêm 8 lượt, giống "Sửa lại câu trả lời").</div>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Còn ${incompleteCount} câu chưa trả lời — AI càng hiểu bạn kỹ thì content viết ra sau này càng đúng chất giọng và câu chuyện thật của bạn. Trả lời tiếp lúc nào rảnh — không cần gõ lại các câu đã trả lời, nhưng khi bấm "Xem kết quả" ở cuối sẽ chạy lại AI để ra bản đầy đủ hơn (tính thêm 8 lượt, giống "Sửa lại câu trả lời").</div>
         <button class="btn btn-sm" data-action="continue-unanswered">Trả lời tiếp câu còn thiếu →</button>
       </div>
       ` : ''}
       <div class="card" style="margin-bottom:14px;background:var(--accent-soft);text-align:center;">
         <h3 style="margin-bottom:6px;">✅ Định vị xong rồi — bước tiếp theo</h3>
-        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">Qua mục Lịch Đăng Bài để bắt đầu lên lịch — bấm "❓ Hướng dẫn" ở đó để xem cách dùng từng bước.</div>
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:12px;">Qua mục Lịch Đăng Bài để bắt đầu lên lịch — bấm "❓ Hướng dẫn" ở đó để xem cách dùng từng bước.</div>
         <button class="btn" data-action="go-lich-dang">Sang Lịch Đăng Bài →</button>
       </div>
       <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên kênh Facebook/TikTok</label>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Lưu 1 lần ở đây — Viết Content sẽ tự lấy tên kênh này để ghép hashtag, khỏi phải nhập lại mỗi bài.</div>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tên kênh Facebook/TikTok</label>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:8px;">Lưu 1 lần ở đây — Viết Content sẽ tự lấy tên kênh này để ghép hashtag, khỏi phải nhập lại mỗi bài.</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <textarea id="channel-handle-input" style="min-height:auto;height:40px;flex:1;min-width:200px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
           <button class="btn btn-sm" data-action="save-channel-handle" ${state.channelSaving?'disabled':''}>${state.channelSaving?'Đang lưu…':'Lưu'}</button>
         </div>
-        ${state.channelSaved?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">Đã lưu ✓</div>`:''}
+        ${state.channelSaved?`<div style="margin-top:8px;font-size:14px;color:var(--accent);">Đã lưu ✓</div>`:''}
       </div>
       <div class="card" style="margin-top:14px;">
         <h3 style="margin-bottom:6px;">Thương hiệu</h3>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Nếu bạn có nhiều thương hiệu khác tên kênh (ví dụ: Hiểu Hạnh, Hiểu Mạnh, Hiểu Kênh tuỳ content) — thêm hết ở đây, mỗi bài Viết Content sẽ cho chọn dùng đúng thương hiệu nào.</div>
-        ${state.brands.length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có thương hiệu nào.</div>`:''}
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Nếu bạn có nhiều thương hiệu khác tên kênh (ví dụ: Hiểu Hạnh, Hiểu Mạnh, Hiểu Kênh tuỳ content) — thêm hết ở đây, mỗi bài Viết Content sẽ cho chọn dùng đúng thương hiệu nào.</div>
+        ${state.brands.length===0?`<div style="color:var(--ink-soft);font-size:15px;margin-bottom:10px;">Chưa có thương hiệu nào.</div>`:''}
         ${state.brands.map(b=>{
           if(state.editingBrandId===b.id){
             return `
@@ -544,11 +544,11 @@ function render(container, ctx){
             `;
           }
           return `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px;">
             <b>${esc(b.name)}</b>
             <div style="display:flex;gap:12px;">
-              <span style="color:var(--accent);cursor:pointer;font-size:12px;" data-edit-brand="${b.id}">Sửa</span>
-              <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-brand="${b.id}">Xoá</span>
+              <span style="color:var(--accent);cursor:pointer;font-size:13.5px;" data-edit-brand="${b.id}">Sửa</span>
+              <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-del-brand="${b.id}">Xoá</span>
             </div>
           </div>
         `;
@@ -560,8 +560,8 @@ function render(container, ctx){
       </div>
       <div class="card" style="margin-top:14px;">
         <h3 style="margin-bottom:6px;">Cộng đồng / Group</h3>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Group/cộng đồng riêng (Facebook, Zalo, Telegram...) — lưu 1 lần ở đây kèm link đầy đủ, để Viết Content/Đẩy Bài tự gợi ý mời đúng người vào đúng group.</div>
-        ${communityAssets().length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có cộng đồng/group nào.</div>`:''}
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Group/cộng đồng riêng (Facebook, Zalo, Telegram...) — lưu 1 lần ở đây kèm link đầy đủ, để Viết Content/Đẩy Bài tự gợi ý mời đúng người vào đúng group.</div>
+        ${communityAssets().length===0?`<div style="color:var(--ink-soft);font-size:15px;margin-bottom:10px;">Chưa có cộng đồng/group nào.</div>`:''}
         ${communityAssets().map(a=>assetRowHtml(a)).join('')}
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
           <textarea id="ng-label" style="min-height:auto;height:40px;" placeholder="Tên group, ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.newGroup.label)}</textarea>
@@ -572,8 +572,8 @@ function render(container, ctx){
       </div>
       <div class="card" style="margin-top:14px;">
         <h3 style="margin-bottom:10px;">Tài sản quảng bá</h3>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Sản phẩm số, khoá học, link aff — lưu 1 lần ở đây, dùng lại ở Viết Content và Đẩy Bài &amp; CTA Comment.</div>
-        ${promoAssets().length===0?`<div style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px;">Chưa có tài sản nào.</div>`:''}
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Sản phẩm số, khoá học, link aff — lưu 1 lần ở đây, dùng lại ở Viết Content và Đẩy Bài &amp; CTA Comment.</div>
+        ${promoAssets().length===0?`<div style="color:var(--ink-soft);font-size:15px;margin-bottom:10px;">Chưa có tài sản nào.</div>`:''}
         ${promoAssets().map(a=>assetRowHtml(a)).join('')}
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
           <textarea id="na-label" style="min-height:auto;height:40px;" placeholder="Tên tài sản, ví dụ: Khoá học Sổ Dòng Tiền">${esc(state.newAsset.label)}</textarea>
@@ -599,7 +599,7 @@ function render(container, ctx){
         return `<div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin-bottom:0;">Câu chuyện cá nhân</h3>
-            ${!state.editingStory ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-story">✏️ Sửa trực tiếp</span>` : ''}
+            ${!state.editingStory ? `<span style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-story">✏️ Sửa trực tiếp</span>` : ''}
           </div>
           ${state.editingStory ? `
             <div style="margin-top:14px;">
@@ -608,7 +608,7 @@ function render(container, ctx){
               <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
                 <button class="btn btn-sm" data-action="save-story-manual" ${state.editStorySaving?'disabled':''}>${state.editStorySaving?'Đang lưu…':'Lưu'}</button>
                 <span class="btn-ghost btn btn-sm" data-action="cancel-edit-story">Huỷ</span>
-                <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Sửa trực tiếp — miễn phí, không tốn lượt AI.</span>
+                <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">Sửa trực tiếp — miễn phí, không tốn lượt AI.</span>
               </div>
             </div>
           ` : `<div style="margin-top:10px;">${collapsibleTextHtml('cau-chuyen-ca-nhan', cc.cau_chuyen, state.expandedIds, t=>`<div class="body">${escBold(breakSentences(t))}</div>`)}</div>`}
@@ -617,14 +617,14 @@ function render(container, ctx){
               <div style="margin-bottom:10px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu dưới đây rồi bấm <b>"Cập nhật câu chuyện"</b> để AI viết lại mượt hơn, hoặc bấm "Sửa trực tiếp" ở trên để tự gõ, không cần làm lại cả Định Vị:</div>
               ${cc.cau_hoi_lam_ro.map((q,i)=>`
                 <div style="margin-bottom:10px;">
-                  <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">${esc(q)}</label>
+                  <label style="display:block;font-size:14.5px;font-weight:600;margin-bottom:4px;">${esc(q)}</label>
                   <textarea data-story-bs="${i}" style="min-height:auto;height:48px;background:var(--panel);">${esc(state.storyBoSung[i]||'')}</textarea>
                 </div>
               `).join('')}
               ${state.storyUpdateError?`<div class="error-box" style="margin-bottom:10px;">${esc(state.storyUpdateError)}</div>`:''}
               <div class="btn-row" style="margin-top:4px;justify-content:flex-start;">
                 <button class="btn btn-sm" data-action="update-story" ${state.storyUpdating?'disabled':''}>${state.storyUpdating?'Đang cập nhật…':'Cập nhật câu chuyện'}</button>
-                <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI — rẻ hơn nhiều so với làm lại cả Định Vị)</span>
+                <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI — rẻ hơn nhiều so với làm lại cả Định Vị)</span>
               </div>
             </div>
           ` : ''}
@@ -641,24 +641,24 @@ function render(container, ctx){
         return `<div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin-bottom:0;">Dấu ấn hình ảnh thương hiệu</h3>
-            ${!state.editingDauAn ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-dau-an">✏️ Sửa</span>` : ''}
+            ${!state.editingDauAn ? `<span style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-dau-an">✏️ Sửa</span>` : ''}
           </div>
           ${state.editingDauAn ? `
             <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
-              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Hành động đặc trưng</label><textarea data-dauan-field="hanh_dong_dac_trung" style="min-height:auto;height:40px;">${esc(state.editDauAn.hanh_dong_dac_trung)}</textarea></div>
-              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Đồ vật/prop</label><textarea data-dauan-field="do_vat_prop" style="min-height:auto;height:40px;">${esc(state.editDauAn.do_vat_prop)}</textarea></div>
-              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Không gian</label><textarea data-dauan-field="khong_gian_signature" style="min-height:auto;height:40px;">${esc(state.editDauAn.khong_gian_signature)}</textarea></div>
-              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Phong cách</label><textarea data-dauan-field="phong_cach_xuat_hien" style="min-height:auto;height:40px;">${esc(state.editDauAn.phong_cach_xuat_hien)}</textarea></div>
-              <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Góc quay POV</label><textarea data-dauan-field="goc_quay_pov" style="min-height:auto;height:40px;">${esc(state.editDauAn.goc_quay_pov)}</textarea></div>
+              <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Hành động đặc trưng</label><textarea data-dauan-field="hanh_dong_dac_trung" style="min-height:auto;height:40px;">${esc(state.editDauAn.hanh_dong_dac_trung)}</textarea></div>
+              <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Đồ vật/prop</label><textarea data-dauan-field="do_vat_prop" style="min-height:auto;height:40px;">${esc(state.editDauAn.do_vat_prop)}</textarea></div>
+              <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Không gian</label><textarea data-dauan-field="khong_gian_signature" style="min-height:auto;height:40px;">${esc(state.editDauAn.khong_gian_signature)}</textarea></div>
+              <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Phong cách</label><textarea data-dauan-field="phong_cach_xuat_hien" style="min-height:auto;height:40px;">${esc(state.editDauAn.phong_cach_xuat_hien)}</textarea></div>
+              <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Góc quay POV</label><textarea data-dauan-field="goc_quay_pov" style="min-height:auto;height:40px;">${esc(state.editDauAn.goc_quay_pov)}</textarea></div>
               <div>
-                <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Cảnh mở đầu (mỗi dòng 1 ý)</label>
+                <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Cảnh mở đầu (mỗi dòng 1 ý)</label>
                 ${state.editDauAn.canh_mo_dau.map((c,i)=>`
                   <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
-                    <input data-dauan-canh="${i}" value="${esc(c)}" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
-                    <span data-dauan-canh-remove="${i}" style="color:var(--danger);cursor:pointer;font-size:12px;">Xoá</span>
+                    <input data-dauan-canh="${i}" value="${esc(c)}" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;">
+                    <span data-dauan-canh-remove="${i}" style="color:var(--danger);cursor:pointer;font-size:13.5px;">Xoá</span>
                   </div>
                 `).join('')}
-                <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="add-dauan-canh">+ Thêm cảnh</span>
+                <span style="font-size:14px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="add-dauan-canh">+ Thêm cảnh</span>
               </div>
               ${state.editDauAnError?`<div class="error-box">${esc(state.editDauAnError)}</div>`:''}
               <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
@@ -686,14 +686,14 @@ function render(container, ctx){
           return `<div class="section">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <h3 style="margin-bottom:0;">Nỗi đau &amp; rào cản (4 tầng)</h3>
-              ${!state.editingNoiDau ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-noi-dau">✏️ Sửa</span>` : ''}
+              ${!state.editingNoiDau ? `<span style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-noi-dau">✏️ Sửa</span>` : ''}
             </div>
             ${state.editingNoiDau ? `
               <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
-                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Bề mặt</label><textarea data-noidau-field="be_mat" style="min-height:auto;height:48px;">${esc(state.editNoiDau.be_mat)}</textarea></div>
-                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Sâu bên trong</label><textarea data-noidau-field="sau_ben_trong" style="min-height:auto;height:48px;">${esc(state.editNoiDau.sau_ben_trong)}</textarea></div>
-                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Nỗi sợ</label><textarea data-noidau-field="noi_so" style="min-height:auto;height:48px;">${esc(state.editNoiDau.noi_so)}</textarea></div>
-                <div><label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Rào cản</label><textarea data-noidau-field="rao_can_chua_hanh_dong" style="min-height:auto;height:48px;">${esc(state.editNoiDau.rao_can_chua_hanh_dong)}</textarea></div>
+                <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Bề mặt</label><textarea data-noidau-field="be_mat" style="min-height:auto;height:48px;">${esc(state.editNoiDau.be_mat)}</textarea></div>
+                <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Sâu bên trong</label><textarea data-noidau-field="sau_ben_trong" style="min-height:auto;height:48px;">${esc(state.editNoiDau.sau_ben_trong)}</textarea></div>
+                <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Nỗi sợ</label><textarea data-noidau-field="noi_so" style="min-height:auto;height:48px;">${esc(state.editNoiDau.noi_so)}</textarea></div>
+                <div><label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Rào cản</label><textarea data-noidau-field="rao_can_chua_hanh_dong" style="min-height:auto;height:48px;">${esc(state.editNoiDau.rao_can_chua_hanh_dong)}</textarea></div>
                 ${state.editNoiDauError?`<div class="error-box">${esc(state.editNoiDauError)}</div>`:''}
                 <div class="btn-row" style="margin-top:0;justify-content:flex-start;">
                   <button class="btn btn-sm" data-action="save-noi-dau" ${state.editNoiDauSaving?'disabled':''}>${state.editNoiDauSaving?'Đang lưu…':'Lưu'}</button>
@@ -708,21 +708,21 @@ function render(container, ctx){
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin-bottom:0;">Hệ trục nội dung</h3>
-            ${!state.editingTruc ? `<span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-truc">✏️ Không hài lòng? Tự sửa</span>` : ''}
+            ${!state.editingTruc ? `<span style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="edit-truc">✏️ Không hài lòng? Tự sửa</span>` : ''}
           </div>
           ${state.editingTruc ? `
             <div style="margin-top:14px;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Trục chính</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Trục chính</label>
               <textarea id="edit-truc-chinh" style="min-height:auto;height:44px;">${esc(state.editTrucChinh)}</textarea>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 8px;">Trục phụ (bổ trợ)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin:14px 0 8px;">Trục phụ (bổ trợ)</label>
               ${state.editTruPhu.map((t,i)=>`
                 <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;flex-wrap:wrap;">
-                  <input data-edit-truphu-ten="${i}" value="${esc(t.ten)}" placeholder="Tên trục phụ" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
-                  <input data-edit-truphu-vaitro="${i}" value="${esc(t.vai_tro)}" placeholder="Vai trò" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
-                  <span data-edit-truphu-remove="${i}" style="align-self:center;color:var(--danger);cursor:pointer;font-size:12px;">Xoá</span>
+                  <input data-edit-truphu-ten="${i}" value="${esc(t.ten)}" placeholder="Tên trục phụ" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;">
+                  <input data-edit-truphu-vaitro="${i}" value="${esc(t.vai_tro)}" placeholder="Vai trò" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;">
+                  <span data-edit-truphu-remove="${i}" style="align-self:center;color:var(--danger);cursor:pointer;font-size:13.5px;">Xoá</span>
                 </div>
               `).join('')}
-              <span style="font-size:12.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="add-truphu">+ Thêm trục phụ</span>
+              <span style="font-size:14px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="add-truphu">+ Thêm trục phụ</span>
               ${state.editTrucError?`<div class="error-box" style="margin-top:10px;">${esc(state.editTrucError)}</div>`:''}
               <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
                 <button class="btn btn-sm" data-action="save-truc" ${state.editTrucSaving?'disabled':''}>${state.editTrucSaving?'Đang lưu…':'Lưu'}</button>
@@ -737,13 +737,13 @@ function render(container, ctx){
             return `
             ${truc.cong_thuc?`<div class="body" style="margin-bottom:14px;color:var(--ink-soft);font-style:italic;">${escBold(truc.cong_thuc)}</div>`:''}
             <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
-              <div style="font-size:11px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
-              <div style="color:#fff;font-size:16px;font-weight:700;">${esc(truc.truc_chinh)}</div>
+              <div style="font-size:12.5px;font-weight:700;color:#DCEAE4;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
+              <div style="color:#fff;font-size:17px;font-weight:700;">${esc(truc.truc_chinh)}</div>
             </div>
-            <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
             ${(truc.tru_phu||[]).map(t=>`
               <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
-                <b>${esc(t.ten)}</b><br><span style="font-size:13px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
+                <b>${esc(t.ten)}</b><br><span style="font-size:14.5px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
               </div>
             `).join('')}
           `;})()}
@@ -761,11 +761,11 @@ function render(container, ctx){
             ${(Array.isArray(r2.lo_trinh_dan_ve_dong_tien)?r2.lo_trinh_dan_ve_dong_tien:[]).map((b,i,arr)=>`
               <div style="display:flex;align-items:center;">
                 <div style="min-width:140px;max-width:180px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);">
-                  <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Bước ${i+1}</div>
-                  <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${esc(b.buoc)}</div>
-                  <div style="font-size:12px;color:var(--ink-soft);line-height:1.4;">${esc(b.mo_ta)}</div>
+                  <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Bước ${i+1}</div>
+                  <div style="font-weight:700;font-size:15px;margin-bottom:4px;">${esc(b.buoc)}</div>
+                  <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.4;">${esc(b.mo_ta)}</div>
                 </div>
-                ${i<arr.length-1?`<div style="padding:0 8px;color:var(--ink-soft);font-size:18px;">→</div>`:''}
+                ${i<arr.length-1?`<div style="padding:0 8px;color:var(--ink-soft);font-size:19px;">→</div>`:''}
               </div>
             `).join('')}
           </div>

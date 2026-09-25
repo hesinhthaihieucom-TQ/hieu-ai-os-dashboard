@@ -50,9 +50,9 @@ function render(container, ctx){
       ` : ''}
 
       <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">1. Dán nguyên văn bài/video đang viral</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">1. Dán nguyên văn bài/video đang viral</label>
         <textarea id="viral-text" style="min-height:180px;" placeholder="Dán caption, kịch bản video, hoặc bài viết đang viral bạn muốn học theo...">${esc(state.viralText)}</textarea>
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="analyze" ${state.analyzing?'disabled':''}>${state.analyzing?'Đang phân tích…':(state.phanTich?'Phân tích lại':'Phân tích bài viral')}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI)</span></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="analyze" ${state.analyzing?'disabled':''}>${state.analyzing?'Đang phân tích…':(state.phanTich?'Phân tích lại':'Phân tích bài viral')}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI)</span></div>
         <div class="hint-box" style="margin-top:10px;">Chỉ mổ xẻ vì sao bài gốc viral trước — chọn tái chế thành gì sau khi có kết quả.</div>
         ${state.analyzeError?`<div class="error-box">${esc(state.analyzeError)}</div>`:''}
       </div>
@@ -74,27 +74,27 @@ function render(container, ctx){
     return `
       <div class="section highlight" style="margin-top:20px;"><h3>Vì sao bài gốc viral</h3>
         <div style="margin-bottom:14px;">
-          <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Yếu tố mở đầu khiến người đọc dừng lại</div>
+          <div style="font-size:14px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Yếu tố mở đầu khiến người đọc dừng lại</div>
           <div class="body">${formatAnalysisText(r.yeu_to_mo_dau)}</div>
         </div>
         <div style="margin-bottom:14px;">
-          <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Điểm cảm xúc mạnh nhất <span style="text-transform:none;font-weight:600;color:var(--ink-soft);">(cảm xúc: ${esc(r.loai_cam_xuc)})</span></div>
+          <div style="font-size:14px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Điểm cảm xúc mạnh nhất <span style="text-transform:none;font-weight:600;color:var(--ink-soft);">(cảm xúc: ${esc(r.loai_cam_xuc)})</span></div>
           <div class="body">${formatAnalysisText(r.diem_cam_xuc_manh_nhat)}</div>
         </div>
         <div>
-          <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Vì sao người đọc muốn share</div>
+          <div style="font-size:14px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Vì sao người đọc muốn share</div>
           <div class="body">${formatAnalysisText(r.ly_do_muon_share)}</div>
         </div>
       </div>
 
       <div class="card" style="margin-top:16px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề mới bạn muốn áp dụng</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề mới bạn muốn áp dụng</label>
         <textarea id="topic-text" style="min-height:auto;height:52px;" placeholder="Ví dụ: Sai lầm khiến dòng tiền cá nhân bị nghẽn">${esc(state.topic)}</textarea>
         ${!state.positioning ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
         ` : ''}
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bạn muốn tái chế thành gì?</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bạn muốn tái chế thành gì?</label>
         <div class="chips">
           <div class="chip ${state.recycleMode==='tieu_de'?'selected':''}" data-recycle-mode="tieu_de">10 tiêu đề mới</div>
           <div class="chip ${state.recycleMode==='bai_moi'?'selected':''}" data-recycle-mode="bai_moi">5 bài viết mới hoàn chỉnh</div>
@@ -111,20 +111,20 @@ function render(container, ctx){
     if(!state.recycleMode) return '';
     if(state.recycleMode==='tieu_de'){
       return `
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="fetch-titles" ${state.titlesLoading?'disabled':''}>${state.titlesLoading?'Đang tạo…':(state.titles?'Tạo lại 10 tiêu đề':'Tạo 10 tiêu đề mới →')}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI)</span></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="fetch-titles" ${state.titlesLoading?'disabled':''}>${state.titlesLoading?'Đang tạo…':(state.titles?'Tạo lại 10 tiêu đề':'Tạo 10 tiêu đề mới →')}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI)</span></div>
         ${state.titlesError?`<div class="error-box" style="margin-top:10px;">${esc(state.titlesError)}</div>`:''}
       `;
     }
     const done = state.posts.length >= TOTAL_POSTS;
     return `
-      ${!done ? `<div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="next-post" ${state.postsLoading?'disabled':''}>${state.postsLoading?'Đang viết…':(state.posts.length===0?'Viết bài đầu tiên →':`Viết bài tiếp theo (${state.posts.length+1}/${TOTAL_POSTS}) →`)}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI)</span></div>` : `<div class="hint-box" style="margin-top:14px;">Đã viết đủ ${TOTAL_POSTS} bài — xem bên dưới, bấm "Lưu vào Kho Content" cho bài nào bạn ưng ý.</div>`}
+      ${!done ? `<div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="next-post" ${state.postsLoading?'disabled':''}>${state.postsLoading?'Đang viết…':(state.posts.length===0?'Viết bài đầu tiên →':`Viết bài tiếp theo (${state.posts.length+1}/${TOTAL_POSTS}) →`)}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI)</span></div>` : `<div class="hint-box" style="margin-top:14px;">Đã viết đủ ${TOTAL_POSTS} bài — xem bên dưới, bấm "Lưu vào Kho Content" cho bài nào bạn ưng ý.</div>`}
       ${state.postsError?`<div class="error-box" style="margin-top:10px;">${esc(state.postsError)}</div>`:''}
     `;
   }
 
   function titlesHtml(){
     return `
-      <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">10 tiêu đề mới — giữ nguyên cấu trúc tâm lý bài gốc</h3>
+      <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">10 tiêu đề mới — giữ nguyên cấu trúc tâm lý bài gốc</h3>
       ${state.titles.map((t,i)=>`
         <div class="section">
           <div class="body" style="font-weight:600;">${esc(t)}</div>
@@ -139,7 +139,7 @@ function render(container, ctx){
 
   function postsHtml(){
     return `
-      <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">Bài mới đã viết (${state.posts.length}/${TOTAL_POSTS}) — áp dụng đúng công thức bài gốc</h3>
+      <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">Bài mới đã viết (${state.posts.length}/${TOTAL_POSTS}) — áp dụng đúng công thức bài gốc</h3>
       ${state.posts.map((p,i)=>`
         <div class="section">
           <h3>${esc(p.tieu_de)}</h3>

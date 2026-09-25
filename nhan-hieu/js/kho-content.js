@@ -28,7 +28,7 @@ const DAY_BAI_MILESTONE_LABELS = { m1:'Trước 1.000 view', m2:'Đạt 10.000 v
 
 // select mặc định trong style.css bị width:100%/padding:14px (dùng cho form nhập liệu dài) — ép lại
 // gọn như 1 chip để dùng làm bộ lọc trục/trạng thái, đỡ chiếm cả hàng ngang dài như trước.
-const COMPACT_SELECT_STYLE = 'width:auto;min-width:150px;margin-top:0;padding:8px 30px 8px 12px;font-size:13px;border-radius:999px;';
+const COMPACT_SELECT_STYLE = 'width:auto;min-width:150px;margin-top:0;padding:8px 30px 8px 12px;font-size:14.5px;border-radius:999px;';
 
 // Trục nội dung (content pillar) — nhóm các tag chi tiết trong data lại thành nhóm lớn dễ chọn,
 // tránh người dùng bị ngộp vì phải lướt qua cả kho chung chưa lọc. Khớp key với api/_lib/pillars.js.
@@ -248,7 +248,7 @@ function render(container, ctx){
   }
   function usageBadgeHtml(key){
     const n = usageCountFor(key);
-    return n>0 ? `<span style="color:var(--accent);font-size:12px;font-weight:600;">✓ Đã dùng viết bài ${n} lần</span>` : '';
+    return n>0 ? `<span style="color:var(--accent);font-size:13.5px;font-weight:600;">✓ Đã dùng viết bài ${n} lần</span>` : '';
   }
 
   // Tiêu đề lưu riêng cột "title" trong DB, tách khỏi "content" (thân bài) — cần lấy đúng cột này
@@ -300,7 +300,7 @@ function render(container, ctx){
     const protectAttrs = isProtected ? ' oncontextmenu="return false;" oncopy="return false;" oncut="return false;"' : '';
     return `
       <div class="${bodyClass}"${protectAttrs}>${esc(isExpanded ? text : preview)}</div>
-      ${needsToggle ? `<span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">${isExpanded?'Thu gọn ↑':'Đọc full →'}</span>` : ''}
+      ${needsToggle ? `<span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">${isExpanded?'Thu gọn ↑':'Đọc full →'}</span>` : ''}
     `;
   }
 
@@ -312,11 +312,11 @@ function render(container, ctx){
   function titleOnlyBodyHtml(key, content){
     const isExpanded = state.expandedIds.has(key);
     if(!isExpanded){
-      return `<span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">Đọc full →</span>`;
+      return `<span style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">Đọc full →</span>`;
     }
     return `
       <div class="body">${esc(content||'')}</div>
-      <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">Thu gọn ↑</span>
+      <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-full="${key}">Thu gọn ↑</span>
     `;
   }
 
@@ -378,7 +378,7 @@ function render(container, ctx){
       <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <span class="btn-ghost btn btn-sm" data-write-toggle="${key}">${isOpen?'Đóng':'Viết bài từ đây →'}</span>
         ${isCurrentVoice
-          ? `<span style="color:var(--accent);font-size:12.5px;font-weight:600;">✓ Đang là giọng mẫu</span>`
+          ? `<span style="color:var(--accent);font-size:14px;font-weight:600;">✓ Đang là giọng mẫu</span>`
           : `<span class="btn-ghost btn btn-sm" data-apply-voice="${key}" ${state.applyingVoice===key?'disabled':''}>${state.applyingVoice===key?'Đang phân tích giọng văn…':'Dùng làm giọng mẫu'}</span>`
         }
         ${usageBadgeHtml(key)}
@@ -395,8 +395,8 @@ function render(container, ctx){
     if(state.writeIdeas){
       return `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
         ${state.writeIdeas.map((idea,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--accent-soft);">
-          <div style="font-size:13px;">${esc(idea)}</div>
-          <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;" data-use-idea="${i}">Dùng ý tưởng này →</span>
+          <div style="font-size:14.5px;">${esc(idea)}</div>
+          <span style="display:inline-block;margin-top:6px;color:var(--accent);font-size:13.5px;font-weight:600;cursor:pointer;" data-use-idea="${i}">Dùng ý tưởng này →</span>
         </div>`).join('')}
       </div>`;
     }
@@ -409,9 +409,9 @@ function render(container, ctx){
       <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
         <button class="btn btn-sm" data-write-keep="1">Viết lại bằng câu chuyện của tôi →</button>
         <button class="btn-ghost btn btn-sm" data-write-generate="1">Tạo 5 ý tưởng mới từ đây</button>
-        <span style="font-size:11px;color:var(--ink-soft);align-self:center;">("Tạo 5 ý tưởng" tốn 1 lượt AI)</span>
+        <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">("Tạo 5 ý tưởng" tốn 1 lượt AI)</span>
       </div>
-      <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Bài trong kho là cấu trúc đã được kiểm chứng viral — giữ nguyên hook và cấu trúc/trình tự bài gốc, chỉ đổi câu từ ở các đoạn còn lại bằng giọng và câu chuyện của bạn, không sao chép nguyên văn.</div>`;
+      <div style="margin-top:6px;font-size:13px;color:var(--ink-soft);">Bài trong kho là cấu trúc đã được kiểm chứng viral — giữ nguyên hook và cấu trúc/trình tự bài gốc, chỉ đổi câu từ ở các đoạn còn lại bằng giọng và câu chuyện của bạn, không sao chép nguyên văn.</div>`;
   }
 
   function daVietTab(){
@@ -422,7 +422,7 @@ function render(container, ctx){
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
         ${pillarSelectHtml(state.posts, state.daVietPillar, 'daviet-pillar')}
         ${statusSelectHtml(state.posts, state.daVietStatus)}
-        <input type="text" data-daviet-search value="${esc(state.daVietSearch)}" placeholder="Tìm theo tên bài..." style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+        <input type="text" data-daviet-search value="${esc(state.daVietSearch)}" placeholder="Tìm theo tên bài..." style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
       </div>
     `;
 
@@ -438,13 +438,13 @@ function render(container, ctx){
       .sort((a,b)=> (!!a.item.posted)===(!!b.item.posted) ? a.i-b.i : (a.item.posted?1:-1))
       .map(x=>x.item);
 
-    if(items.length===0) return hint + filterBar + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp bộ lọc.</div>`;
+    if(items.length===0) return hint + filterBar + `<div style="color:var(--ink-soft);font-size:15.5px;">Không có bài nào khớp bộ lọc.</div>`;
 
     return hint + filterBar + bulkBarHtml(state.selectedPosts, 'posts', items.map(p=>p.id)) + items.map(p=>{
       const isEditing = state.editingPostId === p.id;
       return `
       <div class="section" id="post-card-${p.id}">
-        ${isEditing ? '' : `<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-post="${p.id}" ${state.selectedPosts.has(p.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--danger);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3></label>`}
+        ${isEditing ? '' : `<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-post="${p.id}" ${state.selectedPosts.has(p.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(p.title||'(không tiêu đề)')}${p.posted?` <span style="color:var(--danger);font-size:13.5px;font-weight:600;vertical-align:middle;">✓ Đã đăng</span>`:''}</h3></label>`}
         ${isEditing ? '' : (p.posted ? postMetricsHtml(p) : '')}
         ${isEditing ? editPostHtml(p) : titleOnlyBodyHtml('post:'+p.id, p.content)}
         ${isEditing ? '' : postOptionsPanelHtml(p)}
@@ -460,8 +460,8 @@ function render(container, ctx){
   function postMetricsHtml(p){
     const field = (key, label, placeholder)=>`
       <div style="flex:1;min-width:70px;">
-        <label style="display:block;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;">${esc(label)}</label>
-        <input type="number" min="0" inputmode="numeric" data-post-metric-field="${key}" data-post-metric-id="${p.id}" value="${p[key]==null?'':p[key]}" placeholder="${esc(placeholder)}" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--line);font-size:12.5px;">
+        <label style="display:block;font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;">${esc(label)}</label>
+        <input type="number" min="0" inputmode="numeric" data-post-metric-field="${key}" data-post-metric-id="${p.id}" value="${p[key]==null?'':p[key]}" placeholder="${esc(placeholder)}" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--line);font-size:14px;">
       </div>
     `;
     return `
@@ -481,7 +481,7 @@ function render(container, ctx){
     const isOpen = state.expandedOptionsIds.has(p.id);
     return `
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
-        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-options="${p.id}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
+        <span style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-options="${p.id}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
         ${isOpen ? postOptionsBodyHtml(p) : ''}
       </div>
     `;
@@ -497,14 +497,14 @@ function render(container, ctx){
     const allSelected = allIds.length > 0 && allIds.every(id=>selectedSet.has(id));
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--ink-soft);cursor:pointer;">
           <input type="checkbox" data-select-all="${listKey}" data-select-all-ids="${allIds.join(',')}" ${allSelected?'checked':''}>
           Chọn tất cả (${allIds.length})
         </label>
         ${selectedSet.size > 0 ? `
         <div class="btn-row" style="margin-top:0;align-items:center;">
-          <span style="font-size:12.5px;color:var(--ink-soft);">Đã chọn <b>${selectedSet.size}</b></span>
-          <span style="color:var(--danger);cursor:pointer;font-size:13px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
+          <span style="font-size:14px;color:var(--ink-soft);">Đã chọn <b>${selectedSet.size}</b></span>
+          <span style="color:var(--danger);cursor:pointer;font-size:14.5px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
           <span class="btn-ghost btn btn-sm" data-bulk-clear="${listKey}">Bỏ chọn</span>
         </div>
         ` : ''}
@@ -520,10 +520,10 @@ function render(container, ctx){
     return `
       <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div>
-          <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(label)}</div>
-          <div style="font-size:13px;">${esc(value)}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${esc(label)}</div>
+          <div style="font-size:14.5px;">${esc(value)}</div>
         </div>
-        <span class="btn-ghost btn btn-sm" style="flex-shrink:0;padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(value)}">Copy</span>
+        <span class="btn-ghost btn btn-sm" style="flex-shrink:0;padding:3px 10px;font-size:13px;" data-copy-value="${esc(value)}">Copy</span>
       </div>
     `;
   }
@@ -548,7 +548,7 @@ function render(container, ctx){
       <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
         ${plan.moc.map(m=>`
           <div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.03em;">${esc(DAY_BAI_MILESTONE_LABELS[m.moc]||m.moc)}</div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.03em;">${esc(DAY_BAI_MILESTONE_LABELS[m.moc]||m.moc)}</div>
             ${copyRowHtml('Bình luận tự đăng', m.cmt_tu_dang)}
             ${copyRowHtml('Trả lời từ khoá CTA', m.tra_loi_tu_khoa_cta)}
           </div>
@@ -585,7 +585,7 @@ function render(container, ctx){
         ` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--line);">
           <span class="btn-ghost btn btn-sm" data-edit-post="${p.id}">Sửa bài</span>
-          <span style="color:var(--danger);font-size:12.5px;cursor:pointer;" data-delete-post="${p.id}">Xoá bài</span>
+          <span style="color:var(--danger);font-size:14px;cursor:pointer;" data-delete-post="${p.id}">Xoá bài</span>
         </div>
       </div>
     `;
@@ -595,9 +595,9 @@ function render(container, ctx){
     const draft = state.editDraft || { title:p.title||'', content:p.content||'' };
     return `
       <div>
-        <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tiêu đề</label>
+        <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tiêu đề</label>
         <textarea id="edit-title" style="min-height:auto;height:40px;">${esc(draft.title)}</textarea>
-        <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:10px 0 4px;">Nội dung</label>
+        <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin:10px 0 4px;">Nội dung</label>
         <textarea id="edit-content" style="min-height:220px;">${esc(draft.content)}</textarea>
         ${state.editSaveError?`<div class="error-box" style="margin-top:8px;">${esc(state.editSaveError)}</div>`:''}
         <div class="btn-row" style="margin-top:10px;">
@@ -624,17 +624,17 @@ function render(container, ctx){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Nơi lưu chất liệu của riêng bạn — câu chuyện cá nhân, case học viên, câu hỏi khách hàng hay gặp. <b>Đặc biệt nên cập nhật cả những content đang viral bạn tự tìm thấy ở nơi khác</b> (kênh khác, group khác...) — AI sẽ tự chọn đúng trục nội dung giúp bạn, không cần tự chọn nữa.<br><br>💡 Chọn loại nguồn <b>"Kiến thức ngành"</b> để lưu kiến thức/kinh nghiệm chuyên môn — sang <a href="#viet-content">Viết Content</a> sẽ chọn được lồng thẳng vào bài, giúp content có chuyên môn thật thay vì AI viết chung chung.</div>`;
     return hint + `
       <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tiêu đề</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tiêu đề</label>
         <textarea id="ne-title" style="min-height:auto;height:44px;">${esc(state.newEntry.title)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Nội dung</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Nội dung</label>
         <textarea id="ne-content">${esc(state.newEntry.content)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại nguồn</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại nguồn</label>
         <select id="ne-source">
           <option value="">— Chọn —</option>
           ${SOURCE_OPTIONS.map(k=>`<option value="${k}" ${state.newEntry.source_type===k?'selected':''}>${esc(SOURCE_MAP[k])}</option>`).join('')}
         </select>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đây có phải content đang viral bạn tìm thấy ở nơi khác không?</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đây có phải content đang viral bạn tìm thấy ở nơi khác không?</label>
         <div class="chips">
           <div class="chip ${state.newEntry.isViral===true?'selected':''}" data-ne-viral="yes">Có, content viral tôi sưu tầm</div>
           <div class="chip ${state.newEntry.isViral===false?'selected':''}" data-ne-viral="no">Không, câu chuyện/case của tôi</div>
@@ -642,19 +642,19 @@ function render(container, ctx){
         ${state.newEntry.isViral===true ? `
           <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
             <div style="flex:1;min-width:140px;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt xem (view) — nếu biết</label>
-              <input id="ne-views" type="text" value="${esc(state.newEntry.viralViews)}" placeholder="VD: 500k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt xem (view) — nếu biết</label>
+              <input id="ne-views" type="text" value="${esc(state.newEntry.viralViews)}" placeholder="VD: 500k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
             </div>
             <div style="flex:1;min-width:140px;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt thích (like) — nếu biết</label>
-              <input id="ne-likes" type="text" value="${esc(state.newEntry.viralLikes)}" placeholder="VD: 20k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt thích (like) — nếu biết</label>
+              <input id="ne-likes" type="text" value="${esc(state.newEntry.viralLikes)}" placeholder="VD: 20k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
             </div>
           </div>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:12px 0 4px;">Ảnh chụp màn hình chứng minh view/like (không bắt buộc, nhưng giúp admin duyệt nhanh hơn)</label>
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin:12px 0 4px;">Ảnh chụp màn hình chứng minh view/like (không bắt buộc, nhưng giúp admin duyệt nhanh hơn)</label>
           ${state.newEntry.viralScreenshot ? `
             <div style="display:flex;align-items:center;gap:10px;">
               <img src="${state.newEntry.viralScreenshot}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--line);">
-              <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-action="clear-viral-screenshot">Xoá ảnh</span>
+              <span style="color:var(--danger);cursor:pointer;font-size:14px;" data-action="clear-viral-screenshot">Xoá ảnh</span>
             </div>
           ` : `<input type="file" accept="image/*" id="ne-screenshot">`}
         ` : ''}
@@ -671,18 +671,18 @@ function render(container, ctx){
   }
 
   function khoToiListHtml(){
-    if(state.personalBank.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
+    if(state.personalBank.length===0) return `<div style="color:var(--ink-soft);font-size:15.5px;">Kho của bạn đang trống.</div>`;
 
     let items = filterByPillar(state.personalBank, state.khoToiPillar);
     const q = state.khoToiSearch.trim().toLowerCase();
     if(q) items = items.filter(b=>(b.title||'').toLowerCase().includes(q));
     items = sortUnusedFirst(items, 'personal');
-    const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
-    if(items.length===0) return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
+    const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;margin-bottom:12px;">`;
+    if(items.length===0) return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:15.5px;">Không có bài nào khớp tìm kiếm.</div>`;
     return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'content_bank_personal', items.map(b=>b.id)) + items.map(b=>`
       <div class="section">
-        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
-        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}${b.share_status==='approved'?` <span style="color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;">✓ Đã lên Kho chung</span>`:b.share_status==='pending'?` <span style="color:var(--gold);font-size:12px;font-weight:600;vertical-align:middle;">Đang chờ duyệt lên Kho chung</span>`:''}</h3></label>
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
+        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}${b.share_status==='approved'?` <span style="color:var(--accent);font-size:13.5px;font-weight:600;vertical-align:middle;">✓ Đã lên Kho chung</span>`:b.share_status==='pending'?` <span style="color:var(--gold);font-size:13.5px;font-weight:600;vertical-align:middle;">Đang chờ duyệt lên Kho chung</span>`:''}</h3></label>
         ${contentBodyHtml('personal:'+b.id, b.content)}
         ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
         ${khoToiOptionsPanelHtml(b)}
@@ -700,7 +700,7 @@ function render(container, ctx){
     const isOpen = state.expandedOptionsIds.has(key);
     return `
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
-        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-options="${key}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
+        <span style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-options="${key}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
         ${isOpen ? khoToiOptionsBodyHtml(b) : ''}
       </div>
     `;
@@ -731,7 +731,7 @@ function render(container, ctx){
             // vẫn giữ nguyên ở đây cho mục CHƯA từng gửi (share_status rỗng) LẪN mục đã bị từ chối
             // (rejected — cho phép gửi lại), không đổi hành vi cũ.
             :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${b.id}">Đóng góp vào Kho Viral</span>`}
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal="${b.id}">Xoá</span>
+          <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-del-personal="${b.id}">Xoá</span>
         </div>
       </div>
     `;
@@ -772,17 +772,17 @@ function render(container, ctx){
     const currentPillar = (b.tags && b.tags[0]) || '';
     return `
       <div>
-        <span style="cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:700;" data-admin-menu-toggle="${b.id}">⋯</span>
+        <span style="cursor:pointer;font-size:14.5px;color:var(--ink-soft);font-weight:700;" data-admin-menu-toggle="${b.id}">⋯</span>
         ${isOpen ? `
           <div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;gap:8px;background:var(--panel);">
             <div>
-              <label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Đổi trục nội dung (khi thấy phân loại chưa chuẩn)</label>
-              <select data-admin-pillar-select="${b.id}" style="width:100%;font-size:12.5px;padding:4px;">
+              <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Đổi trục nội dung (khi thấy phân loại chưa chuẩn)</label>
+              <select data-admin-pillar-select="${b.id}" style="width:100%;font-size:14px;padding:4px;">
                 <option value="" ${!currentPillar?'selected':''}>— Chưa phân loại —</option>
                 ${PILLARS.map(p=>`<option value="${p.key}" ${currentPillar===p.key?'selected':''}>${esc(p.label)}</option>`).join('')}
               </select>
             </div>
-            <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-admin-del-shared="${b.id}">Xoá khỏi Kho chung</span>
+            <span style="color:var(--danger);cursor:pointer;font-size:14px;" data-admin-del-shared="${b.id}">Xoá khỏi Kho chung</span>
           </div>
         ` : ''}
       </div>
@@ -800,12 +800,12 @@ function render(container, ctx){
     const q = state.chungSearch.trim().toLowerCase();
     if(q) items = items.filter(b=>(b.title||'').toLowerCase().includes(q));
     items = sortUnusedFirst(items, 'shared');
-    const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
-    if(items.length===0) return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có bài nào khớp tìm kiếm.</div>`;
+    const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo tiêu đề..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;margin-bottom:12px;">`;
+    if(items.length===0) return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:15.5px;">Không có bài nào khớp tìm kiếm.</div>`;
     return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + items.map(b=>`
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
           ${adminMenuHtml(b)}
         </div>
         <h3>${esc(b.title)}</h3>
@@ -835,7 +835,7 @@ function render(container, ctx){
       : `<input type="file" accept="image/*" multiple id="cs-upload">`;
     const errorHtml = state.caseStudyError ? `<div class="error-box" style="margin-top:10px;">${esc(state.caseStudyError)}</div>` : '';
     if(state.caseStudies.length===0){
-      return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:14px;">Chưa có ảnh case study nào.</div>`;
+      return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:15.5px;">Chưa có ảnh case study nào.</div>`;
     }
     const grid = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
       ${state.caseStudies.map(cs=>{
@@ -843,8 +843,8 @@ function render(container, ctx){
         const pillar = PILLARS.find(p=>p.key===pillarKey);
         return `<div style="width:160px;">
           <img src="${cs.image}" style="width:160px;height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
-          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">${pillar?esc(pillar.label):'Chưa rõ trục'}</div>
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-case-study="${cs.id}">Xoá</span>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${pillar?esc(pillar.label):'Chưa rõ trục'}</div>
+          <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-del-case-study="${cs.id}">Xoá</span>
         </div>`;
       }).join('')}
     </div>`;
@@ -864,15 +864,15 @@ function render(container, ctx){
       : `<input type="file" accept="image/*" multiple id="pp-upload">`;
     const errorHtml = state.personalPhotoError ? `<div class="error-box" style="margin-top:10px;">${esc(state.personalPhotoError)}</div>` : '';
     if(state.personalPhotos.length===0){
-      return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:14px;">Chưa có ảnh cá nhân nào.</div>`;
+      return hint + uploadHtml + errorHtml + `<div style="margin-top:14px;color:var(--ink-soft);font-size:15.5px;">Chưa có ảnh cá nhân nào.</div>`;
     }
     const grid = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
       ${state.personalPhotos.map(pp=>`<div style="width:160px;">
           <img src="${pp.image}" style="width:160px;height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
-          <select data-corner-select="${pp.id}" style="width:100%;margin-top:6px;font-size:11.5px;padding:2px;">
+          <select data-corner-select="${pp.id}" style="width:100%;margin-top:6px;font-size:13px;padding:2px;">
             ${Object.keys(CORNER_LABELS).map(c=>`<option value="${c}" ${(pp.card_corner||'top-right')===c?'selected':''}>${CORNER_LABELS[c]}</option>`).join('')}
           </select>
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-personal-photo="${pp.id}">Xoá</span>
+          <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-del-personal-photo="${pp.id}">Xoá</span>
         </div>`).join('')}
     </div>`;
     return hint + uploadHtml + errorHtml + grid;

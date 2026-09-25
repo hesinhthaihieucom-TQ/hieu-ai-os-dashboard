@@ -137,7 +137,7 @@ function render(container, ctx){
   function limitLabel(){
     const { used, limit, isTrial } = remainingInfo();
     const trialLimit = (ctx.profile && ctx.profile.trial_ai_limit) || TRIAL_AI_LIMIT;
-    const totalNote = `<div style="margin-top:6px;font-size:12px;opacity:.85;">Tổng lượt bạn có thể dùng qua cả 2 giai đoạn: <b>${trialLimit} lượt dùng thử</b> (trọn đời) + <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi mua gói.</div>`;
+    const totalNote = `<div style="margin-top:6px;font-size:13.5px;opacity:.85;">Tổng lượt bạn có thể dùng qua cả 2 giai đoạn: <b>${trialLimit} lượt dùng thử</b> (trọn đời) + <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> khi mua gói.</div>`;
     return (isTrial
       ? `Đã dùng <b>${used}/${limit}</b> lượt AI dùng thử (trọn đời) — còn <b>${Math.max(0,limit-used)}</b> lượt.`
       : `Đã dùng <b>${used}/${limit}</b> lượt AI (chu kỳ ${currentCycleRangeLabel(paidCycleAnchor(ctx.profile))}) — còn <b>${Math.max(0,limit-used)}</b> lượt.`) + totalNote;
@@ -158,31 +158,31 @@ function render(container, ctx){
             ? `<img src="${state.avatarPreview}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;">`
             : `<div style="width:72px;height:72px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;">${esc((state.fullName||'?').charAt(0).toUpperCase())}</div>`}
           <div>
-            <input type="file" accept="image/*" id="tk-avatar-upload" style="font-size:13px;">
-            ${state.avatarSaving?`<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Đang lưu…</div>`:''}
+            <input type="file" accept="image/*" id="tk-avatar-upload" style="font-size:14.5px;">
+            ${state.avatarSaving?`<div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">Đang lưu…</div>`:''}
           </div>
         </div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Tên hiển thị</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Tên hiển thị</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input id="tk-name" type="text" value="${esc(state.fullName)}" style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;">
+          <input id="tk-name" type="text" value="${esc(state.fullName)}" style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;">
           <button class="btn btn-sm" data-action="save-name" ${state.nameSaving?'disabled':''}>${state.nameSaving?'Đang lưu…':'Lưu tên'}</button>
         </div>
-        ${state.nameSaved?`<div style="color:var(--accent);font-size:12.5px;margin-top:6px;">✓ Đã lưu</div>`:''}
+        ${state.nameSaved?`<div style="color:var(--accent);font-size:14px;margin-top:6px;">✓ Đã lưu</div>`:''}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Email đăng nhập</label>
-        <div class="body" style="background:var(--accent-soft);padding:10px 12px;border-radius:8px;font-size:13.5px;">${esc((ctx.user&&ctx.user.email)||'')}</div>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Email đăng nhập</label>
+        <div class="body" style="background:var(--accent-soft);padding:10px 12px;border-radius:8px;font-size:15px;">${esc((ctx.user&&ctx.user.email)||'')}</div>
       </div>
 
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:12px;">Đổi mật khẩu</h3>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới (ít nhất 6 ký tự)</label>
-        <input id="tk-pass" type="password" placeholder="Mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:10px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Nhập lại mật khẩu mới</label>
-        <input id="tk-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:10px;">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới (ít nhất 6 ký tự)</label>
+        <input id="tk-pass" type="password" placeholder="Mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;margin-bottom:10px;">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Nhập lại mật khẩu mới</label>
+        <input id="tk-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;margin-bottom:10px;">
         <button class="btn btn-sm" data-action="save-password" ${state.passwordSaving?'disabled':''}>${state.passwordSaving?'Đang đổi…':'Đổi mật khẩu'}</button>
         ${state.passwordError?`<div class="error-box" style="margin-top:10px;">${esc(state.passwordError)}</div>`:''}
-        ${state.passwordSaved?`<div style="color:var(--accent);font-size:12.5px;margin-top:8px;">✓ Đã đổi mật khẩu thành công</div>`:''}
+        ${state.passwordSaved?`<div style="color:var(--accent);font-size:14px;margin-top:8px;">✓ Đã đổi mật khẩu thành công</div>`:''}
       </div>
 
       <div class="hint-box" style="margin-bottom:20px;">🔔 Đặt giờ đăng bài mặc định và bật thông báo nhắc lịch ở tab <a href="#lich-dang">Lịch Đăng Bài → Thông báo &amp; giờ đăng</a>.</div>
@@ -191,41 +191,41 @@ function render(container, ctx){
         <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
         <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — bạn bè bấm vào đăng ký sẽ được <b>giảm 15%</b> khi mua gói giá thường (không áp dụng gói ưu đãi/flash-sale), còn bạn được <b>tặng lượt AI</b> tương đương 15% giá trị đơn hàng của họ ngay khi họ thanh toán thành công lần đầu${ctx.profile&&ctx.profile.is_vip_partner?' (VIP Partner: 25%)':''}.<br><br>🌟 Giới thiệu thành công từ <b>${PARTNER_REFERRAL_THRESHOLD} người trở lên</b> — cộng dồn cả Xây Nhân Hiệu lẫn Sổ Dòng Tiền Tâm Thức — bạn sẽ được coi là <b>Hiểu Partner</b> của hệ sinh thái — từ đó thay vì tặng lượt AI, bạn sẽ được thưởng bằng <b>hoa hồng tiền mặt</b> — liên hệ để nhận sau khi đạt mốc.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--panel);" onclick="this.select()">
+          <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;background:var(--panel);" onclick="this.select()">
           <button class="btn btn-sm" data-action="copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>
         </div>
         <div style="display:flex;gap:24px;margin-top:14px;flex-wrap:wrap;">
-          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.hieuPartnerCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công (mọi sản phẩm)</div></div>
-          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralLuotEarned}</div><div style="font-size:12px;color:var(--ink-soft);">lượt AI đã được tặng</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.hieuPartnerCount}</div><div style="font-size:13.5px;color:var(--ink-soft);">người đã giới thiệu thành công (mọi sản phẩm)</div></div>
+          <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${state.referralLuotEarned}</div><div style="font-size:13.5px;color:var(--ink-soft);">lượt AI đã được tặng</div></div>
         </div>
         ${state.hieuPartnerCount >= PARTNER_REFERRAL_THRESHOLD
-          ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:13px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái! Liên hệ để nhận hoa hồng tiền mặt.</div>`
-          : `<div style="margin-top:12px;font-size:12.5px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - state.hieuPartnerCount}</b> người nữa để trở thành Hiểu Partner 🌟</div>`}
+          ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:14.5px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái! Liên hệ để nhận hoa hồng tiền mặt.</div>`
+          : `<div style="margin-top:12px;font-size:14px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - state.hieuPartnerCount}</b> người nữa để trở thành Hiểu Partner 🌟</div>`}
         ${ctx.profile&&ctx.profile.is_vip_partner
-          ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:13px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
-          : `<div style="margin-top:10px;font-size:12.5px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
+          ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:14.5px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
+          : `<div style="margin-top:10px;font-size:14px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
       </div>
 
       <div class="card">
         <h3 style="margin-bottom:6px;">Lượt AI — lên kế hoạch dùng trong tháng</h3>
         <div class="hint-box" style="margin-bottom:14px;">${limitLabel()}</div>
 
-        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--gold);margin-bottom:8px;">Mỗi hành động tốn bao nhiêu lượt</label>
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:13.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--gold);margin-bottom:8px;">Mỗi hành động tốn bao nhiêu lượt</label>
         ${ACTION_WEIGHTS_DISPLAY.map(a=>`
-          <div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+          <div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px;">
             <span>${esc(a.label)}</span>
             <span style="font-weight:700;color:var(--accent);white-space:nowrap;">${a.weight} lượt</span>
           </div>
         `).join('')}
 
-        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--accent);margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line);">Đặt mục tiêu cho chu kỳ này — tự tính xem có đủ lượt không</label>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Ô bên dưới điền <b>số LẦN</b> bạn dự định làm (không phải số lượt) — hệ thống tự nhân theo trọng số để ra tổng lượt cần, rồi báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" hiện cả số lần đã thực sự làm và số lượt AI thật đã tiêu cho đúng nhóm đó${remainingInfo().isTrial?' (tính trọn đời dùng thử)':` (tính trong chu kỳ ${currentCycleRangeLabel(paidCycleAnchor(ctx.profile))})`}, để tự đối chiếu với kế hoạch.</div>
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:13.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--accent);margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line);">Đặt mục tiêu cho chu kỳ này — tự tính xem có đủ lượt không</label>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Ô bên dưới điền <b>số LẦN</b> bạn dự định làm (không phải số lượt) — hệ thống tự nhân theo trọng số để ra tổng lượt cần, rồi báo ngay nếu vượt quá số lượt bạn còn. "Thực tế" hiện cả số lần đã thực sự làm và số lượt AI thật đã tiêu cho đúng nhóm đó${remainingInfo().isTrial?' (tính trọn đời dùng thử)':` (tính trong chu kỳ ${currentCycleRangeLabel(paidCycleAnchor(ctx.profile))})`}, để tự đối chiếu với kế hoạch.</div>
         ${GOAL_ITEMS.map(g=>`
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;flex-wrap:wrap;">
-            <span style="font-size:13.5px;">${esc(g.label)} <span style="color:var(--ink-soft);font-size:12px;">(${g.weight} lượt/lần)</span></span>
+            <span style="font-size:15px;">${esc(g.label)} <span style="color:var(--ink-soft);font-size:13.5px;">(${g.weight} lượt/lần)</span></span>
             <div style="display:flex;align-items:center;gap:10px;">
-              <span style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">Thực tế: <b style="color:var(--accent);">${state.actualUsage[g.key]||0} lần</b> · <b style="color:var(--accent);">${state.actualLuot[g.key]||0} lượt</b></span>
-              <input type="number" min="0" data-goal="${g.key}" value="${state.goals[g.key]}" style="width:70px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;text-align:center;"> <span style="font-size:11.5px;color:var(--ink-soft);">lần</span>
+              <span style="font-size:13.5px;color:var(--ink-soft);white-space:nowrap;">Thực tế: <b style="color:var(--accent);">${state.actualUsage[g.key]||0} lần</b> · <b style="color:var(--accent);">${state.actualLuot[g.key]||0} lượt</b></span>
+              <input type="number" min="0" data-goal="${g.key}" value="${state.goals[g.key]}" style="width:70px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:15px;text-align:center;"> <span style="font-size:13px;color:var(--ink-soft);">lần</span>
             </div>
           </div>
         `).join('')}
@@ -236,7 +236,7 @@ function render(container, ctx){
           return `
             <div style="margin-top:12px;padding:12px;border-radius:8px;background:${over?'#FBEAE4':'var(--accent-soft)'};">
               <b style="color:${over?'var(--danger)':'var(--accent)'};">Tổng cần: ${total} lượt</b> — bạn còn ${remaining} lượt.
-              ${over ? `<div style="margin-top:4px;color:var(--danger);font-size:13px;">⚠️ Vượt quá ${total-remaining} lượt so với số bạn còn — nên giảm bớt mục tiêu, hoặc <a href="#nang-cap">mua thêm lượt</a>.</div>` : `<div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Đủ dùng, còn dư ${remaining-total} lượt.</div>`}
+              ${over ? `<div style="margin-top:4px;color:var(--danger);font-size:14.5px;">⚠️ Vượt quá ${total-remaining} lượt so với số bạn còn — nên giảm bớt mục tiêu, hoặc <a href="#nang-cap">mua thêm lượt</a>.</div>` : `<div style="margin-top:4px;font-size:14.5px;color:var(--ink-soft);">Đủ dùng, còn dư ${remaining-total} lượt.</div>`}
             </div>
           `;
         })()}

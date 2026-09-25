@@ -127,7 +127,7 @@ function render(container, ctx){
       </div>
 
       <div class="card" id="db-post-card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Bài đang đẩy</label>
         <div class="chips" style="margin-bottom:10px;">
           <div class="chip ${state.postSource==='lich'?'selected':''}" data-post-source="lich">Từ Lịch Đăng Bài</div>
           <div class="chip ${state.postSource==='kho'?'selected':''}" data-post-source="kho">Từ Kho Content (bài đã viết)</div>
@@ -138,19 +138,19 @@ function render(container, ctx){
             <option value="">— Chọn bài từ Lịch Đăng Bài —</option>
             ${state.calendarEntries.map(e=>`<option value="${e.id}" ${state.postChoice===e.id?'selected':''}>${esc(new Date(e.scheduled_date).toLocaleDateString('vi-VN'))} — ${esc((e.posts && e.posts.title) || e.title || '(không tiêu đề)')}</option>`).join('')}
           </select>
-          ${state.calendarEntries.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có bài nào trong Lịch Đăng Bài — chọn "Từ Kho Content" nếu bài đã viết từ lâu, hoặc viết bài ở <a href="#viet-content">Viết Content</a> rồi đưa vào lịch.</div>`:''}
+          ${state.calendarEntries.length===0?`<div style="margin-top:6px;font-size:13px;color:var(--ink-soft);">Chưa có bài nào trong Lịch Đăng Bài — chọn "Từ Kho Content" nếu bài đã viết từ lâu, hoặc viết bài ở <a href="#viet-content">Viết Content</a> rồi đưa vào lịch.</div>`:''}
         ` : ''}
         ${state.postSource==='kho' ? `
           <select id="db-post-select-kho">
             <option value="">— Chọn bài đã viết trong Kho Content —</option>
             ${state.posts.map(p=>`<option value="${p.id}" ${state.postChoice===p.id?'selected':''}>${esc(p.title || '(không tiêu đề)')}${p.day_bai_plan?' ✓ đã có kế hoạch':''}</option>`).join('')}
           </select>
-          ${state.posts.length===0?`<div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Chưa có bài nào đã viết — sang <a href="#kho-content">Kho Content</a> hoặc <a href="#viet-content">Viết Content</a> trước.</div>`:''}
+          ${state.posts.length===0?`<div style="margin-top:6px;font-size:13px;color:var(--ink-soft);">Chưa có bài nào đã viết — sang <a href="#kho-content">Kho Content</a> hoặc <a href="#viet-content">Viết Content</a> trước.</div>`:''}
         ` : ''}
-        ${state.postSource==='other'?`<textarea id="db-topic-other" style="margin-top:8px;" placeholder="Dán chủ đề/nội dung bài đang đẩy...">${esc(state.topicOther)}</textarea><div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Nguồn này không gắn với bài nào trong Kho Content nên không lưu lại được kế hoạch — chỉ dùng để xem nhanh.</div>`:''}
+        ${state.postSource==='other'?`<textarea id="db-topic-other" style="margin-top:8px;" placeholder="Dán chủ đề/nội dung bài đang đẩy...">${esc(state.topicOther)}</textarea><div style="margin-top:6px;font-size:13px;color:var(--ink-soft);">Nguồn này không gắn với bài nào trong Kho Content nên không lưu lại được kế hoạch — chỉ dùng để xem nhanh.</div>`:''}
 
         ${!(state.positioning) ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
           <textarea id="db-quick-context" style="min-height:auto;height:44px;" placeholder="Ví dụ: Coach tài chính cá nhân...">${esc(state.quickContext)}</textarea>
         ` : ''}
       </div>
@@ -158,7 +158,7 @@ function render(container, ctx){
       ${assetsCardHtml()}
 
       <div class="card" style="margin-top:16px;">
-        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang gợi ý…':'Đẩy bài (đủ 5 mốc)'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 2 lượt AI — ra đủ 5 mốc trong 1 lần, không phải bấm lại từng mốc)</span></div>
+        <div class="btn-row"><button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang gợi ý…':'Đẩy bài (đủ 5 mốc)'}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 2 lượt AI — ra đủ 5 mốc trong 1 lần, không phải bấm lại từng mốc)</span></div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1-2 phút để ra đủ cả 5 mốc, đừng thoát trang khi đang đợi.</div>
         ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
       </div>
@@ -171,15 +171,15 @@ function render(container, ctx){
     return `
       <div class="card" id="db-assets-card" style="margin-top:16px;">
         <h3 style="margin-bottom:4px;">Tài sản muốn đẩy cho bài này</h3>
-        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 hoặc nhiều tài sản muốn dùng — AI sẽ tự phân bổ hợp lý qua 5 mốc (mốc đầu ít cam kết, mốc cuối giá trị cao hơn). Không chọn gì thì để AI tự chọn từ kho.</p>
-        ${state.assets.length===0?`<div style="font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào.</div>`: `
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 hoặc nhiều tài sản muốn dùng — AI sẽ tự phân bổ hợp lý qua 5 mốc (mốc đầu ít cam kết, mốc cuối giá trị cao hơn). Không chọn gì thì để AI tự chọn từ kho.</p>
+        ${state.assets.length===0?`<div style="font-size:13px;color:var(--ink-soft);">Chưa có tài sản nào.</div>`: `
         <div style="display:flex;flex-direction:column;gap:6px;">
           ${Object.entries(ASSET_KINDS).map(([kind,label])=>{
             const items = state.assets.filter(a=>a.kind===kind);
             if(items.length===0) return '';
-            return `<div style="font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-top:6px;">${esc(label)}</div>` +
+            return `<div style="font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-top:6px;">${esc(label)}</div>` +
               items.map(a=>`
-                <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;">
                   <input type="checkbox" data-asset-check="${a.id}" ${state.selectedAssetIds.has(a.id)?'checked':''}>
                   ${esc(a.label)}
                 </label>
@@ -187,7 +187,7 @@ function render(container, ctx){
           }).join('')}
         </div>
         `}
-        <div style="margin-top:10px;"><a href="#dinh-vi" style="font-size:12.5px;color:var(--ink-soft);">Thêm/sửa tài sản ở Định Vị →</a></div>
+        <div style="margin-top:10px;"><a href="#dinh-vi" style="font-size:14px;color:var(--ink-soft);">Thêm/sửa tài sản ở Định Vị →</a></div>
       </div>
     `;
   }
@@ -195,15 +195,15 @@ function render(container, ctx){
   // Nút "Copy" dùng chung — tra theo key thay vì nhét thẳng text vào attribute HTML (tránh vỡ
   // attribute khi text có dấu ngoặc kép/xuống dòng), luôn đọc đúng state.result mới nhất lúc bấm.
   function copyBtnHtml(field){
-    return `<span class="btn-ghost btn btn-sm" style="padding:4px 10px;font-size:11.5px;" data-copy-field="${field}">Copy</span>`;
+    return `<span class="btn-ghost btn btn-sm" style="padding:4px 10px;font-size:13px;" data-copy-field="${field}">Copy</span>`;
   }
   // Tích "đã làm" cho TỪNG hành động riêng trong 1 mốc (bình luận tự đăng, trả lời từ khoá, từng gợi
   // ý trả lời, gắn tài sản) — không phải tích chung cả mốc, vì 1 mốc có nhiều việc cần làm ở nhiều
   // thời điểm khác nhau (vd bình luận tự đăng làm ngay, trả lời từ khoá chỉ làm khi có người bình
   // luận đúng chữ). Lưu vào m.done (object key theo action), ghi thẳng vào posts.day_bai_plan luôn.
   function doneToggleHtml(mocKey, actionKey, isDone){
-    return `<span data-toggle-done="${mocKey}:${actionKey}" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap;${isDone?'color:var(--accent);font-weight:700;':'color:var(--ink-soft);'}">
-      <span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${isDone?'var(--accent)':'var(--ink-soft)'};background:${isDone?'var(--accent)':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${isDone?`<span style="color:#fff;font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>
+    return `<span data-toggle-done="${mocKey}:${actionKey}" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;white-space:nowrap;${isDone?'color:var(--accent);font-weight:700;':'color:var(--ink-soft);'}">
+      <span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${isDone?'var(--accent)':'var(--ink-soft)'};background:${isDone?'var(--accent)':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${isDone?`<span style="color:#fff;font-size:11.5px;line-height:1;font-weight:900;">✓</span>`:''}</span>
       ${isDone?'Đã làm':'Đánh dấu đã làm'}
     </span>`;
   }
@@ -245,18 +245,18 @@ function render(container, ctx){
           <div style="${i>0?'border-top:1px solid var(--line);':''}">
             <div data-toggle-moc="${m.moc}" style="padding:14px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
               <div>
-                <b style="font-size:14.5px;">${esc(MILESTONE_LABEL[m.moc] || m.moc)}</b>
-                ${!isOpen?`<div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(excerpt(m.chien_luoc_moc_nay, 90))}</div>`:''}
+                <b style="font-size:16px;">${esc(MILESTONE_LABEL[m.moc] || m.moc)}</b>
+                ${!isOpen?`<div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${esc(excerpt(m.chien_luoc_moc_nay, 90))}</div>`:''}
               </div>
               <span style="color:var(--ink-soft);flex-shrink:0;">${isOpen?'▾':'▸'}</span>
             </div>
             ${isOpen ? `
             <div style="padding:0 18px 18px;">
-              <div style="font-style:italic;color:var(--ink-soft);font-size:12.5px;line-height:1.55;margin-bottom:14px;">${esc(m.chien_luoc_moc_nay)}</div>
+              <div style="font-style:italic;color:var(--ink-soft);font-size:14px;line-height:1.55;margin-bottom:14px;">${esc(m.chien_luoc_moc_nay)}</div>
 
-              <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">📌 Bình luận tự đăng / ghim</div>
+              <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">📌 Bình luận tự đăng / ghim</div>
               <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-                <div style="font-size:14.5px;color:var(--ink);line-height:1.55;">${esc(m.cmt_tu_dang)}</div>
+                <div style="font-size:16px;color:var(--ink);line-height:1.55;">${esc(m.cmt_tu_dang)}</div>
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
                   ${copyBtnHtml(m.moc+':cmt')}
                   ${doneToggleHtml(m.moc, 'cmt', !!done.cmt)}
@@ -264,9 +264,9 @@ function render(container, ctx){
               </div>
 
               ${m.tra_loi_tu_khoa_cta ? `
-              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">🔑 Trả lời khi có người để lại đúng từ khoá (nhớ gửi — đây là lời hứa với người đọc)</div>
+              <div style="font-size:12.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">🔑 Trả lời khi có người để lại đúng từ khoá (nhớ gửi — đây là lời hứa với người đọc)</div>
               <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-                <div style="font-size:14.5px;color:var(--ink);line-height:1.55;font-weight:600;">${esc(m.tra_loi_tu_khoa_cta)}</div>
+                <div style="font-size:16px;color:var(--ink);line-height:1.55;font-weight:600;">${esc(m.tra_loi_tu_khoa_cta)}</div>
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
                   ${copyBtnHtml(m.moc+':keyword')}
                   ${doneToggleHtml(m.moc, 'keyword', !!done.keyword)}
@@ -274,10 +274,10 @@ function render(container, ctx){
               </div>
               ` : ''}
 
-              <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">💬 Gợi ý trả lời bình luận người khác</div>
+              <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">💬 Gợi ý trả lời bình luận người khác</div>
               ${(m.goi_y_tra_loi_cmt||[]).map((c,ci)=>`
                 <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
-                  <div style="font-size:14px;color:var(--ink);line-height:1.5;">${esc(c)}</div>
+                  <div style="font-size:15.5px;color:var(--ink);line-height:1.5;">${esc(c)}</div>
                   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
                     ${copyBtnHtml(m.moc+':reply:'+ci)}
                     ${doneToggleHtml(m.moc, 'reply'+ci, !!done['reply'+ci])}
@@ -285,9 +285,9 @@ function render(container, ctx){
                 </div>
               `).join('')}
 
-              <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin:14px 0 6px;">🎯 Tài sản nên gắn</div>
+              <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin:14px 0 6px;">🎯 Tài sản nên gắn</div>
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-                <div style="font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b style="color:var(--ink);">${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
+                <div style="font-size:15px;color:var(--ink-soft);line-height:1.55;">${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? `<b style="color:var(--ink);">${esc(m.tai_san_de_xuat.label)}</b><br>` : `<i>Chưa nên gắn tài sản nào</i><br>`}${esc((m.tai_san_de_xuat||{}).ly_do||'')}</div>
                 ${m.tai_san_de_xuat && m.tai_san_de_xuat.label ? doneToggleHtml(m.moc, 'asset', !!done.asset) : ''}
               </div>
             </div>

@@ -165,7 +165,7 @@ function render(container, ctx){
       { label:'AI xếp cả tuần', done: !!p.used_auto_fill_week_at },
       { label:'Đã đăng bài', done: state.journeyPosted.has(p.id) },
     ];
-    return steps.map(s=>`<span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:${s.done?'var(--accent-soft)':'var(--line)'};color:${s.done?'var(--accent)':'var(--ink-soft)'};white-space:nowrap;">${s.done?'✓':'○'} ${s.label}</span>`).join('');
+    return steps.map(s=>`<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:${s.done?'var(--accent-soft)':'var(--line)'};color:${s.done?'var(--accent)':'var(--ink-soft)'};white-space:nowrap;">${s.done?'✓':'○'} ${s.label}</span>`).join('');
   }
 
   // Đăng ký mới (theo phản hồi chị Quỳnh 21/8: "người đăng ký mới sẽ đẩy lên đầu danh sách để kiểm
@@ -273,7 +273,7 @@ function render(container, ctx){
       .filter(x=>x.msg);
     return `
       <div class="page-head"><h1>Quản trị học viên</h1><p>Danh sách tài khoản, hạn dùng, và gia hạn nhanh sau khi học viên thanh toán. Xem doanh thu/chi phí/lợi nhuận ở tab <b>Tài chính</b>.</p></div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt dùng thử (trọn đời) chốt riêng lúc mỗi người đăng ký, xem đúng số ở từng thẻ bên dưới (mục "Đã dùng") — hiện tại người đăng ký từ 24/8 là 50 lượt, người đăng ký trước đó là ${TRIAL_AI_LIMIT} lượt. Trả phí thì đổi sang <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> (bộ đếm khác, không cộng dồn với lượt dùng thử).</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:-12px;margin-bottom:16px;">Trần lượt dùng thử (trọn đời) chốt riêng lúc mỗi người đăng ký, xem đúng số ở từng thẻ bên dưới (mục "Đã dùng") — hiện tại người đăng ký từ 24/8 là 50 lượt, người đăng ký trước đó là ${TRIAL_AI_LIMIT} lượt. Trả phí thì đổi sang <b>${PAID_MONTHLY_AI_LIMIT} lượt/tháng</b> (bộ đếm khác, không cộng dồn với lượt dùng thử).</div>
 
       <div class="source-grid" style="margin-bottom:20px;">
         <div class="source-card"><div class="ic">${counts.active||0}</div><div class="label">Đang hoạt động</div></div>
@@ -297,9 +297,9 @@ function render(container, ctx){
       ${state.referralPartners.length ? `
       <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
         <h3 style="margin-bottom:6px;">🌟 Hiểu Partner (≥ ${PARTNER_REFERRAL_THRESHOLD} người, cộng dồn mọi sản phẩm)</h3>
-        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Đủ ngưỡng để cân nhắc trả hoa hồng tiền mặt — tự nhắn/chuyển khoản tay, hệ thống không tự động chuyển tiền.</div>
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:12px;">Đủ ngưỡng để cân nhắc trả hoa hồng tiền mặt — tự nhắn/chuyển khoản tay, hệ thống không tự động chuyển tiền.</div>
         ${state.referralPartners.map(rp=>`
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;flex-wrap:wrap;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px;flex-wrap:wrap;">
             <span>${esc(rp.email)}${rp.fullName?` <span style="color:var(--ink-soft);">(${esc(rp.fullName)})</span>`:''}</span>
             <span><b style="color:var(--accent);">${rp.count}</b> người · đã tặng <b>${rp.luot}</b> lượt</span>
           </div>
@@ -309,8 +309,8 @@ function render(container, ctx){
 
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;">
         <div>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Lọc theo gói đã mua gần nhất</label>
-          <select data-plan-filter-select style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:220px;">
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Lọc theo gói đã mua gần nhất</label>
+          <select data-plan-filter-select style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;min-width:220px;">
             ${PLAN_TABS.map(t=>{
               const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && planKeyOf(p)===t.key).length;
               return `<option value="${t.key}" ${state.planFilter===t.key?'selected':''}>${esc(t.label)} (${n})</option>`;
@@ -318,8 +318,8 @@ function render(container, ctx){
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Lọc theo trạng thái hạn dùng</label>
-          <select data-status-filter-select style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:220px;">
+          <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Lọc theo trạng thái hạn dùng</label>
+          <select data-status-filter-select style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;min-width:220px;">
             ${STATUS_TABS.map(t=>{
               const n = t.key==='all' ? state.profiles.filter(p=>p.role!=='admin').length : state.profiles.filter(p=>p.role!=='admin' && statusOf(p).cls===t.key).length;
               return `<option value="${t.key}" ${state.statusFilter===t.key?'selected':''}>${esc(t.label)} (${n})</option>`;
@@ -333,47 +333,47 @@ function render(container, ctx){
 
       <div class="card" style="margin-bottom:20px;">
         <input id="q-search" type="text" placeholder="Tìm theo email, tên, hoặc mã tham chiếu chuyển khoản..." value="${esc(state.q)}"
-          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
       </div>
 
       ${state.error?`<div class="error-box">${esc(state.error)}</div>`:''}
 
       ${list.map(p=>{
         const st = statusOf(p);
-        const miniLabel = `font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;`;
+        const miniLabel = `font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;`;
         const planUnclear = planKeyOf(p) === 'none';
         const isExpanded = state.expandedMemberIds.has(p.id);
         return `
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;cursor:pointer;" data-toggle-member="${p.id}">
             <div>
-              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}${quotaAnomaly(p) ? ` <span style="font-size:11px;font-weight:700;color:var(--danger);vertical-align:middle;" title="${esc(quotaAnomaly(p))}">⚠️ Lượt AI bất thường</span>` : ''}</h3>
-              <div style="color:var(--ink-soft);font-size:13px;">${esc(p.full_name||'')}</div>
-              ${p.role!=='admin' ? `<div style="margin-top:4px;font-size:12px;color:var(--ink-soft);">⚡ ${esc(aiUsageShortLabel(p))}</div>` : ''}
+              <h3 style="margin-bottom:2px;">${esc(p.email||'(không có email)')}${isNewAccount(p) ? ` <span style="font-size:12.5px;font-weight:700;color:var(--gold);vertical-align:middle;">🆕 Mới đăng ký</span>` : ''}${hasPaidMismatch(p) ? ` <span style="font-size:12.5px;font-weight:700;color:var(--danger);vertical-align:middle;">⚠️ Chưa đánh dấu trả phí</span>` : ''}${quotaAnomaly(p) ? ` <span style="font-size:12.5px;font-weight:700;color:var(--danger);vertical-align:middle;" title="${esc(quotaAnomaly(p))}">⚠️ Lượt AI bất thường</span>` : ''}</h3>
+              <div style="color:var(--ink-soft);font-size:14.5px;">${esc(p.full_name||'')}</div>
+              ${p.role!=='admin' ? `<div style="margin-top:4px;font-size:13.5px;color:var(--ink-soft);">⚡ ${esc(aiUsageShortLabel(p))}</div>` : ''}
               ${p.role!=='admin' && !p.has_paid ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">${journeyBadgesHtml(p)}</div>` : ''}
             </div>
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;
               background:${st.cls==='active'?'var(--accent-soft)':st.cls==='soon'?'#FBF6E9':st.cls==='expired'?'#FBEAE4':st.cls==='admin'?'#EDEAE0':'var(--line)'};
               color:${st.cls==='active'?'var(--accent)':st.cls==='soon'?'var(--gold)':st.cls==='expired'?'var(--danger)':'var(--ink-soft)'};">${esc(st.label)}</span>
           </div>
 
-          ${p.role!=='admin' && !isExpanded ? `<span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-member="${p.id}">▸ Xem chi tiết</span>` : ''}
-          ${p.role!=='admin' && isExpanded ? `<span style="display:block;margin-top:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-member="${p.id}">▾ Thu gọn</span>` : ''}
+          ${p.role!=='admin' && !isExpanded ? `<span style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-member="${p.id}">▸ Xem chi tiết</span>` : ''}
+          ${p.role!=='admin' && isExpanded ? `<span style="display:block;margin-top:6px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-member="${p.id}">▾ Thu gọn</span>` : ''}
 
           ${p.role!=='admin' && isExpanded ? `
-            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:13px;">
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:14.5px;">
               <div><span style="color:var(--ink-soft);">Hạn dùng:</span> ${p.access_until ? esc(new Date(p.access_until).toLocaleString('vi-VN')) : '(chưa có)'}</div>
               <div><span style="color:var(--ink-soft);">Gói:</span> <b>${esc((PLAN_TABS.find(t=>t.key===planKeyOf(p))||{}).label||'Chưa rõ')}</b>
-                <span style="margin-left:6px;font-size:12px;">— gắn tay:
+                <span style="margin-left:6px;font-size:13.5px;">— gắn tay:
                   <span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|30">1th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|180">6th</span>/<span style="text-decoration:underline;cursor:pointer;" data-set-plan="${p.id}|365">12th</span>${!planUnclear ? `/<span style="text-decoration:underline;cursor:pointer;color:var(--danger);" data-set-plan="${p.id}|clear">xoá</span>` : ''}</span>
               </div>
               <div><span style="color:var(--ink-soft);">Đã dùng:</span> ${esc(aiUsageLabel(p))}</div>
               <div><span style="color:var(--ink-soft);">Loại khách:</span> ${p.is_student?'🎓 Học viên':'Thường'}
-                <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-student="${p.id}|${!p.is_student}">đổi</span></div>
+                <span style="text-decoration:underline;cursor:pointer;font-size:13.5px;margin-left:4px;" data-toggle-student="${p.id}|${!p.is_student}">đổi</span></div>
               <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);">Thanh toán:</span> ${p.has_paid?`💰 Đã trả phí (trần ${PAID_MONTHLY_AI_LIMIT} lượt/tháng)`:`Chưa trả phí (trần dùng thử ${p.trial_ai_limit||TRIAL_AI_LIMIT} lượt)`}
-                <span style="text-decoration:underline;cursor:pointer;font-size:12px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.has_paid}">đổi</span></div>
-              ${p.ref_code ? `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Nội dung CK: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
-              ${p.is_vip_partner ? `<div style="grid-column:1/-1;color:var(--gold,var(--accent));font-size:12.5px;font-weight:600;">👑 VIP Partner (+10 điểm % hoa hồng)</div>` : ''}
+                <span style="text-decoration:underline;cursor:pointer;font-size:13.5px;margin-left:4px;" data-toggle-paid="${p.id}|${!p.has_paid}">đổi</span></div>
+              ${p.ref_code ? `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:14px;">Nội dung CK: <span style="font-family:'IBM Plex Mono',monospace;">SEVQR ${esc(p.ref_code)}</span></div>` : ''}
+              ${p.is_vip_partner ? `<div style="grid-column:1/-1;color:var(--gold,var(--accent));font-size:14px;font-weight:600;">👑 VIP Partner (+10 điểm % hoa hồng)</div>` : ''}
               ${(() => {
                 const rc = state.referralCounts[p.id];
                 const referrer = p.referred_by_ref_code ? state.profiles.find(x=>x.ref_code===p.referred_by_ref_code) : null;
@@ -382,7 +382,7 @@ function render(container, ctx){
                 if(rc) parts.push(`đã giới thiệu <b>${rc.count}</b> người (tặng ${rc.luot} lượt)${rc.count>=PARTNER_REFERRAL_THRESHOLD?' 🌟 Hiểu Partner':''}`);
                 if(referrer) parts.push(`được giới thiệu bởi <b>${esc(referrer.email||referrer.ref_code)}</b>`);
                 const suspect = referrer ? selfReferralSuspect(p, referrer) : null;
-                return `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;">Giới thiệu: ${parts.join(' · ')}${suspect?` <span style="color:var(--danger);font-weight:600;" title="Chỉ là nghi vấn, không tự động chặn/thu hồi gì — chị tự kiểm tra">⚠️ Nghi tự giới thiệu chính mình: ${esc(suspect)}</span>`:''}</div>`;
+                return `<div style="grid-column:1/-1;color:var(--ink-soft);font-size:14px;">Giới thiệu: ${parts.join(' · ')}${suspect?` <span style="color:var(--danger);font-weight:600;" title="Chỉ là nghi vấn, không tự động chặn/thu hồi gì — chị tự kiểm tra">⚠️ Nghi tự giới thiệu chính mình: ${esc(suspect)}</span>`:''}</div>`;
               })()}
             </div>
 
@@ -398,43 +398,43 @@ function render(container, ctx){
               <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-180" ${state.busyId===p.id?'disabled':''}>Hoàn tác -180</button>
               <button class="btn-ghost btn btn-sm" style="color:var(--danger);" data-extend="${p.id}|-365" ${state.busyId===p.id?'disabled':''}>Hoàn tác -365</button>
             </div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Không tự tính vào doanh thu — kích hoạt tay cho khách chuyển khoản thật thì ghi nhận doanh thu riêng bên dưới.</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Không tự tính vào doanh thu — kích hoạt tay cho khách chuyển khoản thật thì ghi nhận doanh thu riêng bên dưới.</div>
 
             <div class="btn-row" style="justify-content:flex-start;align-items:center;margin-top:8px;">
-              <input type="number" data-custom-days="${p.id}" placeholder="Số ngày, vd 4" style="width:110px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.customDays[p.id]||'')}">
+              <input type="number" data-custom-days="${p.id}" placeholder="Số ngày, vd 4" style="width:110px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;" value="${esc(state.customDays[p.id]||'')}">
               <button class="btn-ghost btn btn-sm" data-extend-trial="${p.id}" ${state.busyId===p.id?'disabled':''}>Bù ngày dùng thử (không đánh dấu đã trả phí)</button>
             </div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Dùng khi cần cộng bù đúng số ngày lẻ (vd sửa lỗi thiếu ngày dùng thử) — chỉ đổi hạn dùng, KHÔNG bật "đã trả phí" như 3 nút bên trên.</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Dùng khi cần cộng bù đúng số ngày lẻ (vd sửa lỗi thiếu ngày dùng thử) — chỉ đổi hạn dùng, KHÔNG bật "đã trả phí" như 3 nút bên trên.</div>
 
             <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Cộng/hoàn lượt AI thủ công</div>
             <div class="btn-row" style="justify-content:flex-start;align-items:center;">
-              <input type="number" data-manual-luot="${p.id}" placeholder="Số lượt, vd 22" style="width:120px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualLuot[p.id]||'')}">
+              <input type="number" data-manual-luot="${p.id}" placeholder="Số lượt, vd 22" style="width:120px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;" value="${esc(state.manualLuot[p.id]||'')}">
               <button class="btn-ghost btn btn-sm" data-credit-luot="${p.id}" ${state.busyId===p.id?'disabled':''}>Cộng lượt</button>
             </div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Dùng khi cần hoàn lượt cho khách bị lỗi (vd bấm "AI viết cả tuần" bị timeout mà vẫn bị trừ lượt) — trừ thẳng vào số đã dùng của chu kỳ hiện tại (dùng thử: trọn đời, đã trả phí: đúng chu kỳ 30 ngày đang tính), không đụng gì khác.</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Dùng khi cần hoàn lượt cho khách bị lỗi (vd bấm "AI viết cả tuần" bị timeout mà vẫn bị trừ lượt) — trừ thẳng vào số đã dùng của chu kỳ hiện tại (dùng thử: trọn đời, đã trả phí: đúng chu kỳ 30 ngày đang tính), không đụng gì khác.</div>
 
             <div style="${miniLabel}margin-top:14px;margin-bottom:6px;">Ghi nhận doanh thu thủ công</div>
             <div class="btn-row" style="justify-content:flex-start;align-items:center;">
-              <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;" value="${esc(state.manualAmount[p.id]||'')}">
-              <select data-manual-days="${p.id}" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+              <input type="number" data-manual-amount="${p.id}" placeholder="Số tiền đã nhận, vd 499000" style="width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;" value="${esc(state.manualAmount[p.id]||'')}">
+              <select data-manual-days="${p.id}" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;">
                 <option value="" ${!state.manualDays[p.id]?'selected':''}>Gói (không rõ)</option>
                 <option value="30" ${state.manualDays[p.id]==='30'?'selected':''}>1 tháng</option>
                 <option value="180" ${state.manualDays[p.id]==='180'?'selected':''}>6 tháng</option>
                 <option value="365" ${state.manualDays[p.id]==='365'?'selected':''}>12 tháng</option>
               </select>
               <button class="btn-ghost btn btn-sm" data-mark-revenue="${p.id}" ${state.busyId===p.id?'disabled':''}>Ghi nhận</button>
-              ${state.justMarkedId===p.id ? `<span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Thành công</span>` : ''}
-              ${state.revenueByProfile[p.id] ? `<span style="color:var(--accent);font-size:12.5px;">Đã ghi nhận: ${state.revenueByProfile[p.id].toLocaleString('vi-VN')}đ</span>` : ''}
+              ${state.justMarkedId===p.id ? `<span style="color:var(--accent);font-weight:600;font-size:14px;">✓ Thành công</span>` : ''}
+              ${state.revenueByProfile[p.id] ? `<span style="color:var(--accent);font-size:14px;">Đã ghi nhận: ${state.revenueByProfile[p.id].toLocaleString('vi-VN')}đ</span>` : ''}
             </div>
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Chọn đúng gói để tính đúng "Gói đã mua gần nhất" và phân bổ doanh thu theo tháng ở tab Tài chính — bỏ trống nếu không rõ khách mua gói mấy tháng.</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">Chọn đúng gói để tính đúng "Gói đã mua gần nhất" và phân bổ doanh thu theo tháng ở tab Tài chính — bỏ trống nếu không rõ khách mua gói mấy tháng.</div>
 
             <div style="margin-top:16px;padding-top:10px;border-top:1px solid var(--line);">
               ${state.confirmDeleteId===p.id ? `
-                <span style="font-size:12.5px;color:var(--danger);font-weight:600;">Xoá vĩnh viễn tài khoản này? Không khôi phục được.</span>
+                <span style="font-size:14px;color:var(--danger);font-weight:600;">Xoá vĩnh viễn tài khoản này? Không khôi phục được.</span>
                 <button class="btn btn-sm" style="background:var(--danger);margin-left:8px;" data-confirm-delete="${p.id}" ${state.busyId===p.id?'disabled':''}>${state.busyId===p.id?'Đang xoá…':'Xác nhận xoá'}</button>
                 <span class="btn-ghost btn btn-sm" data-cancel-delete="1">Huỷ</span>
               ` : `
-                <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-ask-delete="${p.id}">Xoá tài khoản (tài khoản test/rác)</span>
+                <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-ask-delete="${p.id}">Xoá tài khoản (tài khoản test/rác)</span>
               `}
             </div>
           ` : ''}

@@ -201,7 +201,7 @@ function render(container, ctx){
   }
   function usageBadgeHtml(key){
     const n = usageCountFor(key);
-    return n>0 ? `<span style="color:var(--accent);font-size:12px;font-weight:600;">✓ Đã dùng viết bài ${n} lần</span>` : '';
+    return n>0 ? `<span style="color:var(--accent);font-size:13.5px;font-weight:600;">✓ Đã dùng viết bài ${n} lần</span>` : '';
   }
   // Hook đã dùng viết bài rồi thì đẩy xuống cuối danh sách — hook chưa dùng nổi lên trên để dễ chọn
   // tiếp (theo phản hồi chị Quỳnh 21/8), giữ nguyên thứ tự tương đối trong từng nhóm. keyFn nhận 1
@@ -234,30 +234,30 @@ function render(container, ctx){
     return `
       <div class="hint-box" style="margin-bottom:14px;">Câu hook (câu mở đầu) quyết định người xem có dừng lại đọc tiếp hay lướt qua — quan trọng ngang bài viết. Nhập chủ đề + chọn đúng mục tiêu, AI sinh ngay 5 hook phù hợp, lưu lại vào <b>Kho của tôi</b> để dùng dần.</div>
       <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề muốn viết hook</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề muốn viết hook</label>
         <textarea id="gen-topic" style="min-height:auto;height:52px;" placeholder="Ví dụ: sai lầm khiến dòng tiền cá nhân bị nghẽn">${esc(state.genTopic)}</textarea>
 
         ${!hasPositioning ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/đối tượng (không bắt buộc)</label>
           <textarea id="gen-quick-context" style="min-height:auto;height:44px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.genQuickContext)}</textarea>
         ` : ''}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mục tiêu content này là gì?</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Mục tiêu content này là gì?</label>
         <div class="chips">
           ${CONTENT_GOALS.map(g=>`<div class="chip ${state.genGoal===g.key?'selected':''}" data-gen-goal="${g.key}">${esc(g.label)}</div>`).join('')}
         </div>
-        <div style="margin-top:6px;font-size:12.5px;color:var(--ink-soft);">${esc((CONTENT_GOALS.find(g=>g.key===state.genGoal)||{}).desc||'')}</div>
+        <div style="margin-top:6px;font-size:14px;color:var(--ink-soft);">${esc((CONTENT_GOALS.find(g=>g.key===state.genGoal)||{}).desc||'')}</div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại hook phù hợp mục tiêu này</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Loại hook phù hợp mục tiêu này</label>
         <div class="chips">
           ${(state.genShowAllCats ? HOOK_GEN_CATEGORIES : HOOK_GEN_CATEGORIES.filter(c=>(GOAL_RECOMMENDED_CATS[state.genGoal]||[]).includes(c.key)))
             .map(c=>`<div class="chip ${state.genCategory===c.key?'selected':''}" data-gen-cat="${c.key}">${esc(c.label)}</div>`).join('')}
         </div>
         <div style="margin-top:6px;">
-          <span style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="toggle-all-cats">${state.genShowAllCats?'Chỉ xem loại phù hợp mục tiêu này':'Xem tất cả 15 loại hook →'}</span>
+          <span style="font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="toggle-all-cats">${state.genShowAllCats?'Chỉ xem loại phù hợp mục tiêu này':'Xem tất cả 15 loại hook →'}</span>
         </div>
 
-        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>
+        <div class="btn-row" style="margin-top:14px;"><button class="btn" data-action="generate-hooks" ${state.genLoading?'disabled':''}>${state.genLoading?'Đang sinh hook…':'Tạo 5 hook'}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 30-40 giây để ra 5 hook + 3 tiêu đề thumbnail.</div>
         ${state.genError?`<div class="error-box">${esc(state.genError)}</div>`:''}
       </div>
@@ -277,7 +277,7 @@ function render(container, ctx){
       ` : ''}
 
       ${state.genThumbTitles ? `
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">Gợi ý tiêu đề ghi lên thumbnail</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 12px;">Gợi ý tiêu đề ghi lên thumbnail</h3>
         <div style="display:flex;flex-direction:column;gap:10px;">
           ${state.genThumbTitles.map((t,i)=>`
             <div class="section">
@@ -353,13 +353,13 @@ function render(container, ctx){
     const hint = `<div class="hint-box" style="margin-bottom:14px;">Hook hay của riêng bạn — tự nghĩ ra hoặc lưu lại từ hook AI vừa sinh. <b>Đặc biệt nên cập nhật cả hook từ content đang viral bạn tự tìm thấy ở nơi khác</b> — AI sẽ tự chọn đúng trục nội dung và loại hook giúp bạn, không cần tự chọn nữa.</div>`;
     return hint + `
       <div class="card">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Câu hook</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Câu hook</label>
         <textarea id="ne-hook" style="min-height:auto;height:56px;">${esc(state.newEntry.hook_text)}</textarea>
-        <div style="margin-top:6px;font-size:12px;color:var(--ink-soft);">Không cần chọn loại hook — hệ thống tự nhận diện khi bạn lưu.</div>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ghi chú (tuỳ chọn)</label>
+        <div style="margin-top:6px;font-size:13.5px;color:var(--ink-soft);">Không cần chọn loại hook — hệ thống tự nhận diện khi bạn lưu.</div>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ghi chú (tuỳ chọn)</label>
         <textarea id="ne-note" style="min-height:auto;height:44px;">${esc(state.newEntry.note)}</textarea>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đây có phải hook từ content đang viral bạn tìm thấy ở nơi khác không?</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Đây có phải hook từ content đang viral bạn tìm thấy ở nơi khác không?</label>
         <div class="chips">
           <div class="chip ${state.newEntry.isViral===true?'selected':''}" data-ne-viral="yes">Có, từ content viral tôi sưu tầm</div>
           <div class="chip ${state.newEntry.isViral===false?'selected':''}" data-ne-viral="no">Không, hook tôi tự nghĩ</div>
@@ -367,12 +367,12 @@ function render(container, ctx){
         ${state.newEntry.isViral===true ? `
           <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
             <div style="flex:1;min-width:140px;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt xem (view) — nếu biết</label>
-              <input id="ne-views" type="text" value="${esc(state.newEntry.viralViews)}" placeholder="VD: 500k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt xem (view) — nếu biết</label>
+              <input id="ne-views" type="text" value="${esc(state.newEntry.viralViews)}" placeholder="VD: 500k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
             </div>
             <div style="flex:1;min-width:140px;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt thích (like) — nếu biết</label>
-              <input id="ne-likes" type="text" value="${esc(state.newEntry.viralLikes)}" placeholder="VD: 20k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Số lượt thích (like) — nếu biết</label>
+              <input id="ne-likes" type="text" value="${esc(state.newEntry.viralLikes)}" placeholder="VD: 20k" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
             </div>
           </div>
         ` : ''}
@@ -396,14 +396,14 @@ function render(container, ctx){
     const allSelected = allIds.length > 0 && allIds.every(id=>selectedSet.has(id));
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--ink-soft);cursor:pointer;">
           <input type="checkbox" data-select-all="${listKey}" data-select-all-ids="${allIds.join(',')}" ${allSelected?'checked':''}>
           Chọn tất cả (${allIds.length})
         </label>
         ${selectedSet.size > 0 ? `
         <div class="btn-row" style="margin-top:0;align-items:center;">
-          <span style="font-size:12.5px;color:var(--ink-soft);">Đã chọn <b>${selectedSet.size}</b></span>
-          <span style="color:var(--danger);cursor:pointer;font-size:13px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
+          <span style="font-size:14px;color:var(--ink-soft);">Đã chọn <b>${selectedSet.size}</b></span>
+          <span style="color:var(--danger);cursor:pointer;font-size:14.5px;font-weight:600;" data-bulk-delete="${listKey}">Xoá tất cả đã chọn</span>
           <span class="btn-ghost btn btn-sm" data-bulk-clear="${listKey}">Bỏ chọn</span>
         </div>
         ` : ''}
@@ -413,17 +413,17 @@ function render(container, ctx){
   }
 
   function khoToiListHtml(){
-    if(state.personal.length===0) return `<div style="color:var(--ink-soft);font-size:14px;">Kho của bạn đang trống.</div>`;
+    if(state.personal.length===0) return `<div style="color:var(--ink-soft);font-size:15.5px;">Kho của bạn đang trống.</div>`;
 
     let items = filterByPillar(state.personal, state.khoToiPillar);
     const q = state.khoToiSearch.trim().toLowerCase();
     if(q) items = items.filter(h=>(h.hook_text||'').toLowerCase().includes(q));
     items = sortUnusedFirst(items, h=>'personal:'+h.id);
-    const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
-    if(items.length===0) return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
+    const searchHtml = `<input type="text" data-khotoi-search value="${esc(state.khoToiSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;margin-bottom:12px;">`;
+    if(items.length===0) return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:15.5px;">Không có hook nào khớp tìm kiếm.</div>`;
     return pillarChipsHtml(state.personal, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'hooks_bank_personal', items.map(h=>h.id)) + items.map(h=>`
       <div class="section">
-        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
+        <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(categoryLabel(h.category))}${h.is_viral?' · VIRAL':''}${(h.viral_views||h.viral_likes)?` · ${[h.viral_views&&('view '+h.viral_views), h.viral_likes&&('like '+h.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
         <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${h.id}" ${state.selectedPersonal.has(h.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><div class="body" style="margin:0;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div></label>
         ${khoToiOptionsPanelHtml(h)}
       </div>
@@ -437,7 +437,7 @@ function render(container, ctx){
     const isOpen = state.expandedOptionsIds.has(h.id);
     return `
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
-        <span style="color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;" data-toggle-options="${h.id}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
+        <span style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-options="${h.id}">${isOpen?'▾':'▸'} Tuỳ chọn</span>
         ${isOpen ? khoToiOptionsBodyHtml(h) : ''}
       </div>
     `;
@@ -455,13 +455,13 @@ function render(container, ctx){
         ${state.promoteErrorFor===h.id?`<div class="error-box">${esc(state.promoteError)}</div>`:''}
         ${writeActionHtml('personal:'+h.id)}
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--line);">
-          ${h.share_status==='pending'?'<span style="font-size:12px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
-            :h.share_status==='approved'?'<span style="font-size:12px;color:var(--accent);">Đã lên Kho chung ✓</span>'
+          ${h.share_status==='pending'?'<span style="font-size:13.5px;color:var(--gold);">Đang chờ admin duyệt lên Kho chung</span>'
+            :h.share_status==='approved'?'<span style="font-size:13.5px;color:var(--accent);">Đã lên Kho chung ✓</span>'
             // "bài trong kho của tôi cũng phải có nút bấm đóng góp vào kho viral chứ" (chị Quỳnh
             // 2026-09-07) — cùng lý do đã sửa ở kho-content.js: trước đây chỉ mời đóng góp 1 LẦN DUY
             // NHẤT ngay lúc thêm hook mới, bỏ lỡ là hết cách đóng góp lại.
             :`<span class="btn-ghost btn btn-sm" data-contribute-personal="${h.id}">Đóng góp vào Kho Viral</span>`}
-          <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del="${h.id}">Xoá</span>
+          <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-del="${h.id}">Xoá</span>
         </div>
       </div>
     `;
@@ -504,17 +504,17 @@ function render(container, ctx){
     const currentPillar = (h.tags && h.tags[0]) || '';
     return `
       <div>
-        <span style="cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:700;" data-admin-menu-toggle="${key}">⋯</span>
+        <span style="cursor:pointer;font-size:14.5px;color:var(--ink-soft);font-weight:700;" data-admin-menu-toggle="${key}">⋯</span>
         ${isOpen ? `
           <div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;gap:8px;background:var(--panel);">
             <div>
-              <label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Đổi trục nội dung (khi thấy phân loại chưa chuẩn)</label>
-              <select data-admin-pillar-select="${key}" style="width:100%;font-size:12.5px;padding:4px;">
+              <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Đổi trục nội dung (khi thấy phân loại chưa chuẩn)</label>
+              <select data-admin-pillar-select="${key}" style="width:100%;font-size:14px;padding:4px;">
                 <option value="" ${!currentPillar?'selected':''}>— Chưa phân loại —</option>
                 ${HOOK_PILLARS.map(p=>`<option value="${p.key}" ${currentPillar===p.key?'selected':''}>${esc(p.label)}</option>`).join('')}
               </select>
             </div>
-            <span style="color:var(--danger);cursor:pointer;font-size:12.5px;" data-admin-del="${key}">Xoá khỏi Kho chung</span>
+            <span style="color:var(--danger);cursor:pointer;font-size:14px;" data-admin-del="${key}">Xoá khỏi Kho chung</span>
           </div>
         ` : ''}
       </div>
@@ -530,12 +530,12 @@ function render(container, ctx){
     const q = state.chungSearch.trim().toLowerCase();
     if(q) items = items.filter(h=>(h.hook_text||'').toLowerCase().includes(q));
     items = sortUnusedFirst(items, h=>h._src+':'+h.id);
-    const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;margin-bottom:12px;">`;
-    if(items.length===0) return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:14px;">Không có hook nào khớp tìm kiếm.</div>`;
+    const searchHtml = `<input type="text" data-chung-search value="${esc(state.chungSearch)}" placeholder="Tìm theo câu hook..." style="width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;margin-bottom:12px;">`;
+    if(items.length===0) return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + `<div style="color:var(--ink-soft);font-size:15.5px;">Không có hook nào khớp tìm kiếm.</div>`;
     return hint + pillarChipsHtml(all, state.chungPillar, 'chung-pillar') + searchHtml + items.map(h=>`
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${h._src==='content' ? 'Từ Kho Content' : esc(categoryLabel(h.category))}</div>
           ${adminMenuHtml(h)}
         </div>
         <div class="body protected" oncontextmenu="return false;" oncopy="return false;" oncut="return false;"><b>${esc(h.hook_text)}</b>${h.note?`<br><span style="color:var(--ink-soft);">${esc(h.note)}</span>`:''}</div>

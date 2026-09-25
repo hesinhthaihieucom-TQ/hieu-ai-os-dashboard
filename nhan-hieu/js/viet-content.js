@@ -145,14 +145,14 @@ function render(container, ctx){
       <div class="card">
         ${state.khoGocSource ? `
           <div class="hint-box">Đang viết từ 1 bài trong <b>Kho Content</b> — sẽ <b>giữ nguyên hook và cấu trúc/trình tự bài gốc</b> (đây là công thức đã kiểm chứng viral), chỉ đổi câu từ ở các đoạn còn lại bằng giọng và câu chuyện của bạn, không sao chép nguyên văn. <span style="cursor:pointer;text-decoration:underline;" data-action="cancel-kho-goc">Huỷ, viết bài mới thay vì giữ nguyên →</span></div>
-          ${state.khoGocSource.title ? `<label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tiêu đề gốc</label>
-          <div class="body" style="background:var(--accent-soft);padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;">${esc(state.khoGocSource.title)}</div>` : ''}
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bài gốc (tham khảo — hook và cấu trúc sẽ giữ, câu từ ở các đoạn khác sẽ đổi)</label>
-          <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-size:13px;">${esc(excerpt(state.khoGocSource.content, 180))}</div>
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện riêng của bạn (AI sẽ diễn đạt lại theo giọng bài này, không copy nguyên văn)</label>
+          ${state.khoGocSource.title ? `<label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Tiêu đề gốc</label>
+          <div class="body" style="background:var(--accent-soft);padding:10px 12px;border-radius:8px;font-size:14.5px;font-weight:600;">${esc(state.khoGocSource.title)}</div>` : ''}
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Bài gốc (tham khảo — hook và cấu trúc sẽ giữ, câu từ ở các đoạn khác sẽ đổi)</label>
+          <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-size:14.5px;">${esc(excerpt(state.khoGocSource.content, 180))}</div>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Câu chuyện riêng của bạn (AI sẽ diễn đạt lại theo giọng bài này, không copy nguyên văn)</label>
           ${state.cauChuyenRieng ? `
-            <div class="body" style="background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:8px;font-size:13px;">${esc(state.cauChuyenRieng)}</div>
-            <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">AI tổng hợp từ câu trả lời Định Vị của bạn — xem/làm lại ở <a href="#dinh-vi">Định Vị</a> nếu muốn câu chuyện khác.</div>
+            <div class="body" style="background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:8px;font-size:14.5px;">${esc(state.cauChuyenRieng)}</div>
+            <div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">AI tổng hợp từ câu trả lời Định Vị của bạn — xem/làm lại ở <a href="#dinh-vi">Định Vị</a> nếu muốn câu chuyện khác.</div>
           ` : `
             <div class="hint-box">Chưa có câu chuyện cá nhân trong kết quả <a href="#dinh-vi">Định Vị</a> — làm Định Vị (hoặc làm lại) trước, rồi quay lại đây bấm tạo lại.</div>
           `}
@@ -160,50 +160,50 @@ function render(container, ctx){
             <div class="hint-box" style="margin-top:14px;">Bạn chưa chọn sản phẩm/group nào ở "Tuỳ chọn thêm" bên dưới — nếu có, CTA sẽ dẫn đúng về đó; nếu không, CTA sẽ chỉ mời bình luận tương tác chung (không hứa gửi tài liệu/quà gì, vì bài gốc trong kho là của người khác, không dùng lại lời hứa đó được).</div>
           ` : ''}
         ` : `
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chủ đề / ý tưởng muốn viết</label>
         <textarea id="idea-input" placeholder="Ví dụ: 3 sai lầm khiến dòng tiền cá nhân bị nghẽn...">${esc(state.ideaText)}</textarea>
         ${state.ideaIsHook ? `
           <div class="hint-box" style="margin-top:8px;">Đây là 1 hook đã chọn sẵn — AI sẽ <b>giữ nguyên câu này làm hook mở đầu</b>, chỉ đổi con số nếu hook có số và cần khớp lại nội dung bài. <span style="cursor:pointer;text-decoration:underline;" data-action="cancel-idea-hook">Không cần giữ nguyên, để AI viết hook mới →</span></div>
         ` : ''}
         `}
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Yêu cầu riêng cho bài này (không bắt buộc)</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Yêu cầu riêng cho bài này (không bắt buộc)</label>
         <textarea id="custom-instructions" style="min-height:auto;height:52px;" placeholder="Ví dụ: viết ngắn gọn hơn, nhấn mạnh số liệu cụ thể, giọng hài hước hơn, không dùng từ &quot;chắc chắn&quot;...">${esc(state.customInstructions)}</textarea>
         ${!state.positioning ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc, giúp bài viết sát hơn)</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc, giúp bài viết sát hơn)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
         ` : ''}
         <div style="margin-top:10px;">
-          <span style="color:var(--accent);font-size:13px;cursor:pointer;font-weight:600;" data-action="toggle-extra">${state.showExtra?'▾':'▸'} Tuỳ chọn thêm (tên kênh, sản phẩm, group — để ghép hashtag & CTA chính xác hơn)</span>
+          <span style="color:var(--accent);font-size:14.5px;cursor:pointer;font-weight:600;" data-action="toggle-extra">${state.showExtra?'▾':'▸'} Tuỳ chọn thêm (tên kênh, sản phẩm, group — để ghép hashtag & CTA chính xác hơn)</span>
         </div>
         ${state.showExtra ? `
           <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
             <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Tên kênh Facebook/TikTok</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Tên kênh Facebook/TikTok</label>
               <textarea id="ex-channel" style="min-height:auto;height:40px;" placeholder="Ví dụ: Tú Quỳnh">${esc(state.channelHandle)}</textarea>
-              <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Lưu ở đây sẽ tự cập nhật vào Định Vị luôn, dùng chung cho các bài sau.</div>
+              <div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Lưu ở đây sẽ tự cập nhật vào Định Vị luôn, dùng chung cho các bài sau.</div>
             </div>
             ${state.brands.length ? `
             <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Thương hiệu dùng cho bài này</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Thương hiệu dùng cho bài này</label>
               <select id="ex-brand-select">
                 <option value="">— Không ghép thương hiệu —</option>
                 ${state.brands.map(b=>`<option value="${b.id}" ${state.brandChoice===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}
               </select>
-              <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Thêm/sửa thương hiệu ở <a href="#dinh-vi">Định Vị</a>.</div>
+              <div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Thêm/sửa thương hiệu ở <a href="#dinh-vi">Định Vị</a>.</div>
             </div>
             ` : ''}
             <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Sản phẩm/dịch vụ muốn nhắc (nếu có)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Sản phẩm/dịch vụ muốn nhắc (nếu có)</label>
               <select id="ex-product-select">
                 <option value="">— Không nhắc —</option>
                 ${state.assets.filter(a=>['san_pham_so','khoa_hoc','aff_cua_toi','aff_nguoi_khac'].includes(a.kind)).map(a=>`<option value="${a.id}" ${state.productChoice===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}
                 <option value="other" ${state.productChoice==='other'?'selected':''}>Khác (tự nhập)</option>
               </select>
               ${state.productChoice==='other'?`<textarea id="ex-product-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Sổ tay Dòng Tiền">${esc(state.productNameOther)}</textarea>`:''}
-              ${state.assets.length===0?`<div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Chưa có tài sản nào — thêm ở mục <a href="#dinh-vi">Định Vị</a> để lần sau chọn nhanh.</div>`:''}
+              ${state.assets.length===0?`<div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Chưa có tài sản nào — thêm ở mục <a href="#dinh-vi">Định Vị</a> để lần sau chọn nhanh.</div>`:''}
             </div>
             <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Group/cộng đồng muốn nhắc (nếu có)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Group/cộng đồng muốn nhắc (nếu có)</label>
               <select id="ex-group-select">
                 <option value="">— Không nhắc —</option>
                 ${state.assets.filter(a=>a.kind==='cong_dong').map(a=>`<option value="${a.id}" ${state.groupChoice===a.id?'selected':''}>${esc(a.label)}</option>`).join('')}
@@ -212,23 +212,23 @@ function render(container, ctx){
               ${state.groupChoice==='other'?`<textarea id="ex-group-other" style="min-height:auto;height:40px;margin-top:8px;" placeholder="Ví dụ: Cộng Đồng Tâm Thức Thịnh Vượng">${esc(state.groupNameOther)}</textarea>`:''}
             </div>
             <div>
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Kiến thức ngành muốn lồng vào bài (nếu có)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;">Kiến thức ngành muốn lồng vào bài (nếu có)</label>
               ${state.knowledgeItems.length ? `
                 <select id="ex-knowledge-select">
                   <option value="">— Không lồng —</option>
                   ${state.knowledgeItems.map(k=>`<option value="${k.id}" ${state.knowledgeChoice===k.id?'selected':''}>${esc(k.title||'(không tiêu đề)')}</option>`).join('')}
                 </select>
-                <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">AI sẽ lồng đúng nội dung này vào bài (diễn đạt lại bằng giọng của bạn, không copy nguyên văn) để bài có chuyên môn thật.</div>
-              ` : `<div style="font-size:11.5px;color:var(--ink-soft);">Chưa có kiến thức ngành nào — thêm ở <a href="#kho-content">Kho Content → Kho của tôi</a> (chọn loại nguồn "Kiến thức ngành").</div>`}
+                <div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">AI sẽ lồng đúng nội dung này vào bài (diễn đạt lại bằng giọng của bạn, không copy nguyên văn) để bài có chuyên môn thật.</div>
+              ` : `<div style="font-size:13px;color:var(--ink-soft);">Chưa có kiến thức ngành nào — thêm ở <a href="#kho-content">Kho Content → Kho của tôi</a> (chọn loại nguồn "Kiến thức ngành").</div>`}
             </div>
             ${resolvedProductCtaMau() || resolvedGroupCtaMau() ? `
-            <div style="font-size:11.5px;color:var(--ink-soft);">💡 AI sẽ bám theo giọng điệu câu CTA mẫu đã lưu cho ${resolvedProductCtaMau() && resolvedGroupCtaMau() ? 'sản phẩm và group này' : resolvedProductCtaMau() ? 'sản phẩm này' : 'group này'} (biến tấu lại cho hợp bài mới, không copy y nguyên) — sửa câu mẫu ở <a href="#dinh-vi">Định Vị</a>.</div>
+            <div style="font-size:13px;color:var(--ink-soft);">💡 AI sẽ bám theo giọng điệu câu CTA mẫu đã lưu cho ${resolvedProductCtaMau() && resolvedGroupCtaMau() ? 'sản phẩm và group này' : resolvedProductCtaMau() ? 'sản phẩm này' : 'group này'} (biến tấu lại cho hợp bài mới, không copy y nguyên) — sửa câu mẫu ở <a href="#dinh-vi">Định Vị</a>.</div>
             ` : ''}
           </div>
         ` : ''}
         <div class="btn-row" style="align-items:center;">
           <button class="btn" data-action="generate" ${state.generating?'disabled':''}>${state.generating?'Đang viết…':(state.khoGocSource?'Cá nhân hoá bài này':'Viết bài')}</button>
-          ${!state.generating?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 3 lượt AI)</span>`:''}
+          ${!state.generating?`<span style="font-size:12.5px;color:var(--ink-soft);">(tốn 3 lượt AI)</span>`:''}
           ${state.generating?`<span class="btn-ghost btn btn-sm" data-action="retry-generate">Thử lại ngay</span>`:''}
         </div>
         <div class="hint-box" id="generate-wait-hint" style="margin-top:10px;">Bài viết sẽ hiện ra trong khoảng <b>30-45 giây</b> — hashtag, gợi ý hình ảnh, dạng content và chấm điểm là các bước tiếp theo, bấm xem khi cần.<br><br>Nếu điện thoại tự khoá màn hình hoặc chuyển sang app khác khi đang chờ, quá trình có thể bị tạm dừng — bấm <b>"Thử lại ngay"</b> nếu chờ quá lâu không thấy gì, <b>không cần nhập lại chủ đề</b>.</div>
@@ -238,29 +238,29 @@ function render(container, ctx){
       ${state.result ? resultHtml() : ''}
 
       <div style="margin-top:28px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Bài đã viết gần đây</h3>
-        ${state.recentPosts.length===0?`<div style="color:var(--ink-soft);font-size:14px;">Chưa có bài nào được lưu.</div>`:''}
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Bài đã viết gần đây</h3>
+        ${state.recentPosts.length===0?`<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có bài nào được lưu.</div>`:''}
         ${state.recentPosts.map(p=>{
           const scheduled = state.scheduledPostIds.has(p.id);
           return `
           <div class="list-item">
             <div class="txt">
-              <b>${esc(p.title||'(không tiêu đề)')}</b>${scheduled?` <span style="color:var(--accent);font-weight:600;font-size:12.5px;">✓ Đã có trong lịch</span>`:''}<br>
-              <span style="color:var(--ink-soft);font-size:13px;">${esc((p.content||'').slice(0,120))}${(p.content||'').length>120?'…':''}</span>
+              <b>${esc(p.title||'(không tiêu đề)')}</b>${scheduled?` <span style="color:var(--accent);font-weight:600;font-size:14px;">✓ Đã có trong lịch</span>`:''}<br>
+              <span style="color:var(--ink-soft);font-size:14.5px;">${esc((p.content||'').slice(0,120))}${(p.content||'').length>120?'…':''}</span>
               ${state.viralDoneFor===p.id ? `
-                <div style="margin-top:6px;font-size:12px;color:var(--accent);">✓ Đã gửi đề xuất lên Kho Viral, đang chờ admin duyệt</div>
+                <div style="margin-top:6px;font-size:13.5px;color:var(--accent);">✓ Đã gửi đề xuất lên Kho Viral, đang chờ admin duyệt</div>
               ` : state.viralPromptFor===p.id ? `
                 <div style="margin-top:8px;">
-                  <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;">Chỉ gửi nếu bài <b>đã thực sự đạt tối thiểu 200.000 view thật</b> trên nền tảng bạn đăng — nhập đúng số view hiện có:</div>
+                  <div style="font-size:13px;color:var(--ink-soft);margin-bottom:6px;">Chỉ gửi nếu bài <b>đã thực sự đạt tối thiểu 200.000 view thật</b> trên nền tảng bạn đăng — nhập đúng số view hiện có:</div>
                   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                    <input type="number" id="viral-views-${p.id}" placeholder="Số view thật, vd 250000" style="width:160px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+                    <input type="number" id="viral-views-${p.id}" placeholder="Số view thật, vd 250000" style="width:160px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;">
                     <button class="btn btn-sm" data-confirm-viral="${p.id}" ${state.viralSubmitting?'disabled':''}>${state.viralSubmitting?'Đang gửi…':'Gửi'}</button>
                     <span class="btn-ghost btn btn-sm" data-cancel-viral="1">Huỷ</span>
                   </div>
-                  ${state.viralError?`<div style="margin-top:6px;font-size:11.5px;color:var(--danger);">${esc(state.viralError)}</div>`:''}
+                  ${state.viralError?`<div style="margin-top:6px;font-size:13px;color:var(--danger);">${esc(state.viralError)}</div>`:''}
                 </div>
               ` : `
-                <span style="display:inline-block;margin-top:8px;padding:6px 12px;background:#FBF0DC;border:1px solid var(--gold);border-radius:20px;color:var(--gold);font-weight:700;font-size:12.5px;cursor:pointer;" data-ask-viral="${p.id}">🔥 Bài này viral (200k+ view) thật? Đóng góp vào Kho Viral →</span>
+                <span style="display:inline-block;margin-top:8px;padding:6px 12px;background:#FBF0DC;border:1px solid var(--gold);border-radius:20px;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer;" data-ask-viral="${p.id}">🔥 Bài này viral (200k+ view) thật? Đóng góp vào Kho Viral →</span>
               `}
             </div>
             <button class="btn btn-sm" data-schedule="${p.id}">${scheduled?'Đưa vào lịch thêm →':'Đưa vào lịch →'}</button>
@@ -278,8 +278,8 @@ function render(container, ctx){
     return `
       <div class="section highlight">
         <h3>Chấm điểm &amp; tối ưu tự động</h3>
-        <div class="body" style="font-size:28px;font-weight:700;">${s.diem_tong}<span style="font-size:14px;">/100</span>
-          <span style="font-size:13px;font-weight:400;color:var(--ink-soft);margin-left:8px;">${esc(s.tang_noi_dung)} · ${esc(s.loai_content)}</span>
+        <div class="body" style="font-size:28px;font-weight:700;">${s.diem_tong}<span style="font-size:15.5px;">/100</span>
+          <span style="font-size:14.5px;font-weight:400;color:var(--ink-soft);margin-left:8px;">${esc(s.tang_noi_dung)} · ${esc(s.loai_content)}</span>
         </div>
       </div>
       ${(s.tieu_chi||[]).filter(t=>t.diem<8).map(t=>`
@@ -304,8 +304,8 @@ function render(container, ctx){
     return `
       <div class="section highlight">
         <h3>Chấm điểm Hook riêng</h3>
-        <div class="body" style="font-size:28px;font-weight:700;">${h.diem_tong}<span style="font-size:14px;">/100</span>
-          <span style="font-size:13px;font-weight:400;color:var(--ink-soft);margin-left:8px;">${esc(h.loai_hook)} · Dự đoán dừng lại: ${esc(h.du_doan_muc_do_dung_lai)}</span>
+        <div class="body" style="font-size:28px;font-weight:700;">${h.diem_tong}<span style="font-size:15.5px;">/100</span>
+          <span style="font-size:14.5px;font-weight:400;color:var(--ink-soft);margin-left:8px;">${esc(h.loai_hook)} · Dự đoán dừng lại: ${esc(h.du_doan_muc_do_dung_lai)}</span>
         </div>
       </div>
       <div class="section"><h3>Điểm yếu của hook</h3><div class="body">${esc(h.diem_yeu)}</div></div>
@@ -316,7 +316,7 @@ function render(container, ctx){
   // Nút "Copy" dùng chung — tra theo key thay vì nhét thẳng text vào attribute HTML (tránh vỡ
   // attribute khi text có dấu ngoặc kép/xuống dòng), luôn đọc đúng state.result mới nhất lúc bấm.
   function copyBtnHtml(field, label){
-    return `<span class="btn-ghost btn btn-sm" style="padding:5px 12px;font-size:12px;" data-copy-field="${field}">${label||'Copy'}</span>`;
+    return `<span class="btn-ghost btn btn-sm" style="padding:5px 12px;font-size:13.5px;" data-copy-field="${field}">${label||'Copy'}</span>`;
   }
   function resolveCopyText(field){
     const r = state.result;
@@ -351,14 +351,14 @@ function render(container, ctx){
         <div class="section"><h3>Bình luận CTA sản phẩm/group</h3>
           ${r.cmt_cta_san_pham.map((c,i)=>`
             <div style="padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;">
-              <div style="font-size:14.5px;">${esc(c)}</div>
+              <div style="font-size:16px;">${esc(c)}</div>
               ${copyBtnHtml('cmt_cta_san_pham:'+i)}
             </div>
           `).join('')}
         </div>` : ''}
       ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (r.goi_y_caption.theo_nen_tang||[]).length)) ? `
         <div class="section"><h3>Caption gợi ý (khi đăng dạng video)</h3>
-          <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:12.5px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
+          <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:14px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
           ${r.goi_y_caption.caption_chinh?`<div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('caption_chinh')}</div>`:''}
           ${(r.goi_y_caption.theo_nen_tang||[]).length ? `
             <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
@@ -376,8 +376,8 @@ function render(container, ctx){
         return `
         <div class="section highlight"><h3>Dạng content phù hợp nhất</h3>
           ${window.CONTENT_FORMATS ? `
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">AI gợi ý dạng này — không hợp ý bạn thì chọn dạng khác:</label>
-            <select id="dinh-dang-override" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:10px;">
+            <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">AI gợi ý dạng này — không hợp ý bạn thì chọn dạng khác:</label>
+            <select id="dinh-dang-override" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;margin-bottom:10px;">
               ${window.CONTENT_FORMATS.map(f=>`<option value="${esc(f.name)}" ${f.name===currentName?'selected':''}>${esc(f.name)}</option>`).join('')}
             </select>
           ` : `<div class="body" style="font-weight:700;margin-bottom:6px;">${esc(r.dinh_dang_de_xuat)}</div>`}
@@ -403,12 +403,12 @@ function render(container, ctx){
       <div class="section highlight">
         <h3>Tiêu đề &amp; bài viết (sửa trực tiếp nếu muốn)</h3>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-          <input id="edit-tieu-de" value="${esc(r.tieu_de)}" style="flex:1;font-weight:700;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);">
+          <input id="edit-tieu-de" value="${esc(r.tieu_de)}" style="flex:1;font-weight:700;font-size:17px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);">
           ${copyBtnHtml('tieu_de')}
         </div>
         <textarea id="edit-bai-hoan-chinh" style="min-height:260px;background:var(--panel);">${esc(r.bai_hoan_chinh)}</textarea>
         <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('bai_hoan_chinh', 'Copy bài viết')}</div>
-        ${r.tu_khoa_cta?`<div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">Từ khoá CTA: <span style="display:inline-block;margin-left:2px;padding:2px 9px;border-radius:999px;background:var(--gold);color:#1E2420;font-size:12px;font-weight:700;">${esc(r.tu_khoa_cta)}</span></div>`:''}
+        ${r.tu_khoa_cta?`<div style="margin-top:8px;font-size:14px;color:var(--ink-soft);">Từ khoá CTA: <span style="display:inline-block;margin-left:2px;padding:2px 9px;border-radius:999px;background:var(--gold);color:#1E2420;font-size:13.5px;font-weight:700;">${esc(r.tu_khoa_cta)}</span></div>`:''}
       </div>
       <div class="section">
         <h3>Bình luận ghim (sửa trực tiếp nếu muốn)</h3>
@@ -426,8 +426,8 @@ function render(container, ctx){
 
       <div class="page-head" style="margin:26px 0 10px;"><div class="tag">Tuỳ chọn thêm</div></div>
       <div class="btn-row no-print" style="justify-content:flex-start;flex-wrap:wrap;align-items:center;">
-        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>${!state.score?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 2 lượt AI)</span>`:''}</span>` : ''}
-        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-hook">${state.hookScore?'✓ ':''}Chấm điểm Hook →</button>${!state.hookScore?`<span style="font-size:11px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}</span>` : ''}
+        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-content">${state.score?'✓ ':''}Chấm điểm Content →</button>${!state.score?`<span style="font-size:12.5px;color:var(--ink-soft);">(tốn 2 lượt AI)</span>`:''}</span>` : ''}
+        ${!state.khoGocSource ? `<span style="display:inline-flex;align-items:center;gap:4px;"><button class="btn-ghost btn btn-sm" data-action="toggle-score-hook">${state.hookScore?'✓ ':''}Chấm điểm Hook →</button>${!state.hookScore?`<span style="font-size:12.5px;color:var(--ink-soft);">(tốn 1 lượt AI)</span>`:''}</span>` : ''}
       </div>
       ${state.showScoreContent ? scoreSectionHtml() : ''}
       ${state.showScoreHook ? hookScoreSectionHtml() : ''}
@@ -437,7 +437,7 @@ function render(container, ctx){
           <button class="btn" data-action="save" ${state.saving?'disabled':''}>${state.savedId?'Đã lưu vào thư viện ✓':state.saving?'Đang lưu…':'Lưu vào thư viện bài viết'}</button>
           ${state.savedId?`<span class="btn-ghost btn" data-action="schedule-saved">Đưa vào Lịch Đăng Bài →</span>`:''}
           ${state.savedId?`<span class="btn-ghost btn" data-action="day-bai-saved">Đẩy Bài &amp; CTA Comment →</span>`:''}
-        ` : `<span style="font-size:13px;color:var(--ink-soft);">Tạo Hashtag, hình ảnh, dạng content &amp; caption ở trên trước đã, rồi mới lưu được bài.</span>`}
+        ` : `<span style="font-size:14.5px;color:var(--ink-soft);">Tạo Hashtag, hình ảnh, dạng content &amp; caption ở trên trước đã, rồi mới lưu được bài.</span>`}
       </div>
     `;
   }

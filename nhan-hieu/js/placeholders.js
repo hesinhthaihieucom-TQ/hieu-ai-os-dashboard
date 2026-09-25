@@ -85,21 +85,21 @@ function renderHelp(container, ctx){
       <textarea id="hd-question" placeholder="Ví dụ: Làm sao để AI viết đúng giọng văn của tôi?" style="min-height:70px;">${esc(state.question)}</textarea>
       <div class="btn-row" style="margin-top:10px;align-items:center;">
         <button class="btn" data-action="ask" ${state.asking?'disabled':''}>${state.asking?'Đang trả lời…':'Hỏi AI'}</button>
-        ${!state.asking?`<span style="font-size:11px;color:var(--ink-soft);">(câu đầu tiên trong ngày miễn phí, từ câu thứ 2 tốn 1 lượt AI)</span>`:''}
+        ${!state.asking?`<span style="font-size:12.5px;color:var(--ink-soft);">(câu đầu tiên trong ngày miễn phí, từ câu thứ 2 tốn 1 lượt AI)</span>`:''}
       </div>
       ${state.error?`<div class="error-box" style="margin-top:10px;">${esc(state.error)}</div>`:''}
       ${state.answer?`<div class="body" style="margin-top:14px;background:var(--accent-soft);padding:12px;border-radius:8px;">${esc(breakSentences(state.answer))}</div>`:''}
-      ${state.answer && state.freeQuestionUsed?`<div style="margin-top:8px;font-size:12px;color:var(--accent);font-weight:600;">✓ Câu hỏi này miễn phí, không trừ lượt AI.</div>`:''}
+      ${state.answer && state.freeQuestionUsed?`<div style="margin-top:8px;font-size:13.5px;color:var(--accent);font-weight:600;">✓ Câu hỏi này miễn phí, không trừ lượt AI.</div>`:''}
     </div>
 
-    <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">📋 Thông báo &amp; hướng dẫn đã đăng</div>
+    <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">📋 Thông báo &amp; hướng dẫn đã đăng</div>
     ${state.loadingAnnouncements ? `<div class="section" style="color:var(--ink-soft);">Đang tải…</div>`
       : state.announcements.length===0 ? `<div class="section" style="color:var(--ink-soft);">Chưa có thông báo nào.</div>`
       : (state.showAllAnnouncements ? state.announcements : state.announcements.slice(0, ANNOUNCEMENTS_COLLAPSED_COUNT)).map(a=>`
         <div class="section">
           <h3>${esc(a.emoji||'🎉')} ${esc(a.title)}</h3>
           <div class="body" style="white-space:pre-wrap;">${esc(a.body)}</div>
-          <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(new Date(a.created_at).toLocaleDateString('vi-VN'))}</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;">${esc(new Date(a.created_at).toLocaleDateString('vi-VN'))}</div>
           ${Array.isArray(a.steps) && a.steps.length ? `<div class="btn-row" style="margin-top:10px;"><span class="btn-ghost btn btn-sm" data-replay-announcement="${a.id}">▶ Xem lại hướng dẫn từng bước</span></div>` : ''}
         </div>
       `).join('')}
@@ -107,8 +107,8 @@ function renderHelp(container, ctx){
       <div class="btn-row" style="justify-content:flex-start;"><span class="btn-ghost btn btn-sm" data-action="show-all-announcements">Xem thêm ${state.announcements.length - ANNOUNCEMENTS_COLLAPSED_COUNT} thông báo cũ hơn →</span></div>
     ` : ''}
 
-    <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">Câu hỏi thường gặp</div>
-    <input type="text" id="hd-faq-search" value="${esc(state.faqSearch)}" placeholder="Tìm câu hỏi... (vd: giọng văn, lịch đăng, kho content)" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:14px;background:#FDFCF8;">
+    <div style="margin-top:22px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);">Câu hỏi thường gặp</div>
+    <input type="text" id="hd-faq-search" value="${esc(state.faqSearch)}" placeholder="Tìm câu hỏi... (vd: giọng văn, lịch đăng, kho content)" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font-size:15.5px;margin-bottom:14px;background:#FDFCF8;">
     ${(()=>{
       const matches = faqMatches();
       if(matches){
@@ -117,7 +117,7 @@ function renderHelp(container, ctx){
           : matches.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('');
       }
       return HELP_SECTIONS.map(sec=>`
-        <div style="margin-top:18px;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;">${esc(sec.group)}</div>
+        <div style="margin-top:18px;margin-bottom:10px;font-size:13.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;">${esc(sec.group)}</div>
         ${sec.items.map(i=>`<div class="section"><h3>${esc(i.q)}</h3><div class="body">${esc(i.a)}</div></div>`).join('')}
       `).join('');
     })()}

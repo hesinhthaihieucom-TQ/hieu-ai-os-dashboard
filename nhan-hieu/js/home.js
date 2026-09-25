@@ -151,22 +151,22 @@ function render(container, ctx){
       </div>
 
       <div class="card">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">📋 Quy trình dùng app hiệu quả nhất</h3>
-        ${state.loading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải tiến độ…</div>` : STEPS.map((s,i)=>{
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">📋 Quy trình dùng app hiệu quả nhất</h3>
+        ${state.loading ? `<div style="color:var(--ink-soft);font-size:15.5px;">Đang tải tiến độ…</div>` : STEPS.map((s,i)=>{
           const isDone = state.done[s.key];
           const isNext = i===nextIdx;
           const groupHeader = (i===0 || STEPS[i-1].group!==s.group)
-            ? `<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin:${i===0?'0':'16px'} 0 8px;">${esc(STEP_GROUP_LABEL[s.group])}</div>`
+            ? `<div style="font-size:12.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin:${i===0?'0':'16px'} 0 8px;">${esc(STEP_GROUP_LABEL[s.group])}</div>`
             : '';
           return `
           ${groupHeader}
           <div class="list-item">
             <div style="display:flex;align-items:flex-start;gap:12px;">
-              <div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+              <div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:700;
                 background:${isDone?'var(--accent)':'var(--accent-soft)'};color:${isDone?'#fff':'var(--accent)'};">${isDone?'✓':i+1}</div>
               <div class="txt">
                 <b>${esc(s.label)}</b><br>
-                <span style="color:var(--ink-soft);font-size:13px;">${esc(s.why)}</span>
+                <span style="color:var(--ink-soft);font-size:14.5px;">${esc(s.why)}</span>
               </div>
             </div>
             <button class="${isNext?'btn':'btn-ghost btn'} btn-sm" data-key="${s.key}">${isDone?'Xem lại →':(isNext?'Bắt đầu →':'→')}</button>
@@ -179,9 +179,9 @@ function render(container, ctx){
       ${isProminent ? reviewSectionHtml() + upgradeBannerHtml() : ''}
 
       <div class="card" style="margin-top:20px;background:var(--accent-soft);">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Lưu ý quan trọng</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Lưu ý quan trọng</h3>
         ${IMPORTANT_NOTES.map(n=>`
-          <div style="display:flex;gap:10px;padding:8px 0;font-size:13.5px;line-height:1.55;">
+          <div style="display:flex;gap:10px;padding:8px 0;font-size:15px;line-height:1.55;">
             <span style="flex-shrink:0;">${n.icon}</span>
             <span>${n.text}</span>
           </div>
@@ -189,7 +189,7 @@ function render(container, ctx){
       </div>
 
       <div style="margin-top:24px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Khám phá thêm</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Khám phá thêm</h3>
         <div class="chips">
           ${EXPLORE.map(e=>`<div class="chip" data-key="${e.key}">${esc(e.label)}</div>`).join('')}
         </div>
@@ -201,7 +201,7 @@ function render(container, ctx){
 
   function momentumSectionHtml(){
     if(state.statsLoading){
-      return `<div class="card" style="margin-top:20px;"><div style="color:var(--ink-soft);font-size:14px;">Đang tải momentum…</div></div>`;
+      return `<div class="card" style="margin-top:20px;"><div style="color:var(--ink-soft);font-size:15.5px;">Đang tải momentum…</div></div>`;
     }
     const now = new Date();
     const todayDate = now.getDate();
@@ -219,22 +219,22 @@ function render(container, ctx){
     }).join('');
     return `
       <div class="card" style="margin-top:20px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">🔥 Đà đăng bài của bạn</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">🔥 Đà đăng bài của bạn</h3>
         <div style="display:flex;gap:28px;flex-wrap:wrap;margin-bottom:16px;">
           <div>
             <div style="font-size:32px;font-weight:800;color:var(--accent);line-height:1;">${state.streak}</div>
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">tuần liên tục có đăng bài</div>
+            <div style="font-size:14px;color:var(--ink-soft);margin-top:4px;">tuần liên tục có đăng bài</div>
           </div>
           <div>
             <div style="font-size:32px;font-weight:800;line-height:1;">${state.monthlyViews.toLocaleString('vi-VN')}</div>
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">tổng view tháng này</div>
+            <div style="font-size:14px;color:var(--ink-soft);margin-top:4px;">tổng view tháng này</div>
           </div>
         </div>
         ${!state.thisWeekHasPost && state.streak>0 ? `<div class="hint-box" style="margin-bottom:14px;">Tuần này chưa có bài nào được đánh dấu đã đăng — đăng ngay để giữ chuỗi <b>${state.streak} tuần liên tục</b>!</div>` : ''}
         ${state.monthlyViews>0 ? `
           <div style="display:flex;gap:3px;align-items:flex-end;height:48px;">${bars}</div>
-          <div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">Số view theo ngày trong tháng này (bài đã đăng, tính theo view bạn tự điền ở Lịch Đăng Bài)</div>
-        ` : `<div style="font-size:12.5px;color:var(--ink-soft);">Chưa có view nào ghi nhận tháng này — điền view thật ở Lịch Đăng Bài sau khi đăng bài để theo dõi hiệu quả theo thời gian.</div>`}
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">Số view theo ngày trong tháng này (bài đã đăng, tính theo view bạn tự điền ở Lịch Đăng Bài)</div>
+        ` : `<div style="font-size:14px;color:var(--ink-soft);">Chưa có view nào ghi nhận tháng này — điền view thật ở Lịch Đăng Bài sau khi đăng bài để theo dõi hiệu quả theo thời gian.</div>`}
       </div>
     `;
   }
@@ -243,8 +243,8 @@ function render(container, ctx){
     if(!ctx.profile || ctx.profile.has_paid) return '';
     return `
       <div class="card" style="margin-top:16px;margin-bottom:24px;background:var(--accent);color:#fff;">
-        <div style="font-weight:700;font-size:15px;margin-bottom:6px;">Dùng quen tay rồi đúng không? 🚀</div>
-        <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;opacity:.95;">Nâng cấp ngay để dùng không giới hạn thời gian dùng thử, không lo hết lượt giữa chừng.</div>
+        <div style="font-weight:700;font-size:16.5px;margin-bottom:6px;">Dùng quen tay rồi đúng không? 🚀</div>
+        <div style="font-size:15px;line-height:1.6;margin-bottom:14px;opacity:.95;">Nâng cấp ngay để dùng không giới hạn thời gian dùng thử, không lo hết lượt giữa chừng.</div>
         <span class="btn-ghost btn btn-sm" style="background:#fff;color:var(--accent);border:none;font-weight:600;" data-key="nang-cap">Xem bảng giá →</span>
       </div>
     `;
@@ -254,14 +254,14 @@ function render(container, ctx){
     const alreadyRewarded = !!(ctx.profile && ctx.profile.review_reward_given);
     return `
       <div style="margin-top:28px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Đánh giá từ mọi người</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Đánh giá từ mọi người</h3>
         <div class="card" style="margin-bottom:16px;background:var(--accent-soft);border:1px solid var(--accent);">
           ${state.reviewJustSubmitted
-            ? `<div style="color:var(--accent);font-weight:600;font-size:14px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
+            ? `<div style="color:var(--accent);font-weight:600;font-size:15.5px;">✓ Cảm ơn bạn đã gửi đánh giá!</div>`
             : `
-            ${!alreadyRewarded ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:10px;">🎁 Tặng ngay 20 lượt AI miễn phí khi viết từ 50 từ trở lên!</div>` : ''}
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoe trải nghiệm của bạn — kể thoải mái 3-5 điều bạn thích nhất</label>
-            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">Viết nhanh hơn bao nhiêu, tự tin hơn thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt, cảm nhận của bạn sẽ truyền cảm hứng cho rất nhiều người sau này.</div>
+            ${!alreadyRewarded ? `<div style="font-size:16.5px;font-weight:700;color:var(--danger);margin-bottom:10px;">🎁 Tặng ngay 20 lượt AI miễn phí khi viết từ 50 từ trở lên!</div>` : ''}
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoe trải nghiệm của bạn — kể thoải mái 3-5 điều bạn thích nhất</label>
+            <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:8px;">Viết nhanh hơn bao nhiêu, tự tin hơn thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt, cảm nhận của bạn sẽ truyền cảm hứng cho rất nhiều người sau này.</div>
             <textarea id="rv-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây, mỗi tuần tiết kiệm được vài tiếng 2. AI bám đúng giọng văn của mình, đọc lên như chính mình viết 3. Lên lịch tuần không còn phải nghĩ, cứ theo AI gợi ý là xong..." style="min-height:70px;">${esc(state.reviewComment)}</textarea>
             ${state.reviewError?`<div class="error-box" style="margin-top:10px;">${esc(state.reviewError)}</div>`:''}
             <div class="btn-row" style="margin-top:10px;justify-content:flex-start;">
@@ -269,12 +269,12 @@ function render(container, ctx){
             </div>
           `}
         </div>
-        ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải…</div>`
-          : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào được duyệt.</div>`
+        ${state.reviewsLoading ? `<div style="color:var(--ink-soft);font-size:15.5px;">Đang tải…</div>`
+          : state.reviews.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có đánh giá nào được duyệt.</div>`
           : (state.showAllReviews ? state.reviews : state.reviews.slice(0, REVIEWS_COLLAPSED_COUNT)).map(r=>`
             <div class="section">
               <div class="body" style="white-space:pre-wrap;">${esc(r.comment)}</div>
-              <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
             </div>
           `).join('')}
         ${!state.showAllReviews && state.reviews.length > REVIEWS_COLLAPSED_COUNT ? `

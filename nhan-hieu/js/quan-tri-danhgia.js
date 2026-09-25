@@ -31,14 +31,14 @@ function render(container, ctx){
       <div class="page-head"><h1>Đánh giá app</h1><p>${pendingCount} đánh giá đang chờ duyệt. Duyệt xong mới hiện công khai ở Trang chủ.</p></div>
       <div class="card" style="margin-bottom:20px;">
         <input id="dg-search" type="text" placeholder="Tìm theo nội dung hoặc tên..." value="${esc(state.q)}"
-          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
       </div>
-      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào.</div>` : ''}
+      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có đánh giá nào.</div>` : ''}
       ${list.map(r=>`
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:13px;color:var(--ink-soft);">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleString('vi-VN'))}</div>
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 10px;border-radius:999px;
+            <div style="font-size:14.5px;color:var(--ink-soft);">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleString('vi-VN'))}</div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:3px 10px;border-radius:999px;
               background:${r.approved?'var(--accent-soft)':'#FBF6E9'};color:${r.approved?'var(--accent)':'var(--gold)'};">${r.approved?'Đã duyệt':'Chờ duyệt'}</span>
           </div>
           <div class="body" style="margin-top:10px;white-space:pre-wrap;">${esc(r.comment)}</div>

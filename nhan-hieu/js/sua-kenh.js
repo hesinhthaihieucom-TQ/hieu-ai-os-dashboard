@@ -54,7 +54,7 @@ function render(container, ctx){
     if(state.screen==='submitting') return `<div class="loading">
       ${state.error ? '' : `<div id="progress-bar-el">${progressBarHtml(0)}</div>`}
       <p style="margin-top:14px;">Đang phân tích ảnh kênh của bạn…</p>
-      <p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">AI cần khoảng 1-2 phút để xử lý — đừng thoát trang, cứ để chờ nhé.</p>
+      <p style="color:var(--ink-soft);font-size:14.5px;margin-top:6px;">AI cần khoảng 1-2 phút để xử lý — đừng thoát trang, cứ để chờ nhé.</p>
       ${state.error?`<div class="error-box">${esc(state.error)}</div><div class="btn-row"><button class="btn" data-action="retry">Thử lại</button></div>`:''}</div>`;
     if(state.screen==='result') return resultHtml();
     return '';
@@ -76,12 +76,12 @@ function render(container, ctx){
           ${imgs.map((src,i)=>`
             <div style="position:relative;">
               <img src="${src}" style="width:160px;height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;">
-              <span style="position:absolute;top:6px;right:6px;background:#fff;border-radius:999px;padding:2px 8px;font-size:11.5px;color:var(--danger);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);" data-action="clear-image-multi" data-idx="${i}">Xoá</span>
+              <span style="position:absolute;top:6px;right:6px;background:#fff;border-radius:999px;padding:2px 8px;font-size:13px;color:var(--danger);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);" data-action="clear-image-multi" data-idx="${i}">Xoá</span>
             </div>
           `).join('')}
         </div>
-        ${imgs.length < 2 ? `<input type="file" accept="image/*" id="step-upload" style="margin-top:12px;">` : `<div style="margin-top:10px;font-size:12.5px;color:var(--ink-soft);">Đã đủ 2 ảnh — xoá 1 ảnh nếu muốn thay.</div>`}
-        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này (chụp đủ cả 2 phần: giới thiệu ngắn ở đầu trang, và phần công việc/liên kết/cộng đồng bên dưới):</div>
+        ${imgs.length < 2 ? `<input type="file" accept="image/*" id="step-upload" style="margin-top:12px;">` : `<div style="margin-top:10px;font-size:14px;color:var(--ink-soft);">Đã đủ 2 ảnh — xoá 1 ảnh nếu muốn thay.</div>`}
+        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này (chụp đủ cả 2 phần: giới thiệu ngắn ở đầu trang, và phần công việc/liên kết/cộng đồng bên dưới):</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <img src="assets/sua-kenh-vi-du-1.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
             <img src="assets/sua-kenh-vi-du-2.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
@@ -91,8 +91,8 @@ function render(container, ctx){
       inputHtml = `
         <input type="file" accept="image/*" id="step-upload">
         ${val ? `<img src="${val}" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--line);margin-top:12px;display:block;">
-          <span style="display:inline-block;margin-top:8px;color:var(--danger);font-size:12.5px;cursor:pointer;" data-action="clear-image">Xoá ảnh, chọn lại</span>` : ''}
-        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này (chụp đủ cả 2 phần: giới thiệu ngắn ở đầu trang, và phần công việc/liên kết/cộng đồng bên dưới):</div>
+          <span style="display:inline-block;margin-top:8px;color:var(--danger);font-size:14px;cursor:pointer;" data-action="clear-image">Xoá ảnh, chọn lại</span>` : ''}
+        ${step.hasExample ? `<div style="margin-top:14px;"><div class="k" style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">Ảnh mẫu nên chụp giống thế này (chụp đủ cả 2 phần: giới thiệu ngắn ở đầu trang, và phần công việc/liên kết/cộng đồng bên dưới):</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <img src="assets/sua-kenh-vi-du-1.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
             <img src="assets/sua-kenh-vi-du-2.jpg" style="width:140px;border-radius:8px;border:1px solid var(--line);">
@@ -105,27 +105,27 @@ function render(container, ctx){
       <div class="progress-groups" style="display:flex;gap:6px;margin-bottom:10px;">
         ${STEPS.map((s,i)=>`<span style="flex:1;height:5px;border-radius:3px;background:${i<state.qIndex?'var(--accent)':i===state.qIndex?'var(--gold)':'var(--line)'};"></span>`).join('')}
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:18px;">
         <span>SỬA KÊNH</span><span>Bước ${state.qIndex+1}/${STEPS.length}</span>
       </div>
       ${(state.qIndex===0 && !state.positioning) ? `
         <div class="hint-box" style="margin-bottom:16px;">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn audit được bình thường, nhưng nếu làm Định Vị trước, kết quả sẽ sát hơn. Có thể điền nhanh bên dưới thay thế:</div>
         <div class="card" style="margin-bottom:16px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext||'')}</textarea>
         </div>
       ` : ''}
       <div class="card">
         <h2 style="font-size:21px;line-height:1.4;">${esc(step.title)}</h2>
-        ${step.helper?`<div style="margin-top:10px;font-size:13.5px;color:var(--ink-soft);line-height:1.55;">${esc(step.helper)}</div>`:''}
+        ${step.helper?`<div style="margin-top:10px;font-size:15px;color:var(--ink-soft);line-height:1.55;">${esc(step.helper)}</div>`:''}
         <div style="margin-top:16px;">${inputHtml}</div>
       </div>
       <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
-        ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;" data-action="back">← Bước trước</span>` : `<span></span>`}
+        ${state.qIndex>0 ? `<span style="color:var(--ink-soft);font-size:15px;cursor:pointer;" data-action="back">← Bước trước</span>` : `<span></span>`}
         <div style="display:flex;gap:10px;">
-          ${step.type!=='choice' ? `<span style="color:var(--ink-soft);font-size:13.5px;cursor:pointer;align-self:center;" data-action="skip">Bỏ qua</span>` : ''}
+          ${step.type!=='choice' ? `<span style="color:var(--ink-soft);font-size:15px;cursor:pointer;align-self:center;" data-action="skip">Bỏ qua</span>` : ''}
           <button class="btn" data-action="next">${state.qIndex===STEPS.length-1?'Audit kênh của tôi':'Tiếp tục'}</button>
-          ${state.qIndex===STEPS.length-1?`<span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 4 lượt AI)</span>`:''}
+          ${state.qIndex===STEPS.length-1?`<span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 4 lượt AI)</span>`:''}
         </div>
       </div>
       ${state.error?`<div class="error-box" style="margin-top:16px;">${esc(state.error)}</div>`:''}
@@ -142,7 +142,7 @@ function render(container, ctx){
     const hangMuc = r.hang_muc || [];
     return `
       <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Kết quả audit kênh</h1></div>
-      <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:16px;">/100</span></div></div>
+      <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:17px;">/100</span></div></div>
       <div class="section"><h3>Điểm mạnh</h3><ul>${(r.top_diem_manh||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="section"><h3>Điểm nghẽn</h3><ul>${(r.top_diem_nghen||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${(r.thu_tu_uu_tien||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
@@ -160,16 +160,16 @@ function render(container, ctx){
           <h3>Gợi ý ảnh bìa phù hợp</h3>
           <div class="body" style="margin-bottom:12px;">${esc(cover.ly_do)}</div>
           <div class="hint-box" style="margin-bottom:12px;">Ảnh bìa này dùng chính <b>ảnh thật của bạn</b> làm gốc, không phải ảnh người lạ AI tự vẽ — làm đúng thứ tự: <b>① Tải lên 1 ảnh chân dung rõ mặt của bạn vào ChatGPT trước</b>, sau đó <b>② dán nguyên văn prompt bên dưới</b> để AI biến ảnh đó thành ảnh bìa mới, có sẵn chữ tiêu đề luôn — không cần tự ghép chữ thêm.</div>
-          <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:pre-wrap;">${esc(breakSentences(cover.prompt_anh_bia))}</div>
+          <div class="body" style="background:var(--accent-soft);padding:12px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:14px;white-space:pre-wrap;">${esc(breakSentences(cover.prompt_anh_bia))}</div>
           <div class="btn-row" style="margin-top:14px;justify-content:flex-start;">
             <button class="btn btn-sm" data-action="copy-cover-prompt">${state.coverPromptCopied?'Đã copy ✓':'Copy prompt'}</button>
             <a class="btn-ghost btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener">Mở ChatGPT →</a>
           </div>
-          <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">Nhớ tải ảnh chân dung của bạn lên ChatGPT trước khi dán prompt.</div>
+          <div style="margin-top:6px;font-size:13px;color:var(--ink-soft);">Nhớ tải ảnh chân dung của bạn lên ChatGPT trước khi dán prompt.</div>
         </div>
       ` : ''}
       <div class="btn-row no-print">
-        <button class="btn-ghost btn" data-action="redo">Audit lại</button> <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 4 lượt AI)</span>
+        <button class="btn-ghost btn" data-action="redo">Audit lại</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 4 lượt AI)</span>
         <a class="btn" href="#dinh-dang-content">Tiếp tục: Dạng Content →</a>
       </div>
     `;

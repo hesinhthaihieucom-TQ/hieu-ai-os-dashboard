@@ -104,11 +104,11 @@ function sidebarFootHtml(){
   const initial = name.charAt(0).toUpperCase();
   const avatarHtml = (p && p.avatar_url)
     ? `<img src="${p.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
-    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${esc(initial)}</div>`;
+    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15.5px;flex-shrink:0;">${esc(initial)}</div>`;
   return `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       ${avatarHtml}
-      <div style="min-width:0;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+      <div style="min-width:0;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
     </div>
     ${(AppState.profile && AppState.profile.role !== 'admin' && AppState.profile.access_until)
       ? `Hạn dùng: ${esc(new Date(AppState.profile.access_until).toLocaleDateString('vi-VN'))}<br>` : ''}
@@ -523,13 +523,13 @@ function maybeShowReviewPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Xây Nhân Hiệu 🎉</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái 3-5 điều bạn thích nhất — viết nhanh hơn bao nhiêu, tự tin hơn thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt, cảm nhận của bạn sẽ truyền cảm hứng cho rất nhiều người sau này.</div>
-      <textarea id="rp-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây, mỗi tuần tiết kiệm được vài tiếng 2. AI bám đúng giọng văn của mình, đọc lên như chính mình viết 3. Lên lịch tuần không còn phải nghĩ, cứ theo AI gợi ý là xong..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
-      <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Xây Nhân Hiệu 🎉</div>
+      <div style="font-size:15px;line-height:1.6;color:#5B5F55;margin-bottom:14px;"><b style="color:var(--danger,#A6462E);">Tặng ngay ${REVIEW_REWARD_LUOT} lượt AI miễn phí</b> khi viết từ ${REVIEW_MIN_WORDS_FOR_REWARD} từ trở lên! Kể thoải mái 3-5 điều bạn thích nhất — viết nhanh hơn bao nhiêu, tự tin hơn thế nào, tiết kiệm được bao nhiêu thời gian mỗi tuần... Viết càng thật, càng chi tiết càng tốt, cảm nhận của bạn sẽ truyền cảm hứng cho rất nhiều người sau này.</div>
+      <textarea id="rp-comment" placeholder="Ví dụ: 1. Viết bài nhanh hơn hẳn trước đây, mỗi tuần tiết kiệm được vài tiếng 2. AI bám đúng giọng văn của mình, đọc lên như chính mình viết 3. Lên lịch tuần không còn phải nghĩ, cứ theo AI gợi ý là xong..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:15.5px;resize:vertical;"></textarea>
+      <div id="rp-error" style="display:none;color:var(--danger,#A6462E);font-size:14px;margin-top:8px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
-        <span id="rp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
-        <button id="rp-submit" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
+        <span id="rp-skip" style="font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="rp-submit" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
       </div>
     </div>
   `;
@@ -593,11 +593,11 @@ function maybeShowEarlyBirdPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🎁 Ưu đãi chỉ dành cho ngày đầu tiên đăng ký</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Mua gói <b>6 tháng</b> được TẶNG THÊM <b>1 tháng</b>, mua gói <b>12 tháng</b> được TẶNG THÊM <b>2 tháng</b> — cùng 1 mức giá, chỉ áp dụng nếu chuyển khoản trong 24 giờ đầu kể từ lúc đăng ký. ${label ? `Còn <b style="color:var(--danger,#A6462E);">${esc(label)}</b> là hết ưu đãi này.` : ''}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">🎁 Ưu đãi chỉ dành cho ngày đầu tiên đăng ký</div>
+      <div style="font-size:15px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Mua gói <b>6 tháng</b> được TẶNG THÊM <b>1 tháng</b>, mua gói <b>12 tháng</b> được TẶNG THÊM <b>2 tháng</b> — cùng 1 mức giá, chỉ áp dụng nếu chuyển khoản trong 24 giờ đầu kể từ lúc đăng ký. ${label ? `Còn <b style="color:var(--danger,#A6462E);">${esc(label)}</b> là hết ưu đãi này.` : ''}</div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
-        <span id="ebp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
-        <button id="ebp-view" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Xem gói ngay</button>
+        <span id="ebp-skip" style="font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="ebp-view" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;">Xem gói ngay</button>
       </div>
     </div>
   `;
@@ -641,12 +641,12 @@ async function maybeShowPushPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🔔 Bật thông báo để không bị khoá app</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Bạn đang dùng thử miễn phí — bật thông báo để được nhắc trước 24 giờ khi sắp hết hạn, không cần tự nhớ ngày rồi bất ngờ bị khoá app giữa chừng.</div>
-      <div id="pp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-bottom:10px;"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">🔔 Bật thông báo để không bị khoá app</div>
+      <div style="font-size:15px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Bạn đang dùng thử miễn phí — bật thông báo để được nhắc trước 24 giờ khi sắp hết hạn, không cần tự nhớ ngày rồi bất ngờ bị khoá app giữa chừng.</div>
+      <div id="pp-error" style="display:none;color:var(--danger,#A6462E);font-size:14px;margin-bottom:10px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
-        <span id="pp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
-        <button id="pp-enable" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Bật thông báo</button>
+        <span id="pp-skip" style="font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="pp-enable" style="background:var(--accent,#2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;">Bật thông báo</button>
       </div>
     </div>
   `;
@@ -756,21 +756,21 @@ function paymentCardHtml(){
   const urgencyDigitBox = (n)=>`<div style="background:var(--ink);color:#fff;font-family:'Playfair Display',serif;font-weight:900;font-size:32px;line-height:1;padding:8px 14px;border-radius:10px;font-variant-numeric:tabular-nums;min-width:50px;">${String(n).padStart(2,'0')}</div>`;
 
   return `
-    <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
+    <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${isStudent ? '🎓 Chọn gói muốn mua (giá học viên — đã giảm 20%)' : 'Chọn gói muốn mua'}</label>
     ${urgencySeconds != null ? `
     <div style="background:linear-gradient(135deg, rgba(166,70,46,.10), rgba(166,70,46,.18));border:1.5px solid var(--danger);border-radius:14px;padding:14px 16px;margin-bottom:12px;text-align:center;">
-      <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:10px;">🔥 Ưu đãi giảm 10% gói 6/12 tháng sắp hết!</div>
+      <div style="font-size:14.5px;font-weight:700;color:var(--danger);margin-bottom:10px;">🔥 Ưu đãi giảm 10% gói 6/12 tháng sắp hết!</div>
       <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
         ${urgencyDigitBox(urgencyMin)}
         <div style="font-size:26px;font-weight:900;color:var(--danger);">:</div>
         ${urgencyDigitBox(urgencySec)}
       </div>
       <div style="display:flex;justify-content:center;gap:24px;margin-top:5px;">
-        <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Phút</span>
-        <span style="min-width:50px;font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Giây</span>
+        <span style="min-width:50px;font-size:11.5px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Phút</span>
+        <span style="min-width:50px;font-size:11.5px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Giây</span>
       </div>
     </div>` : ''}
-    ${earlyBirdLabel ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:13px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdLabel)} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
+    ${earlyBirdLabel ? `<div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center;font-size:14.5px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${esc(earlyBirdLabel)} là hết ưu đãi TẶNG THÊM tháng — mua gói 6/12 tháng ngay để được tặng thêm 1-2 tháng dùng miễn phí</div>` : ''}
     <div class="hint-box" style="margin-bottom:12px;line-height:1.7;">
       💡 <b>Đặc biệt Kho Content và Kho Hook viral</b> — nơi giúp bạn viết content dễ dàng từ các content đang có tín hiệu tốt trên thị trường.<br><br>
       Kho này được <b>cập nhật liên tục</b> và <b>mở rộng vô hạn theo từng tuần</b> — càng dùng lâu càng có nhiều để khai thác.<br><br>
@@ -793,9 +793,9 @@ function paymentCardHtml(){
         // (theo phản hồi chị Quỳnh 2026-08-20, áp lại cho ưu đãi 15 phút 2026-09-17). Gắn theo
         // pl.flash/pl.urgent (đúng ngữ nghĩa "đang giảm giá có hạn"), không gắn theo pl.recommended
         // (khái niệm khác — gói được đề xuất, có thể không phải ưu đãi có hạn).
-        const flashTag = pl.flash ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">FLASH SALE</span>` : '';
-        const urgentTag = pl.urgent ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">ƯU ĐÃI 15 PHÚT</span>` : '';
-        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${flashTag}${urgentTag}${esc(pl.label)} — ${priceHtml}${savings?` <span style="opacity:.72;font-size:11.5px;">(${savings})</span>`:''}</div>`;
+        const flashTag = pl.flash ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">FLASH SALE</span>` : '';
+        const urgentTag = pl.urgent ? `<span style="display:inline-block;background:#E5484D;color:#fff;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.03em;margin-right:6px;vertical-align:middle;">ƯU ĐÃI 15 PHÚT</span>` : '';
+        return `<div class="chip ${pl.key===selectedPaymentPlanKey?'selected':''}" data-plan="${pl.key}">${flashTag}${urgentTag}${esc(pl.label)} — ${priceHtml}${savings?` <span style="opacity:.72;font-size:13px;">(${savings})</span>`:''}</div>`;
       }
       const urgentPlans = plans.filter(pl => pl.urgent);
       const flashPlans = plans.filter(pl => pl.flash);
@@ -804,26 +804,26 @@ function paymentCardHtml(){
         <div class="chips" id="plan-chips">
           ${urgentPlans.map(chipHtml).join('')}
           ${flashPlans.map(chipHtml).join('')}
-          ${flashPlans.length ? `<div style="flex-basis:100%;font-size:12px;color:var(--ink-soft);margin:4px 2px 0;">— Sau ngày 20/8, chỉ còn giá thường bên dưới —</div>` : ''}
+          ${flashPlans.length ? `<div style="flex-basis:100%;font-size:13.5px;color:var(--ink-soft);margin:4px 2px 0;">— Sau ngày 20/8, chỉ còn giá thường bên dưới —</div>` : ''}
           ${basePlans.map(chipHtml).join('')}
         </div>
       `;
     })()}
-    ${plan.note?`<div style="margin-top:8px;font-size:12.5px;color:var(--accent);">${esc(plan.note)}</div>`:''}
+    ${plan.note?`<div style="margin-top:8px;font-size:14px;color:var(--accent);">${esc(plan.note)}</div>`:''}
 
     ${qrUrl ? `
       <div style="text-align:center;margin-top:18px;">
         <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
         <div style="margin-top:8px;">
-          <a href="${qrUrl}" download="vietqr-thanh-toan.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
+          <a href="${qrUrl}" download="vietqr-thanh-toan.png" target="_blank" rel="noopener" style="font-size:14px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
         </div>
       </div>
-      <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+      <div style="margin-top:14px;font-size:15px;line-height:1.7;">
         <div><b>Ngân hàng:</b> Vietinbank</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
         <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${plan.amount}">Copy</span></div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${plan.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${plan.amount}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
       </div>
       <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu thì ngân hàng mới báo về hệ thống được) — hệ thống tự đối chiếu và kích hoạt, không cần nội dung nào khác. Chuyển xong đợi 1-2 phút rồi tải lại trang.</div>
     ` : `
@@ -873,23 +873,23 @@ function topupCardHtml(){
     : null;
   return `
     <div class="card" style="max-width:460px;margin-top:16px;">
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Mua thêm lượt AI</label>
+      <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Mua thêm lượt AI</label>
       <div class="hint-box" style="margin-bottom:12px;">Tháng này bạn đã dùng <b>${used}/${limit} lượt</b>. Nếu cần dùng nhiều hơn mức bình thường (nhiều kênh, tần suất đăng cao...), mua thêm lượt dùng ngay trong tháng, không cần chờ đầu tháng sau. Mua càng nhiều, giá/lượt càng rẻ.</div>
       <div class="chips" id="topup-chips">
         ${PAID_TOPUP_PACKS.map(pk => {
           const pricePerLuot = pk.amount / pk.luot;
           const pct = Math.round((1 - pricePerLuot / basePricePerLuot) * 100);
-          return `<div class="chip ${pk.key===selectedTopupKey?'selected':''}" data-topup="${pk.key}">+${pk.luot} lượt — ${pk.amount.toLocaleString('vi-VN')}đ${pct>0?` <span style="opacity:.72;font-size:11.5px;">(giảm ${pct}%)</span>`:''}</div>`;
+          return `<div class="chip ${pk.key===selectedTopupKey?'selected':''}" data-topup="${pk.key}">+${pk.luot} lượt — ${pk.amount.toLocaleString('vi-VN')}đ${pct>0?` <span style="opacity:.72;font-size:13px;">(giảm ${pct}%)</span>`:''}</div>`;
         }).join('')}
       </div>
       ${qrUrl ? `
         <div style="text-align:center;margin-top:14px;">
           <img src="${qrUrl}" alt="Mã VietQR mua thêm lượt" style="max-width:220px;width:100%;border-radius:12px;border:1px solid var(--line);">
-          <div style="margin-top:8px;"><a href="${qrUrl}" download="vietqr-mua-them-luot.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a></div>
+          <div style="margin-top:8px;"><a href="${qrUrl}" download="vietqr-mua-them-luot.png" target="_blank" rel="noopener" style="font-size:14px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a></div>
         </div>
-        <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${pack.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${pack.amount}">Copy</span></div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+        <div style="margin-top:14px;font-size:15px;line-height:1.7;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${pack.amount.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${pack.amount}">Copy</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
         </div>
         <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu thì ngân hàng mới báo về hệ thống được) — lượt được cộng thẳng trong vài phút, dùng được ngay, không ảnh hưởng tới hạn gói đang có.</div>
       ` : ''}
@@ -929,7 +929,7 @@ function renderProfileLoadErrorScreen(){
           <button class="btn" id="retry-load-profile-btn">Thử lại</button>
         </div>
         <div class="btn-row" style="margin-top:6px;justify-content:center;">
-          <span class="signout" id="signout-btn-loaderr" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
+          <span class="signout" id="signout-btn-loaderr" style="cursor:pointer;color:var(--ink-soft);font-size:14.5px;">Đăng xuất</span>
         </div>
       </div>
     </div>
@@ -959,7 +959,7 @@ function renderExpiredScreen(){
           <button class="btn-ghost btn" id="reload-status-btn">Tôi đã chuyển khoản — tải lại trạng thái</button>
         </div>
         <div class="btn-row" style="margin-top:6px;justify-content:center;">
-          <span class="signout" id="signout-btn-expired" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
+          <span class="signout" id="signout-btn-expired" style="cursor:pointer;color:var(--ink-soft);font-size:14.5px;">Đăng xuất</span>
         </div>
       </div>
     </div>
@@ -1098,7 +1098,7 @@ function renderApp(){
       <span class="menu-toggle" id="menu-toggle-btn">☰</span>
       <span class="topbar-title">XÂY NHÂN HIỆU</span>
     </div>
-    ${expired ? `<div style="background:var(--danger);color:#fff;padding:9px 16px;font-size:13px;text-align:center;">Gói dùng đã hết hạn — bạn vẫn xem được nội dung cũ, <a href="#nang-cap" style="color:#fff;text-decoration:underline;font-weight:600;">nâng cấp ngay</a> để tiếp tục dùng AI.</div>` : ''}
+    ${expired ? `<div style="background:var(--danger);color:#fff;padding:9px 16px;font-size:14.5px;text-align:center;">Gói dùng đã hết hạn — bạn vẫn xem được nội dung cũ, <a href="#nang-cap" style="color:#fff;text-decoration:underline;font-weight:600;">nâng cấp ngay</a> để tiếp tục dùng AI.</div>` : ''}
     <div class="app-layout">
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <div class="sidebar" id="sidebar">

@@ -37,12 +37,12 @@ function render(container, ctx){
     if(!reviewsLoading && reviews.length===0) return '';
     return `
       <div class="card" style="margin-bottom:20px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Mọi người đang nói gì</h3>
-        ${reviewsLoading ? `<div style="color:var(--ink-soft);font-size:14px;">Đang tải…</div>`
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">⭐ Mọi người đang nói gì</h3>
+        ${reviewsLoading ? `<div style="color:var(--ink-soft);font-size:15.5px;">Đang tải…</div>`
           : (showAllReviews ? reviews : reviews.slice(0, REVIEWS_COLLAPSED_COUNT)).map(r=>`
             <div class="section">
               <div class="body" style="white-space:pre-wrap;">${esc(r.comment)}</div>
-              <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleDateString('vi-VN'))}</div>
             </div>
           `).join('')}
         ${!showAllReviews && reviews.length > REVIEWS_COLLAPSED_COUNT ? `

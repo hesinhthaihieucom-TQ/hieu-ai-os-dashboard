@@ -400,27 +400,27 @@ function render(container, ctx){
       return `
         <div ${opts.id?`id="${opts.id}"`:''} class="card${opts.pulse?' autofill-pulse':''}" style="margin-bottom:14px;${opts.bg?`background:${opts.bg};`:''}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;" data-toggle-tool="${key}">
-            <h3 style="margin:0;font-size:15px;">${icon} ${title}</h3>
-            <span style="color:var(--accent);font-size:12px;font-weight:600;white-space:nowrap;">${expanded?'Thu gọn ▴':'Mở rộng ▾'}</span>
+            <h3 style="margin:0;font-size:16.5px;">${icon} ${title}</h3>
+            <span style="color:var(--accent);font-size:13.5px;font-weight:600;white-space:nowrap;">${expanded?'Thu gọn ▴':'Mở rộng ▾'}</span>
           </div>
-          ${expanded ? `<div style="margin-top:14px;">${bodyHtml}</div>` : `<div style="margin-top:6px;font-size:12.5px;color:var(--ink-soft);">${collapsedHint}</div>`}
+          ${expanded ? `<div style="margin-top:14px;">${bodyHtml}</div>` : `<div style="margin-top:6px;font-size:14px;color:var(--ink-soft);">${collapsedHint}</div>`}
         </div>
       `;
     }
 
     const goalCardBody = `
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tuần này bạn muốn đẩy mục tiêu gì nhất?</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Tuần này bạn muốn đẩy mục tiêu gì nhất?</label>
         <textarea id="weekly-goal" style="min-height:56px;" placeholder="Ví dụ: ra mắt khoá học mới, tăng follow, xây niềm tin trước đợt mở bán...">${esc(state.weeklyGoal)}</textarea>
         ${!state.positioning ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Ngành/lĩnh vực &amp; đối tượng của bạn (không bắt buộc)</label>
           <textarea id="quick-context" style="min-height:auto;height:52px;" placeholder="Ví dụ: Coach tài chính cá nhân, hướng tới người mới đi làm...">${esc(state.quickContext)}</textarea>
         ` : ''}
         <div class="btn-row">
           <button class="btn" data-action="ai-suggest" ${state.aiLoading?'disabled':''}>${state.aiLoading?'Đang lên lịch…':'AI gợi ý lịch tuần'}</button>
-          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI/tuần — KHÁC "AI viết luôn" tính theo lượt/bài)</span>
+          <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 3 lượt AI/tuần — KHÁC "AI viết luôn" tính theo lượt/bài)</span>
           ${(state.aiSuggestions || state.weeklyGoal) ? `<span class="btn-ghost btn btn-sm" data-action="reset-week">Reset tuần</span>` : ''}
         </div>
-        <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu theo tài khoản — xem lại được trên mọi thiết bị, không mất khi thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>
+        <div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Mục tiêu và gợi ý AI của tuần này được lưu theo tài khoản — xem lại được trên mọi thiết bị, không mất khi thoát ra rồi quay lại, chỉ mất khi bấm "Reset tuần".</div>
         <div class="hint-box" style="margin-top:10px;">AI cần khoảng 1 phút để xếp xong cả tuần — đừng thoát trang khi đang đợi.</div>
         ${!state.positioning ? `<div class="hint-box">Chưa có <a href="#dinh-vi">Định Vị</a> đã lưu — vẫn gợi ý lịch được bình thường, nhưng làm Định Vị trước sẽ bám đúng trục nội dung của bạn hơn.</div>` : ''}
         ${state.aiError?`<div class="error-box">${esc(state.aiError)}</div>`:''}
@@ -437,34 +437,34 @@ function render(container, ctx){
 
     const autoFillCardBody = `
         <div class="hint-box" style="margin-bottom:12px;">Khác với "AI gợi ý lịch tuần" ở trên (chỉ ra chủ đề, bạn vẫn phải tự viết) — cái này AI viết bài HOÀN CHỈNH và xếp thẳng vào ô trống luôn. Bấm "Xem chi tiết" trong lịch để đọc lại/sửa trước khi đăng.</div>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chọn cách AI lấy nguồn để viết</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Chọn cách AI lấy nguồn để viết</label>
         <div class="chips" style="margin-bottom:12px;">
           <div class="chip ${state.autoFillMode==='kho'?'selected':''}" data-autofill-mode="kho">Cách 1: Dùng Kho Content/Hook viral đúng trục của bạn</div>
           <div class="chip ${state.autoFillMode==='new_hook'?'selected':''}" data-autofill-mode="new_hook">Cách 2: Tự tạo hook mới theo ngành của bạn rồi viết</div>
         </div>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Yêu cầu thêm (không bắt buộc)</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Yêu cầu thêm (không bắt buộc)</label>
         <textarea id="autofill-custom-instructions" style="min-height:auto;height:52px;margin-bottom:12px;" placeholder="Ví dụ: viết ngắn gọn hơn, nhấn mạnh sản phẩm X, giọng hài hước hơn, không dùng từ &quot;chắc chắn&quot;...">${esc(state.autoFillCustomInstructions)}</textarea>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Muốn AI ưu tiên dạng bài nào cho từng buổi? (không bắt buộc)</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Muốn AI ưu tiên dạng bài nào cho từng buổi? (không bắt buộc)</label>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:6px;">
           ${autoFillActiveSlotKeys.map(slotKey => `
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="font-size:12.5px;color:var(--ink-soft);width:40px;flex-shrink:0;">${SLOTS.find(s=>s.key===slotKey).label}</span>
-              <select data-autofill-format-slot="${slotKey}" style="flex:1;min-width:180px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+              <span style="font-size:14px;color:var(--ink-soft);width:40px;flex-shrink:0;">${SLOTS.find(s=>s.key===slotKey).label}</span>
+              <select data-autofill-format-slot="${slotKey}" style="flex:1;min-width:180px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:14px;">
                 <option value="">— AI tự chọn —</option>
                 ${FORMAT_NAMES.map(f=>`<option value="${esc(f)}" ${state.autoFillFormatBySlot[slotKey]===f?'selected':''}>${esc(f)}</option>`).join('')}
               </select>
             </div>
           `).join('')}
         </div>
-        <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:12px;">Gợi ý: buổi Tối hợp với "Video Ngồi Nói" (chia sẻ trực diện, chuyển đổi mạnh) — đã chọn sẵn, đổi lại nếu muốn.</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">Gợi ý: buổi Tối hợp với "Video Ngồi Nói" (chia sẻ trực diện, chuyển đổi mạnh) — đã chọn sẵn, đổi lại nếu muốn.</div>
         <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer;">
           <input type="checkbox" id="autofill-generate-image" ${state.autoFillGenerateImage?'checked':''} style="margin-top:3px;">
-          <span style="font-size:13px;">🖼️ Tự động tạo ảnh cho từng bài — ${personalPhotoHint} Bỏ tick nếu chỉ cần bài viết, tự thêm ảnh sau.</span>
+          <span style="font-size:14.5px;">🖼️ Tự động tạo ảnh cho từng bài — ${personalPhotoHint} Bỏ tick nếu chỉ cần bài viết, tự thêm ảnh sau.</span>
         </label>
-        ${emptySlotCount===0 ? `<div style="font-size:13px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
+        ${emptySlotCount===0 ? `<div style="font-size:14.5px;color:var(--ink-soft);">Tuần này đã kín lịch — không còn ô trống nào để AI điền.</div>` : `
         <div class="btn-row">
           <button class="btn" data-action="auto-fill-week" ${state.autoFillBusy?'disabled':''}>${state.autoFillBusy?'Đang viết…':'Bắt đầu viết'}</button>
-          <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Điền ${autoFillToFillCount} ô lần này (tốn khoảng ${autoFillToFillCount*autoFillPerPostCost} lượt AI)${emptySlotCount>AUTO_FILL_MAX_PER_CLICK?`, còn ${emptySlotCount-AUTO_FILL_MAX_PER_CLICK} ô nữa — bấm thêm lần nữa sau khi xong`:''}</span>
+          <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">Điền ${autoFillToFillCount} ô lần này (tốn khoảng ${autoFillToFillCount*autoFillPerPostCost} lượt AI)${emptySlotCount>AUTO_FILL_MAX_PER_CLICK?`, còn ${emptySlotCount-AUTO_FILL_MAX_PER_CLICK} ô nữa — bấm thêm lần nữa sau khi xong`:''}</span>
         </div>
         <div class="hint-box" style="margin-top:10px;">Mỗi lần bấm viết tối đa 1 bài/ngày cho cả 7 ngày (khoảng 2-3 phút) rồi dừng — nếu chọn 2-3 bài/ngày thì cần bấm thêm 1-2 lần nữa sau khi xong để lấp đủ các buổi còn lại. Đừng thoát trang khi đang đợi.</div>
         `}
@@ -483,7 +483,7 @@ function render(container, ctx){
           <div class="chip ${state.aiCardMode==='goi-y'?'selected':''}" data-ai-card-mode="goi-y">Chỉ gợi ý chủ đề (3 lượt/tuần)</div>
           <div class="chip ${state.aiCardMode==='viet-luon'?'selected':''}" data-ai-card-mode="viet-luon">Để AI viết luôn (${autoFillPerPostCost} lượt/bài)</div>
         </div>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mỗi ngày muốn đăng mấy bài? (áp dụng cho cả 2 chế độ trên)</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mỗi ngày muốn đăng mấy bài? (áp dụng cho cả 2 chế độ trên)</label>
         <div class="chips" style="margin-bottom:16px;">${[1,2,3].map(n=>`<div class="chip ${state.postsPerDay===n?'selected':''}" data-posts-per-day="${n}">${n} bài/ngày</div>`).join('')}</div>
         ${state.aiCardMode==='goi-y' ? goalCardBody : autoFillCardBody}
     `;
@@ -493,16 +493,16 @@ function render(container, ctx){
         <div class="hint-box" style="margin-bottom:12px;">Đặt lịch cho việc content sắp tới — quay video, lên kịch bản, họp nhóm, deadline bất kỳ... không chỉ riêng buổi quay. Nếu đã <span style="text-decoration:underline;cursor:pointer;" data-tab="thong-bao">bật thông báo</span>, bạn sẽ được nhắc ngay khi đến giờ.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
           <div style="flex:2;min-width:160px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tên công việc (không bắt buộc)</label>
-            <input id="rec-title" type="text" value="${esc(state.newRecordingTitle)}" placeholder="Vd: Quay 5 video tuần này, Lên kịch bản..." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+            <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tên công việc (không bắt buộc)</label>
+            <input id="rec-title" type="text" value="${esc(state.newRecordingTitle)}" placeholder="Vd: Quay 5 video tuần này, Lên kịch bản..." style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
           </div>
           <div style="min-width:130px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Ngày</label>
-            <input id="rec-date" type="date" value="${esc(state.newRecordingDate)}" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+            <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Ngày</label>
+            <input id="rec-date" type="date" value="${esc(state.newRecordingDate)}" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
           </div>
           <div style="min-width:100px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Giờ</label>
-            <input id="rec-time" type="time" value="${esc(state.newRecordingTime)}" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+            <label style="display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Giờ</label>
+            <input id="rec-time" type="time" value="${esc(state.newRecordingTime)}" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
           </div>
           <button class="btn btn-sm" data-action="add-recording" ${state.recordingSaving?'disabled':''}>${state.recordingSaving?'Đang lưu…':'Thêm lịch'}</button>
         </div>
@@ -513,18 +513,18 @@ function render(container, ctx){
               const isOverdue = new Date(r.scheduled_at).getTime() < Date.now();
               return `
               <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;">
-                <span style="font-size:13.5px;${isOverdue?'color:var(--gold);':''}">${isOverdue?'⏰ ':''}<b>${esc(new Date(r.scheduled_at).toLocaleString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }))}</b>${r.title?` — ${esc(r.title)}`:''}</span>
+                <span style="font-size:15px;${isOverdue?'color:var(--gold);':''}">${isOverdue?'⏰ ':''}<b>${esc(new Date(r.scheduled_at).toLocaleString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }))}</b>${r.title?` — ${esc(r.title)}`:''}</span>
                 <span style="display:flex;gap:12px;align-items:center;">
-                  <span data-mark-recording-done="${r.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:var(--ink-soft);font-size:13px;" title="Bấm để đánh dấu đã làm xong — chưa bấm thì vẫn coi là chưa làm">
+                  <span data-mark-recording-done="${r.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:var(--ink-soft);font-size:14.5px;" title="Bấm để đánh dấu đã làm xong — chưa bấm thì vẫn coi là chưa làm">
                     <span style="width:13px;height:13px;border-radius:3px;border:1.5px solid var(--ink-soft);background:transparent;display:inline-flex;flex-shrink:0;"></span>
                     Đã làm
                   </span>
-                  <span style="color:var(--danger);cursor:pointer;font-size:12px;" data-del-recording="${r.id}">Xoá</span>
+                  <span style="color:var(--danger);cursor:pointer;font-size:13.5px;" data-del-recording="${r.id}">Xoá</span>
                 </span>
               </div>
             `;}).join('')}
           </div>
-        ` : `<div style="margin-top:10px;font-size:13px;color:var(--ink-soft);">Chưa có việc nào sắp tới.</div>`}
+        ` : `<div style="margin-top:10px;font-size:14.5px;color:var(--ink-soft);">Chưa có việc nào sắp tới.</div>`}
     `;
     const recordingCardHint = state.recordingSchedule.length ? `${state.recordingSchedule.length} việc sắp tới.` : 'Chưa có việc nào sắp tới.';
 
@@ -544,7 +544,7 @@ function render(container, ctx){
         </div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0;">
         <span style="cursor:pointer;color:var(--ink-soft);" data-action="prev-week">← Tuần trước</span>
-        <b style="font-family:'IBM Plex Mono',monospace;font-size:13px;">${esc(weekLabel)}</b>
+        <b style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;">${esc(weekLabel)}</b>
         <span style="cursor:pointer;color:var(--ink-soft);" data-action="next-week">Tuần sau →</span>
       </div>
       ${state.weekLoadError ? `<div class="error-box">${esc(state.weekLoadError)}</div>` : ''}
@@ -568,7 +568,7 @@ function render(container, ctx){
                 if(suggestion){
                   return `<div class="week-slot" style="opacity:.55;min-height:auto;padding:6px;text-align:center;border-color:var(--danger);">
                     <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${slotTimeFor(s.key)}</span></div>
-                    <div style="font-size:10.5px;color:var(--danger);margin-top:2px;">Đã bỏ lỡ</div>
+                    <div style="font-size:12px;color:var(--danger);margin-top:2px;">Đã bỏ lỡ</div>
                   </div>`;
                 }
                 return `<div class="week-slot" style="opacity:.2;min-height:auto;padding:6px;border-style:none;"></div>`;
@@ -577,8 +577,8 @@ function render(container, ctx){
               if(state.pickerFor && state.pickerFor.date===dateStr && state.pickerFor.slot===s.key){
                 return `<div class="week-slot filled">
                   <div class="slot-label">${s.label}</div>
-                  ${suggestion?`<div style="font-size:11px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
-                  <select data-picker-select style="width:100%;margin-top:4px;font-size:12px;padding:6px;">
+                  ${suggestion?`<div style="font-size:12.5px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
+                  <select data-picker-select style="width:100%;margin-top:4px;font-size:13.5px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
                     ${state.posts.filter(p=>(!p.posted && !state.scheduledPostIds.has(p.id)) || (e && e.post_id===p.id))
                       // "hiện thứ tự bài đăng theo kiểu chữ cái đầu ABC với số cho dễ nhìn — dạng số sẽ
@@ -588,14 +588,14 @@ function render(container, ctx){
                       .slice().sort((a,b)=>(a.title||'').localeCompare(b.title||'', 'vi', { numeric:true, sensitivity:'base' }))
                       .map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}${p.posted?' (đã đăng)':''}</option>`).join('')}
                   </select>
-                  <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng hoặc đã có sẵn trong lịch rồi không hiện ở đây nữa, đỡ chọn trùng.</div>
-                  <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
-                  <input type="text" data-picker-custom placeholder="Tên bài tự điền..." value="${e && !e.post_id ? esc(e.title||'') : ''}" style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
-                  <div style="font-size:10px;color:var(--ink-soft);margin:6px 0 2px;">Giờ đăng bài này</div>
-                  <input type="time" data-picker-time value="${esc((e && e.scheduled_time) || slotTimeFor(s.key))}" style="width:100%;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
+                  <div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng hoặc đã có sẵn trong lịch rồi không hiện ở đây nữa, đỡ chọn trùng.</div>
+                  <div style="font-size:11.5px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
+                  <input type="text" data-picker-custom placeholder="Tên bài tự điền..." value="${e && !e.post_id ? esc(e.title||'') : ''}" style="width:100%;font-size:13.5px;padding:6px;border:1px solid var(--line);border-radius:6px;">
+                  <div style="font-size:11.5px;color:var(--ink-soft);margin:6px 0 2px;">Giờ đăng bài này</div>
+                  <input type="time" data-picker-time value="${esc((e && e.scheduled_time) || slotTimeFor(s.key))}" style="width:100%;font-size:13.5px;padding:6px;border:1px solid var(--line);border-radius:6px;">
                   <div style="display:flex;gap:6px;margin-top:6px;">
                     <button class="btn btn-sm" data-picker-save="${dateStr}|${s.key}">Lưu</button>
-                    <span style="align-self:center;font-size:11px;color:var(--ink-soft);cursor:pointer;" data-picker-cancel="1">Huỷ</span>
+                    <span style="align-self:center;font-size:12.5px;color:var(--ink-soft);cursor:pointer;" data-picker-cancel="1">Huỷ</span>
                   </div>
                 </div>`;
               }
@@ -608,18 +608,18 @@ function render(container, ctx){
                 // Ô đã đăng dùng nền đậm khác hẳn ô mới chọn bài (nền nhạt mặc định) — phân biệt
                 // ngay bằng mắt trên lịch cả tuần, không phải đọc chữ mới biết bài nào xong rồi.
                 return `<div class="week-slot filled" ${e.posted?'style="background:var(--accent);border-color:var(--accent);"':''}>
-                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span ${e.posted?'':`data-toggle-posted="${e.id}"`} style="${e.posted?'':'cursor:pointer;'}display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Đã đánh dấu đăng rồi':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:10px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
-                  <b style="font-size:12.5px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
-                  ${e.format?`<div style="font-size:11px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
+                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span ${e.posted?'':`data-toggle-posted="${e.id}"`} style="${e.posted?'':'cursor:pointer;'}display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Đã đánh dấu đăng rồi':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:11.5px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
+                  <b style="font-size:14px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
+                  ${e.format?`<div style="font-size:12.5px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
                   ${isAdmin && state.channel==='fanpage' && e.post_id && (e.fb_publish_status || !isPast) ? `
                     <div style="margin-top:8px;padding-top:8px;border-top:1px solid ${e.posted?'rgba(255,255,255,.25)':'var(--line)'};">
                       ${e.fb_publish_status==='published' ? `
-                        <div style="font-size:10.5px;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}">✅ Đã tự động đăng lên Fanpage${e.fb_post_id?` · <a href="https://facebook.com/${e.fb_post_id}" target="_blank" style="color:inherit;text-decoration:underline;">Xem bài</a>`:''}</div>
+                        <div style="font-size:12px;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}">✅ Đã tự động đăng lên Fanpage${e.fb_post_id?` · <a href="https://facebook.com/${e.fb_post_id}" target="_blank" style="color:inherit;text-decoration:underline;">Xem bài</a>`:''}</div>
                       ` : e.fb_publish_status==='failed' ? `
-                        <div style="font-size:10.5px;color:var(--danger);">❌ Đăng tự động thất bại: ${esc(e.fb_publish_error||'')}</div>
-                        <span style="font-size:10.5px;cursor:pointer;color:var(--accent);text-decoration:underline;" data-retry-fb="${e.id}">Thử lại</span>
+                        <div style="font-size:12px;color:var(--danger);">❌ Đăng tự động thất bại: ${esc(e.fb_publish_error||'')}</div>
+                        <span style="font-size:12px;cursor:pointer;color:var(--accent);text-decoration:underline;" data-retry-fb="${e.id}">Thử lại</span>
                       ` : `
-                        <label style="font-size:10.5px;display:flex;align-items:center;gap:5px;cursor:pointer;${e.posted?'color:#fff;opacity:.85;':'color:var(--ink-soft);'}">
+                        <label style="font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer;${e.posted?'color:#fff;opacity:.85;':'color:var(--ink-soft);'}">
                           <input type="checkbox" data-toggle-auto-fb="${e.id}" ${e.auto_publish_fb?'checked':''}>
                           Tự động đăng lên Fanpage${e.fb_publish_status==='pending'?' (đang xử lý...)':''}
                         </label>
@@ -628,19 +628,19 @@ function render(container, ctx){
                   ` : ''}
                   ${e.posted ? `
                     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.25);">
-                      <div style="font-size:9.5px;color:#fff;opacity:.75;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;">Kết quả (không bắt buộc)</div>
+                      <div style="font-size:11px;color:#fff;opacity:.75;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;">Kết quả (không bắt buộc)</div>
                       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="views" data-metric-id="${e.id}" value="${e.views==null?'':e.views}" placeholder="View" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="likes" data-metric-id="${e.id}" value="${e.likes==null?'':e.likes}" placeholder="Like" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="comments" data-metric-id="${e.id}" value="${e.comments==null?'':e.comments}" placeholder="Cmt" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="shares" data-metric-id="${e.id}" value="${e.shares==null?'':e.shares}" placeholder="Share" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:11px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="views" data-metric-id="${e.id}" value="${e.views==null?'':e.views}" placeholder="View" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="likes" data-metric-id="${e.id}" value="${e.likes==null?'':e.likes}" placeholder="Like" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="comments" data-metric-id="${e.id}" value="${e.comments==null?'':e.comments}" placeholder="Cmt" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
+                        <input type="number" min="0" inputmode="numeric" data-metric-field="shares" data-metric-id="${e.id}" value="${e.shares==null?'':e.shares}" placeholder="Share" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
                       </div>
                     </div>
                   ` : ''}
                   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-                    ${linkedPost?`<span style="font-size:11px;cursor:pointer;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}" data-view-post="${e.id}">Xem bài →</span>`:''}
-                    <span style="font-size:11px;cursor:pointer;${e.posted?'color:#fff;opacity:.85;':'color:var(--ink-soft);'}" data-edit-slot="${dateStr}|${s.key}">Sửa</span>
-                    <span style="font-size:11px;cursor:pointer;${e.posted?'color:#fff;':'color:var(--danger);'}" data-remove="${e.id}">Xoá</span>
+                    ${linkedPost?`<span style="font-size:12.5px;cursor:pointer;font-weight:600;${e.posted?'color:#fff;':'color:var(--accent);'}" data-view-post="${e.id}">Xem bài →</span>`:''}
+                    <span style="font-size:12.5px;cursor:pointer;${e.posted?'color:#fff;opacity:.85;':'color:var(--ink-soft);'}" data-edit-slot="${dateStr}|${s.key}">Sửa</span>
+                    <span style="font-size:12.5px;cursor:pointer;${e.posted?'color:#fff;':'color:var(--danger);'}" data-remove="${e.id}">Xoá</span>
                   </div>
                 </div>`;
               }
@@ -651,26 +651,26 @@ function render(container, ctx){
                 if(state.pending){
                   return `<div class="week-slot" data-empty="${dateStr}|${s.key}" style="cursor:pointer;border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
                     <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${slotTimeFor(s.key)}</span> · <span style="color:var(--gold);">Gợi ý AI</span></div>
-                    ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
-                    <div style="color:var(--accent);font-size:11.5px;font-weight:600;margin-top:6px;">Bấm để xếp bài đang chờ vào đây →</div>
+                    ${suggestion.truc_noi_dung?`<div style="font-size:11.5px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
+                    <div style="color:var(--accent);font-size:13px;font-weight:600;margin-top:6px;">Bấm để xếp bài đang chờ vào đây →</div>
                   </div>`;
                 }
                 const matchedPost = suggestion.bai_co_san ? state.posts.find(p=>p.title===suggestion.bai_co_san) : null;
                 return `<div class="week-slot" style="border-style:dashed;border-color:var(--gold);background:#FBF6E9;">
                   <div class="slot-label">${s.label} <span style="opacity:.6;font-weight:400;">${slotTimeFor(s.key)}</span> · <span style="color:var(--gold);">Gợi ý AI</span></div>
-                  ${suggestion.truc_noi_dung?`<div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
-                  <b style="font-size:12px;">${esc(matchedPost ? matchedPost.title : (suggestion.chu_de || 'Chưa chọn bài cụ thể'))}</b>
-                  ${matchedPost ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">Bài đã viết sẵn</div>` : (suggestion.dinh_dang ? `<div style="color:var(--ink-soft);font-size:10.5px;margin-top:2px;">${esc(suggestion.dinh_dang)}</div>` : '')}
+                  ${suggestion.truc_noi_dung?`<div style="font-size:11.5px;color:var(--accent);font-weight:600;margin-bottom:3px;">${esc(suggestion.truc_noi_dung)}</div>`:''}
+                  <b style="font-size:13.5px;">${esc(matchedPost ? matchedPost.title : (suggestion.chu_de || 'Chưa chọn bài cụ thể'))}</b>
+                  ${matchedPost ? `<div style="color:var(--ink-soft);font-size:12px;margin-top:2px;">Bài đã viết sẵn</div>` : (suggestion.dinh_dang ? `<div style="color:var(--ink-soft);font-size:12px;margin-top:2px;">${esc(suggestion.dinh_dang)}</div>` : '')}
                   <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;">
                     ${matchedPost ? `<button class="btn btn-sm" data-accept-suggestion="${dateStr}|${s.key}">Dùng bài này</button>` : ''}
                     ${!matchedPost && suggestion.chu_de ? `<span class="btn-ghost btn btn-sm" data-write-new-for-slot="${dateStr}|${s.key}">Viết bài mới cho gợi ý này →</span>` : ''}
                     ${state.choosingKhoFor===`${dateStr}|${s.key}`
-                      ? `<span style="font-size:11px;color:var(--ink-soft);">Tìm ở kho nào?</span>
+                      ? `<span style="font-size:12.5px;color:var(--ink-soft);">Tìm ở kho nào?</span>
                          <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-content|${dateStr}|${s.key}">Kho Content</span>
                          <span class="btn-ghost btn btn-sm" data-write-for-slot="kho-hook|${dateStr}|${s.key}">Kho Hook</span>`
                       : `<span class="btn-ghost btn btn-sm" data-choose-kho="${dateStr}|${s.key}">Chọn bài mẫu đúng trục →</span>`
                     }
-                    <span style="align-self:center;color:var(--ink-soft);font-size:11px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
+                    <span style="align-self:center;color:var(--ink-soft);font-size:12.5px;cursor:pointer;" data-empty="${dateStr}|${s.key}">Chọn khác</span>
                   </div>
                 </div>`;
               }
@@ -683,7 +683,7 @@ function render(container, ctx){
         }).join('')}
       </div>
 
-      <div style="margin:26px 0 10px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">🛠️ Công cụ lên lịch</div>
+      <div style="margin:26px 0 10px;font-size:13.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;">🛠️ Công cụ lên lịch</div>
       ${toolCardHtml('recording', '🎬', 'Lịch công việc content', recordingCardBody, recordingCardHint, { id:'recording-card' })}
       ${state.channel==='ca_nhan' ? `
         ${toolCardHtml('ai-lich', '🤖', 'AI lên lịch tuần', aiCardBody, aiCardHint, { id:'ai-lich-card', bg: state.aiCardMode==='viet-luon' ? 'var(--accent-soft)' : null, pulse: state.highlightAutoFill })}
@@ -692,9 +692,9 @@ function render(container, ctx){
           <div style="margin-bottom:10px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
           <div class="btn-row">
             <button class="btn btn-sm" data-action="regen-week" ${state.regenWeekLoading?'disabled':''}>${state.regenWeekLoading?'Đang viết lại…':'Làm lại cả tuần này'}</button>
-            <span style="font-size:11px;color:var(--ink-soft);align-self:center;">Xoá hết bài Fanpage tuần đang xem rồi viết lại từ đầu (tốn tối đa ~14 lượt AI cho 7 ngày)</span>
+            <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">Xoá hết bài Fanpage tuần đang xem rồi viết lại từ đầu (tốn tối đa ~14 lượt AI cho 7 ngày)</span>
           </div>
-          <div style="margin-top:4px;font-size:11.5px;color:var(--ink-soft);">Có thể mất 1-2 phút — đừng thoát trang khi đang đợi.</div>
+          <div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Có thể mất 1-2 phút — đừng thoát trang khi đang đợi.</div>
           ${state.regenWeekError?`<div class="error-box" style="margin-top:10px;">${esc(state.regenWeekError)}</div>`:''}
         </div>
       `}
@@ -710,20 +710,20 @@ function render(container, ctx){
         <div class="hint-box" style="margin-bottom:14px;">Áp dụng khi tạo mới 1 ô lịch ở tab "Lịch" (đỡ phải gõ tay mỗi lần) — mỗi bài vẫn sửa được giờ riêng ngay tại ô lịch của nó. Nếu đã bật thông báo, đây cũng là giờ mặc định bạn sẽ được nhắc "đến giờ đăng bài".</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Sáng</label>
-            <input id="ld-slot-sang" type="time" value="${esc(state.slotTimeSang)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+            <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Sáng</label>
+            <input id="ld-slot-sang" type="time" value="${esc(state.slotTimeSang)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
           </div>
           <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Trưa</label>
-            <input id="ld-slot-trua" type="time" value="${esc(state.slotTimeTrua)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+            <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Trưa</label>
+            <input id="ld-slot-trua" type="time" value="${esc(state.slotTimeTrua)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
           </div>
           <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tối</label>
-            <input id="ld-slot-toi" type="time" value="${esc(state.slotTimeToi)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">
+            <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">Tối</label>
+            <input id="ld-slot-toi" type="time" value="${esc(state.slotTimeToi)}" style="padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
           </div>
           <button class="btn btn-sm" data-action="save-slot-times" style="align-self:flex-end;" ${state.slotTimeSaving?'disabled':''}>${state.slotTimeSaving?'Đang lưu…':'Lưu giờ'}</button>
         </div>
-        ${state.slotTimeSaved?`<div style="color:var(--accent);font-size:12.5px;margin-top:8px;">✓ Đã lưu</div>`:''}
+        ${state.slotTimeSaved?`<div style="color:var(--accent);font-size:14px;margin-top:8px;">✓ Đã lưu</div>`:''}
       </div>
 
       <div class="card" style="margin-bottom:20px;">
@@ -740,7 +740,7 @@ function render(container, ctx){
         ${state.pushSupported ? `
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
             <span class="btn-ghost btn btn-sm" data-action="test-push" ${state.testPushBusy?'disabled':''}>${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Bấm để kiểm tra ngay thông báo có hoạt động không, không cần chờ đúng lúc có sự kiện thật.</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">Bấm để kiểm tra ngay thông báo có hoạt động không, không cần chờ đúng lúc có sự kiện thật.</div>
             ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
           </div>
         ` : ''}

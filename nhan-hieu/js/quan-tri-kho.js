@@ -51,18 +51,18 @@ function render(container, ctx){
       ${state.rewardMsg?`<div class="hint-box">${esc(state.rewardMsg)}</div>`:''}
 
       <div class="card" style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Dọn xuống dòng cho bài cũ trong Kho</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Dọn xuống dòng cho bài cũ trong Kho</label>
         <div class="hint-box" style="margin-bottom:10px;">Chạy lại hàm tách đoạn tự động (miễn phí, không qua AI) cho các bài đã lưu từ trước khi tính năng này ra đời — chỉ sửa bài nào thực sự đang dính liền chữ, không đụng bài đã ổn. Bấm 1 lần là đủ, chạy lại nhiều lần cũng không sao (không tách trùng).</div>
         <button class="btn btn-sm" data-action="fix-linebreaks" ${state.fixingLineBreaks?'disabled':''}>${state.fixingLineBreaks?'Đang dọn…':'Dọn xuống dòng cho Kho Content'}</button>
-        ${state.fixResult?`<div style="margin-top:10px;font-size:13px;color:var(--accent);">${esc(state.fixResult)}</div>`:''}
+        ${state.fixResult?`<div style="margin-top:10px;font-size:14.5px;color:var(--accent);">${esc(state.fixResult)}</div>`:''}
       </div>
       ${total===0 ? `<div class="card" style="color:var(--ink-soft);">Không có đề xuất nào đang chờ duyệt.</div>` : ''}
 
       ${state.pendingContent.length ? `
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:20px 0 12px;">Đề xuất Content (${state.pendingContent.length})</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:20px 0 12px;">Đề xuất Content (${state.pendingContent.length})</h3>
         ${state.pendingContent.map(item=>`
           <div class="section">
-            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
               ${esc(submitterLabel(item.user_id))} · ${new Date(item.created_at).toLocaleDateString('vi-VN')} ${viralMetaHtml(item)?' · '+viralMetaHtml(item):''}
             </div>
             <h3>${esc(item.title||'(không tiêu đề)')}</h3>
@@ -77,10 +77,10 @@ function render(container, ctx){
       ` : ''}
 
       ${state.pendingHooks.length ? `
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:20px 0 12px;">Đề xuất Hook (${state.pendingHooks.length})</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:20px 0 12px;">Đề xuất Hook (${state.pendingHooks.length})</h3>
         ${state.pendingHooks.map(item=>`
           <div class="section">
-            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+            <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
               ${esc(submitterLabel(item.user_id))} · ${new Date(item.created_at).toLocaleDateString('vi-VN')} ${viralMetaHtml(item)?' · '+viralMetaHtml(item):''}
             </div>
             <div class="body"><b>${esc(item.hook_text)}</b>${item.note?`<br><span style="color:var(--ink-soft);">${esc(item.note)}</span>`:''}</div>

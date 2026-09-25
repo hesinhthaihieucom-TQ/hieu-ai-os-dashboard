@@ -196,7 +196,7 @@ function render(container, ctx){
       ${suggestBlock()}
       <div class="card" style="margin-bottom:20px;">
         <input type="text" id="fmt-search" placeholder="Tìm theo tên dạng content hoặc ngành, ví dụ: sức khoẻ, coach, video..." value="${esc(state.query)}"
-          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
       </div>
       ${list.length===0 ? `<div style="color:var(--ink-soft);">Không tìm thấy dạng content phù hợp với từ khoá này.</div>` : ''}
       ${list.map(f=>{

@@ -48,16 +48,16 @@ function startFeatureAnnouncement(ann, onDone){
     overlay.innerHTML = `
       <div style="position:fixed;inset:0;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div data-fa-card style="position:relative;max-width:400px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-          <span id="fa-close-x" style="position:absolute;top:10px;right:14px;font-size:18px;color:#9CA396;cursor:pointer;line-height:1;">✕</span>
+          <span id="fa-close-x" style="position:absolute;top:10px;right:14px;font-size:19px;color:#9CA396;cursor:pointer;line-height:1;">✕</span>
           <div style="font-size:34px;margin-bottom:10px;">${esc(ann.emoji || '🎉')}</div>
           <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:10px;">${esc(ann.title)}</div>
-          <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:22px;white-space:pre-wrap;">${esc(ann.body)}</div>
+          <div style="font-size:15.5px;line-height:1.6;color:#1E2420;margin-bottom:22px;white-space:pre-wrap;">${esc(ann.body)}</div>
           <div style="display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap;">
             ${steps.length ? `
-              <span id="fa-skip" style="font-size:12.5px;color:#5B5F55;cursor:pointer;">Bỏ qua</span>
-              <button id="fa-tour" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;">Xem hướng dẫn →</button>
+              <span id="fa-skip" style="font-size:14px;color:#5B5F55;cursor:pointer;">Bỏ qua</span>
+              <button id="fa-tour" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;">Xem hướng dẫn →</button>
             ` : `
-              <button id="fa-close" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;">Đã hiểu</button>
+              <button id="fa-close" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;">Đã hiểu</button>
             `}
           </div>
         </div>
@@ -99,13 +99,13 @@ function startFeatureAnnouncement(ann, onDone){
         border-radius:10px;box-shadow:0 0 0 9999px rgba(20,24,20,.78);pointer-events:none;transition:all .2s ease;"></div>
       <div data-fa-card style="position:fixed;top:${Math.min(r.top, window.innerHeight-(step.img?380:220))}px;left:${Math.min(r.left+r.width+16, window.innerWidth-cardWidth-40)}px;
         width:${cardWidth}px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 8px 28px rgba(0,0,0,.25);pointer-events:auto;max-height:80vh;overflow-y:auto;">
-        <span id="fa-close-x2" style="position:absolute;top:10px;right:14px;font-size:16px;color:#9CA396;cursor:pointer;line-height:1;">✕</span>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft, #5B5F55);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Bước ${idx+1}/${steps.length}</div>
+        <span id="fa-close-x2" style="position:absolute;top:10px;right:14px;font-size:17px;color:#9CA396;cursor:pointer;line-height:1;">✕</span>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft, #5B5F55);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Bước ${idx+1}/${steps.length}</div>
         ${step.img ? `<img src="${step.img}" style="width:100%;border-radius:8px;border:1px solid var(--line, #E4DFCF);margin-bottom:12px;display:block;">` : ''}
-        <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:14px;">${esc(step.text)}</div>
+        <div style="font-size:15.5px;line-height:1.6;color:#1E2420;margin-bottom:14px;">${esc(step.text)}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span id="fa-skip2" style="font-size:12.5px;color:#5B5F55;cursor:pointer;">Bỏ qua</span>
-          <button id="fa-next" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">${idx===steps.length-1?'Xong':'Tiếp theo →'}</button>
+          <span id="fa-skip2" style="font-size:14px;color:#5B5F55;cursor:pointer;">Bỏ qua</span>
+          <button id="fa-next" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14.5px;font-weight:600;cursor:pointer;">${idx===steps.length-1?'Xong':'Tiếp theo →'}</button>
         </div>
       </div>
     `;

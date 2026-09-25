@@ -73,13 +73,13 @@ function render(container, ctx){
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
           <h3 style="margin:0;">${esc(ph.title)}</h3>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;">${esc(ph.when)}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;">${esc(ph.when)}</span>
         </div>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;"><b>Kênh:</b> ${ph.channels.map(esc).join(' · ')}</div>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;"><b>Kênh:</b> ${ph.channels.map(esc).join(' · ')}</div>
         <div class="body" style="margin-bottom:12px;"><b>Mục tiêu:</b> ${esc(ph.goal)}</div>
-        <div style="font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Việc cần làm</div>
+        <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Việc cần làm</div>
         <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;">
-          ${ph.actions.map(a=>`<li style="font-size:13.5px;line-height:1.6;">${esc(a)}</li>`).join('')}
+          ${ph.actions.map(a=>`<li style="font-size:15px;line-height:1.6;">${esc(a)}</li>`).join('')}
         </ul>
       </div>
     `).join('')}

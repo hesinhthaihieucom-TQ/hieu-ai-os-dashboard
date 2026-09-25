@@ -264,12 +264,12 @@ function render(container, ctx){
 
   function pickerRow(title, items, activeKey, dataAttr, renderSwatch){
     return `
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${esc(title)}</label>
+      <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${esc(title)}</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         ${items.map(it => `
           <div data-${dataAttr}="${it.key}" style="cursor:pointer;text-align:center;">
             ${renderSwatch(it, it.key===activeKey)}
-            <div style="font-size:11px;margin-top:4px;color:${it.key===activeKey?'var(--accent)':'var(--ink-soft)'};font-weight:${it.key===activeKey?700:400};">${esc(it.label)}</div>
+            <div style="font-size:12.5px;margin-top:4px;color:${it.key===activeKey?'var(--accent)':'var(--ink-soft)'};font-weight:${it.key===activeKey?700:400};">${esc(it.label)}</div>
           </div>
         `).join('')}
       </div>
@@ -282,22 +282,22 @@ function render(container, ctx){
       <div class="page-head"><h1>Tạo Ảnh Thương Hiệu</h1><p>Dùng để tạo ảnh có chữ đăng content (dạng "Text trên ảnh") — tải ảnh nền, chọn bố cục / font / màu, điền tiêu đề, tải PNG đăng ngay.</p></div>
       <div class="ta-layout">
         <div class="card">
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ảnh nền</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ảnh nền</label>
           <input type="file" accept="image/*" id="ta-upload">
 
           ${state.bgImage ? `
             <div style="margin-top:14px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;"><label style="font-size:12.5px;font-weight:600;color:var(--ink-soft);">Phóng to / thu nhỏ ảnh nền</label><span id="ta-zoom-pct" style="font-size:12px;color:var(--ink-soft);">${Math.round(state.imgZoom*100)}%</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;"><label style="font-size:14px;font-weight:600;color:var(--ink-soft);">Phóng to / thu nhỏ ảnh nền</label><span id="ta-zoom-pct" style="font-size:13.5px;color:var(--ink-soft);">${Math.round(state.imgZoom*100)}%</span></div>
               <input type="range" id="ta-img-zoom" min="1" max="3" step="0.02" value="${state.imgZoom}" style="width:100%;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Dịch ngang (trái/phải)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Dịch ngang (trái/phải)</label>
               <input type="range" id="ta-img-offset-x" min="-1" max="1" step="0.02" value="${state.imgOffsetX}" style="width:100%;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Dịch dọc (lên/xuống)</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:10px;">Dịch dọc (lên/xuống)</label>
               <input type="range" id="ta-img-offset-y" min="-1" max="1" step="0.02" value="${state.imgOffsetY}" style="width:100%;">
-              <span style="display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="reset-image-transform">Đặt lại vị trí ảnh</span>
+              <span style="display:inline-block;margin-top:8px;font-size:13.5px;color:var(--accent);cursor:pointer;font-weight:600;" data-action="reset-image-transform">Đặt lại vị trí ảnh</span>
             </div>
           ` : ''}
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Kích thước ảnh</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Kích thước ảnh</label>
           <div class="chips" style="margin-top:0;">
             ${SIZES.map(s=>`<div class="chip ${state.size===s.key?'selected':''}" data-size="${s.key}">${esc(s.label)}</div>`).join('')}
           </div>
@@ -306,7 +306,7 @@ function render(container, ctx){
             <canvas class="ta-thumb-layout" data-thumb-layout="${it.key}" width="160" height="${Math.round(160*sizeObj().h/CANVAS_W)}"
               style="width:112px;height:auto;border-radius:8px;border:2px solid ${active?'var(--accent)':'var(--line)'};display:block;"></canvas>
           `)}
-          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${esc((LAYOUTS.find(l=>l.key===state.layout)||{}).desc||'')} Xem full ở khung ảnh xem trước phía trên. ⬆</div>
+          <div style="font-size:14px;color:var(--ink-soft);margin-top:8px;">${esc((LAYOUTS.find(l=>l.key===state.layout)||{}).desc||'')} Xem full ở khung ảnh xem trước phía trên. ⬆</div>
 
           ${pickerRow('Kiểu chữ (font)', FONTS, state.font, 'font', (it, active)=>`
             <canvas class="ta-thumb-font" data-thumb-font="${it.key}" width="150" height="60"
@@ -317,20 +317,20 @@ function render(container, ctx){
             <div style="width:36px;height:36px;border-radius:50%;background:${it.hex};border:3px solid ${active?'var(--ink)':'var(--line)'};"></div>
           `)}
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:18px 0 6px;">Tiêu đề chính</label>
-          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">Bọc từ khoá muốn tô màu nhấn trong dấu **...**, ví dụ: Facebook đang **trả lương** ảnh cao gấp đôi video?</div>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:18px 0 6px;">Tiêu đề chính</label>
+          <div style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;">Bọc từ khoá muốn tô màu nhấn trong dấu **...**, ví dụ: Facebook đang **trả lương** ảnh cao gấp đôi video?</div>
           <textarea id="ta-title" style="min-height:80px;">${esc(state.title)}</textarea>
           <div style="margin-top:6px;">
             <button class="btn-ghost btn btn-sm" data-action="save-title-as-hook" ${state.titleSavedAsHook?'disabled':''}>${state.titleSavedAsHook?'Đã lưu vào Kho Hook ✓':'Lưu tiêu đề này vào Kho Hook'}</button>
           </div>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Handle thương hiệu</label>
-          <input type="text" id="ta-handle" value="${esc(state.handle)}" placeholder="@tenban" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Handle thương hiệu</label>
+          <input type="text" id="ta-handle" value="${esc(state.handle)}" placeholder="@tenban" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
 
           <div class="btn-row"><button class="btn" data-action="download">Tải ảnh PNG</button></div>
         </div>
         <div class="ta-preview">
-          <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Xem trước — cập nhật ngay khi bạn chọn</div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Xem trước — cập nhật ngay khi bạn chọn</div>
           <canvas id="ta-canvas" width="${CANVAS_W}" height="${sizeObj().h}" style="width:280px;max-width:80vw;height:auto;aspect-ratio:${CANVAS_W}/${sizeObj().h};border-radius:12px;border:1px solid var(--line);background:#ddd;"></canvas>
         </div>
       </div>
