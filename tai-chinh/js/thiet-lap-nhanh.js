@@ -175,7 +175,7 @@ const PILLAR_ANALYSIS = {
 function pillarTier(score){ return score >= 80 ? 'cao' : score >= 40 ? 'trungBinh' : 'thap'; }
 function tierBadgeHtml(tier){
   const info = { cao:['🟢 Đang vững','var(--accent)'], trungBinh:['🟡 Đang dao động','var(--gold)'], thap:['🔴 Cần chú ý','var(--danger)'] }[tier];
-  return `<span style="font-size:11px;font-weight:600;color:${info[1]};margin-left:6px;white-space:nowrap;">${info[0]}</span>`;
+  return `<span style="font-size:12.5px;font-weight:600;color:${info[1]};margin-left:6px;white-space:nowrap;">${info[0]}</span>`;
 }
 // Cách nâng điểm — góp ý Quỳnh 2026-08-25: "Soi theo 5 Trụ Cột" cần nói rõ cách nâng điểm lên, không
 // chỉ mô tả hiện trạng. 1 gợi ý/trụ, LUÔN gắn với 1 tính năng THẬT đã có trong app (không bịa hành
@@ -268,22 +268,22 @@ function deepAnalysisHtml(houseKey, houseLabel){
   const d = PILLAR_DEEP_ANALYSIS[houseKey];
   function stepHead(num, icon, title, tint){
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:${tint};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">${num}</span>
-      <span style="font-weight:700;font-size:15px;">${icon} ${esc(title)}</span>
+      <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:${tint};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14.5px;">${num}</span>
+      <span style="font-weight:700;font-size:16.5px;">${icon} ${esc(title)}</span>
     </div>`;
   }
   return `
     <div class="card" style="margin-top:16px;border:1px solid var(--gold);background:var(--panel);padding:0;overflow:hidden;">
       <div style="padding:18px 20px;background:var(--gold);color:#fff;">
-        <div style="font-weight:700;font-size:17px;margin-bottom:4px;">🔬 Bản Giải Phẫu Chi Tiết</div>
-        <div style="font-size:14px;opacity:.95;">${esc(houseLabel)} — trụ đang thấp điểm nhất của bạn hôm nay</div>
+        <div style="font-weight:700;font-size:18px;margin-bottom:4px;">🔬 Bản Giải Phẫu Chi Tiết</div>
+        <div style="font-size:15.5px;opacity:.95;">${esc(houseLabel)} — trụ đang thấp điểm nhất của bạn hôm nay</div>
       </div>
       <div style="padding:20px;">
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;font-style:italic;">Đọc chậm rãi — chỗ nào khiến bạn nhói lên hoặc nghẹn lại, chỗ đó chính là sự thật cần nhìn thẳng, không phải để phán xét bản thân.</div>
+        <div style="font-size:14px;color:var(--ink-soft);margin-bottom:18px;font-style:italic;">Đọc chậm rãi — chỗ nào khiến bạn nhói lên hoặc nghẹn lại, chỗ đó chính là sự thật cần nhìn thẳng, không phải để phán xét bản thân.</div>
 
         <div style="margin-bottom:20px;">
           ${stepHead(1, '💔', 'Vết thương gốc bắt nguồn từ đâu?', 'var(--ink-soft)')}
-          <div style="font-size:14px;line-height:1.75;padding-left:38px;">${d.wound}</div>
+          <div style="font-size:15.5px;line-height:1.75;padding-left:38px;">${d.wound}</div>
         </div>
 
         <div style="margin-bottom:20px;padding:16px;border-radius:10px;background:rgba(166,70,46,.06);border:1px solid rgba(166,70,46,.18);">
@@ -291,8 +291,8 @@ function deepAnalysisHtml(houseKey, houseLabel){
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
             ${d.drains.map((x,i)=>`
               <div style="background:var(--panel);border-radius:8px;padding:10px 12px;">
-                <div style="font-weight:700;font-size:13px;margin-bottom:3px;">${DRAIN_ICONS[i]||'▸'} ${esc(x.label)}</div>
-                <div style="font-size:13px;line-height:1.55;">${x.text}</div>
+                <div style="font-weight:700;font-size:14.5px;margin-bottom:3px;">${DRAIN_ICONS[i]||'▸'} ${esc(x.label)}</div>
+                <div style="font-size:14.5px;line-height:1.55;">${x.text}</div>
               </div>
             `).join('')}
           </div>
@@ -300,12 +300,12 @@ function deepAnalysisHtml(houseKey, houseLabel){
 
         <div style="margin-bottom:20px;padding:16px;border-radius:10px;background:rgba(184,134,46,.10);border:1px solid rgba(184,134,46,.28);">
           ${stepHead(3, '⏳', 'Năm năm nữa, nếu bạn vẫn để yên như cũ?', 'var(--gold)')}
-          <div style="font-size:14px;line-height:1.75;padding-left:38px;">${d.future}</div>
+          <div style="font-size:15.5px;line-height:1.75;padding-left:38px;">${d.future}</div>
         </div>
 
         <div style="padding:16px;border-radius:10px;background:var(--accent-soft);border:1px solid var(--accent);">
           ${stepHead(4, '🔑', 'Bí mật để đập tan vòng nghiệp', 'var(--accent)')}
-          <div style="font-size:14px;line-height:1.75;padding-left:38px;">${d.secret}</div>
+          <div style="font-size:15.5px;line-height:1.75;padding-left:38px;">${d.secret}</div>
         </div>
       </div>
     </div>
@@ -736,11 +736,11 @@ function render(container, ctx){
 
   function fieldHtml(dataKey, label, hint, unit){
     return `
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 4px;">${esc(label)}</label>
-      ${hint?`<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">${esc(hint)}</div>`:''}
+      <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 4px;">${esc(label)}</label>
+      ${hint?`<div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">${esc(hint)}</div>`:''}
       <div style="display:flex;align-items:center;gap:8px;">
-        <input type="number" min="0" data-field="${dataKey}" value="${esc(state.form[dataKey])}" placeholder="0" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
-        <span style="font-size:13px;color:var(--ink-soft);white-space:nowrap;">${esc(unit)}</span>
+        <input type="number" min="0" data-field="${dataKey}" value="${esc(state.form[dataKey])}" placeholder="0" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
+        <span style="font-size:14.5px;color:var(--ink-soft);white-space:nowrap;">${esc(unit)}</span>
       </div>
     `;
   }
@@ -750,7 +750,7 @@ function render(container, ctx){
     const selected = state.vibe[key];
     return `
       <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${esc(q.q)}</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">${esc(q.q)}</label>
         <div class="chips" data-vibe-group="${key}">
           ${q.options.map(o=>`<div class="chip ${selected===o.k?'selected':''}" data-vibe-key="${key}" data-vibe-val="${o.k}">${esc(o.label)}</div>`).join('')}
         </div>
@@ -771,12 +771,12 @@ function render(container, ctx){
       <div class="section">
         <h3>🧭 Bức tranh tài chính của bạn</h3>
         <div class="source-grid">
-          <div class="source-card"><div class="ic" style="font-size:16px;color:${r.cashFlow>=0?'var(--accent)':'var(--danger)'};">${r.cashFlow>=0?'+':''}${r.cashFlow.toLocaleString('vi-VN')}tr</div><div class="label">Dòng tiền/tháng</div></div>
-          <div class="source-card"><div class="ic" style="font-size:16px;">${r.savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
-          <div class="source-card"><div class="ic" style="font-size:16px;">${r.efMonths==null?'—':r.efMonths+' tháng'}</div><div class="label">Dự phòng</div></div>
-          <div class="source-card"><div class="ic" style="font-size:16px;color:${r.netWorth>=0?'var(--accent)':'var(--danger)'};">${r.netWorth.toLocaleString('vi-VN')}tr</div><div class="label">Tài sản ròng</div></div>
-          <div class="source-card"><div class="ic" style="font-size:16px;color:${r.dti>=36?'var(--danger)':'var(--ink)'};">${r.dti}%</div><div class="label">Áp lực trả nợ</div></div>
-          <div class="source-card"><div class="ic" style="font-size:16px;">${r.passivePct}%</div><div class="label">Thu nhập tự động</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;color:${r.cashFlow>=0?'var(--accent)':'var(--danger)'};">${r.cashFlow>=0?'+':''}${r.cashFlow.toLocaleString('vi-VN')}tr</div><div class="label">Dòng tiền/tháng</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;">${r.savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;">${r.efMonths==null?'—':r.efMonths+' tháng'}</div><div class="label">Dự phòng</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;color:${r.netWorth>=0?'var(--accent)':'var(--danger)'};">${r.netWorth.toLocaleString('vi-VN')}tr</div><div class="label">Tài sản ròng</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;color:${r.dti>=36?'var(--danger)':'var(--ink)'};">${r.dti}%</div><div class="label">Áp lực trả nợ</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;">${r.passivePct}%</div><div class="label">Thu nhập tự động</div></div>
         </div>
         <div class="hint-box" style="margin-top:14px;">${esc(r.note)}</div>
       </div>
@@ -785,7 +785,7 @@ function render(container, ctx){
         <div class="section">
           <h3>🔥 Điểm Nghiệp Tiền của bạn</h3>
           <div style="text-align:center;padding:12px 0;">
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:700;color:var(--accent);">${r.vibeScore}<span style="font-size:18px;color:var(--ink-soft);">/100</span></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:700;color:var(--accent);">${r.vibeScore}<span style="font-size:19px;color:var(--ink-soft);">/100</span></div>
           </div>
           ${r.weakestArea ? `
             <div class="hint-box">Khâu đang yếu nhất hiện tại: <b>${esc(WEAKEST_AREA_INFO[r.weakestArea].label)}</b> — ${esc(WEAKEST_AREA_INFO[r.weakestArea].explain)}</div>
@@ -800,7 +800,7 @@ function render(container, ctx){
 
         <div class="section">
           <h3>🌿 Soi theo 5 Trụ Cột Năng Lượng</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Không chỉ 1 điểm số — đây là cách câu trả lời của bạn đang tác động tới TỪNG trụ trong 5 Trụ Cột Năng Lượng Bản Thể ở Điểm Nghiệp phía trên ↑.</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:12px;">Không chỉ 1 điểm số — đây là cách câu trả lời của bạn đang tác động tới TỪNG trụ trong 5 Trụ Cột Năng Lượng Bản Thể ở Điểm Nghiệp phía trên ↑.</p>
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${HOUSES.map(h=>{
               // Điểm ở đây LUÔN lấy từ state.karmaAxes — đúng số đang hiện trên radar Điểm Nghiệp phía
@@ -813,12 +813,12 @@ function render(container, ctx){
               return `
                 <div class="hint-box" style="text-align:left;">
                   <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px;">
-                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:var(--accent);">${score}<span style="font-size:11px;font-weight:600;color:var(--ink-soft);">/100</span></span>
-                    <span style="font-weight:700;font-size:13.5px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:19px;color:var(--accent);">${score}<span style="font-size:12.5px;font-weight:600;color:var(--ink-soft);">/100</span></span>
+                    <span style="font-weight:700;font-size:15px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
                   </div>
                   ${canSeeFullAnalysis ? `
-                    <div style="font-size:13px;line-height:1.65;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
-                    <div style="font-size:12.5px;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);"><b>💡 Cách nâng điểm:</b> ${esc(PILLAR_IMPROVE_TIPS[h.key])}</div>
+                    <div style="font-size:14.5px;line-height:1.65;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
+                    <div style="font-size:14px;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);"><b>💡 Cách nâng điểm:</b> ${esc(PILLAR_IMPROVE_TIPS[h.key])}</div>
                   ` : ''}
                 </div>
               `;
@@ -837,8 +837,8 @@ function render(container, ctx){
 
         ${!canSeeFullAnalysis ? `
         <div class="card" style="margin-bottom:20px;background:var(--accent-soft);border-color:var(--accent);">
-          <div style="font-weight:700;font-size:15.5px;margin-bottom:8px;">🔒 Hiểu rõ vì sao và cách chuyển hoá</div>
-          <div style="font-size:13.5px;line-height:1.6;margin-bottom:14px;">Bạn vừa thấy ĐIỂM — nhưng chưa thấy VÌ SAO mỗi Trụ Cột lại ở mức đó và cách nâng lên thế nào.${isGuest?' Đăng ký miễn phí (30 giây) để lưu lại kết quả này':' Mở khoá TRỌN ĐỜI'} để xem đủ ý nghĩa từng Trụ, Bản Giải Phẫu Chi Tiết cho khâu yếu nhất, cùng Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật.</div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:8px;">🔒 Hiểu rõ vì sao và cách chuyển hoá</div>
+          <div style="font-size:15px;line-height:1.6;margin-bottom:14px;">Bạn vừa thấy ĐIỂM — nhưng chưa thấy VÌ SAO mỗi Trụ Cột lại ở mức đó và cách nâng lên thế nào.${isGuest?' Đăng ký miễn phí (30 giây) để lưu lại kết quả này':' Mở khoá TRỌN ĐỜI'} để xem đủ ý nghĩa từng Trụ, Bản Giải Phẫu Chi Tiết cho khâu yếu nhất, cùng Hạt Giống Phước - Nghiệp, Mục Tiêu & Cam Kết, Tổng Kết Tuần/Tháng, Quản Lý Nợ để bắt đầu chuyển hoá thật.</div>
           ${isGuest
             ? `<button class="btn btn-full" id="tc-guest-save-cta">Lưu kết quả — Đăng ký miễn phí →</button>`
             : `${tcPriceAnchorHtml(ctx.profile)}<button class="btn btn-full" style="margin-top:14px;" data-goto="nang-cap">Nâng Cấp Ngay →</button>`}
@@ -869,7 +869,7 @@ function render(container, ctx){
   function dashboardHtml(){
     return `
       <div class="card" style="margin-bottom:20px;">
-        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;text-align:center;">${glossaryWrap('Điểm Nghiệp', 'karma_score')}</h3>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;text-align:center;">${glossaryWrap('Điểm Nghiệp', 'karma_score')}</h3>
         ${radarChartHtml(state.karmaAxes)}
         <div class="hint-box" id="tc-pillar-explain" style="margin-top:6px;">${
           state.selectedPillarKey
@@ -880,23 +880,23 @@ function render(container, ctx){
       </div>
 
       <div class="source-grid" style="margin-bottom:20px;">
-        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${state.monthIncome.toLocaleString('vi-VN')}đ</div><div class="label">Thu tháng này</div></div>
-        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${state.monthExpense.toLocaleString('vi-VN')}đ</div><div class="label">Chi tháng này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${state.monthIncome.toLocaleString('vi-VN')}đ</div><div class="label">Thu tháng này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${state.monthExpense.toLocaleString('vi-VN')}đ</div><div class="label">Chi tháng này</div></div>
         <div class="source-card">
-          <div class="ic" style="font-size:17px;${state.netWorth==null?'':`color:${state.netWorth>=0?'var(--accent)':'var(--danger)'};`}">${state.netWorth==null?'Chưa có':state.netWorth.toLocaleString('vi-VN')+'đ'}</div>
+          <div class="ic" style="font-size:18px;${state.netWorth==null?'':`color:${state.netWorth>=0?'var(--accent)':'var(--danger)'};`}">${state.netWorth==null?'Chưa có':state.netWorth.toLocaleString('vi-VN')+'đ'}</div>
           <div class="label">Tài sản ròng${state.netWorthMonth?` (${esc(state.netWorthMonth)})`:''}</div>
         </div>
-        <div class="source-card"><div class="ic" style="font-size:17px;${state.totalDebt>0?'color:var(--danger);':''}">${state.totalDebt.toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
-        <div class="source-card"><div class="ic" style="font-size:17px;">${state.tichLuy==null?'Chưa có':state.tichLuy.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ (<a href="#danh-muc" style="color:var(--accent);">xem →</a>)</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;${state.totalDebt>0?'color:var(--danger);':''}">${state.totalDebt.toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;">${state.tichLuy==null?'Chưa có':state.tichLuy.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ (<a href="#danh-muc" style="color:var(--accent);">xem →</a>)</div></div>
       </div>
 
       ${state.upcomingDebts.length>0 ? `
         <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
-          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">💛 Cơ hội thanh khoản tri ân sắp tới</h3>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">💛 Cơ hội thanh khoản tri ân sắp tới</h3>
           ${state.upcomingDebts.map(d=>{
             const timeLabel = d.daysUntil===0 ? 'Hôm nay' : d.daysUntil===1 ? 'Ngày mai' : `Còn ${d.daysUntil} ngày`;
             return `
-            <div style="padding:6px 0;font-size:13.5px;line-height:1.6;">
+            <div style="padding:6px 0;font-size:15px;line-height:1.6;">
               <b>${timeLabel}</b> là cơ hội để bạn thanh khoản tri ân cho <b>${esc(d.creditor_name)}</b> — hãy gửi năng lượng biết ơn đến dòng chảy tài chính đang nâng đỡ bạn nhé.
             </div>
           `;}).join('')}
@@ -960,8 +960,8 @@ function render(container, ctx){
             return `
               <div class="hint-box" style="text-align:left;">
                 <div style="display:flex;align-items:baseline;gap:8px;">
-                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:16px;color:var(--accent);">${score}<span style="font-size:10px;font-weight:600;color:var(--ink-soft);">/100</span></span>
-                  <span style="font-weight:700;font-size:13px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:17px;color:var(--accent);">${score}<span style="font-size:11.5px;font-weight:600;color:var(--ink-soft);">/100</span></span>
+                  <span style="font-weight:700;font-size:14.5px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
                 </div>
               </div>
             `;
@@ -977,10 +977,10 @@ function render(container, ctx){
           return `
             <div class="hint-box" style="text-align:left;">
               <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px;">
-                <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:16px;color:var(--accent);">${score}<span style="font-size:10px;font-weight:600;color:var(--ink-soft);">/100</span></span>
-                <span style="font-weight:700;font-size:13px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:17px;color:var(--accent);">${score}<span style="font-size:11.5px;font-weight:600;color:var(--ink-soft);">/100</span></span>
+                <span style="font-weight:700;font-size:14.5px;">${esc(h.label)}${tierBadgeHtml(tier)}</span>
               </div>
-              <div style="font-size:12.5px;line-height:1.6;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
+              <div style="font-size:14px;line-height:1.6;">${esc(PILLAR_ANALYSIS[h.key][tier])}</div>
             </div>
           `;
         }).join('')}
@@ -994,15 +994,15 @@ function render(container, ctx){
     if(state.karmaHistory.length === 0) return `<div class="hint-box">Chưa có lần chấm điểm nào được lưu — sang tab "📝 Làm Bài & Kết Quả" và bấm "Xem Kết Quả" để bắt đầu theo dõi.</div>`;
     return `
       <div class="section">
-        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">${state.karmaHistory.length>=50?'50 lần gần nhất — ':''}Mới nhất ở trên cùng. Bấm vào 1 dòng để đọc lại toàn bộ phân tích lúc đó.</p>
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:12px;">${state.karmaHistory.length>=50?'50 lần gần nhất — ':''}Mới nhất ở trên cùng. Bấm vào 1 dòng để đọc lại toàn bộ phân tích lúc đó.</p>
         ${karmaHistoryChartHtml(state.karmaHistory)}
         <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <table style="width:100%;border-collapse:collapse;font-size:14.5px;">
             <thead><tr>
-              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">Ngày</th>
-              <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">Điểm Nghiệp Tiền</th>
-              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">Khâu yếu nhất</th>
-              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;">5 Trụ Cột</th>
+              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;">Ngày</th>
+              <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;">Điểm Nghiệp Tiền</th>
+              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;">Khâu yếu nhất</th>
+              <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;">5 Trụ Cột</th>
             </tr></thead>
             <tbody>
               ${state.karmaHistory.map(row=>`
@@ -1010,7 +1010,7 @@ function render(container, ctx){
                   <td style="padding:8px;border-bottom:1px solid var(--line-soft);white-space:nowrap;vertical-align:top;">${esc(new Date(row.taken_at).toLocaleDateString('vi-VN'))} ${state.expandedHistoryId===row.id?'▲':'▼'}</td>
                   <td style="text-align:right;padding:8px;border-bottom:1px solid var(--line-soft);font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);vertical-align:top;">${row.vibe_score==null?'—':row.vibe_score+'/100'}</td>
                   <td style="padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:top;">${row.weakest_area && WEAKEST_AREA_INFO[row.weakest_area] ? esc(WEAKEST_AREA_INFO[row.weakest_area].label) : '—'}</td>
-                  <td style="padding:8px;border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--ink-soft);vertical-align:top;">
+                  <td style="padding:8px;border-bottom:1px solid var(--line-soft);font-size:13px;color:var(--ink-soft);vertical-align:top;">
                     ${HOUSES.map(h=>`${esc(h.label.replace(/^\S+\s/,''))}: <b>${row[h.key]==null?'—':row[h.key]}</b>`).join(' · ')}
                   </td>
                 </tr>
@@ -1083,7 +1083,7 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Bước 6-7 · Thu nhập tự động & Số nguồn thu</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;">2 câu số này chỉ để tham khảo trong kết quả, chưa có chỗ lưu theo thời gian trong app.</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:0;">2 câu số này chỉ để tham khảo trong kết quả, chưa có chỗ lưu theo thời gian trong app.</p>
           ${fieldHtml('passive_income', 'Thu nhập tự động/tháng', 'Tiền đến từ tài sản/hệ thống, không cần trực tiếp làm việc trong tháng đó.', 'triệu đ')}
           ${fieldHtml('income_sources', 'Số nguồn thu đang hoạt động', 'VD: lương + bán hàng online + cho thuê nhà = 3 nguồn.', 'nguồn')}
           ${vibeQuestionHtml('passive')}
@@ -1091,9 +1091,9 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Bước 8 · Cội Nguồn, Mối Quan Hệ & Cho Đi</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">4 câu này không liên quan số liệu.</p>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;"><b>2 câu đầu</b> giúp Điểm Nghiệp có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột.</p>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:0;"><b>2 câu sau</b> giúp chẩn đoán đủ hơn khâu đang yếu nhất (kể cả khi thấy người khác nhận tiền), và soi thêm phần <b>"cho đi"</b> — gốc rễ thật của phước phần, không chỉ riêng chuyện tích luỹ.</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;">4 câu này không liên quan số liệu.</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;"><b>2 câu đầu</b> giúp Điểm Nghiệp có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột.</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:0;"><b>2 câu sau</b> giúp chẩn đoán đủ hơn khâu đang yếu nhất (kể cả khi thấy người khác nhận tiền), và soi thêm phần <b>"cho đi"</b> — gốc rễ thật của phước phần, không chỉ riêng chuyện tích luỹ.</p>
           ${vibeQuestionHtml('parents')}
           ${vibeQuestionHtml('partner')}
           ${vibeQuestionHtml('witness_receive')}

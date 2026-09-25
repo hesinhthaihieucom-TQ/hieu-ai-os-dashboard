@@ -203,7 +203,7 @@ function render(container, ctx){
     const avalanche = simulateStrategy(state.debts, extra, 'avalanche');
     function fmtOrder(r){
       if(!r.converged || r.payoffOrder.length === 0) return '';
-      return `<div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft);">Thứ tự hết nợ: ${r.payoffOrder.map((p,i)=>`${i+1}) <b>${esc(p.name)}</b> (tháng ${p.month})`).join(' → ')}</div>`;
+      return `<div style="margin-top:8px;font-size:14px;color:var(--ink-soft);">Thứ tự hết nợ: ${r.payoffOrder.map((p,i)=>`${i+1}) <b>${esc(p.name)}</b> (tháng ${p.month})`).join(' → ')}</div>`;
     }
     function fmtResult(r){
       if(!r.converged) return `<span style="color:var(--danger);">Chưa xác định — số tiền trả thêm chưa đủ bù lãi, nợ sẽ không giảm.</span>`;
@@ -217,11 +217,11 @@ function render(container, ctx){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
         <div class="source-card" style="text-align:left;padding:16px;">
           <div style="font-weight:700;color:var(--ink);margin-bottom:6px;">❄️ Đà Thắng Nhỏ (nợ nhỏ nhất trước)</div>
-          <div style="font-size:13px;line-height:1.6;">${fmtResult(snowball)}</div>
+          <div style="font-size:14.5px;line-height:1.6;">${fmtResult(snowball)}</div>
         </div>
         <div class="source-card" style="text-align:left;padding:16px;">
           <div style="font-weight:700;color:var(--ink);margin-bottom:6px;">🏔️ Diệt Lãi Cao (lãi cao nhất trước)</div>
-          <div style="font-size:13px;line-height:1.6;">${fmtResult(avalanche)}</div>
+          <div style="font-size:14.5px;line-height:1.6;">${fmtResult(avalanche)}</div>
         </div>
       </div>
       <div class="hint-box" style="margin-top:12px;">${interestDiff!=null && interestDiff>0
@@ -233,47 +233,47 @@ function render(container, ctx){
   function debtFormFields(d, prefix){
     const costType = d.cost_type || 'percent';
     return `
-      <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Tên Ân Nhân Hỗ Trợ Vốn (chủ nợ / khoản vay)</label>
-      <input type="text" data-${prefix}="creditor_name" value="${esc(d.creditor_name)}" placeholder="VD: Thẻ tín dụng Vietcombank" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+      <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Tên Ân Nhân Hỗ Trợ Vốn (chủ nợ / khoản vay)</label>
+      <input type="text" data-${prefix}="creditor_name" value="${esc(d.creditor_name)}" placeholder="VD: Thẻ tín dụng Vietcombank" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Nguồn Lực Đã Đón Nhận — số dư hiện tại (đ)</label>
-          <input type="text" inputmode="numeric" data-${prefix}="current_balance" data-money value="${esc(formatThousands(d.current_balance))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Nguồn Lực Đã Đón Nhận — số dư hiện tại (đ)</label>
+          <input type="text" inputmode="numeric" data-${prefix}="current_balance" data-money value="${esc(formatThousands(d.current_balance))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
-          <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Trả tối thiểu/tháng (đ)</label>
-          <input type="text" inputmode="numeric" data-${prefix}="minimum_payment" data-money value="${esc(formatThousands(d.minimum_payment))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Trả tối thiểu/tháng (đ)</label>
+          <input type="text" inputmode="numeric" data-${prefix}="minimum_payment" data-money value="${esc(formatThousands(d.minimum_payment))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
-          <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Ngày Cam Kết Tri Ân (ngày trong tháng)</label>
-          <input type="number" min="1" max="31" data-${prefix}="due_day" value="${esc(d.due_day)}" placeholder="VD: 15" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+          <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Ngày Cam Kết Tri Ân (ngày trong tháng)</label>
+          <input type="number" min="1" max="31" data-${prefix}="due_day" value="${esc(d.due_day)}" placeholder="VD: 15" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
         </div>
       </div>
 
-      <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Cách tính chi phí — không phải khoản nào cũng có lãi %/năm (thẻ trả góp/đáo hạn thường tính phí cố định)</label>
+      <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Cách tính chi phí — không phải khoản nào cũng có lãi %/năm (thẻ trả góp/đáo hạn thường tính phí cố định)</label>
       <div class="chips" data-${prefix}-costtype-group>
         <div class="chip ${costType==='percent'?'selected':''}" data-${prefix}-costtype="percent">Lãi suất %/năm</div>
         <div class="chip ${costType==='flat_fee'?'selected':''}" data-${prefix}-costtype="flat_fee">Phí cố định (trả góp/đáo thẻ)</div>
       </div>
       ${costType==='percent' ? `
-        <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Lãi suất (%/năm)</label>
-        <input type="number" min="0" data-${prefix}="interest_rate" value="${esc(d.interest_rate)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Lãi suất (%/năm)</label>
+        <input type="number" min="0" data-${prefix}="interest_rate" value="${esc(d.interest_rate)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
       ` : `
-        <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">Phí cố định (đ) — vd phí trả góp/phí đáo hạn thẻ tín dụng</label>
-        <input type="text" inputmode="numeric" data-${prefix}="flat_fee_amount" data-money value="${esc(formatThousands(d.flat_fee_amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Phí cố định (đ) — vd phí trả góp/phí đáo hạn thẻ tín dụng</label>
+        <input type="text" inputmode="numeric" data-${prefix}="flat_fee_amount" data-money value="${esc(formatThousands(d.flat_fee_amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
       `}
 
-      <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:14px 0 6px;">${glossaryWrap('Khoản nợ này có phải Nợ Kiến Tạo?', 'no_xanh', 'no_do')} — tích cả 3 ý dưới đây thì mới là Nợ Kiến Tạo, thiếu 1 ý là Nợ Hoảng Loạn:</label>
+      <label style="display:block;font-size:14px;color:var(--ink-soft);margin:14px 0 6px;">${glossaryWrap('Khoản nợ này có phải Nợ Kiến Tạo?', 'no_xanh', 'no_do')} — tích cả 3 ý dưới đây thì mới là Nợ Kiến Tạo, thiếu 1 ý là Nợ Hoảng Loạn:</label>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer;">
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:14.5px;cursor:pointer;">
           <input type="checkbox" data-${prefix}="crit_legit_source" ${d.crit_legit_source?'checked':''} style="margin-top:3px;">
           <span>Vay từ nguồn chính thống (ngân hàng, tổ chức tín dụng hợp pháp) — không phải vay nóng/tín dụng đen</span>
         </label>
-        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer;">
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:14.5px;cursor:pointer;">
           <input type="checkbox" data-${prefix}="crit_real_value" ${d.crit_real_value?'checked':''} style="margin-top:3px;">
           <span>Dùng để tạo giá trị/tài sản tăng trưởng thật (mua nhà, học tập, kinh doanh) — không phải tiêu xài mất giá ngay</span>
         </label>
-        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer;">
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:14.5px;cursor:pointer;">
           <input type="checkbox" data-${prefix}="crit_clear_plan" ${d.crit_clear_plan?'checked':''} style="margin-top:3px;">
           <span>Có kế hoạch trả rõ ràng, nằm trong khả năng chi trả — không vay trong lúc hoảng loạn</span>
         </label>
@@ -303,13 +303,13 @@ function render(container, ctx){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
           <div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="font-weight:700;font-size:15.5px;">${esc(d.creditor_name)}</span>
-              <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;${isGreenDebt?'background:var(--accent-soft);color:var(--accent);':'background:#FBE5E5;color:var(--danger);'}">${isGreenDebt?'🟢 Nợ Kiến Tạo':'🔴 Nợ Hoảng Loạn'}</span>
+              <span style="font-weight:700;font-size:17px;">${esc(d.creditor_name)}</span>
+              <span style="font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:99px;${isGreenDebt?'background:var(--accent-soft);color:var(--accent);':'background:#FBE5E5;color:var(--danger);'}">${isGreenDebt?'🟢 Nợ Kiến Tạo':'🔴 Nợ Hoảng Loạn'}</span>
             </div>
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${costLabel} · Tối thiểu ${Number(d.minimum_payment).toLocaleString('vi-VN')}đ/tháng${d.due_day?` · Cam kết tri ân ngày ${esc(d.due_day)}`:''}</div>
-            ${d.cost_type !== 'flat_fee' ? `<div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">~${Math.round(monthlyInterest).toLocaleString('vi-VN')}đ tiền lãi/tháng</div>` : ''}
+            <div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${costLabel} · Tối thiểu ${Number(d.minimum_payment).toLocaleString('vi-VN')}đ/tháng${d.due_day?` · Cam kết tri ân ngày ${esc(d.due_day)}`:''}</div>
+            ${d.cost_type !== 'flat_fee' ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">~${Math.round(monthlyInterest).toLocaleString('vi-VN')}đ tiền lãi/tháng</div>` : ''}
           </div>
-          <div style="font-size:19px;font-weight:700;color:var(--danger);white-space:nowrap;">${Number(d.current_balance).toLocaleString('vi-VN')}đ</div>
+          <div style="font-size:20px;font-weight:700;color:var(--danger);white-space:nowrap;">${Number(d.current_balance).toLocaleString('vi-VN')}đ</div>
         </div>
         ${d.gratitude_note ? `<div class="hint-box" style="margin-top:12px;">💛 ${esc(d.gratitude_note)}</div>` : ''}
         <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
@@ -321,7 +321,7 @@ function render(container, ctx){
         </div>
         ${state.gratitudeOpenId === d.id ? `
           <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
-            <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Lời cảm ơn ngầm gửi tới ${esc(d.creditor_name)} vì đã tin tưởng giao nguồn lực cho bạn</label>
+            <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">Lời cảm ơn ngầm gửi tới ${esc(d.creditor_name)} vì đã tin tưởng giao nguồn lực cho bạn</label>
             <textarea id="gratitude-text" placeholder="VD: Cảm ơn vì đã tin tưởng và đồng hành cùng mình lúc khó khăn...">${esc(state.gratitudeForm)}</textarea>
             <button class="btn btn-sm" style="margin-top:10px;" data-submit-gratitude="${d.id}">Lưu lời tri ân</button>
           </div>
@@ -330,12 +330,12 @@ function render(container, ctx){
           <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
-                <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Số tiền trả (đ)</label>
-                <input type="text" inputmode="numeric" id="pay-amount" value="${esc(formatThousands(state.paymentForm.amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+                <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">Số tiền trả (đ)</label>
+                <input type="text" inputmode="numeric" id="pay-amount" value="${esc(formatThousands(state.paymentForm.amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
               </div>
               <div>
-                <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Ngày trả</label>
-                <input type="date" id="pay-date" value="${esc(state.paymentForm.date)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+                <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">Ngày trả</label>
+                <input type="date" id="pay-date" value="${esc(state.paymentForm.date)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
               </div>
             </div>
             ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
@@ -363,18 +363,18 @@ function render(container, ctx){
           <h3>A. Quỹ Khẩn Cấp</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
-              <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu (đ)</label>
-              <input type="text" inputmode="numeric" id="ef-target" value="${esc(formatThousands(ef.target_amount))}" placeholder="VD: 15.000.000" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+              <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu (đ)</label>
+              <input type="text" inputmode="numeric" id="ef-target" value="${esc(formatThousands(ef.target_amount))}" placeholder="VD: 15.000.000" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
             </div>
             <div>
-              <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Hiện có (đ)</label>
-              <input type="text" inputmode="numeric" id="ef-current" value="${esc(formatThousands(ef.current_amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+              <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">Hiện có (đ)</label>
+              <input type="text" inputmode="numeric" id="ef-current" value="${esc(formatThousands(ef.current_amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
             </div>
           </div>
           <div style="margin-top:14px;height:10px;border-radius:999px;background:var(--line);overflow:hidden;">
             <div style="height:100%;width:${efPct}%;background:var(--accent);border-radius:999px;"></div>
           </div>
-          <div style="margin-top:6px;font-size:12.5px;color:var(--ink-soft);">${efPct}% mục tiêu${efTarget===0?' — đặt mục tiêu trước (thường 10-20 triệu để bắt đầu, không cần đủ 3-6 tháng chi phí ngay khi đang nợ).':''}</div>
+          <div style="margin-top:6px;font-size:14px;color:var(--ink-soft);">${efPct}% mục tiêu${efTarget===0?' — đặt mục tiêu trước (thường 10-20 triệu để bắt đầu, không cần đủ 3-6 tháng chi phí ngay khi đang nợ).':''}</div>
           <button class="btn btn-sm" style="margin-top:14px;" id="ef-save" ${state.savingEmergency?'disabled':''}>${state.savingEmergency?'Đang lưu…':'Lưu quỹ khẩn cấp'}</button>
         </div>
 
@@ -382,15 +382,15 @@ function render(container, ctx){
           <h3>${glossaryWrap('B. Các khoản nợ', 'danh_xung_tri_an', 'no_xanh', 'no_do')}</h3>
           ${state.debts.length>0 ? `
             <div class="source-grid" style="margin-bottom:16px;">
-              <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${totalDebt().toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
-              <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${Math.round(monthlyInterestCost()).toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lãi mất mỗi tháng</div></div>
+              <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${totalDebt().toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
+              <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${Math.round(monthlyInterestCost()).toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lãi mất mỗi tháng</div></div>
             </div>
-          ` : `<div style="color:var(--ink-soft);font-size:14px;margin-bottom:16px;">Chưa có khoản nợ nào được ghi nhận 🎉</div>`}
+          ` : `<div style="color:var(--ink-soft);font-size:15.5px;margin-bottom:16px;">Chưa có khoản nợ nào được ghi nhận 🎉</div>`}
 
           ${state.debts.map(debtCardHtml).join('')}
 
           <div class="card" style="background:var(--accent-soft);">
-            <div style="font-weight:600;font-size:13px;color:var(--ink-soft);margin-bottom:4px;">+ Thêm khoản nợ mới</div>
+            <div style="font-weight:600;font-size:14.5px;color:var(--ink-soft);margin-bottom:4px;">+ Thêm khoản nợ mới</div>
             ${debtFormFields(state.newDebt, 'new')}
             ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
             <button class="btn btn-sm" style="margin-top:14px;" id="add-debt" ${state.savingDebt?'disabled':''}>${state.savingDebt?'Đang lưu…':'+ Thêm khoản nợ'}</button>
@@ -400,8 +400,8 @@ function render(container, ctx){
         ${state.debts.length>0 ? `
           <div class="section">
             <h3>C. Chiến lược trả nợ</h3>
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Số tiền dư ra có thể trả THÊM mỗi tháng (ngoài mức tối thiểu)</label>
-            <input type="text" inputmode="numeric" id="extra-payment" value="${esc(formatThousands(state.extraPerMonth))}" placeholder="0" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Số tiền dư ra có thể trả THÊM mỗi tháng (ngoài mức tối thiểu)</label>
+            <input type="text" inputmode="numeric" id="extra-payment" value="${esc(formatThousands(state.extraPerMonth))}" placeholder="0" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;color:var(--ink);">
             <div id="strategy-results">${strategyResultsHtml()}</div>
           </div>
         ` : ''}

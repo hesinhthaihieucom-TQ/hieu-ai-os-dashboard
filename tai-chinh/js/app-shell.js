@@ -146,7 +146,7 @@ function tcPriceAnchorHtml(profile){
     return `
       <div style="text-align:center;font-size:20px;color:var(--ink-soft);text-decoration:line-through;line-height:1.3;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</div>
       <div style="text-align:center;font-size:24px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${price.toLocaleString('vi-VN')}đ</div>
-      <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Giá ưu đãi riêng từ Landing Page — tiết kiệm ${(TC_PRICE_TIER_3-price).toLocaleString('vi-VN')}đ</div>
+      <div style="text-align:center;font-size:13.5px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Giá ưu đãi riêng từ Landing Page — tiết kiệm ${(TC_PRICE_TIER_3-price).toLocaleString('vi-VN')}đ</div>
     `;
   }
   const price = tcCurrentPrice(profile);
@@ -176,15 +176,15 @@ function tcPriceAnchorHtml(profile){
     return `
       <div style="flex:1;text-align:center;padding:7px 4px;border-radius:8px;${active ? 'background:var(--accent-soft);border:1.5px solid var(--accent);' : 'border:1.5px dashed var(--line);opacity:.55;'}">
         <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:${active?'13px':'11.5px'};color:${active?'var(--accent)':'var(--ink-soft)'};">${s.price.toLocaleString('vi-VN')}đ</div>
-        <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">${s.label}</div>
+        <div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">${s.label}</div>
       </div>
     `;
-  }).join(`<div style="display:flex;align-items:center;color:var(--ink-soft);font-size:12px;padding:0 1px;">→</div>`);
+  }).join(`<div style="display:flex;align-items:center;color:var(--ink-soft);font-size:13.5px;padding:0 1px;">→</div>`);
   return `
     <div style="text-align:center;font-size:20px;color:var(--ink-soft);text-decoration:line-through;line-height:1.3;">${TC_PRICE_TIER_3.toLocaleString('vi-VN')}đ</div>
-    <div style="text-align:center;font-size:17px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${price.toLocaleString('vi-VN')}đ</div>
-    <div style="text-align:center;font-size:12px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Tiết kiệm ${savings.toLocaleString('vi-VN')}đ nếu bắt đầu ngay</div>
-    <div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:9px 12px;margin-top:10px;text-align:center;font-size:12.5px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${tierDaysLeft} ngày ở mức giá này — hết hạn TỰ ĐỘNG tăng lên ${nextPrice.toLocaleString('vi-VN')}đ, không cần chờ ai bấm nút</div>
+    <div style="text-align:center;font-size:18px;font-weight:800;color:var(--accent);line-height:1.3;margin-top:2px;">Chỉ ${price.toLocaleString('vi-VN')}đ</div>
+    <div style="text-align:center;font-size:13.5px;font-weight:700;color:var(--gold);margin-top:8px;line-height:1.5;">🎁 Tiết kiệm ${savings.toLocaleString('vi-VN')}đ nếu bắt đầu ngay</div>
+    <div style="background:#FBEAE5;border:1px solid var(--danger);border-radius:8px;padding:9px 12px;margin-top:10px;text-align:center;font-size:14px;font-weight:700;color:var(--danger);line-height:1.5;">⏰ Còn ${tierDaysLeft} ngày ở mức giá này — hết hạn TỰ ĐỘNG tăng lên ${nextPrice.toLocaleString('vi-VN')}đ, không cần chờ ai bấm nút</div>
     <div style="display:flex;align-items:stretch;gap:0;margin-top:12px;">${stepsHtml}</div>
   `;
 }
@@ -207,11 +207,11 @@ function sidebarFootHtml(){
   const initial = name.charAt(0).toUpperCase();
   const avatarHtml = (p && p.avatar_url)
     ? `<img src="${p.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
-    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${esc(initial)}</div>`;
+    : `<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15.5px;flex-shrink:0;">${esc(initial)}</div>`;
   return `
     <div style="display:flex;align-items:center;gap:8px;">
       ${avatarHtml}
-      <div style="min-width:0;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+      <div style="min-width:0;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
     </div>
   `;
 }
@@ -331,13 +331,13 @@ function maybeShowTcReviewPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Sổ Dòng Tiền Tâm Thức 🌱</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Kể thoải mái điều bạn thấy thay đổi rõ nhất — dòng tiền bớt hoảng loạn hơn, thấy rõ tiền đi đâu, hay đơn giản là thói quen ghi chép đều hơn trước. Cảm nhận thật của bạn sẽ giúp rất nhiều người khác quyết định bắt đầu.</div>
-      <textarea id="tcrp-comment" placeholder="Ví dụ: Trước đây mình không biết tiền đi đâu hết, giờ nhìn Tổng Kết Tháng là biết ngay..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
-      <div id="tcrp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-top:8px;"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">Khoe trải nghiệm của bạn với Sổ Dòng Tiền Tâm Thức 🌱</div>
+      <div style="font-size:15px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Kể thoải mái điều bạn thấy thay đổi rõ nhất — dòng tiền bớt hoảng loạn hơn, thấy rõ tiền đi đâu, hay đơn giản là thói quen ghi chép đều hơn trước. Cảm nhận thật của bạn sẽ giúp rất nhiều người khác quyết định bắt đầu.</div>
+      <textarea id="tcrp-comment" placeholder="Ví dụ: Trước đây mình không biết tiền đi đâu hết, giờ nhìn Tổng Kết Tháng là biết ngay..." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line,#E4DFCF);border-radius:8px;font-family:inherit;font-size:15.5px;resize:vertical;"></textarea>
+      <div id="tcrp-error" style="display:none;color:var(--danger,#A6462E);font-size:14px;margin-top:8px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;">
-        <span id="tcrp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
-        <button id="tcrp-submit" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
+        <span id="tcrp-skip" style="font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="tcrp-submit" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;">Gửi đánh giá</button>
       </div>
     </div>
   `;
@@ -406,12 +406,12 @@ async function maybeShowTcPushPrompt(){
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.78);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="max-width:420px;width:100%;background:#fff;border-radius:14px;padding:26px 24px;box-shadow:0 12px 36px rgba(0,0,0,.3);">
-      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">🔔 Bật thông báo để không lỡ giá ưu đãi</div>
-      <div style="font-size:13.5px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Giá mở khoá TRỌN ĐỜI tăng dần theo thời gian dùng thử — 299.000đ trong 15 ngày đầu, sau đó tự động lên 599.000đ rồi 999.000đ. Bật thông báo để được nhắc trước 3 ngày mỗi lần giá sắp tăng, không cần tự nhớ ngày.</div>
-      <div id="tcpp-error" style="display:none;color:var(--danger,#A6462E);font-size:12.5px;margin-bottom:10px;"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2420;margin-bottom:8px;">🔔 Bật thông báo để không lỡ giá ưu đãi</div>
+      <div style="font-size:15px;line-height:1.6;color:#5B5F55;margin-bottom:14px;">Giá mở khoá TRỌN ĐỜI tăng dần theo thời gian dùng thử — 299.000đ trong 15 ngày đầu, sau đó tự động lên 599.000đ rồi 999.000đ. Bật thông báo để được nhắc trước 3 ngày mỗi lần giá sắp tăng, không cần tự nhớ ngày.</div>
+      <div id="tcpp-error" style="display:none;color:var(--danger,#A6462E);font-size:14px;margin-bottom:10px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
-        <span id="tcpp-skip" style="font-size:13px;color:#5B5F55;cursor:pointer;">Để sau</span>
-        <button id="tcpp-enable" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;">Bật thông báo</button>
+        <span id="tcpp-skip" style="font-size:14.5px;color:#5B5F55;cursor:pointer;">Để sau</span>
+        <button id="tcpp-enable" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;">Bật thông báo</button>
       </div>
     </div>
   `;
@@ -716,8 +716,8 @@ function tcBenefitsHtml(){
         <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);">
           <span style="font-size:20px;flex-shrink:0;">${b.icon}</span>
           <div>
-            <div style="font-weight:700;font-size:14px;margin-bottom:3px;">${esc(b.title)}</div>
-            <div style="font-size:13px;color:var(--ink-soft);line-height:1.55;">${esc(b.text)}</div>
+            <div style="font-weight:700;font-size:15.5px;margin-bottom:3px;">${esc(b.title)}</div>
+            <div style="font-size:14.5px;color:var(--ink-soft);line-height:1.55;">${esc(b.text)}</div>
           </div>
         </div>
       `).join('')}
@@ -743,20 +743,20 @@ function tcPaymentCardHtml(){
 
   return `
     ${tcPriceAnchorHtml(p)}
-    <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:6px;margin-bottom:14px;">1 lần duy nhất — chưa tới ${Math.ceil(price/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
+    <div style="text-align:center;font-size:14px;color:var(--ink-soft);margin-top:6px;margin-bottom:14px;">1 lần duy nhất — chưa tới ${Math.ceil(price/365/100)*100}đ/ngày nếu dùng đều trong năm đầu tiên</div>
     ${qrUrl ? `
       <div style="text-align:center;">
         <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
         <div style="margin-top:8px;">
-          <a href="${qrUrl}" download="vietqr-tai-chinh.png" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
+          <a href="${qrUrl}" download="vietqr-tai-chinh.png" target="_blank" rel="noopener" style="font-size:14px;color:var(--accent);font-weight:600;text-decoration:none;">📥 Tải ảnh mã QR về máy</a>
         </div>
       </div>
-      <div style="margin-top:14px;font-size:13.5px;line-height:1.7;">
+      <div style="margin-top:14px;font-size:15px;line-height:1.7;">
         <div><b>Ngân hàng:</b> Vietinbank</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tài khoản:</b> ${esc(PAYMENT_BANK.account)} <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(PAYMENT_BANK.account)}">Copy</span></div>
         <div><b>Chủ tài khoản:</b> ${esc(PAYMENT_BANK.accountName)}</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${price.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${price}">Copy</span></div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:11.5px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Số tiền:</b> ${price.toLocaleString('vi-VN')}đ <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${price}">Copy</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><b>Nội dung CK (bắt buộc giữ nguyên):</b> <span style="font-family:'IBM Plex Mono',monospace;background:var(--accent-soft);padding:2px 8px;border-radius:6px;">${esc(transferContent)}</span> <span class="btn-ghost btn btn-sm" style="padding:3px 10px;font-size:13px;" data-copy-value="${esc(transferContent)}">Copy</span></div>
       </div>
       <div class="hint-box" style="margin-top:14px;">Quét mã hoặc chuyển khoản đúng số tiền + giữ nguyên nội dung <b>${esc(transferContent)}</b> (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận. Chuyển xong đợi 1-2 phút rồi bấm nút bên dưới.</div>
     ` : `
@@ -828,8 +828,8 @@ function renderLockOverlay(content){
   overlay.innerHTML = `
     <div class="card" style="max-width:400px;text-align:center;pointer-events:auto;">
       <div style="font-size:30px;margin-bottom:6px;">🔒</div>
-      <div style="font-family:'Playfair Display',serif;font-size:18px;color:#1E2420;margin-bottom:8px;">Tính năng trả phí</div>
-      ${weakest ? `<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Bạn đang yếu nhất ở khâu <b>${esc(weakest.label)}</b> — mở khoá để đi sâu vào đúng chỗ này.</p>` : `<p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Đây là bản xem trước trang này — mở khoá trọn đời để dùng đầy đủ, lưu được dữ liệu.</p>`}
+      <div style="font-family:'Playfair Display',serif;font-size:19px;color:#1E2420;margin-bottom:8px;">Tính năng trả phí</div>
+      ${weakest ? `<p style="font-size:15px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Bạn đang yếu nhất ở khâu <b>${esc(weakest.label)}</b> — mở khoá để đi sâu vào đúng chỗ này.</p>` : `<p style="font-size:15px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">Đây là bản xem trước trang này — mở khoá trọn đời để dùng đầy đủ, lưu được dữ liệu.</p>`}
       <button id="tc-lock-cta" class="btn" style="width:100%;">Mở khoá ngay — ${tcActivePrice().toLocaleString('vi-VN')}đ</button>
     </div>
   `;

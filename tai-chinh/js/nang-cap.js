@@ -19,7 +19,7 @@ function render(container, ctx){
       ${alreadyPaid ? `
         <div class="card" style="max-width:460px;text-align:center;">
           <div style="font-size:34px;margin-bottom:8px;">🎉</div>
-          <div style="font-weight:600;font-size:15px;">Tài khoản của bạn đã ở bản trọn đời</div>
+          <div style="font-weight:600;font-size:16.5px;">Tài khoản của bạn đã ở bản trọn đời</div>
         </div>
       ` : `
         <div class="card" style="max-width:460px;">

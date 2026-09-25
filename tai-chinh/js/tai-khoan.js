@@ -85,11 +85,11 @@ function render(container, ctx){
 
       <div class="section">
         <h3>Thông tin cơ bản</h3>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Email</label>
-        <input type="text" value="${esc((ctx.user && ctx.user.email) || '')}" disabled style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:var(--bg);color:var(--ink-soft);">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Email</label>
+        <input type="text" value="${esc((ctx.user && ctx.user.email) || '')}" disabled style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:var(--bg);color:var(--ink-soft);">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Họ tên</label>
-        <input type="text" id="tk-name" value="${esc(state.fullName)}" placeholder="Tên của bạn" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Họ tên</label>
+        <input type="text" id="tk-name" value="${esc(state.fullName)}" placeholder="Tên của bạn" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;color:var(--ink);">
 
         <button class="btn" style="margin-top:14px;" id="tk-save-name" ${state.savingName?'disabled':''}>${state.savingName?'Đang lưu…':'Lưu tên'}</button>
         <span id="tk-name-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedNameMsg}</span>
@@ -97,11 +97,11 @@ function render(container, ctx){
 
       <div class="section">
         <h3>Đổi mật khẩu</h3>
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới</label>
-        <input type="password" id="tk-new-pass" value="${esc(state.newPass)}" placeholder="Ít nhất 6 ký tự" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới</label>
+        <input type="password" id="tk-new-pass" value="${esc(state.newPass)}" placeholder="Ít nhất 6 ký tự" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;color:var(--ink);">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Xác nhận mật khẩu mới</label>
-        <input type="password" id="tk-confirm-pass" value="${esc(state.confirmPass)}" placeholder="Nhập lại mật khẩu mới" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Xác nhận mật khẩu mới</label>
+        <input type="password" id="tk-confirm-pass" value="${esc(state.confirmPass)}" placeholder="Nhập lại mật khẩu mới" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;color:var(--ink);">
 
         ${state.passError ? `<div class="error-box">${esc(state.passError)}</div>` : ''}
         ${state.passMsg ? `<div class="hint-box">${esc(state.passMsg)}</div>` : ''}
@@ -136,26 +136,26 @@ function render(container, ctx){
             <h3 style="margin-bottom:6px;">Giới thiệu bạn bè</h3>
             <div class="hint-box" style="margin-bottom:14px;">Chia sẻ link dưới đây — khi bạn bè bấm vào đăng ký rồi mua trọn đời, bạn được thưởng <b>${effectivePercent}%</b> giá trị đơn hàng của họ${isVip?' (VIP Partner: +10 điểm %)':''} (~${Math.round(tcCurrentPrice()*effectivePercent/100).toLocaleString('vi-VN')}đ mỗi người ở giá hiện tại). Trả bằng chuyển khoản tay, không tự động — bên dưới là số bạn đang được ghi nợ.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-              <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg);color:var(--ink);" onclick="this.select()">
+              <input readonly value="${esc(referralLink())}" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;background:var(--bg);color:var(--ink);" onclick="this.select()">
               <button class="btn btn-sm" id="tk-copy-referral-link">${state.referralLinkCopied?'✓ Đã copy':'Copy link'}</button>
             </div>
             <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
-              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalCount}</div><div style="font-size:12px;color:var(--ink-soft);">người đã giới thiệu thành công (app này)</div></div>
-              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalPaid.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">đã nhận</div></div>
-              <div><div style="font-size:20px;font-weight:700;color:${totalPending>0?'var(--danger)':'var(--ink)'};">${totalPending.toLocaleString('vi-VN')}đ</div><div style="font-size:12px;color:var(--ink-soft);">đang chờ chuyển khoản</div></div>
+              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalCount}</div><div style="font-size:13.5px;color:var(--ink-soft);">người đã giới thiệu thành công (app này)</div></div>
+              <div><div style="font-size:20px;font-weight:700;color:var(--accent);">${totalPaid.toLocaleString('vi-VN')}đ</div><div style="font-size:13.5px;color:var(--ink-soft);">đã nhận</div></div>
+              <div><div style="font-size:20px;font-weight:700;color:${totalPending>0?'var(--danger)':'var(--ink)'};">${totalPending.toLocaleString('vi-VN')}đ</div><div style="font-size:13.5px;color:var(--ink-soft);">đang chờ chuyển khoản</div></div>
             </div>
             ${hieuPartnerCount >= PARTNER_REFERRAL_THRESHOLD
-              ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:13px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái (${hieuPartnerCount} người, cộng dồn mọi sản phẩm)!</div>`
-              : `<div style="margin-top:12px;font-size:12.5px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - hieuPartnerCount}</b> người nữa (cộng dồn mọi sản phẩm) để trở thành Hiểu Partner 🌟</div>`}
+              ? `<div style="margin-top:12px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;font-size:14.5px;color:var(--accent);font-weight:600;">🌟 Bạn đã là Hiểu Partner của hệ sinh thái (${hieuPartnerCount} người, cộng dồn mọi sản phẩm)!</div>`
+              : `<div style="margin-top:12px;font-size:14px;color:var(--ink-soft);">Còn <b>${PARTNER_REFERRAL_THRESHOLD - hieuPartnerCount}</b> người nữa (cộng dồn mọi sản phẩm) để trở thành Hiểu Partner 🌟</div>`}
             ${isVip
-              ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:13px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
-              : `<div style="margin-top:10px;font-size:12.5px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
+              ? `<div style="margin-top:10px;padding:10px 14px;background:var(--gold-soft,var(--accent-soft));border-radius:8px;font-size:14.5px;color:var(--gold,var(--accent));font-weight:600;">👑 Bạn là VIP Partner — hoa hồng +10 điểm % trên mọi sản phẩm.</div>`
+              : `<div style="margin-top:10px;font-size:14px;color:var(--ink-soft);">Mua gói VIP Partner (55tr) để được +10 điểm % hoa hồng trên mọi sản phẩm — liên hệ Zalo để tìm hiểu.</div>`}
           </div>
         `;
       })()}
 
       <div class="btn-row" style="justify-content:flex-start;margin-top:8px;">
-        <span class="signout" id="tk-signout-btn" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Đăng xuất</span>
+        <span class="signout" id="tk-signout-btn" style="cursor:pointer;color:var(--ink-soft);font-size:14.5px;">Đăng xuất</span>
       </div>
     `;
   }

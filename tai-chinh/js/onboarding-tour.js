@@ -47,7 +47,7 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
     <div id="ot-welcome" style="position:fixed;top:0;left:${sidebarWidth}px;right:0;bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
       <div style="max-width:420px;padding:0 24px;">
         <div style="font-family:'Playfair Display',serif;font-size:30px;color:#fff;margin-bottom:12px;">Chào mừng đến với Sổ Dòng Tiền Tâm Thức!</div>
-        <div style="font-size:14.5px;color:#DCEAE4;line-height:1.6;">Cùng xem nhanh từng bước ở sidebar bên trái trước khi bắt đầu nhé.</div>
+        <div style="font-size:16px;color:#DCEAE4;line-height:1.6;">Cùng xem nhanh từng bước ở sidebar bên trái trước khi bắt đầu nhé.</div>
       </div>
     </div>
   `;
@@ -78,11 +78,11 @@ function startOnboardingTour(userId, alreadySeen, onSeen){
     ` + welcomeHtml + `
       <div style="position:fixed;top:${Math.min(r.top, window.innerHeight-220)}px;left:${Math.min(r.left+r.width+16, window.innerWidth-320)}px;
         width:280px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 8px 28px rgba(0,0,0,.25);pointer-events:auto;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft, #5B5F55);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Bước ${idx+1}/${availableSteps.length}</div>
-        <div style="font-size:14px;line-height:1.6;color:#1E2420;margin-bottom:14px;">${step.text}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft, #5B5F55);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Bước ${idx+1}/${availableSteps.length}</div>
+        <div style="font-size:15.5px;line-height:1.6;color:#1E2420;margin-bottom:14px;">${step.text}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span id="ot-skip" style="font-size:12.5px;color:#5B5F55;cursor:pointer;">Bỏ qua hướng dẫn</span>
-          <button id="ot-next" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">${idx===availableSteps.length-1?'Bắt đầu dùng →':'Tiếp theo →'}</button>
+          <span id="ot-skip" style="font-size:14px;color:#5B5F55;cursor:pointer;">Bỏ qua hướng dẫn</span>
+          <button id="ot-next" style="background:var(--accent, #2F6F62);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14.5px;font-weight:600;cursor:pointer;">${idx===availableSteps.length-1?'Bắt đầu dùng →':'Tiếp theo →'}</button>
         </div>
       </div>
     `;

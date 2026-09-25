@@ -33,9 +33,9 @@ function scoreLevelExplain(field, value){
 }
 function scoreChipGroupHtml(field, question, idSuffix, value, extraHint){
   return `
-    <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">${question}</label>
+    <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">${question}</label>
     <div class="chips" id="tt-${idSuffix}-chips">
-      ${[1,2,3,4,5].map(v=>`<div class="chip ${value===v?'selected':''}" data-score-field="${field}" data-score-value="${v}" style="font-size:18px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
+      ${[1,2,3,4,5].map(v=>`<div class="chip ${value===v?'selected':''}" data-score-field="${field}" data-score-value="${v}" style="font-size:19px;padding:8px 14px;">${SELF_RATING_EMOJI[v-1]}</div>`).join('')}
     </div>
     <div class="hint-box" id="tt-${idSuffix}-explain" style="margin-top:8px;">${esc(scoreLevelExplain(field, value))}</div>
     ${extraHint || ''}
@@ -210,11 +210,11 @@ function render(container, ctx){
           const overspentMonth = remainingBudget < 0;
           return `
             <div style="padding:10px 0;border-bottom:1px solid var(--line);">
-              <div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:600;">
+              <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;">
                 <span>${esc(key)}</span>
                 <span style="color:${remainingThisWeek<0?'var(--danger)':'var(--accent)'};">${remainingThisWeek<0?'Vượt ':'Còn '}${Math.abs(Math.round(remainingThisWeek)).toLocaleString('vi-VN')}đ</span>
               </div>
-              <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:3px;">
                 ${overspentMonth
                   ? `Đã vượt hạn mức cả tháng ${Math.abs(Math.round(remainingBudget)).toLocaleString('vi-VN')}đ trước tuần này — nên tạm dừng chi mục này tới hết tháng.`
                   : `Gợi ý tuần này: ${Math.round(suggestedThisWeek).toLocaleString('vi-VN')}đ (ngân sách tháng còn ${Math.round(remainingBudget).toLocaleString('vi-VN')}đ ÷ ${weeksRemaining} tuần) — đã chi ${Math.round(spentThisWeek).toLocaleString('vi-VN')}đ.`}
@@ -240,9 +240,9 @@ function render(container, ctx){
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="source-grid" style="margin-bottom:16px;">
-          <div class="source-card"><div class="ic" style="font-size:16px;color:var(--accent);">${totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu nhập</div></div>
-          <div class="source-card"><div class="ic" style="font-size:16px;color:var(--danger);">${totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi tiêu</div></div>
-          <div class="source-card"><div class="ic" style="font-size:16px;color:${savingsRate>=20?'var(--accent)':'var(--ink)'};">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu nhập</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi tiêu</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;color:${savingsRate>=20?'var(--accent)':'var(--ink)'};">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
         </div>
 
         <div class="section">
@@ -257,8 +257,8 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Top 3 khoản chi lớn nhất</h3>
-          ${top3.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có khoản chi nào.</div>` : top3.map((e,i)=>`
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;">
+          ${top3.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có khoản chi nào.</div>` : top3.map((e,i)=>`
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15.5px;">
               <span>${i+1}. ${esc(e.description||'(không ghi chú)')}</span>
               <b style="color:var(--danger);">${Number(e.amount).toLocaleString('vi-VN')}đ</b>
             </div>
@@ -272,21 +272,21 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Nhận xét & đánh giá tuần</h3>
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Cảm giác về chi tiêu tuần này</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Cảm giác về chi tiêu tuần này</label>
           <div class="chips" id="tt-feeling-chips" style="margin-bottom:14px;">
             ${FEELING_OPTIONS.map(f=>`<div class="chip ${state.reflection.spending_feeling===f?'selected':''}" data-feeling="${esc(f)}">${esc(f)}</div>`).join('')}
           </div>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoản chi HỐI TIẾC nhất tuần này</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoản chi HỐI TIẾC nhất tuần này</label>
           <textarea id="tt-regret" placeholder="Khoản chi nào bạn ước gì đã không tiêu?">${esc(state.reflection.regret_expense)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Khoản chi BẤT NGỜ tuần này</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Khoản chi BẤT NGỜ tuần này</label>
           <textarea id="tt-unexpected" placeholder="Có khoản chi phát sinh ngoài dự tính không?">${esc(state.reflection.unexpected_expense)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều làm ĐƯỢC tốt tuần này</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều làm ĐƯỢC tốt tuần này</label>
           <textarea id="tt-went-well" placeholder="Bạn đã làm tốt điều gì về chi tiêu/tiết kiệm?">${esc(state.reflection.went_well)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều cần THAY ĐỔI tuần tới</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều cần THAY ĐỔI tuần tới</label>
           <textarea id="tt-to-change" placeholder="Tuần tới bạn muốn thay đổi điều gì?">${esc(state.reflection.to_change)}</textarea>
 
           <div class="hint-box" style="margin:16px 0 10px;">5 câu chấm điểm dưới đây tương ứng đúng 5 Trụ Cột ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a> — chấm thật theo cảm nhận tuần này, không cần nghĩ nhiều.</div>
@@ -298,7 +298,7 @@ function render(container, ctx){
           ${scoreChipGroupHtml('finance_mindset_score', glossaryWrap('Tâm thức về tiền của bạn tuần này thế nào?', 'karma_score'), 'finance-mindset', state.reflection.finance_mindset_score,
             `<div class="hint-box" style="margin-top:6px;">Câu này CHECK trực tiếp Trụ Tài Chính Tâm Thức — vì tài chính bất ổn kéo theo mọi mặt khác, điểm này còn ảnh hưởng nhẹ tới cả 4 trụ còn lại ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a>.</div>`)}
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Tuần này khi thấy người khác (đồng nghiệp, bạn bè) nhận tin vui về tiền, bạn cảm thấy thế nào?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Tuần này khi thấy người khác (đồng nghiệp, bạn bè) nhận tin vui về tiền, bạn cảm thấy thế nào?</label>
           <div class="chips" id="tt-reaction-chips">
             ${REACTION_OPTIONS.map(o=>`<div class="chip ${state.reflection.reaction_to_others_success===o.key?'selected':''}" data-reaction="${o.key}">${o.label}</div>`).join('')}
           </div>

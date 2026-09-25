@@ -70,12 +70,12 @@ function render(container, ctx){
         <div class="txt">${esc(c.label)}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
           ${c.type==='expense' ? `
-            <select data-classification="${c.id}" style="padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#FDFCF8;color:var(--ink);">
+            <select data-classification="${c.id}" style="padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
               <option value="" ${!c.default_classification?'selected':''}>— Chưa gắn —</option>
               ${CLASSIFICATION_OPTIONS.map(o=>`<option value="${o.key}" ${c.default_classification===o.key?'selected':''}>${o.label}</option>`).join('')}
             </select>
           ` : ''}
-          <span class="btn-ghost btn btn-sm" data-delete-category="${c.id}" data-category-label="${esc(c.label)}" style="padding:5px 10px;font-size:12px;">Xoá</span>
+          <span class="btn-ghost btn btn-sm" data-delete-category="${c.id}" data-category-label="${esc(c.label)}" style="padding:5px 10px;font-size:13.5px;">Xoá</span>
         </div>
       </div>
     `;
@@ -101,12 +101,12 @@ function render(container, ctx){
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : `
         <div class="section">
-          ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có danh mục nào.</div>` : list.map(categoryRowHtml).join('')}
+          ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có danh mục nào.</div>` : list.map(categoryRowHtml).join('')}
 
           <div style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;flex-wrap:wrap;">
-            <input type="text" id="dm-new-label" value="${esc(state.newLabel)}" placeholder="+ Thêm danh mục mới..." style="flex:1;min-width:160px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;color:var(--ink);">
+            <input type="text" id="dm-new-label" value="${esc(state.newLabel)}" placeholder="+ Thêm danh mục mới..." style="flex:1;min-width:160px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;color:var(--ink);">
             ${state.tab==='expense' ? `
-              <select id="dm-new-classification" style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;color:var(--ink);">
+              <select id="dm-new-classification" style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;color:var(--ink);">
                 ${CLASSIFICATION_OPTIONS.map(o=>`<option value="${o.key}" ${state.newClassification===o.key?'selected':''}>${o.label}</option>`).join('')}
               </select>
             ` : ''}

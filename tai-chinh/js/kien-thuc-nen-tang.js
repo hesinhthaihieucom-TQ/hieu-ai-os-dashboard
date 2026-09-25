@@ -50,7 +50,7 @@ const NUT_CHAN = [
 function detailsSection(title, bodyHtml){
   return `<details class="kt-section" style="margin-bottom:12px;">
     <summary class="kt-summary">${esc(title)}</summary>
-    <div style="margin-top:12px;line-height:1.7;font-size:14.5px;">${bodyHtml}</div>
+    <div style="margin-top:12px;line-height:1.7;font-size:16px;">${bodyHtml}</div>
   </details>`;
 }
 

@@ -86,12 +86,12 @@ function renderThongBao(container, ctx){
   function stepRowHtml(step, i){
     return `
       <div class="section" data-step-row="${i}" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
-        <select data-step-key="${i}" style="flex:0 0 200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+        <select data-step-key="${i}" style="flex:0 0 200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;">
           <option value="">— Chọn mục trong app —</option>
           ${navOptions.map(n => `<option value="${esc(n.key)}" ${step.key===n.key?'selected':''}>${esc(n.title)}</option>`).join('')}
         </select>
         <input data-step-text="${i}" type="text" placeholder="Nói gì ở bước này..." value="${esc(step.text)}"
-          style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;">
+          style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;">
         <span data-step-remove="${i}" class="btn-ghost btn btn-sm" style="color:var(--danger);white-space:nowrap;">Xoá</span>
       </div>
     `;
@@ -99,17 +99,17 @@ function renderThongBao(container, ctx){
 
   function html(){
     return `
-      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Đăng ở đây sẽ hiện popup giữa màn hình cho tất cả khách đang dùng Sổ Dòng Tiền Tâm Thức. Thêm "các bước hướng dẫn" nếu muốn dẫn khách đi từng bước trong app (giống hướng dẫn lúc mới vào app).</p>
+      <p style="color:var(--ink-soft);font-size:15px;margin-bottom:16px;">Đăng ở đây sẽ hiện popup giữa màn hình cho tất cả khách đang dùng Sổ Dòng Tiền Tâm Thức. Thêm "các bước hướng dẫn" nếu muốn dẫn khách đi từng bước trong app (giống hướng dẫn lúc mới vào app).</p>
       <div class="card" style="margin-bottom:24px;">
         <div class="field" style="margin-bottom:14px;">
           <label>Tiêu đề</label>
           <input id="tb-title" type="text" placeholder="VD: Mới: Hạt Giống Phước - Nghiệp" value="${esc(state.title)}"
-            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
         </div>
         <div class="field" style="margin-bottom:18px;">
           <label>Nội dung</label>
           <textarea id="tb-body" rows="4" placeholder="Mô tả ngắn tính năng mới..."
-            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;resize:vertical;">${esc(state.body)}</textarea>
+            style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;resize:vertical;">${esc(state.body)}</textarea>
         </div>
         <div class="field" style="margin-bottom:18px;">
           <label>Sticker</label>
@@ -130,14 +130,14 @@ function renderThongBao(container, ctx){
           </button>
         </div>
       </div>
-      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Đã đăng gần đây</h2></div>
-      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa đăng thông báo nào.</div>` : ''}
+      <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Đã đăng gần đây</h2></div>
+      ${state.list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa đăng thông báo nào.</div>` : ''}
       ${state.list.map(a=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
           <div>
-            <div style="font-weight:600;font-size:14.5px;margin-bottom:4px;">${esc(a.emoji || '🎉')} ${esc(a.title)}</div>
-            <div style="font-size:13.5px;color:var(--ink-soft);white-space:pre-wrap;">${esc(a.body)}</div>
-            <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">
+            <div style="font-weight:600;font-size:16px;margin-bottom:4px;">${esc(a.emoji || '🎉')} ${esc(a.title)}</div>
+            <div style="font-size:15px;color:var(--ink-soft);white-space:pre-wrap;">${esc(a.body)}</div>
+            <div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">
               ${esc(new Date(a.created_at).toLocaleString('vi-VN'))}${a.steps && a.steps.length ? ` — ${a.steps.length} bước hướng dẫn` : ''}
             </div>
           </div>
@@ -211,12 +211,12 @@ function renderThanhVien(container, ctx){
   }
 
   function statusBadge(row){
-    if(row.role === 'admin') return `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Admin</span>`;
-    if(row.tc_has_paid) return `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Đã trả phí</span>`;
+    if(row.role === 'admin') return `<span style="font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Admin</span>`;
+    if(row.tc_has_paid) return `<span style="font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Đã trả phí</span>`;
     const left = trialDaysLeft(row);
     return left > 0
-      ? `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FDF0E0;color:#B5691A;">Còn ${left} ngày dùng thử</span>`
-      : `<span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FBE5E5;color:#B5271A;">Hết dùng thử</span>`;
+      ? `<span style="font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FDF0E0;color:#B5691A;">Còn ${left} ngày dùng thử</span>`
+      : `<span style="font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FBE5E5;color:#B5271A;">Hết dùng thử</span>`;
   }
 
   async function markPaid(id, value){
@@ -244,13 +244,13 @@ function renderThanhVien(container, ctx){
       : state.rows;
     return `
       <input type="text" id="tv-search" placeholder="Tìm theo email hoặc tên..." value="${esc(state.search)}"
-        style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#FDFCF8;margin-bottom:16px;">
+        style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#FDFCF8;margin-bottom:16px;">
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : filtered.map(r=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
           <div>
-            <div style="font-weight:600;font-size:14px;">${esc(r.full_name||'(chưa đặt tên)')} ${statusBadge(r)}</div>
-            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(r.email||'')}</div>
-            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">
+            <div style="font-weight:600;font-size:15.5px;">${esc(r.full_name||'(chưa đặt tên)')} ${statusBadge(r)}</div>
+            <div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${esc(r.email||'')}</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">
               Vào tai-chinh: ${r.tc_trial_started_at ? esc(new Date(r.tc_trial_started_at).toLocaleDateString('vi-VN')) : 'chưa vào'}
               ${r.tc_paid_at ? ` · Trả phí: ${esc(new Date(r.tc_paid_at).toLocaleDateString('vi-VN'))}` : ''}
             </div>
@@ -263,7 +263,7 @@ function renderThanhVien(container, ctx){
           </div>
         </div>
       `).join('')}
-      ${!state.loading && filtered.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Không có kết quả.</div>` : ''}
+      ${!state.loading && filtered.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Không có kết quả.</div>` : ''}
     `;
   }
 
@@ -351,17 +351,17 @@ function renderHoaHong(container, ctx){
   function html(){
     const groups = groupByReferrer();
     return `
-      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:16px;">Mỗi người giới thiệu thành công 1 khách mua trọn đời được thưởng 20% (~59.800đ), VIP Partner được 30%. Không có chuyển khoản tự động — chị tự chuyển khoản tay cho người giới thiệu rồi bấm "Đánh dấu đã trả" bên dưới.</p>
-      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : groups.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có ai được thưởng hoa hồng.</div>` : groups.map(g=>`
+      <p style="color:var(--ink-soft);font-size:15px;margin-bottom:16px;">Mỗi người giới thiệu thành công 1 khách mua trọn đời được thưởng 20% (~59.800đ), VIP Partner được 30%. Không có chuyển khoản tự động — chị tự chuyển khoản tay cho người giới thiệu rồi bấm "Đánh dấu đã trả" bên dưới.</p>
+      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : groups.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có ai được thưởng hoa hồng.</div>` : groups.map(g=>`
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
             <div>
-              <div style="font-weight:600;font-size:14.5px;">${esc(nameOf(g.referrerId))}${(state.profileById[g.referrerId]&&state.profileById[g.referrerId].is_vip_partner)?' <span style="color:var(--gold,var(--accent));">👑 VIP Partner</span>':''}</div>
-              <div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;">Đã giới thiệu: ${g.rows.map(r=>esc(nameOf(r.referee_id))).join(', ')}</div>
+              <div style="font-weight:600;font-size:16px;">${esc(nameOf(g.referrerId))}${(state.profileById[g.referrerId]&&state.profileById[g.referrerId].is_vip_partner)?' <span style="color:var(--gold,var(--accent));">👑 VIP Partner</span>':''}</div>
+              <div style="font-size:14px;color:var(--ink-soft);margin-top:4px;">Đã giới thiệu: ${g.rows.map(r=>esc(nameOf(r.referee_id))).join(', ')}</div>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:12px;color:var(--ink-soft);">Đã trả: ${g.totalPaid.toLocaleString('vi-VN')}đ</div>
-              <div style="font-size:15px;font-weight:700;color:${g.totalPending>0?'var(--danger)':'var(--ink)'};">Đang nợ: ${g.totalPending.toLocaleString('vi-VN')}đ</div>
+              <div style="font-size:13.5px;color:var(--ink-soft);">Đã trả: ${g.totalPaid.toLocaleString('vi-VN')}đ</div>
+              <div style="font-size:16.5px;font-weight:700;color:${g.totalPending>0?'var(--danger)':'var(--ink)'};">Đang nợ: ${g.totalPending.toLocaleString('vi-VN')}đ</div>
             </div>
           </div>
           ${g.totalPending>0 ? `<button class="btn btn-sm" style="margin-top:10px;" data-mark-group-paid="${g.referrerId}" ${state.busyReferrerId===g.referrerId?'disabled':''}>${state.busyReferrerId===g.referrerId?'Đang lưu…':'✓ Đánh dấu đã trả hết'}</button>` : ''}
@@ -425,14 +425,14 @@ function renderTaiChinh(container, ctx){
       <div class="page-head"><h1>Tài chính</h1><p>Doanh thu thật (chỉ 3 mức giá tai-chinh) — tổng quan và theo từng tháng. Tai-chinh không có hệ lượt AI như Xây Nhân Hiệu nên không có mục chi phí/lợi nhuận ước tính.</p></div>
 
       <div class="source-grid" style="margin-bottom:12px;">
-        <div class="source-card"><div class="ic" style="font-size:18px;">${totalRevenue.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
-        <div class="source-card"><div class="ic" style="font-size:18px;">${revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
-        <div class="source-card"><div class="ic" style="font-size:18px;">${state.rows.length}</div><div class="label">Số giao dịch đã khớp</div></div>
+        <div class="source-card"><div class="ic" style="font-size:19px;">${totalRevenue.toLocaleString('vi-VN')}đ</div><div class="label">Tổng doanh thu</div></div>
+        <div class="source-card"><div class="ic" style="font-size:19px;">${revenueThisMonth.toLocaleString('vi-VN')}đ</div><div class="label">Doanh thu tháng này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:19px;">${state.rows.length}</div><div class="label">Số giao dịch đã khớp</div></div>
       </div>
 
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo mức giá</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo mức giá</div>
       <div class="card" style="overflow-x:auto;padding:0;margin-bottom:24px;">
-        <table style="width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;">
+        <table style="width:100%;border-collapse:collapse;font-size:15px;white-space:nowrap;">
           <thead><tr style="text-align:left;border-bottom:1px solid var(--line);">
             <th style="padding:10px 14px;">Mức giá</th><th style="padding:10px 14px;">Số người mua</th>
           </tr></thead>
@@ -447,10 +447,10 @@ function renderTaiChinh(container, ctx){
         </table>
       </div>
 
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo từng tháng</div>
-      ${monthlyRows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;margin-bottom:24px;">Chưa có dữ liệu.</div>` : `
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Theo từng tháng</div>
+      ${monthlyRows.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;margin-bottom:24px;">Chưa có dữ liệu.</div>` : `
       <div class="card" style="overflow-x:auto;padding:0;margin-bottom:24px;">
-        <table style="width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;">
+        <table style="width:100%;border-collapse:collapse;font-size:15px;white-space:nowrap;">
           <thead><tr style="text-align:left;border-bottom:1px solid var(--line);">
             <th style="padding:10px 14px;">Tháng</th><th style="padding:10px 14px;">Doanh thu</th><th style="padding:10px 14px;">Số giao dịch</th>
           </tr></thead>
@@ -467,10 +467,10 @@ function renderTaiChinh(container, ctx){
       </div>
       `}
 
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Giao dịch gần nhất</div>
-      ${state.rows.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào.</div>` : state.rows.slice(0,50).map(r=>`
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;">Giao dịch gần nhất</div>
+      ${state.rows.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có giao dịch nào.</div>` : state.rows.slice(0,50).map(r=>`
         <div class="section" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-size:13px;">${esc(new Date(r.created_at).toLocaleString('vi-VN'))} · <span style="font-family:'IBM Plex Mono',monospace;">${esc(r.ref_code_found||'—')}</span></span>
+          <span style="font-size:14.5px;">${esc(new Date(r.created_at).toLocaleString('vi-VN'))} · <span style="font-family:'IBM Plex Mono',monospace;">${esc(r.ref_code_found||'—')}</span></span>
           <b style="color:var(--accent);">${Number(r.transfer_amount).toLocaleString('vi-VN')}đ</b>
         </div>
       `).join('')}
@@ -505,14 +505,14 @@ function renderDanhGia(container, ctx){
       <div class="page-head"><h1>Đánh giá app</h1><p>${pendingCount} đánh giá đang chờ duyệt. Duyệt xong mới hiện công khai ở Trang chủ.</p></div>
       <div class="card" style="margin-bottom:20px;">
         <input id="dg-search" type="text" placeholder="Tìm theo nội dung hoặc tên..." value="${esc(state.q)}"
-          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;background:#FDFCF8;">
+          style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
       </div>
-      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có đánh giá nào.</div>` : ''}
+      ${list.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có đánh giá nào.</div>` : ''}
       ${list.map(r=>`
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:13px;color:var(--ink-soft);">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleString('vi-VN'))}</div>
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 10px;border-radius:999px;
+            <div style="font-size:14.5px;color:var(--ink-soft);">${esc(r.display_name||'Ẩn danh')} · ${esc(new Date(r.created_at).toLocaleString('vi-VN'))}</div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:3px 10px;border-radius:999px;
               background:${r.approved?'var(--accent-soft)':'#FBF6E9'};color:${r.approved?'var(--accent)':'var(--gold)'};">${r.approved?'Đã duyệt':'Chờ duyệt'}</span>
           </div>
           <div class="body" style="margin-top:10px;white-space:pre-wrap;">${esc(r.comment)}</div>

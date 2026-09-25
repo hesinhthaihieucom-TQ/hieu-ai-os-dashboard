@@ -241,10 +241,10 @@ function render(container, ctx){
         <div class="section">
           <h3>A. Dòng tiền tháng</h3>
           <div class="source-grid">
-            <div class="source-card"><div class="ic" style="font-size:16px;color:var(--accent);">${state.cashFlow.income.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu</div></div>
-            <div class="source-card"><div class="ic" style="font-size:16px;color:var(--danger);">${state.cashFlow.expense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi</div></div>
-            <div class="source-card"><div class="ic" style="font-size:16px;">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
-            ${dti!=null ? `<div class="source-card"><div class="ic" style="font-size:16px;color:${dtiColor};">${dti}%</div><div class="label">Tỷ lệ nợ/thu nhập (DTI)</div></div>` : ''}
+            <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${state.cashFlow.income.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${state.cashFlow.expense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+            ${dti!=null ? `<div class="source-card"><div class="ic" style="font-size:17px;color:${dtiColor};">${dti}%</div><div class="label">Tỷ lệ nợ/thu nhập (DTI)</div></div>` : ''}
           </div>
           ${dti!=null && dti>=36 ? `<div class="hint-box" style="margin-top:12px;">DTI ${dti}% ${dti>=43?'ở mức đáng lo (≥43%)':'ở mức cần chú ý (36-43%)'} — ngân hàng thường coi trên 43% là rủi ro cao. Cân nhắc ưu tiên trả bớt nợ trước khi vay/mua thêm.</div>` : ''}
         </div>
@@ -259,17 +259,17 @@ function render(container, ctx){
           ${state.networthCarriedForward ? `<div class="hint-box" style="margin-bottom:14px;">Số liệu dưới đây tự lấy từ tháng trước — chỉnh lại đúng số thật của tháng này rồi bấm "Lưu cân đối tháng này".</div>` : ''}
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
             <div>
-              <div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:8px;">🏦 Tài sản sinh lợi</div>
+              <div style="font-weight:600;font-size:14.5px;color:var(--accent);margin-bottom:8px;">🏦 Tài sản sinh lợi</div>
               ${ASSET_FIELDS.map(f=>`
-                <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">${esc(f.label)}</label>
-                <input type="text" inputmode="numeric" data-networth="${f.key}" value="${esc(formatThousands(state.networth[f.key]))}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+                <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">${esc(f.label)}</label>
+                <input type="text" inputmode="numeric" data-networth="${f.key}" value="${esc(formatThousands(state.networth[f.key]))}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
               `).join('')}
             </div>
             <div>
-              <div style="font-weight:600;font-size:13px;color:var(--danger);margin-bottom:8px;">🔴 Tiêu sản / Nợ</div>
+              <div style="font-weight:600;font-size:14.5px;color:var(--danger);margin-bottom:8px;">🔴 Tiêu sản / Nợ</div>
               ${DEBT_FIELDS.map(f=>`
-                <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;">${esc(f.label)}</label>
-                <input type="text" inputmode="numeric" data-networth="${f.key}" value="${esc(formatThousands(state.networth[f.key]))}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#FDFCF8;color:var(--ink);">
+                <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">${esc(f.label)}</label>
+                <input type="text" inputmode="numeric" data-networth="${f.key}" value="${esc(formatThousands(state.networth[f.key]))}" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
               `).join('')}
             </div>
           </div>
@@ -282,10 +282,10 @@ function render(container, ctx){
 
           ${historyRows.length>1 ? `
             <div style="margin-top:20px;">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;">Lịch sử Tài Sản Ròng</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;">Lịch sử Tài Sản Ròng</div>
               ${networthChartHtml(historyRows)}
               ${historyRows.slice().reverse().map(r=>`
-                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;">
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px;">
                   <span>${esc(r.month)}</span>
                   <b style="color:${r.net>=0?'var(--accent)':'var(--danger)'};">${r.net.toLocaleString('vi-VN')}đ</b>
                 </div>
@@ -296,19 +296,19 @@ function render(container, ctx){
 
         <div class="section">
           <h3>C. Bài học nhìn lại tháng qua</h3>
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoản chi khiến bạn HỐI TIẾC nhất? Lần sau xử lý thế nào?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Khoản chi khiến bạn HỐI TIẾC nhất? Lần sau xử lý thế nào?</label>
           <textarea data-reflection="reflection_regret">${esc(state.reflection.reflection_regret)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Khoản chi/đầu tư XỨNG ĐÁNG nhất? Tại sao?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Khoản chi/đầu tư XỨNG ĐÁNG nhất? Tại sao?</label>
           <textarea data-reflection="reflection_worth">${esc(state.reflection.reflection_worth)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều gì đã ngăn cản bạn tiết kiệm được nhiều hơn?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều gì đã ngăn cản bạn tiết kiệm được nhiều hơn?</label>
           <textarea data-reflection="reflection_blocker">${esc(state.reflection.reflection_blocker)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Thói quen tài chính TỐT đã xây dựng được tháng này?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Thói quen tài chính TỐT đã xây dựng được tháng này?</label>
           <textarea data-reflection="reflection_good_habit">${esc(state.reflection.reflection_good_habit)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Thói quen tài chính XẤU cần loại bỏ?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Thói quen tài chính XẤU cần loại bỏ?</label>
           <textarea data-reflection="reflection_bad_habit">${esc(state.reflection.reflection_bad_habit)}</textarea>
 
           <div class="hint-box" style="margin-top:16px;">Muốn đặt mục tiêu cho tháng tới? Sang <a href="#muc-tieu" style="color:var(--accent);font-weight:600;">Mục Tiêu & Cam Kết →</a> — đặt mục tiêu là một nghi thức riêng, nên làm TRƯỚC khi bắt đầu ghi chép tháng mới, không gộp chung với việc nhìn lại ở đây.</div>
@@ -321,7 +321,7 @@ function render(container, ctx){
   }
 
   function networthPreviewHtml(totalAssets, totalDebts, netWorth){
-    return `Tổng tài sản: <b>${totalAssets.toLocaleString('vi-VN')}đ</b> · Tổng tiêu sản: <b>${totalDebts.toLocaleString('vi-VN')}đ</b> · TÀI SẢN RÒNG: <b style="color:${netWorth>=0?'var(--accent)':'var(--danger)'};font-size:15px;">${netWorth.toLocaleString('vi-VN')}đ</b>`;
+    return `Tổng tài sản: <b>${totalAssets.toLocaleString('vi-VN')}đ</b> · Tổng tiêu sản: <b>${totalDebts.toLocaleString('vi-VN')}đ</b> · TÀI SẢN RÒNG: <b style="color:${netWorth>=0?'var(--accent)':'var(--danger)'};font-size:16.5px;">${netWorth.toLocaleString('vi-VN')}đ</b>`;
   }
 
   function recomputeNetworthPreview(){

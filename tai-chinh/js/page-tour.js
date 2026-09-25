@@ -55,15 +55,15 @@
       const card = document.createElement('div');
       card.style.cssText = `position:fixed;top:${top}px;left:${left}px;width:${cardWidth}px;background:#fff;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.25);padding:18px;z-index:1;`;
       card.innerHTML = `
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;color:var(--accent,#2F6F62);text-transform:uppercase;margin-bottom:8px;">Bước ${idx+1}/${steps.length}</div>
-        <div style="font-weight:700;font-size:14.5px;margin-bottom:6px;color:#1E2420;">${esc(step.title)}</div>
-        <div style="font-size:13px;line-height:1.6;color:#5B5F55;">${esc(step.text)}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.06em;color:var(--accent,#2F6F62);text-transform:uppercase;margin-bottom:8px;">Bước ${idx+1}/${steps.length}</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px;color:#1E2420;">${esc(step.title)}</div>
+        <div style="font-size:14.5px;line-height:1.6;color:#5B5F55;">${esc(step.text)}</div>
         ${step.img ? `<img src="${step.img}" style="max-width:100%;border-radius:8px;margin-top:10px;border:1px solid #E4DFCF;">` : ''}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
-          <span id="pt-skip" style="cursor:pointer;font-size:12.5px;color:#9CA396;">Bỏ qua</span>
+          <span id="pt-skip" style="cursor:pointer;font-size:14px;color:#9CA396;">Bỏ qua</span>
           <div style="display:flex;gap:8px;">
-            ${idx>0 ? `<span id="pt-back" style="cursor:pointer;font-size:12.5px;color:var(--accent,#2F6F62);padding:6px 10px;">← Trước</span>` : ''}
-            <span id="pt-next" style="cursor:pointer;font-size:12.5px;font-weight:600;color:#fff;background:var(--accent,#2F6F62);padding:6px 14px;border-radius:999px;">${idx===steps.length-1?'Xong':'Tiếp →'}</span>
+            ${idx>0 ? `<span id="pt-back" style="cursor:pointer;font-size:14px;color:var(--accent,#2F6F62);padding:6px 10px;">← Trước</span>` : ''}
+            <span id="pt-next" style="cursor:pointer;font-size:14px;font-weight:600;color:#fff;background:var(--accent,#2F6F62);padding:6px 14px;border-radius:999px;">${idx===steps.length-1?'Xong':'Tiếp →'}</span>
           </div>
         </div>
       `;

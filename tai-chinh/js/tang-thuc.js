@@ -128,19 +128,19 @@ function render(container, ctx){
             <div class="meta">${new Date(b.created_at).toLocaleDateString('vi-VN')}${b.linked_nut_chan?' · '+esc(NUT_CHAN_LABELS[b.linked_nut_chan]):''}</div>
             "${esc(b.belief_text)}"
           </div>
-          <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;${b.still_active?'background:#FDF0E0;color:#B5691A;':'background:#E5F0E5;color:#2E7D32;'}">${b.still_active?'Đang chi phối':'Đã chuyển hoá ✓'}</span>
+          <span style="flex-shrink:0;font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px;${b.still_active?'background:#FDF0E0;color:#B5691A;':'background:#E5F0E5;color:#2E7D32;'}">${b.still_active?'Đang chi phối':'Đã chuyển hoá ✓'}</span>
         </div>
-        ${b.origin_note?`<div style="font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:6px;">Sự kiện gốc: ${esc(b.origin_note)}</div>`:''}
+        ${b.origin_note?`<div style="font-size:14.5px;color:var(--ink-soft);font-style:italic;margin-top:6px;">Sự kiện gốc: ${esc(b.origin_note)}</div>`:''}
         ${b.new_belief?`<div class="hint-box" style="margin-top:8px;">🌱 Niềm tin mới: "${esc(b.new_belief)}"</div>`:
           state.justAddedId===b.id ? `
             <div class="hint-box" style="margin-top:10px;">💛 ${esc(state.lastReframe)}</div>
-            <label style="display:block;font-size:12.5px;color:var(--ink-soft);margin:8px 0 4px;">Niềm tin MỚI bạn muốn thay vào (viết đúng lời của bạn)</label>
+            <label style="display:block;font-size:14px;color:var(--ink-soft);margin:8px 0 4px;">Niềm tin MỚI bạn muốn thay vào (viết đúng lời của bạn)</label>
             <textarea data-new-belief-input="${b.id}" placeholder="VD: Tiền đến với tôi dễ dàng khi tôi tạo ra giá trị thật...">${esc(state.newBeliefDraft)}</textarea>
             <button class="btn btn-sm" style="margin-top:8px;" data-save-new-belief="${b.id}">Lưu niềm tin mới</button>
           ` : ''}
         <div style="display:flex;gap:8px;margin-top:10px;">
-          ${b.still_active?`<span class="btn-ghost btn btn-sm" data-resolve="${b.id}" style="padding:5px 10px;font-size:12px;">Đánh dấu đã chuyển hoá</span>`:''}
-          <span class="btn-ghost btn btn-sm" data-delete-belief="${b.id}" style="padding:5px 10px;font-size:12px;">Xoá</span>
+          ${b.still_active?`<span class="btn-ghost btn btn-sm" data-resolve="${b.id}" style="padding:5px 10px;font-size:13.5px;">Đánh dấu đã chuyển hoá</span>`:''}
+          <span class="btn-ghost btn btn-sm" data-delete-belief="${b.id}" style="padding:5px 10px;font-size:13.5px;">Xoá</span>
         </div>
       </div>
     `;
@@ -156,11 +156,11 @@ function render(container, ctx){
 
       <div class="hint-box" style="display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FDF0E0;color:#B5691A;">Đang chi phối</span>
+          <span style="flex-shrink:0;font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px;background:#FDF0E0;color:#B5691A;">Đang chi phối</span>
           <span>— còn kéo nhẹ Trụ Tài Chính Tâm Thức ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp ở Chấm Điểm Nghiệp Tiền →</a> xuống</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="flex-shrink:0;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Đã chuyển hoá ✓</span>
+          <span style="flex-shrink:0;font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px;background:#E5F0E5;color:#2E7D32;">Đã chuyển hoá ✓</span>
           <span>— đánh dấu khi bạn thật sự không còn thấy niềm tin đó chi phối mình nữa</span>
         </div>
       </div>
@@ -169,18 +169,18 @@ function render(container, ctx){
         <div class="section">
           <h3>Ghi lại 1 niềm tin cũ</h3>
           ${state.incomingContext ? `<div class="hint-box" style="margin-bottom:14px;">${state.incomingContext.justSaved ? `✓ Đã tự động lưu 1 hạt giống về khâu <b>${esc(state.incomingContext.areaLabel)}</b> (bài Chấm Điểm Nghiệp Tiền vừa chỉ ra đây là khâu yếu nhất) vào sổ bên dưới — sửa lại câu chữ cho đúng cảm nhận thật của bạn bất cứ lúc nào.` : `Bài Chấm Điểm Nghiệp Tiền vừa chỉ ra khâu <b>${esc(state.incomingContext.areaLabel)}</b> đang yếu nhất — thử viết xem có niềm tin cũ nào từ nhỏ đang đứng sau phản ứng đó không.`}</div>` : ''}
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Niềm tin cũ về tiền bạn đang mang là gì?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Niềm tin cũ về tiền bạn đang mang là gì?</label>
           <textarea id="tt2-belief" placeholder="VD: Tiền là thứ khó kiếm, phải vất vả cả đời mới có được...">${esc(state.form.belief_text)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Sự kiện cụ thể nào trong quá khứ khiến bạn tin điều này? <span style="font-weight:400;">(không bắt buộc)</span></label>
-          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Chưa nhớ ra rõ ràng? Bấm thử 1 gợi ý quen thuộc dưới đây để bắt đầu:</div>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Sự kiện cụ thể nào trong quá khứ khiến bạn tin điều này? <span style="font-weight:400;">(không bắt buộc)</span></label>
+          <div style="font-size:14px;color:var(--ink-soft);margin-bottom:8px;">Chưa nhớ ra rõ ràng? Bấm thử 1 gợi ý quen thuộc dưới đây để bắt đầu:</div>
           <div class="chips" id="tt2-origin-pattern-chips" style="margin-bottom:10px;">
             ${ORIGIN_EVENT_PATTERNS.map(p=>`<div class="chip ${state.selectedOriginPattern===p.key?'selected':''}" data-origin-pattern="${p.key}">${esc(p.label)}</div>`).join('')}
           </div>
           ${state.selectedOriginPattern ? `<div class="hint-box" style="margin-bottom:10px;">${esc(ORIGIN_EVENT_PATTERNS.find(p=>p.key===state.selectedOriginPattern).analysis)}</div>` : ''}
           <textarea id="tt2-origin" placeholder="VD: Năm 10 tuổi, thấy bố mẹ cãi nhau vì tiền, nghe mẹ nói 'nhà mình nghèo lắm'...">${esc(state.form.origin_note)}</textarea>
 
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Niềm tin này thường hiện rõ nhất ở đâu? <span style="font-weight:400;">(không bắt buộc)</span></label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Niềm tin này thường hiện rõ nhất ở đâu? <span style="font-weight:400;">(không bắt buộc)</span></label>
           <div class="chips" id="tt2-nutchan-chips">
             ${[1,2,3,4].map(n=>`<div class="chip ${state.form.linked_nut_chan===n?'selected':''}" data-nutchan="${n}">${esc(NUT_CHAN_LABELS[n])}</div>`).join('')}
           </div>
@@ -190,7 +190,7 @@ function render(container, ctx){
 
         <div class="section">
           <h3>Sổ niềm tin đã ghi (${state.beliefs.length})</h3>
-          ${state.beliefs.length===0 ? `<p style="color:var(--ink-soft);font-size:13.5px;">Chưa có niềm tin nào được ghi lại.</p>` : `
+          ${state.beliefs.length===0 ? `<p style="color:var(--ink-soft);font-size:15px;">Chưa có niềm tin nào được ghi lại.</p>` : `
             <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
               ${state.beliefs.map(beliefCardHtml).join('')}
             </div>

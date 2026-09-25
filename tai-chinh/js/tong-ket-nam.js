@@ -119,11 +119,11 @@ function render(container, ctx){
         <div class="section">
           <h3>🧭 Số liệu cả năm</h3>
           <div class="source-grid">
-            <div class="source-card"><div class="ic" style="font-size:16px;color:var(--accent);">${state.totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu cả năm</div></div>
-            <div class="source-card"><div class="ic" style="font-size:16px;color:var(--danger);">${state.totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi cả năm</div></div>
-            <div class="source-card"><div class="ic" style="font-size:16px;">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
-            <div class="source-card"><div class="ic" style="font-size:16px;${netWorthChange==null?'':`color:${netWorthChange>=0?'var(--accent)':'var(--danger)'};`}">${netWorthChange==null?'Chưa đủ dữ liệu':(netWorthChange>=0?'+':'')+netWorthChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tài sản ròng thay đổi</div></div>
-            <div class="source-card"><div class="ic" style="font-size:16px;${tichLuyChange==null?'':`color:${tichLuyChange>=0?'var(--accent)':'var(--danger)'};`}">${tichLuyChange==null?'Chưa đủ dữ liệu':(tichLuyChange>=0?'+':'')+tichLuyChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ thay đổi</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${state.totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu cả năm</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${state.totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi cả năm</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;${netWorthChange==null?'':`color:${netWorthChange>=0?'var(--accent)':'var(--danger)'};`}">${netWorthChange==null?'Chưa đủ dữ liệu':(netWorthChange>=0?'+':'')+netWorthChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tài sản ròng thay đổi</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;${tichLuyChange==null?'':`color:${tichLuyChange>=0?'var(--accent)':'var(--danger)'};`}">${tichLuyChange==null?'Chưa đủ dữ liệu':(tichLuyChange>=0?'+':'')+tichLuyChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ thay đổi</div></div>
           </div>
           <div class="hint-box" style="margin-top:10px;">Dựa vào cân đối tài sản đã lưu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> đầu năm và tháng gần nhất trong năm ${state.year}. Xem xu hướng chi tiết hơn ở <a href="#danh-muc" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>.</div>
         </div>
@@ -133,12 +133,12 @@ function render(container, ctx){
           ${state.karmaAvg === null
             ? `<div class="hint-box">Chưa có lần nào bấm "💾 Lưu kết quả này" trong năm ${state.year} — sang <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Chấm Điểm Nghiệp Tiền →</a> làm bài rồi lưu lại vài lần trong năm để có số liệu ở đây.</div>`
             : `
-            <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Trung bình ${state.karmaCount} lần đã lưu trong năm ${state.year}.</p>
+            <p style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Trung bình ${state.karmaCount} lần đã lưu trong năm ${state.year}.</p>
             <div style="display:flex;flex-direction:column;gap:8px;">
               ${HOUSES.map(h=>{
                 const v = state.karmaAvg[h.key];
                 return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
-                  <span style="font-size:13.5px;">${esc(h.label)}</span>
+                  <span style="font-size:15px;">${esc(h.label)}</span>
                   <b style="font-family:'IBM Plex Mono',monospace;color:var(--accent);">${v==null?'—':v+'/100'}</b>
                 </div>`;
               }).join('')}
@@ -153,8 +153,8 @@ function render(container, ctx){
             ? `<div class="hint-box">Chưa ghi hạt giống nào trong năm ${state.year} — sang <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Hạt Giống Phước - Nghiệp →</a> khi thấy 1 Nút Chặn Dòng Tiền lặp lại.</div>`
             : `
             <div class="source-grid" style="margin-bottom:10px;">
-              <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${state.beliefsResolved.length}</div><div class="label">Đã chuyển hoá</div></div>
-              <div class="source-card"><div class="ic" style="font-size:17px;color:var(--gold);">${state.beliefsActive.length}</div><div class="label">Còn đang active</div></div>
+              <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${state.beliefsResolved.length}</div><div class="label">Đã chuyển hoá</div></div>
+              <div class="source-card"><div class="ic" style="font-size:18px;color:var(--gold);">${state.beliefsActive.length}</div><div class="label">Còn đang active</div></div>
             </div>
             ${state.beliefsActive.length > 0 ? `<div class="hint-box">Còn <b>${state.beliefsActive.length}</b> hạt giống chưa chuyển hoá — xem lại ở <a href="#tang-thuc" style="color:var(--accent);font-weight:600;">Hạt Giống Phước - Nghiệp →</a>.</div>` : ''}
           `}
@@ -167,10 +167,10 @@ function render(container, ctx){
 
         <div class="section">
           <h3>🎯 Lời cam kết cho năm ${state.year+1}</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Không bắt buộc — viết cho trụ nào bạn muốn tập trung năm tới.</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Không bắt buộc — viết cho trụ nào bạn muốn tập trung năm tới.</p>
           ${HOUSES.map(h=>`
             <div style="margin-top:10px;">
-              <label style="display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">${esc(h.label)}</label>
+              <label style="display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;">${esc(h.label)}</label>
               <textarea data-nextyear-goal="${h.key}" placeholder="${esc(HOUSE_GOAL_ANCHOR[h.key])}">${esc(state.nextYearGoals[h.key] || '')}</textarea>
             </div>
           `).join('')}

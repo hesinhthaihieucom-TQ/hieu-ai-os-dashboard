@@ -94,10 +94,10 @@ function render(container, ctx){
       </div>
 
       <div class="source-grid" style="margin-bottom:24px;">
-        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${latestStock.toLocaleString('vi-VN')}đ</div><div class="label">Tổng đang tích luỹ${latest?` (${monthLabel(latest.snapshot_month)})`:''}</div></div>
-        <div class="source-card"><div class="ic" style="font-size:17px;">${thisMonthFlow.toLocaleString('vi-VN')}đ</div><div class="label">Đã để dành tháng này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${latestStock.toLocaleString('vi-VN')}đ</div><div class="label">Tổng đang tích luỹ${latest?` (${monthLabel(latest.snapshot_month)})`:''}</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;">${thisMonthFlow.toLocaleString('vi-VN')}đ</div><div class="label">Đã để dành tháng này</div></div>
         <div class="source-card">
-          <div class="ic" style="font-size:17px;${stockChange==null?'':`color:${stockChange>=0?'var(--accent)':'var(--danger)'};`}">${stockChange==null?'Chưa đủ dữ liệu':(stockChange>=0?'+':'')+stockChange.toLocaleString('vi-VN')+'đ'}</div>
+          <div class="ic" style="font-size:18px;${stockChange==null?'':`color:${stockChange>=0?'var(--accent)':'var(--danger)'};`}">${stockChange==null?'Chưa đủ dữ liệu':(stockChange>=0?'+':'')+stockChange.toLocaleString('vi-VN')+'đ'}</div>
           <div class="label">So với tháng trước</div>
         </div>
       </div>
@@ -106,13 +106,13 @@ function render(container, ctx){
 
       <div class="section">
         <h3>📈 Tổng tích luỹ theo tháng</h3>
-        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Tiết kiệm có kỳ hạn + Vàng/Ngoại tệ + Cổ phiếu/Quỹ đầu tư — lấy từ Tổng Kết Tháng, cập nhật mỗi khi bạn lưu cân đối tài sản ở đó.</p>
-        ${stockBuckets.length < 2 ? `<div style="color:var(--ink-soft);font-size:14px;">Cần ít nhất 2 tháng đã lưu cân đối tài sản để vẽ xu hướng.</div>` : trendChartHtml(stockBuckets, 'var(--accent)')}
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Tiết kiệm có kỳ hạn + Vàng/Ngoại tệ + Cổ phiếu/Quỹ đầu tư — lấy từ Tổng Kết Tháng, cập nhật mỗi khi bạn lưu cân đối tài sản ở đó.</p>
+        ${stockBuckets.length < 2 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Cần ít nhất 2 tháng đã lưu cân đối tài sản để vẽ xu hướng.</div>` : trendChartHtml(stockBuckets, 'var(--accent)')}
       </div>
 
       <div class="section">
         <h3>💰 Đã để dành theo tháng</h3>
-        <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Tổng tiền bạn tự ghi "chuyển vào Tích Lũy" ở Ghi Chép Hàng Ngày mỗi tháng — khoản này KHÔNG tính vào chi tiêu thật, chỉ để ghi công hành động để dành.</p>
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Tổng tiền bạn tự ghi "chuyển vào Tích Lũy" ở Ghi Chép Hàng Ngày mỗi tháng — khoản này KHÔNG tính vào chi tiêu thật, chỉ để ghi công hành động để dành.</p>
         ${flowBuckets.length === 0 ? `<div class="hint-box">Chưa ghi khoản nào vào danh mục "Tích Lũy" — sang <a href="#ghi-chep" style="color:var(--accent);font-weight:600;">Ghi Chép Hàng Ngày →</a>, chọn danh mục "Tích Lũy" mỗi lần chuyển tiền vào tiết kiệm/đầu tư.</div>`
           : flowBuckets.length < 2 ? trendChartHtml([...flowBuckets, {month:nextMonthKey(flowBuckets[0].month), value:0}], 'var(--gold)')
           : trendChartHtml(flowBuckets, 'var(--gold)')}

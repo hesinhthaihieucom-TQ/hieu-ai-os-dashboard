@@ -245,24 +245,24 @@ function render(container, ctx){
       </div>
 
       <div class="card" style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Ngày</label>
-        <input type="date" id="gc-date" value="${esc(state.date)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Chỉ ghi được 1 lần/tuần cũng không sao — chọn lại đúng ngày ở đây cho từng khoản, ghi bù cả tuần vẫn ra đúng dữ liệu.</div>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Ngày</label>
+        <input type="date" id="gc-date" value="${esc(state.date)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">Chỉ ghi được 1 lần/tuần cũng không sao — chọn lại đúng ngày ở đây cho từng khoản, ghi bù cả tuần vẫn ra đúng dữ liệu.</div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Loại giao dịch</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Loại giao dịch</label>
         <div class="chips" id="gc-type-chips">
           <div class="chip ${isIncome?'selected':''}" data-type="income">💰 Thu nhập</div>
           <div class="chip ${state.form.type==='expense'?'selected':''}" data-type="expense">💸 Chi tiêu</div>
           <div class="chip ${isTichLuy?'selected':''}" data-type="tich_luy">🏦 Tích Lũy</div>
         </div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Nguồn thu (Lương, thưởng, thu nhập phụ...)':isTichLuy?'Chuyển vào đâu?':'Nội dung chi (Mua gì? Ở đâu?)'}</label>
-        <input type="text" id="gc-desc" placeholder="${isIncome?'VD: Lương tháng 8':isTichLuy?'VD: Mua vàng tiết kiệm':'VD: Ăn trưa, đổ xăng...'}" value="${esc(state.form.description)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Nguồn thu (Lương, thưởng, thu nhập phụ...)':isTichLuy?'Chuyển vào đâu?':'Nội dung chi (Mua gì? Ở đâu?)'}</label>
+        <input type="text" id="gc-desc" placeholder="${isIncome?'VD: Lương tháng 8':isTichLuy?'VD: Mua vàng tiết kiệm':'VD: Ăn trưa, đổ xăng...'}" value="${esc(state.form.description)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Số tiền (đồng)</label>
-        <input type="text" inputmode="numeric" id="gc-amount" placeholder="0" value="${esc(formatThousands(state.form.amount))}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Số tiền (đồng)</label>
+        <input type="text" inputmode="numeric" id="gc-amount" placeholder="0" value="${esc(formatThousands(state.form.amount))}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Bạn đang cảm nhận gì lúc này?', 'dong_tien_xanh', 'dong_tien_do')}</label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Bạn đang cảm nhận gì lúc này?', 'dong_tien_xanh', 'dong_tien_do')}</label>
         <div class="chips" id="gc-vibe-chips">
           <div class="chip ${state.form.vibe==='green'?'selected':''}" data-vibe="green">${VIBE_INFO.green.label}</div>
           <div class="chip ${state.form.vibe==='red'?'selected':''}" data-vibe="red">${VIBE_INFO.red.label}</div>
@@ -270,26 +270,26 @@ function render(container, ctx){
         </div>
         <div class="hint-box" id="gc-vibe-explain" style="margin-top:10px;">${state.form.vibe ? esc(VIBE_INFO[state.form.vibe].explain) : 'Chọn 1 cảm nhận để hiểu gốc rễ tâm thức phía sau — đây là bước quan trọng nhất của cuốn sổ này.'}</div>
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Vì sao bạn cảm thấy vậy? <span style="font-weight:400;">(viết ra giúp bạn hiểu chính mình hơn, không bắt buộc)</span></label>
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Vì sao bạn cảm thấy vậy? <span style="font-weight:400;">(viết ra giúp bạn hiểu chính mình hơn, không bắt buộc)</span></label>
         <textarea id="gc-vibe-reason" placeholder="VD: Vì đây là tiền dành dụm bao lâu mới có...">${esc(state.form.vibe_reason)}</textarea>
 
         ${isIncome ? `
           <div class="hint-box" id="gc-fund-split" style="margin-top:14px;">${fundSplitHtml(state.form.amount, state.debtWarning)}</div>
         ` : state.form.type==='expense' ? `
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Khoản này là Tài sản hay Tiêu sản?', 'tai_san', 'tieu_san')} <span style="font-weight:400;">(không bắt buộc)</span></label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${glossaryWrap('Khoản này là Tài sản hay Tiêu sản?', 'tai_san', 'tieu_san')} <span style="font-weight:400;">(không bắt buộc)</span></label>
           <div class="chips" id="gc-category-chips">
             ${EXPENSE_CATEGORIES.map(c=>`<div class="chip ${state.form.category===c.key?'selected':''}" data-category="${c.key}" title="${esc(c.hint)}">${esc(c.label)}</div>`).join('')}
           </div>
         ` : ''}
 
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':isTichLuy?'Tích Lũy vào đâu':'Danh mục chi tiêu'} <span style="font-weight:400;">(<a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
-        <select id="gc-category-label-select" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Danh mục nguồn thu':isTichLuy?'Tích Lũy vào đâu':'Danh mục chi tiêu'} <span style="font-weight:400;">(<a href="#danh-muc" style="color:var(--accent);font-weight:600;">quản lý danh mục →</a>)</span></label>
+        <select id="gc-category-label-select" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
           <option value="" ${!state.form.category_label && !state.showCustomCategory?'selected':''}>— Chọn danh mục —</option>
           ${state.categories.filter(c=>c.type===state.form.type).map(c=>`<option value="${esc(c.label)}" ${state.form.category_label===c.label && !state.showCustomCategory?'selected':''}>${esc(c.label)}</option>`).join('')}
           <option value="__custom__" ${state.showCustomCategory?'selected':''}>+ Khác (thêm mới)...</option>
         </select>
         ${state.showCustomCategory ? `
-          <input type="text" id="gc-category-label-custom" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Cho thuê nhà...':isTichLuy?'VD: Vàng, Cổ phiếu...':'VD: Tiền điện nước...'}" style="width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+          <input type="text" id="gc-category-label-custom" value="${esc(state.form.category_label)}" placeholder="${isIncome?'VD: Cho thuê nhà...':isTichLuy?'VD: Vàng, Cổ phiếu...':'VD: Tiền điện nước...'}" style="width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
         ` : ''}
 
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
@@ -297,12 +297,12 @@ function render(container, ctx){
       </div>
 
       <div class="source-grid" style="margin-bottom:16px;">
-        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu ngày này</div></div>
-        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi ngày này</div></div>
-        <div class="source-card"><div class="ic" style="font-size:17px;color:var(--gold);">${totalTichLuy.toLocaleString('vi-VN')}đ</div><div class="label">Tổng tích luỹ ngày này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu ngày này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi ngày này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--gold);">${totalTichLuy.toLocaleString('vi-VN')}đ</div><div class="label">Tổng tích luỹ ngày này</div></div>
       </div>
 
-      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (state.entries.length===0 ? `<div style="color:var(--ink-soft);font-size:14px;">Chưa có giao dịch nào cho ngày này.</div>` : state.entries.map(e=>{
+      ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (state.entries.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có giao dịch nào cho ngày này.</div>` : state.entries.map(e=>{
         const catLabel = e.type==='expense' ? ((EXPENSE_CATEGORIES.find(c=>c.key===e.category)||{}).label) : null;
         const spendLabel = e.category_label || null;
         const typeLabel = e.type==='income' ? '💰 Thu nhập' : e.type==='tich_luy' ? '🏦 Tích Lũy' : '💸 Chi tiêu';
@@ -312,11 +312,11 @@ function render(container, ctx){
           <div class="txt">
             <div class="meta">${vibeIcon(e.vibe)} ${typeLabel}${catLabel?` · ${esc(catLabel)}`:''}${spendLabel?` · ${esc(spendLabel)}`:''}${e.tich_luy_category?` · ${esc(e.tich_luy_category)}`:''}</div>
             ${esc(e.description||'(không ghi chú)')}
-            ${e.vibe_reason ? `<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:4px;">"${esc(e.vibe_reason)}"</div>` : ''}
+            ${e.vibe_reason ? `<div style="font-size:13.5px;color:var(--ink-soft);font-style:italic;margin-top:4px;">"${esc(e.vibe_reason)}"</div>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
             <div style="font-weight:700;color:${amountColor};">${e.type==='income'?'+':'-'}${Number(e.amount).toLocaleString('vi-VN')}đ</div>
-            <span class="btn-ghost btn btn-sm" data-delete="${e.id}" style="padding:5px 10px;font-size:12px;">Xoá</span>
+            <span class="btn-ghost btn btn-sm" data-delete="${e.id}" style="padding:5px 10px;font-size:13.5px;">Xoá</span>
           </div>
         </div>
       `;}).join(''))}
@@ -334,7 +334,7 @@ function render(container, ctx){
         ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
         ${state.pushSubscribed ? `
           <div style="margin-top:16px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Tần suất nhắc</label>
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Tần suất nhắc</label>
             <div class="chips">
               <div class="chip ${state.reminderFreq==='daily'?'selected':''}" data-freq="daily">Hằng ngày (20h)</div>
               <div class="chip ${state.reminderFreq==='weekly'?'selected':''}" data-freq="weekly">Hằng tuần (Chủ Nhật 19h)</div>
