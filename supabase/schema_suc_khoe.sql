@@ -484,6 +484,14 @@ alter table sk_customer_products add column if not exists reminder_time text;
 -- còn ở Quản Trị nữa.
 alter table profiles add column if not exists sk_reminder_time text;
 
+-- 2026-09-25, chị Quỳnh: "cái giờ nhắc là sẽ cho nhắc ở mỗi lịch trình luôn" + "sáng mấy giờ, trưa
+-- mấy h á" — ĐỔI từ 1 giờ nhắc CHUNG/ngày (sk_reminder_time ở trên, cột cũ giữ nguyên không xoá,
+-- không còn được UI ghi vào nữa) sang 3 giờ RIÊNG cho từng khung Sáng/Trưa/Tối, đặt ngay trong từng
+-- khối lịch trình tương ứng (xem dailyScheduleHtml() ở lich-trinh.js) thay vì 1 ô chung ở đầu trang.
+alter table profiles add column if not exists sk_reminder_time_sang text;
+alter table profiles add column if not exists sk_reminder_time_trua text;
+alter table profiles add column if not exists sk_reminder_time_toi text;
+
 -- Khách (chủ sở hữu dòng) được tự SỬA giờ nhắc sản phẩm lẻ của chính mình — trước đây chỉ admin sửa
 -- được (is_admin() ở policy "..._admin_all" phía trên), giờ thêm quyền update cho chính chủ. Không
 -- cho khách tự INSERT/DELETE (chỉ admin mới được gán sản phẩm nào cho khách), chỉ được SỬA reminder_time

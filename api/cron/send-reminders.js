@@ -379,27 +379,30 @@ async function checkSucKhoeProductReminders() {
   return count;
 }
 
-async function checkSucKhoePackageDailyReminder() {
+// 2026-09-25, chị Quỳnh: "cái giờ nhắc là sẽ cho nhắc ở mỗi lịch trình luôn" + "sáng mấy giờ, trưa
+// mấy h á" — ĐỔI từ 1 giờ nhắc CHUNG/ngày (profiles.sk_reminder_time, cột cũ giữ nguyên không xoá,
+// không còn được ghi nữa) sang 3 giờ RIÊNG cho từng khung Sáng/Trưa/Tối (sk_reminder_time_sang/
+// trua/toi, khách tự đặt ngay trong từng khối lịch trình — xem dailyScheduleHtml() ở lich-trinh.js).
+// Không còn đòi hỏi sk_package_id nữa (khác bản cũ) — lịch trình 1 ngày giờ có thể dựa theo BMI dù
+// khách chưa được gán gói Combo, nên bỏ điều kiện đó để nhắc đúng cho cả nhóm khách đó.
+const SK_SLOT_LABELS = { sang: 'Sáng', trua: 'Trưa', toi: 'Tối' };
+async function checkSucKhoeScheduleReminders() {
   const { dateStr, minutesOfDay } = vnNowParts();
-  const usersResp = await supabaseAdmin(`profiles?sk_package_id=not.is.null&sk_reminder_time=not.is.null&select=id,sk_package_id,sk_reminder_time`);
-  const users = usersResp.ok ? await usersResp.json() : [];
-  const dueUsers = users.filter((u) => withinWindow(parseHHMM(u.sk_reminder_time), minutesOfDay));
-  if (!dueUsers.length) return 0;
-
-  const packageIds = [...new Set(dueUsers.map((u) => u.sk_package_id))];
-  const packagesResp = await supabaseAdmin(`sk_packages?id=in.(${packageIds.join(',')})&select=id,name`);
-  const packages = packagesResp.ok ? await packagesResp.json() : [];
-  const packageNameById = Object.fromEntries(packages.map((p) => [p.id, p.name]));
-
   let count = 0;
-  for (const u of dueUsers) {
-    const pkgName = packageNameById[u.sk_package_id] || 'gói của bạn';
-    const result = await notifyOnce(u.id, `sk-package-daily:${dateStr}`, {
-      title: '⏰ Đến giờ chăm sóc cơ thể hôm nay',
-      body: `Xem lịch trình sản phẩm hôm nay của gói "${pkgName}".`,
-      url: './#lich-trinh',
-    }, 'suc-khoe');
-    if (result.sent) count++;
+  for (const slot of Object.keys(SK_SLOT_LABELS)) {
+    const col = `sk_reminder_time_${slot}`;
+    const usersResp = await supabaseAdmin(`profiles?${col}=not.is.null&select=id,${col}`);
+    const users = usersResp.ok ? await usersResp.json() : [];
+    const dueUsers = users.filter((u) => withinWindow(parseHHMM(u[col]), minutesOfDay));
+    for (const u of dueUsers) {
+      const label = SK_SLOT_LABELS[slot];
+      const result = await notifyOnce(u.id, `sk-schedule:${slot}:${dateStr}`, {
+        title: `⏰ Đến giờ buổi ${label} rồi`,
+        body: `Xem lịch trình dùng sản phẩm/ăn uống buổi ${label.toLowerCase()} hôm nay.`,
+        url: './#lich-trinh',
+      }, 'suc-khoe');
+      if (result.sent) count++;
+    }
   }
   return count;
 }
@@ -526,7 +529,7 @@ module.exports = async (req, res) => {
   if (!vapidConfigured()) { res.status(200).json({ ok: false, reason: 'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY chưa được cấu hình.' }); return; }
 
   try {
-    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder, tcPriceTierDeadline, skProductReminders, skPackageDailyReminder, skWeighInReminder] = await Promise.all([
+    const [lich, daybai, quay, signups, announcements, trialEnding, autoFillNudge, crmFollow, skDailyTip, tcLogReminder, tcPriceTierDeadline, skProductReminders, skScheduleReminders, skWeighInReminder] = await Promise.all([
       checkLichDangBai(),
       checkDayBaiCheckpoints(),
       checkRecordingSchedule(),
@@ -539,10 +542,10 @@ module.exports = async (req, res) => {
       checkTaiChinhLogReminder(),
       checkTcPriceTierDeadline(),
       checkSucKhoeProductReminders(),
-      checkSucKhoePackageDailyReminder(),
+      checkSucKhoeScheduleReminders(),
       checkSucKhoeWeighInReminder(),
     ]);
-    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder, tc_price_tier_deadline: tcPriceTierDeadline, sk_product_reminders: skProductReminders, sk_package_daily_reminder: skPackageDailyReminder, sk_weigh_in_reminder: skWeighInReminder } });
+    res.status(200).json({ ok: true, sent: { lich_dang_bai: lich, day_bai: daybai, quay_content: quay, new_signups: signups, announcements, trial_ending: trialEnding, auto_fill_nudge: autoFillNudge, crm_follow: crmFollow, sk_daily_tip: skDailyTip, tc_log_reminder: tcLogReminder, tc_price_tier_deadline: tcPriceTierDeadline, sk_product_reminders: skProductReminders, sk_schedule_reminders: skScheduleReminders, sk_weigh_in_reminder: skWeighInReminder } });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

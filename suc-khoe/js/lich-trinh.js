@@ -117,12 +117,16 @@ function render(container, ctx){
   }
 
   // Khách TỰ đặt giờ nhắc của chính mình (2026-09-05, chị Quỳnh: "cái nhắc lịch dùng sản phẩm...
-  // nên cho người dùng tự cài giờ nhắc chứ không phải mình") — profiles.sk_reminder_time là giờ
-  // nhắc CHUNG/ngày cho gói Combo của riêng người này (không ảnh hưởng người khác cùng gói).
-  async function savePackageReminderTime(time){
-    const { error } = await ctx.supabase.from('profiles').update({ sk_reminder_time: time||null }).eq('id', ctx.user.id);
+  // nên cho người dùng tự cài giờ nhắc chứ không phải mình"). 2026-09-25, chị Quỳnh: "cái giờ nhắc
+  // là sẽ cho nhắc ở mỗi lịch trình luôn" + "sáng mấy giờ, trưa mấy h á" — ĐỔI từ 1 giờ nhắc CHUNG/
+  // ngày (profiles.sk_reminder_time, cột cũ giữ nguyên không xoá) sang 3 giờ RIÊNG cho từng khung
+  // Sáng/Trưa/Tối (sk_reminder_time_sang/trua/toi), đặt ngay trong từng khối màu tương ứng ở
+  // dailyScheduleHtml() thay vì 1 ô chung ở đầu trang — khớp đúng ý "nhắc ở mỗi lịch trình".
+  async function saveSlotReminderTime(slot, time){
+    const col = 'sk_reminder_time_' + slot;
+    const { error } = await ctx.supabase.from('profiles').update({ [col]: time||null }).eq('id', ctx.user.id);
     if(error){ alert('Không lưu được giờ nhắc: ' + error.message); return; }
-    if(ctx.profile) ctx.profile.sk_reminder_time = time||null;
+    if(ctx.profile) ctx.profile[col] = time||null;
   }
 
   // sk_customer_products cho phép chính chủ UPDATE reminder_time (RLS "sk_customer_products_owner_update",
@@ -232,9 +236,16 @@ function render(container, ctx){
       const steps = overrideProducts && overrideProducts.length>0 ? overrideProducts.map(regimenStepHtml).join('') : regimenSectionsHtml(secs);
       const hasSteps = (overrideProducts && overrideProducts.length>0) || secs.some(sec=>(sec.steps||[]).length>0 || sec.note);
       const st = SK_TIMESLOT_STYLE[key];
+      const reminderTime = (ctx.profile && ctx.profile['sk_reminder_time_' + key]) || '';
       return `
       <div style="border-left:4px solid ${st.color};background:${st.bg};border:1px solid ${st.bd};border-left-width:4px;border-radius:10px;padding:14px;margin-bottom:14px;">
-        <div style="font-weight:700;font-size:16px;color:${st.color};margin-bottom:8px;">${icon} ${esc(label)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="font-weight:700;font-size:16px;color:${st.color};">${icon} ${esc(label)}</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:13px;color:${st.color};margin:0;">⏰ Nhắc lúc:</label>
+            <input type="time" data-slot-reminder="${key}" value="${esc(reminderTime)}" style="width:auto;margin:0;padding:6px 8px;font-size:14px;">
+          </div>
+        </div>
         ${data ? `
           <div style="font-size:15px;line-height:1.8;"><b>Uống:</b> ${esc(data.uong)}</div>
           <div style="font-size:15px;line-height:1.8;"><b>Ăn:</b> ${esc(data.an)}</div>
@@ -285,13 +296,6 @@ function render(container, ctx){
     const doneCount = state.items.filter(i=>state.doneIds.has(i.id)).length;
     const customerProductsToShow = customerProductsNotInRegimen();
     return `
-      ${state.packageName ? `
-        <div class="card" style="margin-bottom:18px;">
-          ${skSectionHeaderHtml('Giờ nhắc mỗi ngày của bạn', '#7c6bd4', '⏰')}
-          <div style="font-size:14.5px;color:var(--ink-soft);margin-bottom:10px;">Chọn 1 giờ trong ngày để nhận thông báo nhắc xem lịch trình gói "${esc(state.packageName)}" — tự chọn giờ phù hợp với bạn.</div>
-          <input type="time" id="lt-package-reminder" value="${esc((ctx.profile && ctx.profile.sk_reminder_time) || '')}" style="width:auto;margin:0;">
-        </div>
-      ` : ''}
       ${dailyScheduleHtml()}
       ${customerProductsToShow.length>0 ? `
         <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">Sản phẩm bạn đang dùng</h2></div>
@@ -588,8 +592,9 @@ function render(container, ctx){
     container.querySelectorAll('[data-tab]').forEach(el=>{
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
     });
-    const packageReminderEl = container.querySelector('#lt-package-reminder');
-    if(packageReminderEl) packageReminderEl.onchange = (e)=>savePackageReminderTime(e.target.value);
+    container.querySelectorAll('[data-slot-reminder]').forEach(el=>{
+      el.onchange = (e)=>saveSlotReminderTime(el.getAttribute('data-slot-reminder'), e.target.value);
+    });
     container.querySelectorAll('[data-customer-product-reminder]').forEach(el=>{
       el.onchange = (e)=>saveCustomerProductReminderTime(el.getAttribute('data-customer-product-reminder'), e.target.value);
     });
