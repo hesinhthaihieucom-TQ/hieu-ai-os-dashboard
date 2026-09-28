@@ -682,7 +682,11 @@ function render(container, ctx){
     return pillarChipsHtml(state.personalBank, state.khoToiPillar, 'khotoi-pillar') + searchHtml + bulkBarHtml(state.selectedPersonal, 'content_bank_personal', items.map(b=>b.id)) + items.map(b=>`
       <div class="section">
         <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${b.is_viral?' · VIRAL':''}${(b.viral_views||b.viral_likes)?` · ${[b.viral_views&&('view '+b.viral_views), b.viral_likes&&('like '+b.viral_likes)].filter(Boolean).map(esc).join(', ')}`:''}</div>
-        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}${b.share_status==='approved'?` <span style="color:var(--accent);font-size:13.5px;font-weight:600;vertical-align:middle;">✓ Đã lên Kho chung</span>`:b.share_status==='pending'?` <span style="color:var(--gold);font-size:13.5px;font-weight:600;vertical-align:middle;">Đang chờ duyệt lên Kho chung</span>`:''}</h3></label>
+        <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;"><input type="checkbox" data-select-personal="${b.id}" ${state.selectedPersonal.has(b.id)?'checked':''} style="margin-top:4px;flex-shrink:0;"><h3 style="margin:0;">${esc(b.title)}</h3></label>
+        ${b.share_status==='approved'||b.share_status==='pending'?`
+        <div style="margin:6px 0 0 26px;">
+          <span style="display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;${b.share_status==='approved'?'background:var(--accent-soft);color:var(--accent);':'background:rgba(184,134,46,.12);color:var(--gold);'}">${b.share_status==='approved'?'✓ Đã lên Kho chung':'Đang chờ duyệt lên Kho chung'}</span>
+        </div>` : ''}
         ${contentBodyHtml('personal:'+b.id, b.content)}
         ${b.viral_screenshot ? `<img src="${b.viral_screenshot}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);margin-top:8px;">` : ''}
         ${khoToiOptionsPanelHtml(b)}
