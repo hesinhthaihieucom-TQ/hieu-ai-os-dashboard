@@ -608,7 +608,7 @@ function render(container, ctx){
                 // Ô đã đăng dùng nền đậm khác hẳn ô mới chọn bài (nền nhạt mặc định) — phân biệt
                 // ngay bằng mắt trên lịch cả tuần, không phải đọc chữ mới biết bài nào xong rồi.
                 return `<div class="week-slot filled" ${e.posted?'style="background:var(--accent);border-color:var(--accent);"':''}>
-                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span ${e.posted?'':`data-toggle-posted="${e.id}"`} style="${e.posted?'':'cursor:pointer;'}display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Đã đánh dấu đăng rồi':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:11.5px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
+                  <div class="slot-label" style="${e.posted?'color:#fff;opacity:.85;':''}">${s.label} <input type="time" data-inline-time="${e.id}" value="${esc(e.scheduled_time || slotTimeFor(s.key))}" style="border:none;background:transparent;font-family:inherit;font-size:inherit;opacity:.75;font-weight:400;padding:0;width:72px;cursor:pointer;${e.posted?'color:#fff;':''}" title="Bấm để đổi giờ đăng bài này"> · <span data-toggle-posted="${e.id}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;${e.posted?'color:#fff;font-weight:700;':'color:var(--ink-soft);'}" title="${e.posted?'Bấm để bỏ đánh dấu (nếu tích nhầm)':'Bấm để đánh dấu đã đăng thật'}"><span style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${e.posted?'#fff':'var(--ink-soft)'};background:${e.posted?'#fff':'transparent'};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${e.posted?`<span style="color:var(--accent);font-size:11.5px;line-height:1;font-weight:900;">✓</span>`:''}</span>Đã đăng</span></div>
                   <b style="font-size:14px;${e.posted?'color:#fff;':''}">${esc(e.title||'')}</b>
                   ${e.format?`<div style="font-size:12.5px;margin-top:2px;${e.posted?'color:#fff;opacity:.8;':'color:var(--ink-soft);'}">${esc(e.format)}</div>`:''}
                   ${isAdmin && state.channel==='fanpage' && e.post_id && (e.fb_publish_status || !isPast) ? `
@@ -629,11 +629,12 @@ function render(container, ctx){
                   ${e.posted ? `
                     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.25);">
                       <div style="font-size:11px;color:#fff;opacity:.75;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;">Kết quả (không bắt buộc)</div>
-                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="views" data-metric-id="${e.id}" value="${e.views==null?'':e.views}" placeholder="View" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="likes" data-metric-id="${e.id}" value="${e.likes==null?'':e.likes}" placeholder="Like" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="comments" data-metric-id="${e.id}" value="${e.comments==null?'':e.comments}" placeholder="Cmt" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
-                        <input type="number" min="0" inputmode="numeric" data-metric-field="shares" data-metric-id="${e.id}" value="${e.shares==null?'':e.shares}" placeholder="Share" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        ${[['views','View'],['likes','Like'],['comments','Cmt'],['shares','Share']].map(([field,label])=>`
+                        <div>
+                          <label style="display:block;font-size:9.5px;color:#fff;opacity:.7;text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px;">${label}</label>
+                          <input type="number" min="0" inputmode="numeric" data-metric-field="${field}" data-metric-id="${e.id}" value="${e[field]==null?'':e[field]}" style="width:100%;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;">
+                        </div>`).join('')}
                       </div>
                     </div>
                   ` : ''}
@@ -1028,18 +1029,30 @@ function render(container, ctx){
       };
     });
 
-    // Đánh dấu "đã đăng" là hành động 1 CHIỀU (theo phản hồi chị Quỳnh 21/8: "nút tích luôn là đã
-    // đăng... không tích lại được") — bấm xong đổi màu xác nhận luôn, không có đường bấm lại để bỏ
-    // đánh dấu (phần tử này chỉ được gắn data-toggle-posted khi CHƯA posted, xem html() ở trên).
+    // Đánh dấu "đã đăng" giờ là hành động 2 CHIỀU (chị Quỳnh 2026-09-28: "chỗ tích đã đăng phải cho
+    // tích lại nếu tích nhầm" — ĐẢO NGƯỢC quyết định 1 chiều trước đó ngày 21/8). Bấm lại để BỎ đánh
+    // dấu dùng đúng logic "trả lại chưa đăng cho bài ở Kho Content" đã có sẵn ở nút Xoá bên dưới —
+    // CHỈ trả posts.posted về false nếu không còn ô lịch nào KHÁC của đúng bài đó vẫn đang posted
+    // (1 bài có thể được xếp vào nhiều ô, xem "Đưa vào lịch thêm" ở Viết Content).
     container.querySelectorAll('[data-toggle-posted]').forEach(el=>{
       el.onclick = async ()=>{
         const id = el.getAttribute('data-toggle-posted');
         const entry = state.entries.find(x=>x.id===id);
-        await ctx.supabase.from('calendar_entries').update({ posted: true, posted_at: new Date().toISOString() }).eq('id', id);
+        if(!entry) return;
+        const nextPosted = !entry.posted;
+        await ctx.supabase.from('calendar_entries').update({ posted: nextPosted, posted_at: nextPosted ? new Date().toISOString() : null }).eq('id', id);
         // Đồng bộ ngược sang đúng bài trong Kho Content (nếu ô này gắn 1 bài đã viết cụ thể) — để
         // Kho Content chia được đã đăng/chưa đăng, và picker chọn bài tự loại bài đã đăng rồi.
-        if(entry && entry.post_id){
-          await ctx.supabase.from('posts').update({ posted: true }).eq('id', entry.post_id);
+        if(entry.post_id){
+          if(nextPosted){
+            await ctx.supabase.from('posts').update({ posted: true }).eq('id', entry.post_id);
+          } else {
+            const { data: stillPosted } = await ctx.supabase.from('calendar_entries')
+              .select('id').eq('post_id', entry.post_id).eq('posted', true).neq('id', id).limit(1);
+            if(!stillPosted || !stillPosted.length){
+              await ctx.supabase.from('posts').update({ posted: false }).eq('id', entry.post_id);
+            }
+          }
           await loadPosts();
         }
         await Promise.all([loadEntries(), loadScheduledPostIds()]);
