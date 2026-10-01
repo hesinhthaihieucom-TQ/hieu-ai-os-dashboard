@@ -53,6 +53,9 @@ a{ color:inherit; }
 
 .main{ flex:1; min-width:0; }
 .main-inner{ max-width:760px; margin:0 auto; padding:32px 24px 90px; }
+/* Lịch Đăng Bài cần đủ chỗ ngang cho 7 cột/tuần — giữ nguyên max-width:760px (tối ưu đọc chữ) cho
+   mọi màn khác, chỉ nới riêng màn này để khỏi phải kéo ngang mới xem hết tuần (chị Quỳnh 2026-10-01). */
+.main-inner-wide{ max-width:1500px; }
 
 /* ===== Auth screen ===== */
 .auth-shell{ max-width:400px; margin:0 auto; padding:80px 20px; }

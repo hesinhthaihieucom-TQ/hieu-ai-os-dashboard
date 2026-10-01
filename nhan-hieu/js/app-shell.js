@@ -1232,7 +1232,7 @@ function renderApp(){
           <span class="signout" id="signout-btn">Đăng xuất</span>
         </div>
       </div>
-      <div class="main"><div class="main-inner" id="main-content"></div></div>
+      <div class="main"><div class="main-inner${AppState.route==='lich-dang' ? ' main-inner-wide' : ''}" id="main-content"></div></div>
     </div>
   `;
 
