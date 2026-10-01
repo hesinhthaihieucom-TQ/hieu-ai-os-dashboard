@@ -13,6 +13,7 @@
 
 const crypto = require('crypto');
 const { currentCycleKey, paidCycleAnchor } = require('./_lib/quota-cycle');
+const { sendEmail, escHtml } = require('./_lib/send-email');
 
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
@@ -445,7 +446,7 @@ module.exports = async (req, res) => {
     let topupLuotGranted = null;
 
     if (refCode) {
-      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,access_until,has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given,created_at,first_paid_at`);
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,email,full_name,access_until,has_paid,tc_has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given,created_at,first_paid_at`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
@@ -519,6 +520,28 @@ module.exports = async (req, res) => {
             status = 'matched';
             matchedProfileId = profile.id;
             try { await creditTcReferralReward(profile, transferAmount); } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
+            // Email xác nhận — CHỈ gửi lần đầu (profile.tc_has_paid là giá trị TRƯỚC patch này, nên
+            // false nghĩa là lần kích hoạt đầu tiên) — tránh gửi lại mỗi lần webhook lỡ bắn trùng
+            // (SePay resend, hoặc admin xử lý tay lại). Best-effort, lỗi gửi email KHÔNG được làm
+            // mất việc đã kích hoạt tài khoản thành công ở trên — xem sendEmail() tự no-op nếu chưa
+            // cấu hình RESEND_API_KEY (chị Quỳnh 2026-10-01 yêu cầu, chưa setup Resend ngay lúc này).
+            if (!profile.tc_has_paid && profile.email) {
+              try {
+                await sendEmail({
+                  to: profile.email,
+                  subject: '✅ Đã kích hoạt Sổ Dòng Tiền Tâm Thức trọn đời!',
+                  html: `
+                    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#333;">
+                      <h2 style="color:#111;">✅ Đã kích hoạt trọn đời!</h2>
+                      <p>Chào ${escHtml(profile.full_name || 'bạn')},</p>
+                      <p>Cảm ơn bạn đã tin tưởng — tài khoản <b>${escHtml(profile.email)}</b> vừa được kích hoạt <b>trọn đời</b> Sổ Dòng Tiền Tâm Thức (${transferAmount.toLocaleString('vi-VN')}đ, thanh toán 1 lần duy nhất, dùng mãi mãi).</p>
+                      <p><a href="https://hesinhthaihieu.com/sodongtientamthuc/" style="display:inline-block;background:#F0C24B;color:#241a03;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:700;">Vào app ngay →</a></p>
+                      <p style="color:#666;font-size:13px;margin-top:24px;">Đăng nhập bằng đúng email và mật khẩu bạn đã tạo lúc đăng ký. Cần hỗ trợ, nhắn Zalo: 0866849193.</p>
+                    </div>
+                  `,
+                });
+              } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
+            }
           } else {
             status = 'unmatched_amount';
           }
