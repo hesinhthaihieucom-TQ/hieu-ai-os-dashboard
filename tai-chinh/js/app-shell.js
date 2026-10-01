@@ -34,6 +34,12 @@ const TC_LP_PROMO_AMOUNT = 199000;
 function tcHasLpPromo(){
   try { return localStorage.getItem(TC_LP_PROMO_STORAGE_KEY) === '1'; } catch(e){ return false; }
 }
+// Dự phòng cho trường hợp tự đăng nhập ngay tại ladipage (xem tai-chinh/lp/index.html) lỡ không
+// thành công (vd khách tải lại trang landing page làm mất email/mật khẩu đang giữ tạm trong bộ nhớ
+// JS) — ladipage vẫn gắn thêm ?prefill_email= vào link "Vào app ngay" để tự điền sẵn email ở modal
+// đăng nhập, khách chỉ cần gõ lại đúng mật khẩu đã tạo, khỏi phải gõ cả email lẫn mật khẩu từ đầu.
+let TC_PREFILL_EMAIL = '';
+try { TC_PREFILL_EMAIL = new URLSearchParams(location.search).get('prefill_email') || ''; } catch(e){}
 // Đồng bộ đồng hồ đếm ngược 60 phút với ladipage (chị Quỳnh chốt 2026-09-17: "làm bài Chấm Điểm
 // Nghiệp Tiền rồi quay lại đăng ký thì giá cũng phải hết hạn giống hệt bên ladipage, không được để
 // đi đường vòng qua bài test thì thoải mái không bị thúc giục"). Đọc lại ĐÚNG key
@@ -199,7 +205,7 @@ const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'L
 // api/_lib/push.js). tai-khoan.js dùng key này lúc bật "Nhắc ghi chép".
 const VAPID_PUBLIC_KEY = 'BNTlCve7JFY6nki3SBjlPAQVsmOD68oTIvSDMP1VkNe-jWtCPQuPUY4xz2SisvwpU3IWo_ciiGTMxoLJq42QzkE';
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null, tcReviewPromptEligible:false };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', latestAnnouncement:null, tcReviewPromptEligible:false, passwordRecoveryMode:false };
 
 function sidebarFootHtml(){
   const p = AppState.profile;
@@ -225,7 +231,47 @@ async function initApp(){
   const root = document.getElementById('app');
   root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
 
+  // Đăng ký onAuthStateChange TRƯỚC getSession() — xem giải thích đầy đủ ở app-shell.js bên nhan-hieu
+  // (2026-10-01): tránh lỡ mất sự kiện PASSWORD_RECOVERY nếu nó bắn sớm lúc client khởi tạo.
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if(event === 'PASSWORD_RECOVERY' && session){
+      AppState.passwordRecoveryMode = true;
+      AppState.user = session.user;
+      renderSetNewPasswordScreen();
+      return;
+    }
+    if(event === 'SIGNED_IN' && session){
+      if(AppState.passwordRecoveryMode) return;
+      // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại — chỉ
+      // render lại toàn bộ khi đây thực sự là 1 phiên đăng nhập MỚI (user id khác), không phải mỗi
+      // lần bắn sự kiện, tránh xoá mất state tạm đang gõ dở ở module hiện tại.
+      if(AppState.user && AppState.user.id === session.user.id) return;
+      AppState.user = session.user;
+      // Vừa đăng ký/đăng nhập ngay SAU KHI làm bài Chấm Điểm Nghiệp Tiền lúc còn là khách (câu trả
+      // lời còn nằm trong TC_GUEST_QUIZ_KEY, xem util.js) — giữ nguyên route ở đúng trang đó để
+      // thiet-lap-nhanh.js tự phát hiện + lưu thật kết quả, KHÔNG nhảy về Trang chủ như bình thường
+      // (mất ngữ cảnh, người dùng lại tưởng phải làm lại từ đầu).
+      let hasGuestQuiz = false;
+      try{ hasGuestQuiz = !!localStorage.getItem(TC_GUEST_QUIZ_KEY); }catch(e){}
+      if(!hasGuestQuiz) AppState.route = 'trang-chu';
+      loadProfile().then(()=>Promise.all([loadLatestAnnouncement(), loadTcReviewPromptEligibility()])).then(()=>{
+        if(hasGuestQuiz) AppState.route = 'thiet-lap-nhanh';
+        location.hash = AppState.route;
+        renderApp();
+      });
+    } else if(event === 'SIGNED_OUT'){
+      AppState.user = null;
+      AppState.profile = null;
+      AppState.route = 'trang-chu';
+      AppState.passwordRecoveryMode = false;
+      AppState.tcPushPromptAttempted = false; // cho phép hỏi lại nếu 1 người khác đăng nhập cùng phiên tải trang (vd máy dùng chung)
+      location.hash = '';
+      renderApp();
+    }
+  });
+
   const { data } = await supabaseClient.auth.getSession();
+  if(AppState.passwordRecoveryMode) return;
   if(data.session){
     AppState.user = data.session.user;
     // loadProfile() TRƯỚC, riêng — loadTcReviewPromptEligibility() cần profile.tc_trial_started_at/
@@ -253,35 +299,6 @@ async function initApp(){
     await loadLatestAnnouncement();
     maybeShowFeatureAnnouncement();
   }, 3 * 60 * 1000);
-
-  supabaseClient.auth.onAuthStateChange((event, session) => {
-    if(event === 'SIGNED_IN' && session){
-      // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại — chỉ
-      // render lại toàn bộ khi đây thực sự là 1 phiên đăng nhập MỚI (user id khác), không phải mỗi
-      // lần bắn sự kiện, tránh xoá mất state tạm đang gõ dở ở module hiện tại.
-      if(AppState.user && AppState.user.id === session.user.id) return;
-      AppState.user = session.user;
-      // Vừa đăng ký/đăng nhập ngay SAU KHI làm bài Chấm Điểm Nghiệp Tiền lúc còn là khách (câu trả
-      // lời còn nằm trong TC_GUEST_QUIZ_KEY, xem util.js) — giữ nguyên route ở đúng trang đó để
-      // thiet-lap-nhanh.js tự phát hiện + lưu thật kết quả, KHÔNG nhảy về Trang chủ như bình thường
-      // (mất ngữ cảnh, người dùng lại tưởng phải làm lại từ đầu).
-      let hasGuestQuiz = false;
-      try{ hasGuestQuiz = !!localStorage.getItem(TC_GUEST_QUIZ_KEY); }catch(e){}
-      if(!hasGuestQuiz) AppState.route = 'trang-chu';
-      loadProfile().then(()=>Promise.all([loadLatestAnnouncement(), loadTcReviewPromptEligibility()])).then(()=>{
-        if(hasGuestQuiz) AppState.route = 'thiet-lap-nhanh';
-        location.hash = AppState.route;
-        renderApp();
-      });
-    } else if(event === 'SIGNED_OUT'){
-      AppState.user = null;
-      AppState.profile = null;
-      AppState.route = 'trang-chu';
-      AppState.tcPushPromptAttempted = false; // cho phép hỏi lại nếu 1 người khác đăng nhập cùng phiên tải trang (vd máy dùng chung)
-      location.hash = '';
-      renderApp();
-    }
-  });
 
   window.addEventListener('hashchange', () => {
     AppState.route = currentRouteFromHash();
@@ -474,7 +491,7 @@ function maybeShowFeatureAnnouncement(){
   }
 }
 
-let authFields = { name:'', email:'', pass:'', passConfirm:'' };
+let authFields = { name:'', email:TC_PREFILL_EMAIL, pass:'', passConfirm:'', newPass:'', newPassConfirm:'' };
 
 // Khung cho khách chưa đăng nhập (2026-08-26) — thay hẳn cho renderAuthScreen() cũ (màn đăng nhập
 // chặn hết mọi thứ). Chỉ có logo/tên app + nút "Đăng nhập / Đăng ký" góc phải (mở modal, xem
@@ -508,13 +525,52 @@ function renderGuestShell(){
 // thành công thì onAuthStateChange (ở initApp()) tự lo phần còn lại — kể cả tự lưu lại bài vừa làm
 // nếu có (xem TC_GUEST_QUIZ_KEY) — modal này chỉ cần đóng lại khi xong.
 window.startTcAuthModal = function(mode){ AppState.authMode = mode || 'login'; renderTcAuthModal(); };
+// "Quên mật khẩu" (2026-10-01, áp lại từ nhan-hieu theo yêu cầu chị Quỳnh "làm tương tự cho các app
+// còn lại") — xem app-shell.js bên nhan-hieu cho lời giải thích đầy đủ. App này dùng popup/modal
+// (không phải màn hình riêng) cho đăng nhập/đăng ký nên chế độ "forgot" cũng render NGAY TRONG modal
+// này, giữ nguyên khung overlay — chỉ đổi mode 'forgot' trong AppState.authMode như login/signup.
 function renderTcAuthModal(err, successMsg){
   const existing = document.getElementById('tc-auth-modal');
   if(existing) existing.remove();
   const isLogin = AppState.authMode === 'login';
+  const isForgot = AppState.authMode === 'forgot';
   const overlay = document.createElement('div');
   overlay.id = 'tc-auth-modal';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(20,24,20,.7);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+  if(isForgot){
+    overlay.innerHTML = `
+      <div class="auth-shell" style="max-width:380px;padding:28px 24px;margin:auto;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative;">
+        <span id="am-close" style="position:absolute;top:14px;right:16px;cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;">&times;</span>
+        <h1 style="font-size:20px;">Quên mật khẩu</h1>
+        <div class="sub" style="margin-bottom:14px;">Nhập email đã đăng ký — hệ thống gửi link đặt mật khẩu mới qua email đó.</div>
+        <label>Email</label>
+        <input id="am-email" type="email" placeholder="ban@email.com" value="${esc(authFields.email)}">
+        <button class="btn btn-full" id="am-submit" style="margin-top:16px;">Gửi email đặt lại mật khẩu</button>
+        ${err ? `<div class="error-box" style="margin-top:10px;">${esc(err)}</div>` : ''}
+        ${successMsg ? `<div class="hint-box" style="margin-top:10px;">${esc(successMsg)}</div>` : ''}
+        <div style="margin-top:14px;text-align:center;"><span id="am-back-login" style="cursor:pointer;color:var(--ink-soft);font-size:14px;">← Quay lại đăng nhập</span></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#am-close').onclick = ()=>overlay.remove();
+    overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+    overlay.querySelector('#am-back-login').onclick = ()=>{ AppState.authMode = 'login'; renderTcAuthModal(); };
+    overlay.querySelector('#am-email').oninput = (e)=>{ authFields.email = e.target.value; };
+    overlay.querySelector('#am-submit').onclick = async ()=>{
+      const email = overlay.querySelector('#am-email').value.trim();
+      if(!email){ renderTcAuthModal('Vui lòng nhập email.'); return; }
+      const btn = overlay.querySelector('#am-submit');
+      btn.disabled = true; btn.textContent = 'Đang gửi…';
+      try{
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+        if(error) throw error;
+        renderTcAuthModal(null, 'Đã gửi email — kiểm tra hộp thư (cả mục Spam) và bấm vào link trong email để đặt mật khẩu mới.');
+      } catch(e){
+        renderTcAuthModal(e.message);
+      }
+    };
+    return;
+  }
   overlay.innerHTML = `
     <div class="auth-shell" style="max-width:380px;padding:28px 24px;margin:auto;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative;">
       <span id="am-close" style="position:absolute;top:14px;right:16px;cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;">&times;</span>
@@ -531,6 +587,7 @@ function renderTcAuthModal(err, successMsg){
       <input id="am-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.pass)}">
       ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="am-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(authFields.passConfirm)}">` : ''}
       <button class="btn btn-full" id="am-submit" style="margin-top:16px;">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
+      ${isLogin ? `<div style="text-align:center;margin-top:10px;"><span id="am-forgot" style="cursor:pointer;color:var(--ink-soft);font-size:13px;">Quên mật khẩu?</span></div>` : ''}
       ${err ? `<div class="error-box" style="margin-top:10px;">${esc(err)}</div>` : ''}
       ${successMsg ? `<div class="hint-box" style="margin-top:10px;">${esc(successMsg)}</div>` : ''}
     </div>
@@ -542,6 +599,7 @@ function renderTcAuthModal(err, successMsg){
   overlay.querySelectorAll('.auth-tab').forEach(el=>{
     el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderTcAuthModal(); };
   });
+  const forgotEl = overlay.querySelector('#am-forgot'); if(forgotEl) forgotEl.onclick = ()=>{ AppState.authMode = 'forgot'; renderTcAuthModal(); };
 
   const nameEl = overlay.querySelector('#am-name'); if(nameEl) nameEl.oninput = ()=>{ authFields.name = nameEl.value; };
   overlay.querySelector('#am-email').oninput = (e)=>{ authFields.email = e.target.value; };
@@ -585,7 +643,54 @@ function renderTcAuthModal(err, successMsg){
   };
 }
 
+// Màn "Đặt mật khẩu mới" — TOÀN TRANG (không phải modal như renderTcAuthModal) dù app này bình
+// thường cho khách lướt tự do không cần đăng nhập — vì đây là lúc khách VỪA bấm link trong email
+// chủ động để đặt lại mật khẩu, nên cố tình CHE hẳn màn hình, không cho lướt lung tung cho tới khi
+// xong, giống cách nhan-hieu/suc-khoe/tro-ly-crm đang làm.
+function renderSetNewPasswordScreen(err, successMsg){
+  const root = document.getElementById('app');
+  root.innerHTML = `
+    <div class="auth-shell" style="max-width:380px;margin:80px auto;padding:28px 24px;">
+      <h1 style="font-size:22px;">Đặt mật khẩu mới</h1>
+      <div class="sub" style="margin-bottom:14px;">Nhập mật khẩu mới cho tài khoản ${esc((AppState.user&&AppState.user.email)||'')}.</div>
+      <label>Mật khẩu mới</label>
+      <input id="af-new-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.newPass)}">
+      <label>Xác nhận mật khẩu mới</label>
+      <input id="af-new-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" value="${esc(authFields.newPassConfirm)}">
+      <button class="btn btn-full" id="af-submit-new-pass" style="margin-top:16px;">Đặt mật khẩu mới</button>
+      ${err ? `<div class="error-box" style="margin-top:10px;">${esc(err)}</div>` : ''}
+      ${successMsg ? `<div class="hint-box" style="margin-top:10px;">${esc(successMsg)}</div>` : ''}
+    </div>
+  `;
+  root.querySelector('#af-new-pass').oninput = (e)=>{ authFields.newPass = e.target.value; };
+  root.querySelector('#af-new-pass-confirm').oninput = (e)=>{ authFields.newPassConfirm = e.target.value; };
+  root.querySelector('#af-submit-new-pass').onclick = async ()=>{
+    const pass = root.querySelector('#af-new-pass').value;
+    const confirmPass = root.querySelector('#af-new-pass-confirm').value;
+    if(!pass || pass.length < 6){ renderSetNewPasswordScreen('Mật khẩu cần ít nhất 6 ký tự.'); return; }
+    if(pass !== confirmPass){ renderSetNewPasswordScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+    const btn = root.querySelector('#af-submit-new-pass');
+    btn.disabled = true; btn.textContent = 'Đang lưu…';
+    try{
+      const { error } = await supabaseClient.auth.updateUser({ password: pass });
+      if(error) throw error;
+      authFields.newPass = ''; authFields.newPassConfirm = '';
+      AppState.passwordRecoveryMode = false;
+      AppState.route = currentRouteFromHash();
+      await loadProfile();
+      renderApp();
+    } catch(e){
+      renderSetNewPasswordScreen(e.message);
+    }
+  };
+}
+
 function renderApp(){
+  // Chặn NGAY TẠI ĐÂY (không chỉ ở nơi gọi) — xem giải thích race-condition đầy đủ ở app-shell.js
+  // bên nhan-hieu (2026-10-01): Supabase đôi khi bắn cả SIGNED_IN lẫn PASSWORD_RECOVERY cho cùng 1
+  // phiên khôi phục, chuỗi loadProfile().then(renderApp) của SIGNED_IN có thể hoàn tất SAU khi cờ đã
+  // được set, nên phải check lại NGAY TRONG renderApp() — nơi duy nhất mọi đường gọi đều đi qua.
+  if(AppState.passwordRecoveryMode) return;
   if(!AppState.user){
     if(!GUEST_ALLOWED_ROUTES.has(AppState.route)) AppState.route = 'trang-chu';
     renderGuestShell();

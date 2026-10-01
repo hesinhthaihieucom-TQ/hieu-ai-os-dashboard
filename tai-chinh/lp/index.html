@@ -405,6 +405,13 @@
   <a class="lp-cta" href="#dang-ky">Đăng ký ngay — <span class="tc-lp-price">199.000đ</span> →</a>
 </div>
 
+<!-- Tải SDK Supabase để TỰ ĐĂNG NHẬP thật ngay sau khi thanh toán xong (2026-10-01, chị Quỳnh yêu
+     cầu) — không chỉ đưa link, mà gọi signInWithPassword() ngay trên trang này bằng đúng email/mật
+     khẩu khách vừa gõ ở form đăng ký. Supabase JS mặc định lưu phiên đăng nhập vào localStorage theo
+     key gắn với ĐÚNG project (không phải theo đường dẫn trang) — mà ladipage và app dùng chung 1
+     origin (cùng domain), nên phiên đăng nhập này app sẽ tự thấy ngay khi khách bấm "Vào app ngay",
+     khỏi cần truyền token qua URL hay sửa gì ở app-shell.js. -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
 // Đếm ngược giữ giá 199k — chị Quỳnh chốt 2026-09-17: 60 phút kể từ lúc khách THẬT SỰ vào trang lần
 // đầu (mốc giờ tuyệt đối lưu localStorage, không reset khi F5 lại trang), hết giờ tự lên 299.000đ —
@@ -467,6 +474,13 @@
     if(m) refCodeCaptured = m[1].toUpperCase();
   } catch(e){}
 
+  // Cùng URL/key với tai-chinh/js/supabase-client.js — cố ý KHÔNG tách file riêng vì ladipage chỉ
+  // cần đúng 1 lệnh signInWithPassword() lúc thanh toán xong, không cần toàn bộ hạ tầng auth như app.
+  const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';
+  const lpSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let capturedEmail = null, capturedPass = null;
+
   const openBtn = document.getElementById('lp-open-signup');
   if(openBtn) openBtn.onclick = ()=>{
     document.getElementById('dang-ky').scrollIntoView({behavior:'smooth'});
@@ -499,6 +513,9 @@
       const data = await resp.json();
       if(!resp.ok || !data.ok){ showError(data.error || 'Không tạo được tài khoản — thử lại giúp mình.'); submitBtn.disabled=false; submitBtn.textContent='Xác nhận thông tin — lấy mã QR →'; return; }
       if(!data.ref_code){ showError(data.warn || 'Tài khoản đã tạo — vào app đăng nhập để lấy mã QR.'); submitBtn.disabled=false; submitBtn.textContent='Xác nhận thông tin — lấy mã QR →'; return; }
+      // Giữ lại để tự đăng nhập thật ngay khi phát hiện đã thanh toán (xem startPolling bên dưới) —
+      // khách khỏi phải gõ lại email/mật khẩu lần nữa ở app.
+      capturedEmail = email; capturedPass = pass;
       renderPaymentCard(data.ref_code);
     } catch(e){
       showError('Không kết nối được server — thử lại giúp mình.');
@@ -551,8 +568,27 @@
           const statusEl = document.getElementById('lp-pay-status');
           if(statusEl){
             statusEl.className = 'lp-pay-status paid';
-            statusEl.innerHTML = '✅ Đã thanh toán thành công! <a href="../index.html" style="color:var(--gold);font-weight:700;">Vào app ngay →</a>';
+            statusEl.innerHTML = '✅ Đã thanh toán thành công! Đang tự đăng nhập…';
           }
+          // Tự đăng nhập THẬT ngay tại đây bằng đúng email/mật khẩu khách vừa gõ — không chỉ đưa
+          // link. Supabase lưu phiên vào localStorage theo project (không theo đường dẫn trang),
+          // ladipage và app chung 1 origin nên app sẽ tự thấy phiên này, khách bấm "Vào app ngay"
+          // là vào thẳng Trang chủ, không phải màn đăng nhập. Best-effort — nếu lỡ fail (vd quá lâu
+          // nên không còn email/pass trong bộ nhớ do khách load lại trang), vẫn cho vào app bình
+          // thường, khách tự đăng nhập tay 1 lần là xong, không có gì bị kẹt.
+          (async ()=>{
+            try {
+              if(capturedEmail && capturedPass){
+                await lpSupabase.auth.signInWithPassword({ email: capturedEmail, password: capturedPass });
+              }
+            } catch(e){ /* bỏ qua, xem fallback ở link dưới */ }
+            if(statusEl){
+              // ?prefill_email= chỉ là lưới an toàn phòng khi signInWithPassword() ở trên lỡ fail —
+              // app tự điền sẵn email này ở modal đăng nhập (xem TC_PREFILL_EMAIL/authFields ở
+              // app-shell.js), khách chỉ cần gõ lại mật khẩu, không phải gõ lại từ đầu.
+              statusEl.innerHTML = '✅ Đã thanh toán thành công! <a href="../index.html?prefill_email=' + encodeURIComponent(capturedEmail||'') + '" style="color:var(--gold);font-weight:700;">Vào app ngay →</a>';
+            }
+          })();
         }
       } catch(e){}
     }, 4000);
