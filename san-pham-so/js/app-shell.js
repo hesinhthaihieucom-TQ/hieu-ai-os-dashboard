@@ -215,11 +215,51 @@ function maybeShowSpsReviewPrompt() {
 // is_student mặc định false qua handle_new_user() (coalesce an toàn, xem schema_core.sql), không bắt
 // buộc phải hỏi ở đây.
 let spsAuthMode = 'login';
-let spsAuthFields = { name: '', email: '', pass: '', passConfirm: '' };
+let spsAuthFields = { name: '', email: '', pass: '', passConfirm: '', newPass: '', newPassConfirm: '' };
+// "Quên mật khẩu" (2026-10-01, Y HỆT pattern nhan-hieu/js/app-shell.js) — chế độ thứ 3 ngoài
+// login/signup, dùng chung renderLogin() cho gọn. passwordRecoveryMode chặn renderShell()/boot()
+// ghi đè màn đặt mật khẩu mới nếu Supabase bắn thêm sự kiện khác (vd SIGNED_IN) cho cùng phiên
+// recovery — xem onAuthStateChange bên dưới.
+let passwordRecoveryMode = false;
 
 function renderLogin(err, successMsg) {
   const app = document.getElementById('app');
   const isLogin = spsAuthMode === 'login';
+  const isForgot = spsAuthMode === 'forgot';
+  if (isForgot) {
+    app.innerHTML = `
+      <div class="wrap" style="max-width:400px;">
+        <h1 style="text-align:center;">Quên mật khẩu</h1>
+        <div class="card">
+          <div class="hint-box">Nhập email đã đăng ký — hệ thống gửi link đặt mật khẩu mới qua email đó.</div>
+          <label>Email</label>
+          <input id="af-email" type="email" placeholder="ban@email.com" value="${esc(spsAuthFields.email)}">
+          <div class="btn-row" style="justify-content:center;">
+            <button class="btn btn-full" id="af-submit">Gửi email đặt lại mật khẩu</button>
+          </div>
+          ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
+          ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+          <div style="text-align:center;margin-top:12px;"><span id="af-back-login" style="cursor:pointer;color:var(--accent);font-size:13px;">← Quay lại đăng nhập</span></div>
+        </div>
+      </div>
+    `;
+    app.querySelector('#af-email').oninput = (e) => { spsAuthFields.email = e.target.value; };
+    app.querySelector('#af-back-login').onclick = () => { spsAuthMode = 'login'; renderLogin(); };
+    app.querySelector('#af-submit').onclick = async () => {
+      const email = app.querySelector('#af-email').value.trim();
+      if (!email) { renderLogin('Vui lòng nhập email.'); return; }
+      const btn = app.querySelector('#af-submit');
+      btn.disabled = true; btn.textContent = 'Đang gửi…';
+      try {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+        if (error) throw error;
+        renderLogin(null, 'Đã gửi email — kiểm tra hộp thư (cả mục Spam) và bấm vào link trong email để đặt mật khẩu mới.');
+      } catch (e) {
+        renderLogin(e.message);
+      }
+    };
+    return;
+  }
   app.innerHTML = `
     <div class="wrap" style="max-width:400px;">
       <h1 style="text-align:center;">Sản Phẩm Số</h1>
@@ -237,6 +277,7 @@ function renderLogin(err, successMsg) {
         <div class="btn-row" style="justify-content:center;">
           <button class="btn btn-full" id="af-submit">${isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}</button>
         </div>
+        ${isLogin ? `<div style="text-align:center;margin-top:12px;"><span id="af-forgot" style="cursor:pointer;color:var(--accent);font-size:13px;">Quên mật khẩu?</span></div>` : ''}
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
         <div class="hint-box">Tài khoản dùng chung với Xây Nhân Hiệu (cùng 1 hồ sơ) — ${isLogin ? 'đã có tài khoản Xây Nhân Hiệu thì đăng nhập thẳng ở đây, không cần tạo mới.' : 'tạo mới ở đây cũng dùng đăng nhập được bên Xây Nhân Hiệu.'}</div>
@@ -246,6 +287,7 @@ function renderLogin(err, successMsg) {
   app.querySelectorAll('[data-auth-mode]').forEach(el => {
     el.onclick = () => { spsAuthMode = el.getAttribute('data-auth-mode'); renderLogin(); };
   });
+  const forgotEl = app.querySelector('#af-forgot'); if (forgotEl) forgotEl.onclick = () => { spsAuthMode = 'forgot'; renderLogin(); };
   const nameEl = document.getElementById('af-name');
   if (nameEl) nameEl.oninput = () => { spsAuthFields.name = nameEl.value; };
   const emailEl = document.getElementById('af-email');
@@ -274,13 +316,60 @@ function renderLogin(err, successMsg) {
       const { error } = await supabaseClient.auth.signUp({ email, password: pass, options: { data: { full_name } } });
       if (error) { renderLogin(error.message); return; }
       spsAuthMode = 'login';
-      spsAuthFields = { name: '', email, pass: '', passConfirm: '' };
+      spsAuthFields = { name: '', email, pass: '', passConfirm: '', newPass: '', newPassConfirm: '' };
       renderLogin(null, 'Đăng ký thành công! Nếu tài khoản cần xác nhận email, kiểm tra hộp thư rồi quay lại đăng nhập bằng email/mật khẩu vừa tạo.');
     }
   };
 }
 
+// Màn "Đặt mật khẩu mới" — hiện SAU KHI khách bấm link trong email "Quên mật khẩu" ở trên. Lúc này
+// Supabase đã tự cấp 1 phiên đăng nhập tạm (recovery session) nên CHỈ cần gọi updateUser({password})
+// — không cần hỏi lại mật khẩu cũ. Đặt xong coi như đã đăng nhập luôn, gọi boot() vào thẳng app.
+function renderSetNewPasswordScreen(err, successMsg) {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="wrap" style="max-width:400px;">
+      <h1 style="text-align:center;">Đặt mật khẩu mới</h1>
+      <div class="card">
+        <div class="hint-box">Nhập mật khẩu mới cho tài khoản ${esc((currentUser && currentUser.email) || '')}.</div>
+        <label>Mật khẩu mới</label>
+        <input id="af-new-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(spsAuthFields.newPass)}">
+        <label>Xác nhận mật khẩu mới</label>
+        <input id="af-new-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" value="${esc(spsAuthFields.newPassConfirm)}">
+        <div class="btn-row" style="justify-content:center;">
+          <button class="btn btn-full" id="af-submit-new-pass">Đặt mật khẩu mới</button>
+        </div>
+        ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
+        ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+      </div>
+    </div>
+  `;
+  app.querySelector('#af-new-pass').oninput = (e) => { spsAuthFields.newPass = e.target.value; };
+  app.querySelector('#af-new-pass-confirm').oninput = (e) => { spsAuthFields.newPassConfirm = e.target.value; };
+  app.querySelector('#af-submit-new-pass').onclick = async () => {
+    const pass = app.querySelector('#af-new-pass').value;
+    const confirmPass = app.querySelector('#af-new-pass-confirm').value;
+    if (!pass || pass.length < 6) { renderSetNewPasswordScreen('Mật khẩu cần ít nhất 6 ký tự.'); return; }
+    if (pass !== confirmPass) { renderSetNewPasswordScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+    const btn = app.querySelector('#af-submit-new-pass');
+    btn.disabled = true; btn.textContent = 'Đang lưu…';
+    try {
+      const { error } = await supabaseClient.auth.updateUser({ password: pass });
+      if (error) throw error;
+      spsAuthFields.newPass = ''; spsAuthFields.newPassConfirm = '';
+      passwordRecoveryMode = false;
+      boot();
+    } catch (e) {
+      renderSetNewPasswordScreen(e.message);
+    }
+  };
+}
+
 function renderShell(profile) {
+  // Chặn ở ĐÂY (chứ không chỉ ở boot()) vì đây là nơi DUY NHẤT mọi đường render app đều đi qua
+  // (boot() gọi trực tiếp, hashchange cũng gọi trực tiếp) — nếu PASSWORD_RECOVERY bắn ra giữa lúc
+  // boot() đang await, màn "Đặt mật khẩu mới" phải thắng, không bị renderShell() ghi đè.
+  if (passwordRecoveryMode) return;
   currentRoute = currentRouteFromHash();
   const app = document.getElementById('app');
   app.innerHTML = `
@@ -346,6 +435,10 @@ async function boot() {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="wrap"><div class="loading">Đang tải…</div></div>`;
   const { data } = await supabaseClient.auth.getSession();
+  // onAuthStateChange (đăng ký TRƯỚC getSession() ở dưới) có thể đã bắn PASSWORD_RECOVERY và hiện
+  // màn "Đặt mật khẩu mới" ngay trong lúc await ở trên — không được ghi đè lại bằng renderLogin()/
+  // renderShell() bên dưới.
+  if (passwordRecoveryMode) return;
   if (!data.session) { renderLogin(); return; }
   currentUser = data.session.user;
   // Cần thêm role/created_at/sps_* so với bản trước (chỉ id,full_name) — role để nhận diện admin
@@ -358,8 +451,19 @@ async function boot() {
   maybeShowSpsReviewPrompt();
 }
 
-supabaseClient.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; renderLogin(); }
+// Đăng ký TRƯỚC khi boot() (gọi getSession()) chạy ở dưới — supabase-js tự đọc link khôi phục mật
+// khẩu (?type=recovery trong URL) ngay lúc khởi tạo client, có thể bắn PASSWORD_RECOVERY rất sớm,
+// đăng ký sau có rủi ro lỡ mất sự kiện này. Xem renderSetNewPasswordScreen() ở trên.
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY' && session) {
+    passwordRecoveryMode = true;
+    currentUser = session.user;
+    renderSetNewPasswordScreen();
+    return;
+  }
+  if (event === 'SIGNED_OUT') {
+    currentUser = null; currentProfile = null; passwordRecoveryMode = false; renderLogin();
+  }
 });
 
 boot();
