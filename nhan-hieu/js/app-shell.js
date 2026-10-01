@@ -1188,6 +1188,16 @@ function renderSetNewPasswordScreen(err, successMsg){
 let expiredRedirectDone = false;
 
 function renderApp(){
+  // Chặn NGAY TẠI ĐÂY (không chỉ ở nơi gọi) — 2026-10-01, chị Quỳnh báo "bấm link quên mật khẩu, màn
+  // đặt mật khẩu mới chỉ hiện đúng 1s rồi tự nhảy vào app". Nguyên nhân: Supabase đôi khi bắn CẢ
+  // SIGNED_IN lẫn PASSWORD_RECOVERY cho cùng 1 phiên khôi phục (thứ tự không đảm bảo). Nhánh SIGNED_IN
+  // ở initApp() có check passwordRecoveryMode NGAY LÚC BẮT ĐẦU xử lý, nhưng nếu nó bắn TRƯỚC
+  // PASSWORD_RECOVERY thì check đó qua được, rồi chuỗi loadProfile().then(...).then(renderApp) chạy
+  // NGẦM (mất ~1s round-trip mạng) — đúng lúc nó gọi renderApp() ở cuối thì PASSWORD_RECOVERY đã kịp
+  // bắn và set cờ rồi, nhưng chuỗi async đó không biết, cứ gọi renderApp() đè lên màn đặt mật khẩu
+  // mới. Check lại NGAY TRONG renderApp() (nơi DUY NHẤT mọi đường gọi đều đi qua) mới chặn được chắc
+  // chắn, bất kể lúc gọi hàm này cờ đã được set từ bao giờ.
+  if(AppState.passwordRecoveryMode) return;
   // Tải hồ sơ thất bại (lỗi mạng/API, đã thử lại 1 lần trong loadProfile() rồi vẫn lỗi) khác hẳn
   // "thật sự hết hạn" — không được rơi vào renderExpiredScreen() (hasActiveAccess() thấy profile=null
   // sẽ hiểu nhầm là "chưa từng dùng thử", hiện oan "Dùng thử 7 ngày đã kết thúc" cho người còn hạn
