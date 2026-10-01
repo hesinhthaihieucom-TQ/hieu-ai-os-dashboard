@@ -17,7 +17,7 @@ const NAV = [
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, pastReviewThreshold:false, profileLoadError:null };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, pastReviewThreshold:false, profileLoadError:null, passwordRecoveryMode:false };
 // Điều kiện hiện popup xin đánh giá (2026-08-24, theo yêu cầu chị Quỳnh) — đã dùng có kết quả thật
 // (từ 3 bài đã viết) HOẶC đã dùng app đủ lâu, không hỏi ngay lúc mới vào khi chưa kịp thấy giá trị gì.
 // MIN_DAYS hạ từ 3 -> 1 (2026-09-12, chị Quỳnh: audit hành trình người mới phát hiện trial chỉ có
@@ -346,6 +346,57 @@ async function initApp(){
   const root = document.getElementById('app');
   root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
 
+  // Đăng ký onAuthStateChange TRƯỚC getSession() — supabase-js tự đọc link khôi phục mật khẩu
+  // (?type=recovery trong URL, xem renderAuthScreen() mục "forgot") ngay lúc khởi tạo client, có
+  // thể bắn sự kiện PASSWORD_RECOVERY rất sớm. Đăng ký sau getSession() (như code cũ) có rủi ro lỡ
+  // mất sự kiện này, khiến khách bấm link trong email lại bị vào thẳng app như đăng nhập thường,
+  // không có cơ hội đặt mật khẩu mới (đúng yêu cầu chị Quỳnh 2026-10-01).
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if(event === 'PASSWORD_RECOVERY' && session){
+      AppState.passwordRecoveryMode = true;
+      AppState.user = session.user;
+      renderSetNewPasswordScreen();
+      return;
+    }
+    if(event === 'SIGNED_IN' && session){
+      // Đang ở màn "Đặt mật khẩu mới" (phiên recovery) — Supabase có thể bắn thêm SIGNED_IN ngay
+      // sau PASSWORD_RECOVERY cho CÙNG phiên đó; không được để nhánh này nhảy thẳng vào app, phải
+      // đợi khách thực sự đặt xong mật khẩu mới (xem renderSetNewPasswordScreen()).
+      if(AppState.passwordRecoveryMode) return;
+      // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại —
+      // không phải chỉ lúc đăng nhập thật. Nếu render lại toàn bộ app mỗi lần đó, bất kỳ màn hình
+      // nào đang có state tạm chưa lưu (ví dụ AI gợi ý lịch tuần vừa chạy xong) sẽ bị xoá sạch
+      // ngay khi vừa hiện ra — nhìn như tính năng "không chạy". Chỉ render lại khi đây thực sự là
+      // 1 phiên đăng nhập mới (user id khác với user đang có).
+      if(AppState.user && AppState.user.id === session.user.id) return;
+      AppState.user = session.user;
+      // Đây là 1 phiên đăng nhập MỚI (vd vừa đăng ký tài khoản khác trong cùng tab, sau khi tài
+      // khoản trước đó đã đăng xuất) — luôn đưa về trang chào mừng, không giữ lại route/hash của
+      // tài khoản CŨ (vd nếu tài khoản cũ là admin đang ở Quản trị, tài khoản mới không phải admin
+      // sẽ bị kẹt ở "Không có quyền truy cập" — đúng lỗi đã gặp khi test tài khoản mới, 2026-08-20).
+      // Đặt location.hash SAU KHI loadProfile() xong (trong .then) — không phải trước — để lúc
+      // hashchange tự bắn ra và gọi renderApp() lần nữa, AppState.profile đã có sẵn rồi, tránh
+      // render hụt 1 nhịp với profile null.
+      AppState.route = 'trang-chu';
+      // Tuần tự — cùng lý do đã ghi ở initApp(): loadAnnouncementQueue() cần profile đã tải xong.
+      loadProfile().then(loadAnnouncementQueue).then(loadReviewPromptEligibility).then(()=>{
+        location.hash = 'trang-chu';
+        renderApp();
+      });
+    } else if(event === 'SIGNED_OUT'){
+      AppState.user = null;
+      AppState.profile = null;
+      AppState.profileLoadError = null;
+      AppState.passwordRecoveryMode = false;
+      AppState.pushPromptAttempted = false; // cho phép hỏi lại nếu 1 người khác đăng nhập cùng phiên tải trang (vd máy dùng chung)
+      // Reset route/hash ngay lúc đăng xuất — để nếu có đăng nhập/đăng ký tài khoản khác tiếp theo
+      // trong cùng tab (không tải lại trang), route không bị kẹt lại ở trang của tài khoản cũ.
+      AppState.route = 'trang-chu';
+      location.hash = '';
+      renderAuthScreen();
+    }
+  });
+
   const { data, error: sessionError } = await withTimeout(
     supabaseClient.auth.getSession(),
     10000, 'Kết nối mạng chậm/không ổn định — không kiểm tra được đăng nhập.'
@@ -357,6 +408,10 @@ async function initApp(){
     </div>`;
     return;
   }
+  // Sự kiện PASSWORD_RECOVERY ở trên có thể đã chạy xong (đồng bộ, trong lúc await getSession()) và
+  // đang hiện màn "Đặt mật khẩu mới" — không được ghi đè lại bằng renderApp()/renderAuthScreen() ở
+  // dưới, kẻo mất màn đó giữa chừng.
+  if(AppState.passwordRecoveryMode) return;
   if(data.session){
     AppState.user = data.session.user;
     // TUẦN TỰ, không Promise.all — loadAnnouncementQueue() cần đọc profile.last_seen_announcement_at
@@ -386,41 +441,6 @@ async function initApp(){
     await loadAnnouncementQueue();
     maybeShowFeatureAnnouncement();
   }, 3 * 60 * 1000);
-
-  supabaseClient.auth.onAuthStateChange((event, session) => {
-    if(event === 'SIGNED_IN' && session){
-      // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại —
-      // không phải chỉ lúc đăng nhập thật. Nếu render lại toàn bộ app mỗi lần đó, bất kỳ màn hình
-      // nào đang có state tạm chưa lưu (ví dụ AI gợi ý lịch tuần vừa chạy xong) sẽ bị xoá sạch
-      // ngay khi vừa hiện ra — nhìn như tính năng "không chạy". Chỉ render lại khi đây thực sự là
-      // 1 phiên đăng nhập mới (user id khác với user đang có).
-      if(AppState.user && AppState.user.id === session.user.id) return;
-      AppState.user = session.user;
-      // Đây là 1 phiên đăng nhập MỚI (vd vừa đăng ký tài khoản khác trong cùng tab, sau khi tài
-      // khoản trước đó đã đăng xuất) — luôn đưa về trang chào mừng, không giữ lại route/hash của
-      // tài khoản CŨ (vd nếu tài khoản cũ là admin đang ở Quản trị, tài khoản mới không phải admin
-      // sẽ bị kẹt ở "Không có quyền truy cập" — đúng lỗi đã gặp khi test tài khoản mới, 2026-08-20).
-      // Đặt location.hash SAU KHI loadProfile() xong (trong .then) — không phải trước — để lúc
-      // hashchange tự bắn ra và gọi renderApp() lần nữa, AppState.profile đã có sẵn rồi, tránh
-      // render hụt 1 nhịp với profile null.
-      AppState.route = 'trang-chu';
-      // Tuần tự — cùng lý do đã ghi ở initApp(): loadAnnouncementQueue() cần profile đã tải xong.
-      loadProfile().then(loadAnnouncementQueue).then(loadReviewPromptEligibility).then(()=>{
-        location.hash = 'trang-chu';
-        renderApp();
-      });
-    } else if(event === 'SIGNED_OUT'){
-      AppState.user = null;
-      AppState.profile = null;
-      AppState.profileLoadError = null;
-      AppState.pushPromptAttempted = false; // cho phép hỏi lại nếu 1 người khác đăng nhập cùng phiên tải trang (vd máy dùng chung)
-      // Reset route/hash ngay lúc đăng xuất — để nếu có đăng nhập/đăng ký tài khoản khác tiếp theo
-      // trong cùng tab (không tải lại trang), route không bị kẹt lại ở trang của tài khoản cũ.
-      AppState.route = 'trang-chu';
-      location.hash = '';
-      renderAuthScreen();
-    }
-  });
 
   window.addEventListener('hashchange', () => {
     if(!AppState.user) return;
@@ -978,11 +998,51 @@ let signupIsStudent = null;
 // lại là các input bị XOÁ TRẮNG hoàn toàn (không có "value=" nào cả), nên chỉ cần bấm nhầm thứ tự (vd
 // gõ hết form rồi mới chọn "Chưa" ở cuối) là mất sạch, bấm "Tạo tài khoản" với ô email trống sẽ ra lỗi
 // khó hiểu "Anonymous sign-ins are disabled" (Supabase hiểu signUp với email rỗng là đăng ký ẩn danh).
-let authFields = { name:'', email:'', pass:'', passConfirm:'' };
+let authFields = { name:'', email:'', pass:'', passConfirm:'', newPass:'', newPassConfirm:'' };
 
+// "Quên mật khẩu" (2026-10-01, chị Quỳnh: "cho người dùng ấn đó để tạo mật khẩu mới") — chế độ thứ
+// 3 ngoài login/signup, dùng CHUNG màn renderAuthScreen() cho gọn (cùng khung .auth-shell/.card) thay
+// vì dựng màn riêng. Chỉ hiện ở login (không hiện lúc đang đăng ký — lúc đó chưa có tài khoản để quên
+// mật khẩu). Gửi email đặt lại qua supabaseClient.auth.resetPasswordForEmail() — Supabase tự gửi
+// link, bấm vào link đó sẽ quay lại ĐÚNG trang này kèm theo 1 phiên "khôi phục" đặc biệt, xem
+// PASSWORD_RECOVERY ở onAuthStateChange/initApp() bên dưới (nơi thật sự hiện màn đặt mật khẩu mới).
 function renderAuthScreen(err, successMsg){
   const root = document.getElementById('app');
   const isLogin = AppState.authMode === 'login';
+  const isForgot = AppState.authMode === 'forgot';
+  if(isForgot){
+    root.innerHTML = `
+      <div class="auth-shell">
+        <img src="assets/logo-hieu-kenh-badge.png" class="auth-logo" alt="" onerror="this.style.display='none'">
+        <h1>Quên mật khẩu</h1>
+        <div class="sub">Nhập email đã đăng ký — hệ thống gửi link đặt mật khẩu mới qua email đó.</div>
+        <div class="card">
+          <label>Email</label>
+          <input id="af-email" type="email" placeholder="ban@email.com" value="${esc(authFields.email)}">
+          <button class="btn btn-full" id="af-submit">Gửi email đặt lại mật khẩu</button>
+          ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
+          ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+          <div class="btn-row" style="margin-top:14px;"><span class="signout" id="af-back-login" style="cursor:pointer;">← Quay lại đăng nhập</span></div>
+        </div>
+      </div>
+    `;
+    root.querySelector('#af-email').oninput = (e)=>{ authFields.email = e.target.value; };
+    root.querySelector('#af-back-login').onclick = ()=>{ AppState.authMode = 'login'; renderAuthScreen(); };
+    root.querySelector('#af-submit').onclick = async ()=>{
+      const email = root.querySelector('#af-email').value.trim();
+      if(!email){ renderAuthScreen('Vui lòng nhập email.'); return; }
+      const btn = root.querySelector('#af-submit');
+      btn.disabled = true; btn.textContent = 'Đang gửi…';
+      try{
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+        if(error) throw error;
+        renderAuthScreen(null, 'Đã gửi email — kiểm tra hộp thư (cả mục Spam) và bấm vào link trong email để đặt mật khẩu mới.');
+      } catch(e){
+        renderAuthScreen(e.message);
+      }
+    };
+    return;
+  }
   root.innerHTML = `
     <div class="auth-shell">
       <img src="assets/logo-hieu-kenh-badge.png" class="auth-logo" alt="" onerror="this.style.display='none'">
@@ -1007,6 +1067,7 @@ function renderAuthScreen(err, successMsg){
           </div>
         ` : ''}
         <button class="btn btn-full" id="af-submit">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
+        ${isLogin ? `<div style="text-align:center;margin-top:12px;"><span class="signout" id="af-forgot" style="cursor:pointer;font-size:13px;">Quên mật khẩu?</span></div>` : ''}
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
       </div>
@@ -1016,6 +1077,7 @@ function renderAuthScreen(err, successMsg){
   root.querySelectorAll('.auth-tab').forEach(el=>{
     el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderAuthScreen(); };
   });
+  const forgotEl = root.querySelector('#af-forgot'); if(forgotEl) forgotEl.onclick = ()=>{ AppState.authMode = 'forgot'; renderAuthScreen(); };
 
   const nameEl = root.querySelector('#af-name'); if(nameEl) nameEl.oninput = ()=>{ authFields.name = nameEl.value; };
   root.querySelector('#af-email').oninput = (e)=>{ authFields.email = e.target.value; };
@@ -1065,6 +1127,54 @@ function renderAuthScreen(err, successMsg){
       }
     } catch(e){
       renderAuthScreen(e.message);
+    }
+  };
+}
+
+// Màn "Đặt mật khẩu mới" — hiện SAU KHI khách bấm link trong email "Quên mật khẩu" (xem PASSWORD_RECOVERY
+// ở onAuthStateChange, initApp() bên dưới). Lúc này Supabase đã tự cấp 1 phiên đăng nhập tạm (recovery
+// session) nên CHỈ cần gọi updateUser({password}) — không cần hỏi lại mật khẩu cũ (đúng bản chất "quên",
+// khách không nhớ mật khẩu cũ để nhập). Đặt xong coi như đã đăng nhập luôn, vào thẳng app — không bắt
+// đăng nhập lại lần nữa cho rườm rà.
+function renderSetNewPasswordScreen(err, successMsg){
+  const root = document.getElementById('app');
+  root.innerHTML = `
+    <div class="auth-shell">
+      <img src="assets/logo-hieu-kenh-badge.png" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <h1>Đặt mật khẩu mới</h1>
+      <div class="sub">Nhập mật khẩu mới cho tài khoản ${esc((AppState.user&&AppState.user.email)||'')}.</div>
+      <div class="card">
+        <label>Mật khẩu mới</label>
+        <input id="af-new-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.newPass)}">
+        <label>Xác nhận mật khẩu mới</label>
+        <input id="af-new-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" value="${esc(authFields.newPassConfirm)}">
+        <button class="btn btn-full" id="af-submit-new-pass">Đặt mật khẩu mới</button>
+        ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
+        ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+      </div>
+    </div>
+  `;
+  root.querySelector('#af-new-pass').oninput = (e)=>{ authFields.newPass = e.target.value; };
+  root.querySelector('#af-new-pass-confirm').oninput = (e)=>{ authFields.newPassConfirm = e.target.value; };
+  root.querySelector('#af-submit-new-pass').onclick = async ()=>{
+    const pass = root.querySelector('#af-new-pass').value;
+    const confirmPass = root.querySelector('#af-new-pass-confirm').value;
+    if(!pass || pass.length < 6){ renderSetNewPasswordScreen('Mật khẩu cần ít nhất 6 ký tự.'); return; }
+    if(pass !== confirmPass){ renderSetNewPasswordScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+    const btn = root.querySelector('#af-submit-new-pass');
+    btn.disabled = true; btn.textContent = 'Đang lưu…';
+    try{
+      const { error } = await supabaseClient.auth.updateUser({ password: pass });
+      if(error) throw error;
+      authFields.newPass = ''; authFields.newPassConfirm = '';
+      AppState.passwordRecoveryMode = false;
+      AppState.route = currentRouteFromHash();
+      await loadProfile();
+      await loadAnnouncementQueue();
+      await loadReviewPromptEligibility();
+      renderApp();
+    } catch(e){
+      renderSetNewPasswordScreen(e.message);
     }
   };
 }
