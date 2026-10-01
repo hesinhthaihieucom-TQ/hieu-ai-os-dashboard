@@ -25,7 +25,7 @@ const NAV = [
   { key:'quan-tri', title:'Quản Trị', adminOnly:true }, // chỉ hiện khi profiles.role==='admin'
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', showAuthForm:false };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', showAuthForm:false, passwordRecoveryMode:false };
 
 function sidebarFootHtml(){
   const p = AppState.profile;
@@ -51,22 +51,17 @@ async function initApp(){
   const root = document.getElementById('app');
   root.innerHTML = `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
 
-  const { data } = await supabaseClient.auth.getSession();
-  if(data.session){
-    AppState.user = data.session.user;
-    await loadProfile();
-    AppState.route = currentRouteFromHash();
-    renderApp();
-  } else {
-    renderUnauthedScreen();
-  }
-
-  // Cảnh báo trình duyệt trong app (Facebook/Instagram/Zalo...) NGAY LẦN ĐẦU VÀO, kể cả CHƯA đăng
-  // nhập (2026-09-03, áp dụng từ tai-chinh theo góp ý Quỳnh "áp dụng cho tất cả các app về sau").
-  if(window.maybeShowInAppBrowserBanner) window.maybeShowInAppBrowserBanner();
-
+  // Đăng ký onAuthStateChange TRƯỚC getSession() — xem giải thích đầy đủ ở app-shell.js bên nhan-hieu
+  // (2026-10-01): tránh lỡ mất sự kiện PASSWORD_RECOVERY nếu nó bắn sớm lúc client khởi tạo.
   supabaseClient.auth.onAuthStateChange((event, session) => {
+    if(event === 'PASSWORD_RECOVERY' && session){
+      AppState.passwordRecoveryMode = true;
+      AppState.user = session.user;
+      renderSetNewPasswordScreen();
+      return;
+    }
     if(event === 'SIGNED_IN' && session){
+      if(AppState.passwordRecoveryMode) return;
       // Supabase cũng bắn lại "SIGNED_IN" khi refresh token nền hoặc khi tab được focus lại — chỉ
       // render lại toàn bộ khi đây thực sự là 1 phiên đăng nhập MỚI, tránh xoá state đang gõ dở.
       if(AppState.user && AppState.user.id === session.user.id) return;
@@ -85,10 +80,26 @@ async function initApp(){
       AppState.profile = null;
       AppState.route = 'trang-chu';
       AppState.showAuthForm = false;
+      AppState.passwordRecoveryMode = false;
       location.hash = '';
       renderUnauthedScreen();
     }
   });
+
+  const { data } = await supabaseClient.auth.getSession();
+  if(AppState.passwordRecoveryMode) return;
+  if(data.session){
+    AppState.user = data.session.user;
+    await loadProfile();
+    AppState.route = currentRouteFromHash();
+    renderApp();
+  } else {
+    renderUnauthedScreen();
+  }
+
+  // Cảnh báo trình duyệt trong app (Facebook/Instagram/Zalo...) NGAY LẦN ĐẦU VÀO, kể cả CHƯA đăng
+  // nhập (2026-09-03, áp dụng từ tai-chinh theo góp ý Quỳnh "áp dụng cho tất cả các app về sau").
+  if(window.maybeShowInAppBrowserBanner) window.maybeShowInAppBrowserBanner();
 
   window.addEventListener('hashchange', () => {
     if(!AppState.user) return;
@@ -133,7 +144,7 @@ async function transferGuestCheckinDraftIfAny(){
   if(!error) clearGuestCheckinDraft();
 }
 
-let authFields = { name:'', email:'', pass:'', passConfirm:'' };
+let authFields = { name:'', email:'', pass:'', passConfirm:'', newPass:'', newPassConfirm:'' };
 
 // 2026-09-16, chị Quỳnh: "e muốn khi ng dùng vào là sẽ được check kiểm tra sức khỏe luôn xong mới
 // đăng ký" — trước đây chưa đăng nhập là CHỈ thấy màn hình đăng nhập/đăng ký (renderAuthScreen), không
@@ -170,9 +181,45 @@ window.skRequestGuestSignup = function(){
   AppState.showAuthForm = true; AppState.authMode = 'signup'; renderUnauthedScreen();
 };
 
+// "Quên mật khẩu" (2026-10-01, áp lại từ nhan-hieu theo yêu cầu chị Quỳnh "làm tương tự cho các app
+// còn lại") — xem app-shell.js bên nhan-hieu cho lời giải thích đầy đủ. Chỉ hiện ở login.
 function renderAuthScreen(err, successMsg){
   const root = document.getElementById('app');
   const isLogin = AppState.authMode === 'login';
+  const isForgot = AppState.authMode === 'forgot';
+  if(isForgot){
+    root.innerHTML = `
+      <div class="auth-shell">
+        <img src="assets/logo-hieu-manh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
+        <h1>Quên mật khẩu</h1>
+        <div class="sub">Nhập email đã đăng ký — hệ thống gửi link đặt mật khẩu mới qua email đó.</div>
+        <div class="card">
+          <label>Email</label>
+          <input id="af-email" type="email" placeholder="ban@email.com" value="${esc(authFields.email)}">
+          <button class="btn btn-full" id="af-submit">Gửi email đặt lại mật khẩu</button>
+          ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
+          ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+          <div class="btn-row" style="margin-top:14px;"><span class="signout" id="af-back-login" style="cursor:pointer;">← Quay lại đăng nhập</span></div>
+        </div>
+      </div>
+    `;
+    root.querySelector('#af-email').oninput = (e)=>{ authFields.email = e.target.value; };
+    root.querySelector('#af-back-login').onclick = ()=>{ AppState.authMode = 'login'; renderAuthScreen(); };
+    root.querySelector('#af-submit').onclick = async ()=>{
+      const email = root.querySelector('#af-email').value.trim();
+      if(!email){ renderAuthScreen('Vui lòng nhập email.'); return; }
+      const btn = root.querySelector('#af-submit');
+      btn.disabled = true; btn.textContent = 'Đang gửi…';
+      try{
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+        if(error) throw error;
+        renderAuthScreen(null, 'Đã gửi email — kiểm tra hộp thư (cả mục Spam) và bấm vào link trong email để đặt mật khẩu mới.');
+      } catch(e){
+        renderAuthScreen(e.message);
+      }
+    };
+    return;
+  }
   root.innerHTML = `
     <div class="auth-shell">
       <img src="assets/logo-hieu-manh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
@@ -190,6 +237,7 @@ function renderAuthScreen(err, successMsg){
         <input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.pass)}">
         ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(authFields.passConfirm)}">` : ''}
         <button class="btn btn-full" id="af-submit">${isLogin?'Đăng nhập':'Tạo tài khoản'}</button>
+        ${isLogin ? `<div style="text-align:center;margin-top:12px;"><span class="signout" id="af-forgot" style="cursor:pointer;font-size:13px;">Quên mật khẩu?</span></div>` : ''}
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
       </div>
@@ -200,6 +248,7 @@ function renderAuthScreen(err, successMsg){
   root.querySelectorAll('.auth-tab').forEach(el=>{
     el.onclick = ()=>{ AppState.authMode = el.getAttribute('data-mode'); renderAuthScreen(); };
   });
+  const forgotEl = root.querySelector('#af-forgot'); if(forgotEl) forgotEl.onclick = ()=>{ AppState.authMode = 'forgot'; renderAuthScreen(); };
   const backLink = root.querySelector('#guest-back-link');
   if(backLink) backLink.onclick = ()=>{ AppState.showAuthForm = false; renderUnauthedScreen(); };
 
@@ -238,7 +287,54 @@ function renderAuthScreen(err, successMsg){
   };
 }
 
+// Màn "Đặt mật khẩu mới" — xem giải thích đầy đủ ở app-shell.js bên nhan-hieu (cùng pattern).
+function renderSetNewPasswordScreen(err, successMsg){
+  const root = document.getElementById('app');
+  root.innerHTML = `
+    <div class="auth-shell">
+      <img src="assets/logo-hieu-manh.png" class="auth-logo" alt="" onerror="this.style.display='none'">
+      <h1>Đặt mật khẩu mới</h1>
+      <div class="sub">Nhập mật khẩu mới cho tài khoản ${esc((AppState.user&&AppState.user.email)||'')}.</div>
+      <div class="card">
+        <label>Mật khẩu mới</label>
+        <input id="af-new-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.newPass)}">
+        <label>Xác nhận mật khẩu mới</label>
+        <input id="af-new-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" value="${esc(authFields.newPassConfirm)}">
+        <button class="btn btn-full" id="af-submit-new-pass">Đặt mật khẩu mới</button>
+        ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
+        ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
+      </div>
+    </div>
+  `;
+  root.querySelector('#af-new-pass').oninput = (e)=>{ authFields.newPass = e.target.value; };
+  root.querySelector('#af-new-pass-confirm').oninput = (e)=>{ authFields.newPassConfirm = e.target.value; };
+  root.querySelector('#af-submit-new-pass').onclick = async ()=>{
+    const pass = root.querySelector('#af-new-pass').value;
+    const confirmPass = root.querySelector('#af-new-pass-confirm').value;
+    if(!pass || pass.length < 6){ renderSetNewPasswordScreen('Mật khẩu cần ít nhất 6 ký tự.'); return; }
+    if(pass !== confirmPass){ renderSetNewPasswordScreen('Mật khẩu xác nhận không khớp — kiểm tra lại.'); return; }
+    const btn = root.querySelector('#af-submit-new-pass');
+    btn.disabled = true; btn.textContent = 'Đang lưu…';
+    try{
+      const { error } = await supabaseClient.auth.updateUser({ password: pass });
+      if(error) throw error;
+      authFields.newPass = ''; authFields.newPassConfirm = '';
+      AppState.passwordRecoveryMode = false;
+      AppState.route = currentRouteFromHash();
+      await loadProfile();
+      renderApp();
+    } catch(e){
+      renderSetNewPasswordScreen(e.message);
+    }
+  };
+}
+
 function renderApp(){
+  // Chặn NGAY TẠI ĐÂY (không chỉ ở nơi gọi) — xem giải thích race-condition đầy đủ ở app-shell.js
+  // bên nhan-hieu (2026-10-01): Supabase đôi khi bắn cả SIGNED_IN lẫn PASSWORD_RECOVERY cho cùng 1
+  // phiên khôi phục, chuỗi loadProfile().then(renderApp) của SIGNED_IN có thể hoàn tất SAU khi cờ đã
+  // được set, nên phải check lại NGAY TRONG renderApp() — nơi duy nhất mọi đường gọi đều đi qua.
+  if(AppState.passwordRecoveryMode) return;
   if(!AppState.user){ renderUnauthedScreen(); return; }
   const root = document.getElementById('app');
   root.innerHTML = `
