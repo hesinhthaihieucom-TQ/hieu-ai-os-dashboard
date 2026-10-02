@@ -341,12 +341,17 @@ async function checkSucKhoeDailyTip() {
   const teaserSource = entry.remedies || entry.symptoms || '';
   const teaser = teaserSource.split('\n').map((s) => s.trim().replace(/^[•-]\s*/, '')).filter(Boolean)[0] || '';
 
+  // 2026-10-02, chị Quỳnh: "khi có bản tin sức khỏe thì hiện trên màn hình người dùng thì người ta
+  // bấm vào phải ra cái bản tin đó chứ không chỉ là app" — trước đây url chỉ dẫn chung vào trang Thư
+  // Viện Sức Khỏe, bấm vào không ra ĐÚNG mục đang nhắc, phải tự tìm lại. Gắn kèm ?sklib=<id> — đọc ở
+  // thu-vien-suc-khoe.js (render(), đọc location.search 1 lần lúc mở trang) để tự mở đúng mục + cuộn
+  // tới, không cần sửa currentRouteFromHash() (route vẫn lấy từ phần #, không đụng query string).
   let count = 0;
   for (const u of users) {
     const result = await notifyOnce(u.id, `sk-daily-tip:${dateStr}`, {
       title: '🌿 Bản tin sức khỏe hôm nay: ' + entry.issue_name,
       body: teaser || 'Xem ngay trong Thư Viện Sức Khỏe.',
-      url: './#thu-vien-suc-khoe',
+      url: `./?sklib=${entry.id}#thu-vien-suc-khoe`,
     }, 'suc-khoe');
     if (result.sent) count++;
   }

@@ -8,7 +8,25 @@
 function render(container, ctx){
   const state = { loading:true, entries:[], productById:{}, q:'', deselected:new Set(), quantities:{} };
 
+  // 2026-10-02, chị Quỳnh: "khi có bản tin sức khỏe thì hiện trên màn hình người dùng thì người ta
+  // bấm vào phải ra cái bản tin đó chứ không chỉ là app" — bản tin đẩy mỗi ngày (checkSucKhoeDailyTip,
+  // api/cron/send-reminders.js) giờ gắn kèm ?sklib=<id của sk_library_entries> trên URL. Đọc 1 LẦN lúc
+  // mở trang (không phải từ location.hash — route key vẫn lấy ở app-shell.js currentRouteFromHash(),
+  // không đụng tới query string), dùng để tự mở đúng mục + cuộn tới sau khi tải xong.
+  const pendingEntryId = new URLSearchParams(location.search).get('sklib');
+
   function draw(){ container.innerHTML = html(); bind(); }
+
+  // Mở đúng mục đang nhắc (nếu có) rồi xoá khỏi URL — không xoá thì tải lại trang/chuyển qua lại tab
+  // cứ mở lại mục cũ mãi, không đúng ý chỉ mở 1 lần ngay khi bấm vào thông báo.
+  function openPendingEntry(){
+    if(!pendingEntryId) return;
+    const el = container.querySelector(`[data-entry-id="${pendingEntryId}"]`);
+    if(el){ el.open = true; el.scrollIntoView({ behavior:'smooth', block:'start' }); }
+    const url = new URL(location.href);
+    url.searchParams.delete('sklib');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  }
 
   async function load(){
     const { data: entries } = await ctx.supabase.from('sk_library_entries').select('*').order('issue_name', { ascending:true });
@@ -20,6 +38,7 @@ function render(container, ctx){
     }
     state.loading = false;
     draw();
+    openPendingEntry();
   }
 
   function filtered(){
@@ -69,7 +88,7 @@ function render(container, ctx){
       ${list.map(e=>{
         const products = entryProducts(e);
         return `
-        <details class="kt-section">
+        <details class="kt-section" data-entry-id="${esc(e.id)}">
           <summary class="kt-summary">${esc(e.issue_name)}</summary>
           <div style="margin-top:12px;font-size:15px;line-height:1.8;">
             ${e.causes ? `<div style="margin-bottom:16px;border-left:3px solid #c0392b;padding-left:14px;">${skSectionHeaderHtml('Nguyên nhân', '#c0392b', '🔍')}${skRichBodyHtml(e.causes)}</div>` : ''}
