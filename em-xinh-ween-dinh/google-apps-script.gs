@@ -35,6 +35,25 @@ function saveImg_(dataUrl, name) {
   return { url: f.getUrl(), id: f.getId() };
 }
 
+var SEP_ = null;
+function sep_() {
+  if (SEP_) return SEP_;
+  var p = PropertiesService.getScriptProperties().getProperty('SEP');
+  if (p) return (SEP_ = p);
+  return (SEP_ = detectSep_());
+}
+function detectSep_() {
+  var ss = ss_(), t = ss.insertSheet('_tmp');
+  t.getRange('A1').setFormula('=IF(1=1,1,2)');
+  SpreadsheetApp.flush();
+  var ok = String(t.getRange('A1').getDisplayValue()) === '1';
+  ss.deleteSheet(t);
+  var s = ok ? ',' : ';';
+  PropertiesService.getScriptProperties().setProperty('SEP', s);
+  return s;
+}
+function f_(formula) { return formula.replace(/§/g, sep_()); }
+
 function idFromUrl_(url) {
   var m = /[-\w]{25,}/.exec(url || '');
   return m ? m[0] : '';
@@ -42,11 +61,11 @@ function idFromUrl_(url) {
 
 function thumb_(url) {
   var id = idFromUrl_(url);
-  return id ? '=IMAGE("https://drive.google.com/thumbnail?id=' + id + '&sz=w400",4,110,110)' : '';
+  return id ? f_('=IMAGE("https://drive.google.com/thumbnail?id=' + id + '&sz=w400"§4§110§110)') : '';
 }
 
 function link_(url, label) {
-  return url ? '=HYPERLINK("' + url + '","' + label + '")' : '';
+  return url ? f_('=HYPERLINK("' + url + '"§"' + label + '")') : '';
 }
 
 // 1 dòng dữ liệu theo đúng thứ tự cột
@@ -95,7 +114,7 @@ function buildTab_(cfg) {
   sh.setRowHeight(1, 54);
   // dòng 2: thống kê nhanh
   sh.getRange(2, 1, 1, NCOL).merge()
-    .setFormula('="' + cfg.sub + '   •   Tổng đăng ký: "&COUNTA(B' + DATA_ROW + ':B)&"   •   Chờ xác nhận: "&COUNTIF(J' + DATA_ROW + ':J,"Chờ xác nhận")&"   •   Đã xác nhận: "&COUNTIF(J' + DATA_ROW + ':J,"Đã xác nhận")')
+    .setFormula(f_('="' + cfg.sub + '   •   Tổng đăng ký: "&COUNTA(B' + DATA_ROW + ':B)&"   •   Chờ xác nhận: "&COUNTIF(J' + DATA_ROW + ':J§"Chờ xác nhận")&"   •   Đã xác nhận: "&COUNTIF(J' + DATA_ROW + ':J§"Đã xác nhận")'))
     .setBackground(cfg.color).setFontColor('#ffffff').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('left');
   sh.setRowHeight(2, 32);
   // dòng 3: tên cột
@@ -127,7 +146,7 @@ function buildTab_(cfg) {
   st('Đã nhận phí', '#d8ebff', '#0b4f9c');
   st('Đã xác nhận', '#d3f5e1', '#13794a');
   st('Hủy', '#ffd9d9', '#a61b1b');
-  rules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND($B' + DATA_ROW + '<>"",ISEVEN(ROW()))').setBackground(C.soft).setRanges([rng]).build());
+  rules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied(f_('=AND($B' + DATA_ROW + '<>""§ISEVEN(ROW()))')).setBackground(C.soft).setRanges([rng]).build());
   sh.setConditionalFormatRules(rules);
   sh.setFrozenRows(3);
 
@@ -168,11 +187,11 @@ function buildOverview_() {
   sh.setRowHeight(3, 16);
 
   function sum_(col, crit) { // đếm theo trạng thái trên cả 3 tab
-    return TABS.map(function (t) { return "COUNTIF('" + t.n + "'!J" + DATA_ROW + ':J,"' + crit + '")'; }).join('+');
+    return TABS.map(function (t) { return "COUNTIF('" + t.n + "'!J" + DATA_ROW + ':J§"' + crit + '")'; }).join('+');
   }
   var total = TABS.map(function (t) { return "COUNTA('" + t.n + "'!B" + DATA_ROW + ':B)'; }).join('+');
   var paid = TABS.map(function (t) {
-    return "SUMIF('" + t.n + "'!J" + DATA_ROW + ':J,"Đã nhận phí",\'' + t.n + "'!E" + DATA_ROW + ':E)+SUMIF(\'' + t.n + "'!J" + DATA_ROW + ':J,"Đã xác nhận",\'' + t.n + "'!E" + DATA_ROW + ':E)';
+    return "SUMIF('" + t.n + "'!J" + DATA_ROW + ':J§"Đã nhận phí"§\'' + t.n + "'!E" + DATA_ROW + ':E)+SUMIF(\'' + t.n + "'!J" + DATA_ROW + ':J§"Đã xác nhận"§\'' + t.n + "'!E" + DATA_ROW + ':E)';
   }).join('+');
   var expected = TABS.map(function (t) { return "SUM('" + t.n + "'!E" + DATA_ROW + ':E)'; }).join('+');
 
@@ -190,7 +209,7 @@ function buildOverview_() {
   cards.forEach(function (k) {
     sh.getRange(k[0]).merge().setValue(k[2]).setBackground(k[4]).setFontColor(k[5]).setFontWeight('bold').setFontSize(10)
       .setFontFamily('Montserrat').setHorizontalAlignment('center').setVerticalAlignment('bottom');
-    sh.getRange(k[1]).merge().setFormula(k[3]).setBackground(k[4]).setFontColor(k[5]).setFontWeight('bold').setFontSize(30)
+    sh.getRange(k[1]).merge().setFormula(f_(k[3])).setBackground(k[4]).setFontColor(k[5]).setFontWeight('bold').setFontSize(30)
       .setFontFamily('Montserrat').setHorizontalAlignment('center').setVerticalAlignment('middle').setNumberFormat(k[6]);
     sh.getRange(k[0].split(':')[0] + ':' + k[1].split(':')[1]).setBorder(true, true, true, true, null, null, '#e3c4ee', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
   });
@@ -200,7 +219,7 @@ function buildOverview_() {
 
   // dự kiến + bảng phân bố để vẽ biểu đồ
   sh.getRange('B12:C12').merge().setValue('DOANH THU DỰ KIẾN').setFontWeight('bold').setFontFamily('Montserrat').setFontSize(10).setFontColor('#6a4a86');
-  sh.getRange('D12:E12').merge().setFormula('=' + expected).setNumberFormat('#,##0"đ"').setFontWeight('bold').setFontSize(16).setFontColor('#b8560c').setHorizontalAlignment('left');
+  sh.getRange('D12:E12').merge().setFormula(f_('=' + expected)).setNumberFormat('#,##0"đ"').setFontWeight('bold').setFontSize(16).setFontColor('#b8560c').setHorizontalAlignment('left');
   sh.getRange('B14:C14').merge().setValue('PHÂN BỔ THEO BẢNG').setFontWeight('bold').setFontFamily('Montserrat').setFontSize(10).setFontColor('#6a4a86');
   sh.getRange('B15:C18').setValues([['Bảng', 'Số đăng ký'], ['Series A', ''], ['Series B', ''], ['KOL', '']]);
   sh.getRange('C16').setFormula('=B9'); sh.getRange('C17').setFormula('=D9'); sh.getRange('C18').setFormula('=F9');
@@ -219,6 +238,7 @@ function buildOverview_() {
 
 /* ---------- chạy 1 lần (nút ▶ Chạy → setup) hoặc mỗi khi muốn dựng lại giao diện ---------- */
 function setup() {
+  SEP_ = null; PropertiesService.getScriptProperties().deleteProperty('SEP'); sep_(); // dò lại dấu phân cách theo ngôn ngữ sheet
   TABS.forEach(buildTab_);
   buildOverview_();
   var ss = ss_();
