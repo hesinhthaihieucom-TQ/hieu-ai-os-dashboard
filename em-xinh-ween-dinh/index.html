@@ -244,8 +244,9 @@ html{scroll-behavior:auto;overflow-x:hidden}
 /* ===== Cup / podium ===== */
 .podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;padding:20px 10px 16px}
 .pd{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
-.pd .cup{width:100%;max-width:92px;height:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
-.pd.p1 .cup{max-width:118px;filter:drop-shadow(0 0 18px rgba(255,197,49,.65))}
+.pd .cup{width:100%;max-width:100px;height:auto;filter:drop-shadow(0 8px 12px rgba(0,0,0,.55))}
+.pd.p3 .cup{max-width:90px}
+.pd.p1 .cup{max-width:130px;filter:drop-shadow(0 0 20px rgba(255,197,49,.7))}
 .step{width:100%;margin-top:8px;border-radius:10px 10px 0 0;text-align:center;padding:8px 2px 10px;border:1px solid rgba(255,255,255,.14)}
 .step small{display:block;font:700 12px 'Be Vietnam Pro';letter-spacing:.06em;text-transform:uppercase;color:#d9c4ee}
 .step b{display:block;font:800 clamp(13px,3.6vw,16px) 'Be Vietnam Pro';color:var(--gold);white-space:nowrap}
@@ -254,7 +255,7 @@ html{scroll-behavior:auto;overflow-x:hidden}
 .p3 .step{min-height:62px;background:linear-gradient(rgba(217,138,75,.26),rgba(217,138,75,.05))}
 .p1 .step b{font-size:clamp(14px,4vw,18px)}
 .pz.kol header{background:linear-gradient(135deg,#7a3a08,#b8560c)}
-@keyframes shine{0%,100%{filter:drop-shadow(0 0 10px rgba(255,197,49,.4))}50%{filter:drop-shadow(0 0 26px rgba(255,197,49,.95))}}
+@keyframes shine{0%,100%{filter:drop-shadow(0 0 10px rgba(255,197,49,.4))}50%{filter:drop-shadow(0 0 28px rgba(255,197,49,.95))}}
 .pd.p1 .cup{animation:shine 2.6s ease-in-out infinite}
 
 /* ===== Save the date ===== */
@@ -308,22 +309,13 @@ html{scroll-behavior:auto;overflow-x:hidden}
 .fok{text-align:center;padding:10px 0}
 .fok .big{font-size:56px}
 .fok p{color:var(--muted);margin:8px 0 18px}
+.gifts{background:linear-gradient(rgba(36,8,56,.8),rgba(36,8,56,.8)),url(assets/bg-trang-hong.jpg) center/cover}
+.giftlist{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px;text-align:center;font-weight:600}
+.giftlist div{background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px 8px;font-size:16px}
+@media(max-width:700px){.giftlist{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-<linearGradient id="gG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1A8"/><stop offset=".45" stop-color="#FFC531"/><stop offset="1" stop-color="#B9770E"/></linearGradient>
-<linearGradient id="gS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".45" stop-color="#C9D1DE"/><stop offset="1" stop-color="#7E8899"/></linearGradient>
-<linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD2A6"/><stop offset=".45" stop-color="#D98A4B"/><stop offset="1" stop-color="#8A4A1C"/></linearGradient>
-<g id="cupShape">
- <path d="M24 24C4 22 2 52 30 58" fill="none" stroke-width="7" stroke-linecap="round"/>
- <path d="M76 24C96 22 98 52 70 58" fill="none" stroke-width="7" stroke-linecap="round"/>
- <path d="M22 12H78V40C78 62 65 76 50 79C35 76 22 62 22 40Z" stroke="none"/>
- <rect x="17" y="8" width="66" height="9" rx="4.5" stroke="none"/>
- <path d="M43 79H57L59 96H41Z" stroke="none"/>
- <ellipse cx="50" cy="97" rx="14" ry="4" stroke="none"/>
- <rect x="27" y="99" width="46" height="13" rx="4" stroke="none"/>
-</g></defs></svg>
 
 <img class="moon" src="assets/trang-doi.jpg" alt="">
 <div class="top">
@@ -372,6 +364,26 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <div><b>10M+</b><span>lượt xem trên các kênh truyền thông</span></div>
   </div>
 </div>
+
+<!-- GIFTS -->
+<section class="gifts" id="qua-tang">
+  <div class="wrap">
+    <div class="eyebrow rv">Quà từ nhà tài trợ</div>
+    <h2 class="sec-title rv">Quà tặng <em>ngập tràn</em></h2>
+    <p class="sec-sub rv">Mỗi mùa giải có hơn 50 nhà tài trợ đồng hành: thời gian, sản phẩm dùng thử, quà tặng VĐV và minigame trúng quà ngay tại sân.</p>
+    <div class="gal rv">
+      <figure><img loading="lazy" data-zoom src="assets/checkin-2.jpg" alt="Túi quà tặng VĐV"><figcaption>Túi quà tặng dành cho VĐV</figcaption></figure>
+      <figure><img loading="lazy" data-zoom src="assets/qua-tang.jpg" alt="Trang sức vòng ngọc"><figcaption>Trang sức &amp; vòng ngọc</figcaption></figure>
+      <figure><img loading="lazy" data-zoom src="assets/booth-pompeche.jpg" alt="Thời trang pickleball"><figcaption>Thời trang pickleball</figcaption></figure>
+      <figure><img loading="lazy" data-zoom src="assets/mua-truoc-shop.jpg" alt="Gian hàng thời trang"><figcaption>Gian hàng trải nghiệm</figcaption></figure>
+      <figure><img loading="lazy" data-zoom src="assets/mua-truoc-booth.jpg" alt="Gian hàng nhà tài trợ"><figcaption>Quà &amp; sản phẩm dùng thử</figcaption></figure>
+      <figure><img loading="lazy" data-zoom src="assets/food.jpg" alt="Food and Drink"><figcaption>Food &amp; Drink cho VĐV</figcaption></figure>
+    </div>
+    <div class="giftlist rv">
+      <div>🎁 Quà tặng cho mọi VĐV</div><div>🧴 Dùng thử sản phẩm</div><div>🎟️ Voucher &amp; ưu đãi</div><div>🎲 Minigame trúng quà</div>
+    </div>
+  </div>
+</section>
 
 <!-- SAVE THE DATE -->
 <section class="std" id="dia-diem">
@@ -426,44 +438,17 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <h2 class="sec-title rv">Cơ cấu <em>giải thưởng</em></h2>
     <p class="sec-sub rv">3 bảng đấu – tiền mặt thật, vinh danh thật.</p>
     <div class="pgrid rv"><div class="pz "><header>Giải thưởng Bảng A</header><div class="podium">
-<div class="pd p2"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gS)" stroke="url(#gS)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">2</text></svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
-<div class="pd p1"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gG)" stroke="url(#gG)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">1</text></svg><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
-<div class="pd p3"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gB)" stroke="url(#gB)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">3</text></svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+<div class="pd p2"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Hạng Nhì Em Xinh" loading="lazy"><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><img class="cup" src="assets/cup-vo-dich.webp" alt="Cúp Vô Địch Em Xinh" loading="lazy"><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
+<div class="pd p3"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Đồng 3 Em Xinh" loading="lazy"><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
 </div></div><div class="pz "><header>Giải thưởng Bảng B</header><div class="podium">
-<div class="pd p2"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gS)" stroke="url(#gS)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">2</text></svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
-<div class="pd p1"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gG)" stroke="url(#gG)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">1</text></svg><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
-<div class="pd p3"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gB)" stroke="url(#gB)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">3</text></svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+<div class="pd p2"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Hạng Nhì Em Xinh" loading="lazy"><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><img class="cup" src="assets/cup-vo-dich.webp" alt="Cúp Vô Địch Em Xinh" loading="lazy"><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
+<div class="pd p3"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Đồng 3 Em Xinh" loading="lazy"><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
 </div></div><div class="pz kol"><header>Giải thưởng KOL</header><div class="podium">
-<div class="pd p2"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gS)" stroke="url(#gS)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">2</text></svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
-<div class="pd p1"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gG)" stroke="url(#gG)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">1</text></svg><div class="step"><small>Giải 1</small><b>4.000.000đ</b></div></div>
-<div class="pd p3"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gB)" stroke="url(#gB)"/>
-<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
-<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
-<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">3</text></svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+<div class="pd p2"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Hạng Nhì Em Xinh" loading="lazy"><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><img class="cup" src="assets/cup-vo-dich.webp" alt="Cúp Vô Địch Em Xinh" loading="lazy"><div class="step"><small>Giải 1</small><b>4.000.000đ</b></div></div>
+<div class="pd p3"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Đồng 3 Em Xinh" loading="lazy"><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
 </div></div></div>
     <p class="total rv">Tổng giải thưởng tiền mặt: <b>31.000.000đ</b> · Cup &amp; huy chương cho các đội đạt giải</p>
     <div class="gift rv">
@@ -557,6 +542,9 @@ html{scroll-behavior:auto;overflow-x:hidden}
       <figure><img loading="lazy" src="assets/checkin-1.jpg" alt="Quầy check-in"><figcaption>Quầy check-in</figcaption></figure>
       <figure><img loading="lazy" src="assets/food.jpg" alt="Food &amp; Drink"><figcaption>Food &amp; Drink thả ga</figcaption></figure>
       <figure><img loading="lazy" src="assets/qua-tang.jpg" alt="Quà tặng"><figcaption>Quà tặng giá trị</figcaption></figure>
+      <figure><img loading="lazy" src="assets/mua-truoc-hong.jpg" alt="Em Xinh áo hồng"><figcaption>Em Xinh áo hồng</figcaption></figure>
+      <figure><img loading="lazy" src="assets/mua-truoc-banner.jpg" alt="Toàn cảnh mùa trước"><figcaption>Toàn cảnh mùa trước</figcaption></figure>
+      <figure><img loading="lazy" src="assets/mua-truoc-vdv.jpg" alt="Vận động viên"><figcaption>Vận động viên</figcaption></figure>
       <figure><img loading="lazy" src="assets/livestream.jpg" alt="Livestream"><figcaption>Livestream toàn giải</figcaption></figure>
     </div>
   </div>
