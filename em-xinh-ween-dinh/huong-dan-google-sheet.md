@@ -1,13 +1,13 @@
-# Nối form đăng ký với Google Sheet (làm 1 lần, ~3 phút)
+# Nối form đăng ký với Google Sheet
 
-1. Mở Google Sheet "Em Xinh Ween Đỉnh – Đăng ký".
-2. Menu **Tiện ích mở rộng → Apps Script**.
-3. Xóa code mẫu, dán toàn bộ nội dung file `google-apps-script.gs` vào, bấm **Lưu**.
-4. Bấm **Triển khai → Tùy chọn triển khai mới** → loại **Ứng dụng web**:
-   - Thực thi bằng: **Tôi**
-   - Người có quyền truy cập: **Bất kỳ ai**
-   - Bấm **Triển khai**, cho phép các quyền Google hỏi (Sheets + Drive).
-5. (Làm 1 lần) Chọn hàm **setup** ở thanh trên rồi bấm **Chạy** để tạo sẵn 3 sheet: Series A, Series B, KOL.
-6. Copy **URL ứng dụng web** (đuôi `/exec`) gửi cho Claude, hoặc dán vào biến `SHEET_ENDPOINT` ở cuối `index.html`.
+## Cập nhật giao diện sheet mới (làm 1 lần, ~2 phút)
+1. Mở Google Sheet "Em Xinh Ween Đỉnh – Đăng ký" → **Tiện ích mở rộng → Apps Script**.
+2. Xóa hết code cũ, dán toàn bộ nội dung file `google-apps-script.gs` (bản mới), bấm **Lưu**.
+3. Chọn hàm **setup** ở thanh trên → bấm **Chạy**. Lần đầu Google hỏi quyền → cho phép.
+   Sheet sẽ tự dựng lại: tab **Tổng quan** (thẻ số liệu + biểu đồ) và 3 tab **Series A / Series B / KOL** (màu riêng, ảnh thu nhỏ, danh sách trạng thái). Dữ liệu đăng ký đã có được giữ nguyên.
+4. **Triển khai → Quản lý các bản triển khai → biểu tượng bút chì → Phiên bản: Phiên bản mới → Triển khai**. Link `/exec` giữ nguyên, không cần đổi gì ở ladipage.
 
-Mỗi lượt đăng ký sẽ thành 1 dòng mới trong sheet của đúng bảng thi đấu (Series A / Series B / KOL): thời gian, tên, SĐT, bảng, phí áp dụng (490K/590K theo ngày), link hình thiệp, link hình chuyển khoản, cột Trạng thái (chọn Chờ xác nhận / Đã nhận phí / Đã xác nhận / Hủy). Hình lưu trong thư mục Drive `EmXinh_WeenDinh_HinhDangKy`.
+## Cách dùng hằng ngày
+- Mỗi lượt đăng ký là 1 dòng ở tab của đúng bảng thi đấu, kèm ảnh thiệp / ảnh chuyển khoản thu nhỏ (bấm "Mở thiệp" / "Mở CK" để xem ảnh lớn).
+- Cột **Trạng thái**: Chờ xác nhận → Đã nhận phí → Đã xác nhận (hoặc Hủy). Ô tự đổi màu, tab Tổng quan tự cập nhật số liệu và tiền đã thu.
+- Hình lưu trong thư mục Drive `EmXinh_WeenDinh_HinhDangKy`.
