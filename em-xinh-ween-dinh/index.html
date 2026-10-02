@@ -625,13 +625,11 @@ html{scroll-behavior:auto;overflow-x:hidden}
             <label class="opt"><input type="radio" name="bang" value="Series B"><span><b>Series B</b><small>Phong trào · Newbie &lt; 2.5</small></span></label>
             <label class="opt"><input type="radio" name="bang" value="KOL"><span><b>KOL</b><small>Đôi nữ KOLs tự do</small></span></label>
           </div></fieldset>
-        <label>Tên đồng đội (nếu có)
-          <input name="doidoi" type="text" placeholder="Đôi nữ – tên bạn đánh cặp" maxlength="80"></label>
         <div class="up">
           <label class="upbox" id="up1"><input type="file" name="thiep" accept="image/*" required hidden>
             <span class="upic">🖼️</span><b>Hình cá nhân làm thiệp *</b><small>Bấm để chọn ảnh</small><img alt="" hidden></label>
-          <label class="upbox" id="up2"><input type="file" name="ck" accept="image/*" hidden>
-            <span class="upic">🧾</span><b>Hình xác nhận chuyển khoản</b><small>Không bắt buộc – nên gửi để được duyệt nhanh</small><img alt="" hidden></label>
+          <label class="upbox" id="up2"><input type="file" name="ck" accept="image/*" required hidden>
+            <span class="upic">🧾</span><b>Hình xác nhận chuyển khoản *</b><small>Bấm để chọn ảnh</small><img alt="" hidden></label>
         </div>
         <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
         <div class="ferr" id="ferr" role="alert"></div>
@@ -758,9 +756,10 @@ var SHEET_ENDPOINT = "";
     if(!/^(0|\+?84)\d{9}$/.test(sdt)) return err.textContent='Số điện thoại chưa đúng (VD: 0901234567).';
     if(!bang) return err.textContent='Bạn chọn bảng thi đấu nhé.';
     if(!data.thiep) return err.textContent='Bạn gửi kèm 1 hình cá nhân để làm thiệp nhé.';
+    if(!data.ck) return err.textContent='Bạn gửi kèm hình xác nhận chuyển khoản nhé.';
     if(!SHEET_ENDPOINT) return err.textContent='Form đang được kết nối – bạn vui lòng đăng ký qua group Zalo của giải nhé.';
     btn.disabled=true;btn.textContent='Đang gửi...';
-    var payload={ten:ten,sdt:sdt,bang:bang,doidoi:f.doidoi.value.trim(),thiep:data.thiep,ck:data.ck||'',
+    var payload={ten:ten,sdt:sdt,bang:bang,thiep:data.thiep,ck:data.ck,
       gia:(Date.now()<=new Date('2026-10-15T23:59:59+07:00').getTime())?490000:590000,ua:navigator.userAgent.slice(0,120)};
     fetch(SHEET_ENDPOINT,{method:'POST',body:JSON.stringify(payload)})
       .then(function(r){return r.json()}).then(function(j){
