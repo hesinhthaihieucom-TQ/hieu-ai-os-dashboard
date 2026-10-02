@@ -361,11 +361,11 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <h1>Em Xinh <span>Ween Đỉnh</span><br>Giải Pickleball Halloween</h1>
     <p class="lead">Sân chơi dành cho những cô nàng cá tính: thi đấu hết mình, diện đồ thật chất, hóa thân Halloween và cùng hàng chục KOLs đại chiến. Có BBQ ở sân – FREE!</p>
     <div class="cta-row">
-      <a href="#dang-ky" class="btn pulse">🎃 Đăng ký tham gia – 490K</a>
+      <a href="#dang-ky" class="btn pulse">🎃 Đăng ký tham gia</a>
       <a href="#co-cau" class="btn ghost">Xem giải thưởng</a>
     </div>
     <div class="cd-box">
-      <small>⏰ GIÁ 490K CHỈ CÒN ĐẾN HẾT 15/10 – SAU ĐÓ TĂNG LÊN 590K</small>
+      <small>⏰ ĐĂNG KÝ SỚM CHỈ CÒN ĐẾN HẾT 15/10</small>
       <div class="cd" id="cd">
         <div><b id="cd-d">--</b><span>Ngày</span></div>
         <div><b id="cd-h">--</b><span>Giờ</span></div>
@@ -711,7 +711,7 @@ html{scroll-behavior:auto;overflow-x:hidden}
 </footer>
 
 <div class="sticky">
-  <div>Chỉ <b>490K</b> đến 15/10<br>Sau đó 590K</div>
+  <div>Đăng ký giải<br><b>490K</b></div>
   <a href="#dang-ky" class="btn">Đăng ký</a>
 </div>
 
@@ -729,7 +729,7 @@ var ZALO_LINK = "https://zalo.me/g/notihp546";
   function p(n){return n<10?'0'+n:n}
   function tick(){
     var d=end-Date.now();
-    if(d<0){document.querySelector('.cd-box small').textContent='Đã hết đợt đăng ký sớm – phí hiện tại 590K';d=0}
+    if(d<0){document.querySelector('.cd-box small').textContent='Đã hết đợt đăng ký sớm';d=0}
     document.getElementById('cd-d').textContent=p(Math.floor(d/864e5));
     document.getElementById('cd-h').textContent=p(Math.floor(d%864e5/36e5));
     document.getElementById('cd-m').textContent=p(Math.floor(d%36e5/6e4));

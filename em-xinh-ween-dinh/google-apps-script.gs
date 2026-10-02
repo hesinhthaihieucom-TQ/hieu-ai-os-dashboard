@@ -130,7 +130,6 @@ function buildTab_(cfg) {
   rules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND($B' + DATA_ROW + '<>"",ISEVEN(ROW()))').setBackground(C.soft).setRanges([rng]).build());
   sh.setConditionalFormatRules(rules);
   sh.setFrozenRows(3);
-  sh.setFrozenColumns(2);
 
   // ghi lại dữ liệu cũ (nếu có)
   if (keep.length) {
