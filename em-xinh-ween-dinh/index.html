@@ -240,9 +240,90 @@ h1,h2,h3{font-weight:700;letter-spacing:-.005em;text-wrap:balance}
 @media(max-width:700px){.moon{width:110px;right:-30px}}
 @media(max-width:430px){.lw{display:none}.btn{padding:14px 22px}.cta-row .btn{width:100%}}
 html{scroll-behavior:auto;overflow-x:hidden}
+
+/* ===== Cup / podium ===== */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;padding:20px 10px 16px}
+.pd{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.pd .cup{width:100%;max-width:92px;height:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+.pd.p1 .cup{max-width:118px;filter:drop-shadow(0 0 18px rgba(255,197,49,.65))}
+.step{width:100%;margin-top:8px;border-radius:10px 10px 0 0;text-align:center;padding:8px 2px 10px;border:1px solid rgba(255,255,255,.14)}
+.step small{display:block;font:700 12px 'Be Vietnam Pro';letter-spacing:.06em;text-transform:uppercase;color:#d9c4ee}
+.step b{display:block;font:800 clamp(13px,3.6vw,16px) 'Be Vietnam Pro';color:var(--gold);white-space:nowrap}
+.p1 .step{min-height:92px;background:linear-gradient(rgba(255,197,49,.28),rgba(255,197,49,.06))}
+.p2 .step{min-height:74px;background:linear-gradient(rgba(201,209,222,.24),rgba(201,209,222,.05))}
+.p3 .step{min-height:62px;background:linear-gradient(rgba(217,138,75,.26),rgba(217,138,75,.05))}
+.p1 .step b{font-size:clamp(14px,4vw,18px)}
+.pz.kol header{background:linear-gradient(135deg,#7a3a08,#b8560c)}
+@keyframes shine{0%,100%{filter:drop-shadow(0 0 10px rgba(255,197,49,.4))}50%{filter:drop-shadow(0 0 26px rgba(255,197,49,.95))}}
+.pd.p1 .cup{animation:shine 2.6s ease-in-out infinite}
+
+/* ===== Save the date ===== */
+.std{padding-top:48px}
+.stdgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
+.sd{display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:20px;position:relative;overflow:hidden}
+.sd::after{content:"";position:absolute;right:-30px;bottom:-30px;width:110px;height:110px;border-radius:50%;background:radial-gradient(rgba(255,79,184,.28),transparent 70%)}
+.sdtxt b{display:block;font:700 22px 'Playfair Display',serif;color:#fff;margin-bottom:4px}
+.sdtxt span{color:var(--muted);font-size:16px;display:block}
+.sdtxt em{font-style:normal;color:var(--gold);font-weight:700}
+.ico{width:60px;height:60px;flex:none}
+.calpage{flex:none;width:92px;border-radius:14px;overflow:hidden;background:#fff;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.45)}
+.calhead{background:linear-gradient(135deg,#ff3fa9,#c01a85);color:#fff;font:700 11px 'Be Vietnam Pro';letter-spacing:.06em;padding:6px 2px}
+.calday{font:900 46px/1.05 'Playfair Display',serif;color:#2a0b46;padding-top:4px}
+.calwd{font:700 13px 'Be Vietnam Pro';color:#c01a85;padding-bottom:7px}
+.maplink{display:inline-block;margin-top:10px;color:var(--gold)!important;font-weight:700;text-decoration:none;border-bottom:1px dashed var(--gold)}
+@media(max-width:900px){.stdgrid{grid-template-columns:1fr}}
+
+/* ===== Ảnh luôn đủ khung, không cắt góc ===== */
+.hero-img img{height:auto;max-height:none;object-fit:contain;width:100%}
+.eimg{height:auto!important;object-fit:contain!important}
+.gal img,.posters img,.gift img{height:auto}
+
+/* ===== Form ===== */
+.regform{max-width:640px;margin:30px auto 0;background:var(--card);border:1px solid rgba(245,215,122,.35);border-radius:16px;padding:26px 22px}
+.ftitle{text-align:center;font-size:26px;color:#fff;margin-bottom:6px}
+.fsub{text-align:center;color:var(--muted);margin-bottom:20px}
+.regform label{display:block;font-weight:600;margin-bottom:14px;color:#fff;font-size:16px}
+.regform input[type=text],.regform input[type=tel]{display:block;width:100%;margin-top:6px;padding:14px 16px;font:400 16px 'Be Vietnam Pro',sans-serif;color:#fff;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.2);border-radius:10px;outline:0}
+.regform input:focus{border-color:var(--pink)}
+.regform fieldset{border:0;margin:0 0 14px}
+.regform legend{font-weight:600;margin-bottom:8px;font-size:16px}
+.opts{display:grid;gap:10px}
+.opt{margin:0!important;cursor:pointer}
+.opt input{position:absolute;opacity:0}
+.opt span{display:block;padding:12px 16px;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(0,0,0,.3);transition:.15s}
+.opt span b{display:block;color:#fff}
+.opt span small{color:var(--muted);font-size:14px;font-weight:400}
+.opt input:checked+span{border-color:var(--gold);background:rgba(245,215,122,.12);box-shadow:0 0 0 2px rgba(245,215,122,.35)}
+.up{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px}
+.upbox{margin:0!important;text-align:center;border:2px dashed rgba(255,255,255,.28);border-radius:14px;padding:16px 10px;cursor:pointer;background:rgba(0,0,0,.2)}
+.upbox .upic{display:block;font-size:30px}
+.upbox b{display:block;font-size:15.5px}
+.upbox small{display:block;color:var(--muted);font-size:13px;font-weight:400;line-height:1.4}
+.upbox img{width:100%;height:auto;margin-top:10px;border-radius:10px;max-height:240px;object-fit:contain;background:#000}
+.upbox.has{border-style:solid;border-color:#4be39a}
+@media(max-width:560px){.up{grid-template-columns:1fr}}
+.ferr{color:#ff8a8a;font-weight:600;min-height:22px;margin:4px 0 8px;font-size:15.5px}
+.fbtn{width:100%;font-size:18px}
+.fbtn[disabled]{opacity:.6;animation:none}
+.fok{text-align:center;padding:10px 0}
+.fok .big{font-size:56px}
+.fok p{color:var(--muted);margin:8px 0 18px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="gG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1A8"/><stop offset=".45" stop-color="#FFC531"/><stop offset="1" stop-color="#B9770E"/></linearGradient>
+<linearGradient id="gS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".45" stop-color="#C9D1DE"/><stop offset="1" stop-color="#7E8899"/></linearGradient>
+<linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD2A6"/><stop offset=".45" stop-color="#D98A4B"/><stop offset="1" stop-color="#8A4A1C"/></linearGradient>
+<g id="cupShape">
+ <path d="M24 24C4 22 2 52 30 58" fill="none" stroke-width="7" stroke-linecap="round"/>
+ <path d="M76 24C96 22 98 52 70 58" fill="none" stroke-width="7" stroke-linecap="round"/>
+ <path d="M22 12H78V40C78 62 65 76 50 79C35 76 22 62 22 40Z" stroke="none"/>
+ <rect x="17" y="8" width="66" height="9" rx="4.5" stroke="none"/>
+ <path d="M43 79H57L59 96H41Z" stroke="none"/>
+ <ellipse cx="50" cy="97" rx="14" ry="4" stroke="none"/>
+ <rect x="27" y="99" width="46" height="13" rx="4" stroke="none"/>
+</g></defs></svg>
 
 <img class="moon" src="assets/trang-doi.jpg" alt="">
 <div class="top">
@@ -292,6 +373,29 @@ html{scroll-behavior:auto;overflow-x:hidden}
   </div>
 </div>
 
+<!-- SAVE THE DATE -->
+<section class="std" id="dia-diem">
+  <div class="wrap">
+    <div class="eyebrow rv">Ghi nhớ ngay</div>
+    <h2 class="sec-title rv">Thời gian &amp; <em>địa điểm</em></h2>
+    <div class="stdgrid rv">
+      <div class="sd cal">
+        <div class="calpage"><div class="calhead">THÁNG 10 · 2026</div><div class="calday">31</div><div class="calwd">Thứ Bảy</div></div>
+        <div class="sdtxt"><b>Ngày thi đấu</b><span>Đêm hội Halloween của chị em pickleball</span></div>
+      </div>
+      <div class="sd clk">
+        <svg class="ico" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="34" r="24" fill="none" stroke="#F5D77A" stroke-width="4"/><path d="M32 18V34L43 41" fill="none" stroke="#FF8FD6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12L4 20M52 12L60 20" stroke="#F5D77A" stroke-width="5" stroke-linecap="round"/></svg>
+        <div class="sdtxt"><b>9:00 sáng</b><span>Khai mạc &amp; bắt đầu thi đấu<br><em id="evcd">—</em></span></div>
+      </div>
+      <div class="sd loc">
+        <svg class="ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4C20 4 12 13 12 24C12 40 32 60 32 60C32 60 52 40 52 24C52 13 44 4 32 4Z" fill="#FF4FB8"/><circle cx="32" cy="24" r="9" fill="#fff"/></svg>
+        <div class="sdtxt"><b>Cộng Hòa Garden</b><span>20 Cộng Hòa, Phường 2, Tân Bình, TP.HCM</span>
+        <a class="maplink" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=C%E1%BB%99ng+H%C3%B2a+Garden+20+C%E1%BB%99ng+H%C3%B2a+T%C3%A2n+B%C3%ACnh">📍 Chỉ đường Google Maps</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- PRICE -->
 <section id="le-phi">
   <div class="wrap">
@@ -321,20 +425,46 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <div class="eyebrow rv">Giải thưởng tiền mặt</div>
     <h2 class="sec-title rv">Cơ cấu <em>giải thưởng</em></h2>
     <p class="sec-sub rv">3 bảng đấu – tiền mặt thật, vinh danh thật.</p>
-    <div class="pgrid rv">
-      <div class="pz"><header>Giải thưởng Bảng A</header><ul>
-        <li><span><span class="medal">🥇</span>Giải 1</span><b>6.000.000đ</b></li>
-        <li><span><span class="medal">🥈</span>Giải 2</span><b>3.000.000đ</b></li>
-        <li><span><span class="medal">🥉</span>Đồng 3</span><b>2.000.000đ</b></li></ul></div>
-      <div class="pz"><header>Giải thưởng Bảng B</header><ul>
-        <li><span><span class="medal">🥇</span>Giải 1</span><b>6.000.000đ</b></li>
-        <li><span><span class="medal">🥈</span>Giải 2</span><b>3.000.000đ</b></li>
-        <li><span><span class="medal">🥉</span>Đồng 3</span><b>2.000.000đ</b></li></ul></div>
-      <div class="pz kol"><header>Giải thưởng KOL</header><ul>
-        <li><span><span class="medal">🥇</span>Giải 1</span><b>4.000.000đ</b></li>
-        <li><span><span class="medal">🥈</span>Giải 2</span><b>3.000.000đ</b></li>
-        <li><span><span class="medal">🥉</span>Đồng 3</span><b>2.000.000đ</b></li></ul></div>
-    </div>
+    <div class="pgrid rv"><div class="pz "><header>Giải thưởng Bảng A</header><div class="podium">
+<div class="pd p2"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gS)" stroke="url(#gS)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">2</text></svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gG)" stroke="url(#gG)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">1</text></svg><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
+<div class="pd p3"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gB)" stroke="url(#gB)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">3</text></svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+</div></div><div class="pz "><header>Giải thưởng Bảng B</header><div class="podium">
+<div class="pd p2"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gS)" stroke="url(#gS)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">2</text></svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gG)" stroke="url(#gG)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">1</text></svg><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
+<div class="pd p3"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gB)" stroke="url(#gB)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">3</text></svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+</div></div><div class="pz kol"><header>Giải thưởng KOL</header><div class="podium">
+<div class="pd p2"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gS)" stroke="url(#gS)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">2</text></svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gG)" stroke="url(#gG)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">1</text></svg><div class="step"><small>Giải 1</small><b>4.000.000đ</b></div></div>
+<div class="pd p3"><svg class="cup" viewBox="0 0 100 116" aria-hidden="true"><use href="#cupShape" fill="url(#gB)" stroke="url(#gB)"/>
+<path d="M30 16V40C30 56 38 66 46 71" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>
+<polygon points="50,24 54,34 65,35 57,42 59,53 50,47 41,53 43,42 35,35 46,34" fill="#fff" fill-opacity=".85"/>
+<text x="50" y="109" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="11" fill="#3b2300">3</text></svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+</div></div></div>
     <p class="total rv">Tổng giải thưởng tiền mặt: <b>31.000.000đ</b> · Cup &amp; huy chương cho các đội đạt giải</p>
     <div class="gift rv">
       <img src="assets/bi-ngo.jpg" alt="">
@@ -480,6 +610,39 @@ html{scroll-behavior:auto;overflow-x:hidden}
         <a class="btn" id="zalo-btn" href="#dang-ky" style="margin-top:12px;padding:11px 24px;font-size:16px">Tham gia group Zalo</a>
       </div>
     </div>
+    <div class="regform rv" id="form-dk">
+      <div class="eyebrow" style="margin-bottom:10px">Bước cuối</div>
+      <h3 class="ftitle">Điền thông tin đăng ký</h3>
+      <p class="fsub">Sau khi chuyển khoản, điền form dưới đây và gửi kèm hình làm thiệp. BTC sẽ xác nhận khi đủ phí + đủ thông tin.</p>
+      <form id="regForm" novalidate>
+        <label>Tên đăng ký (tên hiển thị trên thiệp) *
+          <input name="ten" type="text" placeholder="VD: Nguyễn Thị A" autocomplete="name" required maxlength="80"></label>
+        <label>Số điện thoại (Zalo) *
+          <input name="sdt" type="tel" inputmode="tel" placeholder="VD: 0901234567" autocomplete="tel" required maxlength="15"></label>
+        <fieldset><legend>Bảng thi đấu *</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="bang" value="Series A" required><span><b>Series A</b><small>Đội mạnh · mỗi VĐV &gt; 2.5</small></span></label>
+            <label class="opt"><input type="radio" name="bang" value="Series B"><span><b>Series B</b><small>Phong trào · Newbie &lt; 2.5</small></span></label>
+            <label class="opt"><input type="radio" name="bang" value="KOL"><span><b>KOL</b><small>Đôi nữ KOLs tự do</small></span></label>
+          </div></fieldset>
+        <label>Tên đồng đội (nếu có)
+          <input name="doidoi" type="text" placeholder="Đôi nữ – tên bạn đánh cặp" maxlength="80"></label>
+        <div class="up">
+          <label class="upbox" id="up1"><input type="file" name="thiep" accept="image/*" required hidden>
+            <span class="upic">🖼️</span><b>Hình cá nhân làm thiệp *</b><small>Bấm để chọn ảnh</small><img alt="" hidden></label>
+          <label class="upbox" id="up2"><input type="file" name="ck" accept="image/*" hidden>
+            <span class="upic">🧾</span><b>Hình xác nhận chuyển khoản</b><small>Không bắt buộc – nên gửi để được duyệt nhanh</small><img alt="" hidden></label>
+        </div>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+        <div class="ferr" id="ferr" role="alert"></div>
+        <button class="btn pulse fbtn" id="fbtn" type="submit">🎃 Gửi đăng ký</button>
+      </form>
+      <div class="fok" id="fok" hidden>
+        <div class="big">🎉</div><h3>Đã nhận đăng ký!</h3>
+        <p>Cảm ơn bạn. BTC sẽ xác nhận qua Zalo khi đã nhận đủ phí và thông tin. Bạn nhớ vào group Zalo của giải nhé!</p>
+        <a class="btn" href="https://zalo.me/g/notihp546" target="_blank" rel="noopener">Vào group Zalo giải</a>
+      </div>
+    </div>
     <div class="posters rv">
       <img src="assets/poster-co-cau.jpg" alt="Poster cơ cấu giải thưởng" loading="lazy" data-zoom>
       <img src="assets/poster-huong-dan.jpg" alt="Poster hướng dẫn đăng ký" loading="lazy" data-zoom>
@@ -563,6 +726,49 @@ var ZALO_LINK = "https://zalo.me/g/notihp546";
   var lb=document.getElementById('lb'),lbi=lb.querySelector('img');
   document.querySelectorAll('#gal img,[data-zoom]').forEach(function(im){im.addEventListener('click',function(){lbi.src=im.src;lb.classList.add('on')})});
   lb.addEventListener('click',function(){lb.classList.remove('on')});
+})();
+
+// Địa chỉ web app Google Apps Script (xem huong-dan-google-sheet.md) — dán link /exec vào đây
+var SHEET_ENDPOINT = "";
+(function(){
+  // đếm ngược ngày thi đấu
+  var ev=new Date('2026-10-31T09:00:00+07:00').getTime(),el=document.getElementById('evcd');
+  if(el){var d=Math.ceil((ev-Date.now())/864e5);el.textContent=d>0?('Còn '+d+' ngày nữa'):(d===0?'Hôm nay!':'Giải đã diễn ra')}
+
+  var f=document.getElementById('regForm'); if(!f) return;
+  var err=document.getElementById('ferr'),btn=document.getElementById('fbtn'),data={};
+  // nén ảnh về tối đa 1200px để gửi nhẹ, đặc biệt trên điện thoại
+  function shrink(file){return new Promise(function(ok,no){
+    var r=new FileReader();r.onerror=no;r.onload=function(){var im=new Image();im.onerror=no;im.onload=function(){
+      var k=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement('canvas');
+      c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      ok(c.toDataURL('image/jpeg',.82))};im.src=r.result};r.readAsDataURL(file)})}
+  ['up1','up2'].forEach(function(id){
+    var box=document.getElementById(id),inp=box.querySelector('input'),pv=box.querySelector('img');
+    inp.addEventListener('change',function(){
+      var fl=inp.files[0]; if(!fl) return;
+      shrink(fl).then(function(u){data[inp.name]=u;pv.src=u;pv.hidden=false;box.classList.add('has');box.querySelector('small').textContent='Đã chọn – bấm để đổi ảnh'})
+      .catch(function(){inp.value='';err.textContent='Không đọc được ảnh này, bạn thử chọn ảnh JPG/PNG khác nhé.'})
+    })});
+  f.addEventListener('submit',function(e){
+    e.preventDefault(); err.textContent='';
+    var ten=f.ten.value.trim(),sdt=f.sdt.value.replace(/[\s.\-]/g,''),bang=(f.bang.value||'');
+    if(f.website.value) return;
+    if(ten.length<2) return err.textContent='Bạn nhập tên đăng ký nhé.';
+    if(!/^(0|\+?84)\d{9}$/.test(sdt)) return err.textContent='Số điện thoại chưa đúng (VD: 0901234567).';
+    if(!bang) return err.textContent='Bạn chọn bảng thi đấu nhé.';
+    if(!data.thiep) return err.textContent='Bạn gửi kèm 1 hình cá nhân để làm thiệp nhé.';
+    if(!SHEET_ENDPOINT) return err.textContent='Form đang được kết nối – bạn vui lòng đăng ký qua group Zalo của giải nhé.';
+    btn.disabled=true;btn.textContent='Đang gửi...';
+    var payload={ten:ten,sdt:sdt,bang:bang,doidoi:f.doidoi.value.trim(),thiep:data.thiep,ck:data.ck||'',
+      gia:(Date.now()<=new Date('2026-10-15T23:59:59+07:00').getTime())?490000:590000,ua:navigator.userAgent.slice(0,120)};
+    fetch(SHEET_ENDPOINT,{method:'POST',body:JSON.stringify(payload)})
+      .then(function(r){return r.json()}).then(function(j){
+        if(!j.ok) throw new Error(j.error||'fail');
+        f.hidden=true;document.querySelector('.fsub').hidden=true;document.getElementById('fok').hidden=false;
+        document.getElementById('form-dk').scrollIntoView({block:'start'})})
+      .catch(function(){err.textContent='Gửi chưa được, bạn thử lại hoặc nhắn BTC qua group Zalo nhé.';btn.disabled=false;btn.textContent='🎃 Gửi đăng ký'})
+  });
 })();
 function copyAcc(b){
   var t=document.getElementById('acc').textContent;
