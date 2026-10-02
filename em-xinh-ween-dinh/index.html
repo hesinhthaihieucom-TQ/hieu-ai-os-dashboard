@@ -244,9 +244,9 @@ html{scroll-behavior:auto;overflow-x:hidden}
 /* ===== Cup / podium ===== */
 .podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;padding:20px 10px 16px}
 .pd{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
-.pd .cup{width:100%;max-width:100px;height:auto;filter:drop-shadow(0 8px 12px rgba(0,0,0,.55))}
+.pd .cup{width:100%;max-width:96px;height:auto;filter:drop-shadow(0 8px 12px rgba(0,0,0,.55))}
 .pd.p3 .cup{max-width:90px}
-.pd.p1 .cup{max-width:130px;filter:drop-shadow(0 0 20px rgba(255,197,49,.7))}
+.pd.p1 .cup{max-width:124px;filter:drop-shadow(0 0 20px rgba(255,197,49,.7))}
 .step{width:100%;margin-top:8px;border-radius:10px 10px 0 0;text-align:center;padding:8px 2px 10px;border:1px solid rgba(255,255,255,.14)}
 .step small{display:block;font:700 12px 'Be Vietnam Pro';letter-spacing:.06em;text-transform:uppercase;color:#d9c4ee}
 .step b{display:block;font:800 clamp(13px,3.6vw,16px) 'Be Vietnam Pro';color:var(--gold);white-space:nowrap}
@@ -316,6 +316,14 @@ html{scroll-behavior:auto;overflow-x:hidden}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="mG" x1="0" x2="1"><stop offset="0" stop-color="#7a4d08"/><stop offset=".18" stop-color="#e8b53a"/><stop offset=".38" stop-color="#fff2b0"/><stop offset=".58" stop-color="#e0a21f"/><stop offset=".8" stop-color="#fbe08a"/><stop offset="1" stop-color="#8a5a0b"/></linearGradient>
+<linearGradient id="mS" x1="0" x2="1"><stop offset="0" stop-color="#5f6877"/><stop offset=".18" stop-color="#c9d0dc"/><stop offset=".38" stop-color="#ffffff"/><stop offset=".58" stop-color="#a7b0bf"/><stop offset=".8" stop-color="#eef1f6"/><stop offset="1" stop-color="#6c7585"/></linearGradient>
+<linearGradient id="mB" x1="0" x2="1"><stop offset="0" stop-color="#5e2e0d"/><stop offset=".18" stop-color="#d98a4b"/><stop offset=".38" stop-color="#ffd2a6"/><stop offset=".58" stop-color="#b5622a"/><stop offset=".8" stop-color="#f1b184"/><stop offset="1" stop-color="#6b3510"/></linearGradient>
+<linearGradient id="inner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2203" stop-opacity=".85"/><stop offset="1" stop-color="#b9801a" stop-opacity=".4"/></linearGradient>
+<linearGradient id="plinth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2a6e"/><stop offset="1" stop-color="#1c0b30"/></linearGradient>
+<radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd86b" stop-opacity=".55"/><stop offset="1" stop-color="#ffd86b" stop-opacity="0"/></radialGradient>
+</defs></svg>
 
 <img class="moon" src="assets/trang-doi.jpg" alt="">
 <div class="top">
@@ -438,17 +446,170 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <h2 class="sec-title rv">Cơ cấu <em>giải thưởng</em></h2>
     <p class="sec-sub rv">3 bảng đấu – tiền mặt thật, vinh danh thật.</p>
     <div class="pgrid rv"><div class="pz "><header>Giải thưởng Bảng A</header><div class="podium">
-<div class="pd p2"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Hạng Nhì Em Xinh" loading="lazy"><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
-<div class="pd p1"><img class="cup" src="assets/cup-vo-dich.webp" alt="Cúp Vô Địch Em Xinh" loading="lazy"><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
-<div class="pd p3"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Đồng 3 Em Xinh" loading="lazy"><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+<div class="pd p2"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 2">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mS)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mS)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mS)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mS)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mS)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">2</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mS)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mS)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mS)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mS)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 1">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mG)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mG)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mG)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mG)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mG)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">1</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mG)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mG)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mG)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mG)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
+<div class="pd p3"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 3">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mB)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mB)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mB)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mB)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mB)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">3</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mB)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mB)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mB)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mB)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
 </div></div><div class="pz "><header>Giải thưởng Bảng B</header><div class="podium">
-<div class="pd p2"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Hạng Nhì Em Xinh" loading="lazy"><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
-<div class="pd p1"><img class="cup" src="assets/cup-vo-dich.webp" alt="Cúp Vô Địch Em Xinh" loading="lazy"><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
-<div class="pd p3"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Đồng 3 Em Xinh" loading="lazy"><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+<div class="pd p2"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 2">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mS)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mS)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mS)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mS)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mS)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">2</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mS)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mS)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mS)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mS)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 1">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mG)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mG)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mG)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mG)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mG)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">1</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mG)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mG)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mG)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mG)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Giải 1</small><b>6.000.000đ</b></div></div>
+<div class="pd p3"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 3">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mB)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mB)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mB)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mB)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mB)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">3</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mB)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mB)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mB)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mB)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
 </div></div><div class="pz kol"><header>Giải thưởng KOL</header><div class="podium">
-<div class="pd p2"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Hạng Nhì Em Xinh" loading="lazy"><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
-<div class="pd p1"><img class="cup" src="assets/cup-vo-dich.webp" alt="Cúp Vô Địch Em Xinh" loading="lazy"><div class="step"><small>Giải 1</small><b>4.000.000đ</b></div></div>
-<div class="pd p3"><img class="cup" src="assets/cup-hang-nhi.webp" alt="Cúp Đồng 3 Em Xinh" loading="lazy"><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
+<div class="pd p2"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 2">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mS)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mS)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mS)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mS)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mS)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">2</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mS)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mS)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mS)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mS)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Giải 2</small><b>3.000.000đ</b></div></div>
+<div class="pd p1"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 1">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mG)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mG)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mG)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mG)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mG)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">1</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mG)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mG)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mG)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mG)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Giải 1</small><b>4.000.000đ</b></div></div>
+<div class="pd p3"><svg class="cup" viewBox="0 0 120 156" role="img" aria-label="Cúp hạng 3">
+<ellipse cx="60" cy="150" rx="46" ry="5" fill="#000" opacity=".4"/>
+<path d="M25 30C0 26-2 70 36 74" fill="none" stroke="url(#mB)" stroke-width="7" stroke-linecap="round"/>
+<path d="M95 30C120 26 122 70 84 74" fill="none" stroke="url(#mB)" stroke-width="7" stroke-linecap="round"/>
+<path d="M22 24C22 64 40 86 60 90C80 86 98 64 98 24Z" fill="url(#mB)"/>
+<ellipse cx="60" cy="24" rx="38" ry="8.5" fill="url(#mB)"/>
+<ellipse cx="60" cy="24.5" rx="33" ry="6" fill="url(#inner)"/>
+<path d="M30 34C31 58 42 76 54 84" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+<circle cx="60" cy="56" r="15" fill="#2b0f4a" opacity=".85"/><circle cx="60" cy="56" r="13" fill="url(#mB)"/>
+<text x="60" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="20" fill="#3b2300">3</text>
+<path d="M53 90H67L65 103H55Z" fill="url(#mB)"/>
+<ellipse cx="60" cy="106" rx="13" ry="5.5" fill="url(#mB)"/>
+<path d="M54 110H66L72 126H48Z" fill="url(#mB)"/>
+<rect x="30" y="126" width="60" height="11" rx="3" fill="url(#plinth)"/>
+<rect x="38" y="128.5" width="44" height="6" rx="2" fill="url(#mB)" opacity=".9"/>
+<rect x="22" y="137" width="76" height="11" rx="4" fill="url(#plinth)"/>
+<path d="M96 6l2.2 5.6 5.6 2.2-5.6 2.2L96 21.6l-2.2-5.6-5.6-2.2 5.6-2.2z" fill="#fff" opacity=".9"/>
+</svg><div class="step"><small>Đồng 3</small><b>2.000.000đ</b></div></div>
 </div></div></div>
     <p class="total rv">Tổng giải thưởng tiền mặt: <b>31.000.000đ</b> · Cup &amp; huy chương cho các đội đạt giải</p>
     <div class="gift rv">
@@ -535,6 +696,7 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <p class="sec-sub rv">Những khoảnh khắc từ 3 mùa giải đã qua – mùa 4 Halloween sẽ còn bùng nổ hơn nữa!</p>
     <div class="gal rv" id="gal">
       <figure><img loading="lazy" src="assets/nhom-dong.jpg" alt="Toàn cảnh các VĐV"><figcaption>Hàng trăm VĐV cùng hội tụ</figcaption></figure>
+      <figure><img loading="lazy" src="assets/cup-that.jpg" alt="Cúp pha lê Em Xinh"><figcaption>Cúp pha lê Em Xinh – hàng thật</figcaption></figure>
       <figure><img loading="lazy" src="assets/cup-btc.jpg" alt="Cup vô địch"><figcaption>Cup &amp; vinh quang</figcaption></figure>
       <figure><img loading="lazy" src="assets/vay-tay.jpg" alt="Giao lưu"><figcaption>Giao lưu cực vui</figcaption></figure>
       <figure><img loading="lazy" src="assets/checkin-2.jpg" alt="Check-in"><figcaption>Check-in nhận quà</figcaption></figure>
