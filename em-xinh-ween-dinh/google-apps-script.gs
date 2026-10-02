@@ -103,7 +103,7 @@ function buildTab_(cfg) {
   sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).breakApart().setDataValidation(null);
   if (sh.getMaxColumns() > NCOL) sh.deleteColumns(NCOL + 1, sh.getMaxColumns() - NCOL);
   if (sh.getMaxColumns() < NCOL) sh.insertColumnsAfter(sh.getMaxColumns(), NCOL - sh.getMaxColumns());
-  sh.setHiddenGridlines(true);
+  sh.setHiddenGridlines(false); // giữ đường kẻ ô cho dễ nhìn
   sh.setTabColor(cfg.color);
   sh.getRange(1, 1, sh.getMaxRows(), NCOL).setFontFamily('Roboto').setFontSize(11).setFontColor(C.text).setVerticalAlignment('middle');
 
@@ -125,7 +125,8 @@ function buildTab_(cfg) {
   // cột
   for (var c = 0; c < NCOL; c++) sh.setColumnWidth(c + 1, WIDTHS[c]);
   var body = sh.getRange(DATA_ROW, 1, sh.getMaxRows() - DATA_ROW + 1, NCOL);
-  body.setBorder(false, false, true, false, false, false, C.line, SpreadsheetApp.BorderStyle.SOLID);
+  // kẻ bảng đầy đủ: viền ngoài + đường ngang + đường dọc giữa các cột
+  sh.getRange(3, 1, sh.getMaxRows() - 2, NCOL).setBorder(true, true, true, true, true, true, '#c9a3bd', SpreadsheetApp.BorderStyle.SOLID);
   sh.getRange(DATA_ROW, 1, sh.getMaxRows() - DATA_ROW + 1, 1).setNumberFormat('dd/MM/yyyy HH:mm').setHorizontalAlignment('center');
   sh.getRange(DATA_ROW, 2, sh.getMaxRows() - DATA_ROW + 1, 1).setFontWeight('bold').setWrap(true);
   sh.getRange(DATA_ROW, 3, sh.getMaxRows() - DATA_ROW + 1, 2).setHorizontalAlignment('center');
