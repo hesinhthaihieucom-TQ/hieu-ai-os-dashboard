@@ -107,8 +107,8 @@ function render(container, ctx){
       ctx.supabase.from('tc_budgets').select('*').eq('user_id', ctx.user.id).eq('month', month),
       // Chi tiêu TRƯỚC tuần này trong cùng tháng (không lấy trùng tuần đang xem, đã có ở entriesRes)
       // — để biết ngân sách tháng còn lại bao nhiêu trước khi chia cho các tuần còn lại.
-      ctx.supabase.from('tc_finance_entries').select('category_label, amount')
-        .eq('user_id', ctx.user.id).eq('type', 'expense')
+      ctx.supabase.from('tc_finance_entries').select('type, category_label, amount')
+        .eq('user_id', ctx.user.id).in('type', ['expense', 'tich_luy'])
         .gte('entry_date', month + '-01').lt('entry_date', weekStartIso),
       ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
         .eq('user_id', ctx.user.id).gte('entry_date', histStartIso).lt('entry_date', weekStartIso),
@@ -123,7 +123,7 @@ function render(container, ctx){
       const wk = isoDate(startOfWeek(e.entry_date + 'T00:00:00'));
       const w = byWeek[wk] || (byWeek[wk] = { income:0, expense:0 });
       if(e.type==='income') w.income += Number(e.amount);
-      else if(e.category_label !== TICH_LUY_CATEGORY_LABEL) w.expense += Number(e.amount);
+      else if(e.type==='expense' && e.category_label !== TICH_LUY_CATEGORY_LABEL) w.expense += Number(e.amount);
     });
     state.history = Array.from({length:8}, (_,i)=>{
       const d = new Date(state.weekStart); d.setDate(d.getDate() - 7*(i+1));
@@ -138,7 +138,9 @@ function render(container, ctx){
     (budgetsRes.data||[]).forEach(b=>{ state.budgets[b.category_label] = Number(b.limit_amount)||0; });
     state.spentBeforeThisWeek = {};
     (priorSpendRes.data||[]).forEach(e=>{
-      const key = e.category_label || 'Khác';
+      // Giao dịch type='tich_luy' (loại riêng, category_label là danh mục con Vàng/Cổ phiếu...) gộp về
+      // đúng khoá "Tích Lũy" để khớp hạn mức Tích Lũy đã đặt trong ngân sách.
+      const key = e.type==='tich_luy' ? TICH_LUY_CATEGORY_LABEL : (e.category_label || 'Khác');
       state.spentBeforeThisWeek[key] = (state.spentBeforeThisWeek[key]||0) + Number(e.amount);
     });
     const r = reflectionRes.data;
@@ -222,6 +224,8 @@ function render(container, ctx){
       const weeksRemaining = Math.max(1, weeksTotal - thisIndex + 1);
       const spentThisWeekByCategory = {};
       expenseByCategory.forEach(c=>{ spentThisWeekByCategory[c.label] = c.amount; });
+      const tichLuyThisWeek = state.entries.filter(e=>e.type==='tich_luy').reduce((s,e)=>s+Number(e.amount),0);
+      if(tichLuyThisWeek > 0) spentThisWeekByCategory[TICH_LUY_CATEGORY_LABEL] = (spentThisWeekByCategory[TICH_LUY_CATEGORY_LABEL]||0) + tichLuyThisWeek;
 
       return `
         <div class="hint-box" style="margin-bottom:14px;">Hạn mức tháng ${monthOfWeek().split('-')[1]}/${monthOfWeek().split('-')[0]} chia cho ${weeksRemaining} tuần còn lại (kể cả tuần này) — tuần nào tiêu ít/nhiều hơn gợi ý, phần chênh lệch tự dồn/bớt cho các tuần sau.</div>

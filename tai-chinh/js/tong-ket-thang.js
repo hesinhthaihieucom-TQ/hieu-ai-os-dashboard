@@ -158,7 +158,7 @@ function render(container, ctx){
       const mk = String(e.entry_date).slice(0,7);
       const m = byMonth[mk] || (byMonth[mk] = { income:0, expense:0 });
       if(e.type==='income') m.income += Number(e.amount);
-      else if(e.category_label !== TICH_LUY_CATEGORY_LABEL) m.expense += Number(e.amount);
+      else if(e.type==='expense' && e.category_label !== TICH_LUY_CATEGORY_LABEL) m.expense += Number(e.amount);
     });
     state.monthHistory = Array.from({length:6}, (_,i)=>{
       const d = new Date(hy, hm-1-(i+1), 1);

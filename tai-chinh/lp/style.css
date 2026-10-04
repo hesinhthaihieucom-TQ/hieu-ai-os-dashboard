@@ -315,3 +315,19 @@ b, strong{ color:var(--white); }
 
 .lp-old-cta{ color:rgba(36,26,3,.62); text-decoration-color:#B91C1C; font-size:.82em; }
 .lp-old-h2{ font-size:.62em; color:var(--gray2); }
+
+/* Thư viện ảnh chụp app thật (2026-10-04): vuốt ngang từng màn hình, khung điện thoại + chú thích. */
+.lp-gal-head{ margin:30px 0 14px; text-align:center; }
+.lp-gal-title{ font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:var(--gold); }
+.lp-gal-sub{ font-size:16px; color:var(--gray); margin-top:6px; line-height:1.5; }
+.lp-gal-sub b{ color:#fff; }
+.lp-gallery{ display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; padding:6px 16px 18px; margin:0 -16px; scrollbar-width:thin; }
+.lp-gal-item{ flex:0 0 74%; max-width:300px; scroll-snap-align:center; margin:0; }
+.lp-gal-phone{ border:6px solid #2b2b2b; border-radius:30px; overflow:hidden; background:#F7F4EC; box-shadow:0 14px 34px rgba(0,0,0,.5), 0 0 0 1px rgba(240,194,75,.25); max-height:560px; position:relative; }
+.lp-gal-phone img{ display:block; width:100%; height:auto; }
+.lp-gal-phone::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:46px; background:linear-gradient(transparent,rgba(247,244,236,.95)); pointer-events:none; }
+.lp-gal-item figcaption{ margin-top:12px; }
+.lp-gal-item figcaption b{ display:block; color:var(--gold-light); font-size:17px; margin-bottom:4px; }
+.lp-gal-item figcaption span{ display:block; color:var(--gray); font-size:15.5px; line-height:1.55; }
+.lp-gal-note{ text-align:center; font-size:14px; color:var(--gray2); margin-top:4px; }
+@media (min-width:701px){ .lp-gal-item{ flex-basis:280px; } .lp-gallery{ padding-left:4px; padding-right:4px; margin:0; } }

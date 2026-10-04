@@ -218,7 +218,10 @@ function render(container, ctx){
     state.incomeActual = 0;
     (entriesRes.data||[]).forEach(e=>{
       if(e.type === 'income'){ state.incomeActual += Number(e.amount); return; }
-      const key = e.category_label || 'Khác';
+      // type='tich_luy' là tiền để dành, không phải chi tiêu — gộp về khoá "Tích Lũy" để so với hạn mức
+      // Tích Lũy trong ngân sách (không cộng vào tổng đã tiêu, budgetTotals đã loại khoá này).
+      const key = e.type === 'tich_luy' ? TICH_LUY_CATEGORY_LABEL : (e.type === 'expense' ? (e.category_label || 'Khác') : null);
+      if(!key) return;
       state.budgetActuals[key] = (state.budgetActuals[key]||0) + Number(e.amount);
     });
     state.budgetForm = {};
