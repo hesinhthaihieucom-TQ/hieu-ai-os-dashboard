@@ -1,7 +1,7 @@
 (function(){
 const TOUR_STEPS = [
-  { selector: '.source-grid', title: 'Dòng tiền tháng', text: 'Tổng thu, tổng chi, tỷ lệ tiết kiệm, và DTI (tỷ lệ nợ/thu nhập nếu có khai ở Quản Lý Nợ) của tháng đang xem.' },
-  { selector: '#tk-goal-compare', title: 'Mục tiêu vs thực tế', text: 'So Lời Cam Kết đã đặt đầu tháng với số thật đạt được: thu nhập, tiết kiệm, giảm nợ (tự tính), còn tài sản mới thì bạn tự đánh dấu đã đạt hay chưa.' },
+  { selector: '.source-grid', title: 'Dòng tiền tháng', text: 'Tổng thu, tổng chi, tỷ lệ tích lũy, và DTI (tỷ lệ nợ/thu nhập nếu có khai ở Quản Lý Nợ) của tháng đang xem.' },
+  { selector: '#tk-goal-compare', title: 'Mục tiêu vs thực tế', text: 'So Lời Cam Kết đã đặt đầu tháng với số thật đạt được: thu nhập, tích lũy, giảm nợ (tự tính), còn tài sản mới thì bạn tự đánh dấu đã đạt hay chưa.' },
   { selector: '#tk-save-networth', title: 'Cân đối Tài Sản Ròng', text: 'Điền tài sản/tiêu sản-nợ để ra Tài Sản Ròng — con số QUAN TRỌNG NHẤT của trang này. Bấm lưu để cộng điểm cho Trụ Thân Tâm Bản Thể ở Điểm Nghiệp.' },
   { selector: '#tk-save-reflection', title: 'Bài học nhìn lại tháng qua', text: 'Trả lời vài câu ngắn về khoản chi hối tiếc/xứng đáng, thói quen tốt/xấu, rồi lưu lại — muốn đặt mục tiêu tháng tới thì sang Mục Tiêu & Cam Kết.' },
 ];
@@ -151,7 +151,7 @@ function render(container, ctx){
     const entries = entriesRes.data || [];
     state.cashFlow = {
       income: entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0),
-      // Tiền chuyển vào Tích Lũy không tính vào "chi tiêu thật" — loại khỏi tổng để Tỷ lệ tiết kiệm
+      // Tiền chuyển vào Tích Lũy không tính vào "chi tiêu thật" — loại khỏi tổng để Tỷ lệ tích lũy
       // không bị trừ 2 lần (xem comment TICH_LUY_CATEGORY_LABEL ở util.js).
       expense: entries.filter(e=>e.type==='expense' && e.category_label!==TICH_LUY_CATEGORY_LABEL).reduce((s,e)=>s+Number(e.amount),0),
     };
@@ -252,7 +252,7 @@ function render(container, ctx){
           <div class="source-grid">
             <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${state.cashFlow.income.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu</div></div>
             <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${state.cashFlow.expense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi</div></div>
-            <div class="source-card"><div class="ic" style="font-size:17px;">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;">${savingsRate}%</div><div class="label">Tỷ lệ tích lũy</div></div>
             ${dti!=null ? `<div class="source-card"><div class="ic" style="font-size:17px;color:${dtiColor};">${dti}%</div><div class="label">Tỷ lệ nợ/thu nhập (DTI)</div></div>` : ''}
           </div>
           ${dti!=null && dti>=36 ? `<div class="hint-box" style="margin-top:12px;">DTI ${dti}% ${dti>=43?'ở mức đáng lo (≥43%)':'ở mức cần chú ý (36-43%)'} — ngân hàng thường coi trên 43% là rủi ro cao. Cân nhắc ưu tiên trả bớt nợ trước khi vay/mua thêm.</div>` : ''}
@@ -292,7 +292,7 @@ function render(container, ctx){
 
           <button class="btn no-print" style="margin-top:14px;" id="tk-save-networth" ${state.savingNetworth?'disabled':''}>${state.savingNetworth?'Đang lưu…':'Lưu cân đối tháng này'}</button>
           <span class="no-print" id="tk-networth-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedNetworthMsg}</span>
-          <div class="hint-box" style="margin-top:12px;">Lưu cân đối tháng này giúp cộng thêm điểm cho Trụ Thân Tâm Bản Thể ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp →</a> — bỏ trống tháng nào, Điểm Nghiệp tháng đó cũng bị kéo nhẹ xuống theo. Xem xu hướng riêng phần tiết kiệm/vàng/cổ phiếu ở <a href="#danh-muc" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>, hoặc cả năm ở <a href="#tong-ket-nam" style="color:var(--accent);font-weight:600;">Tổng Kết Năm →</a>.</div>
+          <div class="hint-box" style="margin-top:12px;">Lưu cân đối tháng này giúp cộng thêm điểm cho Trụ Thân Tâm Bản Thể ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp →</a> — bỏ trống tháng nào, Điểm Nghiệp tháng đó cũng bị kéo nhẹ xuống theo. Xem xu hướng riêng phần tích lũy (gửi tiết kiệm/vàng/cổ phiếu) ở <a href="#danh-muc" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>, hoặc cả năm ở <a href="#tong-ket-nam" style="color:var(--accent);font-weight:600;">Tổng Kết Năm →</a>.</div>
 
           ${historyRows.length>1 ? `
             <div style="margin-top:20px;">
@@ -316,7 +316,7 @@ function render(container, ctx){
           <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Khoản chi/đầu tư XỨNG ĐÁNG nhất? Tại sao?</label>
           <textarea data-reflection="reflection_worth">${esc(state.reflection.reflection_worth)}</textarea>
 
-          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều gì đã ngăn cản bạn tiết kiệm được nhiều hơn?</label>
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều gì đã ngăn cản bạn tích lũy được nhiều hơn?</label>
           <textarea data-reflection="reflection_blocker">${esc(state.reflection.reflection_blocker)}</textarea>
 
           <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Thói quen tài chính TỐT đã xây dựng được tháng này?</label>
@@ -336,7 +336,7 @@ function render(container, ctx){
 
   // So Lời Cam Kết tháng này (đặt ở Mục Tiêu & Cam Kết) với thực tế đạt được — chị Quỳnh chốt
   // 2026-10-04 đặt phần so sánh ở Tổng Kết Tháng thay vì trang riêng. Thực tế: thu nhập = tổng thu
-  // đã ghi; tiết kiệm = thu − chi (cùng công thức "Tỷ lệ tiết kiệm" ở mục A); giảm nợ = tổng các
+  // đã ghi; tích lũy = thu − chi (cùng công thức "Tỷ lệ tích lũy" ở mục A); giảm nợ = tổng các
   // khoản đã trả ghi ở Quản Lý Nợ trong tháng. "Tài sản mới" mang tính chủ quan (không có con số
   // tự động nào để đối chiếu) nên để người dùng tự đánh dấu đã đạt hay chưa.
   function goalVsActualHtml(){
@@ -349,7 +349,7 @@ function render(container, ctx){
     }
     const items = [
       { label:'Thu nhập', goal:Number(g.goal_income)||0, actual:state.cashFlow.income },
-      { label:'Tiết kiệm (thu − chi)', goal:Number(g.goal_savings)||0, actual:state.cashFlow.income - state.cashFlow.expense },
+      { label:'Tích lũy (thu − chi)', goal:Number(g.goal_savings)||0, actual:state.cashFlow.income - state.cashFlow.expense },
       { label:'Giảm nợ (đã trả trong tháng)', goal:Number(g.goal_debt_reduction)||0, actual:state.debtPaid },
     ].filter(i=>i.goal > 0);
     let achieved = 0;

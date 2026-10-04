@@ -339,7 +339,7 @@ function render(container, ctx){
         </div>
 
         <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">${isIncome?'Nguồn thu (Lương, thưởng, thu nhập phụ...)':isTichLuy?'Chuyển vào đâu?':'Nội dung chi (Mua gì? Ở đâu?)'}</label>
-        <input type="text" id="gc-desc" placeholder="${isIncome?'VD: Lương tháng 8':isTichLuy?'VD: Mua vàng tiết kiệm':'VD: Ăn trưa, đổ xăng...'}" value="${esc(state.form.description)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+        <input type="text" id="gc-desc" placeholder="${isIncome?'VD: Lương tháng 8':isTichLuy?'VD: Mua vàng tích lũy':'VD: Ăn trưa, đổ xăng...'}" value="${esc(state.form.description)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
 
         <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 8px;">Số tiền (đồng)</label>
         <input type="text" inputmode="numeric" id="gc-amount" placeholder="0" value="${esc(formatThousands(state.form.amount))}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
@@ -382,7 +382,7 @@ function render(container, ctx){
       <div class="source-grid" style="margin-bottom:16px;">
         <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu ngày này</div></div>
         <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi ngày này</div></div>
-        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--gold);">${totalTichLuy.toLocaleString('vi-VN')}đ</div><div class="label">Tổng tích luỹ ngày này</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--gold);">${totalTichLuy.toLocaleString('vi-VN')}đ</div><div class="label">Tổng tích lũy ngày này</div></div>
       </div>
 
       ${state.loading ? `<div class="loading"><div class="spinner"></div></div>` : (state.entries.length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có giao dịch nào cho ngày này.</div>` : state.entries.map(e=>{

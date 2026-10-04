@@ -1,11 +1,11 @@
 (function(){
 // "Tích Lũy" — mục riêng (2026-08-26, góp ý Quỳnh: "phần tích lũy ở đâu sao e k thấy? hay tách
 // riêng hẳn ra"). KHÔNG lưu số liệu mới nào — gộp lại đúng 2 nguồn đã có sẵn nhưng đang rải rác:
-// (1) DÒNG TIỀN chuyển vào tiết kiệm mỗi lần ghi chép (tc_finance_entries, category_label='Tích Lũy',
+// (1) DÒNG TIỀN chuyển vào Tích Lũy mỗi lần ghi chép (tc_finance_entries, category_label='Tích Lũy',
 // xem TICH_LUY_CATEGORY_LABEL ở util.js) — "mỗi tháng để dành được bao nhiêu"; (2) SỐ DƯ tài sản
-// tích luỹ cuối mỗi tháng (tc_networth_snapshots.asset_savings/asset_gold_fx/asset_stocks, xem
+// tích lũy cuối mỗi tháng (tc_networth_snapshots.asset_savings/asset_gold_fx/asset_stocks, xem
 // tong-ket-thang.js) — "tổng đang có bao nhiêu". Trước đây (1) chỉ ẩn trong danh mục chi tiêu, (2)
-// chỉ là 1 dòng trong bảng Tài Sản ở Tổng Kết Tháng — không ai nhìn thấy "tích luỹ" như 1 con số
+// chỉ là 1 dòng trong bảng Tài Sản ở Tổng Kết Tháng — không ai nhìn thấy "tích lũy" như 1 con số
 // riêng cả.
 const TICH_LUY_ASSET_FIELDS = ['asset_savings', 'asset_gold_fx', 'asset_stocks'];
 
@@ -23,7 +23,7 @@ function monthLabel(m){
 }
 
 // Biểu đồ cột đơn giản, dùng chung layout với karmaHistoryChartHtml (thiet-lap-nhanh.js)/
-// networthChartHtml (tong-ket-thang.js) — luôn >=0 (số dư/dòng tiền tích luỹ không âm) nên không cần
+// networthChartHtml (tong-ket-thang.js) — luôn >=0 (số dư/dòng tiền tích lũy không âm) nên không cần
 // neo mốc 0 linh động như networthChartHtml.
 function trendChartHtml(buckets, barColor){
   if(buckets.length < 2) return '';
@@ -90,11 +90,11 @@ function render(container, ctx){
     return `
       <div class="page-head">
         <h1>Tích Lũy</h1>
-        <p>Gộp lại 2 con số đang rải rác: <b>tiền đã chuyển vào tiết kiệm mỗi tháng</b> (ghi ở Ghi Chép Hàng Ngày, danh mục "Tích Lũy") và <b>tổng số dư đang tích luỹ</b> (tiết kiệm/vàng/cổ phiếu, cập nhật ở Tổng Kết Tháng).</p>
+        <p>Gộp lại 2 con số đang rải rác: <b>tiền đã chuyển vào Tích Lũy mỗi tháng</b> (ghi ở Ghi Chép Hàng Ngày, danh mục "Tích Lũy") và <b>tổng số dư đang tích lũy</b> (gửi tiết kiệm/vàng/cổ phiếu, cập nhật ở Tổng Kết Tháng).</p>
       </div>
 
       <div class="source-grid" style="margin-bottom:24px;">
-        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${latestStock.toLocaleString('vi-VN')}đ</div><div class="label">Tổng đang tích luỹ${latest?` (${monthLabel(latest.snapshot_month)})`:''}</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;color:var(--accent);">${latestStock.toLocaleString('vi-VN')}đ</div><div class="label">Tổng đang tích lũy${latest?` (${monthLabel(latest.snapshot_month)})`:''}</div></div>
         <div class="source-card"><div class="ic" style="font-size:18px;">${thisMonthFlow.toLocaleString('vi-VN')}đ</div><div class="label">Đã để dành tháng này</div></div>
         <div class="source-card">
           <div class="ic" style="font-size:18px;${stockChange==null?'':`color:${stockChange>=0?'var(--accent)':'var(--danger)'};`}">${stockChange==null?'Chưa đủ dữ liệu':(stockChange>=0?'+':'')+stockChange.toLocaleString('vi-VN')+'đ'}</div>
@@ -102,10 +102,10 @@ function render(container, ctx){
         </div>
       </div>
 
-      ${!latest ? `<div class="hint-box" style="margin-bottom:20px;">Chưa có số liệu tài sản tích luỹ — sang <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> điền "Tiết kiệm có kỳ hạn"/"Vàng, Ngoại tệ"/"Cổ phiếu, Quỹ đầu tư" để bắt đầu theo dõi.</div>` : ''}
+      ${!latest ? `<div class="hint-box" style="margin-bottom:20px;">Chưa có số liệu tài sản tích lũy — sang <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> điền "Tiết kiệm có kỳ hạn"/"Vàng, Ngoại tệ"/"Cổ phiếu, Quỹ đầu tư" để bắt đầu theo dõi.</div>` : ''}
 
       <div class="section">
-        <h3>📈 Tổng tích luỹ theo tháng</h3>
+        <h3>📈 Tổng tích lũy theo tháng</h3>
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Tiết kiệm có kỳ hạn + Vàng/Ngoại tệ + Cổ phiếu/Quỹ đầu tư — lấy từ Tổng Kết Tháng, cập nhật mỗi khi bạn lưu cân đối tài sản ở đó.</p>
         ${stockBuckets.length < 2 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Cần ít nhất 2 tháng đã lưu cân đối tài sản để vẽ xu hướng.</div>` : trendChartHtml(stockBuckets, 'var(--accent)')}
       </div>
@@ -113,12 +113,12 @@ function render(container, ctx){
       <div class="section">
         <h3>💰 Đã để dành theo tháng</h3>
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:10px;">Tổng tiền bạn tự ghi "chuyển vào Tích Lũy" ở Ghi Chép Hàng Ngày mỗi tháng — khoản này KHÔNG tính vào chi tiêu thật, chỉ để ghi công hành động để dành.</p>
-        ${flowBuckets.length === 0 ? `<div class="hint-box">Chưa ghi khoản nào vào danh mục "Tích Lũy" — sang <a href="#ghi-chep" style="color:var(--accent);font-weight:600;">Ghi Chép Hàng Ngày →</a>, chọn danh mục "Tích Lũy" mỗi lần chuyển tiền vào tiết kiệm/đầu tư.</div>`
+        ${flowBuckets.length === 0 ? `<div class="hint-box">Chưa ghi khoản nào vào danh mục "Tích Lũy" — sang <a href="#ghi-chep" style="color:var(--accent);font-weight:600;">Ghi Chép Hàng Ngày →</a>, chọn danh mục "Tích Lũy" mỗi lần tích lũy tiền (gửi tiết kiệm, mua vàng, đầu tư...).</div>`
           : flowBuckets.length < 2 ? trendChartHtml([...flowBuckets, {month:nextMonthKey(flowBuckets[0].month), value:0}], 'var(--gold)')
           : trendChartHtml(flowBuckets, 'var(--gold)')}
       </div>
 
-      <div class="hint-box" style="margin-top:4px;">Tích luỹ đều đặn là 1 phần của Trụ <b>Tài Chính Tâm Thức</b> ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp →</a> — Tỷ lệ tiết kiệm ở đó tính từ đúng dòng tiền thu/chi thật, khớp với số liệu ở trang này.</div>
+      <div class="hint-box" style="margin-top:4px;">Tích lũy đều đặn là 1 phần của Trụ <b>Tài Chính Tâm Thức</b> ở <a href="#thiet-lap-nhanh" style="color:var(--accent);font-weight:600;">Điểm Nghiệp →</a> — Tỷ lệ tích lũy ở đó tính từ đúng dòng tiền thu/chi thật, khớp với số liệu ở trang này.</div>
     `;
   }
 

@@ -15,7 +15,7 @@ const REFRAME_MESSAGES = [
 // Chỉ trỏ vào bước 'goal' (state.step mặc định) — 'reaction'/'summary' chỉ hiện SAU khi đã lưu mục
 // tiêu lần đầu, không phải màn hình mọi người luôn thấy khi mới vào trang.
 const TOUR_STEPS = [
-  { selector: '[data-goal="goal_income"]', title: 'Đặt mục tiêu tháng này', text: 'Điền mục tiêu thu nhập/tiết kiệm/giảm nợ/tài sản mới — đặt TRƯỚC khi ghi chép, không phải chuyện cuối tháng mới nghĩ tới.' },
+  { selector: '[data-goal="goal_income"]', title: 'Đặt mục tiêu tháng này', text: 'Điền mục tiêu thu nhập/tích lũy/giảm nợ/tài sản mới — đặt TRƯỚC khi ghi chép, không phải chuyện cuối tháng mới nghĩ tới.' },
   { selector: '#mt-house-chips', title: 'Gắn vào Trụ Cột', text: 'Chọn mục tiêu này phục vụ Trụ Cột nào — giúp mục tiêu có ý nghĩa cảm xúc thật, không chỉ là con số khô khan.' },
   { selector: '#mt-save-goal', title: 'Lưu Lời Cam Kết', text: 'Sau khi lưu, bạn sẽ được hỏi Tiếng Lòng — cảm xúc thật ngay lúc vừa đặt mục tiêu, dù đó là hoài nghi hay sợ hãi.' },
   { selector: '#mt-obstacle-input', title: 'Nhật Ký Rắc Rối', text: 'Có chuyện gì vừa cản trở bạn trên đường tới mục tiêu? Ghi lại ngay lúc vừa xảy ra, app sẽ phản chiếu lại 1 góc nhìn khác ngay bên dưới.' },
@@ -60,7 +60,7 @@ function render(container, ctx){
   // Tổng ngân sách + cân đối với thu nhập/mục tiêu — tính lại NGAY mỗi lần gõ hạn mức (chị Quỳnh
   // 2026-10-04: "tính tổng ra cho mình mỗi khi nhập số liệu để cân đối ngân sách cho hợp lý").
   // Danh mục Tích Lũy KHÔNG tính là chi tiêu (cùng quy ước TICH_LUY_CATEGORY_LABEL ở Tổng Kết
-  // Tháng — tiền chuyển vào tiết kiệm, không phải tiêu mất), nên loại khỏi cả tổng hạn mức lẫn tổng
+  // Tháng — tiền chuyển vào Tích Lũy, không phải tiêu mất), nên loại khỏi cả tổng hạn mức lẫn tổng
   // đã tiêu. Mốc thu nhập: ưu tiên Mục tiêu thu nhập đã đặt, chưa đặt thì dùng thu nhập thật đã ghi.
   function budgetTotals(){
     const keys = budgetCategoryKeys().filter(k=>k !== TICH_LUY_CATEGORY_LABEL);
@@ -85,11 +85,11 @@ function render(container, ctx){
     } else if(t.remaining < 0){
       verdict = `⚠️ Ngân sách đang VƯỢT thu nhập ${fmt(-t.remaining)} — cần cắt giảm bớt ở 1-2 danh mục.`;
     } else if(t.needSavings > 0 && t.remaining < t.needSavings){
-      verdict = `⚠️ Còn lại ${fmt(t.remaining)} nhưng mục tiêu tiết kiệm + giảm nợ cần ${fmt(t.needSavings)} — đang thiếu ${fmt(t.needSavings - t.remaining)}.`;
+      verdict = `⚠️ Còn lại ${fmt(t.remaining)} nhưng mục tiêu tích lũy + giảm nợ cần ${fmt(t.needSavings)} — đang thiếu ${fmt(t.needSavings - t.remaining)}.`;
     } else if(t.needSavings > 0){
-      verdict = `✅ Đủ để thực hiện mục tiêu tiết kiệm + giảm nợ (${fmt(t.needSavings)}), còn dư ${fmt(t.remaining - t.needSavings)}.`;
+      verdict = `✅ Đủ để thực hiện mục tiêu tích lũy + giảm nợ (${fmt(t.needSavings)}), còn dư ${fmt(t.remaining - t.needSavings)}.`;
     } else {
-      verdict = `Còn ${fmt(t.remaining)} chưa phân bổ — có thể dành cho tiết kiệm hoặc giảm nợ.`;
+      verdict = `Còn ${fmt(t.remaining)} chưa phân bổ — có thể dành cho tích lũy hoặc giảm nợ.`;
     }
     return `
       ${row('Tổng ngân sách đã đặt', fmt(t.totalLimit))}
@@ -97,7 +97,7 @@ function render(container, ctx){
       ${t.incomeRef > 0 ? row('Còn lại sau ngân sách', fmt(t.remaining), t.remaining >= 0 ? 'var(--accent)' : 'var(--danger)') : ''}
       ${t.totalLimit > 0 ? row('Đã tiêu / ngân sách', `${fmt(t.totalSpent)} / ${fmt(t.totalLimit)}`, t.totalSpent > t.totalLimit ? 'var(--danger)' : '') : ''}
       <div style="margin-top:8px;font-size:15px;line-height:1.55;font-weight:600;">${verdict}</div>
-      <div style="margin-top:6px;font-size:13.5px;color:var(--ink-soft);">Không tính danh mục Tích Lũy (tiền chuyển vào tiết kiệm, không phải chi tiêu).</div>
+      <div style="margin-top:6px;font-size:13.5px;color:var(--ink-soft);">Không tính danh mục Tích Lũy (đó là tiền để dành, không phải chi tiêu).</div>
     `;
   }
   function budgetSummaryBlockHtml(){
@@ -242,7 +242,7 @@ function render(container, ctx){
           <input type="text" inputmode="numeric" data-goal="goal_income" data-money value="${esc(formatThousands(state.goal.goal_income))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
-          <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu tiết kiệm (đ)</label>
+          <label style="display:block;font-size:14px;color:var(--ink-soft);margin-bottom:4px;">Mục tiêu tích lũy (đ)</label>
           <input type="text" inputmode="numeric" data-goal="goal_savings" data-money value="${esc(formatThousands(state.goal.goal_savings))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
         </div>
         <div>
@@ -283,7 +283,7 @@ function render(container, ctx){
   function summaryCardHtml(){
     const rows = [
       state.goal.goal_income && ['Mục tiêu thu nhập', Number(state.goal.goal_income).toLocaleString('vi-VN')+'đ'],
-      state.goal.goal_savings && ['Mục tiêu tiết kiệm', Number(state.goal.goal_savings).toLocaleString('vi-VN')+'đ'],
+      state.goal.goal_savings && ['Mục tiêu tích lũy', Number(state.goal.goal_savings).toLocaleString('vi-VN')+'đ'],
       state.goal.goal_debt_reduction && ['Mục tiêu giảm nợ', Number(state.goal.goal_debt_reduction).toLocaleString('vi-VN')+'đ'],
       state.goal.goal_new_asset && ['Mục tiêu tài sản mới', Number(state.goal.goal_new_asset).toLocaleString('vi-VN')+'đ' + (state.goal.goal_new_asset_type?` (${esc(state.goal.goal_new_asset_type)})`:'')],
     ].filter(Boolean);
@@ -318,7 +318,7 @@ function render(container, ctx){
           ${state.pastGoals.map(g=>{
             const parts = [
               Number(g.goal_income) && `Thu nhập ${fmt(g.goal_income)}`,
-              Number(g.goal_savings) && `Tiết kiệm ${fmt(g.goal_savings)}`,
+              Number(g.goal_savings) && `Tích lũy ${fmt(g.goal_savings)}`,
               Number(g.goal_debt_reduction) && `Giảm nợ ${fmt(g.goal_debt_reduction)}`,
               (Number(g.goal_new_asset) || (g.goal_new_asset_type||'').trim()) && `Tài sản mới${Number(g.goal_new_asset)?' '+fmt(g.goal_new_asset):''}${(g.goal_new_asset_type||'').trim()?' ('+esc(g.goal_new_asset_type)+')':''}`,
             ].filter(Boolean);
@@ -454,7 +454,7 @@ function render(container, ctx){
       el.oninput = ()=>{
         if(el.hasAttribute('data-money')){ el.value = formatThousands(el.value); state.goal[el.getAttribute('data-goal')] = onlyDigits(el.value); }
         else state.goal[el.getAttribute('data-goal')] = el.value;
-        updateBudgetSummary(); // mục tiêu thu nhập/tiết kiệm/giảm nợ là mốc cân đối của ngân sách ở dưới
+        updateBudgetSummary(); // mục tiêu thu nhập/tích lũy/giảm nợ là mốc cân đối của ngân sách ở dưới
         persistDraft();
       };
     });

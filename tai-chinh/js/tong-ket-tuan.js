@@ -1,6 +1,6 @@
 (function(){
 const TOUR_STEPS = [
-  { selector: '.source-grid', title: 'Tổng quan tuần', text: 'Tổng thu, tổng chi, và tỷ lệ tiết kiệm của tuần đang xem — bấm "← Tuần trước"/"Tuần sau →" ở trên để xem lại tuần khác.' },
+  { selector: '.source-grid', title: 'Tổng quan tuần', text: 'Tổng thu, tổng chi, và tỷ lệ tích lũy của tuần đang xem — bấm "← Tuần trước"/"Tuần sau →" ở trên để xem lại tuần khác.' },
   { selector: '#tt-feeling-chips', title: 'Nhận xét & đánh giá tuần', text: 'Chấm điểm cảm giác chi tiêu và trả lời vài câu ngắn — 5 câu chấm điểm bên dưới tương ứng đúng 5 Trụ Cột ở Điểm Nghiệp.' },
   { selector: '#tt-save', title: 'Lưu nhận xét tuần', text: 'Lưu lại để Trang chủ và Điểm Nghiệp cập nhật theo đúng cảm nhận thật của bạn tuần này.' },
 ];
@@ -147,7 +147,7 @@ function render(container, ctx){
     const income = state.entries.filter(e=>e.type==='income');
     const expense = state.entries.filter(e=>e.type==='expense');
     const totalIncome = income.reduce((s,e)=>s+Number(e.amount),0);
-    // Tiền chuyển vào Tích Lũy KHÔNG tính vào "chi tiêu thật" — loại khỏi tổng để Tỷ lệ tiết kiệm
+    // Tiền chuyển vào Tích Lũy KHÔNG tính vào "chi tiêu thật" — loại khỏi tổng để Tỷ lệ tích lũy
     // không bị trừ 2 lần (xem comment TICH_LUY_CATEGORY_LABEL ở util.js). Vẫn hiện đủ ở breakdown
     // theo danh mục bên dưới.
     const totalExpense = expense.filter(e=>e.category_label !== TICH_LUY_CATEGORY_LABEL).reduce((s,e)=>s+Number(e.amount),0);
@@ -242,7 +242,7 @@ function render(container, ctx){
         <div class="source-grid" style="margin-bottom:16px;">
           <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu nhập</div></div>
           <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi tiêu</div></div>
-          <div class="source-card"><div class="ic" style="font-size:17px;color:${savingsRate>=20?'var(--accent)':'var(--ink)'};">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;color:${savingsRate>=20?'var(--accent)':'var(--ink)'};">${savingsRate}%</div><div class="label">Tỷ lệ tích lũy</div></div>
         </div>
 
         <div class="section">
@@ -284,7 +284,7 @@ function render(container, ctx){
           <textarea id="tt-unexpected" placeholder="Có khoản chi phát sinh ngoài dự tính không?">${esc(state.reflection.unexpected_expense)}</textarea>
 
           <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều làm ĐƯỢC tốt tuần này</label>
-          <textarea id="tt-went-well" placeholder="Bạn đã làm tốt điều gì về chi tiêu/tiết kiệm?">${esc(state.reflection.went_well)}</textarea>
+          <textarea id="tt-went-well" placeholder="Bạn đã làm tốt điều gì về chi tiêu/tích lũy?">${esc(state.reflection.went_well)}</textarea>
 
           <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;">Điều cần THAY ĐỔI tuần tới</label>
           <textarea id="tt-to-change" placeholder="Tuần tới bạn muốn thay đổi điều gì?">${esc(state.reflection.to_change)}</textarea>

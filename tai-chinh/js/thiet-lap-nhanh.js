@@ -54,7 +54,7 @@ const VIBE_QUESTIONS = {
     ],
   },
   asset: {
-    q: 'Động cơ sâu nhất khiến bạn muốn tích luỹ nhiều tài sản hơn là gì?',
+    q: 'Động cơ sâu nhất khiến bạn muốn tích lũy nhiều tài sản hơn là gì?',
     options: [
       { k:'A', points:10, label:'🟢 Phụng sự, kiến tạo', d:'Để lo cho gia đình ấm êm và tạo thêm giá trị cho người khác.' },
       { k:'B', points:5, label:'🟡 Sĩ diện, công nhận', d:'Để chứng minh năng lực bản thân, để người khác nể phục.' },
@@ -205,7 +205,7 @@ const PILLAR_DEEP_ANALYSIS = {
   than_tam_ban_the: {
     wound: 'Có thể bạn đã lớn lên trong một gia đình mà mỗi lần có biến cố — mất việc, ốm đau, thiên tai — cả nhà lập tức rơi vào hoảng loạn vì không có gì để xoay xở. Đứa trẻ ngày ấy chứng kiến sự bất lực đó và âm thầm ghi vào Tàng Thức một niềm tin sinh tồn: <b>"Thế giới này nguy hiểm, mình phải luôn cảnh giác vì tai hoạ có thể ập đến bất cứ lúc nào."</b> Niềm tin ấy khiến bạn lớn lên với một hệ thần kinh <b>luôn trong trạng thái phòng thủ</b> trước tiền bạc, dù bên ngoài bạn có thể trông rất bình tĩnh.',
     drains: [
-      { label:'Ví tiền của bạn', text:'Bạn tích luỹ nhưng <b>không bao giờ thấy đủ</b> — quỹ dự phòng dù đã có vẫn không mang lại cảm giác an toàn thật, vì gốc rễ nỗi sợ không nằm ở con số mà ở niềm tin bên trong.' },
+      { label:'Ví tiền của bạn', text:'Bạn tích lũy nhưng <b>không bao giờ thấy đủ</b> — quỹ dự phòng dù đã có vẫn không mang lại cảm giác an toàn thật, vì gốc rễ nỗi sợ không nằm ở con số mà ở niềm tin bên trong.' },
       { label:'Cơ thể vật lý', text:'Sự cảnh giác thường trực khiến hệ thần kinh của bạn <b>không bao giờ được thả lỏng hoàn toàn</b> — dễ mất ngủ, dễ hồi hộp vô cớ, đặc biệt vào cuối tháng hoặc trước ngày trả nợ.' },
       { label:'Bạn đời & mối quan hệ', text:'Bạn khó chia sẻ thật lòng nỗi lo tài chính vì sợ làm người kia hoảng sợ theo, nên <b>gánh một mình trong im lặng</b> — điều này âm thầm tạo khoảng cách dù cả hai vẫn ở cạnh nhau.' },
       { label:'Sự nghiệp', text:'Nỗi sợ thiếu hụt khiến bạn <b>khó từ chối công việc, khó nghỉ ngơi đúng nghĩa</b>, vì luôn có một tiếng nói bên trong nhắc rằng dừng lại là nguy hiểm.' },
@@ -251,15 +251,15 @@ const PILLAR_DEEP_ANALYSIS = {
     secret: 'Bạn đã đọc nhiều về tài chính, hiểu rõ lý thuyết — nhưng vì sao ví tiền vẫn rò rỉ, áp lực vẫn đè nặng mỗi ngày? Vì tâm trí luôn tìm được lý do rất hợp lý để che giấu nỗi sợ bên dưới: "mình chi tiêu xót xa vì đang gánh nhiều nghĩa vụ quá" — nhưng thực chất là <b>lồng ngực đang hoảng sợ, không phải hoá đơn đang sai</b>. Nghiệp tài chính chỉ buông khi <b>bị bắt quả tang ngay lúc đang vận hành</b> — đó là lý do mỗi câu Vibe Check ở Chấm Điểm Nghiệp Tiền và mỗi lần Ghi Chép Hàng Ngày đều hỏi CẢM XÚC ngay lúc tiền vào/ra, không chỉ con số. Nhìn lại sau vài tuần, bạn sẽ tự bắt quả tang được: "à, hoá ra mình toàn xót của vào đúng những lúc chi cho việc cần thiết nhất" — và đó là khoảnh khắc vòng lặp bắt đầu lỏng ra.',
   },
   thuan_phap_nhan_qua: {
-    wound: 'Có thể bạn từng chứng kiến của cải tan biến chỉ sau một biến cố, hoặc từng bị dạy rằng phải giữ chặt những gì mình có vì "cho đi là mất, là dại". Đứa trẻ ngày ấy học được: <b>"Thế giới này khan hiếm, ai giữ được nhiều hơn thì an toàn hơn."</b> Niềm tin khan hiếm đó khiến việc tích luỹ trở thành <b>một cuộc chạy trốn nỗi sợ</b>, thay vì một hành trình kiến tạo giá trị.',
+    wound: 'Có thể bạn từng chứng kiến của cải tan biến chỉ sau một biến cố, hoặc từng bị dạy rằng phải giữ chặt những gì mình có vì "cho đi là mất, là dại". Đứa trẻ ngày ấy học được: <b>"Thế giới này khan hiếm, ai giữ được nhiều hơn thì an toàn hơn."</b> Niềm tin khan hiếm đó khiến việc tích lũy trở thành <b>một cuộc chạy trốn nỗi sợ</b>, thay vì một hành trình kiến tạo giá trị.',
     drains: [
-      { label:'Ví tiền của bạn', text:'Bạn có thể tích luỹ được tài sản, nhưng <b>luôn thấy chưa đủ</b> — vì gốc rễ động cơ là nỗi sợ thiếu, mà nỗi sợ thì không bao giờ được thoả mãn bằng con số.' },
+      { label:'Ví tiền của bạn', text:'Bạn có thể tích lũy được tài sản, nhưng <b>luôn thấy chưa đủ</b> — vì gốc rễ động cơ là nỗi sợ thiếu, mà nỗi sợ thì không bao giờ được thoả mãn bằng con số.' },
       { label:'Cơ thể vật lý', text:'Nỗi lo giữ của khiến bạn <b>khó thật sự thư giãn</b>, ngay cả khi tài chính đã ổn định — cơ thể vẫn ở trạng thái phòng thủ.' },
       { label:'Bạn đời & mối quan hệ', text:'Sự khan hiếm trong tâm trí có thể khiến bạn <b>tính toán ngay cả với người thân</b>, làm mối quan hệ nặng nề hơn cần thiết.' },
       { label:'Sự nghiệp', text:'Bạn có thể <b>bỏ lỡ những cơ hội hợp tác</b> hoặc cho đi giá trị (thời gian, kiến thức, sự giúp đỡ) vì sợ "mất phần" — trong khi chính sự cởi mở đó thường lại là thứ mở ra cơ hội mới.' },
       { label:'Con cái của bạn', text:'Con học được rằng <b>tiền bạc là thứ phải giữ chặt, phải đề phòng</b>, thay vì một dòng chảy có thể luân chuyển tự nhiên.' },
     ],
-    future: 'Bạn có thể tích luỹ được nhiều tài sản hơn, nhưng <b>cảm giác đủ đầy thật sự vẫn sẽ lảng tránh</b> — vì bạn đang cố lấp một nỗi sợ khan hiếm bằng con số, trong khi gốc rễ vấn đề nằm ở niềm tin, không phải ở số dư tài khoản.',
+    future: 'Bạn có thể tích lũy được nhiều tài sản hơn, nhưng <b>cảm giác đủ đầy thật sự vẫn sẽ lảng tránh</b> — vì bạn đang cố lấp một nỗi sợ khan hiếm bằng con số, trong khi gốc rễ vấn đề nằm ở niềm tin, không phải ở số dư tài khoản.',
     secret: 'Phước phần đúng gốc rễ <b>không nằm ở việc giữ được bao nhiêu, mà ở việc dòng chảy cho-nhận có được lưu thông hay không</b>. Đây là lý do quỹ "🎁 Cho Đi 5%" tồn tại trong Ghi Chép Hàng Ngày — không phải để bạn nghèo đi, mà để mỗi tháng bạn thực chứng lại một điều: <b>cho đi trong sự đủ đầy không làm bạn thiếu hụt</b>, mà thường mở ra đúng lúc một cánh cửa khác. Nhìn lại sau vài tháng thực hành, bạn sẽ tự thấy — nỗi sợ "cho rồi sẽ thiếu" hoá ra không đúng như tâm trí từng doạ bạn.',
   },
 };
@@ -315,7 +315,7 @@ function deepAnalysisHtml(houseKey, houseLabel){
 // Điểm Nghiệp (radar 5 Trụ Cột) — DI CHUYỂN nguyên từ trang-chu.js sang đây (2026-08-24, góp ý
 // Quỳnh: "cái màn hình radar điểm nghiệp này ở luôn cái mục chấm điểm nghiệp"). Trang chủ giờ chỉ còn
 // là màn chào + checklist quy trình (xem trang-chu.js, đổi hẳn sang kiểu y hệt nhan-hieu/js/home.js).
-// LUÔN tính lại từ dữ liệu thô mỗi lần render (không lưu điểm tích luỹ) — xem giải thích đầy đủ ở
+// LUÔN tính lại từ dữ liệu thô mỗi lần render (không lưu điểm tích lũy) — xem giải thích đầy đủ ở
 // comment gốc lúc mới thêm tính năng này (trước đây nằm ở trang-chu.js).
 // Mặc định 0 khi CHƯA CÓ dữ liệu gì (không phải 50 trung tính như trước) — góp ý Quỳnh 2026-08-26:
 // "người lần đầu làm thì radar phải là 0 tất cả, sau khi làm xong mới nhảy điểm". Đổi cả 3 hàm dưới
@@ -558,7 +558,7 @@ function render(container, ctx){
     if(dti >= 43) note = `Áp lực trả nợ đang ở mức đáng lo (${dti}% thu nhập) — ưu tiên số 1 lúc này là giảm bớt khoản trả nợ hàng tháng trước khi tính tới mục tiêu khác.`;
     else if(efMonths!=null && efMonths < 1) note = 'Quỹ dự phòng gần như chưa có — nên ưu tiên gây dựng trước khi mở rộng mục tiêu tài chính khác.';
     else if(efMonths!=null && efMonths < 3) note = 'Quỹ dự phòng còn khá mỏng — nên ưu tiên củng cố trước khi mở rộng mục tiêu tài chính khác.';
-    else if(savingsRate < 0) note = 'Chi tiêu đang vượt thu nhập — đây là điểm cần nhìn thẳng vào đầu tiên, trước khi bàn tới tích luỹ hay đầu tư.';
+    else if(savingsRate < 0) note = 'Chi tiêu đang vượt thu nhập — đây là điểm cần nhìn thẳng vào đầu tiên, trước khi bàn tới tích lũy hay đầu tư.';
     else if(dti >= 36) note = `Áp lực trả nợ đang ở mức cần chú ý (${dti}% thu nhập) — cân nhắc ưu tiên trả bớt trước khi vay/mua thêm.`;
     else note = 'Bức tranh hiện tại khá ổn — duy trì đều đặn và bắt đầu đặt mục tiêu cụ thể ở phần Mục Tiêu & Cam Kết.';
 
@@ -772,7 +772,7 @@ function render(container, ctx){
         <h3>🧭 Bức tranh tài chính của bạn</h3>
         <div class="source-grid">
           <div class="source-card"><div class="ic" style="font-size:17px;color:${r.cashFlow>=0?'var(--accent)':'var(--danger)'};">${r.cashFlow>=0?'+':''}${r.cashFlow.toLocaleString('vi-VN')}tr</div><div class="label">Dòng tiền/tháng</div></div>
-          <div class="source-card"><div class="ic" style="font-size:17px;">${r.savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+          <div class="source-card"><div class="ic" style="font-size:17px;">${r.savingsRate}%</div><div class="label">Tỷ lệ tích lũy</div></div>
           <div class="source-card"><div class="ic" style="font-size:17px;">${r.efMonths==null?'—':r.efMonths+' tháng'}</div><div class="label">Dự phòng</div></div>
           <div class="source-card"><div class="ic" style="font-size:17px;color:${r.netWorth>=0?'var(--accent)':'var(--danger)'};">${r.netWorth.toLocaleString('vi-VN')}tr</div><div class="label">Tài sản ròng</div></div>
           <div class="source-card"><div class="ic" style="font-size:17px;color:${r.dti>=36?'var(--danger)':'var(--ink)'};">${r.dti}%</div><div class="label">Áp lực trả nợ</div></div>
@@ -887,7 +887,7 @@ function render(container, ctx){
           <div class="label">Tài sản ròng${state.netWorthMonth?` (${esc(state.netWorthMonth)})`:''}</div>
         </div>
         <div class="source-card"><div class="ic" style="font-size:18px;${state.totalDebt>0?'color:var(--danger);':''}">${state.totalDebt.toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
-        <div class="source-card"><div class="ic" style="font-size:18px;">${state.tichLuy==null?'Chưa có':state.tichLuy.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ (<a href="#danh-muc" style="color:var(--accent);">xem →</a>)</div></div>
+        <div class="source-card"><div class="ic" style="font-size:18px;">${state.tichLuy==null?'Chưa có':state.tichLuy.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích lũy (<a href="#danh-muc" style="color:var(--accent);">xem →</a>)</div></div>
       </div>
 
       ${state.upcomingDebts.length>0 ? `
@@ -1093,7 +1093,7 @@ function render(container, ctx){
           <h3>Bước 8 · Cội Nguồn, Mối Quan Hệ & Cho Đi</h3>
           <p style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;">4 câu này không liên quan số liệu.</p>
           <p style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;"><b>2 câu đầu</b> giúp Điểm Nghiệp có dữ liệu thật ngay từ đầu ở cả 5 Trụ Cột.</p>
-          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:0;"><b>2 câu sau</b> giúp chẩn đoán đủ hơn khâu đang yếu nhất (kể cả khi thấy người khác nhận tiền), và soi thêm phần <b>"cho đi"</b> — gốc rễ thật của phước phần, không chỉ riêng chuyện tích luỹ.</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:0;"><b>2 câu sau</b> giúp chẩn đoán đủ hơn khâu đang yếu nhất (kể cả khi thấy người khác nhận tiền), và soi thêm phần <b>"cho đi"</b> — gốc rễ thật của phước phần, không chỉ riêng chuyện tích lũy.</p>
           ${vibeQuestionHtml('parents')}
           ${vibeQuestionHtml('partner')}
           ${vibeQuestionHtml('witness_receive')}

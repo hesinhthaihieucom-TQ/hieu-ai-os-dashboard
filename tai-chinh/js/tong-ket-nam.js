@@ -2,7 +2,7 @@
 // "Tổng Kết Năm" (2026-08-26, góp ý Quỳnh: thêm tổng kết năm, liên kết với Chấm Điểm Nghiệp Tiền +
 // Hạt Giống Phước - Nghiệp). KHÔNG tính lại từ đầu — gộp lại đúng dữ liệu đã có sẵn của cả năm:
 // - Số liệu tài chính: tc_finance_entries (thu/chi cả năm) + tc_networth_snapshots (tài sản ròng/
-//   tích luỹ đầu năm so với cuối năm, dùng CHUNG công thức với tich-luy.js).
+//   tích lũy đầu năm so với cuối năm, dùng CHUNG công thức với tich-luy.js).
 // - Điểm Nghiệp cuối năm: trung bình mọi lần "💾 Lưu kết quả này" trong năm ở tc_karma_history
 //   (KHÔNG bắt làm lại 1 bài chấm điểm riêng cho tổng kết năm — dùng thẳng lịch sử đã lưu).
 // - Hạt Giống trong năm: tc_core_beliefs tạo trong năm, tách đã chuyển hoá (still_active=false)/
@@ -121,9 +121,9 @@ function render(container, ctx){
           <div class="source-grid">
             <div class="source-card"><div class="ic" style="font-size:17px;color:var(--accent);">${state.totalIncome.toLocaleString('vi-VN')}đ</div><div class="label">Tổng thu cả năm</div></div>
             <div class="source-card"><div class="ic" style="font-size:17px;color:var(--danger);">${state.totalExpense.toLocaleString('vi-VN')}đ</div><div class="label">Tổng chi cả năm</div></div>
-            <div class="source-card"><div class="ic" style="font-size:17px;">${savingsRate}%</div><div class="label">Tỷ lệ tiết kiệm</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;">${savingsRate}%</div><div class="label">Tỷ lệ tích lũy</div></div>
             <div class="source-card"><div class="ic" style="font-size:17px;${netWorthChange==null?'':`color:${netWorthChange>=0?'var(--accent)':'var(--danger)'};`}">${netWorthChange==null?'Chưa đủ dữ liệu':(netWorthChange>=0?'+':'')+netWorthChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tài sản ròng thay đổi</div></div>
-            <div class="source-card"><div class="ic" style="font-size:17px;${tichLuyChange==null?'':`color:${tichLuyChange>=0?'var(--accent)':'var(--danger)'};`}">${tichLuyChange==null?'Chưa đủ dữ liệu':(tichLuyChange>=0?'+':'')+tichLuyChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích luỹ thay đổi</div></div>
+            <div class="source-card"><div class="ic" style="font-size:17px;${tichLuyChange==null?'':`color:${tichLuyChange>=0?'var(--accent)':'var(--danger)'};`}">${tichLuyChange==null?'Chưa đủ dữ liệu':(tichLuyChange>=0?'+':'')+tichLuyChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích lũy thay đổi</div></div>
           </div>
           <div class="hint-box" style="margin-top:10px;">Dựa vào cân đối tài sản đã lưu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> đầu năm và tháng gần nhất trong năm ${state.year}. Xem xu hướng chi tiết hơn ở <a href="#danh-muc" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>.</div>
         </div>

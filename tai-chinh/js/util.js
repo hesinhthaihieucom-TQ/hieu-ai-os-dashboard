@@ -339,11 +339,11 @@ const SUGGESTED_EXPENSE_CATEGORIES = [
   'Trả góp nhà / xe', 'Đồ dùng thiết yếu', 'Giáo dục / Sách vở', 'Quà tặng / Việc xã hội',
   'Tích Lũy', 'Trả nợ', 'Khác',
 ];
-// Danh mục RIÊNG cho hành động "chuyển tiền vào tiết kiệm" (2026-09-01, góp ý Quỳnh) — ghi dưới dạng
+// Danh mục RIÊNG cho hành động "chuyển tiền vào Tích Lũy" (2026-09-01, góp ý Quỳnh) — ghi dưới dạng
 // 1 dòng chi để có chỗ "ghi công" hành động để dành (giống app Money Lover), NHƯNG không phải tiền
-// mất đi thật nên PHẢI loại khỏi Tổng chi tiêu/Tỷ lệ tiết kiệm ở tong-ket-tuan.js/tong-ket-thang.js
+// mất đi thật nên PHẢI loại khỏi Tổng chi tiêu/Tỷ lệ tích lũy ở tong-ket-tuan.js/tong-ket-thang.js
 // — nếu không loại, tiền để dành bị trừ 2 lần (vừa tính là "chi" vừa không còn nằm trong "thu-chi"),
-// làm Tỷ lệ tiết kiệm hiện THẤP hơn thực tế. Vẫn hiện bình thường ở biểu đồ/list theo danh mục.
+// làm Tỷ lệ tích lũy hiện THẤP hơn thực tế. Vẫn hiện bình thường ở biểu đồ/list theo danh mục.
 const TICH_LUY_CATEGORY_LABEL = 'Tích Lũy';
 const SUGGESTED_INCOME_CATEGORIES = [
   'Lương', 'Thưởng', 'Hoa hồng kinh doanh', 'Đầu tư / Lãi', 'Được tặng / biếu', 'Khác',
@@ -605,7 +605,7 @@ const GLOSSARY = {
   tai_san: { term:'Tài sản', explain:'Thứ mang lại TIỀN cho bạn theo thời gian — tiết kiệm, vàng, cổ phiếu, bất động sản cho thuê... Tài sản càng nhiều, dòng tiền chảy VÀO tương lai của bạn càng lớn. VD dễ nhớ: mua vàng/gửi tiết kiệm/mua cổ phiếu — tiền vẫn của bạn, còn sinh thêm.' },
   tieu_san: { term:'Tiêu sản', explain:'Thứ LẤY TIỀN của bạn theo thời gian — mất giá trị dần, tốn phí duy trì hàng tháng (xe hơi, đồ điện tử, nợ thẻ tín dụng chưa trả...). Không xấu, nhưng cần ý thức rõ nó đang lấy tiền chứ không sinh tiền. VD dễ nhớ: ăn uống/mua quần áo/trả lãi thẻ tín dụng — tiền đã tiêu, không quay lại.' },
   cp_co_dinh: { term:'Chi phí cố định', explain:'Khoản chi lặp lại mỗi tháng gần như không đổi — tiền thuê nhà, bảo hiểm, học phí cố định...' },
-  cp_bien_doi: { term:'Chi phí biến đổi', explain:'Khoản chi thay đổi theo thói quen mỗi tháng — ăn uống, mua sắm, giải trí... Đây là nơi dễ điều chỉnh nhất khi muốn tiết kiệm nhiều hơn.' },
+  cp_bien_doi: { term:'Chi phí biến đổi', explain:'Khoản chi thay đổi theo thói quen mỗi tháng — ăn uống, mua sắm, giải trí... Đây là nơi dễ điều chỉnh nhất khi muốn tích lũy nhiều hơn.' },
   dong_tien_xanh: { term:'Dòng Tiền Bình An', explain:'Tiền kiếm được hoặc chi ra trong sự biết ơn, hoan hỷ, tạo giá trị thặng dư chân chính (lương, bán hàng thật, trả hoá đơn trong sự tri ân...) — mang năng lượng sinh sôi, giúp khơi thông Nút Chặn Dòng Tiền.' },
   dong_tien_do: { term:'Dòng Tiền Sợ Hãi', explain:'Tiền kiếm được hoặc chi ra trong sự sợ hãi, lo âu, xót xa (vay nóng trong hoảng loạn, chi tiêu kèm oán trách, tiếc của...) — mang năng lượng huỷ hoại, tự tay tạo thêm Nút Chặn Dòng Tiền của chính bạn.' },
   no_xanh: { term:'Nợ Kiến Tạo', explain:'Khoản vay từ nguồn chính thống (ngân hàng, tổ chức tín dụng hợp pháp), trong kế hoạch rõ ràng, để tạo ra giá trị thật (mua nhà, đầu tư kinh doanh có tính toán) — đây là "chi phí vận hành cho sự thịnh vượng", không phải gánh nặng.' },
