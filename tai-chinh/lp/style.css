@@ -312,3 +312,6 @@ b, strong{ color:var(--white); }
 
 /* Giá gốc gạch ngang đặt ngay trước giá ưu đãi ở mọi dải đếm ngược/thanh dính — đi cùng khối giá lớn ở bảng giá. */
 .lp-old-inline{ color:#9CA3AF; text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:2px; font-weight:600; margin-right:2px; }
+
+.lp-old-cta{ color:rgba(36,26,3,.62); text-decoration-color:#B91C1C; font-size:.82em; }
+.lp-old-h2{ font-size:.62em; color:var(--gray2); }
