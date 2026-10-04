@@ -385,7 +385,6 @@ function render(container, ctx){
         <div class="section">
           <h3>Ngân sách chi tiêu tháng này</h3>
           <p style="color:var(--ink-soft);font-size:15px;margin-bottom:12px;">Đặt hạn mức từng danh mục TRƯỚC khi tiêu — cùng tinh thần với Lời Cam Kết ở trên. Danh sách dưới đây đúng theo <a href="#danh-muc" style="color:var(--accent);font-weight:600;">danh mục đã thiết lập →</a>. Xem chi tiêu thật đã tiêu vào đâu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a>.</p>
-          ${budgetSummaryBlockHtml()}
           ${budgetCategoryKeys().length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có danh mục chi tiêu nào — <a href="#danh-muc" style="color:var(--accent);font-weight:600;">thiết lập ngay →</a></div>` : budgetCategoryKeys().map(key=>{
             const actual = state.budgetActuals[key]||0;
             const limit = Number(state.budgetForm[key])||0;
@@ -415,7 +414,7 @@ function render(container, ctx){
             <input type="text" inputmode="numeric" id="mt-new-budget-amount" data-money placeholder="Hạn mức" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
             <span class="btn-ghost btn btn-sm" id="mt-add-budget-category">+ Thêm</span>
           </div>
-          ${budgetCategoryKeys().length > 6 ? budgetSummaryBlockHtml() : ''}
+          ${budgetSummaryBlockHtml()}
           <button class="btn btn-sm" style="margin-top:14px;" id="mt-save-budget" ${state.savingBudget?'disabled':''}>${state.savingBudget?'Đang lưu…':'Lưu ngân sách'}</button>
           <span id="mt-budget-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedBudgetMsg}</span>
         </div>
