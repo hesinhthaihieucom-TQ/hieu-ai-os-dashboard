@@ -43,8 +43,11 @@ const TOUR_STEPS = [
 ];
 
 function render(container, ctx){
+  // Dùng chung cho cả boot() (gate loadSharedBank) lẫn html()/bind() (gate hiển thị/chọn Kho Content
+  // Viral trong picker, lane Fanpage...) — trước đây chỉ khai báo RIÊNG trong calendarTabHtml().
+  const isAdmin = !!(ctx.profile && ctx.profile.role === 'admin');
   const state = {
-    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], scheduledPostIds:new Set(), pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
+    screen:'loading', weekStart:startOfWeek(new Date()), entries:[], posts:[], sharedBank:[], scheduledPostIds:new Set(), pending:null, pickerFor:null, pickerCustomTitle:'', editingEntryId:null,
     positioning:null, quickContext:'', weeklyGoal:'', postsPerDay:1, aiSuggestions:null, aiLoading:false, aiError:null,
     choosingKhoFor:null,
     regenWeekLoading:false, regenWeekError:null,
@@ -134,7 +137,7 @@ function render(container, ctx){
       );
       if(error) throw new Error(error.message);
       state.positioning = (pos && pos.luot1) ? pos : null;
-      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule(), loadPersonalPhotoCount(), loadScheduledPostIds(), loadChannels()]);
+      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule(), loadPersonalPhotoCount(), loadScheduledPostIds(), loadChannels(), loadSharedBank()]);
       state.screen='main';
     } catch(e){
       state.screen='error';
@@ -235,6 +238,20 @@ function render(container, ctx){
     const { data, error } = await ctx.supabase.from('user_channels').select('id,name').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
     if(error) throw new Error(error.message);
     state.channels = data || [];
+  }
+
+  // "cho riêng tài khoản của e được chọn bài từ kho content viral, cho vào lịch đăng bài" (chị Quỳnh
+  // 2026-10-04) — CHỈ admin (chính tài khoản chị) được chọn thẳng 1 mục Kho Content Viral (bảng dùng
+  // CHUNG cho mọi user, xem content_bank_shared ở kho-content.js) vào ô lịch, KHÔNG viết lại qua AI
+  // như "Viết bài từ mục này" — vào picker như 1 lựa chọn Y HỆT "tự nhập tên bài", chỉ khác là lấy
+  // sẵn tiêu đề từ kho thay vì gõ tay (xem data-picker-select ở bind()). Chỉ tải khi isAdmin — khách
+  // thường không có lý do dùng (không phải Kho Content Viral của riêng họ, dễ hiểu nhầm là viết bài
+  // thật trong khi calendar_entries không lưu được nội dung đầy đủ, chỉ lưu tiêu đề).
+  async function loadSharedBank(){
+    if(!isAdmin) return;
+    const { data, error } = await ctx.supabase.from('content_bank_shared').select('id,title').order('title', { ascending:true });
+    if(error) throw new Error(error.message);
+    state.sharedBank = data || [];
   }
 
   // Danh sách ĐẦY ĐỦ kênh có thể chọn — 2 kênh dựng sẵn (Fanpage chỉ admin thấy, xem isAdmin ở
@@ -490,8 +507,7 @@ function render(container, ctx){
   function calendarTabHtml(){
     // Auto-đăng Fanpage (2026-08-27) chỉ dùng cho Fanpage riêng của chị Quỳnh (1 token cấu hình ở
     // biến môi trường server, không phải OAuth theo từng user) — nên chỉ admin mới thấy toggle này,
-    // khách thường bấm vào cũng không có Page nào để đăng.
-    const isAdmin = ctx.profile && ctx.profile.role === 'admin';
+    // khách thường bấm vào cũng không có Page nào để đăng. (isAdmin giờ khai báo chung ở render(), xem trên.)
     const days = weekDays();
     const todayStr = isoDate(new Date());
     const weekLabel = `${fmtDate(days[0])} – ${fmtDate(days[6])}`;
@@ -696,6 +712,7 @@ function render(container, ctx){
                   ${suggestion?`<div style="font-size:12.5px;color:var(--accent);margin-bottom:4px;">Gợi ý: ${esc(suggestion.chu_de)}</div>`:''}
                   <select data-picker-select style="width:100%;margin-top:4px;font-size:13.5px;padding:6px;">
                     <option value="">— Chọn bài đã viết —</option>
+                    <optgroup label="Bài đã viết">
                     ${state.posts.filter(p=>(!p.posted && !state.scheduledPostIds.has(p.id)) || (e && e.post_id===p.id))
                       // "hiện thứ tự bài đăng theo kiểu chữ cái đầu ABC với số cho dễ nhìn — dạng số sẽ
                       // xếp đầu tiên, sau đó tới dạng chữ ABC" (chị Quỳnh 2026-09-15) — numeric:true để
@@ -703,7 +720,15 @@ function render(container, ctx){
                       // tiếng Việt xếp đúng vị trí thay vì rơi hết xuống cuối theo mã ký tự thô.
                       .slice().sort((a,b)=>(a.title||'').localeCompare(b.title||'', 'vi', { numeric:true, sensitivity:'base' }))
                       .map(p=>`<option value="${p.id}" ${e && e.post_id===p.id?'selected':''} title="${esc(p.title||'(không tiêu đề)')}">${esc(p.title||'(không tiêu đề)')}${p.posted?' (đã đăng)':''}</option>`).join('')}
+                    </optgroup>
+                    ${isAdmin && state.sharedBank.length ? `
+                    <optgroup label="Kho Content Viral">
+                      ${state.sharedBank.slice().sort((a,b)=>(a.title||'').localeCompare(b.title||'', 'vi', { numeric:true, sensitivity:'base' }))
+                        .map(s=>`<option value="shared:${s.id}" title="${esc(s.title||'(không tiêu đề)')}">${esc(s.title||'(không tiêu đề)')}</option>`).join('')}
+                    </optgroup>
+                    ` : ''}
                   </select>
+                  ${isAdmin ? `<div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">Chọn ở nhóm "Kho Content Viral" chỉ lấy tiêu đề làm nhãn ô lịch — không viết lại bài, không lưu nội dung đầy đủ (khác "Viết bài từ mục này" ở Kho Content).</div>` : ''}
                   <div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">Bài đã đăng hoặc đã có sẵn trong lịch rồi không hiện ở đây nữa, đỡ chọn trùng.</div>
                   <div style="font-size:11.5px;color:var(--ink-soft);margin:6px 0 2px;">hoặc tự nhập tên bài</div>
                   <input type="text" data-picker-custom placeholder="Tên bài tự điền..." value="${e && !e.post_id ? esc(e.title||'') : ''}" style="width:100%;font-size:13.5px;padding:6px;border:1px solid var(--line);border-radius:6px;">
@@ -1079,12 +1104,18 @@ function render(container, ctx){
         const select = container.querySelector('[data-picker-select]');
         const customInput = container.querySelector('[data-picker-custom]');
         const timeInput = container.querySelector('[data-picker-time]');
-        const postId = select ? select.value : '';
+        const selectValue = select ? select.value : '';
+        // "shared:<id>" = mục chọn từ Kho Content Viral (xem optgroup ở trên, chỉ admin thấy) —
+        // calendar_entries.post_id KHÔNG tham chiếu được tới content_bank_shared (khác bảng posts),
+        // nên chỉ lấy đúng tiêu đề làm nhãn, giống hệt cơ chế "tự nhập tên bài" bên dưới.
+        const isSharedPick = selectValue.startsWith('shared:');
+        const postId = isSharedPick ? '' : selectValue;
         const post = state.posts.find(p=>p.id===postId);
+        const sharedItem = isSharedPick ? state.sharedBank.find(s=>s.id===selectValue.slice(7)) : null;
         const customTitle = customInput ? customInput.value.trim() : '';
         const fields = {
           post_id: post ? post.id : null,
-          title: post ? post.title : (customTitle || 'Bài mới'),
+          title: post ? post.title : (sharedItem ? sharedItem.title : (customTitle || 'Bài mới')),
           format: post && post.structure ? (post.structure.format||null) : null,
           cta: post && post.structure ? (post.structure.cta||null) : null,
           scheduled_time: timeInput && timeInput.value ? timeInput.value : null,
