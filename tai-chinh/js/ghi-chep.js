@@ -31,6 +31,7 @@ const TOUR_STEPS = [
   { selector: '#gc-type-chips', title: 'Thu nhập hay chi tiêu', text: 'Chọn đúng loại giao dịch trước — form bên dưới sẽ đổi theo (thu nhập hỏi chia quỹ, chi tiêu hỏi Tài sản/Tiêu sản).' },
   { selector: '#gc-vibe-chips', title: 'Vibe Check — bước quan trọng nhất', text: 'Chọn cảm nhận thật của bạn lúc tiền vào/ra. Đây là dữ liệu gốc cho toàn bộ tâm thức tài chính của cuốn sổ này, không phải lựa chọn cho có.' },
   { selector: '#gc-submit', title: 'Lưu giao dịch', text: 'Ghi chân thật mỗi ngày, dù khoản nhỏ nhất — đây là dữ liệu gốc mà Tổng Kết Tuần/Tháng và các tính năng khác đều dựa vào.' },
+  { selector: '[data-action="enable-push"], #gc-reminder-time', title: 'Nhắc ghi chép theo giờ của bạn', text: 'Bấm "Bật thông báo" một lần là đủ — sau đó app hiện rõ "Đã bật" và cho chọn tần suất (hằng ngày/hằng tuần/tạm dừng) cùng giờ nhắc riêng. Muốn tắt hẳn thì có nút "Tắt thông báo" ngay bên dưới.' },
   { selector: '[data-toggle-options]', title: 'Ghi nhầm thì sửa được', text: 'Bấm "Tuỳ chọn" ở từng giao dịch đã ghi → Sửa để chỉnh lại số tiền, nội dung, danh mục, ngày hay cảm nhận (không cần xoá rồi ghi lại), hoặc Xoá nếu muốn bỏ hẳn.' },
 ];
 
@@ -66,10 +67,17 @@ function render(container, ctx){
     // luôn hợp lý hơn nằm ở Tài khoản. Logic giữ nguyên 100%, chỉ đổi CHỖ ở.
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushSubscribed: false,
+    // Chưa biết đã bật chưa (đang đọc từ trình duyệt) thì KHÔNG hiện nút "Bật thông báo" — trước đây nút
+    // này nháy lên trong lúc chờ rồi mới đổi sang "Đã bật", khiến người đã bật rồi lại bấm bật lần nữa.
+    pushChecked: false,
     pushBusy: false,
     pushError: null,
     reminderFreq: (ctx.profile && ctx.profile.tc_reminder_frequency) || 'daily',
     savingFreq: false,
+    // Giờ nhắc riêng 'HH:MM' (giờ VN), rỗng = dùng giờ mặc định theo tần suất — xem api/cron/send-reminders.js
+    reminderTime: (ctx.profile && ctx.profile.tc_reminder_time) || '',
+    savingTime: false,
+    timeMsg: null,
     testPushBusy: false,
     testPushResult: null,
   };
@@ -111,10 +119,16 @@ function render(container, ctx){
   async function checkPushSubscription(){
     if(!state.pushSupported) return;
     try{
-      const reg = await navigator.serviceWorker.ready;
+      // serviceWorker.ready có thể không bao giờ resolve (SW chưa đăng ký được) — chặn bằng timeout để
+      // khối này không kẹt mãi ở "Đang kiểm tra", sau 4 giây coi như chưa bật.
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject)=>setTimeout(()=>reject(new Error('timeout')), 4000)),
+      ]);
       const sub = await reg.pushManager.getSubscription();
       state.pushSubscribed = !!sub;
     } catch(e){ state.pushSubscribed = false; }
+    state.pushChecked = true;
     draw();
   }
   checkPushSubscription();
@@ -137,6 +151,7 @@ function render(container, ctx){
       });
       await callApi('/api/push-subscribe', { ...sub.toJSON(), app: 'tai-chinh' });
       state.pushSubscribed = true;
+      state.pushChecked = true;
     } catch(e){
       state.pushError = e.message || 'Không bật được thông báo — thử lại giúp mình.';
     }
@@ -167,6 +182,29 @@ function render(container, ctx){
     const { error } = await ctx.supabase.rpc('set_tc_reminder_frequency', { freq });
     if(!error){ state.reminderFreq = freq; if(ctx.profile) ctx.profile.tc_reminder_frequency = freq; }
     state.savingFreq = false; draw();
+  }
+
+  function defaultReminderTime(freq){ return freq === 'weekly' ? '19:00' : '20:00'; }
+  function effectiveReminderTime(){ return state.reminderTime || defaultReminderTime(state.reminderFreq); }
+  function reminderSummary(){
+    if(state.reminderFreq === 'off') return '⏸ Đang tạm dừng nhắc ghi chép (vẫn bật thông báo trên thiết bị này).';
+    return state.reminderFreq === 'weekly'
+      ? `Nhắc mỗi Chủ Nhật lúc ${effectiveReminderTime()}.`
+      : `Nhắc mỗi ngày lúc ${effectiveReminderTime()}.`;
+  }
+  async function setReminderTime(value){
+    if(state.savingTime || !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(value || '')) return;
+    state.savingTime = true; state.timeMsg = null; draw();
+    const { error } = await ctx.supabase.rpc('set_tc_reminder_time', { p_time: value });
+    if(!error){
+      state.reminderTime = value;
+      if(ctx.profile) ctx.profile.tc_reminder_time = value;
+      state.timeMsg = { ok:true, text:'Đã lưu ✓' };
+    } else {
+      state.timeMsg = { ok:false, text:'Chưa lưu được giờ nhắc — thử lại sau ít phút nhé.' };
+    }
+    state.savingTime = false; draw();
+    setTimeout(()=>{ if(state.timeMsg && state.timeMsg.ok){ state.timeMsg = null; const el = container.querySelector('#gc-time-msg'); if(el) el.textContent = ''; } }, 2000);
   }
 
   async function testPush(){
@@ -374,29 +412,51 @@ function render(container, ctx){
 
       <div class="section" style="margin-top:20px;">
         <h3>Nhắc ghi chép</h3>
-        <div class="hint-box" style="margin-bottom:14px;">Bật để được nhắc ghi thu chi, tự chọn tần suất theo thói quen của bạn. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> trước khi bật được (Safari không hỗ trợ thông báo cho tab trình duyệt thường) — mở bằng Safari thật, không mở trong Facebook/Zalo/Instagram.</div>
+        ${!state.pushSubscribed ? `<div class="hint-box" style="margin-bottom:14px;">Bật để được nhắc ghi thu chi, tự chọn tần suất và giờ nhắc theo thói quen của bạn. Trên iPhone: cần <b>"Thêm vào Màn hình chính"</b> trước khi bật được (Safari không hỗ trợ thông báo cho tab trình duyệt thường) — mở bằng Safari thật, không mở trong Facebook/Zalo/Instagram.</div>` : ''}
         ${!state.pushSupported ? `
           <div class="error-box">Trình duyệt/thiết bị này không hỗ trợ thông báo đẩy.</div>
+        ` : !state.pushChecked ? `
+          <div class="hint-box">Đang kiểm tra trạng thái thông báo…</div>
         ` : state.pushSubscribed ? `
-          <button class="btn-ghost btn btn-sm" data-action="disable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang tắt…':'✓ Đã bật — bấm để tắt'}</button>
+          <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;">
+            <div style="font-weight:700;font-size:16px;color:var(--accent);">✅ Đã bật thông báo nhắc ghi chép</div>
+            <div style="font-size:15px;margin-top:4px;">${esc(reminderSummary())}</div>
+            <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;">Áp dụng cho thiết bị này — bật 1 lần là đủ, không cần bật lại mỗi lần vào app.</div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Tần suất nhắc</label>
+            <div class="chips">
+              <div class="chip ${state.reminderFreq==='daily'?'selected':''}" data-freq="daily">Hằng ngày</div>
+              <div class="chip ${state.reminderFreq==='weekly'?'selected':''}" data-freq="weekly">Hằng tuần (Chủ Nhật)</div>
+              <div class="chip ${state.reminderFreq==='off'?'selected':''}" data-freq="off">Tạm dừng nhắc</div>
+            </div>
+          </div>
+
+          ${state.reminderFreq !== 'off' ? `
+            <div style="margin-top:16px;">
+              <label for="gc-reminder-time" style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Giờ nhắc (giờ Việt Nam)</label>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <input type="time" id="gc-reminder-time" value="${esc(effectiveReminderTime())}" ${state.savingTime?'disabled':''} style="padding:10px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
+                <span id="gc-time-msg" style="font-size:14.5px;font-weight:600;color:${state.timeMsg && !state.timeMsg.ok ? 'var(--danger)' : 'var(--accent)'};">${state.savingTime ? 'Đang lưu…' : (state.timeMsg ? esc(state.timeMsg.text) : '')}</span>
+              </div>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">Thông báo sẽ tới trong vòng khoảng 15 phút kể từ giờ bạn chọn.</div>
+            </div>
+          ` : ''}
+
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+            <span class="btn-ghost btn btn-sm" data-action="test-push" ${state.testPushBusy?'disabled':''}>${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
+          </div>
+          ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
+
+          <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--line);">
+            <div style="font-size:14px;color:var(--ink-soft);margin-bottom:8px;">Chỉ muốn nghỉ nhắc một thời gian? Chọn <b>Tạm dừng nhắc</b> ở trên. Muốn tắt hẳn thông báo trên thiết bị này thì bấm nút dưới — sau này bật lại bất cứ lúc nào.</div>
+            <button class="btn-ghost btn btn-sm" data-action="disable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang tắt…':'🔕 Tắt thông báo trên thiết bị này'}</button>
+          </div>
         ` : `
           <button class="btn btn-sm" data-action="enable-push" ${state.pushBusy?'disabled':''}>${state.pushBusy?'Đang bật…':'Bật thông báo'}</button>
         `}
         ${state.pushError?`<div class="error-box" style="margin-top:10px;">${esc(state.pushError)}</div>`:''}
-        ${state.pushSubscribed ? `
-          <div style="margin-top:16px;">
-            <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Tần suất nhắc</label>
-            <div class="chips">
-              <div class="chip ${state.reminderFreq==='daily'?'selected':''}" data-freq="daily">Hằng ngày (20h)</div>
-              <div class="chip ${state.reminderFreq==='weekly'?'selected':''}" data-freq="weekly">Hằng tuần (Chủ Nhật 19h)</div>
-              <div class="chip ${state.reminderFreq==='off'?'selected':''}" data-freq="off">Tắt nhắc</div>
-            </div>
-          </div>
-          <div style="margin-top:14px;">
-            <span class="btn-ghost btn btn-sm" data-action="test-push" ${state.testPushBusy?'disabled':''}>${state.testPushBusy?'Đang gửi…':'Gửi thử thông báo'}</span>
-            ${state.testPushResult ? `<div class="${state.testPushResult.ok?'hint-box':'error-box'}" style="margin-top:8px;">${esc(state.testPushResult.message)}</div>` : ''}
-          </div>
-        ` : ''}
       </div>
     `;
   }
@@ -485,6 +545,8 @@ function render(container, ctx){
     container.querySelectorAll('[data-freq]').forEach(el=>{
       el.onclick = ()=>setReminderFreq(el.getAttribute('data-freq'));
     });
+    const reminderTimeEl = container.querySelector('#gc-reminder-time');
+    if(reminderTimeEl) reminderTimeEl.onchange = (e)=>setReminderTime(e.target.value);
   }
 
   load();

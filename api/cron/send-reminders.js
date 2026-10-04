@@ -453,31 +453,37 @@ async function checkSucKhoeWeighInReminder() {
 // muốn ghi bù cả tuần 1 lần, Ghi Chép Hàng Ngày đã có ô chọn ngày nên ghi bù vẫn ra đúng dữ liệu.
 const TC_DAILY_REMINDER_TIME = '20:00';
 const TC_WEEKLY_REMINDER_TIME = '19:00';
+// Lấy người dùng theo tần suất kèm giờ nhắc RIÊNG (profiles.tc_reminder_time, chị Quỳnh 2026-10-04 cho
+// tự chọn giờ). Nếu cột chưa tồn tại (chưa chạy lại schema_tai_chinh.sql) thì câu query có cột mới sẽ
+// lỗi — thử lại KHÔNG kèm cột đó để mọi người vẫn được nhắc đúng giờ mặc định, không để việc thiếu
+// migration làm mất hết nhắc ghi chép của tất cả mọi người.
+async function fetchTcReminderUsers(freq) {
+  let resp = await supabaseAdmin(`profiles?tc_reminder_frequency=eq.${freq}&select=id,tc_reminder_time`);
+  if (!resp.ok) resp = await supabaseAdmin(`profiles?tc_reminder_frequency=eq.${freq}&select=id`);
+  return resp.ok ? await resp.json() : [];
+}
 async function checkTaiChinhLogReminder() {
   const { dateStr, minutesOfDay } = vnNowParts();
   const dayOfWeek = new Date(Date.now() + 7 * 3600 * 1000).getUTCDay();
 
-  const wantDaily = withinWindow(parseHHMM(TC_DAILY_REMINDER_TIME), minutesOfDay);
-  const wantWeekly = dayOfWeek === 0 && withinWindow(parseHHMM(TC_WEEKLY_REMINDER_TIME), minutesOfDay);
-  if (!wantDaily && !wantWeekly) return 0;
-
   let count = 0;
-  if (wantDaily) {
-    const usersResp = await supabaseAdmin(`profiles?tc_reminder_frequency=eq.daily&select=id`);
-    const users = usersResp.ok ? await usersResp.json() : [];
-    for (const u of users) {
-      const result = await notifyOnce(u.id, `tc-daily-reminder:${dateStr}`, {
-        title: '📒 Ghi thu chi hôm nay chưa?',
-        body: 'Chỉ mất 30 giây — dòng tiền hôm nay là dữ liệu cho Điểm Nghiệp tuần này.',
-        url: './#ghi-chep',
-      }, 'tai-chinh');
-      if (result.sent) count++;
-    }
+  // Không còn thoát sớm theo giờ mặc định chung — mỗi người có giờ riêng nên phải xét từng người.
+  // notifyOnce() chặn gửi trùng trong ngày (key theo dateStr) nên quét nhiều lần trong cửa sổ không sao.
+  const dailyUsers = await fetchTcReminderUsers('daily');
+  for (const u of dailyUsers) {
+    if (!withinWindow(parseHHMM(u.tc_reminder_time || TC_DAILY_REMINDER_TIME), minutesOfDay)) continue;
+    const result = await notifyOnce(u.id, `tc-daily-reminder:${dateStr}`, {
+      title: '📒 Ghi thu chi hôm nay chưa?',
+      body: 'Chỉ mất 30 giây — dòng tiền hôm nay là dữ liệu cho Điểm Nghiệp tuần này.',
+      url: './#ghi-chep',
+    }, 'tai-chinh');
+    if (result.sent) count++;
   }
-  if (wantWeekly) {
-    const usersResp = await supabaseAdmin(`profiles?tc_reminder_frequency=eq.weekly&select=id`);
-    const users = usersResp.ok ? await usersResp.json() : [];
-    for (const u of users) {
+  // 'weekly' chỉ nhắc đúng Chủ Nhật (dayOfWeek=0, giờ VN) — chỉ truy vấn vào ngày đó cho đỡ tốn.
+  if (dayOfWeek === 0) {
+    const weeklyUsers = await fetchTcReminderUsers('weekly');
+    for (const u of weeklyUsers) {
+      if (!withinWindow(parseHHMM(u.tc_reminder_time || TC_WEEKLY_REMINDER_TIME), minutesOfDay)) continue;
       const result = await notifyOnce(u.id, `tc-weekly-reminder:${dateStr}`, {
         title: '📒 Ghi thu chi cả tuần này',
         body: 'Ghi bù từng ngày cũng được — chọn lại ngày ở mỗi dòng khi ghi.',

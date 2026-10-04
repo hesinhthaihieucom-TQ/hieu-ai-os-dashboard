@@ -564,3 +564,21 @@ grant execute on function public.mark_tc_push_prompt_seen() to authenticated;
 -- dùng tự đánh dấu "đã đạt" ở Tổng Kết Tháng, mục A2 (2026-10-04, chị Quỳnh chốt). Cột bổ sung trên
 -- tc_monthly_reflections, không tạo bảng riêng.
 alter table tc_monthly_reflections add column if not exists goal_new_asset_achieved boolean;
+
+-- Giờ nhắc ghi chép do người dùng tự chọn (2026-10-04, chị Quỳnh yêu cầu) — dạng 'HH:MM' giờ Việt Nam.
+-- NULL = dùng giờ mặc định (hằng ngày 20:00, hằng tuần Chủ Nhật 19:00, xem api/cron/send-reminders.js).
+-- Cron quét mỗi 15 phút với cửa sổ 25 phút nên thông báo tới trong vòng ~15 phút kể từ giờ đã chọn.
+alter table profiles add column if not exists tc_reminder_time text
+  check (tc_reminder_time is null or tc_reminder_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+
+-- Qua RPC giống set_tc_reminder_frequency vì user không update() thẳng profiles được (RLS đã khoá).
+create or replace function public.set_tc_reminder_time(p_time text)
+returns void as $$
+begin
+  if p_time is not null and p_time !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
+    raise exception 'invalid tc_reminder_time: %', p_time;
+  end if;
+  update public.profiles set tc_reminder_time = p_time where id = auth.uid();
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+grant execute on function public.set_tc_reminder_time(text) to authenticated;
