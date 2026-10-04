@@ -104,7 +104,7 @@ function render(container, ctx){
     budgetActuals: {},
     totalMinPayments: 0,
     goalRow: null,   // dòng tc_monthly_reflections của tháng đang xem (chứa goal_*)
-    debtPaid: 0,     // tổng đã trả nợ trong tháng, từ tc_debt_payments
+    debtPaid: 0,     // Trả nợ + Trả góp trong tháng (xem load())
     goalAssetError: '',
     savingNetworth: false,
     savingReflection: false,
@@ -146,7 +146,7 @@ function render(container, ctx){
       ctx.supabase.from('tc_debt_payments').select('amount')
         .eq('user_id', ctx.user.id).gte('payment_date', monthStart).lt('payment_date', monthEndExclusive),
     ]);
-    state.debtPaid = (debtPaymentsRes.data||[]).reduce((s,p)=>s+Number(p.amount||0),0);
+    const debtPaymentsTotal = (debtPaymentsRes.data||[]).reduce((s,p)=>s+Number(p.amount||0),0);
     state.goalRow = reflectionRes.data || null;
     const entries = entriesRes.data || [];
     state.cashFlow = {
@@ -156,6 +156,11 @@ function render(container, ctx){
       expense: entries.filter(e=>e.type==='expense' && e.category_label!==TICH_LUY_CATEGORY_LABEL).reduce((s,e)=>s+Number(e.amount),0),
     };
     state.expenseEntries = entries.filter(e=>e.type==='expense');
+    // Giảm nợ = tổng Trả nợ + Trả góp (chị Quỳnh 2026-10-04). Ghi 1 khoản trả ở Quản Lý Nợ đã TỰ tạo
+    // 1 dòng chi "Trả nợ" (quan-ly-no.js) nên lấy từ dòng chi để KHÔNG cộng trùng với tc_debt_payments;
+    // lấy max với tc_debt_payments để không mất các khoản trả cũ ghi trước khi có dòng chi tự động.
+    const sumCat = label => state.expenseEntries.filter(e=>e.category_label===label).reduce((s,e)=>s+Number(e.amount||0),0);
+    state.debtPaid = Math.max(sumCat('Trả nợ'), debtPaymentsTotal) + sumCat('Trả góp nhà / xe');
     state.budgetActuals = {};
     state.expenseEntries.forEach(e=>{
       const key = e.category_label || 'Khác';
@@ -350,7 +355,7 @@ function render(container, ctx){
     const items = [
       { label:'Thu nhập', goal:Number(g.goal_income)||0, actual:state.cashFlow.income },
       { label:'Tích lũy (thu − chi)', goal:Number(g.goal_savings)||0, actual:state.cashFlow.income - state.cashFlow.expense },
-      { label:'Giảm nợ (đã trả trong tháng)', goal:Number(g.goal_debt_reduction)||0, actual:state.debtPaid },
+      { label:'Giảm nợ (Trả nợ + Trả góp trong tháng)', goal:Number(g.goal_debt_reduction)||0, actual:state.debtPaid },
     ].filter(i=>i.goal > 0);
     let achieved = 0;
     const rows = items.map(i=>{

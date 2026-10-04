@@ -52,6 +52,8 @@ function render(container, ctx){
   // Hiện ĐỦ mọi danh mục chi tiêu đã thiết lập (xem danh-muc.js) — không chỉ danh mục đã có chi
   // tiêu/hạn mức như trước (2026-08-24, góp ý Quỳnh "để làm ngân sách thì theo đúng cái của người
   // ta luôn"), để đặt hạn mức được ngay cả cho danh mục chưa tiêu đồng nào tháng này.
+  // Các danh mục tính là "giảm nợ": trả nợ (Quản Lý Nợ tự ghi vào đây) + trả góp nhà/xe.
+  const DEBT_CATEGORY_LABELS = ['Trả nợ', 'Trả góp nhà / xe'];
   function budgetCategoryKeys(){
     const fromCategories = state.expenseCategories.map(c=>c.label);
     return [...new Set([...fromCategories, ...Object.keys(state.budgetActuals), ...Object.keys(state.budgetForm)])]
@@ -68,11 +70,23 @@ function render(container, ctx){
     const totalSpent = keys.reduce((s,k)=> s + (state.budgetActuals[k]||0), 0);
     const goalIncome = Number(state.goal.goal_income) || 0;
     const incomeRef = goalIncome > 0 ? goalIncome : state.incomeActual;
+    // Hạn mức Tích Lũy ĐÃ đặt trong ngân sách = phần đóng góp cho Mục tiêu tích lũy; hạn mức Trả nợ +
+    // Trả góp ĐÃ đặt = phần đóng góp cho Mục tiêu giảm nợ (chị Quỳnh 2026-10-04: giảm nợ chính là
+    // tổng trả nợ + trả góp). Chỉ phần CÒN THIẾU so với mục tiêu mới phải lấy từ tiền chưa phân bổ.
+    const savingsBudget = Number(state.budgetForm[TICH_LUY_CATEGORY_LABEL]) || 0;
+    const debtBudget = DEBT_CATEGORY_LABELS.reduce((s,k)=> s + (Number(state.budgetForm[k])||0), 0);
+    const savingsGoal = Number(state.goal.goal_savings) || 0;
+    const debtGoal = Number(state.goal.goal_debt_reduction) || 0;
+    const savingsGap = Math.max(0, savingsGoal - savingsBudget);
+    const debtGap = Math.max(0, debtGoal - debtBudget);
+    const remaining = incomeRef - totalLimit;   // sau chi tiêu (đã gồm trả nợ/trả góp), còn trước tích lũy
     return {
       totalLimit, totalSpent, incomeRef,
       incomeRefLabel: goalIncome > 0 ? 'Mục tiêu thu nhập' : 'Thu nhập đã ghi tháng này',
-      needSavings: (Number(state.goal.goal_savings)||0) + (Number(state.goal.goal_debt_reduction)||0),
-      remaining: incomeRef - totalLimit,
+      savingsBudget, debtBudget, savingsGoal, debtGoal, savingsGap, debtGap,
+      needExtra: savingsGap + debtGap,
+      remaining,
+      unallocated: remaining - savingsBudget,
     };
   }
   function budgetSummaryInnerHtml(){
@@ -80,24 +94,30 @@ function render(container, ctx){
     const fmt = n => n.toLocaleString('vi-VN') + 'đ';
     const row = (label, value, color)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:15px;"><span>${label}</span><b${color?` style="color:${color};"`:''}>${value}</b></div>`;
     let verdict;
+    const hasGoals = t.savingsGoal > 0 || t.debtGoal > 0;
     if(t.incomeRef <= 0){
       verdict = 'Chưa có thu nhập để cân đối — đặt Mục tiêu thu nhập ở trên, hoặc ghi khoản thu ở Ghi Chép Hàng Ngày.';
     } else if(t.remaining < 0){
       verdict = `⚠️ Ngân sách đang VƯỢT thu nhập ${fmt(-t.remaining)} — cần cắt giảm bớt ở 1-2 danh mục.`;
-    } else if(t.needSavings > 0 && t.remaining < t.needSavings){
-      verdict = `⚠️ Còn lại ${fmt(t.remaining)} nhưng mục tiêu tích lũy + giảm nợ cần ${fmt(t.needSavings)} — đang thiếu ${fmt(t.needSavings - t.remaining)}.`;
-    } else if(t.needSavings > 0){
-      verdict = `✅ Đủ để thực hiện mục tiêu tích lũy + giảm nợ (${fmt(t.needSavings)}), còn dư ${fmt(t.remaining - t.needSavings)}.`;
+    } else if(t.unallocated < 0){
+      verdict = `⚠️ Hạn mức Tích Lũy ${fmt(t.savingsBudget)} lớn hơn số tiền còn lại sau chi tiêu (${fmt(t.remaining)}) — thiếu ${fmt(-t.unallocated)}.`;
+    } else if(hasGoals && t.unallocated < t.needExtra){
+      verdict = `⚠️ Mục tiêu tích lũy + giảm nợ còn thiếu ${fmt(t.needExtra)} so với hạn mức đã đặt, nhưng chỉ còn ${fmt(t.unallocated)} chưa phân bổ — đang thiếu ${fmt(t.needExtra - t.unallocated)}.`;
+    } else if(hasGoals){
+      verdict = `✅ Đủ để thực hiện mục tiêu tích lũy + giảm nợ, còn dư ${fmt(t.unallocated - t.needExtra)} chưa phân bổ.`;
     } else {
-      verdict = `Còn ${fmt(t.remaining)} chưa phân bổ — có thể dành cho tích lũy hoặc giảm nợ.`;
+      verdict = `Còn ${fmt(t.unallocated)} chưa phân bổ — có thể dành cho tích lũy hoặc giảm nợ.`;
     }
     return `
-      ${row('Tổng ngân sách đã đặt', fmt(t.totalLimit))}
+      ${row('Tổng ngân sách chi tiêu đã đặt', fmt(t.totalLimit))}
       ${t.incomeRef > 0 ? row(esc(t.incomeRefLabel), fmt(t.incomeRef)) : ''}
-      ${t.incomeRef > 0 ? row('Còn lại sau ngân sách', fmt(t.remaining), t.remaining >= 0 ? 'var(--accent)' : 'var(--danger)') : ''}
+      ${t.incomeRef > 0 ? row('Còn lại sau chi tiêu', fmt(t.remaining), t.remaining >= 0 ? 'var(--accent)' : 'var(--danger)') : ''}
+      ${t.savingsBudget > 0 ? row('Hạn mức Tích Lũy đã đặt', fmt(t.savingsBudget)) : ''}
+      ${t.savingsGoal > 0 ? row('Mục tiêu tích lũy', `${fmt(t.savingsBudget)} / ${fmt(t.savingsGoal)}`, t.savingsGap > 0 ? 'var(--gold)' : 'var(--accent)') : ''}
+      ${t.debtGoal > 0 ? row('Mục tiêu giảm nợ (Trả nợ + Trả góp)', `${fmt(t.debtBudget)} / ${fmt(t.debtGoal)}`, t.debtGap > 0 ? 'var(--gold)' : 'var(--accent)') : ''}
       ${t.totalLimit > 0 ? row('Đã tiêu / ngân sách', `${fmt(t.totalSpent)} / ${fmt(t.totalLimit)}`, t.totalSpent > t.totalLimit ? 'var(--danger)' : '') : ''}
       <div style="margin-top:8px;font-size:15px;line-height:1.55;font-weight:600;">${verdict}</div>
-      <div style="margin-top:6px;font-size:13.5px;color:var(--ink-soft);">Không tính danh mục Tích Lũy (đó là tiền để dành, không phải chi tiêu).</div>
+      <div style="margin-top:6px;font-size:13.5px;color:var(--ink-soft);">Danh mục Tích Lũy không tính là chi tiêu (đó là tiền để dành). Trả nợ + Trả góp tính là chi tiêu bắt buộc và cũng được đếm vào mục tiêu giảm nợ.</div>
     `;
   }
   function budgetSummaryBlockHtml(){
