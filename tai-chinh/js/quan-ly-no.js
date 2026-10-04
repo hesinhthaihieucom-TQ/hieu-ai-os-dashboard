@@ -15,8 +15,16 @@ const MAX_MONTHS = 600; // trần mô phỏng (50 năm) — vượt mốc này c
 // và cụ thể hơn", không chỉ nói tổng tháng/tổng lãi mà phải nói RÕ khoản nào hết trước, tháng thứ
 // mấy — để người dùng biết chính xác nên nhìn vào đâu tiếp theo, không chỉ 1 con số tổng khô khan.
 function simulateStrategy(debts, extraPerMonth, strategy){
-  let working = debts.map(d => ({ id:d.id, name:d.creditor_name, balance: Number(d.current_balance)||0, rate: Number(d.interest_rate)||0, minPayment: Number(d.minimum_payment)||0 }))
-    .filter(d => d.balance > 0);
+  // Khoản tính PHÍ CỐ ĐỊNH (phí đáo thẻ/trả góp, flat_fee) có interest_rate = 0 nên trước đây bị coi là
+  // "không tốn gì" — mô phỏng bỏ sót phí mỗi tháng (chị Quỳnh 2026-10-04: phải gồm cả lãi và phí đáo).
+  // Phí cộng vào dư nợ mỗi tháng như lãi; `rate` quy đổi tương đương %/năm CHỈ để xếp thứ tự "Diệt Lãi
+  // Cao" cho công bằng với khoản tính lãi %.
+  let working = debts.map(d => {
+    const balance = Number(d.current_balance)||0;
+    const fee = d.cost_type === 'flat_fee' ? (Number(d.flat_fee_amount)||0) : 0;
+    const rate = fee > 0 && balance > 0 ? fee * 12 / balance * 100 : (Number(d.interest_rate)||0);
+    return { id:d.id, name:d.creditor_name, balance, rate, fee, minPayment: Number(d.minimum_payment)||0 };
+  }).filter(d => d.balance > 0);
   if(working.length === 0) return { months: 0, totalInterest: 0, converged: true, payoffOrder: [] };
 
   let months = 0, totalInterest = 0;
@@ -24,7 +32,7 @@ function simulateStrategy(debts, extraPerMonth, strategy){
   while(working.length > 0 && months < MAX_MONTHS){
     months++;
     working.forEach(d => {
-      const interest = d.balance * (d.rate/100) / 12;
+      const interest = d.fee > 0 ? d.fee : d.balance * (d.rate/100) / 12;
       totalInterest += interest;
       d.balance += interest;
     });
@@ -179,7 +187,13 @@ function render(container, ctx){
   }
 
   function totalDebt(){ return state.debts.reduce((s,d)=>s+Number(d.current_balance),0); }
-  function monthlyInterestCost(){ return state.debts.reduce((s,d)=>s + Number(d.current_balance) * (Number(d.interest_rate)/100) / 12, 0); }
+  // Chi phí nợ mỗi tháng = lãi % (khoản tính lãi) + phí cố định (khoản tính phí đáo thẻ/trả góp).
+  function debtMonthlyCost(d){
+    return d.cost_type === 'flat_fee'
+      ? (Number(d.flat_fee_amount)||0)
+      : Number(d.current_balance) * (Number(d.interest_rate)/100) / 12;
+  }
+  function monthlyInterestCost(){ return state.debts.reduce((s,d)=>s + debtMonthlyCost(d), 0); }
 
   // Gợi ý xử lý trước — góp ý Quỳnh 2026-08-26: "AI cũng cần gợi ý cho người dùng cái nào nên xử lý
   // trước". Không có AI thật trong app này (xem CLAUDE.md) nên đây là gợi ý DỰA TRÊN QUY TẮC rõ ràng,
@@ -209,7 +223,7 @@ function render(container, ctx){
       if(!r.converged) return `<span style="color:var(--danger);">Chưa xác định — số tiền trả thêm chưa đủ bù lãi, nợ sẽ không giảm.</span>`;
       const years = Math.floor(r.months/12), rem = r.months%12;
       const timeLabel = years>0 ? `${years} năm ${rem} tháng` : `${rem} tháng`;
-      return `Hết nợ sau <b>${timeLabel}</b> · Tổng lãi phải trả: <b style="color:var(--danger);">${Math.round(r.totalInterest).toLocaleString('vi-VN')}đ</b>${fmtOrder(r)}`;
+      return `Hết nợ sau <b>${timeLabel}</b> · Tổng lãi & phí phải trả: <b style="color:var(--danger);">${Math.round(r.totalInterest).toLocaleString('vi-VN')}đ</b>${fmtOrder(r)}`;
     }
     const interestDiff = (snowball.converged && avalanche.converged) ? Math.round(snowball.totalInterest - avalanche.totalInterest) : null;
     return `
@@ -259,7 +273,7 @@ function render(container, ctx){
         <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Lãi suất (%/năm)</label>
         <input type="number" min="0" data-${prefix}="interest_rate" value="${esc(d.interest_rate)}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
       ` : `
-        <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Phí cố định (đ) — vd phí trả góp/phí đáo hạn thẻ tín dụng</label>
+        <label style="display:block;font-size:14px;color:var(--ink-soft);margin:10px 0 4px;">Phí cố định MỖI THÁNG (đ) — vd phí đáo hạn thẻ tín dụng/phí trả góp</label>
         <input type="text" inputmode="numeric" data-${prefix}="flat_fee_amount" data-money value="${esc(formatThousands(d.flat_fee_amount))}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;background:#FDFCF8;color:var(--ink);">
       `}
 
@@ -293,10 +307,10 @@ function render(container, ctx){
         </div>
       `;
     }
-    const monthlyInterest = Number(d.current_balance) * (Number(d.interest_rate)/100) / 12;
+    const monthlyInterest = debtMonthlyCost(d);
     const isGreenDebt = !!(d.crit_legit_source && d.crit_real_value && d.crit_clear_plan);
     const costLabel = d.cost_type === 'flat_fee'
-      ? `Phí cố định ${Number(d.flat_fee_amount||0).toLocaleString('vi-VN')}đ`
+      ? `Phí cố định ${Number(d.flat_fee_amount||0).toLocaleString('vi-VN')}đ/tháng`
       : `Lãi ${esc(d.interest_rate)}%/năm`;
     return `
       <div class="card" style="margin-bottom:12px;">
@@ -307,7 +321,7 @@ function render(container, ctx){
               <span style="font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:99px;${isGreenDebt?'background:var(--accent-soft);color:var(--accent);':'background:#FBE5E5;color:var(--danger);'}">${isGreenDebt?'🟢 Nợ Kiến Tạo':'🔴 Nợ Hoảng Loạn'}</span>
             </div>
             <div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${costLabel} · Tối thiểu ${Number(d.minimum_payment).toLocaleString('vi-VN')}đ/tháng${d.due_day?` · Cam kết tri ân ngày ${esc(d.due_day)}`:''}</div>
-            ${d.cost_type !== 'flat_fee' ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">~${Math.round(monthlyInterest).toLocaleString('vi-VN')}đ tiền lãi/tháng</div>` : ''}
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">~${Math.round(monthlyInterest).toLocaleString('vi-VN')}đ ${d.cost_type === 'flat_fee' ? 'tiền phí' : 'tiền lãi'}/tháng</div>
           </div>
           <div style="font-size:20px;font-weight:700;color:var(--danger);white-space:nowrap;">${Number(d.current_balance).toLocaleString('vi-VN')}đ</div>
         </div>
@@ -383,7 +397,7 @@ function render(container, ctx){
           ${state.debts.length>0 ? `
             <div class="source-grid" style="margin-bottom:16px;">
               <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${totalDebt().toLocaleString('vi-VN')}đ</div><div class="label">Tổng nợ hiện tại</div></div>
-              <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${Math.round(monthlyInterestCost()).toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lãi mất mỗi tháng</div></div>
+              <div class="source-card"><div class="ic" style="font-size:18px;color:var(--danger);">${Math.round(monthlyInterestCost()).toLocaleString('vi-VN')}đ</div><div class="label">Ước tính lãi & phí mất mỗi tháng</div></div>
             </div>
           ` : `<div style="color:var(--ink-soft);font-size:15.5px;margin-bottom:16px;">Chưa có khoản nợ nào được ghi nhận 🎉</div>`}
 
