@@ -35,6 +35,7 @@ function matchPillarKey(text){
 // không cần tour riêng.
 const TOUR_STEPS = [
   { selector: '.tab-row', title: '2 tab của trang này', text: 'Tab "Lịch" xem/xếp lịch đăng bài theo tuần. Tab "Thông báo & giờ đăng" chỉnh giờ đăng mặc định mỗi buổi và bật nhắc nhở.' },
+  { selector: '.channel-switcher', title: 'Nhiều kênh', text: 'Có nhiều kênh/trang khác nhau (TikTok, Fanpage khác...)? Bấm "+ Thêm kênh" để tạo thêm bảng lịch riêng — mỗi kênh có lịch tuần độc lập, không lẫn vào nhau.' },
   { selector: '.week-grid', title: 'Lịch tuần', text: 'Mỗi cột là 1 ngày, mỗi ô là 1 buổi (Sáng/Trưa/Tối). Bấm vào ô trống để chọn bài đã viết xếp vào, hoặc bấm "Gợi ý AI" (nếu có) để xếp nhanh theo gợi ý.' },
   { selector: '#goal-card', title: 'AI gợi ý lịch tuần', text: 'Nói mục tiêu tuần này, AI gợi ý CHỦ ĐỀ cho từng ô trống — bạn vẫn tự vào Kho Content chọn/viết bài cho từng ô.' },
   { selector: '#autofill-card', title: 'AI tự viết + xếp cả tuần', text: 'Khác với gợi ý chủ đề ở trên — cái này AI viết bài HOÀN CHỈNH và xếp thẳng vào ô trống luôn, đỡ công nhất.' },
@@ -76,6 +77,14 @@ function render(container, ctx){
     // cho lane auto-đăng Fanpage (xem toggle ở calendarTabHtml). Không lưu draft — luôn mở lại về
     // 'ca_nhan', tránh admin quên đang ở lane nào giữa các lần vào lại trang.
     channel:'ca_nhan',
+    // Kênh tự tạo (2026-10-04, "cho người dùng tự thêm bảng lịch tuần cho các kênh khác nhau của họ
+    // vì 1 người dùng đôi khi có mấy kênh lận") — danh sách tải từ bảng user_channels (xem
+    // loadChannels()). addingChannel/newChannelName: form inline thêm kênh mới. channelOptionsOpen +
+    // renamingChannelName: panel "Tuỳ chọn" (đổi tên/xoá) cho ĐÚNG kênh tự tạo đang được chọn — theo
+    // quy tắc chung "hành động nhiều thì gom vào Tuỳ chọn" đã áp cho kho-content.js/kho-hook.js.
+    channels: [],
+    addingChannel:false, newChannelName:'', channelSaving:false, channelError:null,
+    channelOptionsOpen:false, renamingChannelName:'',
     pushSupported: !!(window.PushManager && navigator.serviceWorker && window.Notification),
     pushPermission: window.Notification ? Notification.permission : 'denied',
     pushSubscribed: false, pushBusy: false, pushError: null,
@@ -125,7 +134,7 @@ function render(container, ctx){
       );
       if(error) throw new Error(error.message);
       state.positioning = (pos && pos.luot1) ? pos : null;
-      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule(), loadPersonalPhotoCount(), loadScheduledPostIds()]);
+      await Promise.all([applyDraftForCurrentWeek(), loadEntries(), loadPosts(), loadRecordingSchedule(), loadPersonalPhotoCount(), loadScheduledPostIds(), loadChannels()]);
       state.screen='main';
     } catch(e){
       state.screen='error';
@@ -216,6 +225,71 @@ function render(container, ctx){
     );
     if(error) throw new Error(error.message);
     state.posts = data || [];
+  }
+
+  // Kênh tự tạo (xem comment state.channels ở trên) — KHÔNG bọc withTimeout() riêng như các hàm
+  // load khác vì được gọi chung trong Promise.all() ở boot(), đã có timeout tổng của chính nó qua
+  // các lệnh khác trong cùng Promise.all (nếu bảng này lỗi/chậm, lỗi ném ra vẫn được try/catch ở
+  // boot() bắt y hệt).
+  async function loadChannels(){
+    const { data, error } = await ctx.supabase.from('user_channels').select('id,name').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
+    if(error) throw new Error(error.message);
+    state.channels = data || [];
+  }
+
+  // Danh sách ĐẦY ĐỦ kênh có thể chọn — 2 kênh dựng sẵn (Fanpage chỉ admin thấy, xem isAdmin ở
+  // calendarTabHtml) + các kênh tự tạo của riêng user này.
+  function allChannels(isAdmin){
+    return [
+      { id:'ca_nhan', name:'Cá nhân', builtin:true },
+      ...(isAdmin ? [{ id:'fanpage', name:'Fanpage', builtin:true }] : []),
+      ...state.channels.map(c=>({ id:c.id, name:c.name, builtin:false })),
+    ];
+  }
+
+  async function addChannel(){
+    const name = state.newChannelName.trim();
+    if(!name){ state.channelError = 'Nhập tên kênh trước đã.'; draw(); return; }
+    state.channelSaving = true; state.channelError = null; draw();
+    try{
+      const { data, error } = await ctx.supabase.from('user_channels').insert({ user_id: ctx.user.id, name }).select('id,name').single();
+      if(error) throw error;
+      state.channels.push(data);
+      state.channel = data.id;
+      state.addingChannel = false; state.newChannelName = ''; state.channelSaving = false;
+      state.pickerFor = null; state.editingEntryId = null; state.pending = null;
+      await Promise.all([loadEntries(), loadScheduledPostIds()]);
+    } catch(e){
+      state.channelError = e.message; state.channelSaving = false;
+    }
+    draw();
+  }
+
+  async function renameChannel(){
+    const name = state.renamingChannelName.trim();
+    if(!name) return;
+    const id = state.channel;
+    await ctx.supabase.from('user_channels').update({ name }).eq('id', id).eq('user_id', ctx.user.id);
+    const c = state.channels.find(c=>c.id===id);
+    if(c) c.name = name;
+    state.channelOptionsOpen = false;
+    draw();
+  }
+
+  async function deleteChannel(){
+    const id = state.channel;
+    const c = state.channels.find(c=>c.id===id);
+    if(!c) return;
+    const { count } = await ctx.supabase.from('calendar_entries').select('id', { count:'exact', head:true }).eq('user_id', ctx.user.id).eq('channel', id);
+    const warn = count ? `Kênh "${c.name}" đang có ${count} bài đã lên lịch (mọi tuần) — xoá kênh sẽ xoá LUÔN các bài đó khỏi lịch, không khôi phục được.` : `Xoá kênh "${c.name}"?`;
+    if(!(await confirmModal(warn, 'Xoá kênh'))) return;
+    if(count){ await ctx.supabase.from('calendar_entries').delete().eq('user_id', ctx.user.id).eq('channel', id); }
+    await ctx.supabase.from('user_channels').delete().eq('id', id).eq('user_id', ctx.user.id);
+    state.channels = state.channels.filter(c=>c.id!==id);
+    state.channel = 'ca_nhan';
+    state.channelOptionsOpen = false;
+    await Promise.all([loadEntries(), loadScheduledPostIds()]);
+    draw();
   }
 
   // "bài nào đã có trong lịch thì ko đề xuất hiện nữa" (chị Quỳnh 2026-09-07) — ô "Chọn bài đã viết"
@@ -347,6 +421,53 @@ function render(container, ctx){
       </div>`;
     }
     return `<div class="hint-box" style="margin-bottom:16px;">Chưa có bài nào được đăng trong những ngày đã qua tuần này — bắt đầu ngay hôm nay để không bỏ lỡ tuần này nhé.</div>`;
+  }
+
+  // Bộ chuyển kênh — trước đây CHỈ admin thấy (2 lane cố định Cá nhân/Fanpage, xem comment cũ ở
+  // schema_nhan_hieu.sql cột calendar_entries.channel), giờ MỌI người dùng đều thấy để tự thêm kênh
+  // riêng (2026-10-04). ">4 mục thì gom thành dropdown thay vì hàng chip phẳng" — quy tắc chung đã
+  // áp cho mọi bộ lọc/tuỳ chọn nhiều mục trong app (xem kho-content.js các bộ lọc trục/trạng thái).
+  function channelSwitcherHtml(isAdmin){
+    const list = allChannels(isAdmin);
+    const current = list.find(c=>c.id===state.channel) || list[0];
+    const switcherBody = list.length > 4 ? `
+      <select data-channel-select style="width:auto;margin-top:0;min-width:160px;">
+        ${list.map(c=>`<option value="${esc(c.id)}" ${c.id===state.channel?'selected':''}>${esc(c.name)}</option>`).join('')}
+      </select>
+    ` : `
+      <div class="chips" style="margin:0;">
+        ${list.map(c=>`<div class="chip ${c.id===state.channel?'selected':''}" data-channel="${esc(c.id)}">${esc(c.name)}</div>`).join('')}
+      </div>
+    `;
+    const addForm = state.addingChannel ? `
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <input id="new-channel-name" type="text" placeholder="Tên kênh mới…" value="${esc(state.newChannelName)}" style="flex:1;min-width:160px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
+        <button class="btn btn-sm" data-action="save-channel" ${state.channelSaving?'disabled':''}>${state.channelSaving?'Đang lưu…':'Lưu'}</button>
+        <span class="btn-ghost btn btn-sm" data-action="cancel-add-channel">Huỷ</span>
+      </div>
+      ${state.channelError ? `<div class="error-box" style="margin-top:8px;">${esc(state.channelError)}</div>` : ''}
+    ` : `<span style="cursor:pointer;color:var(--accent);font-weight:600;font-size:14.5px;" data-action="start-add-channel">+ Thêm kênh</span>`;
+    const optionsToggle = (current && !current.builtin) ? `
+      <div style="margin-top:10px;">
+        <span style="color:var(--ink-soft);font-size:14px;cursor:pointer;" data-action="toggle-channel-options">${state.channelOptionsOpen?'▾':'▸'} Tuỳ chọn kênh "${esc(current.name)}"</span>
+        ${state.channelOptionsOpen ? `
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+            <input id="rename-channel-name" type="text" value="${esc(state.renamingChannelName)}" style="flex:1;min-width:160px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
+            <button class="btn btn-sm" data-action="save-rename-channel">Đổi tên</button>
+            <span class="btn btn-sm" style="background:var(--danger);" data-action="delete-channel">Xoá kênh</span>
+          </div>
+        ` : ''}
+      </div>
+    ` : '';
+    return `
+      <div class="channel-switcher" style="margin-bottom:16px;">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          ${switcherBody}
+          ${addForm}
+        </div>
+        ${optionsToggle}
+      </div>
+    `;
   }
 
   function html(){
@@ -529,12 +650,7 @@ function render(container, ctx){
     const recordingCardHint = state.recordingSchedule.length ? `${state.recordingSchedule.length} việc sắp tới.` : 'Chưa có việc nào sắp tới.';
 
     return `
-      ${isAdmin ? `
-        <div class="chips" style="margin-bottom:16px;">
-          <div class="chip ${state.channel==='ca_nhan'?'selected':''}" data-channel="ca_nhan">Cá nhân</div>
-          <div class="chip ${state.channel==='fanpage'?'selected':''}" data-channel="fanpage">Fanpage</div>
-        </div>
-      ` : ''}
+      ${channelSwitcherHtml(isAdmin)}
       ${isAdmin && state.channel==='ca_nhan' ? `<div class="hint-box" style="margin-bottom:16px;">Hệ thống cũng tự động viết + xếp <b>3 bài/ngày</b> (Sáng/Trưa/Tối) vào ô trống mỗi sáng sớm — Tối luôn là "Video Ngồi Nói", Trưa luôn là bài case study, Sáng là bài thường. Chị chỉ cần tự đăng tay lên Facebook (không thể tự đăng hộ trang cá nhân).</div>` : ''}
 
       ${state.pending ? `
@@ -688,7 +804,7 @@ function render(container, ctx){
       ${toolCardHtml('recording', '🎬', 'Lịch công việc content', recordingCardBody, recordingCardHint, { id:'recording-card' })}
       ${state.channel==='ca_nhan' ? `
         ${toolCardHtml('ai-lich', '🤖', 'AI lên lịch tuần', aiCardBody, aiCardHint, { id:'ai-lich-card', bg: state.aiCardMode==='viet-luon' ? 'var(--accent-soft)' : null, pulse: state.highlightAutoFill })}
-      ` : `
+      ` : state.channel==='fanpage' ? `
         <div class="hint-box" style="margin-bottom:14px;">
           <div style="margin-bottom:10px;">Lane Fanpage — hệ thống tự chọn hook/content viral, tự viết bài, tự xếp vào ô trống mỗi sáng sớm rồi tự đăng đúng giờ. Vẫn bấm được ô trống để tự xếp bài tay nếu muốn.</div>
           <div class="btn-row">
@@ -698,6 +814,8 @@ function render(container, ctx){
           <div style="margin-top:4px;font-size:13px;color:var(--ink-soft);">Có thể mất 1-2 phút — đừng thoát trang khi đang đợi.</div>
           ${state.regenWeekError?`<div class="error-box" style="margin-top:10px;">${esc(state.regenWeekError)}</div>`:''}
         </div>
+      ` : `
+        <div class="hint-box" style="margin-bottom:14px;">Kênh tự tạo — chỉ là bảng nhắc lịch, chưa hỗ trợ AI gợi ý/tự viết bài như kênh "Cá nhân". Bấm vào ô trống để tự xếp bài tay.</div>
       `}
     `;
   }
@@ -790,16 +908,54 @@ function render(container, ctx){
     container.querySelectorAll('[data-posts-per-day]').forEach(el=>{
       el.onclick = ()=>{ state.postsPerDay = Number(el.getAttribute('data-posts-per-day')); saveDraftForCurrentWeek(); draw(); };
     });
-    // Chuyển lane Cá nhân/Fanpage — cả 2 lane đã cùng nằm trong state.entries của tuần đang xem
+    // Chuyển kênh — mọi kênh (dựng sẵn + tự tạo) đã cùng nằm trong state.entries của tuần đang xem
     // (loadEntries() không lọc theo channel), không cần gọi lại DB. Reset trạng thái thao tác dở
-    // dang để khỏi lẫn giữa 2 lane (vd đang mở picker ở ô lane này mà chuyển sang lane kia).
+    // dang để khỏi lẫn giữa 2 kênh (vd đang mở picker ở ô kênh này mà chuyển sang kênh kia).
+    function switchChannel(id){
+      state.channel = id;
+      state.pickerFor = null; state.editingEntryId = null; state.pending = null;
+      state.channelOptionsOpen = false; state.addingChannel = false;
+      draw();
+    }
     container.querySelectorAll('[data-channel]').forEach(el=>{
-      el.onclick = ()=>{
-        state.channel = el.getAttribute('data-channel');
-        state.pickerFor = null; state.editingEntryId = null; state.pending = null;
-        draw();
-      };
+      el.onclick = ()=> switchChannel(el.getAttribute('data-channel'));
     });
+    const channelSelect = container.querySelector('[data-channel-select]');
+    if(channelSelect) channelSelect.onchange = ()=> switchChannel(channelSelect.value);
+
+    const startAddChannelEl = container.querySelector('[data-action="start-add-channel"]');
+    if(startAddChannelEl) startAddChannelEl.onclick = ()=>{
+      state.addingChannel = true; state.newChannelName = ''; state.channelError = null; draw();
+      const input = document.getElementById('new-channel-name'); if(input) input.focus();
+    };
+    const cancelAddChannelEl = container.querySelector('[data-action="cancel-add-channel"]');
+    if(cancelAddChannelEl) cancelAddChannelEl.onclick = ()=>{ state.addingChannel = false; state.channelError = null; draw(); };
+    const newChannelInput = container.querySelector('#new-channel-name');
+    if(newChannelInput){
+      newChannelInput.oninput = ()=>{ state.newChannelName = newChannelInput.value; };
+      newChannelInput.onkeydown = (e)=>{ if(e.key==='Enter') addChannel(); };
+    }
+    const saveChannelEl = container.querySelector('[data-action="save-channel"]');
+    if(saveChannelEl) saveChannelEl.onclick = addChannel;
+
+    const toggleChannelOptionsEl = container.querySelector('[data-action="toggle-channel-options"]');
+    if(toggleChannelOptionsEl) toggleChannelOptionsEl.onclick = ()=>{
+      state.channelOptionsOpen = !state.channelOptionsOpen;
+      if(state.channelOptionsOpen){
+        const c = state.channels.find(c=>c.id===state.channel);
+        state.renamingChannelName = c ? c.name : '';
+      }
+      draw();
+    };
+    const renameChannelInput = container.querySelector('#rename-channel-name');
+    if(renameChannelInput){
+      renameChannelInput.oninput = ()=>{ state.renamingChannelName = renameChannelInput.value; };
+      renameChannelInput.onkeydown = (e)=>{ if(e.key==='Enter') renameChannel(); };
+    }
+    const saveRenameChannelEl = container.querySelector('[data-action="save-rename-channel"]');
+    if(saveRenameChannelEl) saveRenameChannelEl.onclick = renameChannel;
+    const deleteChannelEl = container.querySelector('[data-action="delete-channel"]');
+    if(deleteChannelEl) deleteChannelEl.onclick = deleteChannel;
     const aiBtn = container.querySelector('[data-action="ai-suggest"]');
     if(aiBtn) aiBtn.onclick = fetchAiSchedule;
     const jumpAutoFillEl = container.querySelector('[data-action="jump-autofill"]');

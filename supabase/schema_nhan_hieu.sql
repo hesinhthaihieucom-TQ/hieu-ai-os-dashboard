@@ -759,3 +759,26 @@ create table if not exists fb_comment_replies (
 -- client (anon/authenticated) không đọc/ghi được gì, vì bảng này thuần phụ trợ cho cron, không hiển
 -- thị ở app phía nào.
 alter table fb_comment_replies enable row level security;
+
+-- Kênh tự tạo (2026-10-04, chị Quỳnh "cho người dùng tự thêm bảng lịch tuần cho các kênh khác nhau
+-- của họ vì 1 người dùng đôi khi có mấy kênh lận") — MỖI user tự đặt tên kênh tuỳ ý (VD "Kênh TikTok
+-- A", "Fanpage công ty B"...), mỗi kênh có 1 bảng lịch tuần riêng trong calendar_entries (cột channel
+-- lưu ĐÚNG id (uuid dạng text) của dòng tương ứng ở đây). KHÔNG liên quan gì đến 2 kênh dựng sẵn
+-- 'ca_nhan'/'fanpage' bên dưới — 'fanpage' là Fanpage THẬT của chị Quỳnh (auto-đăng qua
+-- api/cron/auto-publish-fb.js, token riêng ở biến môi trường server), CHỈ admin thấy/dùng được —
+-- nhan-hieu/js/lich-dang.js không bao giờ cho khách thường chọn channel='fanpage'.
+create table if not exists user_channels (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists user_channels_user_id_idx on user_channels(user_id);
+alter table user_channels enable row level security;
+drop policy if exists "user_channels_owner_all" on user_channels;
+create policy "user_channels_owner_all" on user_channels for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Nới ràng buộc channel — trước đây CHỈ cho đúng 2 giá trị cố định ('ca_nhan'/'fanpage'), giờ còn
+-- phải chứa được id (uuid dạng text) của 1 dòng user_channels tuỳ user tự tạo ở trên, không còn là
+-- enum cố định được nữa. An toàn drop: cột channel vẫn giữ nguyên dữ liệu cũ, chỉ bỏ check.
+alter table calendar_entries drop constraint if exists calendar_entries_channel_check;
