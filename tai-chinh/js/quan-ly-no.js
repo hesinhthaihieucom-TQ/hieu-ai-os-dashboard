@@ -315,16 +315,17 @@ function render(container, ctx){
     return `
       <div class="card" style="margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-          <div>
+          <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <span style="font-weight:700;font-size:17px;">${esc(d.creditor_name)}</span>
               <span style="font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:99px;${isGreenDebt?'background:var(--accent-soft);color:var(--accent);':'background:#FBE5E5;color:var(--danger);'}">${isGreenDebt?'🟢 Nợ Kiến Tạo':'🔴 Nợ Hoảng Loạn'}</span>
             </div>
-            <div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">${costLabel} · Tối thiểu ${Number(d.minimum_payment).toLocaleString('vi-VN')}đ/tháng${d.due_day?` · Cam kết tri ân ngày ${esc(d.due_day)}`:''}</div>
-            <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">~${Math.round(monthlyInterest).toLocaleString('vi-VN')}đ ${d.cost_type === 'flat_fee' ? 'tiền phí' : 'tiền lãi'}/tháng</div>
           </div>
-          <div style="font-size:20px;font-weight:700;color:var(--danger);white-space:nowrap;">${Number(d.current_balance).toLocaleString('vi-VN')}đ</div>
+          <div style="font-size:20px;font-weight:700;color:var(--danger);white-space:nowrap;flex-shrink:0;">${Number(d.current_balance).toLocaleString('vi-VN')}đ</div>
         </div>
+        <!-- Chi tiết lãi/phí để NGOÀI hàng flex trên: trước đây nằm trong cột trái cùng số dư nên bị bóp còn nửa thẻ, xuống dòng vụn -->
+        <div style="font-size:14.5px;color:var(--ink-soft);margin-top:6px;line-height:1.55;">${costLabel} · Tối thiểu ${Number(d.minimum_payment).toLocaleString('vi-VN')}đ/tháng${d.due_day?` · Cam kết tri ân ngày ${esc(d.due_day)}`:''}</div>
+        <div style="font-size:14px;color:var(--ink-soft);margin-top:2px;">≈ ${Math.round(monthlyInterest).toLocaleString('vi-VN')}đ ${d.cost_type === 'flat_fee' ? 'tiền phí' : 'tiền lãi'}/tháng</div>
         ${d.gratitude_note ? `<div class="hint-box" style="margin-top:12px;">💛 ${esc(d.gratitude_note)}</div>` : ''}
         <div class="btn-row" style="justify-content:flex-start;margin-top:14px;">
           <span class="btn btn-sm" data-toggle-payment="${d.id}">💰 Ghi nhận thanh toán</span>
