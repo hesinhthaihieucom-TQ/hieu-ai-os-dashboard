@@ -331,3 +331,12 @@ b, strong{ color:var(--white); }
 .lp-gal-item figcaption span{ display:block; color:var(--gray); font-size:15.5px; line-height:1.55; }
 .lp-gal-note{ text-align:center; font-size:14px; color:var(--gray2); margin-top:4px; }
 @media (min-width:701px){ .lp-gal-item{ flex-basis:280px; } .lp-gallery{ padding-left:4px; padding-right:4px; margin:0; } }
+
+/* Thực đơn tab "xem thử app" ngay dưới hero (2026-10-04, chị Quỳnh: ảnh app nên lên đầu, dạng menu). */
+.lp-peek{ padding-top:28px; padding-bottom:6px; }
+.lp-tabs{ display:flex; gap:8px; overflow-x:auto; padding:14px 16px 10px; margin:0 -16px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.lp-tabs::-webkit-scrollbar{ display:none; }
+.lp-tab{ flex:0 0 auto; padding:11px 18px; border-radius:999px; border:1px solid var(--line); background:var(--black2); color:var(--gray); font-family:inherit; font-size:16px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.lp-tab.on{ background:linear-gradient(135deg,var(--gold-light),var(--orange-dark)); color:#241a03; border-color:transparent; }
+.lp-tab-panel{ display:none; }
+.lp-tab-panel.on{ display:block; }

@@ -139,13 +139,13 @@ function render(container, ctx){
   // tự chia ngân sách tuần). Chỉ là bản xem trước chia đều theo số tuần (Thứ Hai) của tháng — Tổng Kết
   // Tuần (tong-ket-tuan.js) mới là nơi tính lại sát thực tế (dồn/bớt phần dư-thiếu từ các tuần trước).
   // Đọc từ state.savedBudget (đã lưu) chứ không phải form đang gõ, và ẩn khi còn thay đổi chưa lưu.
+  // Số tuần (tính theo Thứ Hai) CHẠM vào tháng — khớp cách Tổng Kết Tuần chia ngân sách (gồm cả tuần
+  // đầu tháng bắt đầu từ cuối tháng trước).
   function weeksInMonth(){
     const [y, m] = month.split('-').map(Number);
-    const d = new Date(y, m-1, 1);
-    const dow = d.getDay();
-    d.setDate(d.getDate() + (dow===0 ? 1 : (dow===1 ? 0 : 8-dow)));
+    const d = startOfWeek(new Date(y, m-1, 1));
     let n = 0;
-    while(d.getMonth() === m-1){ n++; d.setDate(d.getDate()+7); }
+    while(d.getFullYear() < y || (d.getFullYear() === y && d.getMonth() <= m-1)){ n++; d.setDate(d.getDate()+7); }
     return Math.max(1, n);
   }
   function budgetWeeklyHtml(){

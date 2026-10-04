@@ -55,6 +55,7 @@ function render(container, ctx){
     breakdownTab: { expense:'chi-tiet', income:'chi-tiet' },
     budgets: {},
     spentBeforeThisWeek: {},
+    budgetMonth: '',
     history: [],   // 8 tuần ngay trước tuần đang xem (để xem lại nhanh)
   };
   // Draft khoá riêng theo TỪNG TUẦN — không thì đổi tuần (Tuần trước/sau) sẽ vô tình dán nhầm bản
@@ -74,10 +75,25 @@ function render(container, ctx){
   // Tuần thuộc về tháng nào = tháng của chính ngày Thứ Hai đầu tuần (state.weekStart) — quy ước đơn
   // giản cho tuần giao 2 tháng (VD tuần 28/8-3/9 tính hẳn vào tháng 8, không chia đôi ngân sách).
   function monthOfWeek(){ return isoDate(state.weekStart).slice(0,7); }
+  // Tuần giao 2 tháng (VD 28/9–4/10) thì ngân sách có thể được đặt ở tháng của NGÀY CUỐI tuần (chị
+  // Quỳnh đặt ngân sách tháng 10 vào ngày 4/10 nhưng tuần đó lại tính vào tháng 9 theo ngày Thứ Hai →
+  // "chưa đặt ngân sách"). Chọn tháng của Thứ Hai nếu ở đó có ngân sách, không thì thử tháng của Chủ Nhật.
+  function monthOfWeekEnd(){ return isoDate(weekEnd()).slice(0,7); }
 
   // Tất cả các Thứ Hai (đúng định nghĩa "tuần" app dùng, startOfWeek() ở util.js) rơi vào tháng này —
   // dùng để chia đều hạn mức ngân sách/tháng cho từng tuần, và biết tuần đang xem là tuần thứ mấy/
   // còn lại bao nhiêu tuần để phân bổ lại phần dư/thiếu của các tuần trước.
+  // Các tuần (theo ngày Thứ Hai) CHẠM vào tháng — gồm cả tuần đầu tháng bắt đầu từ cuối tháng trước.
+  function weeksOverlappingMonth(monthStr){
+    const [y, m] = monthStr.split('-').map(Number);
+    const d = startOfWeek(new Date(y, m-1, 1));
+    const list = [];
+    while(d.getFullYear() < y || (d.getFullYear() === y && d.getMonth() <= m-1)){
+      list.push(new Date(d));
+      d.setDate(d.getDate()+7);
+    }
+    return list;
+  }
   function mondaysInMonth(monthStr){
     const [y, m] = monthStr.split('-').map(Number);
     const list = [];
@@ -104,10 +120,10 @@ function render(container, ctx){
         .eq('user_id', ctx.user.id).gte('entry_date', weekStartIso).lte('entry_date', weekEndIso),
       ctx.supabase.from('tc_weekly_reflections').select('*')
         .eq('user_id', ctx.user.id).eq('week_start', weekStartIso).maybeSingle(),
-      ctx.supabase.from('tc_budgets').select('*').eq('user_id', ctx.user.id).eq('month', month),
+      ctx.supabase.from('tc_budgets').select('*').eq('user_id', ctx.user.id).in('month', [...new Set([month, monthOfWeekEnd()])]),
       // Chi tiêu TRƯỚC tuần này trong cùng tháng (không lấy trùng tuần đang xem, đã có ở entriesRes)
       // — để biết ngân sách tháng còn lại bao nhiêu trước khi chia cho các tuần còn lại.
-      ctx.supabase.from('tc_finance_entries').select('type, category_label, amount')
+      ctx.supabase.from('tc_finance_entries').select('type, category_label, amount, entry_date')
         .eq('user_id', ctx.user.id).in('type', ['expense', 'tich_luy'])
         .gte('entry_date', month + '-01').lt('entry_date', weekStartIso),
       ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
@@ -134,10 +150,12 @@ function render(container, ctx){
         rate: w.income>0 ? Math.round((w.income-w.expense)/w.income*100) : null, feeling: feelingByWeek[iso] || '' };
     });
     state.entries = entriesRes.data || [];
+    const budgetRows = budgetsRes.data || [];
+    state.budgetMonth = (budgetRows.some(b=>b.month===month) || !budgetRows.length) ? month : monthOfWeekEnd();
     state.budgets = {};
-    (budgetsRes.data||[]).forEach(b=>{ state.budgets[b.category_label] = Number(b.limit_amount)||0; });
+    budgetRows.filter(b=>b.month===state.budgetMonth).forEach(b=>{ state.budgets[b.category_label] = Number(b.limit_amount)||0; });
     state.spentBeforeThisWeek = {};
-    (priorSpendRes.data||[]).forEach(e=>{
+    (priorSpendRes.data||[]).filter(e=>String(e.entry_date) >= state.budgetMonth + '-01').forEach(e=>{
       // Giao dịch type='tich_luy' (loại riêng, category_label là danh mục con Vàng/Cổ phiếu...) gộp về
       // đúng khoá "Tích Lũy" để khớp hạn mức Tích Lũy đã đặt trong ngân sách.
       const key = e.type==='tich_luy' ? TICH_LUY_CATEGORY_LABEL : (e.category_label || 'Khác');
@@ -216,19 +234,25 @@ function render(container, ctx){
       if(!categories.length){
         return `<div class="hint-box">Chưa đặt hạn mức ngân sách tháng này — đặt ở <a href="#muc-tieu" style="color:var(--accent);font-weight:600;">Mục Tiêu & Cam Kết →</a> để tự động chia theo từng tuần ở đây.</div>`;
       }
-      const mondays = mondaysInMonth(monthOfWeek());
+      const bm = state.budgetMonth || monthOfWeek();
+      const mondays = weeksOverlappingMonth(bm);
       const weeksTotal = mondays.length;
       const thisIso = isoDate(state.weekStart);
       let thisIndex = mondays.findIndex(d=>isoDate(d)===thisIso) + 1;
       if(thisIndex <= 0) thisIndex = 1;
       const weeksRemaining = Math.max(1, weeksTotal - thisIndex + 1);
+      // Chỉ tính các khoản NẰM TRONG tháng của ngân sách (tuần giao 2 tháng thì phần của tháng kia không trừ vào).
+      const inBudgetMonth = e => String(e.entry_date).slice(0,7) === bm;
       const spentThisWeekByCategory = {};
-      expenseByCategory.forEach(c=>{ spentThisWeekByCategory[c.label] = c.amount; });
-      const tichLuyThisWeek = state.entries.filter(e=>e.type==='tich_luy').reduce((s,e)=>s+Number(e.amount),0);
+      state.entries.filter(e=>e.type==='expense' && inBudgetMonth(e)).forEach(e=>{
+        const k = e.category_label || 'Khác';
+        spentThisWeekByCategory[k] = (spentThisWeekByCategory[k]||0) + Number(e.amount);
+      });
+      const tichLuyThisWeek = state.entries.filter(e=>e.type==='tich_luy' && inBudgetMonth(e)).reduce((s,e)=>s+Number(e.amount),0);
       if(tichLuyThisWeek > 0) spentThisWeekByCategory[TICH_LUY_CATEGORY_LABEL] = (spentThisWeekByCategory[TICH_LUY_CATEGORY_LABEL]||0) + tichLuyThisWeek;
 
       return `
-        <div class="hint-box" style="margin-bottom:14px;">Hạn mức tháng ${monthOfWeek().split('-')[1]}/${monthOfWeek().split('-')[0]} chia cho ${weeksRemaining} tuần còn lại (kể cả tuần này) — tuần nào tiêu ít/nhiều hơn gợi ý, phần chênh lệch tự dồn/bớt cho các tuần sau.</div>
+        <div class="hint-box" style="margin-bottom:14px;">Hạn mức tháng ${bm.split('-')[1]}/${bm.split('-')[0]} chia cho ${weeksRemaining} tuần còn lại (kể cả tuần này) — tuần nào tiêu ít/nhiều hơn gợi ý, phần chênh lệch tự dồn/bớt cho các tuần sau.</div>
         ${categories.map(key=>{
           const monthlyLimit = state.budgets[key];
           const spentBefore = state.spentBeforeThisWeek[key] || 0;
