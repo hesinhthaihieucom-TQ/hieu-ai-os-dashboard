@@ -294,3 +294,18 @@ b, strong{ color:var(--white); }
 @media (max-width:520px){
   .lp-founder-stats{ grid-template-columns:1fr 1fr; }
 }
+
+/* Khối giá thuyết phục (2026-10-04): tiết kiệm bao nhiêu, quy ra mỗi ngày, quà nhận được, hoàn tiền ngay trước nút. */
+.lp-price-save{ display:inline-block; margin-top:10px; background:rgba(34,197,94,.14); border:1px solid rgba(34,197,94,.45); color:#86EFAC; font-size:17px; font-weight:700; padding:8px 16px; border-radius:999px; }
+.lp-price-save b{ color:#fff; font-weight:800; }
+.lp-price-perday{ background:rgba(240,194,75,.07); border:1px dashed rgba(240,194,75,.45); border-radius:12px; padding:14px 16px; margin:0 0 6px; font-size:16px; line-height:1.6; color:var(--gray); }
+.lp-price-perday b{ color:var(--gold-light); }
+.lp-price-perday-big{ font-family:'Playfair Display',serif; font-size:26px; color:var(--gold); margin-bottom:4px; }
+.lp-price-perday-big b{ color:var(--gold); font-size:32px; }
+.lp-price-gets{ text-align:left; margin-top:20px; }
+.lp-price-gets-title{ font-weight:800; color:var(--gold-light); font-size:17px; margin-bottom:10px; }
+.lp-price-gets-item{ display:flex; gap:10px; font-size:16px; line-height:1.55; color:var(--gray); margin-bottom:9px; }
+.lp-price-gets-item b{ color:#fff; }
+.lp-price-micro{ margin-top:12px; font-size:14.5px; color:var(--gray2); text-align:center; line-height:1.5; }
+.lp-price-guarantee b{ color:#fff; }
+.lp-price-guarantee{ border:1px solid rgba(34,197,94,.4); }

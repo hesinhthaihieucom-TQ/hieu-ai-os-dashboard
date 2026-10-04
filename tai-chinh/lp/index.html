@@ -300,25 +300,29 @@
         <div class="lp-price-arrow">⬇</div>
         <div class="lp-price-label lp-price-label-new">Giá ưu đãi hôm nay <span class="tc-lp-off lp-price-off">-80%</span></div>
         <div class="lp-price-new tc-lp-price">199.000đ</div>
+        <div class="lp-price-save">💰 Bạn tiết kiệm ngay <b class="tc-lp-save">800.000đ</b></div>
       </div>
       <div class="lp-countdown tc-lp-countdown-wrap" style="margin:4px 0 16px;">⏰ Giá này chỉ giữ trong <span class="tc-lp-countdown-time">60:00</span> — hết giờ tự lên <b>299.000đ</b></div>
-      <div class="lp-stat-line" style="justify-content:center;margin-bottom:4px;"><span class="dot"></span>Trả 1 lần duy nhất, dùng trọn đời — không phải gói tháng/năm, không thu lại lần nào nữa</div>
+      <div class="lp-price-perday">
+        <div class="lp-price-perday-big">≈ <b class="tc-lp-perday">545đ</b> / ngày</div>
+        <div>nếu dùng trong 1 năm đầu — rẻ hơn 1 ly trà đá. Từ năm thứ 2 trở đi: <b>0đ</b>, vì bạn chỉ trả <b>1 lần duy nhất, dùng trọn đời</b>.</div>
+      </div>
       <div class="lp-price-why">
         <div class="lp-price-why-title">💡 Vì sao mức giá này đặc biệt?</div>
         <div class="lp-price-why-item">🎯 Đây là giá <strong>RIÊNG cho landing page này</strong> — trong app, các mốc mở khoá thường là 299.000đ / 599.000đ / 999.000đ tuỳ thời điểm bạn vào.</div>
         <div class="lp-price-why-item">🔓 Nhận <strong>đầy đủ 100% tính năng</strong> giống hệt các mốc giá cao hơn — không bị cắt bớt vì trả ít hơn.</div>
-        <div class="lp-price-why-item">♾️ Trả đúng <strong>1 lần duy nhất</strong>, dùng <strong>trọn đời</strong> — không phải gói theo tháng/năm, không phát sinh thu thêm về sau.</div>
       </div>
-      <div style="text-align:left;margin-top:18px;font-size:13.5px;line-height:1.9;color:var(--gray);">
-        Bạn nhận được toàn bộ:<br>
-        ✅ Quyền truy cập trọn đời Web App Sổ Dòng Tiền Tâm Thức<br>
-        ✅ Trắc Nghiệm Chấm Điểm Nghiệp Tiền 5 Trụ Cột + Bác Sĩ Siêu Âm 4 Nút Chặn Dòng Tiền<br>
-        ✅ Hạt Giống Phước - Nghiệp, Mục Tiêu &amp; Cam Kết, Quản Lý Nợ, Tổng Kết Tuần/Tháng/Năm<br>
-        ✅ Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng — miễn phí dùng mãi mãi dù chưa mở khoá<br>
-        ✅ Chương trình giới thiệu bạn bè — nhận 20% hoa hồng mỗi người bạn giới thiệu mua trọn đời
+      <div class="lp-price-gets">
+        <div class="lp-price-gets-title">Mở khoá hôm nay, bạn nhận trọn bộ:</div>
+        <div class="lp-price-gets-item">✅ <span><b>Web App Sổ Dòng Tiền Tâm Thức</b> — dùng trọn đời</span></div>
+        <div class="lp-price-gets-item">✅ <span><b>Chấm Điểm Nghiệp Tiền 5 Trụ Cột</b> + Bác Sĩ Siêu Âm 4 Nút Chặn Dòng Tiền</span></div>
+        <div class="lp-price-gets-item">✅ <span>Hạt Giống Phước - Nghiệp, Mục Tiêu &amp; Cam Kết, Quản Lý Nợ, Tổng Kết Tuần/Tháng/Năm</span></div>
+        <div class="lp-price-gets-item">✅ <span>Ghi Chép Hàng Ngày + Kiến Thức Nền Tảng</span></div>
+        <div class="lp-price-gets-item">✅ <span>Chương trình giới thiệu bạn bè — <b>nhận 20% hoa hồng</b> mỗi người mua trọn đời</span></div>
       </div>
-      <button class="lp-cta" style="margin-top:18px;border:none;cursor:pointer;" id="lp-open-signup">Đăng ký trải nghiệm ngay — chỉ <span class="tc-lp-price">199.000đ</span> →</button>
-      <div class="lp-price-guarantee">🔁 Cam kết hoàn tiền 100% trong 7 ngày đầu nếu dùng thấy không hợp — không cần lý do, chỉ cần nhắn email đăng ký.</div>
+      <div class="lp-price-guarantee">🔁 <b>Dùng thử 7 ngày, không hợp thì hoàn 100% tiền</b> — không cần lý do, chỉ cần nhắn email đăng ký. Bạn gần như không có gì để mất.</div>
+      <button class="lp-cta lp-cta-pulse" style="margin-top:18px;border:none;cursor:pointer;" id="lp-open-signup">Đăng ký ngay — giữ giá <span class="tc-lp-price">199.000đ</span> →</button>
+      <div class="lp-price-micro">🔒 Thanh toán 1 lần qua QR · Vào app ngay sau khi chuyển khoản</div>
     </div>
   </section>
 
@@ -439,6 +443,8 @@
     const off = Math.round((999000 - p) / 999000 * 100);
     document.querySelectorAll('.tc-lp-price').forEach(el => { el.textContent = fmtVnd(p); });
     document.querySelectorAll('.tc-lp-off').forEach(el => { el.textContent = '-' + off + '%'; });
+    document.querySelectorAll('.tc-lp-save').forEach(el => { el.textContent = fmtVnd(999000 - p); });
+    document.querySelectorAll('.tc-lp-perday').forEach(el => { el.textContent = fmtVnd(Math.round(p / 365)); });
   }
   function tick() {
     const msLeft = deadline - Date.now();
