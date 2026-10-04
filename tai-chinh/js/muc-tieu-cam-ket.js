@@ -42,7 +42,7 @@ function render(container, ctx){
     budgetActuals: {},
     budgetForm: {},
     savingBudget: false,
-    savedBudgetMsg: '',
+    savedBudget: {},   // bản ngân sách ĐÃ lưu trên server (category -> số) — để biết form đang "đã lưu" hay "chưa lưu"
     expenseCategories: [],
     // Thu nhập thật đã ghi tháng này — dùng làm mốc cân đối ngân sách khi chưa đặt mục tiêu thu nhập.
     incomeActual: 0,
@@ -123,8 +123,55 @@ function render(container, ctx){
   function budgetSummaryBlockHtml(){
     return `<div class="hint-box mt-budget-summary" style="text-align:left;margin:12px 0;">${budgetSummaryInnerHtml()}</div>`;
   }
+  // Trạng thái lưu ngân sách hiện BỀN (không tự biến mất sau vài giây) và đổi sang "chưa lưu" ngay khi
+  // gõ lại — chị Quỳnh 2026-10-04: lưu xong phải thấy "đã lưu", để khỏi bấm lưu đi lưu lại vì không chắc.
+  function normBudget(o){
+    return JSON.stringify(Object.keys(o).filter(k=>k.trim() && Number(o[k])>0).sort().map(k=>[k, Number(o[k])]));
+  }
+  function budgetStatusHtml(){
+    if(state.savingBudget) return '';
+    if(normBudget(state.budgetForm) !== normBudget(state.savedBudget)){
+      return '<span style="color:var(--gold);">● Có thay đổi chưa lưu</span>';
+    }
+    return Object.keys(state.savedBudget).length ? '✓ Đã lưu ngân sách' : '';
+  }
+  // Ngân sách ĐÃ lưu → hiện luôn cách chia theo tuần ngay tại đây (chị Quỳnh 2026-10-04: lưu xong phải
+  // tự chia ngân sách tuần). Chỉ là bản xem trước chia đều theo số tuần (Thứ Hai) của tháng — Tổng Kết
+  // Tuần (tong-ket-tuan.js) mới là nơi tính lại sát thực tế (dồn/bớt phần dư-thiếu từ các tuần trước).
+  // Đọc từ state.savedBudget (đã lưu) chứ không phải form đang gõ, và ẩn khi còn thay đổi chưa lưu.
+  function weeksInMonth(){
+    const [y, m] = month.split('-').map(Number);
+    const d = new Date(y, m-1, 1);
+    const dow = d.getDay();
+    d.setDate(d.getDate() + (dow===0 ? 1 : (dow===1 ? 0 : 8-dow)));
+    let n = 0;
+    while(d.getMonth() === m-1){ n++; d.setDate(d.getDate()+7); }
+    return Math.max(1, n);
+  }
+  function budgetWeeklyHtml(){
+    const dirty = normBudget(state.budgetForm) !== normBudget(state.savedBudget);
+    const keys = Object.keys(state.savedBudget).filter(k=>Number(state.savedBudget[k]) > 0 && k !== TICH_LUY_CATEGORY_LABEL);
+    if(dirty || !keys.length) return '';
+    const weeks = weeksInMonth();
+    const fmt = n => Math.round(n).toLocaleString('vi-VN') + 'đ';
+    const total = keys.reduce((a,k)=> a + Number(state.savedBudget[k]), 0);
+    return `
+      <div class="hint-box" style="text-align:left;margin:12px 0;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📅 Ngân sách đã tự chia theo tuần — tháng này có ${weeks} tuần</div>
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:15px;padding:4px 0;"><span>Tổng mỗi tuần</span><b style="color:var(--accent);">≈ ${fmt(total/weeks)}</b></div>
+        <details style="margin-top:4px;">
+          <summary style="cursor:pointer;font-size:14.5px;color:var(--ink-soft);">▾ Xem từng danh mục</summary>
+          ${keys.map(k=>`<div style="display:flex;justify-content:space-between;gap:12px;font-size:15px;padding:4px 0;"><span>${esc(k)}</span><span>≈ ${fmt(Number(state.savedBudget[k])/weeks)} / tuần</span></div>`).join('')}
+        </details>
+        <div style="margin-top:8px;font-size:14px;color:var(--ink-soft);line-height:1.5;">Con số chia đều để xem trước. Sang <a href="#tong-ket-tuan" style="color:var(--accent);font-weight:600;">Tổng Kết Tuần →</a> app tự tính lại mỗi tuần theo thực tế đã tiêu (tuần nào tiêu dư/thiếu thì dồn sang các tuần sau).</div>
+      </div>`;
+  }
   function updateBudgetSummary(){
+    const wk = container.querySelector('#mt-budget-weekly');
+    if(wk) wk.innerHTML = budgetWeeklyHtml();
     container.querySelectorAll('.mt-budget-summary').forEach(el=>{ el.innerHTML = budgetSummaryInnerHtml(); });
+    const st = container.querySelector('#mt-budget-saved');
+    if(st) st.innerHTML = budgetStatusHtml();
   }
   const DRAFT_KEY = 'muc-tieu-' + month;
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { goal: state.goal, goal_first_reaction: state.goal_first_reaction, selectedResistance: state.selectedResistance, obstacleInput: state.obstacleInput, step: state.step, budgetForm: state.budgetForm }); }
@@ -175,7 +222,8 @@ function render(container, ctx){
       state.budgetActuals[key] = (state.budgetActuals[key]||0) + Number(e.amount);
     });
     state.budgetForm = {};
-    (budgetsRes.data||[]).forEach(b=>{ state.budgetForm[b.category_label] = String(b.limit_amount); });
+    state.savedBudget = {};
+    (budgetsRes.data||[]).forEach(b=>{ state.budgetForm[b.category_label] = String(b.limit_amount); state.savedBudget[b.category_label] = String(b.limit_amount); });
     // Draft (đang gõ dở, chưa bấm Lưu) đè lên SAU dữ liệu đã lưu — draft luôn là bản mới hơn.
     const draft = await loadModuleDraft(ctx, DRAFT_KEY);
     if(draft){
@@ -199,10 +247,15 @@ function render(container, ctx){
     if(rows.length > 0){
       await ctx.supabase.from('tc_budgets').upsert(rows, { onConflict:'user_id,month,category_label' });
     }
+    // Danh mục từng có hạn mức đã lưu mà giờ để trống/0 → xoá khỏi DB, nếu không xoá số trong ô rồi
+    // bấm Lưu sẽ im lặng giữ lại hạn mức cũ (reload là hiện lại).
+    const kept = new Set(rows.map(r=>r.category_label));
+    const removed = Object.keys(state.savedBudget).filter(k=>!kept.has(k));
+    if(removed.length > 0){
+      await ctx.supabase.from('tc_budgets').delete().eq('user_id', ctx.user.id).eq('month', month).in('category_label', removed);
+    }
     state.savingBudget = false;
-    state.savedBudgetMsg = 'Đã lưu ✓';
     await load();
-    setTimeout(()=>{ state.savedBudgetMsg=''; const el = container.querySelector('#mt-budget-saved'); if(el) el.textContent=''; }, 1800);
   }
 
   async function saveGoal(){
@@ -415,8 +468,9 @@ function render(container, ctx){
             <span class="btn-ghost btn btn-sm" id="mt-add-budget-category">+ Thêm</span>
           </div>
           ${budgetSummaryBlockHtml()}
+          <div id="mt-budget-weekly">${budgetWeeklyHtml()}</div>
           <button class="btn btn-sm" style="margin-top:14px;" id="mt-save-budget" ${state.savingBudget?'disabled':''}>${state.savingBudget?'Đang lưu…':'Lưu ngân sách'}</button>
-          <span id="mt-budget-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedBudgetMsg}</span>
+          <span id="mt-budget-saved" style="margin-left:10px;color:var(--accent);font-weight:600;font-size:15px;">${budgetStatusHtml()}</span>
         </div>
 
         <div class="section">
