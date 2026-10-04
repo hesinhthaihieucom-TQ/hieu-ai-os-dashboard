@@ -31,6 +31,7 @@ const TOUR_STEPS = [
   { selector: '#gc-type-chips', title: 'Thu nhập hay chi tiêu', text: 'Chọn đúng loại giao dịch trước — form bên dưới sẽ đổi theo (thu nhập hỏi chia quỹ, chi tiêu hỏi Tài sản/Tiêu sản).' },
   { selector: '#gc-vibe-chips', title: 'Vibe Check — bước quan trọng nhất', text: 'Chọn cảm nhận thật của bạn lúc tiền vào/ra. Đây là dữ liệu gốc cho toàn bộ tâm thức tài chính của cuốn sổ này, không phải lựa chọn cho có.' },
   { selector: '#gc-submit', title: 'Lưu giao dịch', text: 'Ghi chân thật mỗi ngày, dù khoản nhỏ nhất — đây là dữ liệu gốc mà Tổng Kết Tuần/Tháng và các tính năng khác đều dựa vào.' },
+  { selector: '[data-toggle-options]', title: 'Ghi nhầm thì sửa được', text: 'Bấm "Tuỳ chọn" ở từng giao dịch đã ghi → Sửa để chỉnh lại số tiền, nội dung, danh mục, ngày hay cảm nhận (không cần xoá rồi ghi lại), hoặc Xoá nếu muốn bỏ hẳn.' },
 ];
 
 function fundSplitHtml(amount, debtWarning){
@@ -51,6 +52,12 @@ function render(container, ctx){
     form: { type:'expense', amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' },
     saving: false,
     error: null,
+    // Sửa giao dịch đã ghi (chị Quỳnh 2026-10-04: "ghi nhầm thì sửa được chứ không chỉ xoá") — dùng
+    // lại chính form nhập: bấm Sửa thì đổ dữ liệu vào form, lưu sẽ UPDATE thay vì INSERT.
+    // formBeforeEdit giữ bản đang gõ dở của form "thêm mới" để trả lại nguyên vẹn sau khi sửa xong/huỷ.
+    editingId: null,
+    formBeforeEdit: null,
+    expandedOptionsIds: new Set(),
     debtWarning: null,
     categories: [],
     showCustomCategory: false,
@@ -66,7 +73,35 @@ function render(container, ctx){
     testPushBusy: false,
     testPushResult: null,
   };
-  function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { form: state.form }); }
+  // Đang sửa giao dịch cũ thì KHÔNG lưu draft — draft chỉ dành cho form "thêm mới", nếu lưu dữ liệu
+  // đang sửa vào đó, lần sau mở lại sẽ hiện lẫn vào form thêm mới và dễ lỡ ghi thành giao dịch mới.
+  function persistDraft(){ if(state.editingId) return; saveModuleDraft(ctx, DRAFT_KEY, { form: state.form }); }
+  function blankForm(type){ return { type: type||'expense', amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' }; }
+
+  function startEdit(id){
+    const e = state.entries.find(x=>x.id===id);
+    if(!e) return;
+    if(!state.editingId) state.formBeforeEdit = state.form; // chỉ nhớ bản "thêm mới" lần đầu, bấm sửa tiếp giao dịch khác không đè mất
+    state.editingId = id;
+    state.form = {
+      type: e.type, amount: String(Number(e.amount)), description: e.description || '',
+      category: e.category || '', category_label: e.category_label || '',
+      vibe: e.vibe || null, vibe_reason: e.vibe_reason || '',
+    };
+    // Danh mục của giao dịch cũ có thể không còn trong danh sách (đã xoá/đổi tên) — mở ô "+ Khác" để
+    // vẫn hiện đúng giá trị cũ chứ không bị trống mất.
+    state.showCustomCategory = !!state.form.category_label && !state.categories.some(c=>c.type===e.type && c.label===state.form.category_label);
+    state.error = null;
+    draw();
+    const card = container.querySelector('#gc-form-card');
+    if(card) card.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+  function cancelEdit(){
+    state.form = state.formBeforeEdit || blankForm();
+    state.formBeforeEdit = null; state.editingId = null;
+    state.showCustomCategory = false; state.error = null;
+    draw();
+  }
 
   function draw(){ container.innerHTML = html(); bind(); }
   draw();
@@ -206,7 +241,10 @@ function render(container, ctx){
       vibe: state.form.vibe,
       vibe_reason: state.form.vibe_reason.trim() || null,
     };
-    const { error } = await ctx.supabase.from('tc_finance_entries').insert(payload);
+    const wasEditing = !!state.editingId;
+    const { error } = wasEditing
+      ? await ctx.supabase.from('tc_finance_entries').update(payload).eq('id', state.editingId)
+      : await ctx.supabase.from('tc_finance_entries').insert(payload);
     state.saving = false;
     if(error){ state.error = 'Không lưu được — thử lại. (' + error.message + ')'; draw(); return; }
     // Gõ danh mục mới qua "+ Khác" ngay lúc ghi (không bắt phải qua Quản Lý Danh Mục trước) — lưu
@@ -220,9 +258,14 @@ function render(container, ctx){
         default_classification: null,
       });
     }
-    state.form = { type: state.form.type, amount:'', description:'', category:'', category_label:'', vibe:null, vibe_reason:'' };
+    if(wasEditing){
+      state.form = state.formBeforeEdit || blankForm();
+      state.formBeforeEdit = null; state.editingId = null;
+    } else {
+      state.form = blankForm(state.form.type);
+      await clearModuleDraft(ctx, DRAFT_KEY);
+    }
     state.showCustomCategory = false;
-    await clearModuleDraft(ctx, DRAFT_KEY);
     await load();
     await loadCategories();
   }
@@ -244,7 +287,8 @@ function render(container, ctx){
         <p>Ghi chân thật, dù những khoản nhỏ nhất — cách duy nhất để hiểu rõ tiền của bạn đi đâu.</p>
       </div>
 
-      <div class="card" style="margin-bottom:20px;">
+      <div class="card" id="gc-form-card" style="margin-bottom:20px;${state.editingId?'border-color:var(--accent);':''}">
+        ${state.editingId ? `<div class="hint-box" style="margin-bottom:14px;">✏️ Đang <b>sửa</b> 1 giao dịch đã ghi — chỉnh xong bấm "Lưu thay đổi". Đổi ngày ở ô dưới sẽ chuyển giao dịch này sang ngày mới.</div>` : ''}
         <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;">Ngày</label>
         <input type="date" id="gc-date" value="${esc(state.date)}" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;background:#FDFCF8;color:var(--ink);">
         <div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;">Chỉ ghi được 1 lần/tuần cũng không sao — chọn lại đúng ngày ở đây cho từng khoản, ghi bù cả tuần vẫn ra đúng dữ liệu.</div>
@@ -293,7 +337,8 @@ function render(container, ctx){
         ` : ''}
 
         ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ''}
-        <button class="btn btn-full" id="gc-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':'+ Thêm giao dịch'}</button>
+        <button class="btn btn-full" id="gc-submit" ${state.saving?'disabled':''}>${state.saving?'Đang lưu…':(state.editingId?'Lưu thay đổi':'+ Thêm giao dịch')}</button>
+        ${state.editingId ? `<button class="btn-ghost btn btn-full" id="gc-cancel-edit" style="margin-top:10px;">Huỷ sửa</button>` : ''}
       </div>
 
       <div class="source-grid" style="margin-bottom:16px;">
@@ -307,16 +352,22 @@ function render(container, ctx){
         const spendLabel = e.category_label || null;
         const typeLabel = e.type==='income' ? '💰 Thu nhập' : e.type==='tich_luy' ? '🏦 Tích Lũy' : '💸 Chi tiêu';
         const amountColor = e.type==='income' ? 'var(--accent)' : e.type==='tich_luy' ? 'var(--gold)' : 'var(--danger)';
+        const optionsOpen = state.expandedOptionsIds.has(e.id);
         return `
-        <div class="list-item">
+        <div class="list-item" ${state.editingId===e.id?'style="border-color:var(--accent);"':''}>
           <div class="txt">
             <div class="meta">${vibeIcon(e.vibe)} ${typeLabel}${catLabel?` · ${esc(catLabel)}`:''}${spendLabel?` · ${esc(spendLabel)}`:''}${e.tich_luy_category?` · ${esc(e.tich_luy_category)}`:''}</div>
             ${esc(e.description||'(không ghi chú)')}
             ${e.vibe_reason ? `<div style="font-size:13.5px;color:var(--ink-soft);font-style:italic;margin-top:4px;">"${esc(e.vibe_reason)}"</div>` : ''}
           </div>
-          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;">
             <div style="font-weight:700;color:${amountColor};">${e.type==='income'?'+':'-'}${Number(e.amount).toLocaleString('vi-VN')}đ</div>
-            <span class="btn-ghost btn btn-sm" data-delete="${e.id}" style="padding:5px 10px;font-size:13.5px;">Xoá</span>
+            <span style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;" data-toggle-options="${e.id}">${optionsOpen?'▾':'▸'} Tuỳ chọn</span>
+            ${optionsOpen ? `
+              <div style="display:flex;gap:8px;">
+                <span class="btn-ghost btn btn-sm" data-edit="${e.id}" style="padding:5px 12px;font-size:13.5px;">Sửa</span>
+                <span class="btn-ghost btn btn-sm" data-delete="${e.id}" style="padding:5px 12px;font-size:13.5px;">Xoá</span>
+              </div>` : ''}
           </div>
         </div>
       `;}).join(''))}
@@ -354,7 +405,21 @@ function render(container, ctx){
     const tourBtn = container.querySelector('#gc-start-tour');
     if(tourBtn) tourBtn.onclick = ()=>window.startPageTour(TOUR_STEPS);
 
-    container.querySelector('#gc-date').onchange = (e)=>{ state.date = e.target.value; load(); };
+    // Đang sửa: đổi ngày nghĩa là chuyển giao dịch sang ngày đó, KHÔNG được chuyển trang xem ngày khác
+    // (load() sẽ làm mất giao dịch đang sửa khỏi danh sách) — chỉ ghi nhận ngày mới, lưu xong mới tải lại.
+    container.querySelector('#gc-date').onchange = (e)=>{ state.date = e.target.value; if(!state.editingId) load(); };
+    const cancelEditBtn = container.querySelector('#gc-cancel-edit');
+    if(cancelEditBtn) cancelEditBtn.onclick = cancelEdit;
+    container.querySelectorAll('[data-toggle-options]').forEach(el=>{
+      el.onclick = ()=>{
+        const id = el.getAttribute('data-toggle-options');
+        if(state.expandedOptionsIds.has(id)) state.expandedOptionsIds.delete(id); else state.expandedOptionsIds.add(id);
+        draw();
+      };
+    });
+    container.querySelectorAll('[data-edit]').forEach(el=>{
+      el.onclick = ()=>startEdit(el.getAttribute('data-edit'));
+    });
     container.querySelectorAll('#gc-type-chips [data-type]').forEach(el=>{
       el.onclick = ()=>{ state.form.type = el.getAttribute('data-type'); state.error = null; draw(); persistDraft(); };
     });
@@ -399,7 +464,14 @@ function render(container, ctx){
       el.onclick = async ()=>{
         const ok = await confirmModal('Xoá giao dịch này?');
         if(!ok) return;
-        await ctx.supabase.from('tc_finance_entries').delete().eq('id', el.getAttribute('data-delete'));
+        const delId = el.getAttribute('data-delete');
+        await ctx.supabase.from('tc_finance_entries').delete().eq('id', delId);
+        // Đang sửa đúng giao dịch vừa xoá thì thoát chế độ sửa — nếu không, bấm "Lưu thay đổi" sau đó
+        // sẽ cập nhật 1 dòng không còn tồn tại và âm thầm không có tác dụng gì.
+        if(state.editingId === delId){
+          state.form = state.formBeforeEdit || blankForm();
+          state.formBeforeEdit = null; state.editingId = null; state.showCustomCategory = false;
+        }
         load();
       };
     });
