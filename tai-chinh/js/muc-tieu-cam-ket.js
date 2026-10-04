@@ -44,6 +44,10 @@ function render(container, ctx){
     savingBudget: false,
     savedBudgetMsg: '',
     expenseCategories: [],
+    // Thu nhập thật đã ghi tháng này — dùng làm mốc cân đối ngân sách khi chưa đặt mục tiêu thu nhập.
+    incomeActual: 0,
+    // Mục tiêu các tháng trước (chỉ đọc) — so sánh với thực tế nằm ở Tổng Kết Tháng.
+    pastGoals: [],
   };
   // Hiện ĐỦ mọi danh mục chi tiêu đã thiết lập (xem danh-muc.js) — không chỉ danh mục đã có chi
   // tiêu/hạn mức như trước (2026-08-24, góp ý Quỳnh "để làm ngân sách thì theo đúng cái của người
@@ -52,6 +56,55 @@ function render(container, ctx){
     const fromCategories = state.expenseCategories.map(c=>c.label);
     return [...new Set([...fromCategories, ...Object.keys(state.budgetActuals), ...Object.keys(state.budgetForm)])]
       .sort((a,b)=> (state.budgetActuals[b]||0) - (state.budgetActuals[a]||0));
+  }
+  // Tổng ngân sách + cân đối với thu nhập/mục tiêu — tính lại NGAY mỗi lần gõ hạn mức (chị Quỳnh
+  // 2026-10-04: "tính tổng ra cho mình mỗi khi nhập số liệu để cân đối ngân sách cho hợp lý").
+  // Danh mục Tích Lũy KHÔNG tính là chi tiêu (cùng quy ước TICH_LUY_CATEGORY_LABEL ở Tổng Kết
+  // Tháng — tiền chuyển vào tiết kiệm, không phải tiêu mất), nên loại khỏi cả tổng hạn mức lẫn tổng
+  // đã tiêu. Mốc thu nhập: ưu tiên Mục tiêu thu nhập đã đặt, chưa đặt thì dùng thu nhập thật đã ghi.
+  function budgetTotals(){
+    const keys = budgetCategoryKeys().filter(k=>k !== TICH_LUY_CATEGORY_LABEL);
+    const totalLimit = keys.reduce((s,k)=> s + (Number(state.budgetForm[k])||0), 0);
+    const totalSpent = keys.reduce((s,k)=> s + (state.budgetActuals[k]||0), 0);
+    const goalIncome = Number(state.goal.goal_income) || 0;
+    const incomeRef = goalIncome > 0 ? goalIncome : state.incomeActual;
+    return {
+      totalLimit, totalSpent, incomeRef,
+      incomeRefLabel: goalIncome > 0 ? 'Mục tiêu thu nhập' : 'Thu nhập đã ghi tháng này',
+      needSavings: (Number(state.goal.goal_savings)||0) + (Number(state.goal.goal_debt_reduction)||0),
+      remaining: incomeRef - totalLimit,
+    };
+  }
+  function budgetSummaryInnerHtml(){
+    const t = budgetTotals();
+    const fmt = n => n.toLocaleString('vi-VN') + 'đ';
+    const row = (label, value, color)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:15px;"><span>${label}</span><b${color?` style="color:${color};"`:''}>${value}</b></div>`;
+    let verdict;
+    if(t.incomeRef <= 0){
+      verdict = 'Chưa có thu nhập để cân đối — đặt Mục tiêu thu nhập ở trên, hoặc ghi khoản thu ở Ghi Chép Hàng Ngày.';
+    } else if(t.remaining < 0){
+      verdict = `⚠️ Ngân sách đang VƯỢT thu nhập ${fmt(-t.remaining)} — cần cắt giảm bớt ở 1-2 danh mục.`;
+    } else if(t.needSavings > 0 && t.remaining < t.needSavings){
+      verdict = `⚠️ Còn lại ${fmt(t.remaining)} nhưng mục tiêu tiết kiệm + giảm nợ cần ${fmt(t.needSavings)} — đang thiếu ${fmt(t.needSavings - t.remaining)}.`;
+    } else if(t.needSavings > 0){
+      verdict = `✅ Đủ để thực hiện mục tiêu tiết kiệm + giảm nợ (${fmt(t.needSavings)}), còn dư ${fmt(t.remaining - t.needSavings)}.`;
+    } else {
+      verdict = `Còn ${fmt(t.remaining)} chưa phân bổ — có thể dành cho tiết kiệm hoặc giảm nợ.`;
+    }
+    return `
+      ${row('Tổng ngân sách đã đặt', fmt(t.totalLimit))}
+      ${t.incomeRef > 0 ? row(esc(t.incomeRefLabel), fmt(t.incomeRef)) : ''}
+      ${t.incomeRef > 0 ? row('Còn lại sau ngân sách', fmt(t.remaining), t.remaining >= 0 ? 'var(--accent)' : 'var(--danger)') : ''}
+      ${t.totalLimit > 0 ? row('Đã tiêu / ngân sách', `${fmt(t.totalSpent)} / ${fmt(t.totalLimit)}`, t.totalSpent > t.totalLimit ? 'var(--danger)' : '') : ''}
+      <div style="margin-top:8px;font-size:15px;line-height:1.55;font-weight:600;">${verdict}</div>
+      <div style="margin-top:6px;font-size:13.5px;color:var(--ink-soft);">Không tính danh mục Tích Lũy (tiền chuyển vào tiết kiệm, không phải chi tiêu).</div>
+    `;
+  }
+  function budgetSummaryBlockHtml(){
+    return `<div class="hint-box mt-budget-summary" style="text-align:left;margin:12px 0;">${budgetSummaryInnerHtml()}</div>`;
+  }
+  function updateBudgetSummary(){
+    container.querySelectorAll('.mt-budget-summary').forEach(el=>{ el.innerHTML = budgetSummaryInnerHtml(); });
   }
   const DRAFT_KEY = 'muc-tieu-' + month;
   function persistDraft(){ saveModuleDraft(ctx, DRAFT_KEY, { goal: state.goal, goal_first_reaction: state.goal_first_reaction, selectedResistance: state.selectedResistance, obstacleInput: state.obstacleInput, step: state.step, budgetForm: state.budgetForm }); }
@@ -65,14 +118,19 @@ function render(container, ctx){
     const monthStart = `${month}-01`;
     const [y, mo] = month.split('-').map(Number);
     const monthEndExclusive = `${new Date(y, mo, 1).getFullYear()}-${String(new Date(y, mo, 1).getMonth()+1).padStart(2,'0')}-01`;
-    const [reflRes, obstaclesRes, entriesRes, budgetsRes, categoriesRes] = await Promise.all([
+    const [reflRes, obstaclesRes, entriesRes, budgetsRes, categoriesRes, pastGoalsRes] = await Promise.all([
       ctx.supabase.from('tc_monthly_reflections').select('*').eq('user_id', ctx.user.id).eq('month', month).maybeSingle(),
       ctx.supabase.from('tc_obstacle_log').select('*').eq('user_id', ctx.user.id).order('created_at', { ascending:false }).limit(20),
-      ctx.supabase.from('tc_finance_entries').select('amount, category_label')
-        .eq('user_id', ctx.user.id).eq('type', 'expense').gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
+      // Lấy cả thu lẫn chi (trước chỉ lấy chi) — khoản thu để cân đối ngân sách khi chưa đặt mục tiêu thu nhập.
+      ctx.supabase.from('tc_finance_entries').select('type, amount, category_label')
+        .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
       ctx.supabase.from('tc_budgets').select('*').eq('user_id', ctx.user.id).eq('month', month),
       ctx.supabase.from('tc_categories').select('*').eq('user_id', ctx.user.id).eq('type', 'expense').order('label'),
+      ctx.supabase.from('tc_monthly_reflections')
+        .select('month, goal_income, goal_savings, goal_debt_reduction, goal_new_asset, goal_new_asset_type')
+        .eq('user_id', ctx.user.id).lt('month', month).order('month', { ascending:false }).limit(12),
     ]);
+    state.pastGoals = (pastGoalsRes.data || []).filter(hasAnyGoal);
     state.expenseCategories = categoriesRes.data || [];
     const r = reflRes.data;
     if(r){
@@ -90,7 +148,9 @@ function render(container, ctx){
       state.step = hasAnyGoal(state.goal) ? 'summary' : 'goal';
     }
     state.budgetActuals = {};
+    state.incomeActual = 0;
     (entriesRes.data||[]).forEach(e=>{
+      if(e.type === 'income'){ state.incomeActual += Number(e.amount); return; }
       const key = e.category_label || 'Khác';
       state.budgetActuals[key] = (state.budgetActuals[key]||0) + Number(e.amount);
     });
@@ -245,6 +305,31 @@ function render(container, ctx){
     `;
   }
 
+  // Mục tiêu các tháng trước — chỉ ĐỌC, gập sẵn (quy tắc nội dung dài gập mặc định). Việc so sánh
+  // mục tiêu với kết quả thực tế đạt được nằm ở Tổng Kết Tháng (chị Quỳnh chốt 2026-10-04), trang
+  // này chỉ để xem lại mình đã từng cam kết điều gì.
+  function pastGoalsHtml(){
+    if(!state.pastGoals.length) return '';
+    const fmt = n => Number(n).toLocaleString('vi-VN') + 'đ';
+    return `
+      <details style="margin-top:16px;">
+        <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--ink-soft);">Mục tiêu các tháng trước (${state.pastGoals.length})</summary>
+        <div style="margin-top:10px;">
+          ${state.pastGoals.map(g=>{
+            const parts = [
+              Number(g.goal_income) && `Thu nhập ${fmt(g.goal_income)}`,
+              Number(g.goal_savings) && `Tiết kiệm ${fmt(g.goal_savings)}`,
+              Number(g.goal_debt_reduction) && `Giảm nợ ${fmt(g.goal_debt_reduction)}`,
+              (Number(g.goal_new_asset) || (g.goal_new_asset_type||'').trim()) && `Tài sản mới${Number(g.goal_new_asset)?' '+fmt(g.goal_new_asset):''}${(g.goal_new_asset_type||'').trim()?' ('+esc(g.goal_new_asset_type)+')':''}`,
+            ].filter(Boolean);
+            return `<div style="padding:8px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.55;"><b>Tháng ${esc(g.month.slice(5))}/${esc(g.month.slice(0,4))}</b><br>${parts.join(' · ')}</div>`;
+          }).join('')}
+          <div style="margin-top:10px;font-size:14.5px;"><a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">So sánh với thực tế ở Tổng Kết Tháng →</a></div>
+        </div>
+      </details>
+    `;
+  }
+
   function html(){
     return `
       <span class="tour-trigger" id="mt-start-tour">❓ Hướng dẫn</span>
@@ -274,11 +359,13 @@ function render(container, ctx){
             </div>
           ` : ''}
           ${state.step === 'summary' ? summaryCardHtml() : ''}
+          ${pastGoalsHtml()}
         </div>
 
         <div class="section">
           <h3>Ngân sách chi tiêu tháng này</h3>
           <p style="color:var(--ink-soft);font-size:15px;margin-bottom:12px;">Đặt hạn mức từng danh mục TRƯỚC khi tiêu — cùng tinh thần với Lời Cam Kết ở trên. Danh sách dưới đây đúng theo <a href="#danh-muc" style="color:var(--accent);font-weight:600;">danh mục đã thiết lập →</a>. Xem chi tiêu thật đã tiêu vào đâu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a>.</p>
+          ${budgetSummaryBlockHtml()}
           ${budgetCategoryKeys().length===0 ? `<div style="color:var(--ink-soft);font-size:15.5px;">Chưa có danh mục chi tiêu nào — <a href="#danh-muc" style="color:var(--accent);font-weight:600;">thiết lập ngay →</a></div>` : budgetCategoryKeys().map(key=>{
             const actual = state.budgetActuals[key]||0;
             const limit = Number(state.budgetForm[key])||0;
@@ -308,6 +395,7 @@ function render(container, ctx){
             <input type="text" inputmode="numeric" id="mt-new-budget-amount" data-money placeholder="Hạn mức" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;background:#FDFCF8;color:var(--ink);">
             <span class="btn-ghost btn btn-sm" id="mt-add-budget-category">+ Thêm</span>
           </div>
+          ${budgetCategoryKeys().length > 6 ? budgetSummaryBlockHtml() : ''}
           <button class="btn btn-sm" style="margin-top:14px;" id="mt-save-budget" ${state.savingBudget?'disabled':''}>${state.savingBudget?'Đang lưu…':'Lưu ngân sách'}</button>
           <span id="mt-budget-saved" style="margin-left:10px;color:var(--accent);font-weight:600;">${state.savedBudgetMsg}</span>
         </div>
@@ -366,6 +454,7 @@ function render(container, ctx){
       el.oninput = ()=>{
         if(el.hasAttribute('data-money')){ el.value = formatThousands(el.value); state.goal[el.getAttribute('data-goal')] = onlyDigits(el.value); }
         else state.goal[el.getAttribute('data-goal')] = el.value;
+        updateBudgetSummary(); // mục tiêu thu nhập/tiết kiệm/giảm nợ là mốc cân đối của ngân sách ở dưới
         persistDraft();
       };
     });
@@ -381,7 +470,7 @@ function render(container, ctx){
     if(editBtn) editBtn.onclick = ()=>{ state.step = 'goal'; draw(); persistDraft(); };
 
     container.querySelectorAll('[data-budget]').forEach(el=>{
-      el.oninput = ()=>{ el.value = formatThousands(el.value); state.budgetForm[el.getAttribute('data-budget')] = onlyDigits(el.value); persistDraft(); };
+      el.oninput = ()=>{ el.value = formatThousands(el.value); state.budgetForm[el.getAttribute('data-budget')] = onlyDigits(el.value); updateBudgetSummary(); persistDraft(); };
     });
     const newBudgetAmountEl = container.querySelector('#mt-new-budget-amount');
     if(newBudgetAmountEl) newBudgetAmountEl.oninput = ()=>{ newBudgetAmountEl.value = formatThousands(newBudgetAmountEl.value); };

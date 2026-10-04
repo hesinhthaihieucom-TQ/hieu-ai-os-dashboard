@@ -559,3 +559,8 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.mark_tc_push_prompt_seen() to authenticated;
+
+-- "Tài sản mới" ở mục tiêu tháng mang tính chủ quan (không có con số tự động để đối chiếu) nên người
+-- dùng tự đánh dấu "đã đạt" ở Tổng Kết Tháng, mục A2 (2026-10-04, chị Quỳnh chốt). Cột bổ sung trên
+-- tc_monthly_reflections, không tạo bảng riêng.
+alter table tc_monthly_reflections add column if not exists goal_new_asset_achieved boolean;

@@ -1,6 +1,7 @@
 (function(){
 const TOUR_STEPS = [
   { selector: '.source-grid', title: 'Dòng tiền tháng', text: 'Tổng thu, tổng chi, tỷ lệ tiết kiệm, và DTI (tỷ lệ nợ/thu nhập nếu có khai ở Quản Lý Nợ) của tháng đang xem.' },
+  { selector: '#tk-goal-compare', title: 'Mục tiêu vs thực tế', text: 'So Lời Cam Kết đã đặt đầu tháng với số thật đạt được: thu nhập, tiết kiệm, giảm nợ (tự tính), còn tài sản mới thì bạn tự đánh dấu đã đạt hay chưa.' },
   { selector: '#tk-save-networth', title: 'Cân đối Tài Sản Ròng', text: 'Điền tài sản/tiêu sản-nợ để ra Tài Sản Ròng — con số QUAN TRỌNG NHẤT của trang này. Bấm lưu để cộng điểm cho Trụ Thân Tâm Bản Thể ở Điểm Nghiệp.' },
   { selector: '#tk-save-reflection', title: 'Bài học nhìn lại tháng qua', text: 'Trả lời vài câu ngắn về khoản chi hối tiếc/xứng đáng, thói quen tốt/xấu, rồi lưu lại — muốn đặt mục tiêu tháng tới thì sang Mục Tiêu & Cam Kết.' },
 ];
@@ -102,6 +103,9 @@ function render(container, ctx){
     reflection: { ...EMPTY_REFLECTION },
     budgetActuals: {},
     totalMinPayments: 0,
+    goalRow: null,   // dòng tc_monthly_reflections của tháng đang xem (chứa goal_*)
+    debtPaid: 0,     // tổng đã trả nợ trong tháng, từ tc_debt_payments
+    goalAssetError: '',
     savingNetworth: false,
     savingReflection: false,
     savedNetworthMsg: '',
@@ -127,7 +131,7 @@ function render(container, ctx){
     state.loading = true; draw();
     const monthStart = `${state.month}-01`;
     const monthEndExclusive = `${nextMonthKey(state.month)}-01`;
-    const [entriesRes, snapshotRes, historyRes, reflectionRes, debtsRes] = await Promise.all([
+    const [entriesRes, snapshotRes, historyRes, reflectionRes, debtsRes, debtPaymentsRes] = await Promise.all([
       ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
         .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
       ctx.supabase.from('tc_networth_snapshots').select('*')
@@ -138,7 +142,12 @@ function render(container, ctx){
         .eq('user_id', ctx.user.id).eq('month', state.month).maybeSingle(),
       ctx.supabase.from('tc_debts').select('minimum_payment')
         .eq('user_id', ctx.user.id).eq('is_paid_off', false),
+      // Tổng đã trả nợ trong tháng (ghi ở Quản Lý Nợ) — "thực tế" để so với Mục tiêu giảm nợ.
+      ctx.supabase.from('tc_debt_payments').select('amount')
+        .eq('user_id', ctx.user.id).gte('payment_date', monthStart).lt('payment_date', monthEndExclusive),
     ]);
+    state.debtPaid = (debtPaymentsRes.data||[]).reduce((s,p)=>s+Number(p.amount||0),0);
+    state.goalRow = reflectionRes.data || null;
     const entries = entriesRes.data || [];
     state.cashFlow = {
       income: entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0),
@@ -254,6 +263,11 @@ function render(container, ctx){
           ${breakdownToggleHtml('expense', state.breakdownTab, expenseByCategory, expenseByDayRange, 'var(--danger)')}
         </div>
 
+        <div class="section" id="tk-goal-compare">
+          <h3>A2. Mục tiêu vs thực tế đạt được</h3>
+          ${goalVsActualHtml()}
+        </div>
+
         <div class="section">
           <h3>B. Cân đối tài sản & tiêu sản</h3>
           ${state.networthCarriedForward ? `<div class="hint-box" style="margin-bottom:14px;">Số liệu dưới đây tự lấy từ tháng trước — chỉnh lại đúng số thật của tháng này rồi bấm "Lưu cân đối tháng này".</div>` : ''}
@@ -320,6 +334,66 @@ function render(container, ctx){
     `;
   }
 
+  // So Lời Cam Kết tháng này (đặt ở Mục Tiêu & Cam Kết) với thực tế đạt được — chị Quỳnh chốt
+  // 2026-10-04 đặt phần so sánh ở Tổng Kết Tháng thay vì trang riêng. Thực tế: thu nhập = tổng thu
+  // đã ghi; tiết kiệm = thu − chi (cùng công thức "Tỷ lệ tiết kiệm" ở mục A); giảm nợ = tổng các
+  // khoản đã trả ghi ở Quản Lý Nợ trong tháng. "Tài sản mới" mang tính chủ quan (không có con số
+  // tự động nào để đối chiếu) nên để người dùng tự đánh dấu đã đạt hay chưa.
+  function goalVsActualHtml(){
+    const g = state.goalRow;
+    const fmt = n => Number(n).toLocaleString('vi-VN') + 'đ';
+    const hasAssetGoal = g && (Number(g.goal_new_asset) || (g.goal_new_asset_type||'').trim());
+    const hasAnyGoal = g && (Number(g.goal_income) || Number(g.goal_savings) || Number(g.goal_debt_reduction) || hasAssetGoal);
+    if(!hasAnyGoal){
+      return `<div class="hint-box">Tháng này chưa đặt mục tiêu — đặt ở <a href="#muc-tieu" style="color:var(--accent);font-weight:600;">Mục Tiêu & Cam Kết →</a> để cuối tháng có cái để so sánh.</div>`;
+    }
+    const items = [
+      { label:'Thu nhập', goal:Number(g.goal_income)||0, actual:state.cashFlow.income },
+      { label:'Tiết kiệm (thu − chi)', goal:Number(g.goal_savings)||0, actual:state.cashFlow.income - state.cashFlow.expense },
+      { label:'Giảm nợ (đã trả trong tháng)', goal:Number(g.goal_debt_reduction)||0, actual:state.debtPaid },
+    ].filter(i=>i.goal > 0);
+    let achieved = 0;
+    const rows = items.map(i=>{
+      const pct = i.actual > 0 ? Math.round(i.actual / i.goal * 100) : 0;
+      if(pct >= 100) achieved++;
+      const color = pct >= 100 ? 'var(--accent)' : pct >= 60 ? 'var(--gold)' : 'var(--danger)';
+      return `
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;margin-bottom:4px;">
+            <span>${esc(i.label)}</span>
+            <span><b style="color:${i.actual<0?'var(--danger)':'inherit'};">${fmt(i.actual)}</b> / ${fmt(i.goal)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden;"><div style="height:100%;width:${Math.min(100,Math.max(0,pct))}%;background:${color};border-radius:999px;"></div></div>
+            <b style="min-width:46px;text-align:right;font-size:14.5px;color:${color};">${pct}%</b>
+          </div>
+        </div>`;
+    }).join('');
+    let total = items.length;
+    let assetRow = '';
+    if(hasAssetGoal){
+      total++;
+      const done = !!g.goal_new_asset_achieved;
+      if(done) achieved++;
+      assetRow = `
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;margin-bottom:6px;">
+            <span>Tài sản mới${(g.goal_new_asset_type||'').trim()?` (${esc(g.goal_new_asset_type)})`:''}</span>
+            <span>${Number(g.goal_new_asset)?`mục tiêu ${fmt(g.goal_new_asset)}`:''}</span>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;">
+            <input type="checkbox" id="tk-goal-asset-achieved" ${done?'checked':''} style="width:20px;height:20px;"> Tôi đã đạt mục tiêu này
+          </label>
+          ${state.goalAssetError ? `<div style="font-size:13.5px;color:var(--danger);margin-top:4px;">${esc(state.goalAssetError)}</div>` : ''}
+        </div>`;
+    }
+    const allDone = achieved === total;
+    return `
+      <div style="font-size:15.5px;font-weight:600;margin-bottom:14px;color:${allDone?'var(--accent)':'var(--ink)'};">${allDone?'🎉 ':''}Đạt ${achieved}/${total} mục tiêu tháng này</div>
+      ${rows}${assetRow}
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-top:10px;">Muốn xem lại hoặc sửa Lời Cam Kết: <a href="#muc-tieu" style="color:var(--accent);font-weight:600;">Mục Tiêu & Cam Kết →</a></div>`;
+  }
+
   function networthPreviewHtml(totalAssets, totalDebts, netWorth){
     return `Tổng tài sản: <b>${totalAssets.toLocaleString('vi-VN')}đ</b> · Tổng tiêu sản: <b>${totalDebts.toLocaleString('vi-VN')}đ</b> · TÀI SẢN RÒNG: <b style="color:${netWorth>=0?'var(--accent)':'var(--danger)'};font-size:16.5px;">${netWorth.toLocaleString('vi-VN')}đ</b>`;
   }
@@ -369,6 +443,19 @@ function render(container, ctx){
     });
     const saveReflectionBtn = container.querySelector('#tk-save-reflection');
     if(saveReflectionBtn) saveReflectionBtn.onclick = saveReflection;
+
+    const assetChk = container.querySelector('#tk-goal-asset-achieved');
+    if(assetChk) assetChk.onchange = async ()=>{
+      const checked = assetChk.checked;
+      state.goalAssetError = '';
+      // Chỉ UPDATE (không upsert) — ô này chỉ hiện khi tháng này đã có dòng Lời Cam Kết rồi.
+      const { error } = await ctx.supabase.from('tc_monthly_reflections')
+        .update({ goal_new_asset_achieved: checked, updated_at: new Date().toISOString() })
+        .eq('user_id', ctx.user.id).eq('month', state.month);
+      if(error) state.goalAssetError = 'Chưa lưu được đánh dấu này — thử lại sau ít phút nhé.';
+      else state.goalRow = { ...state.goalRow, goal_new_asset_achieved: checked };
+      draw();
+    };
   }
 
   load();
