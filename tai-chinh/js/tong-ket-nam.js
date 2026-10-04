@@ -29,6 +29,7 @@ function render(container, ctx){
     karmaAvg: null, karmaCount: 0,
     beliefsResolved: [], beliefsActive: [],
     reflectionSummary: '', nextYearGoals: {}, saving: false, savedMsg: '',
+    months: [],   // thu/chi từng tháng trong năm (12 dòng) để xem lại
   };
 
   function draw(){ container.innerHTML = html(); bind(); }
@@ -38,7 +39,7 @@ function render(container, ctx){
     const yStart = `${state.year}-01-01`;
     const yEndExclusive = `${state.year+1}-01-01`;
     const [entriesRes, snapshotsRes, karmaRes, beliefsRes, yearlyRes] = await Promise.all([
-      ctx.supabase.from('tc_finance_entries').select('type, amount')
+      ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
         .eq('user_id', ctx.user.id).gte('entry_date', yStart).lt('entry_date', yEndExclusive),
       ctx.supabase.from('tc_networth_snapshots').select('*')
         .eq('user_id', ctx.user.id).gte('snapshot_month', `${state.year}-01`).lte('snapshot_month', `${state.year}-12`).order('snapshot_month', { ascending:true }),
@@ -52,7 +53,16 @@ function render(container, ctx){
 
     const entries = entriesRes.data || [];
     state.totalIncome = entries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
-    state.totalExpense = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0);
+    // Tiền chuyển vào Tích Lũy không phải chi tiêu thật — loại khỏi tổng chi để Tỷ lệ tích lũy không bị
+    // trừ 2 lần (cùng quy ước tong-ket-thang.js/tong-ket-tuan.js, xem TICH_LUY_CATEGORY_LABEL ở util.js).
+    state.totalExpense = entries.filter(e=>e.type==='expense' && e.category_label!==TICH_LUY_CATEGORY_LABEL).reduce((s,e)=>s+Number(e.amount),0);
+    state.months = Array.from({length:12}, (_,i)=>{
+      const mk = `${state.year}-${String(i+1).padStart(2,'0')}`;
+      const rows = entries.filter(e=>String(e.entry_date).slice(0,7)===mk);
+      const income = rows.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
+      const expense = rows.filter(e=>e.type==='expense' && e.category_label!==TICH_LUY_CATEGORY_LABEL).reduce((s,e)=>s+Number(e.amount),0);
+      return { n:i+1, income, expense, rate: income>0 ? Math.round((income-expense)/income*100) : null };
+    });
 
     const snapshots = snapshotsRes.data || [];
     state.netWorthStart = snapshots.length ? netWorthOf(snapshots[0]) : null;
@@ -126,6 +136,23 @@ function render(container, ctx){
             <div class="source-card"><div class="ic" style="font-size:17px;${tichLuyChange==null?'':`color:${tichLuyChange>=0?'var(--accent)':'var(--danger)'};`}">${tichLuyChange==null?'Chưa đủ dữ liệu':(tichLuyChange>=0?'+':'')+tichLuyChange.toLocaleString('vi-VN')+'đ'}</div><div class="label">Tích lũy thay đổi</div></div>
           </div>
           <div class="hint-box" style="margin-top:10px;">Dựa vào cân đối tài sản đã lưu ở <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> đầu năm và tháng gần nhất trong năm ${state.year}. Xem xu hướng chi tiết hơn ở <a href="#danh-muc" style="color:var(--accent);font-weight:600;">Tích Lũy →</a>.</div>
+        </div>
+
+        <div class="section">
+          <h3>📚 Xem lại từng tháng trong năm ${state.year}</h3>
+          <details>
+            <summary style="cursor:pointer;font-size:15px;color:var(--ink-soft);">▾ Thu — chi — tích lũy của 12 tháng</summary>
+            <div style="margin-top:10px;">
+              ${state.months.map(m=>`
+                <div style="padding:9px 0;border-bottom:1px solid var(--line);">
+                  <div style="font-size:15px;font-weight:600;">Tháng ${m.n}</div>
+                  <div style="font-size:14px;color:var(--ink-soft);margin-top:3px;line-height:1.5;">
+                    ${m.income===0 && m.expense===0 ? 'Chưa ghi gì' : `Thu ${m.income.toLocaleString('vi-VN')}đ · Chi ${m.expense.toLocaleString('vi-VN')}đ${m.rate!=null?` · Tích lũy ${m.rate}%`:''}`}
+                  </div>
+                </div>`).join('')}
+            </div>
+            <div style="margin-top:8px;font-size:14px;color:var(--ink-soft);">Muốn xem chi tiết 1 tháng (danh mục, mục tiêu, tài sản): sang <a href="#tong-ket-thang" style="color:var(--accent);font-weight:600;">Tổng Kết Tháng →</a> rồi chọn tháng.</div>
+          </details>
         </div>
 
         <div class="section">

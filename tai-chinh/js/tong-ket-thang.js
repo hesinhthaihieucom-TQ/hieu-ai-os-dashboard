@@ -106,6 +106,7 @@ function render(container, ctx){
     goalRow: null,   // dòng tc_monthly_reflections của tháng đang xem (chứa goal_*)
     debtPaid: 0,     // Trả nợ + Trả góp trong tháng (xem load())
     goalAssetError: '',
+    monthHistory: [],   // 6 tháng ngay trước tháng đang xem (để xem lại nhanh)
     savingNetworth: false,
     savingReflection: false,
     savedNetworthMsg: '',
@@ -131,7 +132,10 @@ function render(container, ctx){
     state.loading = true; draw();
     const monthStart = `${state.month}-01`;
     const monthEndExclusive = `${nextMonthKey(state.month)}-01`;
-    const [entriesRes, snapshotRes, historyRes, reflectionRes, debtsRes, debtPaymentsRes] = await Promise.all([
+    const [hy, hm] = state.month.split('-').map(Number);
+    const histStartD = new Date(hy, hm-1-6, 1);
+    const histStart = histStartD.getFullYear() + '-' + String(histStartD.getMonth()+1).padStart(2,'0') + '-01';
+    const [entriesRes, snapshotRes, historyRes, reflectionRes, debtsRes, debtPaymentsRes, histEntriesRes] = await Promise.all([
       ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
         .eq('user_id', ctx.user.id).gte('entry_date', monthStart).lt('entry_date', monthEndExclusive),
       ctx.supabase.from('tc_networth_snapshots').select('*')
@@ -145,7 +149,23 @@ function render(container, ctx){
       // Tổng đã trả nợ trong tháng (ghi ở Quản Lý Nợ) — "thực tế" để so với Mục tiêu giảm nợ.
       ctx.supabase.from('tc_debt_payments').select('amount')
         .eq('user_id', ctx.user.id).gte('payment_date', monthStart).lt('payment_date', monthEndExclusive),
+      ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
+        .eq('user_id', ctx.user.id).gte('entry_date', histStart).lt('entry_date', monthStart),
     ]);
+    // Tóm tắt 6 tháng trước tháng đang xem — cùng quy ước tỷ lệ tích lũy (loại danh mục Tích Lũy khỏi chi).
+    const byMonth = {};
+    (histEntriesRes.data||[]).forEach(e=>{
+      const mk = String(e.entry_date).slice(0,7);
+      const m = byMonth[mk] || (byMonth[mk] = { income:0, expense:0 });
+      if(e.type==='income') m.income += Number(e.amount);
+      else if(e.category_label !== TICH_LUY_CATEGORY_LABEL) m.expense += Number(e.amount);
+    });
+    state.monthHistory = Array.from({length:6}, (_,i)=>{
+      const d = new Date(hy, hm-1-(i+1), 1);
+      const mk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      const m = byMonth[mk] || { income:0, expense:0 };
+      return { month: mk, income:m.income, expense:m.expense, rate: m.income>0 ? Math.round((m.income-m.expense)/m.income*100) : null };
+    });
     const debtPaymentsTotal = (debtPaymentsRes.data||[]).reduce((s,p)=>s+Number(p.amount||0),0);
     state.goalRow = reflectionRes.data || null;
     const entries = entriesRes.data || [];
@@ -271,6 +291,28 @@ function render(container, ctx){
         <div class="section" id="tk-goal-compare">
           <h3>A2. Mục tiêu vs thực tế đạt được</h3>
           ${goalVsActualHtml()}
+        </div>
+
+        <div class="section">
+          <h3>📚 Xem lại các tháng đã qua</h3>
+          <details>
+            <summary style="cursor:pointer;font-size:15px;color:var(--ink-soft);">▾ 6 tháng gần nhất trước tháng này — bấm vào 1 tháng để mở</summary>
+            <div style="margin-top:10px;">
+              ${state.monthHistory.map(h=>{
+                const snap = historyRows.find(r=>r.month===h.month);
+                return `
+                <div data-goto-month="${h.month}" style="padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;">
+                  <div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;font-weight:600;">
+                    <span>${esc(monthLabel(h.month))}</span>
+                    <span style="color:var(--accent);font-size:14px;">Xem →</span>
+                  </div>
+                  <div style="font-size:14px;color:var(--ink-soft);margin-top:3px;line-height:1.5;">
+                    ${h.income===0 && h.expense===0 ? 'Chưa ghi gì' : `Thu ${h.income.toLocaleString('vi-VN')}đ · Chi ${h.expense.toLocaleString('vi-VN')}đ${h.rate!=null?` · Tích lũy ${h.rate}%`:''}`}${snap ? ` · Tài sản ròng ${snap.net.toLocaleString('vi-VN')}đ` : ''}
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </details>
         </div>
 
         <div class="section">
@@ -430,6 +472,9 @@ function render(container, ctx){
       state.month = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
       load();
     };
+    container.querySelectorAll('[data-goto-month]').forEach(el=>{
+      el.onclick = ()=>{ state.month = el.getAttribute('data-goto-month'); load(); window.scrollTo({ top:0, behavior:'smooth' }); };
+    });
     const nextEl = container.querySelector('#tk-next');
     if(nextEl) nextEl.onclick = ()=>{ state.month = nextMonthKey(state.month); load(); };
 

@@ -1,6 +1,6 @@
 (function(){
 const TOUR_STEPS = [
-  { selector: '.source-grid', title: 'Tổng quan tuần', text: 'Tổng thu, tổng chi, và tỷ lệ tích lũy của tuần đang xem — bấm "← Tuần trước"/"Tuần sau →" ở trên để xem lại tuần khác.' },
+  { selector: '.source-grid', title: 'Tổng quan tuần', text: 'Tổng thu, tổng chi, và tỷ lệ tích lũy của tuần đang xem — bấm "← Tuần trước"/"Tuần sau →" ở trên, hoặc mục "Xem lại các tuần đã qua" bên dưới, để xem lại tuần khác.' },
   { selector: '#tt-feeling-chips', title: 'Nhận xét & đánh giá tuần', text: 'Chấm điểm cảm giác chi tiêu và trả lời vài câu ngắn — 5 câu chấm điểm bên dưới tương ứng đúng 5 Trụ Cột ở Điểm Nghiệp.' },
   { selector: '#tt-save', title: 'Lưu nhận xét tuần', text: 'Lưu lại để Trang chủ và Điểm Nghiệp cập nhật theo đúng cảm nhận thật của bạn tuần này.' },
 ];
@@ -55,6 +55,7 @@ function render(container, ctx){
     breakdownTab: { expense:'chi-tiet', income:'chi-tiet' },
     budgets: {},
     spentBeforeThisWeek: {},
+    history: [],   // 8 tuần ngay trước tuần đang xem (để xem lại nhanh)
   };
   // Draft khoá riêng theo TỪNG TUẦN — không thì đổi tuần (Tuần trước/sau) sẽ vô tình dán nhầm bản
   // nháp của tuần khác vào tuần đang xem (góp ý Quỳnh 2026-08-22: gõ dở bị mất khi rời trang).
@@ -96,7 +97,9 @@ function render(container, ctx){
     const weekStartIso = isoDate(state.weekStart);
     const weekEndIso = isoDate(weekEnd());
     const month = monthOfWeek();
-    const [entriesRes, reflectionRes, budgetsRes, priorSpendRes] = await Promise.all([
+    const histStart = new Date(state.weekStart); histStart.setDate(histStart.getDate() - 56);
+    const histStartIso = isoDate(histStart);
+    const [entriesRes, reflectionRes, budgetsRes, priorSpendRes, histEntriesRes, histReflRes] = await Promise.all([
       ctx.supabase.from('tc_finance_entries').select('*')
         .eq('user_id', ctx.user.id).gte('entry_date', weekStartIso).lte('entry_date', weekEndIso),
       ctx.supabase.from('tc_weekly_reflections').select('*')
@@ -107,7 +110,29 @@ function render(container, ctx){
       ctx.supabase.from('tc_finance_entries').select('category_label, amount')
         .eq('user_id', ctx.user.id).eq('type', 'expense')
         .gte('entry_date', month + '-01').lt('entry_date', weekStartIso),
+      ctx.supabase.from('tc_finance_entries').select('type, amount, category_label, entry_date')
+        .eq('user_id', ctx.user.id).gte('entry_date', histStartIso).lt('entry_date', weekStartIso),
+      ctx.supabase.from('tc_weekly_reflections').select('week_start, spending_feeling')
+        .eq('user_id', ctx.user.id).gte('week_start', histStartIso).lt('week_start', weekStartIso),
     ]);
+    // Tóm tắt 8 tuần trước tuần đang xem — cùng quy ước tỷ lệ tích lũy (loại danh mục Tích Lũy khỏi chi).
+    const feelingByWeek = {};
+    (histReflRes.data||[]).forEach(r=>{ feelingByWeek[r.week_start] = r.spending_feeling || ''; });
+    const byWeek = {};
+    (histEntriesRes.data||[]).forEach(e=>{
+      const wk = isoDate(startOfWeek(e.entry_date + 'T00:00:00'));
+      const w = byWeek[wk] || (byWeek[wk] = { income:0, expense:0 });
+      if(e.type==='income') w.income += Number(e.amount);
+      else if(e.category_label !== TICH_LUY_CATEGORY_LABEL) w.expense += Number(e.amount);
+    });
+    state.history = Array.from({length:8}, (_,i)=>{
+      const d = new Date(state.weekStart); d.setDate(d.getDate() - 7*(i+1));
+      const iso = isoDate(d);
+      const e = new Date(d); e.setDate(e.getDate()+6);
+      const w = byWeek[iso] || { income:0, expense:0 };
+      return { iso, label: `${d.getDate()}/${d.getMonth()+1} — ${e.getDate()}/${e.getMonth()+1}`, income:w.income, expense:w.expense,
+        rate: w.income>0 ? Math.round((w.income-w.expense)/w.income*100) : null, feeling: feelingByWeek[iso] || '' };
+    });
     state.entries = entriesRes.data || [];
     state.budgets = {};
     (budgetsRes.data||[]).forEach(b=>{ state.budgets[b.category_label] = Number(b.limit_amount)||0; });
@@ -208,6 +233,24 @@ function render(container, ctx){
           const spentThisWeek = spentThisWeekByCategory[key] || 0;
           const remainingThisWeek = suggestedThisWeek - spentThisWeek;
           const overspentMonth = remainingBudget < 0;
+          // Tích Lũy là MỤC TIÊU phải chuyển vào, không phải hạn mức chi — vượt là điều tốt nên không
+          // được hiện "Vượt" đỏ như chi tiêu (chị Quỳnh 2026-10-04).
+          if(key === TICH_LUY_CATEGORY_LABEL){
+            const needMore = suggestedThisWeek - spentThisWeek;
+            const monthDone = remainingBudget <= 0;
+            return `
+            <div style="padding:10px 0;border-bottom:1px solid var(--line);">
+              <div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;font-weight:600;">
+                <span>${esc(key)} <span style="font-weight:400;color:var(--ink-soft);">(mục tiêu chuyển vào)</span></span>
+                <span style="color:var(--accent);">${monthDone || needMore<=0 ? '✓ Đã đạt' : 'Cần chuyển thêm ' + Math.round(needMore).toLocaleString('vi-VN') + 'đ'}</span>
+              </div>
+              <div style="font-size:13.5px;color:var(--ink-soft);margin-top:3px;">
+                ${monthDone
+                  ? `Đã chuyển đủ mục tiêu tích lũy cả tháng (${Math.round(monthlyLimit).toLocaleString('vi-VN')}đ) — tuyệt vời 🎉`
+                  : `Mục tiêu tuần này: ${Math.round(suggestedThisWeek).toLocaleString('vi-VN')}đ (còn ${Math.round(remainingBudget).toLocaleString('vi-VN')}đ cả tháng ÷ ${weeksRemaining} tuần) — đã chuyển ${Math.round(spentThisWeek).toLocaleString('vi-VN')}đ tuần này.${needMore<0 ? ' Chuyển vượt mục tiêu tuần, phần dư giúp các tuần sau nhẹ hơn.' : ''}`}
+              </div>
+            </div>`;
+          }
           return `
             <div style="padding:10px 0;border-bottom:1px solid var(--line);">
               <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;">
@@ -263,6 +306,25 @@ function render(container, ctx){
               <b style="color:var(--danger);">${Number(e.amount).toLocaleString('vi-VN')}đ</b>
             </div>
           `).join('')}
+        </div>
+
+        <div class="section">
+          <h3>📚 Xem lại các tuần đã qua</h3>
+          <details>
+            <summary style="cursor:pointer;font-size:15px;color:var(--ink-soft);">▾ 8 tuần gần nhất trước tuần này — bấm vào 1 tuần để mở</summary>
+            <div style="margin-top:10px;">
+              ${state.history.map(h=>`
+                <div data-goto-week="${h.iso}" style="padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;">
+                  <div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;font-weight:600;">
+                    <span>${h.label}</span>
+                    <span style="color:var(--accent);font-size:14px;">Xem →</span>
+                  </div>
+                  <div style="font-size:14px;color:var(--ink-soft);margin-top:3px;line-height:1.5;">
+                    ${h.income===0 && h.expense===0 ? 'Chưa ghi gì' : `Thu ${h.income.toLocaleString('vi-VN')}đ · Chi ${h.expense.toLocaleString('vi-VN')}đ${h.rate!=null?` · Tích lũy ${h.rate}%`:''}`}${h.feeling?` · ${esc(h.feeling)}`:''}
+                  </div>
+                </div>`).join('')}
+            </div>
+          </details>
         </div>
 
         <div class="section">
@@ -324,6 +386,9 @@ function render(container, ctx){
     });
     const prevEl = container.querySelector('#tt-prev');
     if(prevEl) prevEl.onclick = ()=>{ const d = new Date(state.weekStart); d.setDate(d.getDate()-7); state.weekStart = d; load(); };
+    container.querySelectorAll('[data-goto-week]').forEach(el=>{
+      el.onclick = ()=>{ state.weekStart = new Date(el.getAttribute('data-goto-week') + 'T00:00:00'); load(); window.scrollTo({ top:0, behavior:'smooth' }); };
+    });
     const nextEl = container.querySelector('#tt-next');
     if(nextEl) nextEl.onclick = ()=>{ const d = new Date(state.weekStart); d.setDate(d.getDate()+7); state.weekStart = d; load(); };
 
