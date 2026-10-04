@@ -309,3 +309,6 @@ b, strong{ color:var(--white); }
 .lp-price-micro{ margin-top:12px; font-size:14.5px; color:var(--gray2); text-align:center; line-height:1.5; }
 .lp-price-guarantee b{ color:#fff; }
 .lp-price-guarantee{ border:1px solid rgba(34,197,94,.4); }
+
+/* Giá gốc gạch ngang đặt ngay trước giá ưu đãi ở mọi dải đếm ngược/thanh dính — đi cùng khối giá lớn ở bảng giá. */
+.lp-old-inline{ color:#9CA3AF; text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:2px; font-weight:600; margin-right:2px; }
