@@ -1,0 +1,15 @@
+{
+  "name": "21 Ngày Giải Nghiệp",
+  "short_name": "Giải Nghiệp",
+  "description": "Hành trình tự học 21 ngày — nhận diện vòng lặp cũ, viết nhật ký, ký cam kết mỗi ngày.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8F5EE",
+  "theme_color": "#15130F",
+  "icons": [
+    { "src": "assets/logo-hieu-hanh.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo-hieu-hanh.png", "sizes": "180x180", "type": "image/png", "purpose": "maskable" }
+  ]
+}

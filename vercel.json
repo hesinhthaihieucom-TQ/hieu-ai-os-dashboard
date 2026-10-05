@@ -5,7 +5,8 @@
     { "source": "/san-pham-so/api/:path*", "destination": "/api/:path*" },
     { "source": "/tai-chinh/api/:path*", "destination": "/api/:path*" },
     { "source": "/suc-khoe/api/:path*", "destination": "/api/:path*" },
-    { "source": "/tro-ly-crm/api/:path*", "destination": "/api/:path*" }
+    { "source": "/tro-ly-crm/api/:path*", "destination": "/api/:path*" },
+    { "source": "/giai-nghiep/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300, "includeFiles": "api/_lib/fonts/**" },
@@ -103,6 +104,22 @@
     },
     {
       "source": "/tro-ly-crm/manifest.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/giai-nghiep/js/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/giai-nghiep/style.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/giai-nghiep/lp/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/giai-nghiep/sw.js",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     }
   ]

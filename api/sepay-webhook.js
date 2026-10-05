@@ -94,6 +94,13 @@ const TC_PRICE_TIER_3_AMOUNT = 999000; // sau ngày 30 — giá chuẩn
 // kiểm tra 199000 không trùng bất kỳ giá trị nào khác trong file này.
 const TC_LP_PROMO_AMOUNT = 199000;
 const TC_LIFETIME_AMOUNTS = new Set([TC_PRICE_TIER_1_AMOUNT, TC_PRICE_TIER_2_AMOUNT, TC_PRICE_TIER_3_AMOUNT, TC_LP_PROMO_AMOUNT]);
+// 21 Ngày Giải Nghiệp (giai-nghiep/, 2026-10-04) — trọn đời, cột RIÊNG gn_has_paid/gn_paid_at. Giá 199k/299k
+// TRÙNG HẲN giá Sổ Dòng Tiền (TC_LP_PROMO_AMOUNT/TC_PRICE_TIER_1_AMOUNT) nên KHÔNG phân biệt được chỉ bằng số
+// tiền (khác quy tắc "mỗi gói 1 giá riêng" ở trên) — thay vào đó nội dung CK của app này luôn chứa cờ "GN21"
+// ("SEVQR GN21 <ref_code>", xem giai-nghiep/js/app-shell.js + giai-nghiep/lp/). Nhánh GN21 được xét TRƯỚC mọi
+// nhánh số tiền khác, và chỉ nhận đúng 2 mức này — tránh nhầm sang Sổ Dòng Tiền/Xây Nhân Hiệu và ngược lại.
+const GN_AMOUNTS = new Set([199000, 299000]);
+function isGnContent(content) { return /\bGN21\b/i.test(content || ''); }
 // Chương trình giới thiệu tai-chinh (2026-08-23, chị Quỳnh chốt "20% cho người giới thiệu") — MỘT
 // CHIỀU, referee vẫn trả nguyên giá đang bán lúc đó (khác nhan-hieu có giảm giá riêng cho referee).
 // Trả bằng TIỀN THẬT (không có hệ lượt AI như nhan-hieu để quy đổi) — ghi vào sổ tc_referrals, chị
@@ -446,14 +453,49 @@ module.exports = async (req, res) => {
     let topupLuotGranted = null;
 
     if (refCode) {
-      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,email,full_name,access_until,has_paid,tc_has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given,created_at,first_paid_at`);
+      const profResp = await supabaseAdmin(`profiles?ref_code=eq.${refCode}&select=id,email,full_name,access_until,has_paid,tc_has_paid,gn_has_paid,paid_ai_uses,paid_ai_month,paid_ai_bonus,referred_by_ref_code,referral_reward_given,tc_referral_reward_given,created_at,first_paid_at`);
       const profRows = profResp.ok ? await profResp.json() : [];
       const profile = profRows[0];
 
       if (profile) {
-        const days = AMOUNT_TO_DAYS[transferAmount];
-        const topupLuot = AMOUNT_TO_TOPUP_LUOT[transferAmount];
-        if (days) {
+        const isGn21 = isGnContent(content);
+        const days = isGn21 ? null : AMOUNT_TO_DAYS[transferAmount];
+        const topupLuot = isGn21 ? null : AMOUNT_TO_TOPUP_LUOT[transferAmount];
+        if (isGn21) {
+          if (GN_AMOUNTS.has(transferAmount)) {
+            // Idempotent tự nhiên (chỉ set cờ boolean) — chuyển trùng/SePay gửi lại không có tác dụng phụ.
+            const updateResp = await supabaseAdmin(`profiles?id=eq.${profile.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ gn_has_paid: true, gn_paid_at: new Date().toISOString() }),
+            });
+            if (updateResp.ok) {
+              status = 'matched';
+              matchedProfileId = profile.id;
+              // Email xác nhận chỉ lần đầu (profile.gn_has_paid là giá trị TRƯỚC patch). Best-effort.
+              if (!profile.gn_has_paid && profile.email) {
+                try {
+                  await sendEmail({
+                    to: profile.email,
+                    subject: '✅ Đã kích hoạt 21 Ngày Giải Nghiệp!',
+                    html: `
+                      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#333;">
+                        <h2 style="color:#111;">✅ Đã kích hoạt trọn đời!</h2>
+                        <p>Chào ${escHtml(profile.full_name || 'bạn')},</p>
+                        <p>Cảm ơn bạn đã tin tưởng — tài khoản <b>${escHtml(profile.email)}</b> vừa được kích hoạt <b>trọn đời</b> 21 Ngày Giải Nghiệp (${transferAmount.toLocaleString('vi-VN')}đ, thanh toán 1 lần duy nhất).</p>
+                        <p><a href="https://hesinhthaihieu.com/21ngaygiainghiep/" style="display:inline-block;background:#D9A93A;color:#241a03;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:700;">Bắt đầu Ngày 1 →</a></p>
+                        <p style="color:#666;font-size:13px;margin-top:24px;">Đăng nhập bằng đúng email và mật khẩu bạn đã tạo lúc đăng ký. Cần hỗ trợ, nhắn Zalo: 0866849193.</p>
+                      </div>
+                    `,
+                  });
+                } catch (e) { /* bỏ qua, xem log Vercel nếu cần điều tra */ }
+              }
+            } else {
+              status = 'unmatched_amount';
+            }
+          } else {
+            status = 'unmatched_amount';
+          }
+        } else if (days) {
           const bonusDays = (!EARLY_BIRD_EXCLUDED_AMOUNTS.has(transferAmount) && isWithinEarlyBirdWindow(profile.created_at) && EARLY_BIRD_BONUS_DAYS_BY_PLAN[days]) ? EARLY_BIRD_BONUS_DAYS_BY_PLAN[days] : 0;
           const base = (profile.access_until && new Date(profile.access_until).getTime() > Date.now())
             ? new Date(profile.access_until) : new Date();
