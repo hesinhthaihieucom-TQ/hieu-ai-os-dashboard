@@ -596,7 +596,8 @@ function renderThanhVien(container, ctx){
     anyQuery:'', anySearching:false, anySearched:false, anyResults:[],
     customerProductsFor:null, customerProductIds:null,
     scheduleFor:null, scheduleItemsByPackage:{},
-    dailyScheduleFor:null, dailyScheduleForm:null, dailyScheduleSaving:false, dailyScheduleBmiByUser:{} };
+    dailyScheduleFor:null, dailyScheduleForm:null, dailyScheduleSaving:false, dailyScheduleBmiByUser:{},
+    adherenceFor:null, adherenceData:null };
 
   function draw(){ container.innerHTML = html(); bind(); }
 
@@ -726,6 +727,62 @@ function renderThanhVien(container, ctx){
     const anyRow = state.anyResults.find(r=>r.id===userId); if(anyRow) anyRow.sk_daily_schedule_override = null;
     state.dailyScheduleFor = null; state.dailyScheduleForm = null;
     draw();
+  }
+
+  // 2026-10-05, chị Quỳnh: "các dữ liệu của khách sẽ cho e thấy ở mục quản trị luôn" — xem nhật ký tuân thủ
+  // hằng ngày (sk_daily_logs, khách tự tick ở "Hôm nay của bạn" bên lich-trinh.js) 14 ngày gần nhất: tổng
+  // hợp tỉ lệ ở trên + bảng từng ngày bên dưới. Mục tiêu nước tính theo cân nặng mới nhất của khách (cùng
+  // công thức 35ml/kg bên lich-trinh.js), chưa có cân nặng thì 2.000ml.
+  async function toggleAdherence(userId){
+    if(state.adherenceFor === userId){ state.adherenceFor = null; draw(); return; }
+    state.adherenceFor = userId; state.adherenceData = null; draw();
+    const [{ data: logs, error }, { data: weekly }] = await Promise.all([
+      ctx.supabase.from('sk_daily_logs').select('*').eq('user_id', userId).gte('log_date', skVnDateStr(-13)).order('log_date', { ascending:false }),
+      ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', userId).maybeSingle(),
+    ]);
+    const w = skLatestWeightKg(weekly && weekly.metrics);
+    state.adherenceData = { error: error ? error.message : '', logs: logs || [], target: w ? Math.round(w*35/50)*50 : 2000, weight: w };
+    draw();
+  }
+
+  function adherenceHtml(userId){
+    return `
+      <span class="btn-ghost btn btn-sm" data-toggle-adherence="${userId}">📊 Nhật ký 14 ngày</span>
+      ${state.adherenceFor===userId ? (()=>{
+        const a = state.adherenceData;
+        if(!a) return `<div class="card" style="margin-top:10px;width:100%;"><div class="loading"><div class="spinner"></div></div></div>`;
+        if(a.error) return `<div class="card" style="margin-top:10px;width:100%;"><div class="error-box" style="margin:0;">Không tải được nhật ký: ${esc(a.error)} — cần chạy lại file schema_suc_khoe.sql mới nhất.</div></div>`;
+        const byDate = Object.fromEntries(a.logs.map(l=>[l.log_date, l]));
+        const days = Array.from({length:14}, (_,i)=>skVnDateStr(-i));
+        const tick = (ok) => ok ? `<span style="color:#1f9d63;font-weight:700;">✓</span>` : `<span style="color:#c9cfc6;">–</span>`;
+        const recorded = a.logs.filter(l=>l.water_ml>0||l.exercised||l.plate_sang||l.plate_trua||l.plate_toi||(l.products_done||[]).length>0).length;
+        const exDays = a.logs.filter(l=>l.exercised).length;
+        const waterDays = a.logs.filter(l=>l.water_ml>=a.target).length;
+        const plateDays = a.logs.filter(l=>l.plate_sang&&l.plate_trua&&l.plate_toi).length;
+        const stat = (n, label) => `<div style="flex:1;min-width:92px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;"><div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);">${n}<span style="font-size:13.5px;color:var(--ink-soft);">/14</span></div><div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">${label}</div></div>`;
+        return `
+          <div class="card" style="margin-top:10px;width:100%;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              ${stat(recorded, 'ngày có ghi nhận')}${stat(exDays, 'ngày có tập')}${stat(waterDays, `ngày đủ nước (${a.target.toLocaleString('vi-VN')}ml)`)}${stat(plateDays, 'ngày đủ 3 bữa chia đĩa')}
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="plan" style="min-width:420px;">
+                <thead><tr><th>Ngày</th><th>Nước</th><th>Tập</th><th>Sáng</th><th>Trưa</th><th>Tối</th><th>Sản phẩm đã dùng</th></tr></thead>
+                <tbody>
+                  ${days.map(d=>{
+                    const l = byDate[d];
+                    const [y,m,dd] = d.split('-');
+                    if(!l) return `<tr><td>${dd}/${m}</td><td colspan="6" style="color:var(--ink-soft);">Chưa ghi nhận</td></tr>`;
+                    return `<tr><td>${dd}/${m}</td><td style="${l.water_ml>=a.target?'color:#1f9d63;font-weight:700;':''}">${l.water_ml.toLocaleString('vi-VN')}</td><td>${tick(l.exercised)}</td><td>${tick(l.plate_sang)}</td><td>${tick(l.plate_trua)}</td><td>${tick(l.plate_toi)}</td><td style="font-size:13px;">${(l.products_done||[]).length>0 ? esc(l.products_done.join(', ')) : '<span style="color:#c9cfc6;">–</span>'}</td></tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${a.weight ? '' : `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">Khách chưa nhập cân nặng nên mục tiêu nước dùng mặc định 2.000ml.</div>`}
+          </div>
+        `;
+      })() : ''}
+    `;
   }
 
   function dailyScheduleEditHtml(userId, currentOverride){
@@ -925,6 +982,7 @@ function renderThanhVien(container, ctx){
                 ${nppToggleHtml(r.id, r.sk_is_npp)}
                 ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
                 ${dailyScheduleEditHtml(r.id, r.sk_daily_schedule_override)}
+                ${adherenceHtml(r.id)}
                 ${customerProductsPickerHtml(r.id)}
               </div>
             `).join('')
@@ -950,6 +1008,7 @@ function renderThanhVien(container, ctx){
             ${nppToggleHtml(r.id, r.sk_is_npp)}
             ${packageSchedulePreviewHtml(r.id, r.sk_package_id)}
             ${dailyScheduleEditHtml(r.id, r.sk_daily_schedule_override)}
+                ${adherenceHtml(r.id)}
             ${customerProductsPickerHtml(r.id)}
           </div>
           ${state.pointsFormFor===r.id ? `
@@ -1016,6 +1075,9 @@ function renderThanhVien(container, ctx){
         const row = state.rows.find(r=>r.id===userId) || state.anyResults.find(r=>r.id===userId);
         openDailyScheduleEdit(userId, row ? row.sk_daily_schedule_override : null);
       };
+    });
+    container.querySelectorAll('[data-toggle-adherence]').forEach(el=>{
+      el.onclick = ()=>toggleAdherence(el.getAttribute('data-toggle-adherence'));
     });
     container.querySelectorAll('[data-toggle-npp]').forEach(el=>{
       el.onchange = (e)=>toggleNpp(el.getAttribute('data-toggle-npp'), e.target.checked);

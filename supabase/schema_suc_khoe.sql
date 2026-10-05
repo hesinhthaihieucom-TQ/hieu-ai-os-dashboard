@@ -530,3 +530,27 @@ create policy "sk_health_checkin_history_admin_all" on sk_health_checkin_history
 -- sang:{uong,an}, trua:{uong,an}, toi:{uong,an}, tap:{gio,bai} } — khớp cấu trúc SK_DAILY_SCHEDULE_BY_BMI
 -- để lich-trinh.js dùng chung 1 hàm render cho cả 2 trường hợp mặc định/tuỳ chỉnh.
 alter table profiles add column if not exists sk_daily_schedule_override jsonb;
+
+-- Nhật ký tuân thủ hằng ngày (2026-10-05, chị Quỳnh: "có nên có check list theo ngày kiểu đếm xem ngta
+-- ngày hôm nay đã tập chưa, uống bn ml nước, ăn chia đĩa chưa, dùng sp gì... xong các dữ liệu của khách
+-- sẽ cho e thấy ở mục quản trị luôn") — 1 dòng/khách/ngày, khách tự tick ở "Hôm nay của bạn" (lich-trinh.js),
+-- admin xem lại 14 ngày gần nhất ở Quản Trị > Thành Viên. log_date là NGÀY THEO GIỜ VIỆT NAM do client gửi
+-- lên (không dùng current_date của DB — máy chủ chạy UTC, quá nửa đêm VN sẽ lệch sang ngày hôm trước).
+-- products_done: mảng tên sản phẩm đã tick trong ngày (lưu theo tên như regimen_sections, không theo id).
+create table if not exists sk_daily_logs (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  log_date date not null,
+  water_ml integer not null default 0,
+  exercised boolean not null default false,
+  plate_sang boolean not null default false,
+  plate_trua boolean not null default false,
+  plate_toi boolean not null default false,
+  products_done jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, log_date)
+);
+alter table sk_daily_logs enable row level security;
+drop policy if exists "sk_daily_logs_owner_all" on sk_daily_logs;
+create policy "sk_daily_logs_owner_all" on sk_daily_logs for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "sk_daily_logs_admin_read" on sk_daily_logs;
+create policy "sk_daily_logs_admin_read" on sk_daily_logs for select using (is_admin());

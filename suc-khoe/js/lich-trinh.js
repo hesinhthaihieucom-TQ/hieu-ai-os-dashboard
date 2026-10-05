@@ -16,7 +16,8 @@ const SK_GI_TABLES = [
 function render(container, ctx){
   const state = { loading:true, loadError:'', tab:'sanpham', items:[], doneIds:new Set(), packageName:null, regimenSections:[], productByName:{}, busyId:null,
     insightText:'', insightLoading:false, insightResult:'', insightError:'', customerProducts:[],
-    calcWeight:'', calcGoal:'duy_tri', healthLevel:null, bmiCategory:null };
+    calcWeight:'', calcGoal:'duy_tri', healthLevel:null, bmiCategory:null,
+    logs:{}, logError:'', weightKg:null };
 
   // 2026-09-15, chị Quỳnh: "phần lịch trình cứ quay hoài hoài" — nếu html() ném lỗi giữa chừng (dữ
   // liệu bất thường nào đó), trước đây container.innerHTML KHÔNG ĐƯỢC GÁN (lỗi chặn cả câu lệnh),
@@ -44,7 +45,7 @@ function render(container, ctx){
     // thành công hay thất bại, kèm nút thử lại thay vì quay vô thời hạn.
     try{
       const packageId = ctx.profile && ctx.profile.sk_package_id;
-      const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }, { data: weeklyLog }] = await Promise.all([
+      const [{ data: pkg }, { data: items }, { data: progress }, { data: products }, { data: customerProductRows }, { data: checkin }, { data: weeklyLog }, { data: dailyLogs, error: dailyLogsError }] = await Promise.all([
         packageId ? ctx.supabase.from('sk_packages').select('name,regimen_sections').eq('id', packageId).maybeSingle() : Promise.resolve({ data:null }),
         packageId ? ctx.supabase.from('sk_package_schedule_items').select('*').eq('package_id', packageId).order('day_offset', { ascending:true }) : Promise.resolve({ data:[] }),
         ctx.supabase.from('sk_schedule_progress').select('schedule_item_id').eq('user_id', ctx.user.id),
@@ -55,6 +56,7 @@ function render(container, ctx){
         ctx.supabase.from('sk_customer_products').select('product_id,reminder_time').eq('user_id', ctx.user.id),
         ctx.supabase.from('sk_health_checkins').select('survey_insulin,survey_toxin,survey_metabolic').eq('user_id', ctx.user.id).maybeSingle(),
         ctx.supabase.from('sk_weekly_logs').select('metrics').eq('user_id', ctx.user.id).maybeSingle(),
+        ctx.supabase.from('sk_daily_logs').select('*').eq('user_id', ctx.user.id).gte('log_date', skVnDateStr(-30)),
       ]);
       state.packageName = pkg ? pkg.name : null;
       state.regimenSections = (pkg && Array.isArray(pkg.regimen_sections)) ? pkg.regimen_sections : [];
@@ -65,6 +67,11 @@ function render(container, ctx){
       // Khỏe (không tự suy diễn "an toàn" hay "nặng" khi chưa có dữ liệu, mặc định dùng phác đồ như cũ).
       state.healthLevel = checkin ? skComputeHealthLevel(checkin.survey_insulin, checkin.survey_toxin, checkin.survey_metabolic).level : null;
       state.bmiCategory = skLatestBmiCategoryFromMetrics(weeklyLog && weeklyLog.metrics);
+      state.weightKg = skLatestWeightKg(weeklyLog && weeklyLog.metrics);
+      // Bảng sk_daily_logs chưa tồn tại nếu chưa chạy schema_suc_khoe.sql mới nhất — báo rõ thay vì ẩn
+      // âm thầm (query Supabase lỗi không throw, chỉ trả error).
+      state.logError = dailyLogsError ? dailyLogsError.message : '';
+      state.logs = Object.fromEntries((dailyLogs||[]).map(r=>[r.log_date, r]));
       const allProducts = products || [];
       allProducts.forEach(p=>{ state.productByName[p.name] = p; });
       const reminderByProductId = Object.fromEntries((customerProductRows||[]).map(r=>[r.product_id, r.reminder_time]));
@@ -127,6 +134,134 @@ function render(container, ctx){
     const { error } = await ctx.supabase.from('profiles').update({ [col]: time||null }).eq('id', ctx.user.id);
     if(error){ alert('Không lưu được giờ nhắc: ' + error.message); return; }
     if(ctx.profile) ctx.profile[col] = time||null;
+  }
+
+  // ===== Hôm nay của bạn — checklist tuân thủ hằng ngày =====
+  // 2026-10-05, chị Quỳnh: "có nên có check list theo ngày kiểu đếm xem ngta ngày hôm nay đã tập chưa,
+  // uống bn ml nước, ăn chia đĩa chưa, dùng sp gì... xong các dữ liệu của khách sẽ cho e thấy ở mục quản
+  // trị luôn" + "trông nó phải thật chuyên nghiệp". Mỗi ngày 1 dòng sk_daily_logs (xem schema_suc_khoe.sql),
+  // admin xem lại ở Quản Trị > Thành Viên (quan-tri.js, adherenceHtml).
+  const EMPTY_LOG = { water_ml:0, exercised:false, plate_sang:false, plate_trua:false, plate_toi:false, products_done:[] };
+  function todayLog(){ return { ...EMPTY_LOG, ...(state.logs[skVnDateStr(0)] || {}) }; }
+
+  // Cùng công thức 35ml/kg đã dùng ở Tính nhu cầu Nước & Protein — chưa có cân nặng thì mặc định 2 lít.
+  function waterTargetMl(){
+    return state.weightKg ? Math.round(state.weightKg * 35 / 50) * 50 : 2000;
+  }
+
+  // Sản phẩm cần tick trong ngày: gộp mọi sản phẩm có tên trong lịch trình gói + lịch riêng của khách +
+  // sản phẩm admin gán lẻ, khử trùng theo tên.
+  function checklistProducts(){
+    const names = new Set();
+    state.regimenSections.forEach(sec=>(sec.steps||[]).forEach(st=>{ if(st.product_name) names.add(st.product_name); }));
+    const override = ctx.profile && ctx.profile.sk_daily_schedule_override;
+    if(override) ['sang','trua','toi'].forEach(k=>((override[k] && override[k].products)||[]).forEach(st=>{ if(st.product_name) names.add(st.product_name); }));
+    state.customerProducts.forEach(p=>names.add(p.name));
+    return [...names];
+  }
+
+  function checklistProgress(log){
+    const prods = checklistProducts();
+    const total = 1 + 1 + 3 + prods.length;
+    const done = (log.water_ml >= waterTargetMl() ? 1 : 0) + (log.exercised ? 1 : 0)
+      + (log.plate_sang?1:0) + (log.plate_trua?1:0) + (log.plate_toi?1:0)
+      + prods.filter(n=>log.products_done.includes(n)).length;
+    return { done, total, pct: Math.round(done / total * 100) };
+  }
+
+  // Chuỗi ngày liên tiếp có ghi nhận ÍT NHẤT 1 hoạt động — hôm nay chưa tick gì thì vẫn tính tiếp từ hôm
+  // qua (không phạt khách chỉ vì buổi sáng chưa kịp mở app).
+  function activeStreak(){
+    const active = (d)=>{ const r = state.logs[d]; return !!r && (r.water_ml>0 || r.exercised || r.plate_sang || r.plate_trua || r.plate_toi || (r.products_done||[]).length>0); };
+    let i = active(skVnDateStr(0)) ? 0 : -1, n = 0;
+    while(active(skVnDateStr(i))){ n++; i--; }
+    return n;
+  }
+
+  async function saveLog(patch){
+    const date = skVnDateStr(0);
+    const prev = state.logs[date];
+    const next = { ...todayLog(), ...patch };
+    state.logs[date] = { ...next, user_id: ctx.user.id, log_date: date };
+    draw();
+    const { error } = await ctx.supabase.from('sk_daily_logs').upsert({
+      user_id: ctx.user.id, log_date: date, water_ml: next.water_ml, exercised: next.exercised,
+      plate_sang: next.plate_sang, plate_trua: next.plate_trua, plate_toi: next.plate_toi,
+      products_done: next.products_done, updated_at: new Date().toISOString(),
+    }, { onConflict:'user_id,log_date' });
+    if(error){
+      if(prev) state.logs[date] = prev; else delete state.logs[date];
+      alert('Không lưu được nhật ký hôm nay — có thể chưa chạy file schema_suc_khoe.sql mới nhất. Lỗi: ' + error.message);
+      draw();
+    }
+  }
+
+  function todayChecklistHtml(){
+    if(state.logError) return `<div class="error-box" style="margin-bottom:18px;">Chưa tải được nhật ký hằng ngày: ${esc(state.logError)} — cần chạy lại file schema_suc_khoe.sql mới nhất.</div>`;
+    const log = todayLog();
+    const target = waterTargetMl();
+    const prog = checklistProgress(log);
+    const streak = activeStreak();
+    const waterPct = Math.min(100, Math.round(log.water_ml / target * 100));
+    const R = 30, C = 2 * Math.PI * R;
+    const dayNames = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+    const d = new Date(skVnDateStr(0) + 'T00:00:00Z');
+    const dateLabel = `${dayNames[d.getUTCDay()]}, ${d.getUTCDate()}/${d.getUTCMonth()+1}`;
+    const ringColor = prog.pct >= 100 ? '#1f9d63' : 'var(--accent)';
+    const row = (checked, attr, icon, title, sub) => `
+      <div ${attr} style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid ${checked?'#bfe3cd':'var(--line)'};background:${checked?'#f1faf4':'#fff'};border-radius:12px;cursor:pointer;margin-bottom:8px;transition:background .15s,border-color .15s;">
+        <div style="width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;${checked?'background:#1f9d63;color:#fff;':'border:2px solid #cfd6cb;color:transparent;'}">✓</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:15.5px;${checked?'color:#1f7a4d;':''}">${icon} ${esc(title)}</div>
+          ${sub ? `<div style="font-size:13.5px;color:var(--ink-soft);margin-top:1px;">${esc(sub)}</div>` : ''}
+        </div>
+      </div>`;
+    const groupTitle = (t) => `<div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:18px 0 8px;">${t}</div>`;
+    const prods = checklistProducts();
+    return `
+      <div class="card" style="margin-bottom:18px;padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 18px 16px;background:linear-gradient(135deg,#1f4f45,#2F6F62);color:#fff;">
+          <div style="min-width:0;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;">${esc(dateLabel)}</div>
+            <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-top:2px;">Hôm nay của bạn</div>
+            <div style="font-size:14px;opacity:.9;margin-top:6px;">${prog.done}/${prog.total} việc đã xong${streak>0 ? ` · 🔥 ${streak} ngày liên tiếp` : ''}</div>
+          </div>
+          <div style="position:relative;width:76px;height:76px;flex-shrink:0;">
+            <svg width="76" height="76" viewBox="0 0 76 76" style="transform:rotate(-90deg);">
+              <circle cx="38" cy="38" r="${R}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="7"/>
+              <circle cx="38" cy="38" r="${R}" fill="none" stroke="${prog.pct>=100?'#7be0a8':'#fff'}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C*(1-prog.pct/100)).toFixed(1)}" style="transition:stroke-dashoffset .4s;"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;">${prog.pct}%</div>
+          </div>
+        </div>
+        <div style="padding:6px 18px 18px;">
+          ${groupTitle('💧 Nước uống')}
+          <div style="border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <div><span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:${log.water_ml>=target?'#1f9d63':'var(--accent)'};">${log.water_ml.toLocaleString('vi-VN')}</span><span style="font-size:15px;color:var(--ink-soft);"> / ${target.toLocaleString('vi-VN')} ml</span></div>
+              <div style="font-size:13.5px;color:var(--ink-soft);">${log.water_ml>=target ? '✅ Đã đủ nước hôm nay' : `Còn ${(target-log.water_ml).toLocaleString('vi-VN')} ml`}</div>
+            </div>
+            <div style="height:10px;background:#e8efe9;border-radius:99px;overflow:hidden;margin:10px 0 12px;"><div style="height:100%;width:${waterPct}%;background:${log.water_ml>=target?'#1f9d63':'linear-gradient(90deg,#4aa3c9,#2F6F62)'};border-radius:99px;transition:width .3s;"></div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span class="btn-ghost btn btn-sm" data-log-water="-250" style="flex:1;text-align:center;white-space:nowrap;padding:9px 6px;">−250</span>
+              <span class="btn btn-sm" data-log-water="250" style="flex:1.4;text-align:center;white-space:nowrap;padding:9px 6px;">+250 ml</span>
+              <span class="btn btn-sm" data-log-water="500" style="flex:1.4;text-align:center;white-space:nowrap;padding:9px 6px;">+500 ml</span>
+            </div>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${state.weightKg ? `Mục tiêu tính theo cân nặng ${state.weightKg}kg (≈35ml/kg).` : 'Mục tiêu mặc định 2.000ml — nhập cân nặng ở "Theo Dõi Sức Khỏe Theo Tuần" để tính riêng cho bạn.'}</div>
+          </div>
+          ${groupTitle('🏃 Vận động')}
+          ${row(log.exercised, 'data-log-toggle="exercised"', '🏃', 'Đã tập luyện hôm nay', 'Đi bộ nhanh, đạp xe, bài tập... tối thiểu 30 phút')}
+          ${groupTitle('🍽️ Ăn theo đĩa 4-3-2-1')}
+          ${row(log.plate_sang, 'data-log-plate="sang"', '🌅', 'Bữa sáng', 'Theo hướng dẫn sản phẩm/đĩa ăn của buổi sáng')}
+          ${row(log.plate_trua, 'data-log-plate="trua"', '☀️', 'Bữa trưa', 'Rau xanh nhiều nhất — đạm — tinh bột — chất béo')}
+          ${row(log.plate_toi, 'data-log-plate="toi"', '🌙', 'Bữa tối', 'Ăn trước 20h, cách giờ ngủ 2-3 tiếng')}
+          ${prods.length>0 ? `
+            ${groupTitle('✨ Sản phẩm đã dùng')}
+            ${prods.map(n=>row(log.products_done.includes(n), `data-log-product="${esc(n)}"`, '', n, '')).join('')}
+          ` : ''}
+        </div>
+      </div>
+    `;
   }
 
   // sk_customer_products cho phép chính chủ UPDATE reminder_time (RLS "sk_customer_products_owner_update",
@@ -304,6 +439,7 @@ function render(container, ctx){
     const doneCount = state.items.filter(i=>state.doneIds.has(i.id)).length;
     const customerProductsToShow = customerProductsNotInRegimen();
     return `
+      ${todayChecklistHtml()}
       ${dailyScheduleHtml()}
       ${customerProductsToShow.length>0 ? `
         <div class="page-head" style="margin-bottom:12px;"><h2 style="font-size:18px;">Sản phẩm bạn đang dùng</h2></div>
@@ -601,6 +737,22 @@ function render(container, ctx){
     const retryBtn = container.querySelector('#lt-retry'); if(retryBtn) retryBtn.onclick = load;
     container.querySelectorAll('[data-tab]').forEach(el=>{
       el.onclick = ()=>{ state.tab = el.getAttribute('data-tab'); draw(); };
+    });
+    container.querySelectorAll('[data-log-water]').forEach(el=>{
+      el.onclick = ()=>saveLog({ water_ml: Math.max(0, todayLog().water_ml + Number(el.getAttribute('data-log-water'))) });
+    });
+    container.querySelectorAll('[data-log-toggle]').forEach(el=>{
+      el.onclick = ()=>{ const k = el.getAttribute('data-log-toggle'); saveLog({ [k]: !todayLog()[k] }); };
+    });
+    container.querySelectorAll('[data-log-plate]').forEach(el=>{
+      el.onclick = ()=>{ const k = 'plate_' + el.getAttribute('data-log-plate'); saveLog({ [k]: !todayLog()[k] }); };
+    });
+    container.querySelectorAll('[data-log-product]').forEach(el=>{
+      el.onclick = ()=>{
+        const name = el.getAttribute('data-log-product');
+        const cur = todayLog().products_done;
+        saveLog({ products_done: cur.includes(name) ? cur.filter(n=>n!==name) : [...cur, name] });
+      };
     });
     container.querySelectorAll('[data-slot-reminder]').forEach(el=>{
       el.onchange = (e)=>saveSlotReminderTime(el.getAttribute('data-slot-reminder'), e.target.value);

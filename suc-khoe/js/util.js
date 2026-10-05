@@ -128,6 +128,23 @@ function skBmiCategory(bmi){
   return { key:'thua_can', label:'Béo phì', color:'#c0392b', concern:true };
 }
 
+// Ngày theo GIỜ VIỆT NAM dạng YYYY-MM-DD (offsetDays: 0 = hôm nay, -1 = hôm qua...) — dùng cho nhật ký
+// hằng ngày sk_daily_logs. Không dùng new Date().toISOString() thẳng vì đó là giờ UTC, quá nửa đêm VN
+// (0h-7h sáng) sẽ ra ngày hôm trước.
+function skVnDateStr(offsetDays){
+  return new Date(Date.now() + 7*3600*1000 + (offsetDays||0)*86400000).toISOString().slice(0,10);
+}
+
+// Cân nặng mới nhất đã nhập ở Theo Dõi Tuần (quét từ Tuần 8 lùi về Bắt đầu) — null nếu chưa nhập.
+function skLatestWeightKg(metrics){
+  if(!metrics || !metrics.cannang) return null;
+  for(let week=8; week>=0; week--){
+    const w = parseFloat(metrics.cannang[week]);
+    if(isFinite(w) && w>0) return w;
+  }
+  return null;
+}
+
 // Mốc gần nhất có đủ chiều cao + cân nặng để tính BMI, từ sk_weekly_logs.metrics (2026-09-12) — dùng
 // chung giữa theo-doi-tuan.js, lich-trinh.js (hiện lịch trình cá nhân hoá) và quan-tri.js (admin xem
 // trước "tạng người" của khách khi tuỳ chỉnh lịch trình riêng) — quét từ mốc mới nhất (Tuần 8) lùi về
