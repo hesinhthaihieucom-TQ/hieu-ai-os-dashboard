@@ -235,9 +235,18 @@ function render(container, ctx){
   // các lệnh khác trong cùng Promise.all (nếu bảng này lỗi/chậm, lỗi ném ra vẫn được try/catch ở
   // boot() bắt y hệt).
   async function loadChannels(){
-    const { data, error } = await ctx.supabase.from('user_channels').select('id,name').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
-    if(error) throw new Error(error.message);
-    state.channels = data || [];
+    // KHÔNG throw khi lỗi (khác mọi hàm load khác ở trên) — bảng user_channels là bảng MỚI (2026-10-04),
+    // nếu ai đó chưa kịp chạy lại schema_nhan_hieu.sql trên Supabase thật thì bảng chưa tồn tại, query
+    // này sẽ lỗi. Throw ở đây từng làm SẬP LUÔN CẢ TRANG Lịch Đăng Bài cho MỌI user (Promise.all ở
+    // boot() gộp chung, 1 lỗi là cả trang rơi vào màn "Có lỗi xảy ra") dù tính năng kênh tự tạo chỉ là
+    // phụ — đúng lỗi chị Quỳnh báo 2026-10-06. Lỗi thì coi như chưa có kênh nào, không chặn cả trang.
+    try{
+      const { data, error } = await ctx.supabase.from('user_channels').select('id,name').eq('user_id', ctx.user.id).order('created_at', { ascending:true });
+      if(error) throw error;
+      state.channels = data || [];
+    } catch(e){
+      state.channels = [];
+    }
   }
 
   // "cho riêng tài khoản của e được chọn bài từ kho content viral, cho vào lịch đăng bài" (chị Quỳnh
@@ -249,9 +258,15 @@ function render(container, ctx){
   // thật trong khi calendar_entries không lưu được nội dung đầy đủ, chỉ lưu tiêu đề).
   async function loadSharedBank(){
     if(!isAdmin) return;
-    const { data, error } = await ctx.supabase.from('content_bank_shared').select('id,title').order('title', { ascending:true });
-    if(error) throw new Error(error.message);
-    state.sharedBank = data || [];
+    // KHÔNG throw khi lỗi — cùng lý do với loadChannels() ở trên, đây chỉ là tính năng phụ (chọn bài
+    // từ Kho Content Viral cho picker), không được để lỗi ở đây làm sập cả trang Lịch Đăng Bài.
+    try{
+      const { data, error } = await ctx.supabase.from('content_bank_shared').select('id,title').order('title', { ascending:true });
+      if(error) throw error;
+      state.sharedBank = data || [];
+    } catch(e){
+      state.sharedBank = [];
+    }
   }
 
   // Danh sách ĐẦY ĐỦ kênh có thể chọn — 2 kênh dựng sẵn (Fanpage chỉ admin thấy, xem isAdmin ở
