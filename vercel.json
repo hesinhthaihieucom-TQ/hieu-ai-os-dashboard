@@ -6,7 +6,8 @@
     { "source": "/tai-chinh/api/:path*", "destination": "/api/:path*" },
     { "source": "/suc-khoe/api/:path*", "destination": "/api/:path*" },
     { "source": "/tro-ly-crm/api/:path*", "destination": "/api/:path*" },
-    { "source": "/giai-nghiep/api/:path*", "destination": "/api/:path*" }
+    { "source": "/giai-nghiep/api/:path*", "destination": "/api/:path*" },
+    { "source": "/edit-video-ai/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300, "includeFiles": "api/_lib/fonts/**" },
@@ -116,6 +117,10 @@
     },
     {
       "source": "/giai-nghiep/lp/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/edit-video-ai/lp/:path*",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {
