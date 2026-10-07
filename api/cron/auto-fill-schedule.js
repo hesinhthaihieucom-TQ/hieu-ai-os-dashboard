@@ -308,8 +308,14 @@ async function findEmptySlots(userId, dateStrs, channel, slots) {
   const existing = resp.ok ? await resp.json() : [];
   const taken = new Set(existing.map((e) => `${e.scheduled_date}:${e.slot}`));
   const empty = [];
-  for (const dateStr of dateStrs) {
-    for (const slot of slots) {
+  // Xếp theo BUỔI trước, NGÀY sau (không phải ngược lại) — "lần 1 là xong 7 bài sáng, lần 2 là 7
+  // bài trưa, lần 3 là 7 bài tối" (chị Quỳnh 2026-10-07, khớp đúng tinh thần chốt ban đầu 2026-09-07
+  // "3 bài/ngày thì bấm 3 lần là xong cả tuần" — mỗi lần bấm phải lấp TRỌN 1 buổi cho cả 7 ngày,
+  // không phải lấp trọn vài ngày đầu tuần rồi dừng giữa chừng 1 buổi). Thứ tự cũ (ngày trước, buổi
+  // sau) khiến MAX_FILL_PER_CLICK=7 cắt ngang giữa 1 ngày khi chọn 3 bài/ngày (vd lấp xong Thứ 2+3,
+  // dở dang Thứ 4 sáng) — không khớp kỳ vọng "mỗi lần bấm xong gọn 1 buổi".
+  for (const slot of slots) {
+    for (const dateStr of dateStrs) {
       if (!taken.has(`${dateStr}:${slot}`)) empty.push({ dateStr, slot });
     }
   }

@@ -161,7 +161,27 @@ module.exports = async (req, res) => {
     // nhan-hieu/js/app-shell.js (onGatedApiSuccess nhận thêm weight override) và lich-dang.js.
     let luotUsed = 0;
 
-    for (const slotInfo of toFill) {
+    // Chạy SONG SONG theo đợt (2026-10-07, khách báo "bấm Bắt đầu viết bị ngắt giữa chừng, mất lượt
+    // mà không thấy bài" — đúng nguyên nhân: 7 bài viết NỐI TIẾP nhau, mỗi bài 2-3 lượt gọi AI, dễ
+    // cộng dồn vượt quá 300s Vercel cho phép. Chị Quỳnh muốn GIỮ NGUYÊN 7 bài/lần bấm, không giảm —
+    // nên đổi sang chạy FILL_CONCURRENCY bài cùng lúc mỗi đợt thay vì từng bài 1, rút tổng thời gian
+    // chờ xuống còn ~1/3, mà vẫn ra đủ 7 bài nếu đủ nguồn/lượt.
+    //
+    // AN TOÀN khi chạy song song:
+    // - usedRefs.push() (mode 'kho') PHẢI chạy trước await đầu tiên trong processOneSlot() — Array.map()
+    //   gọi processOneSlot() cho từng slot TUẦN TỰ (đồng bộ) trước khi bất kỳ await nào trong đó thật
+    //   sự nhường quyền thực thi, nên phần "giành" candidate của cả đợt vẫn chạy đúng thứ tự, không 2
+    //   slot nào trong cùng đợt trùng candidate dù xử lý song song sau đó.
+    // - checkAndConsumeTrialQuota() vốn đã ATOMIC ở tầng Postgres (select...for update, xem
+    //   api/_lib/trial-quota.js) — gọi đồng thời từ nhiều slot trong cùng đợt vẫn trừ đúng, không lọt.
+    // - quotaBlockedMessage dùng "||=" (giữ thông báo ĐẦU TIÊN) và chỉ check SAU khi cả đợt xong, thay
+    //   vì "break" giữa chừng như code cũ — 1 đợt có thể có vài slot bị chặn trong khi slot khác cùng
+    //   đợt vẫn kịp chạy trước đó, nhưng sẽ KHÔNG mở thêm đợt mới sau khi phát hiện đã hết lượt.
+    // - recentTitles chỉ cập nhật được GIỮA các đợt (trong cùng 1 đợt, các bài không thấy tiêu đề của
+    //   nhau) — đánh đổi nhỏ về việc né trùng mô-típ, chấp nhận được để đổi lấy tốc độ.
+    const FILL_CONCURRENCY = 3;
+
+    async function processOneSlot(slotInfo) {
       const slotTime = profile['slot_time_' + slotInfo.slot] || DEFAULT_SLOT_TIME[slotInfo.slot];
       // Sản phẩm chọn SAU khi biết candidate (so khớp nội dung, xem pickMatchingProduct bên dưới) —
       // "sản phẩm là tùy bài đó nói về cái j thì chọn sản phẩm đó chứ sao lung tung đc" (chị Quỳnh
@@ -171,12 +191,13 @@ module.exports = async (req, res) => {
       let candidate = null;
       if (finalMode === 'kho') {
         candidate = pickUnusedCandidate(poolFiltered, usedRefs);
-        if (!candidate) { skippedNoCandidate.push(slotInfo); continue; }
+        if (!candidate) { skippedNoCandidate.push(slotInfo); return; }
+        usedRefs.push({ table: candidate.table, id: candidate.id }); // giành NGAY, trước await đầu tiên
       } else {
         // Cách 2: tự sinh 1 hook mới theo đúng trục/ngành, LƯU vào Kho Hook rồi mới viết — 2 lượt
         // riêng (sinh hook + viết bài), đúng yêu cầu "tính tổng chi phí nếu người ta bấm nút đó".
         const hookQuotaError = await checkAndConsumeTrialQuota(user.id, 'goi-y-hook-theo-chu-de');
-        if (hookQuotaError) { quotaBlockedMessage = hookQuotaError; break; }
+        if (hookQuotaError) { quotaBlockedMessage = quotaBlockedMessage || hookQuotaError; return; }
         try {
           const goal = Math.random() < 0.5 ? 'viral' : 'uy_tin';
           const topic = contextBlockOf(positioning, null).slice(0, 800);
@@ -185,7 +206,7 @@ module.exports = async (req, res) => {
             userContent: `CHỦ ĐỀ: ${topic}\n\nLOẠI HOOK CẦN VIẾT: ${goal === 'viral' ? 'Viral' : 'Uy tín'}${hookSuggest.CONTENT_GOALS[goal] ? ' — ' + hookSuggest.CONTENT_GOALS[goal] : ''}\n\nĐỊNH VỊ THƯƠNG HIỆU ĐÃ CHỐT:\n${JSON.stringify(positioning.luot1, null, 2)}\n\nHãy viết đúng 5 hook theo loại trên, sát chủ đề, đúng mục tiêu content.`,
           });
           const hooks = Array.isArray(hookResult.hooks) ? hookResult.hooks.filter(Boolean) : [];
-          if (!hooks.length) { skippedNoCandidate.push(slotInfo); continue; }
+          if (!hooks.length) { skippedNoCandidate.push(slotInfo); return; }
           const hookText = hooks[Math.floor(Math.random() * hooks.length)];
           // "tất cả những câu nào dài trên 2 dòng đều là quote đó" (chị Quỳnh 2026-09-01) — cùng ngưỡng
           // ước lượng ~2 dòng (HOOK_QUOTE_LENGTH_THRESHOLD) và cùng cách ghi đè RAW KEY 'quote' như
@@ -196,21 +217,20 @@ module.exports = async (req, res) => {
             method: 'POST',
             body: JSON.stringify({ user_id: user.id, hook_text: hookText, category: savedCategory, tags: truc ? [truc] : null }),
           });
-          if (!savedResp.ok) { skippedNoCandidate.push(slotInfo); continue; }
+          if (!savedResp.ok) { skippedNoCandidate.push(slotInfo); return; }
           const [savedHook] = await savedResp.json();
           candidate = { table: 'hooks_bank_personal', id: savedHook.id, text: hookText, title: goal, tags: truc ? [truc] : null };
           luotUsed += 1;
         } catch (e) {
           await refundTrialQuota(user.id, 'goi-y-hook-theo-chu-de');
           skippedNoCandidate.push({ ...slotInfo, error: e.message });
-          continue;
+          return;
         }
       }
 
       const writeQuotaError = await checkAndConsumeTrialQuota(user.id, 'viet-tu-kho-goc');
-      if (writeQuotaError) { quotaBlockedMessage = writeQuotaError; break; }
+      if (writeQuotaError) { quotaBlockedMessage = quotaBlockedMessage || writeQuotaError; return; }
       try {
-        if (finalMode === 'kho') usedRefs.push({ table: candidate.table, id: candidate.id });
         const product = pickMatchingProduct(products, candidate.text);
         const result = await fillOneSlot({
           userId: user.id, positioning, slotInfo, candidate, slotTime, apiKey, product, group,
@@ -225,6 +245,12 @@ module.exports = async (req, res) => {
         await refundTrialQuota(user.id, 'viet-tu-kho-goc');
         skippedNoCandidate.push({ ...slotInfo, error: e.message });
       }
+    }
+
+    for (let i = 0; i < toFill.length; i += FILL_CONCURRENCY) {
+      if (quotaBlockedMessage) break; // đã hết lượt ở đợt trước — không mở thêm đợt mới nữa
+      const batch = toFill.slice(i, i + FILL_CONCURRENCY);
+      await Promise.all(batch.map(processOneSlot));
     }
 
     // Đánh dấu "đã chạm tới khoảnh khắc aha" — CHỈ 1 LẦN đầu tiên thật sự điền được ít nhất 1 ô (nếu
