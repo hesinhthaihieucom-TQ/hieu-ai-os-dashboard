@@ -254,6 +254,57 @@ function setup() {
   ss.setSpreadsheetTimeZone('Asia/Ho_Chi_Minh');
 }
 
+/* ---------- xóa các dòng đăng ký trùng (chạy tay: chọn hàm xoaTrung → Chạy) ----------
+ * Trùng = cùng số điện thoại trong cùng 1 tab. Giữ dòng có trạng thái "xa" nhất (Đã xác nhận > Đã nhận phí > Chờ xác nhận),
+ * bằng nhau thì giữ dòng đăng ký sớm nhất. Dòng bị xóa được chép sang tab "Đã xóa (trùng)" để còn khôi phục.
+ * Cùng 1 SĐT xuất hiện ở 2 tab khác nhau (A và B): KHÔNG xóa, chỉ báo để BTC tự quyết. */
+function normPhone_(v) {
+  var d = String(v || '').replace(/\D/g, '');
+  if (d.indexOf('84') === 0 && d.length === 11) d = '0' + d.slice(2);
+  return d;
+}
+function rank_(r) {
+  var s = String(r[9] || '') + '|' + String(r[7] || '');
+  if (s.indexOf('Đã xác nhận') >= 0) return 3;
+  if (s.indexOf('Đã nhận phí') >= 0) return 2;
+  if (s.indexOf('Chờ xác nhận') >= 0) return 1;
+  return 0;
+}
+function xoaTrung() {
+  var ss = ss_(), bk = ss.getSheetByName('Đã xóa (trùng)') || ss.insertSheet('Đã xóa (trùng)');
+  if (bk.getLastRow() === 0) { bk.appendRow(['Tab gốc', 'Dòng cũ', 'Lý do', 'Thời gian đăng ký', 'Tên', 'SĐT', 'Bảng', 'Trạng thái / ghi chú', 'Xóa lúc']); bk.setFrozenRows(1); }
+  var removed = [], seen = {}, cross = [];
+  TABS.forEach(function (t) {
+    var sh = ss.getSheetByName(t.n);
+    if (!sh || sh.getLastRow() < DATA_ROW) return;
+    var n = sh.getLastRow() - DATA_ROW + 1, vals = sh.getRange(DATA_ROW, 1, n, NCOL).getValues(), groups = {};
+    vals.forEach(function (r, i) {
+      if (!r[1]) return;
+      var k = normPhone_(r[2]) || ('ten_' + String(r[1]).trim().toLowerCase());
+      (groups[k] = groups[k] || []).push(i);
+      if (normPhone_(r[2])) { if (seen[k] && seen[k] !== t.n) cross.push(r[1] + ' (' + k + ') ở ' + seen[k] + ' và ' + t.n); seen[k] = seen[k] || t.n; }
+    });
+    var del = [];
+    Object.keys(groups).forEach(function (k) {
+      var idx = groups[k]; if (idx.length < 2) return;
+      var best = idx[0];
+      idx.forEach(function (i) { if (rank_(vals[i]) > rank_(vals[best])) best = i; });
+      idx.forEach(function (i) { if (i !== best) del.push(i); });
+    });
+    del.sort(function (a, b) { return b - a; });
+    del.forEach(function (i) {
+      var r = vals[i];
+      bk.appendRow([t.n, DATA_ROW + i, 'Trùng SĐT', r[0], r[1], "'" + r[2], r[3], String(r[9] || r[7] || '') + ' ' + String(r[10] || r[8] || ''), new Date()]);
+      removed.push(t.n + ' dòng ' + (DATA_ROW + i) + ': ' + r[1] + ' – ' + r[2]);
+      sh.deleteRow(DATA_ROW + i);
+    });
+  });
+  var msg = removed.length ? 'Đã xóa ' + removed.length + ' dòng trùng (chép sang tab "Đã xóa (trùng)").' : 'Không có dòng trùng SĐT trong cùng tab.';
+  if (cross.length) msg += ' Lưu ý trùng giữa 2 tab (không xóa): ' + cross.join('; ');
+  Logger.log(msg + '\n' + removed.join('\n'));
+  ss.toast(msg, 'Kiểm tra trùng', 15);
+}
+
 /* ---------- nhận đăng ký từ ladipage ---------- */
 function doPost(e) {
   var lock = LockService.getScriptLock();
