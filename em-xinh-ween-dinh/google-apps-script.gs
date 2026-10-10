@@ -305,6 +305,50 @@ function xoaTrung() {
   ss.toast(msg, 'Kiểm tra trùng', 15);
 }
 
+/* ---------- kiểm tra có sót thí sinh không (chạy tay: chọn hàm kiemTraSot → Chạy) ----------
+ * Mỗi lượt đăng ký thành công đều lưu ảnh vào thư mục Drive trước khi ghi dòng vào sheet.
+ * Hàm này so các ảnh trong thư mục với các dòng trong 3 tab: ảnh nào chưa có dòng tương ứng
+ * (tên + 4 số cuối SĐT) sẽ được liệt kê ở tab "Có thể sót" kèm link ảnh để BTC thêm tay. */
+function safeName_(ten) { return String(ten).replace(/[^\wÀ-ỹ ]/g, '').trim().slice(0, 40); }
+function kiemTraSot() {
+  var ss = ss_(), have = {}, rows = 0;
+  TABS.forEach(function (t) {
+    var sh = ss.getSheetByName(t.n);
+    if (!sh || sh.getLastRow() < DATA_ROW) return;
+    sh.getRange(DATA_ROW, 2, sh.getLastRow() - DATA_ROW + 1, 2).getValues().forEach(function (r) {
+      if (!r[0]) return;
+      rows++;
+      have[(safeName_(r[0]) + '_' + String(r[1]).replace(/\D/g, '').slice(-4)).toLowerCase()] = true;
+    });
+  });
+  var it = DriveApp.getFoldersByName(FOLDER_NAME);
+  if (!it.hasNext()) { ss.toast('Chưa có thư mục ảnh đăng ký.', 'Kiểm tra sót', 10); return; }
+  var files = it.next().getFiles(), map = {}, nfile = 0;
+  while (files.hasNext()) {
+    var f = files.next(), m = /^(thiep|ck)_(.+)\.jpg$/.exec(f.getName());
+    if (!m) continue;
+    nfile++;
+    var k = m[2], o = map[k] = map[k] || { thiep: '', ck: '', time: f.getDateCreated() };
+    o[m[1]] = f.getUrl();
+    if (f.getDateCreated() < o.time) o.time = f.getDateCreated();
+  }
+  var sh = ss.getSheetByName('Có thể sót') || ss.insertSheet('Có thể sót');
+  sh.clear();
+  sh.appendRow(['Khóa (tên_4 số cuối SĐT)', 'Gửi lúc', 'Link thiệp', 'Link chuyển khoản', 'Ghi chú']);
+  sh.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#ff4fb8').setFontColor('#ffffff');
+  var miss = 0;
+  Object.keys(map).sort(function (a, b) { return map[a].time - map[b].time; }).forEach(function (k) {
+    if (have[k.toLowerCase()]) return;
+    miss++;
+    sh.appendRow([k, map[k].time, map[k].thiep, map[k].ck, 'Có ảnh nhưng chưa có dòng trong 3 tab – kiểm tra rồi thêm tay (cần hỏi SĐT đầy đủ + bảng)']);
+  });
+  sh.getRange(2, 2, Math.max(1, miss), 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  sh.setColumnWidths(1, 5, 220);
+  var msg = 'Thư mục có ' + Object.keys(map).length + ' lượt gửi (' + nfile + ' ảnh), 3 tab có ' + rows + ' dòng. ' + (miss ? 'SÓT ' + miss + ' lượt – xem tab "Có thể sót".' : 'Không sót lượt nào.');
+  Logger.log(msg);
+  ss.toast(msg, 'Kiểm tra sót', 20);
+}
+
 /* ---------- nhận đăng ký từ ladipage ---------- */
 function doPost(e) {
   var lock = LockService.getScriptLock();
