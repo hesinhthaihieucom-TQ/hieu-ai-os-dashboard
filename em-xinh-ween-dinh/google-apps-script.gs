@@ -6,16 +6,17 @@
 var FOLDER_NAME = 'EmXinh_WeenDinh_HinhDangKy';
 var OVERVIEW = 'Tổng quan';
 var DATA_ROW = 4;      // dòng đầu tiên chứa dữ liệu (dòng 1 = tiêu đề lớn, 2 = thống kê, 3 = tên cột)
-var NCOL = 11;
+var NCOL = 10;
+var STATUS_COL = 9, NOTE_COL = 10;   // cột Trạng thái / Ghi chú
 var TABS = [
   { n: 'Series A', title: 'SERIES A  ·  ĐỘI MẠNH', sub: 'Đôi nữ hạng nặng – mỗi VĐV trình > 2.5', color: '#ff4fb8' },
   { n: 'Series B', title: 'SERIES B  ·  PHONG TRÀO', sub: 'Đôi nữ Newbie – mỗi VĐV trình < 2.5', color: '#8a2be2' },
   { n: 'KOL',      title: 'KOL  ·  ĐẠI CHIẾN',      sub: 'Đôi nữ KOLs tự do',                   color: '#ff9a2e' }
 ];
 var HEADERS = ['Thời gian', 'Tên đăng ký (hiển thị trên thiệp)', 'Số điện thoại', 'Bảng thi đấu', 'Phí áp dụng',
-               'Hình thiệp', 'Hình chuyển khoản', 'Mở thiệp', 'Mở CK', 'Trạng thái', 'Ghi chú'];
+               'Hình thiệp', 'Hình chuyển khoản', 'Mở CK', 'Trạng thái', 'Ghi chú'];
 var STATUS = ['Chờ xác nhận', 'Đã nhận phí', 'Đã xác nhận', 'Hủy'];
-var WIDTHS = [150, 230, 130, 110, 110, 130, 130, 90, 90, 140, 240];
+var WIDTHS = [150, 230, 130, 110, 110, 130, 130, 90, 140, 240];
 var C = { dark: '#2b0b4a', gold: '#f5d77a', pink: '#ff4fb8', soft: '#fff5fb', line: '#f1cfe3', text: '#2a1a3a' };
 
 /* ---------- tiện ích ---------- */
@@ -64,6 +65,11 @@ function thumb_(url) {
   return id ? f_('=IMAGE("https://drive.google.com/thumbnail?id=' + id + '&sz=w400"§4§110§110)') : '';
 }
 
+function urlFromThumb_(formula) {   // lấy lại link Drive từ công thức =IMAGE(...id=XXX...)
+  var m = /id=([-\w]{20,})/.exec(String(formula || ''));
+  return m ? 'https://drive.google.com/file/d/' + m[1] + '/view' : '';
+}
+
 function link_(url, label) {
   return url ? f_('=HYPERLINK("' + url + '"§"' + label + '")') : '';
 }
@@ -72,7 +78,7 @@ function link_(url, label) {
 function makeRow_(time, ten, sdt, bang, phi, urlThiep, urlCk, status, note) {
   var p = String(sdt == null ? '' : sdt).replace(/^'/, '').replace(/\s/g, '');
   if (/^\d{9}$/.test(p)) p = '0' + p;           // dòng cũ bị mất số 0 đầu khi Sheet đổi sang số
-  return [time, ten, p, bang, phi, thumb_(urlThiep), thumb_(urlCk), link_(urlThiep, 'Mở thiệp'), link_(urlCk, 'Mở CK'), status || STATUS[0], note || ''];
+  return [time, ten, p, bang, phi, thumb_(urlThiep), thumb_(urlCk), link_(urlCk, 'Mở CK'), status || STATUS[0], note || ''];
 }
 
 /* ---------- dựng giao diện 1 tab bảng ---------- */
@@ -87,15 +93,15 @@ function buildTab_(cfg) {
     var h = -1;
     for (var i = 0; i < v.length; i++) { if (String(v[i][0]) === 'Thời gian') { h = i; break; } }
     if (h >= 0) {
+      var hasOpenThiep = String(v[h][7]) === 'Mở thiệp';          // header 11 cột (bản trước) hay 10 cột (bản này)
+      var stIdx = hasOpenThiep ? 9 : 8;
       for (var r = h + 1; r < v.length; r++) {
         if (!v[r][1]) continue;
-        // dòng kiểu mới: cột F là =IMAGE, cột H là =HYPERLINK; dòng kiểu cũ: cột F/G là link thô, H là trạng thái
-        var isNew = /^=(IMAGE|HYPERLINK)/i.test(String(f[r][5] || f[r][7] || ''));
-        if (!isNew) keep.push(makeRow_(v[r][0], v[r][1], v[r][2], v[r][3], v[r][4], v[r][5], v[r][6], v[r][7], v[r][8]));
-        else {
-          var u1 = (/"(https?:[^"]+)"/.exec(f[r][7] || '') || [])[1] || '';
-          var u2 = (/"(https?:[^"]+)"/.exec(f[r][8] || '') || [])[1] || '';
-          keep.push(makeRow_(v[r][0], v[r][1], v[r][2], v[r][3], v[r][4], u1, u2, v[r][9], v[r][10]));
+        if (/^https?:/.test(String(v[r][5]))) {
+          // dòng do bản script cũ ghi: cột F/G là link thô, H là trạng thái, I là ghi chú
+          keep.push(makeRow_(v[r][0], v[r][1], v[r][2], v[r][3], v[r][4], v[r][5], v[r][6], v[r][7], v[r][8]));
+        } else {
+          keep.push(makeRow_(v[r][0], v[r][1], v[r][2], v[r][3], v[r][4], urlFromThumb_(f[r][5]), urlFromThumb_(f[r][6]), v[r][stIdx], v[r][stIdx + 1]));
         }
       }
     }
@@ -117,7 +123,7 @@ function buildTab_(cfg) {
   sh.setRowHeight(1, 54);
   // dòng 2: thống kê nhanh
   sh.getRange(2, 1, 1, NCOL).merge()
-    .setFormula(f_('="' + cfg.sub + '   •   Tổng đăng ký: "&COUNTA(B' + DATA_ROW + ':B)&"   •   Chờ xác nhận: "&COUNTIF(J' + DATA_ROW + ':J§"Chờ xác nhận")&"   •   Đã xác nhận: "&COUNTIF(J' + DATA_ROW + ':J§"Đã xác nhận")'))
+    .setFormula(f_('="' + cfg.sub + '   •   Tổng đăng ký: "&COUNTA(B' + DATA_ROW + ':B)&"   •   Chờ xác nhận: "&COUNTIF(I' + DATA_ROW + ':I§"Chờ xác nhận")&"   •   Đã xác nhận: "&COUNTIF(I' + DATA_ROW + ':I§"Đã xác nhận")'))
     .setBackground(cfg.color).setFontColor('#ffffff').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('left');
   sh.setRowHeight(2, 32);
   // dòng 3: tên cột
@@ -136,13 +142,13 @@ function buildTab_(cfg) {
   sh.getRange(DATA_ROW, 3, sh.getMaxRows() - DATA_ROW + 1, 2).setHorizontalAlignment('center');
   sh.getRange(DATA_ROW, 5, sh.getMaxRows() - DATA_ROW + 1, 1).setNumberFormat('#,##0"đ"').setHorizontalAlignment('right').setFontWeight('bold').setFontColor('#b8560c');
   sh.getRange(DATA_ROW, 6, sh.getMaxRows() - DATA_ROW + 1, 2).setHorizontalAlignment('center');
-  sh.getRange(DATA_ROW, 8, sh.getMaxRows() - DATA_ROW + 1, 2).setHorizontalAlignment('center').setFontColor('#1a73e8');
-  sh.getRange(DATA_ROW, 10, sh.getMaxRows() - DATA_ROW + 1, 1).setHorizontalAlignment('center').setFontWeight('bold')
+  sh.getRange(DATA_ROW, 8, sh.getMaxRows() - DATA_ROW + 1, 1).setHorizontalAlignment('center').setFontColor('#1a73e8');
+  sh.getRange(DATA_ROW, STATUS_COL, sh.getMaxRows() - DATA_ROW + 1, 1).setHorizontalAlignment('center').setFontWeight('bold')
     .setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(STATUS, true).build());
-  sh.getRange(DATA_ROW, 11, sh.getMaxRows() - DATA_ROW + 1, 1).setWrap(true);
+  sh.getRange(DATA_ROW, NOTE_COL, sh.getMaxRows() - DATA_ROW + 1, 1).setWrap(true);
 
   // tô màu: sọc xen kẽ + trạng thái
-  var rng = sh.getRange(DATA_ROW, 1, sh.getMaxRows() - DATA_ROW + 1, NCOL), jr = sh.getRange(DATA_ROW, 10, sh.getMaxRows() - DATA_ROW + 1, 1);
+  var rng = sh.getRange(DATA_ROW, 1, sh.getMaxRows() - DATA_ROW + 1, NCOL), jr = sh.getRange(DATA_ROW, STATUS_COL, sh.getMaxRows() - DATA_ROW + 1, 1);
   var rules = [];
   function st(text, bg, fg) {
     rules.push(SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(text).setBackground(bg).setFontColor(fg).setRanges([jr]).build());
@@ -194,11 +200,11 @@ function buildOverview_() {
   sh.setRowHeight(3, 16);
 
   function sum_(col, crit) { // đếm theo trạng thái trên cả 3 tab
-    return TABS.map(function (t) { return "COUNTIF('" + t.n + "'!J" + DATA_ROW + ':J§"' + crit + '")'; }).join('+');
+    return TABS.map(function (t) { return "COUNTIF('" + t.n + "'!I" + DATA_ROW + ':I§"' + crit + '")'; }).join('+');
   }
   var total = TABS.map(function (t) { return "COUNTA('" + t.n + "'!B" + DATA_ROW + ':B)'; }).join('+');
   var paid = TABS.map(function (t) {
-    return "SUMIF('" + t.n + "'!J" + DATA_ROW + ':J§"Đã nhận phí"§\'' + t.n + "'!E" + DATA_ROW + ':E)+SUMIF(\'' + t.n + "'!J" + DATA_ROW + ':J§"Đã xác nhận"§\'' + t.n + "'!E" + DATA_ROW + ':E)';
+    return "SUMIF('" + t.n + "'!I" + DATA_ROW + ':I§"Đã nhận phí"§\'' + t.n + "'!E" + DATA_ROW + ':E)+SUMIF(\'' + t.n + "'!I" + DATA_ROW + ':I§"Đã xác nhận"§\'' + t.n + "'!E" + DATA_ROW + ':E)';
   }).join('+');
   var expected = TABS.map(function (t) { return "SUM('" + t.n + "'!E" + DATA_ROW + ':E)'; }).join('+');
 
@@ -271,7 +277,7 @@ function normName_(s) {
 }
 function dupKey_(ten, sdt) { return normPhone_(sdt) + '|' + normName_(ten); } // trùng = cùng SĐT VÀ cùng tên (khác tên = 2 người, vd 1 người đăng ký hộ bạn đánh cặp)
 function rank_(r) {
-  var s = String(r[9] || '') + '|' + String(r[7] || '');
+  var s = String(r[7] || '') + '|' + String(r[8] || '') + '|' + String(r[9] || '');
   if (s.indexOf('Đã xác nhận') >= 0) return 3;
   if (s.indexOf('Đã nhận phí') >= 0) return 2;
   if (s.indexOf('Chờ xác nhận') >= 0) return 1;
@@ -373,6 +379,122 @@ function themTay() {
   sh.appendRow(makeRow_(NGUOI.gio, NGUOI.ten, "'" + NGUOI.SDT, NGUOI.BANG, NGUOI.phi, '', '', 'Đã nhận phí', NGUOI.ghiChu));
   sh.setRowHeight(sh.getLastRow(), 60);
   ss_().toast('Đã thêm ' + NGUOI.ten + ' vào ' + NGUOI.BANG + '. Nhớ gửi lại ảnh thiệp cho bạn qua Zalo.', 'Thêm tay', 15);
+}
+
+/* =====================================================================================
+ * TỰ ĐỐI SOÁT TIỀN VỀ TỪ SEPAY  →  tự chuyển "Chờ xác nhận" thành "Đã nhận phí"
+ * Cài 1 lần: (1) lấy API token ở my.sepay.vn → Cấu hình công ty → API Access;
+ *            (2) Apps Script → Cài đặt dự án → Thuộc tính tập lệnh: thêm SEPAY_TOKEN = <token>
+ *                (tuỳ chọn) SEPAY_ACCOUNT = số tài khoản nhận tiền như hiển thị trên SePay (nếu SePay có nhiều tài khoản);
+ *            (3) chạy hàm caiTuDongSePay 1 lần → sau đó tự chạy mỗi 10 phút.
+ * Khớp = số tiền vào >= phí đăng ký VÀ nội dung chuyển khoản chứa đủ các từ trong tên (không dấu) hoặc 9 số cuối SĐT.
+ * Tab "SePay đối soát" liệt kê mọi khoản tiền vào + khoản nào CHƯA KHỚP ai (người đã chuyển khoản nhưng chưa đăng ký).
+ * ===================================================================================== */
+var SEPAY_API = 'https://my.sepay.vn/userapi/transactions/list';
+var SEPAY_TAB = 'SePay đối soát';
+
+function sepayProp_(k) { return PropertiesService.getScriptProperties().getProperty(k) || ''; }
+
+function sepayFetch_(days) {
+  var token = sepayProp_('SEPAY_TOKEN');
+  if (!token) throw new Error('Chưa có SEPAY_TOKEN (Cài đặt dự án → Thuộc tính tập lệnh)');
+  var min = Utilities.formatDate(new Date(Date.now() - days * 864e5), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd HH:mm:ss');
+  var acc = sepayProp_('SEPAY_ACCOUNT');
+  var url = SEPAY_API + '?limit=1000&transaction_date_min=' + encodeURIComponent(min) + (acc ? '&account_number=' + encodeURIComponent(acc) : '');
+  var res = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200) throw new Error('SePay trả lỗi ' + res.getResponseCode() + ': ' + res.getContentText().slice(0, 200));
+  var j = JSON.parse(res.getContentText());
+  return (j.transactions || []).filter(function (t) { return Number(t.amount_in) > 0; });
+}
+
+function txDate_(s) { return new Date(String(s).replace(' ', 'T') + '+07:00'); }
+
+function payMatches_(row, tx) {
+  var content = normName_(tx.transaction_content || tx.content || '') ;
+  var tokens = normName_(row.ten).split(' ').filter(function (w) { return w.length > 1; });
+  var okName = tokens.length >= 2 && tokens.every(function (w) { return (' ' + content + ' ').indexOf(' ' + w + ' ') >= 0; });
+  var ph = normPhone_(row.sdt).slice(-9);
+  var okPhone = ph.length === 9 && String(tx.transaction_content || '').replace(/\D/g, '').indexOf(ph) >= 0;
+  var okAmt = Number(tx.amount_in) >= Number(row.phi || 0);
+  var dt = txDate_(tx.transaction_date) - new Date(row.time).getTime();
+  var okTime = dt >= -3 * 864e5 && dt <= 20 * 864e5;
+  return (okName || okPhone) && okAmt && okTime;
+}
+
+function kiemTraSePay() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(25000)) return;
+  var ss = ss_(), now = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM HH:mm');
+  try {
+    var txs = sepayFetch_(21);
+    // đọc log cũ để biết khoản nào đã khớp với ai
+    var lg = ss.getSheetByName(SEPAY_TAB) || ss.insertSheet(SEPAY_TAB);
+    var paired = {}, usedTx = {};
+    if (lg.getLastRow() >= 3) lg.getRange(3, 1, lg.getLastRow() - 2, 6).getValues().forEach(function (r) {
+      if (r[4] === 'Đã khớp' && r[0]) { usedTx[String(r[0])] = String(r[5]); paired[String(r[5])] = String(r[0]); }
+    });
+    // gom các dòng đăng ký (trừ Hủy)
+    var rows = [];
+    TABS.forEach(function (t) {
+      var sh = ss.getSheetByName(t.n);
+      if (!sh || sh.getLastRow() < DATA_ROW) return;
+      sh.getRange(DATA_ROW, 1, sh.getLastRow() - DATA_ROW + 1, NCOL).getValues().forEach(function (r, i) {
+        if (!r[1] || String(r[STATUS_COL - 1]) === 'Hủy') return;
+        rows.push({ tab: t.n, sh: sh, line: DATA_ROW + i, time: r[0], ten: r[1], sdt: r[2], phi: r[4], status: String(r[STATUS_COL - 1] || ''), key: t.n + ' · ' + r[1] + ' · ' + normPhone_(r[2]) });
+      });
+    });
+    rows.sort(function (a, b) { return new Date(a.time) - new Date(b.time); });
+    var changed = 0;
+    txs.sort(function (a, b) { return txDate_(a.transaction_date) - txDate_(b.transaction_date); });
+    txs.forEach(function (tx) {
+      var id = String(tx.id);
+      if (usedTx[id]) return;
+      var best = null, bestGap = 1e18;
+      rows.forEach(function (rw) {
+        if (paired[rw.key]) return;                       // dòng này đã có khoản tiền khác khớp rồi
+        if (!payMatches_(rw, tx)) return;
+        var gap = Math.abs(txDate_(tx.transaction_date) - new Date(rw.time).getTime());
+        if (gap < bestGap) { best = rw; bestGap = gap; }
+      });
+      if (!best) return;
+      usedTx[id] = best.key; paired[best.key] = id;
+      if (!best.status || best.status === 'Chờ xác nhận') {
+        best.sh.getRange(best.line, STATUS_COL).setValue('Đã nhận phí');
+        var nc = best.sh.getRange(best.line, NOTE_COL), old = String(nc.getValue() || '');
+        nc.setValue((old ? old + ' | ' : '') + '✅ SePay tự xác nhận: ' + Number(tx.amount_in).toLocaleString('vi-VN') + 'đ lúc ' + tx.transaction_date + ' (GD ' + id + ')');
+        changed++;
+      }
+    });
+    // ghi lại tab đối soát
+    lg.clear();
+    lg.getRange(1, 1, 1, 6).merge().setValue('ĐỐI SOÁT TIỀN VỀ TỪ SEPAY – cập nhật ' + now + ' (21 ngày gần nhất)').setBackground('#2b0b4a').setFontColor('#f5d77a').setFontWeight('bold').setFontSize(13);
+    lg.getRange(2, 1, 1, 6).setValues([['Mã GD', 'Thời gian', 'Số tiền', 'Nội dung chuyển khoản', 'Trạng thái', 'Khớp với (tab · tên · SĐT)']]).setBackground('#ff4fb8').setFontColor('#ffffff').setFontWeight('bold');
+    var out = txs.slice().sort(function (a, b) { return txDate_(b.transaction_date) - txDate_(a.transaction_date); }).map(function (tx) {
+      var id = String(tx.id), m = usedTx[id];
+      return ["'" + id, tx.transaction_date, Number(tx.amount_in), tx.transaction_content || '', m ? 'Đã khớp' : 'Chưa khớp', m || ''];
+    });
+    if (out.length) {
+      lg.getRange(3, 1, out.length, 6).setValues(out);
+      lg.getRange(3, 3, out.length, 1).setNumberFormat('#,##0"đ"');
+      lg.setConditionalFormatRules([SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('Chưa khớp').setBackground('#ffd9d9').setFontColor('#a61b1b').setBold(true).setRanges([lg.getRange(3, 5, out.length, 1)]).build()]);
+    }
+    lg.setColumnWidths(1, 6, 150); lg.setColumnWidth(4, 340); lg.setColumnWidth(6, 330); lg.setFrozenRows(2);
+    var unmatched = out.filter(function (r) { return r[4] === 'Chưa khớp'; }).length;
+    ss.toast('SePay: ' + changed + ' người vừa được xác nhận tiền; ' + unmatched + ' khoản tiền vào chưa khớp ai (xem tab "' + SEPAY_TAB + '").', 'Đối soát SePay', 10);
+  } catch (e) {
+    var lg2 = ss.getSheetByName(SEPAY_TAB) || ss.insertSheet(SEPAY_TAB);
+    lg2.getRange('H1').setValue('Lỗi lần chạy ' + now + ': ' + e);
+    Logger.log('kiemTraSePay lỗi: ' + e);
+  } finally {
+    try { lock.releaseLock(); } catch (x) {}
+  }
+}
+
+// chạy 1 lần để bật tự động đối soát mỗi 10 phút
+function caiTuDongSePay() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'kiemTraSePay') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('kiemTraSePay').timeBased().everyMinutes(10).create();
+  kiemTraSePay();
 }
 
 /* ---------- nhận đăng ký từ ladipage ---------- */
