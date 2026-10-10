@@ -85,10 +85,11 @@ function buildTab_(cfg) {
     var h = -1;
     for (var i = 0; i < v.length; i++) { if (String(v[i][0]) === 'Thời gian') { h = i; break; } }
     if (h >= 0) {
-      var oldFmt = String(v[h][5]) === 'Hình thiệp'; // bản cũ: cột 6,7 là link thô
       for (var r = h + 1; r < v.length; r++) {
         if (!v[r][1]) continue;
-        if (oldFmt) keep.push(makeRow_(v[r][0], v[r][1], v[r][2], v[r][3], v[r][4], v[r][5], v[r][6], v[r][7], v[r][8]));
+        // dòng kiểu mới: cột F là =IMAGE, cột H là =HYPERLINK; dòng kiểu cũ: cột F/G là link thô, H là trạng thái
+        var isNew = /^=(IMAGE|HYPERLINK)/i.test(String(f[r][5] || f[r][7] || ''));
+        if (!isNew) keep.push(makeRow_(v[r][0], v[r][1], v[r][2], v[r][3], v[r][4], v[r][5], v[r][6], v[r][7], v[r][8]));
         else {
           var u1 = (/"(https?:[^"]+)"/.exec(f[r][7] || '') || [])[1] || '';
           var u2 = (/"(https?:[^"]+)"/.exec(f[r][8] || '') || [])[1] || '';
@@ -148,6 +149,8 @@ function buildTab_(cfg) {
   st('Đã xác nhận', '#d3f5e1', '#13794a');
   st('Hủy', '#ffd9d9', '#a61b1b');
   rules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied(f_('=AND($B' + DATA_ROW + '<>""§ISEVEN(ROW()))')).setBackground(C.soft).setRanges([rng]).build());
+  var pr = sh.getRange(DATA_ROW, 3, sh.getMaxRows() - DATA_ROW + 1, 1);
+  rules.unshift(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied(f_('=AND($C' + DATA_ROW + '<>""§COUNTIF($C$' + DATA_ROW + ':$C§$C' + DATA_ROW + ')>1)')).setBackground('#ffc9c9').setFontColor('#a61b1b').setBold(true).setRanges([pr]).build());
   sh.setConditionalFormatRules(rules);
   sh.setFrozenRows(3);
 
@@ -258,10 +261,17 @@ function doPost(e) {
     lock.waitLock(20000);
     var d = JSON.parse(e.postData.contents);
     if (!d.ten || !d.sdt || !d.bang || !d.thiep || !d.ck) throw new Error('thiếu thông tin');
+    // chống ghi trùng: cùng mã gửi (bấm lại/mạng chập chờn) hoặc cùng SĐT + bảng trong 30 phút
+    var cache = CacheService.getScriptCache();
+    var kId = 'id_' + (d.id || ''), kPh = 'ph_' + d.bang + '_' + String(d.sdt).replace(/\D/g, '');
+    if ((d.id && cache.get(kId)) || cache.get(kPh)) return out_({ ok: true, dup: true });
     var safe = String(d.ten).replace(/[^\wÀ-ỹ ]/g, '').trim().slice(0, 40) + '_' + String(d.sdt).slice(-4);
     var a = saveImg_(d.thiep, 'thiep_' + safe), b = saveImg_(d.ck, 'ck_' + safe);
     var sh = getSheet_(d.bang);
-    sh.appendRow(makeRow_(new Date(), d.ten, "'" + d.sdt, d.bang, Number(d.gia) || 0, a.url, b.url, STATUS[0], ''));
+    var warn = findPhone_(d.sdt);
+    sh.appendRow(makeRow_(new Date(), d.ten, "'" + d.sdt, d.bang, Number(d.gia) || 0, a.url, b.url, STATUS[0], warn ? '⚠ SĐT này đã đăng ký trước đó: ' + warn : ''));
+    if (d.id) cache.put(kId, '1', 21600);
+    cache.put(kPh, '1', 1800);
     sh.setRowHeight(sh.getLastRow(), 112);
     return out_({ ok: true });
   } catch (err) {
@@ -269,6 +279,18 @@ function doPost(e) {
   } finally {
     try { lock.releaseLock(); } catch (x) {}
   }
+}
+
+// tìm SĐT đã có ở các tab (để cảnh báo trùng, không chặn)
+function findPhone_(sdt) {
+  var key = String(sdt).replace(/\D/g, ''), hits = [];
+  TABS.forEach(function (t) {
+    var sh = ss_().getSheetByName(t.n);
+    if (!sh || sh.getLastRow() < DATA_ROW) return;
+    var vals = sh.getRange(DATA_ROW, 3, sh.getLastRow() - DATA_ROW + 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) if (String(vals[i][0]).replace(/\D/g, '') === key && key) hits.push(t.n + ' dòng ' + (DATA_ROW + i));
+  });
+  return hits.join(', ');
 }
 
 function doGet() { return out_({ ok: true, msg: 'Em Xinh Ween Đỉnh – endpoint đang chạy' }); }

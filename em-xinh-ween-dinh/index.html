@@ -790,15 +790,21 @@ var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycby2D4dU2Rjzo4OhoHU
     if(!data.thiep) return err.textContent='Bạn gửi kèm 1 hình cá nhân để làm thiệp nhé.';
     if(!data.ck) return err.textContent='Bạn gửi kèm hình xác nhận chuyển khoản nhé.';
     if(!SHEET_ENDPOINT) return err.textContent='Form đang được kết nối – bạn vui lòng đăng ký qua group Zalo của giải nhé.';
+    if(btn.disabled) return;
     btn.disabled=true;btn.textContent='Đang gửi...';
-    var payload={ten:ten,sdt:sdt,bang:bang,thiep:data.thiep,ck:data.ck,
+    var subId=window.__subId||(window.__subId=(window.crypto&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2)));
+    var payload={id:subId,ten:ten,sdt:sdt,bang:bang,thiep:data.thiep,ck:data.ck,
       gia:(Date.now()<=new Date('2026-10-15T23:59:59+07:00').getTime())?490000:590000,ua:navigator.userAgent.slice(0,120)};
-    fetch(SHEET_ENDPOINT,{method:'POST',body:JSON.stringify(payload)})
-      .then(function(r){return r.json()}).then(function(j){
+    function send(retry){
+      return fetch(SHEET_ENDPOINT,{method:'POST',body:JSON.stringify(payload)}).then(function(r){return r.json()})
+        .catch(function(e){ if(retry>0) return new Promise(function(ok){setTimeout(ok,2500)}).then(function(){return send(retry-1)}); throw e; });
+    }
+    send(1).then(function(j){
         if(!j.ok) throw new Error(j.error||'fail');
+        window.__subId=null;
         f.hidden=true;document.querySelector('.fsub').hidden=true;document.getElementById('fok').hidden=false;
         document.getElementById('form-dk').scrollIntoView({block:'start'})})
-      .catch(function(){err.textContent='Gửi chưa được, bạn thử lại hoặc nhắn BTC qua group Zalo nhé.';btn.disabled=false;btn.textContent='🎃 Gửi đăng ký'})
+      .catch(function(){err.textContent='Chưa nhận được phản hồi. Bạn ĐỪNG gửi lại ngay, chờ 1 phút rồi nhắn BTC qua group Zalo để kiểm tra giúp nhé.';btn.disabled=false;btn.textContent='🎃 Gửi đăng ký'})
   });
 })();
 function copyAcc(b){
