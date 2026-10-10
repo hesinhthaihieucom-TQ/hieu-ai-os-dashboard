@@ -353,6 +353,25 @@ function kiemTraSot() {
   ss.toast(msg, 'Kiểm tra sót', 20);
 }
 
+/* ---------- thêm tay 1 người vào sheet (khi form lỗi mà đã chuyển khoản) ----------
+ * Sửa 2 dòng SDT và BANG bên dưới cho đúng, bấm Lưu, chọn hàm themTay → Chạy. Chạy 1 lần thôi (có kiểm tra trùng). */
+function themTay() {
+  var NGUOI = {
+    ten: 'Huỳnh Thị Mỹ Tiên',
+    SDT: '',                 // <-- điền số điện thoại của bạn, ví dụ '0901234567'
+    BANG: '',                // <-- 'Series A' hoặc 'Series B'
+    phi: 490000,
+    gio: new Date('2026-10-07T20:24:00+07:00'),
+    ghiChu: 'Form lỗi, BTC nhập tay. Đã chuyển khoản 490.000đ lúc 20:22:33 07/10/2026, mã GD 2732774766 (Sacombank → MB).'
+  };
+  if (!NGUOI.SDT || TABS.map(function (t) { return t.n; }).indexOf(NGUOI.BANG) < 0) { ss_().toast('Chưa điền SDT hoặc BANG (Series A / Series B) trong hàm themTay.', 'Thêm tay', 15); return; }
+  if (findPhone_(NGUOI.SDT, NGUOI.ten)) { ss_().toast('Người này đã có trong sheet: ' + findPhone_(NGUOI.SDT, NGUOI.ten), 'Thêm tay', 15); return; }
+  var sh = getSheet_(NGUOI.BANG);
+  sh.appendRow(makeRow_(NGUOI.gio, NGUOI.ten, "'" + NGUOI.SDT, NGUOI.BANG, NGUOI.phi, '', '', 'Đã nhận phí', NGUOI.ghiChu));
+  sh.setRowHeight(sh.getLastRow(), 60);
+  ss_().toast('Đã thêm ' + NGUOI.ten + ' vào ' + NGUOI.BANG + '. Nhớ gửi lại ảnh thiệp cho bạn qua Zalo.', 'Thêm tay', 15);
+}
+
 /* ---------- nhận đăng ký từ ladipage ---------- */
 function doPost(e) {
   var lock = LockService.getScriptLock();
