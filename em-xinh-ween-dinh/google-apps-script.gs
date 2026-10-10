@@ -149,8 +149,8 @@ function buildTab_(cfg) {
   st('Đã xác nhận', '#d3f5e1', '#13794a');
   st('Hủy', '#ffd9d9', '#a61b1b');
   rules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied(f_('=AND($B' + DATA_ROW + '<>""§ISEVEN(ROW()))')).setBackground(C.soft).setRanges([rng]).build());
-  var pr = sh.getRange(DATA_ROW, 3, sh.getMaxRows() - DATA_ROW + 1, 1);
-  rules.unshift(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied(f_('=AND($C' + DATA_ROW + '<>""§COUNTIF($C$' + DATA_ROW + ':$C§$C' + DATA_ROW + ')>1)')).setBackground('#ffc9c9').setFontColor('#a61b1b').setBold(true).setRanges([pr]).build());
+  var pr = sh.getRange(DATA_ROW, 2, sh.getMaxRows() - DATA_ROW + 1, 2);
+  rules.unshift(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied(f_('=AND($C' + DATA_ROW + '<>""§COUNTIFS($B$' + DATA_ROW + ':$B§$B' + DATA_ROW + '§$C$' + DATA_ROW + ':$C§$C' + DATA_ROW + ')>1)')).setBackground('#ffc9c9').setFontColor('#a61b1b').setBold(true).setRanges([pr]).build());
   sh.setConditionalFormatRules(rules);
   sh.setFrozenRows(3);
 
@@ -255,14 +255,18 @@ function setup() {
 }
 
 /* ---------- xóa các dòng đăng ký trùng (chạy tay: chọn hàm xoaTrung → Chạy) ----------
- * Trùng = cùng số điện thoại trong cùng 1 tab. Giữ dòng có trạng thái "xa" nhất (Đã xác nhận > Đã nhận phí > Chờ xác nhận),
+ * Trùng = cùng số điện thoại VÀ cùng tên trong cùng 1 tab (cùng SĐT nhưng khác tên = 2 người, giữ cả hai). Giữ dòng có trạng thái "xa" nhất (Đã xác nhận > Đã nhận phí > Chờ xác nhận),
  * bằng nhau thì giữ dòng đăng ký sớm nhất. Dòng bị xóa được chép sang tab "Đã xóa (trùng)" để còn khôi phục.
- * Cùng 1 SĐT xuất hiện ở 2 tab khác nhau (A và B): KHÔNG xóa, chỉ báo để BTC tự quyết. */
+ * Cùng SĐT + tên xuất hiện ở 2 tab khác nhau (A và B): KHÔNG xóa, chỉ báo để BTC tự quyết. */
 function normPhone_(v) {
   var d = String(v || '').replace(/\D/g, '');
   if (d.indexOf('84') === 0 && d.length === 11) d = '0' + d.slice(2);
   return d;
 }
+function normName_(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function dupKey_(ten, sdt) { return normPhone_(sdt) + '|' + normName_(ten); } // trùng = cùng SĐT VÀ cùng tên (khác tên = 2 người, vd 1 người đăng ký hộ bạn đánh cặp)
 function rank_(r) {
   var s = String(r[9] || '') + '|' + String(r[7] || '');
   if (s.indexOf('Đã xác nhận') >= 0) return 3;
@@ -280,9 +284,9 @@ function xoaTrung() {
     var n = sh.getLastRow() - DATA_ROW + 1, vals = sh.getRange(DATA_ROW, 1, n, NCOL).getValues(), groups = {};
     vals.forEach(function (r, i) {
       if (!r[1]) return;
-      var k = normPhone_(r[2]) || ('ten_' + String(r[1]).trim().toLowerCase());
+      var k = dupKey_(r[1], r[2]);
       (groups[k] = groups[k] || []).push(i);
-      if (normPhone_(r[2])) { if (seen[k] && seen[k] !== t.n) cross.push(r[1] + ' (' + k + ') ở ' + seen[k] + ' và ' + t.n); seen[k] = seen[k] || t.n; }
+      if (normPhone_(r[2])) { if (seen[k] && seen[k] !== t.n) cross.push(r[1] + ' (' + normPhone_(r[2]) + ') ở ' + seen[k] + ' và ' + t.n); seen[k] = seen[k] || t.n; }
     });
     var del = [];
     Object.keys(groups).forEach(function (k) {
@@ -294,12 +298,12 @@ function xoaTrung() {
     del.sort(function (a, b) { return b - a; });
     del.forEach(function (i) {
       var r = vals[i];
-      bk.appendRow([t.n, DATA_ROW + i, 'Trùng SĐT', r[0], r[1], "'" + r[2], r[3], String(r[9] || r[7] || '') + ' ' + String(r[10] || r[8] || ''), new Date()]);
+      bk.appendRow([t.n, DATA_ROW + i, 'Trùng SĐT + tên', r[0], r[1], "'" + r[2], r[3], String(r[9] || r[7] || '') + ' ' + String(r[10] || r[8] || ''), new Date()]);
       removed.push(t.n + ' dòng ' + (DATA_ROW + i) + ': ' + r[1] + ' – ' + r[2]);
       sh.deleteRow(DATA_ROW + i);
     });
   });
-  var msg = removed.length ? 'Đã xóa ' + removed.length + ' dòng trùng (chép sang tab "Đã xóa (trùng)").' : 'Không có dòng trùng SĐT trong cùng tab.';
+  var msg = removed.length ? 'Đã xóa ' + removed.length + ' dòng trùng (chép sang tab "Đã xóa (trùng)").' : 'Không có dòng trùng (cùng SĐT và cùng tên) trong cùng tab.';
   if (cross.length) msg += ' Lưu ý trùng giữa 2 tab (không xóa): ' + cross.join('; ');
   Logger.log(msg + '\n' + removed.join('\n'));
   ss.toast(msg, 'Kiểm tra trùng', 15);
@@ -356,15 +360,15 @@ function doPost(e) {
     lock.waitLock(20000);
     var d = JSON.parse(e.postData.contents);
     if (!d.ten || !d.sdt || !d.bang || !d.thiep || !d.ck) throw new Error('thiếu thông tin');
-    // chống ghi trùng: cùng mã gửi (bấm lại/mạng chập chờn) hoặc cùng SĐT + bảng trong 30 phút
+    // chống ghi trùng: cùng mã gửi (bấm lại/mạng chập chờn) hoặc cùng SĐT + cùng tên + bảng trong 30 phút (khác tên = người khác)
     var cache = CacheService.getScriptCache();
-    var kId = 'id_' + (d.id || ''), kPh = 'ph_' + d.bang + '_' + String(d.sdt).replace(/\D/g, '');
+    var kId = 'id_' + (d.id || ''), kPh = 'ph_' + d.bang + '_' + dupKey_(d.ten, d.sdt);
     if ((d.id && cache.get(kId)) || cache.get(kPh)) return out_({ ok: true, dup: true });
     var safe = String(d.ten).replace(/[^\wÀ-ỹ ]/g, '').trim().slice(0, 40) + '_' + String(d.sdt).slice(-4);
     var a = saveImg_(d.thiep, 'thiep_' + safe), b = saveImg_(d.ck, 'ck_' + safe);
     var sh = getSheet_(d.bang);
-    var warn = findPhone_(d.sdt);
-    sh.appendRow(makeRow_(new Date(), d.ten, "'" + d.sdt, d.bang, Number(d.gia) || 0, a.url, b.url, STATUS[0], warn ? '⚠ SĐT này đã đăng ký trước đó: ' + warn : ''));
+    var warn = findPhone_(d.sdt, d.ten);
+    sh.appendRow(makeRow_(new Date(), d.ten, "'" + d.sdt, d.bang, Number(d.gia) || 0, a.url, b.url, STATUS[0], warn ? '⚠ Cùng tên + SĐT đã đăng ký trước đó: ' + warn : ''));
     if (d.id) cache.put(kId, '1', 21600);
     cache.put(kPh, '1', 1800);
     sh.setRowHeight(sh.getLastRow(), 112);
@@ -376,14 +380,14 @@ function doPost(e) {
   }
 }
 
-// tìm SĐT đã có ở các tab (để cảnh báo trùng, không chặn)
-function findPhone_(sdt) {
-  var key = String(sdt).replace(/\D/g, ''), hits = [];
+// tìm người cùng SĐT + cùng tên đã đăng ký ở các tab (để cảnh báo trùng, không chặn)
+function findPhone_(sdt, ten) {
+  var key = dupKey_(ten, sdt), hits = [];
   TABS.forEach(function (t) {
     var sh = ss_().getSheetByName(t.n);
     if (!sh || sh.getLastRow() < DATA_ROW) return;
-    var vals = sh.getRange(DATA_ROW, 3, sh.getLastRow() - DATA_ROW + 1, 1).getValues();
-    for (var i = 0; i < vals.length; i++) if (String(vals[i][0]).replace(/\D/g, '') === key && key) hits.push(t.n + ' dòng ' + (DATA_ROW + i));
+    var vals = sh.getRange(DATA_ROW, 2, sh.getLastRow() - DATA_ROW + 1, 2).getValues();
+    for (var i = 0; i < vals.length; i++) if (vals[i][0] && dupKey_(vals[i][0], vals[i][1]) === key) hits.push(t.n + ' dòng ' + (DATA_ROW + i));
   });
   return hits.join(', ');
 }
