@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2 Buổi Zoom Dựng Video AI – 24 & 25/10 | Hiểu Kênh</title>
+<meta name="description" content="Học trực tiếp qua Zoom 2 buổi (24 và 25/10) để tự dựng một video 9:16 hoàn chỉnh từ clip của chính bạn. Dành cho người dùng máy Mac. 1.490.000đ.">
+<meta property="og:title" content="Tự dựng video 9:16 của chính mình trong 2 buổi Zoom">
+<meta property="og:description" content="24 và 25/10 · Zoom live · Máy Mac · 1.490.000đ. Hoàn tiền nếu lớp dời.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { cream:'#0E0E0E', paper:'#171717', ink:'#F5EFE0', bone:'#F5EFE0', soft:'#A9A397', line:'#2F2A1C',
+              moss:'#D4AF37', mosssoft:'#1D1807', gold:'#EBCB6E', rust:'#E58A6E', night:'#000000' },
+    fontFamily: { body:['"Be Vietnam Pro"','sans-serif'], head:['"Playfair Display"','serif'] }
+  } }
+}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family:'Be Vietnam Pro',sans-serif; background:#0E0E0E; color:#F5EFE0; line-height:1.65; }
+  h1,h2,h3 { font-family:'Playfair Display',serif; }
+  /* nhiễu giấy rất nhẹ cho nền */
+  .grain { background-image: radial-gradient(rgba(212,175,55,.07) 1px, transparent 1px); background-size: 5px 5px; }
+  .btn { transition: background-color .2s, transform .2s, box-shadow .2s; }
+  .btn:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3px solid #EBCB6E; outline-offset:2px; }
+  .ticket { box-shadow: 0 0 0 1px rgba(212,175,55,.35), 0 18px 40px -14px rgba(212,175,55,.28); }
+  .ticket::before, .ticket::after { content:''; position:absolute; left:-11px; width:22px; height:22px; background:#0E0E0E; border-radius:50%; top:58%; }
+  .ticket::after { left:auto; right:-11px; }
+  details > summary { list-style:none; cursor:pointer; }
+  details > summary::-webkit-details-marker { display:none; }
+  details[open] .plus { transform: rotate(45deg); }
+  .plus { transition: transform .2s; }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .btn,.plus{transition:none} }
+</style>
+</head>
+<body class="grain">
+
+<!-- Dải thông tin trên cùng -->
+<div class="bg-night text-bone text-[13px] sm:text-sm">
+  <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+    <p><span class="text-gold font-semibold">Khóa đợt đầu</span> · Zoom live · Thứ Bảy 24/10 và Chủ nhật 25/10/2026</p>
+    <p class="text-bone/80">Chỉ hỗ trợ máy Mac ở đợt này</p>
+  </div>
+</div>
+
+<!-- HERO -->
+<header class="relative">
+  <div class="max-w-6xl mx-auto px-4 pt-8 pb-12 sm:pt-14 sm:pb-20 grid lg:grid-cols-12 gap-10 items-start">
+    <div class="lg:col-span-7">
+      <p class="text-moss font-semibold tracking-wide text-sm mb-4">HIỂU KÊNH · Lê Tú Quỳnh</p>
+      <h1 class="text-[2rem] leading-[1.15] sm:text-5xl sm:leading-[1.1] font-bold text-ink">
+        Tự dựng video 9:16 của chính mình trong <span class="text-moss">2 buổi Zoom</span>, không cần thuê editor.
+      </h1>
+      <p class="mt-5 text-lg text-soft max-w-xl">
+        Bạn đã có nội dung, đã quay xong, nhưng video cứ nằm trong máy vì kẹt khâu dựng. Hai buổi này, mình ngồi cùng bạn đưa một clip thô của bạn thành video hoàn chỉnh: cắt lặp, phụ đề, b-roll, tự kiểm tra lỗi, xuất file.
+      </p>
+
+      <ul class="mt-6 flex flex-wrap gap-2 text-sm">
+        <li class="bg-paper border border-line rounded-full px-3 py-1">24/10 và 25/10, học trên Zoom</li>
+        <li class="bg-paper border border-line rounded-full px-3 py-1">Có người kèm trực tiếp</li>
+        <li class="bg-paper border border-line rounded-full px-3 py-1">Ghi hình lại để xem lại</li>
+      </ul>
+
+      <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <a href="#dang-ky" class="btn bg-moss hover:bg-[#EBCB6E] text-black font-semibold text-lg rounded-xl px-7 py-4 text-center shadow-md">
+          Giữ chỗ của tôi · 1.490.000đ
+        </a>
+        <a href="#lich" class="text-moss font-semibold underline underline-offset-4 px-2 py-3 text-center">Xem lịch 2 buổi</a>
+      </div>
+      <p class="mt-3 text-sm text-soft">Không đạt như mô tả ở buổi 1? Hoàn 100% tiền, không cần giải thích dài.</p>
+    </div>
+
+    <!-- Phiếu ghế -->
+    <aside class="lg:col-span-5 relative lg:mt-6" aria-label="Thông tin khóa học">
+      <div class="ticket relative bg-paper rounded-2xl border border-line p-6 sm:p-7 rotate-[1.2deg] max-w-md mx-auto lg:ml-auto">
+        <p class="text-xs font-semibold tracking-widest text-gold">PHIẾU GHẾ · ĐỢT ĐẦU</p>
+        <p class="font-head text-2xl font-bold mt-1">2 Buổi Làm Chủ Video AI</p>
+        <dl class="mt-5 space-y-3 text-[15px]">
+          <div class="flex justify-between gap-4"><dt class="text-soft">Buổi 1</dt><dd class="font-semibold text-right">Thứ Bảy 24/10/2026</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-soft">Buổi 2</dt><dd class="font-semibold text-right">Chủ nhật 25/10/2026</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-soft">Giờ học</dt><dd class="font-semibold text-right" data-time>Báo khi xác nhận ghế</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-soft">Hình thức</dt><dd class="font-semibold text-right">Zoom, có người kèm</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-soft">Máy học</dt><dd class="font-semibold text-right">Mac</dd></div>
+        </dl>
+        <div class="border-t border-dashed border-line mt-6 pt-6 flex items-end justify-between">
+          <div>
+            <p class="text-sm text-soft">Học phí trọn khóa</p>
+            <p class="font-head text-4xl font-bold text-ink">1.490.000đ</p>
+          </div>
+          <a href="#dang-ky" class="btn bg-gold hover:bg-[#F5DC8E] text-black font-semibold rounded-lg px-4 py-2.5 text-sm">Giữ ghế</a>
+        </div>
+      </div>
+      <!-- Chỗ cho video trước/sau: hiện ra khi điền CONFIG.VIDEO_URL -->
+      <div id="demo-slot" class="hidden mt-8 max-w-[240px] mx-auto lg:ml-auto lg:mr-10 -rotate-2">
+        <video id="demo-video" class="w-full rounded-2xl border-4 border-white shadow-xl" controls playsinline preload="metadata"></video>
+        <p class="text-xs text-soft mt-2 text-center">Clip thô → video thành phẩm, dựng bằng chính quy trình này.</p>
+      </div>
+    </aside>
+  </div>
+</header>
+
+<main>
+
+<!-- AI HỢP / KHÔNG HỢP -->
+<section class="bg-paper border-y border-line">
+  <div class="max-w-6xl mx-auto px-4 py-14 sm:py-20 grid lg:grid-cols-12 gap-10">
+    <div class="lg:col-span-5">
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">Khóa này hợp với bạn nếu…</h2>
+      <p class="mt-4 text-soft">Mình nói thẳng ngay từ đầu để bạn khỏi mất tiền và thời gian oan.</p>
+    </div>
+    <div class="lg:col-span-7 grid sm:grid-cols-2 gap-6">
+      <div>
+        <p class="font-semibold text-moss mb-3">Hợp nếu bạn</p>
+        <ul class="space-y-3 text-[15px]">
+          <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Là chuyên gia, coach hoặc người bán online, đã có nội dung để nói.</span></li>
+          <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Có sẵn một clip quay (1–2 phút) để dựng ngay trong lớp.</span></li>
+          <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Dùng máy Mac và muốn tự chủ khâu dựng thay vì phụ thuộc người khác.</span></li>
+        </ul>
+      </div>
+      <div>
+        <p class="font-semibold text-rust mb-3">Chưa hợp nếu bạn</p>
+        <ul class="space-y-3 text-[15px]">
+          <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-rust" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 5l10 10M15 5L5 15"/></svg><span>Dùng máy Windows. Đợt này chưa có bộ cài cho Windows, bạn để lại thông tin để được báo đợt sau.</span></li>
+          <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-rust" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 5l10 10M15 5L5 15"/></svg><span>Muốn cam kết viral hay lượt xem. Mình dạy làm video tốt, không hứa số view.</span></li>
+          <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-rust" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 5l10 10M15 5L5 15"/></svg><span>Chưa có clip nào để dựng và cũng chưa định quay.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BẠN MANG VỀ GÌ -->
+<section class="max-w-6xl mx-auto px-4 py-14 sm:py-20">
+  <div class="grid lg:grid-cols-12 gap-10">
+    <div class="lg:col-span-5 lg:sticky lg:top-8 self-start">
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">Rời lớp với <span class="text-moss">một video xong thật</span> của bạn.</h2>
+      <p class="mt-4 text-soft text-lg">Không chỉ xem mình thao tác. Bạn tự làm trên clip của bạn, mình sửa ngay khi bạn kẹt. Đây là 7 bước của quy trình mình đang dùng để dựng video cho chính kênh của mình.</p>
+    </div>
+    <ol class="lg:col-span-7 space-y-5">
+      <li class="flex gap-5"><span class="font-head text-4xl text-gold/80 leading-none w-10 shrink-0">01</span><div><p class="font-semibold">Nhận clip thô</p><p class="text-soft text-[15px]">Chuẩn bị file đúng cách để các bước sau không phải làm lại.</p></div></li>
+      <li class="flex gap-5"><span class="font-head text-4xl text-gold/80 leading-none w-10 shrink-0">02</span><div><p class="font-semibold">Cắt lặp và khoảng lặng</p><p class="text-soft text-[15px]">Bỏ câu nói vấp, nói lại, đoạn chết, để video gọn và chạy nhịp.</p></div></li>
+      <li class="flex gap-5"><span class="font-head text-4xl text-gold/80 leading-none w-10 shrink-0">03</span><div><p class="font-semibold">Phụ đề đúng chính tả, đúng lúc nói</p><p class="text-soft text-[15px]">Chữ chỉ nêu ý chính, không đè lên mặt hay chữ ký.</p></div></li>
+      <li class="flex gap-5"><span class="font-head text-4xl text-gold/80 leading-none w-10 shrink-0">04</span><div><p class="font-semibold">B-roll theo thứ tự ưu tiên</p><p class="text-soft text-[15px]">Video và hình thật của bạn trước, rồi mới đến video AI, rồi hình AI. Có ghi nguồn để dùng yên tâm.</p></div></li>
+      <li class="flex gap-5"><span class="font-head text-4xl text-gold/80 leading-none w-10 shrink-0">05</span><div><p class="font-semibold">Chuyển cảnh, hiệu ứng, âm thanh</p><p class="text-soft text-[15px]">Vừa đủ để video có hồn, không rối mắt.</p></div></li>
+      <li class="flex gap-5"><span class="font-head text-4xl text-gold/80 leading-none w-10 shrink-0">06</span><div><p class="font-semibold">Tự kiểm tra lỗi trước khi đăng</p><p class="text-soft text-[15px]">Một checklist để bắt lỗi lặp, chữ bị cắt, phụ đề chồng nhau, trước khi người xem thấy.</p></div></li>
+      <li class="flex gap-5"><span class="font-head text-4xl text-gold/80 leading-none w-10 shrink-0">07</span><div><p class="font-semibold">Xuất file sẵn đăng</p><p class="text-soft text-[15px]">Đúng khung 9:16 cho Reels, TikTok, Shorts.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- LỊCH -->
+<section id="lich" class="bg-night text-bone">
+  <div class="max-w-6xl mx-auto px-4 py-14 sm:py-20">
+    <h2 class="text-3xl sm:text-4xl font-bold">Lịch học: hai ngày cuối tuần liền nhau</h2>
+    <div class="mt-10 grid md:grid-cols-12 gap-6">
+      <article class="md:col-span-7 bg-[#141414] border border-white/10 rounded-2xl p-6 sm:p-8">
+        <p class="text-gold text-sm font-semibold tracking-wide">BUỔI 1 · THỨ BẢY 24/10</p>
+        <h3 class="text-2xl font-bold mt-1">Hiểu quy trình và dựng cùng nhau</h3>
+        <ul class="mt-4 space-y-2 text-bone/85 text-[15px] list-disc pl-5">
+          <li>Tổng quan 7 bước và vì sao làm theo thứ tự này</li>
+          <li>Cài đặt công cụ, mình hướng dẫn từng bước qua chia sẻ màn hình</li>
+          <li>Cùng dựng một <strong class="text-bone">clip mẫu</strong> từ đầu đến cuối</li>
+        </ul>
+      </article>
+      <article class="md:col-span-5 md:mt-10 bg-[#141414] border border-white/10 rounded-2xl p-6 sm:p-8">
+        <p class="text-gold text-sm font-semibold tracking-wide">BUỔI 2 · CHỦ NHẬT 25/10</p>
+        <h3 class="text-2xl font-bold mt-1">Dựng video của bạn</h3>
+        <ul class="mt-4 space-y-2 text-bone/85 text-[15px] list-disc pl-5">
+          <li>Dựng clip của chính bạn, mình sửa trực tiếp khi bạn kẹt</li>
+          <li>Kiểm tra lỗi trước khi đăng</li>
+          <li>15 phút “an toàn nội dung”: lời nói về sức khỏe, bản quyền tư liệu, nhãn nội dung AI</li>
+        </ul>
+      </article>
+    </div>
+    <p class="mt-8 text-bone/80 max-w-2xl">Trước ngày học, mình có <strong class="text-bone">một buổi kiểm tra máy khoảng 15 phút</strong> (khoảng 22–23/10) để biết máy bạn cài được chưa. Có vướng thì xử lý trước, ngày học khỏi mất giờ.</p>
+  </div>
+</section>
+
+<!-- BẠN NHẬN ĐƯỢC -->
+<section class="max-w-6xl mx-auto px-4 py-14 sm:py-20">
+  <h2 class="text-3xl sm:text-4xl font-bold">Bạn nhận được những gì với 1.490.000đ</h2>
+  <div class="mt-8 grid lg:grid-cols-12 gap-6">
+    <div class="lg:col-span-7 bg-paper border border-line rounded-2xl p-6 sm:p-8">
+      <p class="font-semibold text-moss">Trong lớp</p>
+      <ul class="mt-4 space-y-3 text-[15px]">
+        <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>2 buổi Zoom live, có người kèm trực tiếp</span></li>
+        <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Buổi kiểm tra máy trước ngày học</span></li>
+        <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Bộ cài cho Mac, SPEC mẫu và checklist kiểm tra lỗi</span></li>
+        <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Bản ghi hình cả 2 buổi để xem lại</span></li>
+      </ul>
+    </div>
+    <div class="lg:col-span-5 bg-mosssoft border border-moss/20 rounded-2xl p-6 sm:p-8 lg:-mt-4">
+      <p class="font-semibold text-moss">Tặng kèm</p>
+      <ul class="mt-4 space-y-3 text-[15px]">
+        <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Gói “Quy trình dựng video AI” bản tự học (sẽ bán 789.000đ sau lớp), bạn được dùng miễn phí</span></li>
+        <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Kho 60 công thức hook và kho tiêu đề viral</span></li>
+        <li class="flex gap-3"><svg class="w-5 h-5 mt-0.5 shrink-0 text-moss" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg><span>Nhóm hỗ trợ sau lớp 30 ngày</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="mt-5 text-sm text-soft max-w-3xl">Chưa gồm chi phí công cụ AI bạn tự trả cho nhà cung cấp (nếu có dùng gói trả phí). Mình sẽ ghi rõ danh sách công cụ và mức phí tham khảo trong tin nhắn xác nhận ghế, trước ngày học.</p>
+</section>
+
+<!-- BẢO ĐẢM + NGƯỜI DẠY -->
+<section class="bg-paper border-y border-line">
+  <div class="max-w-6xl mx-auto px-4 py-14 sm:py-20 grid lg:grid-cols-12 gap-10">
+    <div class="lg:col-span-6">
+      <h2 class="text-3xl font-bold">Rủi ro mình nhận về phía mình</h2>
+      <ul class="mt-6 space-y-5">
+        <li><p class="font-semibold">Hoàn 100% đến hết buổi 1</p><p class="text-soft text-[15px]">Học thử buổi 1, thấy không phù hợp thì nhắn mình, hoàn lại học phí.</p></li>
+        <li><p class="font-semibold">Hoàn 100% nếu lớp dời quá 7 ngày</p><p class="text-soft text-[15px]">Nếu mình phải dời lịch xa hơn 7 ngày so với 24–25/10, bạn rút được toàn bộ tiền.</p></li>
+        <li><p class="font-semibold">Chưa dựng được theo checklist? Mình kèm thêm 1 buổi</p><p class="text-soft text-[15px]">Học đủ 2 buổi mà vẫn chưa ra video đạt checklist, bạn được thêm 1 buổi hỗ trợ miễn phí.</p></li>
+      </ul>
+      <p class="mt-6 text-sm text-soft border-l-4 border-gold pl-4">Mình không cam kết lượt xem hay doanh thu. Khóa học này cam kết một việc: bạn biết cách tự dựng ra một video sạch, đúng quy trình.</p>
+    </div>
+    <div class="lg:col-span-6 lg:pl-8 lg:border-l border-line">
+      <h2 class="text-3xl font-bold">Ai dạy bạn</h2>
+      <div class="mt-6 flex gap-5 items-start">
+        <div id="photo-wrap" class="hidden w-24 h-24 rounded-full overflow-hidden shrink-0 border border-line"><img id="teacher-photo" alt="Lê Tú Quỳnh" class="w-full h-full object-cover"></div>
+        <div>
+          <p class="font-head text-2xl font-bold">Lê Tú Quỳnh</p>
+          <p class="text-moss font-medium text-sm">Hiểu Kênh · đào tạo xây nhân hiệu</p>
+        </div>
+      </div>
+      <p class="mt-4 text-soft">Mình làm đào tạo và xây nhân hiệu từ năm 2020. Video trên kênh của mình được dựng bằng chính quy trình mình dạy ở đây: có checklist kiểm tra lỗi, có thứ tự ưu tiên b-roll rõ ràng.</p>
+      <p class="mt-3 text-soft"><strong class="text-ink">Đây là khóa đầu tiên.</strong> Vì vậy giá đợt này được giữ ở mức 1.490.000đ, và mình cần phản hồi thật của bạn để hoàn thiện.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ĐĂNG KÝ -->
+<section id="dang-ky" class="max-w-6xl mx-auto px-4 py-14 sm:py-20">
+  <div class="grid lg:grid-cols-12 gap-10">
+    <div class="lg:col-span-5">
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">Giữ ghế trong 2 phút</h2>
+      <ol class="mt-6 space-y-4 text-[15px]">
+        <li class="flex gap-4"><span class="w-7 h-7 rounded-full bg-moss text-black text-sm font-semibold flex items-center justify-center shrink-0">1</span><span>Điền thông tin, bao gồm loại máy bạn dùng.</span></li>
+        <li class="flex gap-4"><span class="w-7 h-7 rounded-full bg-moss text-black text-sm font-semibold flex items-center justify-center shrink-0">2</span><span>Quét mã QR chuyển 1.490.000đ.</span></li>
+        <li class="flex gap-4"><span class="w-7 h-7 rounded-full bg-moss text-black text-sm font-semibold flex items-center justify-center shrink-0">3</span><span>Mình xác nhận ghế và gửi hướng dẫn chuẩn bị, lịch kiểm tra máy.</span></li>
+      </ol>
+      <p class="mt-6 text-sm text-soft">Số ghế phụ thuộc vào số người mình kèm kịp trong lớp. Khi đủ người kèm, mình sẽ đóng đăng ký.</p>
+    </div>
+
+    <div class="lg:col-span-7">
+      <!-- Bước 1: form -->
+      <form id="reg-form" class="bg-paper border border-line rounded-2xl p-6 sm:p-8 space-y-5" novalidate>
+        <div>
+          <label for="f-name" class="block font-semibold text-sm mb-1">Họ và tên</label>
+          <input id="f-name" name="name" type="text" required autocomplete="name" class="w-full border border-line rounded-lg px-4 py-3 bg-black/50 text-base">
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5">
+          <div>
+            <label for="f-zalo" class="block font-semibold text-sm mb-1">Số Zalo</label>
+            <input id="f-zalo" name="zalo" type="tel" required inputmode="tel" autocomplete="tel" class="w-full border border-line rounded-lg px-4 py-3 bg-black/50 text-base">
+          </div>
+          <div>
+            <label for="f-email" class="block font-semibold text-sm mb-1">Email</label>
+            <input id="f-email" name="email" type="email" required autocomplete="email" class="w-full border border-line rounded-lg px-4 py-3 bg-black/50 text-base">
+          </div>
+        </div>
+        <fieldset>
+          <legend class="font-semibold text-sm mb-2">Bạn dùng máy gì để học?</legend>
+          <div class="space-y-2 text-[15px]">
+            <label class="flex items-center gap-3 border border-line rounded-lg px-4 py-3 cursor-pointer"><input type="radio" name="device" value="mac" required class="accent-[#D4AF37] w-4 h-4"> Máy Mac (MacBook, iMac, Mac mini)</label>
+            <label class="flex items-center gap-3 border border-line rounded-lg px-4 py-3 cursor-pointer"><input type="radio" name="device" value="windows" class="accent-[#D4AF37] w-4 h-4"> Máy Windows</label>
+            <label class="flex items-center gap-3 border border-line rounded-lg px-4 py-3 cursor-pointer"><input type="radio" name="device" value="other" class="accent-[#D4AF37] w-4 h-4"> Chưa có / không chắc</label>
+          </div>
+        </fieldset>
+        <div id="mac-fields" class="hidden grid sm:grid-cols-2 gap-5">
+          <div>
+            <label for="f-chip" class="block font-semibold text-sm mb-1">Chip (nếu biết)</label>
+            <select id="f-chip" name="chip" class="w-full border border-line rounded-lg px-4 py-3 bg-black/50 text-base">
+              <option value="">Không rõ</option><option>Apple M1</option><option>Apple M2</option><option>Apple M3</option><option>Apple M4 trở lên</option><option>Intel</option>
+            </select>
+          </div>
+          <div>
+            <label for="f-os" class="block font-semibold text-sm mb-1">Phiên bản macOS (nếu biết)</label>
+            <input id="f-os" name="macos" type="text" placeholder="Ví dụ: Sonoma 14" class="w-full border border-line rounded-lg px-4 py-3 bg-black/50 text-base">
+          </div>
+        </div>
+        <div>
+          <label for="f-channel" class="block font-semibold text-sm mb-1">Kênh của bạn làm về chủ đề gì?</label>
+          <input id="f-channel" name="channel" type="text" placeholder="Ví dụ: tư vấn dinh dưỡng, bán mỹ phẩm, coaching tài chính" class="w-full border border-line rounded-lg px-4 py-3 bg-black/50 text-base">
+        </div>
+        <label class="flex gap-3 text-sm text-soft items-start">
+          <input type="checkbox" id="f-consent" required class="mt-1 w-4 h-4 accent-[#D4AF37]">
+          <span>Mình hiểu đây là khóa đợt đầu, chỉ hỗ trợ máy Mac, <strong class="text-ink">buổi học được ghi hình</strong>, và đồng ý với chính sách hoàn tiền ở trên.</span>
+        </label>
+        <p id="f-error" class="hidden text-rust text-sm font-medium" role="alert"></p>
+        <button type="submit" class="btn w-full bg-moss hover:bg-[#EBCB6E] text-black font-semibold text-lg rounded-xl px-6 py-4 shadow-md">Tiếp tục để thanh toán 1.490.000đ</button>
+      </form>
+
+      <!-- Windows: danh sách chờ -->
+      <div id="waitlist" class="hidden bg-paper border border-line rounded-2xl p-6 sm:p-8">
+        <p class="font-head text-2xl font-bold">Cảm ơn bạn, mình đã ghi tên bạn vào danh sách chờ.</p>
+        <p class="mt-3 text-soft">Đợt 24–25/10 chưa có bộ cài cho Windows nên mình chưa nhận bạn vào lớp này để tránh bạn mất tiền mà không học được. Khi có bản dành cho Windows, mình sẽ liên hệ bạn qua Zalo hoặc email đã điền trước tiên.</p>
+        <p id="waitlist-note" class="hidden mt-3 text-sm text-rust"></p>
+      </div>
+
+      <!-- Bước 2: thanh toán -->
+      <div id="pay" class="hidden bg-paper border border-line rounded-2xl p-6 sm:p-8">
+        <p class="font-head text-2xl font-bold">Chuyển khoản để giữ ghế</p>
+        <div class="mt-5 grid sm:grid-cols-2 gap-6 items-center">
+          <div class="bg-white rounded-xl p-3 border border-line justify-self-center">
+            <img id="qr" alt="Mã QR chuyển khoản 1.490.000đ" width="240" height="240" class="w-60 h-60">
+          </div>
+          <dl class="text-[15px] space-y-3">
+            <div><dt class="text-soft text-sm">Ngân hàng</dt><dd class="font-semibold" id="p-bank"></dd></div>
+            <div><dt class="text-soft text-sm">Số tài khoản</dt><dd class="font-semibold" id="p-acc"></dd></div>
+            <div><dt class="text-soft text-sm">Chủ tài khoản</dt><dd class="font-semibold" id="p-name"></dd></div>
+            <div><dt class="text-soft text-sm">Số tiền</dt><dd class="font-semibold">1.490.000đ</dd></div>
+            <div><dt class="text-soft text-sm">Nội dung chuyển khoản (giữ nguyên)</dt><dd class="font-mono font-semibold bg-mosssoft rounded px-2 py-1 inline-block" id="p-ref"></dd></div>
+          </dl>
+        </div>
+        <p class="mt-5 text-sm text-soft">Gõ đúng nội dung chuyển khoản như trên để mình đối chiếu nhanh. Sau khi chuyển, mình sẽ liên hệ bạn qua Zalo hoặc email đã điền để xác nhận ghế.</p>
+        <div class="mt-5 flex flex-col sm:flex-row gap-3">
+          <a id="zalo-btn" href="#" target="_blank" rel="noopener" class="btn hidden bg-moss hover:bg-[#EBCB6E] text-black font-semibold rounded-xl px-6 py-3.5 text-center">Nhắn Zalo xác nhận đã chuyển</a>
+          <button type="button" id="copy-ref" class="btn border border-moss text-moss font-semibold rounded-xl px-6 py-3.5">Sao chép nội dung chuyển khoản</button>
+        </div>
+        <p id="pay-note" class="hidden mt-4 text-sm text-rust"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="bg-paper border-t border-line">
+  <div class="max-w-3xl mx-auto px-4 py-14 sm:py-20">
+    <h2 class="text-3xl font-bold">Câu hỏi hay gặp</h2>
+    <div class="mt-8 divide-y divide-line border-y border-line">
+      <details class="py-5"><summary class="flex justify-between gap-4 font-semibold"><span>Mình dùng Windows thì sao?</span><span class="plus text-2xl text-moss leading-none">+</span></summary><p class="mt-3 text-soft">Đợt này mình chưa nhận vì chưa có bộ cài cho Windows. Bạn để lại thông tin ở form, chọn “Máy Windows”, mình sẽ báo khi có.</p></details>
+      <details class="py-5"><summary class="flex justify-between gap-4 font-semibold"><span>Mình không rành kỹ thuật, có theo kịp không?</span><span class="plus text-2xl text-moss leading-none">+</span></summary><p class="mt-3 text-soft">Phần cài đặt mình hướng dẫn qua chia sẻ màn hình, và có buổi kiểm tra máy trước ngày học để xử lý lỗi sớm. Bạn không cần biết lập trình, chỉ cần làm theo từng bước và hỏi khi kẹt. Không đảm bảo mọi máy đều cài được, nên buổi kiểm tra máy rất quan trọng.</p></details>
+      <details class="py-5"><summary class="flex justify-between gap-4 font-semibold"><span>Có tốn thêm tiền công cụ không?</span><span class="plus text-2xl text-moss leading-none">+</span></summary><p class="mt-3 text-soft">Có thể, nếu bạn dùng gói trả phí của công cụ AI. Học phí 1.490.000đ không bao gồm khoản này. Mình sẽ gửi danh sách công cụ và mức phí tham khảo trong tin nhắn xác nhận ghế, trước ngày học, để bạn quyết định.</p></details>
+      <details class="py-5"><summary class="flex justify-between gap-4 font-semibold"><span>Buổi học có được ghi hình không?</span><span class="plus text-2xl text-moss leading-none">+</span></summary><p class="mt-3 text-soft">Có. Mình ghi hình để bạn xem lại và để làm tài liệu tự học sau này. Bạn đồng ý điều này khi đăng ký. Nếu muốn hạn chế xuất hiện hình ảnh, bạn có thể tắt camera.</p></details>
+      <details class="py-5"><summary class="flex justify-between gap-4 font-semibold"><span>Mình làm nội dung về sức khỏe, có sao không?</span><span class="plus text-2xl text-moss leading-none">+</span></summary><p class="mt-3 text-soft">Được. Buổi 2 có 15 phút nói về cách viết lời trong video sao cho không vượt quá phạm vi cho phép, tránh hứa chữa bệnh. Bạn vẫn là người chịu trách nhiệm với nội dung của mình.</p></details>
+      <details class="py-5"><summary class="flex justify-between gap-4 font-semibold"><span>Hoàn tiền như thế nào?</span><span class="plus text-2xl text-moss leading-none">+</span></summary><p class="mt-3 text-soft">Báo mình (qua Zalo hoặc email trong tin xác nhận ghế) trước khi kết thúc buổi 1 để được hoàn 100%. Nếu mình dời lớp quá 7 ngày so với lịch, bạn cũng được hoàn 100%.</p></details>
+      <details class="py-5"><summary class="flex justify-between gap-4 font-semibold"><span>Sau lớp mình có được hỗ trợ không?</span><span class="plus text-2xl text-moss leading-none">+</span></summary><p class="mt-3 text-soft">Có nhóm hỗ trợ 30 ngày để bạn hỏi khi tự dựng các video tiếp theo.</p></details>
+    </div>
+    <div class="mt-10 text-center">
+      <a href="#dang-ky" class="btn inline-block bg-moss hover:bg-[#EBCB6E] text-black font-semibold text-lg rounded-xl px-8 py-4 shadow-md">Giữ chỗ của tôi · 1.490.000đ</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="bg-night text-bone/80 text-sm">
+  <div class="max-w-6xl mx-auto px-4 py-10 grid sm:grid-cols-2 gap-6">
+    <div>
+      <p class="font-head text-xl text-bone">Hiểu Kênh</p>
+      <p class="mt-1">Lê Tú Quỳnh · Đào tạo xây nhân hiệu</p>
+    </div>
+    <div class="sm:text-right">
+      <p id="foot-contact"></p>
+      <p class="mt-2 text-bone/60">Kết quả của mỗi người phụ thuộc nội dung, thời gian và mức độ thực hành. Không cam kết lượt xem hay doanh thu.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Thanh CTA dính cho điện thoại -->
+<div id="sticky" class="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-paper/95 backdrop-blur border-t border-line px-4 py-3 flex items-center justify-between gap-3 translate-y-full transition-transform">
+  <div><p class="text-xs text-soft leading-tight">24–25/10 · Zoom · Mac</p><p class="font-head font-bold text-lg leading-tight">1.490.000đ</p></div>
+  <a href="#dang-ky" class="btn bg-moss text-black font-semibold rounded-lg px-5 py-3">Giữ ghế</a>
+</div>
+
+<script>
+/* ===== CẤU HÌNH: điền các ô còn trống trước khi đăng ===== */
+const CONFIG = {
+  BANK: 'VietinBank',            // tên ngân hàng cho mã QR SePay
+  BANK_LABEL: 'VietinBank',
+  ACCOUNT: '199339288888',
+  ACCOUNT_NAME: 'LE TU QUYNH',
+  AMOUNT: 1490000,
+  REF_PREFIX: 'SEVQR VIDEO',     // tiền tố SEVQR để ngân hàng báo biến động
+  ZALO: '',                      // số Zalo nhận xác nhận, ví dụ '0901234567'
+  TIME_1: '',                    // giờ buổi 1, ví dụ '19:30–21:30'
+  TIME_2: '',                    // giờ buổi 2
+  FORM_ENDPOINT: '/zoom-dung-video-ai/api/zoom-video-dang-ky', // lưu đăng ký vào Supabase (bảng zoom_video_leads)
+  VIDEO_URL: '',                 // link video trước/sau (mp4) để hiện trong phiếu
+  PHOTO_URL: ''                  // link ảnh giảng viên
+};
+/* ======================================================== */
+
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => n.toLocaleString('vi-VN');
+
+// Giờ học
+if (CONFIG.TIME_1 || CONFIG.TIME_2) {
+  const t = [CONFIG.TIME_1 && 'B1 ' + CONFIG.TIME_1, CONFIG.TIME_2 && 'B2 ' + CONFIG.TIME_2].filter(Boolean).join(' · ');
+  document.querySelectorAll('[data-time]').forEach(el => el.textContent = t);
+}
+// Video / ảnh tuỳ chọn
+if (CONFIG.VIDEO_URL) { $('#demo-video').src = CONFIG.VIDEO_URL; $('#demo-slot').classList.remove('hidden'); }
+if (CONFIG.PHOTO_URL) { $('#teacher-photo').src = CONFIG.PHOTO_URL; $('#photo-wrap').classList.remove('hidden'); }
+$('#foot-contact').textContent = CONFIG.ZALO ? 'Zalo: ' + CONFIG.ZALO : '';
+
+// Hiện ô chip/macOS khi chọn Mac
+document.querySelectorAll('input[name="device"]').forEach(r => r.addEventListener('change', () => {
+  $('#mac-fields').classList.toggle('hidden', document.querySelector('input[name="device"]:checked').value !== 'mac');
+  $('#mac-fields').classList.toggle('grid', document.querySelector('input[name="device"]:checked').value === 'mac');
+}));
+
+// Mã tham chiếu ngẫu nhiên, bỏ ký tự dễ nhầm
+function makeRef() {
+  const a = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s = ''; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)];
+  return s;
+}
+
+async function sendData(payload) {
+  if (!CONFIG.FORM_ENDPOINT) return false;
+  try {
+    const r = await fetch(CONFIG.FORM_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+
+$('#reg-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const err = $('#f-error'); err.classList.add('hidden');
+  const f = e.target;
+  const name = f.name.value.trim(), zalo = f.zalo.value.trim(), email = f.email.value.trim();
+  const device = (f.querySelector('input[name="device"]:checked') || {}).value;
+  if (!name || !zalo || !email || !device) { err.textContent = 'Bạn điền giúp mình họ tên, Zalo, email và loại máy nhé.'; err.classList.remove('hidden'); return; }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { err.textContent = 'Email chưa đúng định dạng.'; err.classList.remove('hidden'); return; }
+  if (!f.querySelector('#f-consent').checked) { err.textContent = 'Bạn tick xác nhận điều kiện khóa học để tiếp tục.'; err.classList.remove('hidden'); return; }
+
+  const ref = CONFIG.REF_PREFIX + ' ' + makeRef();
+  const payload = { time: new Date().toISOString(), name, zalo, email, device, chip: f.chip ? f.chip.value : '', macos: f.macos ? f.macos.value : '', channel: f.channel.value.trim(), ref, status: device === 'mac' ? 'cho_thanh_toan' : 'danh_sach_cho' };
+  const saved = await sendData(payload);
+
+  $('#reg-form').classList.add('hidden');
+  if (device !== 'mac') {
+    $('#waitlist').classList.remove('hidden');
+    if (!saved) { const n = $('#waitlist-note'); n.textContent = 'Lưu ý: hệ thống chưa lưu được thông tin tự động. Bạn thử lại sau ít phút giúp mình nhé.'; n.classList.remove('hidden'); }
+    $('#waitlist').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  $('#pay').classList.remove('hidden');
+  $('#p-bank').textContent = CONFIG.BANK_LABEL;
+  $('#p-acc').textContent = CONFIG.ACCOUNT;
+  $('#p-name').textContent = CONFIG.ACCOUNT_NAME;
+  $('#p-ref').textContent = ref;
+  $('#qr').src = 'https://qr.sepay.vn/img?acc=' + encodeURIComponent(CONFIG.ACCOUNT) + '&bank=' + encodeURIComponent(CONFIG.BANK) + '&amount=' + CONFIG.AMOUNT + '&des=' + encodeURIComponent(ref);
+  if (CONFIG.ZALO) {
+    const msg = encodeURIComponent('Mình là ' + name + ', vừa chuyển ' + fmt(CONFIG.AMOUNT) + 'đ giữ ghế lớp dựng video AI 24-25/10. Nội dung CK: ' + ref);
+    const z = $('#zalo-btn'); z.href = 'https://zalo.me/' + CONFIG.ZALO.replace(/\D/g, '') + '?text=' + msg; z.classList.remove('hidden');
+  }
+  if (!saved || !CONFIG.ZALO) {
+    const n = $('#pay-note');
+    n.textContent = !saved ? 'Thông tin của bạn chưa được lưu tự động. Sau khi chuyển khoản, bạn nhắn mình để được xác nhận ghế.' : 'Mình đã nhận thông tin của bạn. Sau khi chuyển khoản, mình sẽ liên hệ qua Zalo hoặc email bạn đã điền để xác nhận ghế.';
+    n.classList.remove('hidden');
+  }
+  $('#pay').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+$('#copy-ref').addEventListener('click', async () => {
+  const t = $('#p-ref').textContent;
+  try { await navigator.clipboard.writeText(t); $('#copy-ref').textContent = 'Đã sao chép'; }
+  catch (e) { $('#copy-ref').textContent = 'Bạn bôi đen và sao chép thủ công'; }
+  setTimeout(() => { $('#copy-ref').textContent = 'Sao chép nội dung chuyển khoản'; }, 2000);
+});
+
+// Thanh CTA dính: hiện khi cuộn qua hero, ẩn khi tới form
+const sticky = $('#sticky'), reg = $('#dang-ky');
+function updateSticky() {
+  const y = window.scrollY, regTop = reg.getBoundingClientRect().top + window.scrollY;
+  const show = y > 500 && y < regTop - window.innerHeight * 0.4;
+  sticky.classList.toggle('translate-y-full', !show);
+}
+window.addEventListener('scroll', updateSticky, { passive: true }); updateSticky();
+</script>
+</body>
+</html>
