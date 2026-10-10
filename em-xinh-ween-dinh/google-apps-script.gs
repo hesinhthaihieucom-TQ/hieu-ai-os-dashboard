@@ -70,7 +70,9 @@ function link_(url, label) {
 
 // 1 dòng dữ liệu theo đúng thứ tự cột
 function makeRow_(time, ten, sdt, bang, phi, urlThiep, urlCk, status, note) {
-  return [time, ten, sdt, bang, phi, thumb_(urlThiep), thumb_(urlCk), link_(urlThiep, 'Mở thiệp'), link_(urlCk, 'Mở CK'), status || STATUS[0], note || ''];
+  var p = String(sdt == null ? '' : sdt).replace(/^'/, '').replace(/\s/g, '');
+  if (/^\d{9}$/.test(p)) p = '0' + p;           // dòng cũ bị mất số 0 đầu khi Sheet đổi sang số
+  return [time, ten, p, bang, phi, thumb_(urlThiep), thumb_(urlCk), link_(urlThiep, 'Mở thiệp'), link_(urlCk, 'Mở CK'), status || STATUS[0], note || ''];
 }
 
 /* ---------- dựng giao diện 1 tab bảng ---------- */
@@ -130,6 +132,7 @@ function buildTab_(cfg) {
   sh.getRange(3, 1, sh.getMaxRows() - 2, NCOL).setBorder(true, true, true, true, true, true, '#c9a3bd', SpreadsheetApp.BorderStyle.SOLID);
   sh.getRange(DATA_ROW, 1, sh.getMaxRows() - DATA_ROW + 1, 1).setNumberFormat('dd/MM/yyyy HH:mm').setHorizontalAlignment('center');
   sh.getRange(DATA_ROW, 2, sh.getMaxRows() - DATA_ROW + 1, 1).setFontWeight('bold').setWrap(true);
+  sh.getRange(DATA_ROW, 3, sh.getMaxRows() - DATA_ROW + 1, 1).setNumberFormat('@');   // SĐT luôn là chữ, không mất số 0 đầu
   sh.getRange(DATA_ROW, 3, sh.getMaxRows() - DATA_ROW + 1, 2).setHorizontalAlignment('center');
   sh.getRange(DATA_ROW, 5, sh.getMaxRows() - DATA_ROW + 1, 1).setNumberFormat('#,##0"đ"').setHorizontalAlignment('right').setFontWeight('bold').setFontColor('#b8560c');
   sh.getRange(DATA_ROW, 6, sh.getMaxRows() - DATA_ROW + 1, 2).setHorizontalAlignment('center');
