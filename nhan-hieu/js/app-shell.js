@@ -17,7 +17,15 @@ const NAV = [
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // không hiện trong sidebar — vào qua bấm email ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, pastReviewThreshold:false, profileLoadError:null, passwordRecoveryMode:false };
+const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', announcementQueue:[], reviewPromptEligible:false, pastReviewThreshold:false, profileLoadError:null, passwordRecoveryMode:false, lastPopupShownAt:0 };
+// Khoảng cách tối thiểu giữa 2 popup tự động (thông báo tính năng/ưu đãi/mời push/xin đánh giá) —
+// chị Quỳnh 2026-10-10: "thông báo hiện lên khá nhiều" vì cả chuỗi 4 popup này tự kiểm tra lại ở MỌI
+// lần renderApp() (mọi lần chuyển trang), nên ai đang tồn đọng nhiều thứ cùng lúc (vài thông báo tính
+// năng + đủ điều kiện ưu đãi/push/đánh giá) sẽ thấy 1 popup mới bật lên sau GẦN NHƯ MỖI LẦN bấm
+// chuyển trang. Vẫn giữ nguyên "không bỏ sót gì" (2026-08-24) — chỉ GIÃN cách ra, không bỏ qua hẳn.
+const POPUP_MIN_GAP_MS = 45000;
+function canShowAutoPopupNow(){ return Date.now() - AppState.lastPopupShownAt >= POPUP_MIN_GAP_MS; }
+function markAutoPopupShown(){ AppState.lastPopupShownAt = Date.now(); }
 // Điều kiện hiện popup xin đánh giá (2026-08-24, theo yêu cầu chị Quỳnh) — đã dùng có kết quả thật
 // (từ 3 bài đã viết) HOẶC đã dùng app đủ lâu, không hỏi ngay lúc mới vào khi chưa kịp thấy giá trị gì.
 // MIN_DAYS hạ từ 3 -> 1 (2026-09-12, chị Quỳnh: audit hành trình người mới phát hiện trial chỉ có
@@ -499,7 +507,9 @@ async function loadAnnouncementQueue(){
 function maybeShowFeatureAnnouncement(){
   const queue = AppState.announcementQueue;
   if(!queue || !queue.length || !window.startFeatureAnnouncement) return;
+  if(!canShowAutoPopupNow()) return;
   const ann = queue[0];
+  markAutoPopupShown();
   window.startFeatureAnnouncement(ann, async ()=>{
     if(AppState.profile) AppState.profile.last_seen_announcement_at = ann.created_at;
     await supabaseClient.from('profiles').update({ last_seen_announcement_at: ann.created_at }).eq('id', AppState.user.id);
@@ -536,6 +546,8 @@ async function loadReviewPromptEligibility(){
 function maybeShowReviewPrompt(){
   if(!AppState.reviewPromptEligible) return;
   if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('push-prompt-overlay') || document.getElementById('early-bird-prompt-overlay')) return;
+  if(!canShowAutoPopupNow()) return; // chưa tiêu thụ reviewPromptEligible — thử lại được ở lần gọi sau
+  markAutoPopupShown();
   AppState.reviewPromptEligible = false; // hỏi đúng 1 lần/phiên tải trang, không hiện lại nếu re-render
 
   const overlay = document.createElement('div');
@@ -606,6 +618,8 @@ function maybeShowEarlyBirdPrompt(){
   if(p.early_bird_prompt_seen || p.has_paid || p.role === 'admin' || p.is_student) return;
   if(!isInEarlyBirdWindow(p)) return;
   if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('push-prompt-overlay')) return;
+  if(!canShowAutoPopupNow()) return;
+  markAutoPopupShown();
 
   const label = earlyBirdTimeLeftLabel(p);
   const overlay = document.createElement('div');
@@ -655,6 +669,8 @@ async function maybeShowPushPrompt(){
   if(sub){ markPushPromptSeen(); return; } // đã bật sẵn rồi — không cần hỏi
   // Overlay khác có thể vừa mở trong lúc đang chờ await ở trên — kiểm tra lại lần nữa trước khi vẽ.
   if(document.getElementById('fa-overlay') || document.getElementById('onboarding-tour-overlay') || document.getElementById('review-prompt-overlay') || document.getElementById('early-bird-prompt-overlay')) return;
+  if(!canShowAutoPopupNow()) return;
+  markAutoPopupShown();
 
   const overlay = document.createElement('div');
   overlay.id = 'push-prompt-overlay';

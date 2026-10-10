@@ -308,15 +308,25 @@ async function findEmptySlots(userId, dateStrs, channel, slots) {
   const existing = resp.ok ? await resp.json() : [];
   const taken = new Set(existing.map((e) => `${e.scheduled_date}:${e.slot}`));
   const empty = [];
-  // Xếp theo BUỔI trước, NGÀY sau (không phải ngược lại) — "lần 1 là xong 7 bài sáng, lần 2 là 7
-  // bài trưa, lần 3 là 7 bài tối" (chị Quỳnh 2026-10-07, khớp đúng tinh thần chốt ban đầu 2026-09-07
-  // "3 bài/ngày thì bấm 3 lần là xong cả tuần" — mỗi lần bấm phải lấp TRỌN 1 buổi cho cả 7 ngày,
-  // không phải lấp trọn vài ngày đầu tuần rồi dừng giữa chừng 1 buổi). Thứ tự cũ (ngày trước, buổi
-  // sau) khiến MAX_FILL_PER_CLICK=7 cắt ngang giữa 1 ngày khi chọn 3 bài/ngày (vd lấp xong Thứ 2+3,
-  // dở dang Thứ 4 sáng) — không khớp kỳ vọng "mỗi lần bấm xong gọn 1 buổi".
-  for (const slot of slots) {
+  // Xếp theo BUỔI trước, NGÀY sau — NHƯNG CHỈ khi cả tuần đang TRỐNG HOÀN TOÀN (existing.length===0)
+  // — "lần 1 là xong 7 bài sáng, lần 2 là 7 bài trưa, lần 3 là 7 bài tối" (chị Quỳnh 2026-10-07) chỉ
+  // đúng tinh thần cho trường hợp tuần trống trơn mới bắt đầu lấp. Nếu tuần đã có sẵn vài ô (lấp dở
+  // từ lần trước, hoặc tự tay xếp vài bài), chị Quỳnh làm rõ thêm (2026-10-10): "AI fill vào những
+  // chỗ còn trống chứ không phải cứ 7 sáng, 7 trưa, 7 tối — quy tắc đó chỉ khi trống full tuần" — lúc
+  // này quay lại thứ tự NGÀY trước, BUỔI sau (tự nhiên theo từng ngày) để không bỏ dở 1 buổi nào đó
+  // lưng chừng cả tuần trong khi những ngày gần nhất vẫn còn thiếu bài.
+  const slotMajor = existing.length === 0;
+  if (slotMajor) {
+    for (const slot of slots) {
+      for (const dateStr of dateStrs) {
+        if (!taken.has(`${dateStr}:${slot}`)) empty.push({ dateStr, slot });
+      }
+    }
+  } else {
     for (const dateStr of dateStrs) {
-      if (!taken.has(`${dateStr}:${slot}`)) empty.push({ dateStr, slot });
+      for (const slot of slots) {
+        if (!taken.has(`${dateStr}:${slot}`)) empty.push({ dateStr, slot });
+      }
     }
   }
   return empty;
