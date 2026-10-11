@@ -5,6 +5,7 @@
     { "source": "/san-pham-so/api/:path*", "destination": "/api/:path*" },
     { "source": "/tai-chinh/api/:path*", "destination": "/api/:path*" },
     { "source": "/suc-khoe/api/:path*", "destination": "/api/:path*" },
+    { "source": "/dung-video/api/:path*", "destination": "/api/:path*" },
     { "source": "/tro-ly-crm/api/:path*", "destination": "/api/:path*" },
     { "source": "/giai-nghiep/api/:path*", "destination": "/api/:path*" },
     { "source": "/edit-video-ai/api/:path*", "destination": "/api/:path*" },
@@ -90,6 +91,22 @@
     },
     {
       "source": "/suc-khoe/manifest.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/dung-video/js/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/dung-video/style.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/dung-video/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/dung-video/manifest.json",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {

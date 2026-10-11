@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Dựng Video AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14201B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dựng Video AI">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/logo.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app"></div>
+
+<script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script defer src="js/util.js"></script>
+<script defer src="js/supabase-client.js"></script>
+<script defer src="js/tong-quan.js"></script>
+<script defer src="js/gui-video.js"></script>
+<script defer src="js/video-cua-toi.js"></script>
+<script defer src="js/kho-hinh.js"></script>
+<script defer src="js/cai-dat.js"></script>
+<script defer src="js/quan-tri.js"></script>
+<script defer src="js/app-shell.js"></script>
+<script>
+  // Service worker "trống" (không cache gì) chỉ để cài được như app — copy quy tắc từ nhan-hieu.
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  }
+</script>
+</body>
+</html>

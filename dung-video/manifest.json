@@ -1,0 +1,15 @@
+{
+  "name": "Dựng Video AI",
+  "short_name": "Dựng Video AI",
+  "description": "Gửi video nói thô, nhận video đã cắt, phụ đề, hình minh hoạ, ảnh bìa và caption.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4EC",
+  "theme_color": "#14201B",
+  "icons": [
+    { "src": "assets/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+  ]
+}
