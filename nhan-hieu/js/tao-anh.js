@@ -2,6 +2,7 @@
 const TOUR_STEPS = [
   { selector: '#ta-upload', title: 'Tải ảnh nền', text: 'Chọn ảnh nền (AI hoặc ảnh thật của bạn) để làm ảnh có chữ đăng content dạng "Text trên ảnh".' },
   { selector: '#ta-title', title: 'Tiêu đề chính', text: 'Gõ tiêu đề, bọc từ khoá muốn tô màu nhấn trong dấu **...**. Có thể lưu tiêu đề này thẳng vào Kho Hook để dùng lại sau.' },
+  { selector: '#ta-subtitle', title: 'Tiêu đề phụ', text: 'Không bắt buộc — 1 dòng ngắn bổ sung ý, hiện trắng nghiêng ngay dưới tiêu đề chính, phía trên handle.' },
   { selector: '[data-action="download"]', title: 'Tải ảnh PNG', text: 'Sau khi ưng bố cục/font/màu/tiêu đề, bấm để tải ảnh về máy, đăng ngay được.' },
 ];
 
@@ -139,7 +140,7 @@ function drawLines(ctx, lines, opts){
   ctx.shadowBlur = 0;
 }
 
-function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bgImage, imgZoom, imgOffsetX, imgOffsetY }){
+function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, subtitle, handle, bgImage, imgZoom, imgOffsetX, imgOffsetY }){
   const layout = LAYOUTS.find(l=>l.key===layoutKey) || LAYOUTS[0];
   const font = FONTS.find(f=>f.key===fontKey) || FONTS[0];
   const color = COLORS.find(c=>c.key===colorKey) || COLORS[0];
@@ -155,6 +156,16 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
 
   const maxTextWidth = W - marginX*2 - (isAccent ? 24*scale : 0);
   const handleFontSize = Math.round((layout.decor==='solid-bar' ? 24 : 30) * scale);
+  // Tiêu đề phụ — dòng riêng, TRẮNG + NGHIÊNG, nằm GIỮA khối tiêu đề chính và handle (chị Quỳnh
+  // 2026-10-21: "có riêng 1 mục tiêu đề phụ luôn", không phải chỉnh màu handle như hiểu nhầm lần đầu).
+  // Chỉ 1 dòng (không tự xuống dòng như tiêu đề chính) — cỡ chữ ở giữa tiêu đề chính và handle.
+  const subtitleGap = 10 * scale;
+  const subtitleFontSize = Math.round(handleFontSize * 1.2);
+  const hasSubtitle = !!(subtitle && subtitle.trim());
+  // Tổng khoảng trống cần chừa bên dưới khối tiêu đề chính — TRƯỚC đây chỉ tính riêng handle, giờ
+  // cộng thêm tiêu đề phụ (nếu có) để mọi phép tính vùng/bố cục dưới đây tự động chừa đủ chỗ, không
+  // bị đè lên nhau.
+  const bottomExtra = handleFontSize + handleGap + (hasSubtitle ? subtitleFontSize + subtitleGap : 0);
 
   // Vùng an toàn tối đa cho khối chữ theo từng bố cục (tỉ lệ theo chiều cao canvas).
   let zoneTop, zoneBottom, baseFontSize, minFontSize;
@@ -163,7 +174,7 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
   else if(layout.key === 'quote-left'){ zoneTop = 0.26*H; zoneBottom = 0.74*H; baseFontSize = 46*scale; minFontSize = 20*scale; }
   else { zoneTop = 0.60*H; zoneBottom = 0.97*H; baseFontSize = 44*scale; minFontSize = 18*scale; } // caption-bar
 
-  const availableHeight = Math.max((zoneBottom - zoneTop) - handleFontSize - handleGap, minFontSize*1.2);
+  const availableHeight = Math.max((zoneBottom - zoneTop) - bottomExtra, minFontSize*1.2);
   const { fontSize, lineHeight, lines } = fitTitle(cx, title, {
     maxWidth: maxTextWidth, maxHeight: availableHeight,
     baseFontSize, minFontSize, lineHeightRatio: 1.2,
@@ -173,7 +184,7 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
 
   // startY = baseline của dòng đầu tiên.
   let startY;
-  if(layout.textPos === 'bottom') startY = (zoneBottom - handleFontSize - handleGap) - (lines.length-1)*lineHeight;
+  if(layout.textPos === 'bottom') startY = (zoneBottom - bottomExtra) - (lines.length-1)*lineHeight;
   else if(layout.textPos === 'top') startY = zoneTop + fontSize*0.85;
   else startY = zoneTop + ((zoneBottom - zoneTop) - blockHeight)/2 + fontSize*0.75;
 
@@ -189,11 +200,11 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
     cx.fillStyle = grad; cx.fillRect(0, 0, W, gradEnd);
   } else if(layout.decor === 'solid-bar'){
     const padding = 28*scale;
-    const barHeight = Math.min(Math.max(blockHeight + handleFontSize + handleGap + padding*2, 0.16*H), 0.40*H);
+    const barHeight = Math.min(Math.max(blockHeight + bottomExtra + padding*2, 0.16*H), 0.40*H);
     cx.fillStyle = 'rgba(10,12,10,0.9)';
     cx.fillRect(0, H - barHeight, W, barHeight);
     // Neo lại khối chữ theo đúng thanh vừa vẽ (không dùng zoneBottom cố định nữa).
-    startY = (H - padding - handleFontSize - handleGap) - (lines.length-1)*lineHeight;
+    startY = (H - padding - bottomExtra) - (lines.length-1)*lineHeight;
   } else if(layout.decor === 'accent-bar'){
     const boxTop = startY - lineHeight*0.75;
     const boxHeight = blockHeight + lineHeight*0.35;
@@ -206,16 +217,30 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
   const alignX = layout.align === 'center' ? W/2 : marginX;
   drawLines(cx, lines, { align: layout.align, x: alignX, startY, lineHeight, highlightColor: color.hex });
 
+  const lastLineBaseline = startY + (lines.length-1)*lineHeight;
+  let cursorY = lastLineBaseline + lineHeight*0.62;
+
+  if(hasSubtitle){
+    cx.font = `italic 600 ${subtitleFontSize}px 'Be Vietnam Pro', sans-serif`;
+    cx.fillStyle = '#FFFFFF';
+    cx.shadowColor = 'rgba(0,0,0,0.5)'; cx.shadowBlur = 6*scale;
+    if(layout.align === 'center'){
+      const sw = cx.measureText(subtitle).width;
+      cx.fillText(subtitle, W/2 - sw/2, cursorY);
+    } else {
+      cx.fillText(subtitle, alignX, cursorY);
+    }
+    cursorY += subtitleFontSize + subtitleGap;
+  }
+
   cx.font = `italic 500 ${handleFontSize}px 'Be Vietnam Pro', sans-serif`;
   cx.fillStyle = '#FFFFFF';
   cx.shadowColor = 'rgba(0,0,0,0.5)'; cx.shadowBlur = 6*scale;
-  const lastLineBaseline = startY + (lines.length-1)*lineHeight;
-  const handleY = lastLineBaseline + lineHeight*0.62;
   if(layout.align === 'center'){
     const hw = cx.measureText(handle).width;
-    cx.fillText(handle, W/2 - hw/2, handleY);
+    cx.fillText(handle, W/2 - hw/2, cursorY);
   } else {
-    cx.fillText(handle, alignX, handleY);
+    cx.fillText(handle, alignX, cursorY);
   }
   cx.shadowBlur = 0;
 }
@@ -229,7 +254,7 @@ function render(container, ctx){
   // thường — coi như "làm lại" từ ảnh cũ, không phải sửa từng chữ trong ảnh gốc.
   const pendingImageBg = window.PendingImageBg;
   window.PendingImageBg = null;
-  const state = { bgImage:null, bgImageDataUrl:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, handle:DEMO_HANDLE, size:'doc',
+  const state = { bgImage:null, bgImageDataUrl:null, layout:'bottom-center', font:'oswald', color:'yellow', title:pendingTitle || DEMO_TITLE, subtitle:'', handle:DEMO_HANDLE, size:'doc',
     imgZoom:1, imgOffsetX:0, imgOffsetY:0, titleSavedAsHook:false };
 
   if(pendingImageBg){
@@ -244,7 +269,7 @@ function render(container, ctx){
   function persistDraft(){
     saveModuleDraft(ctx, DRAFT_KEY, {
       bgImageDataUrl: state.bgImageDataUrl, layout: state.layout, font: state.font, color: state.color,
-      title: state.title, handle: state.handle, size: state.size,
+      title: state.title, subtitle: state.subtitle, handle: state.handle, size: state.size,
       imgZoom: state.imgZoom, imgOffsetX: state.imgOffsetX, imgOffsetY: state.imgOffsetY,
     });
   }
@@ -324,6 +349,10 @@ function render(container, ctx){
             <button class="btn-ghost btn btn-sm" data-action="save-title-as-hook" ${state.titleSavedAsHook?'disabled':''}>${state.titleSavedAsHook?'Đã lưu vào Kho Hook ✓':'Lưu tiêu đề này vào Kho Hook'}</button>
           </div>
 
+          <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Tiêu đề phụ <span style="font-weight:400;color:var(--ink-soft);">(không bắt buộc)</span></label>
+          <div style="font-size:14px;color:var(--ink-soft);margin-bottom:6px;">1 dòng ngắn bổ sung ý, hiện trắng nghiêng dưới tiêu đề chính. Để trống nếu không cần.</div>
+          <input type="text" id="ta-subtitle" value="${esc(state.subtitle)}" placeholder="Ví dụ: Dựa trên số liệu nội bộ 2026" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
+
           <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 6px;">Handle thương hiệu</label>
           <input type="text" id="ta-handle" value="${esc(state.handle)}" placeholder="@tenban" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#FDFCF8;">
 
@@ -341,7 +370,7 @@ function render(container, ctx){
 
   function paintAll(){
     const main = container.querySelector('#ta-canvas');
-    if(main) paintDesign(main.getContext('2d'), CANVAS_W, sizeObj().h, { layoutKey: state.layout, fontKey: state.font, colorKey: state.color, title: state.title, handle: state.handle, bgImage: state.bgImage, ...imgTransform() });
+    if(main) paintDesign(main.getContext('2d'), CANVAS_W, sizeObj().h, { layoutKey: state.layout, fontKey: state.font, colorKey: state.color, title: state.title, subtitle: state.subtitle, handle: state.handle, bgImage: state.bgImage, ...imgTransform() });
 
     container.querySelectorAll('.ta-thumb-layout').forEach(c=>{
       const key = c.getAttribute('data-thumb-layout');
@@ -418,6 +447,9 @@ function render(container, ctx){
       state.titleSavedAsHook = true; draw();
     };
 
+    const subtitleInput = container.querySelector('#ta-subtitle');
+    if(subtitleInput) subtitleInput.oninput = () => { state.subtitle = subtitleInput.value; paintAll(); persistDraft(); };
+
     const handleInput = container.querySelector('#ta-handle');
     if(handleInput) handleInput.oninput = () => { state.handle = handleInput.value; paintAll(); persistDraft(); };
 
@@ -471,7 +503,7 @@ function render(container, ctx){
       if(!draft) return;
       Object.assign(state, {
         layout: draft.layout || state.layout, font: draft.font || state.font, color: draft.color || state.color,
-        title: draft.title || state.title, handle: draft.handle || state.handle, size: draft.size || state.size,
+        title: draft.title || state.title, subtitle: draft.subtitle || state.subtitle, handle: draft.handle || state.handle, size: draft.size || state.size,
         imgZoom: draft.imgZoom != null ? draft.imgZoom : state.imgZoom,
         imgOffsetX: draft.imgOffsetX != null ? draft.imgOffsetX : state.imgOffsetX,
         imgOffsetY: draft.imgOffsetY != null ? draft.imgOffsetY : state.imgOffsetY,
