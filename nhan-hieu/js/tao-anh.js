@@ -207,7 +207,7 @@ function paintDesign(cx, W, H, { layoutKey, fontKey, colorKey, title, handle, bg
   drawLines(cx, lines, { align: layout.align, x: alignX, startY, lineHeight, highlightColor: color.hex });
 
   cx.font = `italic 500 ${handleFontSize}px 'Be Vietnam Pro', sans-serif`;
-  cx.fillStyle = '#E8E4D6';
+  cx.fillStyle = '#FFFFFF';
   cx.shadowColor = 'rgba(0,0,0,0.5)'; cx.shadowBlur = 6*scale;
   const lastLineBaseline = startY + (lines.length-1)*lineHeight;
   const handleY = lastLineBaseline + lineHeight*0.62;
