@@ -194,7 +194,7 @@ function buildOverview_() {
   sh.getRange('B1:I1').merge().setValue('🎃  EM XINH WEEN ĐỈNH · MÙA 4  –  TỔNG QUAN ĐĂNG KÝ')
     .setBackground(C.dark).setFontColor(C.gold).setFontFamily('Montserrat').setFontWeight('bold').setFontSize(20).setHorizontalAlignment('left');
   sh.setRowHeight(1, 70);
-  sh.getRange('B2:I2').merge().setValue('31.10.2026  ·  9:00 sáng  ·  Cộng Hòa Garden, Tân Bình   |   Đăng ký sớm 490K (đến 15/10), sau đó 590K')
+  sh.getRange('B2:I2').merge().setValue('31.10.2026  ·  9:00 sáng  ·  Cộng Hòa Garden, Tân Bình   |   Lệ phí 490K / VĐV')
     .setBackground(C.pink).setFontColor('#ffffff').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('left');
   sh.setRowHeight(2, 34);
   sh.setRowHeight(3, 16);
@@ -512,7 +512,7 @@ function doPost(e) {
     var a = saveImg_(d.thiep, 'thiep_' + safe), b = saveImg_(d.ck, 'ck_' + safe);
     var sh = getSheet_(d.bang);
     var warn = findPhone_(d.sdt, d.ten);
-    sh.appendRow(makeRow_(new Date(), d.ten, "'" + d.sdt, d.bang, Number(d.gia) || 0, a.url, b.url, STATUS[0], warn ? '⚠ Cùng tên + SĐT đã đăng ký trước đó: ' + warn : ''));
+    sh.appendRow(makeRow_(new Date(), d.ten, "'" + d.sdt, d.bang, 490000, a.url, b.url, STATUS[0], warn ? '⚠ Cùng tên + SĐT đã đăng ký trước đó: ' + warn : ''));
     if (d.id) cache.put(kId, '1', 21600);
     cache.put(kPh, '1', 1800);
     sh.setRowHeight(sh.getLastRow(), 112);

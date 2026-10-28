@@ -371,15 +371,6 @@ html{scroll-behavior:auto;overflow-x:hidden}
       <a href="#dang-ky" class="btn pulse">🎃 Đăng ký tham gia</a>
       <a href="#co-cau" class="btn ghost">Xem giải thưởng</a>
     </div>
-    <div class="cd-box">
-      <small>⏰ ĐĂNG KÝ SỚM CHỈ CÒN ĐẾN HẾT 15/10</small>
-      <div class="cd" id="cd">
-        <div><b id="cd-d">--</b><span>Ngày</span></div>
-        <div><b id="cd-h">--</b><span>Giờ</span></div>
-        <div><b id="cd-m">--</b><span>Phút</span></div>
-        <div><b id="cd-s">--</b><span>Giây</span></div>
-      </div>
-    </div>
   </div>
 </header>
 
@@ -461,20 +452,15 @@ html{scroll-behavior:auto;overflow-x:hidden}
 <!-- PRICE -->
 <section id="le-phi">
   <div class="wrap">
-    <div class="eyebrow rv">Ưu đãi đăng ký sớm</div>
+    <div class="eyebrow rv">Lệ phí tham gia</div>
     <h2 class="sec-title rv">Lệ phí <em>tham gia</em></h2>
-    <p class="sec-sub rv">Đăng ký sớm giá càng ưu đãi – chốt sớm để không phải trả thêm.</p>
-    <div class="price rv">
+    <p class="sec-sub rv">Một mức phí duy nhất cho mọi vận động viên, không phát sinh thêm.</p>
+    <div class="price rv" style="grid-template-columns:1fr;max-width:420px">
       <div class="pc hot">
-        <span class="tag">🔥 ĐĂNG KÝ SỚM</span>
-        <h3>Trước 15/10/2026</h3>
+        <span class="tag">🔥 LỆ PHÍ / VĐV</span>
+        <h3>Đăng ký tham gia</h3>
         <div class="num">490<small>.000đ</small></div>
-        <p>Tiết kiệm 100.000đ / VĐV</p>
-      </div>
-      <div class="pc">
-        <h3>Sau 15/10/2026</h3>
-        <div class="num">590<small>.000đ</small></div>
-        <p>Giá chính thức đến khi chốt danh sách</p>
+        <p>Đã gồm BBQ ở sân và quà từ nhà tài trợ</p>
       </div>
     </div>
     <div class="bbq rv">🍖 Lệ phí đã bao gồm tiệc <b>BBQ ở sân – FREE</b> + quà hấp dẫn từ các nhà tài trợ</div>
@@ -639,8 +625,7 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <p class="sec-sub rv">3 bước đơn giản – BTC chỉ xác nhận khi đủ phí và đủ thông tin.</p>
     <div class="steps rv">
       <div class="st"><span class="n">BƯỚC 1</span><h3>Chuyển khoản phí tham dự</h3>
-        <p>Đăng ký sớm giá <b style="color:#fff">tăng dần</b>:</p>
-        <ul><li>Trước 15/10: <b style="color:#fff">490.000đ</b></li><li>Sau 15/10: <b style="color:#fff">590.000đ</b></li></ul></div>
+        <p>Lệ phí: <b style="color:#fff">490.000đ</b> / vận động viên.</p></div>
       <div class="st"><span class="n">BƯỚC 2</span><h3>Gửi vào Group Giải</h3>
         <ul><li>Hình xác nhận chuyển khoản</li><li>Hình cá nhân làm thiệp</li><li>Tên hiển thị trên thiệp</li></ul></div>
       <div class="st"><span class="n">BƯỚC 3</span><h3>Ghi rõ khi gửi</h3>
@@ -707,7 +692,7 @@ html{scroll-behavior:auto;overflow-x:hidden}
     <p class="sec-sub rv"></p>
     <div class="rv">
       <details><summary>Mình trình độ nào thì đăng ký bảng nào?</summary><div class="ans">Series A dành cho đôi nữ hạng nặng (mỗi VĐV trình trên 2.5), Series B dành cho đôi nữ Newbie (mỗi VĐV trình dưới 2.5).</div></details>
-      <details><summary>Đăng ký sau 15/10 thì phí bao nhiêu?</summary><div class="ans">Đăng ký và chuyển khoản trước hết ngày 15/10/2026 là 490.000đ. Từ sau 15/10 phí là 590.000đ.</div></details>
+      <details><summary>Lệ phí tham gia là bao nhiêu?</summary><div class="ans">Lệ phí là 490.000đ cho mỗi vận động viên, đã bao gồm tiệc BBQ ở sân và quà từ các nhà tài trợ.</div></details>
       <details><summary>Phí tham gia đã gồm những gì?</summary><div class="ans">Phí giải đấu đã bao gồm tiệc BBQ ở sân (FREE) cùng các quà tặng từ nhà tài trợ.</div></details>
       <details><summary>Khi nào mình được xác nhận đã đăng ký thành công?</summary><div class="ans">BTC chỉ xác nhận khi bạn đã chuyển đủ phí và gửi đủ thông tin (hình xác nhận chuyển khoản, hình cá nhân làm thiệp, tên hiển thị) vào Group Giải, có ghi rõ Series A hoặc B.</div></details>
       <details><summary>Giải diễn ra ở đâu, mấy giờ?</summary><div class="ans">Ngày 31/10/2026, bắt đầu 9:00 sáng tại Cộng Hòa Garden – 20 Cộng Hòa, Phường 2, Tân Bình, TP.HCM.</div></details>
@@ -753,18 +738,7 @@ var ZALO_LINK = "https://zalo.me/g/notihp546";
   var z=document.getElementById('zalo-btn');
   if(ZALO_LINK){z.href=ZALO_LINK;z.target='_blank';z.rel='noopener'}
 
-  // Đếm ngược tới hết 15/10/2026 (giờ VN)
-  var end=new Date('2026-10-15T23:59:59+07:00').getTime();
-  function p(n){return n<10?'0'+n:n}
-  function tick(){
-    var d=end-Date.now();
-    if(d<0){document.querySelector('.cd-box small').textContent='Đã hết đợt đăng ký sớm';d=0}
-    document.getElementById('cd-d').textContent=p(Math.floor(d/864e5));
-    document.getElementById('cd-h').textContent=p(Math.floor(d%864e5/36e5));
-    document.getElementById('cd-m').textContent=p(Math.floor(d%36e5/6e4));
-    document.getElementById('cd-s').textContent=p(Math.floor(d%6e4/1e3));
-  }
-  tick();setInterval(tick,1000);
+
 
   // Hiện dần khi cuộn
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
@@ -812,7 +786,7 @@ var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycby2D4dU2Rjzo4OhoHU
     btn.disabled=true;btn.textContent='Đang gửi...';
     var subId=window.__subId||(window.__subId=(window.crypto&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2)));
     var payload={id:subId,ten:ten,sdt:sdt,bang:bang,thiep:data.thiep,ck:data.ck,
-      gia:(Date.now()<=new Date('2026-10-15T23:59:59+07:00').getTime())?490000:590000,ua:navigator.userAgent.slice(0,120)};
+      gia:490000,ua:navigator.userAgent.slice(0,120)};
     function send(retry){
       return fetch(SHEET_ENDPOINT,{method:'POST',body:JSON.stringify(payload)}).then(function(r){return r.json()})
         .catch(function(e){ if(retry>0) return new Promise(function(ok){setTimeout(ok,2500)}).then(function(){return send(retry-1)}); throw e; });
