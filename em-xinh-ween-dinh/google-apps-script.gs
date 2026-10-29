@@ -123,7 +123,7 @@ function buildTab_(cfg) {
   sh.setRowHeight(1, 54);
   // dòng 2: thống kê nhanh
   sh.getRange(2, 1, 1, NCOL).merge()
-    .setFormula(f_('="' + cfg.sub + '   •   Tổng đăng ký: "&COUNTA(B' + DATA_ROW + ':B)&"   •   Chờ xác nhận: "&COUNTIF(I' + DATA_ROW + ':I§"Chờ xác nhận")&"   •   Đã xác nhận: "&COUNTIF(I' + DATA_ROW + ':I§"Đã xác nhận")'))
+    .setFormula(f_('="' + cfg.sub + '   •   Tổng đăng ký: "&(COUNTA(B' + DATA_ROW + ':B)-COUNTIF(I' + DATA_ROW + ':I§"Hủy"))&"   •   Chờ xác nhận: "&COUNTIF(I' + DATA_ROW + ':I§"Chờ xác nhận")&"   •   Đã xác nhận: "&COUNTIF(I' + DATA_ROW + ':I§"Đã xác nhận")'))
     .setBackground(cfg.color).setFontColor('#ffffff').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('left');
   sh.setRowHeight(2, 32);
   // dòng 3: tên cột
@@ -202,7 +202,9 @@ function buildOverview_() {
   function sum_(col, crit) { // đếm theo trạng thái trên cả 3 tab
     return TABS.map(function (t) { return "COUNTIF('" + t.n + "'!I" + DATA_ROW + ':I§"' + crit + '")'; }).join('+');
   }
-  var total = TABS.map(function (t) { return "COUNTA('" + t.n + "'!B" + DATA_ROW + ':B)'; }).join('+');
+  // Dòng "Hủy" (đã hoàn tiền / trùng người) không tính là người đăng ký — chỉ đếm VĐV thật
+  function countReal_(n) { return "COUNTA('" + n + "'!B" + DATA_ROW + ':B)-COUNTIF(\'' + n + "'!I" + DATA_ROW + ':I§"Hủy")'; }
+  var total = TABS.map(function (t) { return countReal_(t.n); }).join('+');
   var paid = TABS.map(function (t) {
     return "SUMIF('" + t.n + "'!I" + DATA_ROW + ':I§"Đã nhận phí"§\'' + t.n + "'!E" + DATA_ROW + ':E)+SUMIF(\'' + t.n + "'!I" + DATA_ROW + ':I§"Đã xác nhận"§\'' + t.n + "'!E" + DATA_ROW + ':E)';
   }).join('+');
@@ -214,9 +216,9 @@ function buildOverview_() {
     ['D4:E4', 'D5:E6', 'CHỜ XÁC NHẬN', '=' + sum_('J', 'Chờ xác nhận'), '#fff1c9', '#8a5a00', '0'],
     ['F4:G4', 'F5:G6', 'ĐÃ NHẬN PHÍ', '=' + sum_('J', 'Đã nhận phí'), '#d8ebff', '#0b4f9c', '0'],
     ['H4:I4', 'H5:I6', 'ĐÃ XÁC NHẬN', '=' + sum_('J', 'Đã xác nhận'), '#d3f5e1', '#13794a', '0'],
-    ['B8:C8', 'B9:C10', 'SERIES A', "=COUNTA('Series A'!B" + DATA_ROW + ':B)', '#ffe0f1', '#c01a85', '0'],
-    ['D8:E8', 'D9:E10', 'SERIES B', "=COUNTA('Series B'!B" + DATA_ROW + ':B)', '#eadcff', '#5b1fb0', '0'],
-    ['F8:G8', 'F9:G10', 'KOL', "=COUNTA('KOL'!B" + DATA_ROW + ':B)', '#ffe9cf', '#b8560c', '0'],
+    ['B8:C8', 'B9:C10', 'SERIES A', '=' + countReal_('Series A'), '#ffe0f1', '#c01a85', '0'],
+    ['D8:E8', 'D9:E10', 'SERIES B', '=' + countReal_('Series B'), '#eadcff', '#5b1fb0', '0'],
+    ['F8:G8', 'F9:G10', 'KOL', '=' + countReal_('KOL'), '#ffe9cf', '#b8560c', '0'],
     ['H8:I8', 'H9:I10', 'ĐÃ THU (đ)', '=' + paid, '#2b0b4a', '#f5d77a', '#,##0"đ"']
   ];
   cards.forEach(function (k) {
