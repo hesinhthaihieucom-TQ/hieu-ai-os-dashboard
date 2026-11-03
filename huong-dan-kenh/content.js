@@ -281,6 +281,87 @@ window.STEPS = [
   },
 
   {
+    id: 's2-5', grp: 'g2', n: '2.5', title: '10 dạng nội dung lặp lại (theo kênh tham khảo)',
+    lead: 'Kênh tham khảo không nghĩ chủ đề mới mỗi ngày. Họ lặp lại khoảng 10 dạng video, chỉ đổi chủ đề bên trong. Bạn làm giống vậy: chọn dạng, thay nội dung, quay.',
+    blocks: [
+      { t: 'tbl', head: ['#', 'Dạng', 'Nhóm', 'Từ khóa gợi ý'], rows: [
+        ['1', 'Danh sách thực phẩm no lâu', 'Cho đi', 'ĐĨA'],
+        ['2', 'Danh sách 16:8 ăn gì, không ăn gì', 'Cho đi', '16:8'],
+        ['3', 'Danh sách dấu hiệu cơ thể', 'Cho đi', 'INSULIN'],
+        ['4', 'Danh sách lý do bỏ bữa sáng vẫn béo', 'Cho đi', 'SÁNG'],
+        ['5', 'Nỗi đau: bụng to, nghi kháng insulin', 'Cho đi / Đẩy', 'INSULIN'],
+        ['6', 'Chị em U40 muốn g.o.n, ph.ã.ng tự tin', 'Đẩy', 'GỌN'],
+        ['7', 'Mở hộp set 15–30 ngày', 'Đẩy', 'SET'],
+        ['8', 'Gói trải nghiệm mỗi sáng', 'Đẩy', 'TRẢI NGHIỆM'],
+        ['9', 'Mốc 30–60 ngày', 'Đẩy', 'LỘ TRÌNH'],
+        ['10', 'Nói thẳng vào camera', 'Đẩy', 'TƯ VẤN']
+      ] },
+      { t: 'note', x: '<b class="l">Cách viết chữ có dấu chấm</b>Kênh tham khảo viết "g.o.n", "x.e.p", "ph.ã.ng" có dấu chấm xen giữa để tránh bộ lọc từ khóa của Facebook. Mình giữ nguyên cách viết này ở tiêu đề và chữ trên khung hình. Chỉ viết vậy cho vài từ nhạy cảm (gọn, xẹp, phẳng), còn lại viết bình thường để người xem dễ đọc. Cách này không đảm bảo tránh được hạn chế, nên đừng dựa vào nó mà viết lời hứa kết quả.' },
+      { t: 'warn', x: '<b class="l">Khác với kênh tham khảo</b>Kênh tham khảo có tiêu đề như "sát thủ của chất béo" hay "mỡ xấu ăn mòn cơ thể", nói chưa chính xác. Mình giữ cấu trúc danh sách đánh số, nhưng viết lại cho đúng và dùng "gợi ý, có thể, tuỳ cơ địa". Không hứa số cân, không nói chữa bệnh.' },
+
+      { t: 'h', x: 'Dạng 1 · Danh sách thực phẩm no lâu' },
+      { t: 'ul', items: ['5 thực phẩm no lâu cho U40 muốn g.o.n bụng', '5 món bữa sáng nhiều đạm, đỡ đói lả giữa buổi', 'Đĩa ăn của chị em U40 nên có những gì?'] },
+      { t: 'copy', title: 'Chữ trên khung hình (dạng 1)', x: '5 THỰC PHẨM NO LÂU\nCHO U40 MUỐN G.O.N BỤNG\n\n1. Trứng: nhiều đạm, giúp no lâu hơn bữa toàn tinh bột\n2. Thịt bò nạc hoặc ức gà: đạm, ít béo\n3. Cá, tôm: đạm dễ ăn, chế biến nhanh\n4. Rau xanh: nhiều chất xơ, ăn trước cơm\n5. Đậu hũ, đậu các loại: đạm thực vật\n\nTuỳ cơ địa mỗi người. Có bệnh nền thì hỏi bác sĩ.' },
+      { t: 'copy', title: 'Caption + từ khóa (dạng 1)', x: 'Chị em U40 hay đói giữa buổi vì bữa ăn thiếu đạm và rau. Chị đang thiếu món nào trong 5 món này?\n\nComment "ĐĨA" mình gửi mẫu chia đĩa ăn miễn phí.' },
+
+      { t: 'h', x: 'Dạng 2 · 16:8 ăn gì, không ăn gì' },
+      { t: 'ul', items: ['Áp dụng 16:8: ăn gì và không ăn gì?', '16:8 uống gì thì không bị phá nhịn?', '7 điều nên biết trước khi thử 16:8'] },
+      { t: 'copy', title: 'Chữ trên khung hình (dạng 2)', x: 'ÁP DỤNG 16:8\nĂN GÌ VÀ KHÔNG ĂN GÌ?\n\n1. Trong giờ nhịn: được uống nước lọc đều hàng ngày\n2. Được cà phê đen và trà không đường\n3. Không uống nước ngọt có gas\n4. Phá nhịn: cà phê sữa, sữa, nước ép (có đường, có calo)\n5. Trong giờ ăn: rau và đạm trước, tinh bột sau\n6. Không nhịn xong rồi ăn bù thật nhiều\n\nKhông phù hợp: phụ nữ mang thai, người dùng thuốc tiểu đường, người có rối loạn ăn uống. Hỏi bác sĩ trước.' },
+      { t: 'copy', title: 'Caption + từ khóa (dạng 2)', x: 'Nhiều chị thử 16:8 nhưng làm sai chỗ uống gì trong giờ nhịn. Chị đã thử chưa?\n\nComment "16:8" mình gửi lịch ăn 7 ngày cho người mới.' },
+
+      { t: 'h', x: 'Dạng 3 · Danh sách dấu hiệu cơ thể' },
+      { t: 'ul', items: ['7 dấu hiệu bụng to có thể liên quan kháng insulin', 'Sau 35 tuổi, thấy 6 dấu hiệu này thì đừng chủ quan', 'Cơ thể báo gì khi đường huyết lên xuống thất thường?'] },
+      { t: 'copy', title: 'Chữ trên khung hình (dạng 3)', x: '7 DẤU HIỆU\nCÓ THỂ LIÊN QUAN KHÁNG INSULIN\n\n1. Mỡ tập trung ở bụng\n2. Thèm đồ ngọt, tinh bột\n3. Buồn ngủ sau bữa ăn\n4. Mệt mỏi dù ngủ đủ\n5. Da sạm ở cổ, nách\n6. Đói nhanh sau khi ăn\n7. Cân nặng tăng dù ăn không nhiều\n\nĐây chỉ là gợi ý. Muốn biết chắc cần xét nghiệm và hỏi bác sĩ.' },
+      { t: 'copy', title: 'Caption + từ khóa (dạng 3)', x: 'Chị gặp mấy dấu hiệu trong 7 cái này? Comment số cho mình biết nhé.\n\nComment "INSULIN" mình gửi bảng tự kiểm tra và câu hỏi nên hỏi bác sĩ.' },
+
+      { t: 'h', x: 'Dạng 4 · Lý do bỏ bữa sáng vẫn béo' },
+      { t: 'ul', items: ['7 lý do bỏ bữa sáng mà vẫn không g.o.n', 'Bỏ bữa sáng nhưng vẫn khó xuống? Có thể do 7 điều này', 'Vì sao chị ăn ít mà bụng vẫn không x.e.p?'] },
+      { t: 'copy', title: 'Chữ trên khung hình (dạng 4)', x: '7 LÝ DO BỎ BỮA SÁNG\nVẪN KHÔNG G.O.N\n\n1. Sáng chỉ uống cà phê sữa, coi như một bữa\n2. Trưa và tối ăn bù cho bữa đã bỏ\n3. Khoảng 10 giờ sáng ăn lặt vặt\n4. Chiều ăn thêm bữa phụ\n5. Bữa tối ăn nhiều vì đói cả ngày\n6. Bữa nào cũng thiếu đạm\n7. Ít vận động\n\nTuỳ cơ địa, chỉnh cho hợp với bạn.' },
+      { t: 'copy', title: 'Caption + từ khóa (dạng 4)', x: 'Bỏ một bữa chưa chắc đã ăn ít đi. Chị đang dính mấy lý do?\n\nComment "SÁNG" mình gửi gợi ý bữa sáng đơn giản.' },
+
+      { t: 'h', x: 'Dạng 5 · Nỗi đau: bụng to, nghi kháng insulin' },
+      { t: 'ul', items: ['Thêm 1 chị U40 bụng to như trống, nghi kháng insulin', 'Chị em U40: ăn ít mà bụng vẫn to, đã thử gì chưa?', 'U40 bụng to chai lì, vì sao khó xuống?'] },
+      { t: 'copy', title: 'Kịch bản nói (dạng 5, 30–40 giây)', x: 'Mở: Chị em U40 mà bụng to, ăn ít vẫn không xuống, chị nào cũng nghe câu này rồi.\n\nThân: Sau 35 tuổi, cơ thể thay đổi: ngủ ít hơn, stress nhiều hơn, vận động ít đi. Có người còn nghi mình kháng insulin, nhưng chỉ xét nghiệm mới biết chắc.\n\nGợi ý: ăn đủ đạm và rau, ngủ đủ, đi bộ sau bữa ăn. Làm từ từ, đừng nhịn đói quá mức.\n\nKết: Chị nào đang bị vậy, comment "INSULIN", mình gửi bảng tự kiểm tra miễn phí.' },
+      { t: 'note', x: 'Dạng 5 chỉ dùng giọng của chính bạn. Không dựng nhân vật "khách hàng" giả, không đăng lại ảnh người khác.' },
+
+      { t: 'h', x: 'Dạng 6 · Chị em U40 muốn g.o.n, ph.ã.ng tự tin' },
+      { t: 'ul', items: ['Chị em U40 V2 g.o.n ph.ã.ng tự tin', 'U40 muốn g.o.n thì bắt đầu từ đâu?', 'Tuần đầu của chị em U40 muốn x.e.p bụng'] },
+      { t: 'copy', title: 'Kịch bản nói (dạng 6, 30 giây)', x: 'Chị em U40 muốn g.o.n lại nhưng không biết bắt đầu từ đâu? Mình chia sẻ 3 việc làm tuần đầu: ăn đủ đạm và rau, uống đủ nước, đi bộ 15 phút sau bữa tối. Chỉ vậy thôi, không cần nhịn đói.\n\nChị muốn có kế hoạch 7 ngày chi tiết, comment "GỌN" mình gửi.' },
+
+      { t: 'h', x: 'Dạng 7 · Mở hộp set 15–30 ngày' },
+      { t: 'ul', items: ['Set 15–30 ngày U40 muốn V2 g.o.n', '15 ngày trải nghiệm U40 muốn V2 g.o.n', 'Mở hộp set của mình: bên trong có gì?'] },
+      { t: 'copy', title: 'Kịch bản quay (dạng 7, 20–30 giây, không cần nói nhiều)', x: 'Cảnh 1: Hộp đóng kín trên bàn, chữ "SET 15–30 NGÀY" (2 giây)\nCảnh 2: Mở hộp, quay cận cảnh từng món bên trong (8 giây)\nCảnh 3: Cầm từng món lên, chữ ghi tên (8 giây)\nCảnh 4: Cách dùng 1 dòng theo nhãn: [ghi đúng như nhãn] (5 giây)\nCảnh 5: Chữ "Nhắn [SET] để được tư vấn" (3 giây)' },
+      { t: 'copy', title: 'Caption (dạng 7)', x: 'Mở hộp set [tên sản phẩm]: bên trong có gì, dùng thế nào theo nhãn.\n\nChị đang dùng thuốc hoặc có bệnh nền thì hỏi bác sĩ trước khi dùng nhé.\n\nComment "SET" để được tư vấn.' },
+
+      { t: 'h', x: 'Dạng 8 · Gói trải nghiệm mỗi sáng' },
+      { t: 'ul', items: ['10 gói trải nghiệm cho U40 nhẹ bụng mỗi sáng', '10 gói mẫu mời U40 thử mỗi sáng', 'Mình mời chị em U40 trải nghiệm 10 gói đầu tiên'] },
+      { t: 'copy', title: 'Kịch bản nói (dạng 8, 25 giây)', x: 'Mình có bộ 10 gói trải nghiệm cho chị em U40 muốn thử mỗi sáng. Gói này là [tên sản phẩm], dùng theo đúng hướng dẫn trên nhãn: [1 dòng]. Ai chưa biết có hợp không thì thử bộ nhỏ trước.\n\nChị đang dùng thuốc hoặc có bệnh nền thì hỏi bác sĩ trước.\n\nComment "TRẢI NGHIỆM", mình nhắn chi tiết.' },
+
+      { t: 'h', x: 'Dạng 9 · Mốc 30–60 ngày' },
+      { t: 'ul', items: ['30–60 ngày U40 muốn V2 g.o.n đón Tết', '30 ngày đầu của chị em U40 muốn g.o.n', 'Lộ trình 60 ngày cho người mới bắt đầu'] },
+      { t: 'copy', title: 'Kịch bản nói (dạng 9, 30 giây)', x: 'Chị muốn g.o.n đón Tết thì bắt đầu từ bây giờ. Mình chia 60 ngày thành 2 giai đoạn: 30 ngày đầu tập thói quen ăn đủ đạm, rau, ngủ đủ; 30 ngày sau giữ nhịp và theo dõi số đo. Mỗi người mỗi cơ địa, kết quả khác nhau.\n\nComment "LỘ TRÌNH" mình gửi lộ trình chi tiết.' },
+      { t: 'warn', x: 'Không ghi số cân sẽ giảm trong 30–60 ngày. Chỉ nói về thói quen và việc theo dõi số đo.' },
+
+      { t: 'h', x: 'Dạng 10 · Nói thẳng vào camera' },
+      { t: 'ul', items: ['U40 bụng to khó xuống, nhẹ V2 mỗi sáng', 'U40 khó xuống, x.e.p nhẹ V2 mỗi sáng', 'Chị em U40 nào đang bị khó xuống bụng?'] },
+      { t: 'copy', title: 'Kịch bản nói (dạng 10, 30–40 giây)', x: 'Chị em U40 nào bụng to, khó xuống mà đã thử nhiều cách? Mình hiểu cảm giác đó. Mỗi sáng mình giữ một thói quen đơn giản: uống nước, ăn đủ đạm, đi bộ nhẹ. Ai muốn mình hướng dẫn thêm, mình có nhóm Zalo chia sẻ miễn phí.\n\nComment "TƯ VẤN", mình nhắn chi tiết.' },
+
+      { t: 'h', x: 'Cách xoay vòng 10 dạng' },
+      { t: 'tbl', head: ['Ngày', 'Video 1 (sáng)', 'Video 2 (trưa/chiều)', 'Video 3 (tối)'], rows: [
+        ['Thứ 2', 'Dạng 2', 'Dạng 6', 'Dạng 1'],
+        ['Thứ 3', 'Dạng 3', 'Dạng 8', 'Dạng 5'],
+        ['Thứ 4', 'Dạng 4', 'Dạng 7', 'Dạng 1'],
+        ['Thứ 5', 'Dạng 2', 'Dạng 10', 'Dạng 3'],
+        ['Thứ 6', 'Dạng 1', 'Dạng 9', 'Dạng 5'],
+        ['Thứ 7', 'Dạng 4', 'Dạng 6', 'Dạng 2'],
+        ['CN', 'Dạng 3', 'Dạng 10', 'Dạng 4']
+      ] },
+      { t: 'p', x: 'Dạng 1–5 là video có giá trị, đều kết thúc bằng lời mời comment từ khóa để nhận tài liệu, nên vừa là video "Cho đi" vừa là video "Đẩy" ở bước 2.3. Dạng 6–10 là video đẩy sản phẩm, mỗi ngày tối đa 1 video. Giờ đăng vẫn theo lịch ở bước 2.3.' },
+      { t: 'tip', x: 'Xong bước này khi bạn đã chọn từ khóa cho 10 dạng và quay thử được ít nhất 1 video mỗi dạng.' }
+    ]
+  },
+
+  {
     id: 's3-1', grp: 'g3', n: '3.1', title: 'Quay dư video để không đứt lịch',
     lead: 'Phải quay đủ video đăng trong 3 ngày trước khi bắt đầu. Mỗi ngày quay sẵn ít nhất cho 1–2 ngày sắp tới.',
     blocks: [

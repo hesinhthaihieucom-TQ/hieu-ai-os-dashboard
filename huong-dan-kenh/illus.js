@@ -18,7 +18,7 @@
     [['1', 'Chọn thị trường', 'và nội dung kênh', 20], ['2', 'Xây fanpage', 'Facebook + TikTok', 235], ['3', 'Lên sóng', 'đăng và đẩy khách', 450]]
       .map(([n, a, b, x]) => R(x, 30, 170, 110, 's-fill', 16) + C(x + 30, 58, 16, 's-ac') + T(x + 30, 64, n, 's-wh', 17, 'middle', 700) +
         T(x + 54, 64, a, 's-tx', 15, 'start', 650) + T(x + 14, 92, b, 's-mu', 13.5) +
-        T(x + 14, 122, n === '1' ? '2 mục' : '4 mục', 's-mu', 14)).join('') +
+        T(x + 14, 122, n === '1' ? '2 mục' : n === '2' ? '5 mục' : '4 mục', 's-mu', 14)).join('') +
     A(192, 85, 232, 85) + A(407, 85, 447, 85));
 
   // 1.1 chọn ngách: 3 nhóm khách, chấm điểm
