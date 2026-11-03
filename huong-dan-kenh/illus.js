@@ -13,12 +13,43 @@
 
   const I = {};
 
+
+  // Mindmap quy trình (trang chủ): thân dọc, nhánh bước 1-3 + hằng ngày, mỗi lá bấm được
+  I.mindmap = () => {
+    const br = [
+      ['BƯỚC 1', 'Chọn thị trường & nội dung', 's-ac', [['s1-1', '1.1 Hiểu đối tác & chọn ngách'], ['s1-2', '1.2 Chọn gói kịch bản']]],
+      ['BƯỚC 2', 'Xây fanpage FB + TikTok', 's-go', [['s2-1', '2.1 Tạo tài khoản FB & TikTok'], ['s2-2', '2.2 Học CapCut từ số 0'], ['s2-3', '2.3 Lịch 28 ngày'], ['s2-4', '2.4 Story & ảnh sản phẩm'], ['s2-5', '2.5 10 dạng nội dung lặp lại'], ['s2-6', '2.6 Lịch đăng bài 1 tuần']]],
+      ['BƯỚC 3', 'Lên sóng', 's-ac', [['s3-1', '3.1 Quay dư video'], ['s3-2', '3.2 Bám sát kịch bản'], ['s3-3', '3.3 Đăng, seeding, đẩy về Zoom'], ['s3-4', '3.4 Lập cộng đồng']]],
+      ['HẰNG NGÀY', 'Người quản lý', 's-go', [['daily', 'Checklist hằng ngày & lỗi hay gặp'], ['confirm', 'Những chỗ cần xác nhận']]]
+    ];
+    const LH = 40, GAP = 22, X0 = 34, BX = 56, BW = 200, LX = 316, LW = 308;
+    let y = 96, b = R(150, 14, 340, 54, 's-ac', 16) + T(320, 36, 'XÂY KÊNH ZERO → HERO', 's-wh', 18, 'middle', 700) + T(320, 58, 'bấm vào từng ô để mở bước đó', 's-wh', 12.5, 'middle', 500);
+    const trunkTop = 68; let trunkEnd = 0, out = '';
+    br.forEach(([tag, name, cls, leaves]) => {
+      const h = leaves.length * LH, cy = y + h / 2 - 2;
+      const hi = cls === 's-ac' ? 's-wh' : 's-tx';
+      out += '<path d="M' + X0 + ' ' + cy + ' H' + BX + '" stroke="var(--muted)" stroke-width="3" fill="none"/>';
+      out += R(BX, cy - 30, BW, 60, cls, 14) + T(BX + BW / 2, cy - 8, tag, hi, 12.5, 'middle', 700) + T(BX + BW / 2, cy + 14, name, hi, 14, 'middle', 650);
+      leaves.forEach(([id, label], i) => {
+        const ly = y + i * LH + LH / 2 - 2 + 0;
+        out += '<path d="M' + (BX + BW) + ' ' + cy + ' C ' + (BX + BW + 28) + ' ' + cy + ', ' + (LX - 28) + ' ' + ly + ', ' + LX + ' ' + ly + '" stroke="var(--muted)" stroke-width="2" fill="none" opacity=".6"/>';
+        out += '<a href="#/' + id + '">' + R(LX, ly - 16, LW, 32, 's-fill', 9) + T(LX + 12, ly + 5, label, 's-tx', 14.5, 'start', 500) + '</a>';
+      });
+      trunkEnd = cy; y += h + GAP;
+    });
+    b += '<path d="M' + X0 + ' ' + trunkTop + ' V' + trunkEnd + '" stroke="var(--muted)" stroke-width="3" fill="none"/><path d="M320 68 V82 H' + X0 + ' V' + trunkTop + '" stroke="var(--muted)" stroke-width="3" fill="none"/>' + out;
+    const fy = y + 4;
+    b += R(20, fy, 600, 62, 's-gos', 14) + T(320, fy + 24, 'Kết quả: phễu đưa khách về', 's-tx', 14, 'middle', 700) +
+      T(320, fy + 48, 'Video → comment từ khóa → inbox quà → Zalo → Zoom → sản phẩm', 's-tx', 13.5, 'middle', 500);
+    return svg(fy + 80, b);
+  };
+
   // Lộ trình 3 bước
   I.roadmap = () => svg(170,
     [['1', 'Chọn thị trường', 'và nội dung kênh', 20], ['2', 'Xây fanpage', 'Facebook + TikTok', 235], ['3', 'Lên sóng', 'đăng và đẩy khách', 450]]
       .map(([n, a, b, x]) => R(x, 30, 170, 110, 's-fill', 16) + C(x + 30, 58, 16, 's-ac') + T(x + 30, 64, n, 's-wh', 17, 'middle', 700) +
         T(x + 54, 64, a, 's-tx', 15, 'start', 650) + T(x + 14, 92, b, 's-mu', 13.5) +
-        T(x + 14, 122, n === '1' ? '2 mục' : n === '2' ? '5 mục' : '4 mục', 's-mu', 14)).join('') +
+        T(x + 14, 122, n === '1' ? '2 mục' : n === '2' ? '6 mục' : '4 mục', 's-mu', 14)).join('') +
     A(192, 85, 232, 85) + A(407, 85, 447, 85));
 
   // 1.1 chọn ngách: 3 nhóm khách, chấm điểm
@@ -155,15 +186,15 @@
     const X = h => Math.round(40 + (h - 6) / 16.5 * 560);
     let b = '<path d="M40 126 H600" stroke="var(--line)" stroke-width="4"/>';
     [[7, '7h'], [12, '12h'], [17, '17h'], [21, '21h']].forEach(([h, l]) => b += T(X(h), 128 + 4, '', 's-mu', 1) + T(X(h), 146, l, 's-mu', 12.5, 'middle'));
-    b += T(20, 24, 'VIDEO và ẢNH', 's-tx', 14, 'start', 700) + T(20, 176, 'STORY (4–6 cái)', 's-tx', 14, 'start', 700);
+    b += T(20, 24, 'VIDEO và ẢNH', 's-tx', 14, 'start', 700) + T(20, 164, 'STORY (đăng 1 lượt)', 's-tx', 14, 'start', 700);
     [[8, 'Video Đẩy', 's-gos'], [12, 'Ảnh sản phẩm', 's-gos'], [15, 'Video Đẩy', 's-gos'], [20, 'Video Cho đi', 's-acs']].forEach(([h, l, c]) => {
       const x = X(h); b += R(x - 42, 42, 84, 50, c, 10) + T(x, 72, l, 's-tx', 12, 'middle', 650) + '<path d="M' + x + ' 92 V126" stroke="var(--line)" stroke-width="2"/>';
     });
-    [[7, 1], [11.5, 2], [15.5, 3], [17.5, 4], [21, 5], [21.75, 6]].forEach(([h, n]) => {
-      const x = X(h), opt = n === 6;
+    [[7, 1], [7.6, 2], [8.2, 3], [8.8, 4], [9.4, 5], [10, 6]].forEach(([h, n]) => {
+      const x = X(h) + (n - 1) * 4, opt = n === 6;
       b += '<path d="M' + x + ' 126 V176" stroke="var(--line)" stroke-width="2"/>' + C(x, 190, 13, opt ? 's-gos' : 's-ac') + T(x, 195, n, opt ? 's-tx' : 's-wh', 13, 'middle', 700);
     });
-    return svg(250, b + T(320, 236, 'Số trong vòng tròn là story 1–6. Story 6 là tùy chọn (nền vàng)', 's-mu', 13, 'middle'));
+    return svg(250, b + T(320, 236, 'Story 1–6 đăng liền nhau một lượt lúc 7h. Story 6 là tùy chọn (nền vàng)', 's-mu', 13, 'middle'));
   };
 
   // 2.4 bài ảnh sản phẩm
