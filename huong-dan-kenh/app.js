@@ -1,9 +1,27 @@
 (function () {
-  const KEY = 'hdk_progress_v1';
+  // Cùng dự án Supabase với Xây Nhân Hiệu (URL + publishable key công khai, bảo mật nằm ở RLS).
+  // Tiến độ lưu vào user_metadata của chính người đó nên không cần thêm bảng/schema mới.
+  const SB_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
+  const SB_KEY = 'sb_publishable_j0ohsTIc7Df5_dz5vDiniA_nB5jPYWy';
+  const LEGACY_KEY = 'hdk_progress_v1';
+  let KEY = LEGACY_KEY, sb = null, me = null, remoteTimer = null;
   const STEPS = window.STEPS, GROUPS = window.GROUPS;
   let state = { checks: {}, done: {} };
-  try { state = Object.assign(state, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const pushRemote = () => {
+    if (!sb || !me) return;
+    clearTimeout(remoteTimer);
+    remoteTimer = setTimeout(() => { sb.auth.updateUser({ data: { hdk_progress: state } }).catch(() => {}); }, 1200);
+  };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} pushRemote(); };
+  // Server thắng; chưa có thì lấy bản trên máy của riêng tài khoản này, rồi mới tới bản cũ lúc chưa có đăng nhập.
+  function loadState(user) {
+    KEY = LEGACY_KEY + '_' + user.id;
+    let s = user.user_metadata && user.user_metadata.hdk_progress;
+    if (!s) { try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {} }
+    if (!s) { try { s = JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null'); } catch (e) {} }
+    state = Object.assign({ checks: {}, done: {} }, s || {});
+    save();
+  }
 
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   // Cho phép <b> trong nội dung do mình viết sẵn (không nhận dữ liệu người dùng)
@@ -68,8 +86,9 @@
         h += `<a href="#/${s.id}" class="${cur === s.id ? 'on' : ''}"><span class="dot ${isDone(s) ? 'done' : ''}">${isDone(s) ? '✓' : ''}</span><span>${s.n ? s.n + ' · ' : ''}${esc(s.title)}</span></a>`;
       });
     });
-    h += `</div><div class="side-foot">Tiến độ được lưu trên máy này.<br><button id="reset">Làm lại từ đầu</button></div>`;
+    h += `</div><div class="side-foot">Đăng nhập: ${esc((me && me.email) || '')}<br>Tiến độ được lưu theo tài khoản.<br><button id="reset">Làm lại từ đầu</button> <button id="logout">Đăng xuất</button></div>`;
     $('#side').innerHTML = h;
+    $('#logout').onclick = () => { sb.auth.signOut(); };
     $('#reset').onclick = () => { if (confirm('Xóa toàn bộ tiến độ và làm lại từ đầu?')) { state = { checks: {}, done: {} }; save(); route(); } };
   }
 
@@ -181,14 +200,101 @@
     show();
   }
 
+  /* ---------- đăng nhập / đăng ký ---------- */
+  function authShell(inner) {
+    $('#app').innerHTML = `<div class="auth-wrap"><div class="auth-card">
+      <div class="crumb">Xây kênh từ Zero → Hero</div>${inner}</div></div>`;
+  }
+  function renderAuth(mode, msg, ok) {
+    const login = mode !== 'signup';
+    authShell(`<h1>${login ? 'Đăng nhập' : 'Tạo tài khoản'}</h1>
+      <p class="lead">${login ? 'Đăng nhập để mở hướng dẫn và lưu tiến độ của bạn.' : 'Tạo tài khoản miễn phí để dùng hướng dẫn. Tiến độ của bạn được lưu lại, mở trên máy nào cũng thấy.'}</p>
+      <div class="auth-tabs"><button class="${login ? 'on' : ''}" data-m="login">Đăng nhập</button><button class="${login ? '' : 'on'}" data-m="signup">Đăng ký</button></div>
+      ${msg ? `<div class="${ok ? 'tip' : 'warn'}">${esc(msg)}</div>` : ''}
+      <form id="af" novalidate>
+        ${login ? '' : '<label>Họ tên<input id="af-name" autocomplete="name" placeholder="Nguyễn Văn A"></label>'}
+        <label>Email<input id="af-email" type="email" autocomplete="email" placeholder="ten@email.com"></label>
+        <label>Mật khẩu<input id="af-pass" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" placeholder="Ít nhất 6 ký tự"></label>
+        ${login ? '' : '<label>Nhập lại mật khẩu<input id="af-pass2" type="password" autocomplete="new-password"></label>'}
+        <button class="btn pri" id="af-go" type="submit">${login ? 'Đăng nhập' : 'Tạo tài khoản'}</button>
+      </form>
+      ${login ? '<p class="auth-sub"><a href="#" id="af-forgot">Quên mật khẩu?</a></p>' : ''}`);
+    document.querySelectorAll('.auth-tabs button').forEach(b => b.onclick = () => renderAuth(b.dataset.m));
+    const fg = $('#af-forgot');
+    if (fg) fg.onclick = async e => {
+      e.preventDefault();
+      const email = $('#af-email').value.trim();
+      if (!email) return renderAuth('login', 'Nhập email vào ô Email rồi bấm "Quên mật khẩu" lại.');
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      renderAuth('login', error ? error.message : 'Đã gửi email đặt lại mật khẩu. Kiểm tra hộp thư (cả mục thư rác).', !error);
+    };
+    $('#af').onsubmit = async e => {
+      e.preventDefault();
+      const email = $('#af-email').value.trim(), pass = $('#af-pass').value, btn = $('#af-go');
+      if (!email) return renderAuth(mode, 'Vui lòng nhập email.');
+      if (pass.length < 6) return renderAuth(mode, 'Mật khẩu cần ít nhất 6 ký tự.');
+      try {
+        if (login) {
+          btn.disabled = true; btn.textContent = 'Đang xử lý…';
+          const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+          if (error) throw error;
+        } else {
+          if (pass !== $('#af-pass2').value) return renderAuth('signup', 'Mật khẩu nhập lại không khớp.');
+          btn.disabled = true; btn.textContent = 'Đang xử lý…';
+          const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: $('#af-name').value.trim() } } });
+          if (error) throw error;
+          if (!data.session) renderAuth('login', 'Tạo tài khoản thành công! Nếu hệ thống yêu cầu xác nhận email, kiểm tra hộp thư rồi quay lại đăng nhập.', true);
+        }
+      } catch (err) {
+        const m = /Invalid login/i.test(err.message) ? 'Email hoặc mật khẩu chưa đúng.' : /already registered/i.test(err.message) ? 'Email này đã có tài khoản, hãy đăng nhập.' : err.message;
+        renderAuth(mode, m);
+      }
+    };
+  }
+  function renderNewPass() {
+    authShell(`<h1>Đặt mật khẩu mới</h1><p class="lead">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+      <form id="af" novalidate><label>Mật khẩu mới<input id="af-pass" type="password" autocomplete="new-password" placeholder="Ít nhất 6 ký tự"></label>
+      <button class="btn pri" type="submit">Lưu mật khẩu</button></form>`);
+    $('#af').onsubmit = async e => {
+      e.preventDefault();
+      const p = $('#af-pass').value;
+      if (p.length < 6) return;
+      const { error } = await sb.auth.updateUser({ password: p });
+      if (error) { authShell(`<div class="warn">${esc(error.message)}</div>`); return; }
+      history.replaceState(null, '', location.pathname + '#/');
+      boot();
+    };
+  }
+
   /* ---------- init ---------- */
-  document.addEventListener('DOMContentLoaded', () => {
+  function startApp(user) {
+    me = user;
+    loadState(user);
     $('#app').innerHTML = `<div class="layout"><aside class="side" id="side"></aside><div class="scrim" id="scrim"></div>
       <main class="main"><div class="topbar"><button class="burger" id="burger" aria-label="Mở menu">☰</button><span class="sp"></span><button class="btn sm" id="help">❓ Hướng dẫn</button></div><div id="main-body"></div></main></div>`;
     $('#burger').onclick = () => { $('#side').classList.add('open'); $('#scrim').classList.add('open'); };
     $('#scrim').onclick = () => { $('#side').classList.remove('open'); $('#scrim').classList.remove('open'); };
     $('#help').onclick = tour;
-    window.addEventListener('hashchange', route);
     route();
+  }
+  let booting = false, recovering = false;
+  async function boot() {
+    if (booting) return; booting = true;
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data.session) startApp(data.session.user); else { me = null; renderAuth('login'); }
+    } finally { booting = false; }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.supabase) { authShell('<h1>Không kết nối được</h1><p class="lead">Kiểm tra mạng rồi tải lại trang.</p><button class="btn pri" onclick="location.reload()">Tải lại</button>'); return; }
+    sb = window.supabase.createClient(SB_URL, SB_KEY);
+    window.addEventListener('hashchange', () => { if (me) route(); });
+    sb.auth.onAuthStateChange((ev, session) => {
+      if (ev === 'PASSWORD_RECOVERY') { recovering = true; renderNewPass(); return; }
+      if (recovering) return;
+      if (ev === 'SIGNED_IN' && session && (!me || me.id !== session.user.id)) startApp(session.user);
+      if (ev === 'SIGNED_OUT') { me = null; renderAuth('login'); }
+    });
+    boot();
   });
 })();
