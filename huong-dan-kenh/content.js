@@ -43,6 +43,8 @@ window.STEPS = [
       { t: 'tbl', head: ['Nội dung trong gói', 'Số lượng'], rows: [
         ['Kịch bản "Cho đi" (kiến thức, không bán)', '28'],
         ['Kịch bản "Đẩy" (kéo người xem về comment, Zalo, Zoom)', '56'],
+        ['Bài ảnh sản phẩm + caption (1 bài/ngày)', '28'],
+        ['Mẫu story (4–6 story/ngày)', '6 loại mẫu, dùng lặp lại'],
         ['Caption + hashtag cho mỗi video', '84'],
         ['Mẫu comment ghim', '84'],
         ['Tin nhắn chào, tin nhắn mời Zoom/Zalo', '5–8 mẫu']
@@ -172,9 +174,10 @@ window.STEPS = [
   },
   {
     id: 's2-3', grp: 'g2', n: '2.3', title: 'Lịch truyền thông cố định 28 ngày',
-    lead: 'Mỗi ngày đăng đúng 3 video theo một công thức. Lặp lại trong 28 ngày.',
+    lead: 'Mỗi ngày: 3 video, 1 bài ảnh sản phẩm và 4–6 story. Lặp lại trong 28 ngày.',
     blocks: [
       { t: 'svg', k: 'daily3', cap: 'Công thức mỗi ngày: 1 video Cho đi (tối) + 2 video Đẩy (giờ linh hoạt)' },
+      { t: 'note', x: 'Ngoài 3 video, mỗi ngày còn 1 bài ảnh (ưu tiên ảnh sản phẩm, đây là chỗ đẩy sản phẩm) và 4–6 story. Cách làm chi tiết ở bước 2.4.' },
       { t: 'tbl', head: ['', 'Cho đi', 'Đẩy'], rows: [
         ['Nội dung', 'Kiến thức, mẹo, dấu hiệu', 'Lời mời hành động: nhận tài liệu, vào nhóm, tham gia Zoom'],
         ['Có nhắc sản phẩm?', 'Không', 'Không bán thẳng, chỉ mời nhận giá trị'],
@@ -209,13 +212,83 @@ window.STEPS = [
   },
 
   {
+    id: 's2-4', grp: 'g2', n: '2.4', title: 'Story hằng ngày & bài ảnh sản phẩm',
+    lead: 'Mỗi ngày đăng thêm 4–6 story và 1 bài ảnh (ưu tiên ảnh sản phẩm). Story giữ người xem quay lại, bài ảnh là chỗ giới thiệu sản phẩm.',
+    blocks: [
+      { t: 'svg', k: 'daytime', cap: 'Một ngày đăng: video và ảnh ở hàng trên, story ở hàng dưới' },
+      { t: 'tbl', head: ['Món', 'Số lượng / ngày', 'Vai trò'], rows: [
+        ['Video', '3 (1 Cho đi + 2 Đẩy)', 'Kéo người xem, tạo niềm tin'],
+        ['Bài ảnh', '1, ưu tiên ảnh sản phẩm', 'Giới thiệu và đẩy sản phẩm'],
+        ['Story', '4–6', 'Nhắc, tương tác, giữ người xem quay lại']
+      ] },
+
+      { t: 'h', x: 'A. 6 story mỗi ngày' },
+      { t: 'tbl', head: ['Story', 'Giờ gợi ý', 'Loại', 'Nội dung'], rows: [
+        ['1', '7:00', 'Chào buổi sáng', 'Một câu hỏi hoặc mẹo ngắn, có thanh bình chọn'],
+        ['2', '11:30', 'Hậu trường', 'Cảnh đang chuẩn bị bữa ăn hoặc đang quay video tối nay'],
+        ['3', '15:30', 'Sản phẩm', 'Ảnh hoặc clip ngắn sản phẩm + 1 ý theo nhãn + mời nhắn tin'],
+        ['4', '17:30', 'Tương tác', 'Bình chọn hoặc hộp câu hỏi để khách trả lời'],
+        ['5', '21:00', 'Nhắc video tối', 'Nhắc "Tối nay có video: [tên]" và chia sẻ lại video vào story'],
+        ['6', '21:45 (tùy chọn)', 'Mời nhận tài liệu', 'Nhắc từ khóa comment để nhận tài liệu']
+      ] },
+      { t: 'p', x: 'Mỗi ngày làm tối thiểu story 1–5 (đủ 5 story). Có thời gian thì thêm story 6. Tối thiểu 4 story thì giữ story 1, 3, 4, 5.' },
+      { t: 'ck', items: [
+        'Quay hoặc chụp theo chiều dọc 9:16.',
+        'Chữ nằm vùng giữa màn hình, không sát mép trên và dưới.',
+        'Mỗi story ngắn 5–15 giây, một ý duy nhất.',
+        'Mỗi ngày có ít nhất 1 story dùng thanh bình chọn hoặc hộp câu hỏi.',
+        'Không quá 2 story sản phẩm mỗi ngày.',
+        'Trả lời mọi người bình chọn hoặc nhắn tin sau story trong ngày.'
+      ] },
+      { t: 'h', x: 'Cách đăng story' },
+      { t: 'ul', items: [
+        'Facebook: vào trang của bạn → Tạo tin (Create story) → chọn ảnh hoặc video → thêm chữ, hình dán, thanh bình chọn → Chia sẻ lên tin.',
+        'TikTok: bấm nút + → chọn Story → quay hoặc chọn ảnh → thêm chữ → Đăng.',
+        'Tên nút có thể khác theo phiên bản. Story tự biến mất sau 24 giờ.'
+      ] },
+      { t: 'copy', title: 'Mẫu story 1: chào buổi sáng (có bình chọn)', x: 'Sáng nay chị ăn gì đầu tiên?\n[ Trứng / rau ]   [ Bún, phở, xôi ]   [ Chưa ăn gì ]' },
+      { t: 'copy', title: 'Mẫu story 3: sản phẩm', x: '[Tên sản phẩm]\nDùng như thế nào: [1 dòng theo nhãn]\nChị muốn biết thêm, nhắn mình nhé 💛' },
+      { t: 'copy', title: 'Mẫu story 4: hộp câu hỏi', x: 'Chị muốn mình làm video về chủ đề nào tuần này?\nGhi câu hỏi vào đây, mình sẽ trả lời.' },
+      { t: 'copy', title: 'Mẫu story 5: nhắc video tối', x: 'Tối nay lúc [giờ] có video: [tên video].\nChị nhớ xem nhé!' },
+
+      { t: 'h', x: 'B. Bài ảnh mỗi ngày (ưu tiên ảnh sản phẩm)' },
+      { t: 'svg', k: 'productphoto', cap: 'Một bài ảnh sản phẩm gồm ảnh sạch, chữ ngắn và caption có lời mời' },
+      { t: 'p', x: 'Mỗi ngày đăng 1 bài ảnh, tốt nhất vào buổi trưa. Mỗi ngày một kiểu ảnh để người xem không thấy lặp lại.' },
+      { t: 'tbl', head: ['Thứ', 'Kiểu ảnh', 'Ý chính của bài'], rows: [
+        ['2', 'Ảnh sản phẩm chính, nền sáng', 'Sản phẩm là gì, dùng cho ai (theo nhãn)'],
+        ['3', 'Ảnh bộ sản phẩm (set)', 'Set 15–30 ngày gồm những gì'],
+        ['4', 'Ảnh cách dùng', 'Dùng từng bước như thế nào'],
+        ['5', 'Ảnh mở hộp', 'Nhận hàng sẽ có gì bên trong'],
+        ['6', 'Ảnh khách nhận hàng', 'Chỉ dùng khi khách đồng ý, ảnh thật'],
+        ['7', 'Ảnh hỏi đáp', '1 câu hay gặp và câu trả lời ngắn'],
+        ['CN', 'Ảnh ưu đãi cuối tuần', 'Ưu đãi (nếu có) và cách đặt']
+      ] },
+      { t: 'h', x: 'Cách chụp ảnh sản phẩm' },
+      { t: 'ck', items: [
+        'Chụp gần cửa sổ, ánh sáng ban ngày, không dùng đèn flash.',
+        'Nền trơn, sáng, gọn, không đồ lộn xộn xung quanh.',
+        'Một sản phẩm chính nằm ở giữa, nhìn rõ nhãn.',
+        'Chụp 3 góc: chính diện, nghiêng, cận cảnh.',
+        'Lau sạch sản phẩm và ống kính trước khi chụp.',
+        'Ảnh dọc tỉ lệ 4:5 hoặc vuông 1:1, không filter nặng.',
+        'Chữ trên ảnh tối đa 6 từ, dễ đọc.',
+        'Chụp một buổi cho 7 ngày liền, đặt tên file theo thứ tự ngày đăng.'
+      ] },
+      { t: 'copy', title: 'Mẫu caption bài ảnh sản phẩm', x: '[Câu hỏi về vấn đề của khách, 1 câu]\n\n[Sản phẩm là gì, dùng thế nào, theo đúng nhãn, 2–3 dòng]\n\nChị đang dùng thuốc hoặc có bệnh nền thì hỏi bác sĩ trước khi dùng nhé.\n\n👉 Nhắn mình hoặc comment [TỪ KHÓA] để được tư vấn.' },
+      { t: 'warn', x: '<b class="l">Quy tắc khi đẩy sản phẩm sức khỏe</b>Chỉ nói công dụng được ghi trên nhãn. Không hứa giảm bao nhiêu cân, không nói chữa hay thay thế thuốc. Ảnh khách hàng phải thật và có sự đồng ý của họ, không chỉnh sửa. Mỗi ngày chỉ 1 bài ảnh và tối đa 2 story sản phẩm, còn lại là nội dung có ích.' },
+      { t: 'tip', x: 'Xong bước này khi bạn có kế hoạch 28 ngày × (1 bài ảnh + 4–6 story) và đã chụp xong ảnh sản phẩm cho 7 ngày đầu.' }
+    ]
+  },
+
+  {
     id: 's3-1', grp: 'g3', n: '3.1', title: 'Quay dư video để không đứt lịch',
     lead: 'Phải quay đủ video đăng trong 3 ngày trước khi bắt đầu. Mỗi ngày quay sẵn ít nhất cho 1–2 ngày sắp tới.',
     blocks: [
       { t: 'svg', k: 'stock', cap: 'Luôn giữ kho video dự trữ' },
       { t: 'ul', items: [
         'Tối thiểu trước ngày đầu tiên đăng: 9 video (3 ngày × 3 video).',
-        'Sau đó mỗi ngày quay thêm 3–6 video để luôn dư ít nhất 1–2 ngày.'
+        'Sau đó mỗi ngày quay thêm 3–6 video để luôn dư ít nhất 1–2 ngày.',
+        'Chuẩn bị thêm ảnh sản phẩm cho 7 ngày đầu và nội dung story cho 3 ngày đầu (xem bước 2.4).'
       ] },
       { t: 'h', x: 'Một buổi quay (khoảng 2–3 giờ cho 9 video)' },
       { t: 'ck', items: [
@@ -268,7 +341,8 @@ window.STEPS = [
         'Chọn giờ đăng theo lịch ở bước 2.3.',
         'Đăng hoặc lên lịch.',
         'Trong 5 phút đầu: ghim comment đã soạn sẵn (có từ khóa).',
-        'Trong 30 phút đầu: trả lời mọi comment.'
+        'Trong 30 phút đầu: trả lời mọi comment.',
+        'Đăng bài ảnh sản phẩm lúc trưa và các story theo giờ ở bước 2.4.'
       ] },
       { t: 'h', x: 'B. Seeding comment' },
       { t: 'p', x: '<b>Seeding comment</b> là có vài comment thật ngay khi video lên, để người đến sau thấy đã có người quan tâm và dễ để lại comment hơn.' },
@@ -336,11 +410,11 @@ window.STEPS = [
     lead: 'Dùng làm việc mỗi ngày cho người mới.',
     blocks: [
       { t: 'h', x: 'Sáng (30 phút)' },
-      { t: 'ck', items: ['Kiểm tra video hôm nay đã lên lịch đủ 3 chưa', 'Đăng video sáng, ghim comment', 'Trả lời comment và tin nhắn'] },
+      { t: 'ck', items: ['Kiểm tra video hôm nay đã lên lịch đủ 3 chưa', 'Đăng story 1 (chào buổi sáng)', 'Đăng video sáng, ghim comment', 'Trả lời comment và tin nhắn'] },
       { t: 'h', x: 'Trưa/chiều (30 phút)' },
-      { t: 'ck', items: ['Đăng video thứ 2', 'Seeding comment theo bảng phân công', 'Gửi tài liệu cho người comment từ khóa'] },
+      { t: 'ck', items: ['Đăng bài ảnh sản phẩm', 'Đăng story 2 (hậu trường) và story 3 (sản phẩm)', 'Đăng video thứ 2', 'Seeding comment theo bảng phân công', 'Gửi tài liệu cho người comment từ khóa'] },
       { t: 'h', x: 'Tối (45 phút)' },
-      { t: 'ck', items: ['Đăng video "Cho đi" lúc tối', 'Trả lời comment trong 30 phút', 'Cập nhật bảng theo dõi khách', 'Quay thêm cho 1–2 ngày sắp tới'] },
+      { t: 'ck', items: ['Đăng story 4 (tương tác) lúc 17:30', 'Đăng video "Cho đi" lúc tối', 'Đăng story 5 (nhắc video tối), story 6 nếu có thời gian', 'Trả lời comment trong 30 phút', 'Cập nhật bảng theo dõi khách', 'Quay thêm cho 1–2 ngày sắp tới'] },
       { t: 'h', x: '6 lỗi người mới hay mắc' },
       { t: 'ul', items: [
         'Quay từng ngày rồi bị đứt lịch. Luôn giữ video dự trữ.',

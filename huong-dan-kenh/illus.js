@@ -18,7 +18,7 @@
     [['1', 'Chọn thị trường', 'và nội dung kênh', 20], ['2', 'Xây fanpage', 'Facebook + TikTok', 235], ['3', 'Lên sóng', 'đăng và đẩy khách', 450]]
       .map(([n, a, b, x]) => R(x, 30, 170, 110, 's-fill', 16) + C(x + 30, 58, 16, 's-ac') + T(x + 30, 64, n, 's-wh', 17, 'middle', 700) +
         T(x + 54, 64, a, 's-tx', 15, 'start', 650) + T(x + 14, 92, b, 's-mu', 13.5) +
-        T(x + 14, 122, n === '1' ? '2 mục' : n === '2' ? '3 mục' : '4 mục', 's-mu', 14)).join('') +
+        T(x + 14, 122, n === '1' ? '2 mục' : '4 mục', 's-mu', 14)).join('') +
     A(192, 85, 232, 85) + A(407, 85, 447, 85));
 
   // 1.1 chọn ngách: 3 nhóm khách, chấm điểm
@@ -149,6 +149,32 @@
     R(214, 180, 190, 40, 's-acs', 10) + T(224, 205, 'Câu hỏi cho thành viên', 's-tx', 13.5) +
     T(20, 60, 'T2: mẹo nhỏ', 's-mu', 14) + T(20, 100, 'T4: câu hỏi', 's-mu', 14) + T(20, 140, 'T6: tài liệu mới', 's-mu', 14) + T(20, 180, 'CN: tổng kết + Zoom', 's-mu', 14) +
     T(470, 120, '4 bài có ích', 's-tx', 14, 'start', 650) + T(470, 142, ': 1 bài giới thiệu', 's-tx', 14));
+
+  // 2.4 một ngày: video + ảnh (hàng trên), story (hàng dưới)
+  I.daytime = () => {
+    const X = h => Math.round(40 + (h - 6) / 16.5 * 560);
+    let b = '<path d="M40 126 H600" stroke="var(--line)" stroke-width="4"/>';
+    [[7, '7h'], [12, '12h'], [17, '17h'], [21, '21h']].forEach(([h, l]) => b += T(X(h), 128 + 4, '', 's-mu', 1) + T(X(h), 146, l, 's-mu', 12.5, 'middle'));
+    b += T(20, 24, 'VIDEO và ẢNH', 's-tx', 14, 'start', 700) + T(20, 176, 'STORY (4–6 cái)', 's-tx', 14, 'start', 700);
+    [[8, 'Video Đẩy', 's-gos'], [12, 'Ảnh sản phẩm', 's-gos'], [15, 'Video Đẩy', 's-gos'], [20, 'Video Cho đi', 's-acs']].forEach(([h, l, c]) => {
+      const x = X(h); b += R(x - 42, 42, 84, 50, c, 10) + T(x, 72, l, 's-tx', 12, 'middle', 650) + '<path d="M' + x + ' 92 V126" stroke="var(--line)" stroke-width="2"/>';
+    });
+    [[7, 1], [11.5, 2], [15.5, 3], [17.5, 4], [21, 5], [21.75, 6]].forEach(([h, n]) => {
+      const x = X(h), opt = n === 6;
+      b += '<path d="M' + x + ' 126 V176" stroke="var(--line)" stroke-width="2"/>' + C(x, 190, 13, opt ? 's-gos' : 's-ac') + T(x, 195, n, opt ? 's-tx' : 's-wh', 13, 'middle', 700);
+    });
+    return svg(250, b + T(320, 236, 'Số trong vòng tròn là story 1–6. Story 6 là tùy chọn (nền vàng)', 's-mu', 13, 'middle'));
+  };
+
+  // 2.4 bài ảnh sản phẩm
+  I.productphoto = () => svg(290,
+    R(20, 20, 250, 250, 's-fill', 16) + R(34, 34, 222, 160, 's-bg', 10) + R(34, 34, 222, 160, 's-ln', 10) +
+    R(74, 78, 56, 90, 's-acs', 8) + R(86, 94, 32, 10, 's-go', 3) + R(138, 98, 50, 70, 's-gos', 8) + R(198, 110, 36, 58, 's-acs', 8) +
+    T(145, 188, 'ảnh sản phẩm, nền sáng', 's-mu', 12, 'middle') +
+    R(34, 204, 150, 8, 's-ln', 3) + R(34, 220, 200, 8, 's-ln', 3) + R(34, 236, 120, 8, 's-ln', 3) +
+    R(190, 238, 66, 22, 's-ac', 8) + T(223, 254, 'Nhắn mình', 's-wh', 11.5, 'middle') +
+    [['①', 'Ánh sáng cửa sổ, nền trơn sáng'], ['②', '1 sản phẩm chính, thấy rõ nhãn'], ['③', 'Chữ trên ảnh ngắn, tối đa 6 từ'], ['④', 'Caption: vấn đề → sản phẩm → cách dùng'], ['⑤', 'Kết bằng lời mời nhắn tin / từ khóa']]
+      .map(([n, t], i) => T(300, 62 + i * 42, n, 's-tx', 18, 'start', 700) + T(326, 62 + i * 42, t, 's-tx', 14.5)).join(''));
 
   window.ILLUS = I;
 })();

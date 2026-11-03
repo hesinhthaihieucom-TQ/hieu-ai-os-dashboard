@@ -82,7 +82,7 @@
       <p class="lead">Làm lần lượt từng bước theo thanh bên trái. Mỗi bước có hình minh họa, việc cần làm và ô tick. Xong bước nào thì bấm "Đã xong bước này".</p>
       <figure>${window.ILLUS.roadmap()}<figcaption>3 bước lớn của cả hành trình</figcaption></figure>
       <div class="card"><b>Bạn sẽ làm được gì sau khi đi hết:</b>
-        <ul style="margin-top:8px"><li>Có 1 kênh Facebook + TikTok hoàn chỉnh, cùng tên và hình.</li><li>Tự quay và dựng được video bằng CapCut.</li><li>Có lịch đăng 3 video mỗi ngày trong 28 ngày.</li><li>Có phễu đưa người xem về nhóm Zalo và buổi Zoom.</li></ul></div>
+        <ul style="margin-top:8px"><li>Có 1 kênh Facebook + TikTok hoàn chỉnh, cùng tên và hình.</li><li>Tự quay và dựng được video bằng CapCut.</li><li>Có lịch mỗi ngày trong 28 ngày: 3 video, 1 bài ảnh sản phẩm và 4–6 story.</li><li>Có phễu đưa người xem về nhóm Zalo và buổi Zoom.</li></ul></div>
       <div class="card"><b>Ba quy tắc cho người mới</b>
         <ul style="margin-top:8px"><li>Làm theo thứ tự, chưa xong bước này thì chưa sang bước sau.</li><li>Bám sát kịch bản và lịch, không tự thêm ý.</li><li>Nội dung sức khỏe chỉ nói "gợi ý", "có thể", "tuỳ cơ địa". Không hứa kết quả.</li></ul></div>
       <div class="done-bar"><span class="step-prog">Tiếp theo: ${first.n ? first.n + ' · ' : ''}${esc(first.title)}</span><a class="btn pri" href="#/${first.id}" style="text-decoration:none">Bắt đầu →</a></div>
