@@ -171,3 +171,4 @@ figcaption { text-align: center; color: var(--muted); font-size: 14.5px; margin-
 .auth-sub { text-align: center; margin: 14px 0 0; font-size: 15px; }
 .auth-sub a { color: var(--acc); font-weight: 600; }
 .side-foot button + button { margin-left: 6px; }
+.auth-logo { display: block; width: 76px; height: 76px; margin: 0 auto 10px; border-radius: 18px; }

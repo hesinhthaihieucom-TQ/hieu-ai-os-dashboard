@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#FBF7F0"/>
+  <circle cx="256" cy="256" r="206" fill="none" stroke="#C9972B" stroke-width="7"/>
+  <circle cx="256" cy="256" r="192" fill="#FFFFFF"/>
+  <g transform="translate(0,-22)">
+  <!-- thân + rễ -->
+  <path d="M243 372 C246 330 247 290 249 236 L263 236 C265 290 266 330 270 372 Z" fill="#8A6A4A"/>
+  <path d="M245 372 C228 380 214 384 200 392 M268 372 C284 380 298 384 312 392 M256 374 V394" stroke="#8A6A4A" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- cành -->
+  <path d="M250 300 C226 296 210 282 200 262 M262 280 C288 276 304 262 314 244" stroke="#8A6A4A" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- tán lá -->
+  <circle cx="256" cy="176" r="64" fill="#14503F"/>
+  <circle cx="204" cy="214" r="46" fill="#1F6F5C"/>
+  <circle cx="310" cy="212" r="48" fill="#1F6F5C"/>
+  <circle cx="256" cy="226" r="40" fill="#14503F"/>
+  <!-- nút play vàng = video -->
+  <circle cx="256" cy="190" r="34" fill="#E3A92B"/>
+  <path d="M246 172 L246 208 L276 190 Z" fill="#14503F"/>
+  <!-- mũi tên lên (Hero) -->
+  <path d="M326 146 L356 116 M338 116 H356 V134" stroke="#C9972B" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- chữ -->
+  <text x="256" y="414" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#14503F" letter-spacing="3">ZERO → HERO</text>
+</svg>

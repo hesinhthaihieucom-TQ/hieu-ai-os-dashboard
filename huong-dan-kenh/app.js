@@ -203,6 +203,7 @@
   /* ---------- đăng nhập / đăng ký ---------- */
   function authShell(inner) {
     $('#app').innerHTML = `<div class="auth-wrap"><div class="auth-card">
+      <img src="assets/icon-192.png" alt="" class="auth-logo">
       <div class="crumb">Xây kênh từ Zero → Hero</div>${inner}</div></div>`;
   }
   function renderAuth(mode, msg, ok) {
