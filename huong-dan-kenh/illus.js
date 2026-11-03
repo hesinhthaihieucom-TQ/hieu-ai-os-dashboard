@@ -14,39 +14,38 @@
   const I = {};
 
 
-  // Mindmap quy trình (trang chủ): tỏa tròn từ giữa, 4 nhánh, mỗi lá bấm được
+  // Mindmap dạng cây (trang chủ): gốc Zero ở dưới, thân đi lên, 4 cành, mỗi cành có các nhánh (bước) bấm được
   I.mindmap = () => {
-    const Wd = 140, Hd = 44, BWd = 116, BH = 64;
-    // [tag, tên 1, tên 2, màu, cx, cy, phía (-1 trái / 1 phải), lá [id, dòng 1, dòng 2, cy]]
+    const BR = '#8a6a4a', PW = 128, PH = 44, TW = 116, TH = 64;
+    // [tag, tên 1, tên 2, màu tag, màu lá, cx tag, cy, phía, nhánh [id, dòng 1, dòng 2, cy]]
     const br = [
-      ['BƯỚC 1', 'Chọn thị trường', '& nội dung', 's-ac', 234, 130, -1, [['s1-1', '1.1 Hiểu đối tác', '& chọn ngách', 104], ['s1-2', '1.2 Chọn gói', 'kịch bản', 156]]],
-      ['BƯỚC 2', 'Xây fanpage', 'FB + TikTok', 's-go', 406, 190, 1, [['s2-1', '2.1 Tạo tài khoản', 'FB & TikTok', 60], ['s2-2', '2.2 Học CapCut', 'từ con số 0', 112], ['s2-3', '2.3 Lịch', '28 ngày', 164], ['s2-4', '2.4 Story &', 'ảnh sản phẩm', 216], ['s2-5', '2.5 10 dạng', 'nội dung lặp lại', 268], ['s2-6', '2.6 Lịch đăng', 'bài 1 tuần', 320]]],
-      ['BƯỚC 3', 'Lên sóng', 'đăng & đẩy khách', 's-ac', 234, 558, -1, [['s3-1', '3.1 Quay dư', 'video', 480], ['s3-2', '3.2 Bám sát', 'kịch bản', 532], ['s3-3', '3.3 Đăng, seeding,', 'đẩy về Zoom', 584], ['s3-4', '3.4 Lập', 'cộng đồng', 636]]],
-      ['HẰNG NGÀY', 'Người quản lý', '& kiểm tra', 's-go', 406, 570, 1, [['daily', 'Checklist', 'hằng ngày', 544], ['confirm', 'Chỗ cần', 'xác nhận', 596]]]
+      ['BƯỚC 1', 'Chọn thị trường', '& nội dung', 's-ac', 's-acs', 214, 800, -1, [['s1-1', '1.1 Hiểu đối tác', '& chọn ngách', 774], ['s1-2', '1.2 Chọn gói', 'kịch bản', 826]]],
+      ['BƯỚC 2', 'Xây fanpage', 'FB + TikTok', 's-go', 's-gos', 426, 640, 1, [['s2-1', '2.1 Tạo tài khoản', 'FB & TikTok', 510], ['s2-2', '2.2 Học CapCut', 'từ con số 0', 562], ['s2-3', '2.3 Lịch', '28 ngày', 614], ['s2-4', '2.4 Story &', 'ảnh sản phẩm', 666], ['s2-5', '2.5 10 dạng', 'nội dung lặp lại', 718], ['s2-6', '2.6 Lịch đăng', 'bài 1 tuần', 770]]],
+      ['BƯỚC 3', 'Lên sóng', 'đăng & đẩy khách', 's-ac', 's-acs', 214, 470, -1, [['s3-1', '3.1 Quay dư', 'video', 392], ['s3-2', '3.2 Bám sát', 'kịch bản', 444], ['s3-3', '3.3 Đăng, seeding,', 'đẩy về Zoom', 496], ['s3-4', '3.4 Lập', 'cộng đồng', 548]]],
+      ['HẰNG NGÀY', 'Người quản lý', '& kiểm tra', 's-go', 's-gos', 426, 300, 1, [['daily', 'Checklist', 'hằng ngày', 274], ['confirm', 'Chỗ cần', 'xác nhận', 326]]]
     ];
-    const col = { 's-ac': 'var(--acc)', 's-go': 'var(--gold)' };
-    let lines = '', nodes = '';
-    const link = [
-      'M292 322 C 250 290, 234 230, 234 162', 'M348 318 C 380 290, 406 260, 406 222',
-      'M292 378 C 250 410, 234 470, 234 526', 'M348 378 C 380 410, 406 490, 406 538'
-    ];
-    br.forEach(([tag, n1, n2, cls, cx, cy, side, leaves], i) => {
+    // thân + rễ
+    let b = '<path d="M300 940 C 306 800, 308 500, 311 100 L 331 100 C 334 500, 336 800, 344 940 Z" fill="' + BR + '"/>' +
+      '<path d="M304 934 C 280 950, 262 958, 244 972 M340 934 C 364 950, 382 958, 400 972 M322 940 V 968" stroke="' + BR + '" stroke-width="9" fill="none" stroke-linecap="round"/>';
+    let tw = '', nodes = '';
+    br.forEach(([tag, n1, n2, cls, lcls, cx, cy, side, twigs]) => {
       const tx = cls === 's-ac' ? 's-wh' : 's-tx';
-      lines += '<path d="' + link[i] + '" stroke="' + col[cls] + '" stroke-width="5" fill="none" stroke-linecap="round"/>';
-      nodes += R(cx - BWd / 2, cy - BH / 2, BWd, BH, cls, 14) + T(cx, cy - 14, tag, tx, 12, 'middle', 700) + T(cx, cy + 3, n1, tx, 12.5, 'middle', 650) + T(cx, cy + 19, n2, tx, 12.5, 'middle', 650);
-      leaves.forEach(([id, l1, l2, ly]) => {
-        const lx = side < 0 ? 8 : 492;
-        const ex = side < 0 ? cx - BWd / 2 : cx + BWd / 2, sx = side < 0 ? lx + Wd : lx;
-        const mid = (ex + sx) / 2;
-        lines += '<path d="M' + ex + ' ' + cy + ' C ' + mid + ' ' + cy + ', ' + mid + ' ' + ly + ', ' + sx + ' ' + ly + '" stroke="' + col[cls] + '" stroke-width="2.5" fill="none" opacity=".75"/>';
-        nodes += '<a href="#/' + id + '">' + R(lx, ly - Hd / 2, Wd, Hd, 's-fill', 10) + T(lx + Wd / 2, ly - 3, l1, 's-tx', 13, 'middle', 600) + T(lx + Wd / 2, ly + 14, l2, 's-tx', 13, 'middle', 500) + '</a>';
+      const edge = side < 0 ? cx + TW / 2 : cx - TW / 2, trunk = side < 0 ? 312 : 332, dir = side < 0 ? 1 : -1;
+      // cành lớn: từ thân sang ô nhánh
+      b += '<path d="M' + trunk + ' ' + (cy + 62) + ' C ' + (trunk - dir * 34) + ' ' + (cy + 62) + ', ' + (edge + dir * 8) + ' ' + (cy + 30) + ', ' + edge + ' ' + cy + '" stroke="' + BR + '" stroke-width="11" fill="none" stroke-linecap="round"/>';
+      nodes += R(cx - TW / 2, cy - TH / 2, TW, TH, cls, 14) + T(cx, cy - 14, tag, tx, 12, 'middle', 700) + T(cx, cy + 3, n1, tx, 12.5, 'middle', 650) + T(cx, cy + 19, n2, tx, 12.5, 'middle', 650);
+      twigs.forEach(([id, l1, l2, ly]) => {
+        const lx = side < 0 ? 8 : 504;
+        const ex = side < 0 ? cx - TW / 2 : cx + TW / 2, sx = side < 0 ? lx + PW : lx, mid = (ex + sx) / 2;
+        tw += '<path d="M' + ex + ' ' + cy + ' C ' + mid + ' ' + cy + ', ' + mid + ' ' + ly + ', ' + sx + ' ' + ly + '" stroke="' + BR + '" stroke-width="3" fill="none" stroke-linecap="round"/>';
+        nodes += '<a href="#/' + id + '">' + R(lx, ly - PH / 2, PW, PH, lcls, 12) + T(lx + PW / 2, ly - 3, l1, 's-tx', 13, 'middle', 600) + T(lx + PW / 2, ly + 14, l2, 's-tx', 13, 'middle', 500) + '</a>';
       });
     });
-    const ctr = '<ellipse cx="320" cy="350" rx="88" ry="38" class="s-ac"/>' + T(320, 345, 'XÂY KÊNH', 's-wh', 16, 'middle', 700) + T(320, 365, 'ZERO → HERO', 's-wh', 16, 'middle', 700);
-    const fy = 684;
-    const foot = R(20, fy, 600, 64, 's-gos', 14) + T(320, fy + 26, 'Kết quả: phễu đưa khách về', 's-tx', 14, 'middle', 700) +
-      T(320, fy + 48, 'Video → comment từ khóa → inbox quà → Zalo → Zoom → sản phẩm', 's-tx', 13.5, 'middle', 500);
-    return svg(fy + 82, lines + ctr + nodes + foot);
+    // ngọn: kết quả
+    const crown = R(20, 16, 600, 84, 's-ac', 40) + T(320, 44, 'NGỌN · HERO: kênh có khách đều đặn', 's-wh', 16, 'middle', 700) +
+      T(320, 68, 'Phễu: Video → comment từ khóa → inbox quà →', 's-wh', 13.5, 'middle', 500) + T(320, 86, 'Zalo → Zoom → sản phẩm', 's-wh', 13.5, 'middle', 500);
+    const root = R(190, 972, 260, 50, 's-gos', 14) + T(320, 994, 'GỐC · ZERO', 's-tx', 14, 'middle', 700) + T(320, 1012, 'chưa biết gì về xây kênh', 's-tx', 12.5, 'middle', 500);
+    return svg(1040, b + tw + crown + nodes + root);
   };
 
   // Lộ trình 3 bước

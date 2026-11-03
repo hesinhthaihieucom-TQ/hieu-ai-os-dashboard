@@ -80,7 +80,7 @@
       <div class="crumb">Xây kênh từ Zero → Hero</div>
       <h1>Hướng dẫn xây kênh cho người chưa biết gì</h1>
       <p class="lead">Làm lần lượt từng bước theo thanh bên trái. Mỗi bước có hình minh họa, việc cần làm và ô tick. Xong bước nào thì bấm "Đã xong bước này".</p>
-      <figure id="t-mindmap" class="mm">${window.ILLUS.mindmap()}<figcaption>Bản đồ cả quy trình: bấm vào ô để mở bước đó (trên điện thoại kéo ngang để xem đủ)</figcaption></figure>
+      <figure id="t-mindmap" class="mm">${window.ILLUS.mindmap()}<figcaption>Cây quy trình: đi từ gốc lên ngọn, bấm vào ô để mở bước đó (trên điện thoại kéo ngang để xem đủ)</figcaption></figure>
       <figure>${window.ILLUS.roadmap()}<figcaption>3 bước lớn của cả hành trình</figcaption></figure>
       <div class="card"><b>Bạn sẽ làm được gì sau khi đi hết:</b>
         <ul style="margin-top:8px"><li>Có 1 kênh Facebook + TikTok hoàn chỉnh, cùng tên và hình.</li><li>Tự quay và dựng được video bằng CapCut.</li><li>Có lịch mỗi ngày trong 28 ngày: 3 video, 1 bài ảnh sản phẩm và 4–6 story.</li><li>Có phễu đưa người xem về nhóm Zalo và buổi Zoom.</li></ul></div>
