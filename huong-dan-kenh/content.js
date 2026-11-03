@@ -346,15 +346,24 @@ window.STEPS = [
       { t: 'ul', items: ['U40 bụng to khó xuống, nhẹ V2 mỗi sáng', 'U40 khó xuống, x.e.p nhẹ V2 mỗi sáng', 'Chị em U40 nào đang bị khó xuống bụng?'] },
       { t: 'copy', title: 'Kịch bản nói (dạng 10, 30–40 giây)', x: 'Chị em U40 nào bụng to, khó xuống mà đã thử nhiều cách? Mình hiểu cảm giác đó. Mỗi sáng mình giữ một thói quen đơn giản: uống nước, ăn đủ đạm, đi bộ nhẹ. Ai muốn mình hướng dẫn thêm, mình có nhóm Zalo chia sẻ miễn phí.\n\nComment "TƯ VẤN", mình nhắn chi tiết.' },
 
-      { t: 'h', x: 'Cách xoay vòng 10 dạng' },
-      { t: 'tbl', head: ['Ngày', 'Video 1 (sáng)', 'Video 2 (trưa/chiều)', 'Video 3 (tối)'], rows: [
-        ['Thứ 2', 'Dạng 2', 'Dạng 6', 'Dạng 1'],
-        ['Thứ 3', 'Dạng 3', 'Dạng 8', 'Dạng 5'],
-        ['Thứ 4', 'Dạng 4', 'Dạng 7', 'Dạng 1'],
-        ['Thứ 5', 'Dạng 2', 'Dạng 10', 'Dạng 3'],
-        ['Thứ 6', 'Dạng 1', 'Dạng 9', 'Dạng 5'],
-        ['Thứ 7', 'Dạng 4', 'Dạng 6', 'Dạng 2'],
-        ['CN', 'Dạng 3', 'Dạng 10', 'Dạng 4']
+      { t: 'h', x: 'LỊCH ĐĂNG BÀI 1 TUẦN (bảng tổng)' },
+      { t: 'p', x: 'Mỗi ô là 1 việc cần đăng. "Dạng 2" nghĩa là làm video theo dạng 2 ở trên. Kéo bảng sang ngang để xem đủ 7 ngày.' },
+      { t: 'tbl', wide: true, head: ['Giờ', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'], rows: [
+        ['7:00', 'Story chào sáng', 'Story chào sáng', 'Story chào sáng', 'Story chào sáng', 'Story chào sáng', 'Story chào sáng', 'Story chào sáng'],
+        ['8:00', '🎬 Video: Dạng 2 (16:8)', '🎬 Video: Dạng 3 (dấu hiệu)', '🎬 Video: Dạng 4 (bỏ bữa sáng)', '🎬 Video: Dạng 2 (16:8)', '🎬 Video: Dạng 1 (no lâu)', '🎬 Video: Dạng 4 (bỏ bữa sáng)', '🎬 Video: Dạng 3 (dấu hiệu)'],
+        ['11:30', 'Story hậu trường', 'Story hậu trường', 'Story hậu trường', 'Story hậu trường', 'Story hậu trường', 'Story hậu trường', 'Story hậu trường'],
+        ['12:00', '🖼 Ảnh: sản phẩm chính', '🖼 Ảnh: bộ set', '🖼 Ảnh: cách dùng', '🖼 Ảnh: mở hộp', '🖼 Ảnh: khách nhận hàng', '🖼 Ảnh: hỏi đáp', '🖼 Ảnh: ưu đãi cuối tuần'],
+        ['15:00', '🎬 Video: Dạng 6 (U40 g.o.n)', '🎬 Video: Dạng 8 (gói trải nghiệm)', '🎬 Video: Dạng 7 (mở hộp)', '🎬 Video: Dạng 10 (nói với camera)', '🎬 Video: Dạng 9 (30–60 ngày)', '🎬 Video: Dạng 6 (U40 g.o.n)', '🎬 Video: Dạng 10 (nói với camera)'],
+        ['15:30', 'Story sản phẩm', 'Story sản phẩm', 'Story sản phẩm', 'Story sản phẩm', 'Story sản phẩm', 'Story sản phẩm', 'Story sản phẩm'],
+        ['17:30', 'Story bình chọn', 'Story hộp câu hỏi', 'Story bình chọn', 'Story hộp câu hỏi', 'Story bình chọn', 'Story hộp câu hỏi', 'Story bình chọn'],
+        ['20:00', '🎬 Video: Dạng 1 (no lâu)', '🎬 Video: Dạng 5 (nỗi đau)', '🎬 Video: Dạng 1 (no lâu)', '🎬 Video: Dạng 3 (dấu hiệu)', '🎬 Video: Dạng 5 (nỗi đau)', '🎬 Video: Dạng 2 (16:8)', '🎬 Video: Dạng 4 (bỏ bữa sáng)'],
+        ['21:00', 'Story nhắc video tối', 'Story nhắc video tối', 'Story nhắc video tối', 'Story nhắc video tối', 'Story nhắc video tối', 'Story nhắc video tối', 'Story nhắc video tối']
+      ] },
+      { t: 'ck', items: [
+        'Cuối mỗi ngày: trả lời hết comment và tin nhắn.',
+        'Mỗi ngày tổng cộng 3 video + 1 ảnh + 5 story.',
+        'Story 6 (21:45, mời nhận tài liệu) thêm khi còn thời gian.',
+        'Sau 2–3 tuần, xem Insights, giữ 3 giờ đăng video có view cao nhất.'
       ] },
       { t: 'p', x: 'Dạng 1–5 là video có giá trị, đều kết thúc bằng lời mời comment từ khóa để nhận tài liệu, nên vừa là video "Cho đi" vừa là video "Đẩy" ở bước 2.3. Dạng 6–10 là video đẩy sản phẩm, mỗi ngày tối đa 1 video. Giờ đăng vẫn theo lịch ở bước 2.3.' },
       { t: 'tip', x: 'Xong bước này khi bạn đã chọn từ khóa cho 10 dạng và quay thử được ít nhất 1 video mỗi dạng.' }

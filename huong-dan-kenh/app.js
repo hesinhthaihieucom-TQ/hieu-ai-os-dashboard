@@ -44,7 +44,7 @@
           const on = !!state.checks[id];
           return `<li class="${on ? 'on' : ''}" data-id="${id}"><input type="checkbox" ${on ? 'checked' : ''} aria-label="Đã làm"><span>${esc(it)}</span></li>`;
         }).join('')}</ul>`;
-        case 'tbl': return `<div class="tbl-wrap"><table><thead><tr>${b.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+        case 'tbl': return `<div class="tbl-wrap"><table${b.wide ? ' class="wide"' : ''}><thead><tr>${b.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
         case 'tip': return `<div class="tip">${rich(b.x)}</div>`;
         case 'warn': return `<div class="warn">${rich(b.x)}</div>`;
         case 'note': return `<div class="note">${rich(b.x)}</div>`;
