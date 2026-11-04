@@ -230,3 +230,8 @@ details.kt-section[open] summary.kt-summary::before{ content:'▾ '; }
 .gn-apply > div{ background:#FDFCF8; border:1px solid var(--line); border-radius:10px; padding:12px 14px; font-size:16px; line-height:1.6; }
 .gn-apply b{ display:block; font-size:13.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--accent); margin-bottom:2px; }
 .help-btn{ cursor:pointer; font-size:14.5px; color:var(--accent); border:1px solid var(--line); border-radius:999px; padding:6px 14px; background:#FDFCF8; display:inline-block; }
+
+.gn-week{ margin:26px 0 6px; }
+.gn-week-h{ font-size:17px; line-height:1.5; color:var(--ink); }
+.gn-week-h span{ display:block; font-family:'IBM Plex Mono',monospace; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin-top:2px; }
+.gn-week-d{ font-size:15.5px; line-height:1.6; color:var(--ink-soft); margin-top:6px; }

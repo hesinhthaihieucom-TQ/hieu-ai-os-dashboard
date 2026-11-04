@@ -1,12 +1,9 @@
 (function(){
   window.Modules = window.Modules || {};
 
-  // Khối "Tổng kết tuần" (ebook có trang này sau ngày 7 và ngày 14) — 4 ô viết tự do.
-  const WEEK_RECAP = {
-    7:  { title:'Tổng kết Tuần 1 (Ngày 1–7)' },
-    14: { title:'Tổng kết Tuần 2 (Ngày 8–14)' },
-  };
-  const WEEK_PROMPTS = ['Điều tôi đã nhận ra', 'Mô thức tôi đã bớt lặp', 'Khoảnh khắc tôi chọn khác', 'Tôi muốn tiếp tục điều gì'];
+  // Nội dung đọc của ngày — chép nguyên văn ebook, đúng thứ tự và tên mục trong ebook. Khối nào trống thì bỏ qua.
+  const P = (s)=>`<p style="font-size:16.5px;line-height:1.7;margin:0 0 10px;">${esc(s)}</p>`;
+  const H = (s)=>`<h3 style="margin:18px 0 8px;">${esc(s)}</h3>`;
 
   window.Modules['ngay'] = {
     title: 'Bài Học Hôm Nay',
@@ -28,20 +25,24 @@
         row = data;
       } catch(e){}
       const state = {
-        answers: Object.assign({ ex:['','',''], jr:['','',''], wk:['','','',''] }, (row && row.answers) || {}),
+        answers: Object.assign({ ex:[], jr:[] }, (row && row.answers) || {}),
         checklist: (row && row.checklist && row.checklist.length) ? row.checklist.slice() : d.checklist.map(()=>false),
         done_at: row && row.done_at,
       };
-      ['ex','jr'].forEach(k=>{ while(state.answers[k].length<3) state.answers[k].push(''); });
-      while(state.answers.wk.length<4) state.answers.wk.push('');
+      ['ex','jr'].forEach(k=>{ state.answers[k] = state.answers[k] || []; });
 
-      const deep = [];
-      if(d.manifest && d.manifest.length) deep.push(`<h3 style="margin:16px 0 8px;">Biểu hiện trong đời sống</h3><ul style="padding-left:20px;line-height:1.7;font-size:16.5px;">${d.manifest.map(x=>`<li style="margin-bottom:6px;">${esc(x)}</li>`).join('')}</ul>`);
-      if(d.root && d.root.length) deep.push(`<h3 style="margin:18px 0 8px;">Vì sao mô thức này tồn tại?</h3>${d.rootQuote?`<div class="gn-quote" style="font-size:17px;">${esc(d.rootQuote)}</div>`:''}${d.root.map(x=>`<p style="font-size:16.5px;line-height:1.7;margin:0 0 10px;">${esc(x)}</p>`).join('')}`);
-      if(d.awTitle) deep.push(`<h3 style="margin:18px 0 8px;">Nhận thức mới</h3><p style="font-size:17px;line-height:1.7;font-weight:600;margin:0 0 8px;">${esc(d.awTitle)}</p>${(d.aw||[]).map(x=>`<p style="font-size:16.5px;line-height:1.7;margin:0 0 10px;">${esc(x)}</p>`).join('')}`);
-      if(d.apply && d.apply.length) deep.push(`<h3 style="margin:18px 0 8px;">Ứng dụng vào đời sống</h3><div class="gn-apply">${d.apply.map(a=>`<div><b>${esc(a[0])}</b>${esc(a[1])}</div>`).join('')}</div>`);
-      if(d.practice) deep.push(`<h3 style="margin:18px 0 8px;">Thực hành chuyển nghiệp</h3><p style="font-size:16.5px;line-height:1.7;margin:0;">${esc(d.practice)}</p>`);
-      const recap = WEEK_RECAP[n];
+      const more = [];
+      if(d.manifest.length) more.push(H('Biểu hiện trong đời sống') + `<ul style="padding-left:20px;line-height:1.7;font-size:16.5px;">${d.manifest.map(x=>`<li style="margin-bottom:6px;">${esc(x)}</li>`).join('')}</ul>`);
+      d.ex.forEach((x,i)=>{ if(x) more.push(H('Ví dụ thực tế '+(i+1)) + P(x)); });
+      if(d.conseq) more.push(H('Hệ quả của nghiệp') + P(d.conseq));
+      if(d.essence || d.essenceQuote) more.push(H('Bản chất tâm thức') + (d.essence?P(d.essence):'') + (d.essenceQuote?`<div class="gn-quote" style="font-size:17px;">${esc(d.essenceQuote)}</div>`:''));
+      if(d.root.length) more.push(H('Gốc rễ & phân tích sâu — Tại sao mô thức này tồn tại?') + d.root.map(P).join(''));
+      if(d.awTitle || d.aw.length) more.push(H('Nhận thức mới — Góc nhìn cần cài lại') + (d.awTitle?`<p style="font-size:17px;line-height:1.7;font-weight:600;margin:0 0 8px;">${esc(d.awTitle)}</p>`:'') + d.aw.map(P).join(''));
+      if(d.apply.length) more.push(H('Ứng dụng vào đời sống') + `<div class="gn-apply">${d.apply.map(a=>`<div><b>${esc(a[0])}</b>${esc(a[1])}</div>`).join('')}</div>`);
+      if(d.practice) more.push(H('Thực hành chuyển nghiệp') + P(d.practice));
+
+      const upsell = (n===21 && window.GN_UPSELL && window.GN_UPSELL.length)
+        ? `<details class="kt-section" style="margin-top:16px;"><summary class="kt-summary">${esc(window.GN_UPSELL[0])}</summary><div style="margin-top:8px;">${gnParas(window.GN_UPSELL.slice(1)).map(P).join('')}</div></details>` : '';
 
       container.innerHTML = `
         <div class="page-head">
@@ -52,13 +53,13 @@
 
         <div class="section" id="gn-read">
           <h3>Hôm nay</h3>
-          <div class="body" style="white-space:normal;">${esc(d.intro || d.summary)}</div>
+          <div class="body" style="white-space:normal;">${esc(d.intro)}</div>
           ${d.pattern ? `<p style="font-size:16.5px;line-height:1.7;margin:12px 0 0;"><b>Mô thức cần quan sát:</b> ${esc(d.pattern)}</p>` : ''}
-          <div class="gn-quote">${esc(d.quote)}</div>
-          ${deep.length ? `<details class="kt-section"><summary class="kt-summary">Đọc thêm — hiểu sâu mô thức này</summary><div style="margin-top:6px;">${deep.join('')}</div></details>` : ''}
+          ${more.length ? `<details class="kt-section" style="margin-top:14px;"><summary class="kt-summary">Đọc thêm — nội dung đầy đủ của ngày ${n}</summary><div style="margin-top:6px;">${more.join('')}</div></details>` : ''}
         </div>
 
         ${d.action ? `<div class="gn-action" id="gn-action"><b>⚡ Bước hành động hôm nay</b>${esc(d.action)}</div>` : ''}
+        ${d.proof ? `<div class="gn-action" style="margin-top:10px;"><b>⚡ Hành động thực chứng hôm nay</b>${esc(d.proof)}</div>` : ''}
 
         <div class="section" id="gn-ex" style="margin-top:16px;">
           <h3>Bài tập áp dụng</h3>
@@ -77,15 +78,8 @@
             <textarea data-k="jr" data-i="${i}" placeholder="Viết thật, không cần hay…">${esc(state.answers.jr[i]||'')}</textarea>`).join('')}
         </div>
 
-        ${recap ? `
-        <div class="section" id="gn-wk">
-          <h3>${esc(recap.title)}</h3>
-          <p style="color:var(--ink-soft);font-size:16px;margin:0;">Nhìn lại không tự trách, ghi nhận không phô trương.</p>
-          ${WEEK_PROMPTS.map((q,i)=>`<div class="gn-q">${esc(q)}</div><textarea data-k="wk" data-i="${i}" placeholder="…">${esc(state.answers.wk[i]||'')}</textarea>`).join('')}
-        </div>` : ''}
-
         <div class="section" id="gn-check">
-          <h3>Danh sách kiểm tra tiến độ</h3>
+          <h3>Danh sách kiểm tra tiến độ — Ngày ${String(n).padStart(2,'0')}</h3>
           ${d.checklist.map((c,i)=>`<label class="gn-check"><input type="checkbox" data-ci="${i}" ${state.checklist[i]?'checked':''}><span>${esc(c)}</span></label>`).join('')}
         </div>
 
@@ -95,6 +89,7 @@
           <button class="btn btn-full" id="gn-sign">${state.done_at?'✓ Đã ký cam kết — bấm để bỏ ký':'✍️ Tôi cam kết — hoàn thành Ngày '+n}</button>
           ${state.done_at?`<div class="hint-box">Ngày ${n} đã hoàn thành. Cảm ơn bạn đã trung thực với chính mình.</div>`:''}
         </div>
+        ${upsell}
 
         <div class="gn-saved" id="gn-saved"></div>
         <div class="gn-nav">
@@ -135,14 +130,13 @@
       container.querySelector('#gn-home').onclick = ()=>{ location.hash = 'trang-chu'; };
       container.querySelector('#gn-help').onclick = ()=>{
         if(!window.startPageTour) return;
-        const steps = [
-          { selector:'#gn-read', title:'Đọc nội dung hôm nay', text:'Đọc chậm, không vội kết luận đúng sai về bản thân. Bấm "Đọc thêm" nếu muốn hiểu sâu hơn.' },
+        window.startPageTour([
+          { selector:'#gn-read', title:'Đọc nội dung hôm nay', text:'Đọc chậm, không vội kết luận đúng sai về bản thân. Bấm "Đọc thêm" để xem đầy đủ biểu hiện, ví dụ, gốc rễ và ứng dụng.' },
           { selector:'#gn-ex', title:'Bài tập áp dụng', text:'Làm từng bài tập rồi ghi chú vào ô bên dưới. Tự động lưu — thoát ra vào lại vẫn còn.' },
           { selector:'#gn-jr', title:'Nhật ký 3 câu hỏi', text:'Viết vài dòng đủ thật, không cần hay, không cần hoàn hảo.' },
           { selector:'#gn-check', title:'Checklist', text:'Tick từng việc khi làm xong.' },
           { selector:'#gn-commit', title:'Ký cam kết', text:'Bấm nút này để hoàn thành ngày — ô ngày này trên Hành Trình sẽ hiện dấu ✓.' },
-        ];
-        window.startPageTour(steps);
+        ]);
       };
     }
   };
