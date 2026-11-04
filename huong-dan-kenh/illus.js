@@ -20,7 +20,7 @@
     // [tag, tên 1, tên 2, màu tag, màu lá, cx tag, cy, phía, nhánh [id, dòng 1, dòng 2, cy]]
     const br = [
       ['BƯỚC 1', 'Chọn thị trường', '& nội dung', 's-ac', 's-acs', 214, 800, -1, [['s1-1', '1.1 Hiểu đối tác', '& chọn ngách', 774], ['s1-2', '1.2 Chọn gói', 'kịch bản', 826]]],
-      ['BƯỚC 2', 'Xây fanpage', 'FB + TikTok', 's-go', 's-gos', 426, 640, 1, [['s2-1', '2.1 Tạo tài khoản', 'FB & TikTok', 510], ['s2-2', '2.2 Học CapCut', 'từ con số 0', 562], ['s2-3', '2.3 Lịch', '28 ngày', 614], ['s2-4', '2.4 Story &', 'ảnh sản phẩm', 666], ['s2-5', '2.5 10 dạng', 'nội dung lặp lại', 718], ['s2-6', '2.6 Lịch đăng', 'bài 1 tuần', 770]]],
+      ['BƯỚC 2', 'Xây fanpage', 'FB + TikTok', 's-go', 's-gos', 426, 640, 1, [['s2-1', '2.1 Tạo tài khoản', 'FB & TikTok', 484], ['s2-2', '2.2 Học CapCut', 'từ con số 0', 536], ['s2-3', '2.3 Lịch', '28 ngày', 588], ['s2-4', '2.4 Story &', 'ảnh sản phẩm', 640], ['s2-5', '2.5 10 dạng', 'nội dung lặp lại', 692], ['s2-6', '2.6 Lịch đăng', 'bài 1 tuần', 744], ['s2-7', '2.7 Nhạc nền', '& chèn nhạc', 796]]],
       ['BƯỚC 3', 'Lên sóng', 'đăng & đẩy khách', 's-ac', 's-acs', 214, 470, -1, [['s3-1', '3.1 Quay dư', 'video', 392], ['s3-2', '3.2 Bám sát', 'kịch bản', 444], ['s3-3', '3.3 Đăng, seeding,', 'đẩy về Zoom', 496], ['s3-4', '3.4 Lập', 'cộng đồng', 548]]],
       ['HẰNG NGÀY', 'Người quản lý', '& kiểm tra', 's-go', 's-gos', 426, 300, 1, [['daily', 'Checklist', 'hằng ngày', 274], ['confirm', 'Chỗ cần', 'xác nhận', 326]]]
     ];
@@ -48,12 +48,20 @@
     return svg(1040, b + tw + crown + nodes + root);
   };
 
+
+  // 2.7 trộn âm: giọng nói to, nhạc nhỏ
+  I.soundmix = () => svg(200,
+    T(20, 30, 'Âm thanh trong 1 video', 's-tx', 15, 'start', 700) +
+    T(20, 76, 'Giọng nói', 's-tx', 14, 'start', 650) + R(130, 58, 480, 26, 's-acs', 8) + R(130, 58, 480, 26, 's-ac', 8) + T(370, 76, '100%', 's-wh', 13, 'middle', 700) +
+    T(20, 126, 'Nhạc nền', 's-tx', 14, 'start', 650) + R(130, 108, 480, 26, 's-gos', 8) + R(130, 108, 66, 26, 's-go', 8) + T(163, 126, '10–15%', 's-tx', 12.5, 'middle', 700) +
+    T(320, 172, 'Nhạc chỉ nhỏ phía sau, nghe rõ giọng nói là đạt', 's-mu', 13.5, 'middle'));
+
   // Lộ trình 3 bước
   I.roadmap = () => svg(170,
     [['1', 'Chọn thị trường', 'và nội dung kênh', 20], ['2', 'Xây fanpage', 'Facebook + TikTok', 235], ['3', 'Lên sóng', 'đăng và đẩy khách', 450]]
       .map(([n, a, b, x]) => R(x, 30, 170, 110, 's-fill', 16) + C(x + 30, 58, 16, 's-ac') + T(x + 30, 64, n, 's-wh', 17, 'middle', 700) +
         T(x + 54, 64, a, 's-tx', 15, 'start', 650) + T(x + 14, 92, b, 's-mu', 13.5) +
-        T(x + 14, 122, n === '1' ? '2 mục' : n === '2' ? '6 mục' : '4 mục', 's-mu', 14)).join('') +
+        T(x + 14, 122, n === '1' ? '2 mục' : n === '2' ? '7 mục' : '4 mục', 's-mu', 14)).join('') +
     A(192, 85, 232, 85) + A(407, 85, 447, 85));
 
   // 1.1 chọn ngách: 3 nhóm khách, chấm điểm

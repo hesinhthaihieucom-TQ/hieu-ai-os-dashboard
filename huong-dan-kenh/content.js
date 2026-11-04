@@ -347,7 +347,7 @@ window.STEPS = [
       { t: 'ul', items: ['U40 bụng to khó xuống, nhẹ V2 mỗi sáng', 'U40 khó xuống, x.e.p nhẹ V2 mỗi sáng', 'Chị em U40 nào đang bị khó xuống bụng?'] },
       { t: 'copy', title: 'Kịch bản nói (dạng 10, 30–40 giây)', x: 'Chị em U40 nào bụng to, khó xuống mà đã thử nhiều cách? Mình hiểu cảm giác đó. Mỗi sáng mình giữ một thói quen đơn giản: uống nước, ăn đủ đạm, đi bộ nhẹ. Ai muốn mình hướng dẫn thêm, mình có nhóm Zalo chia sẻ miễn phí.\n\nComment "TƯ VẤN", mình nhắn chi tiết.' },
 
-      { t: 'note', x: 'Lịch đăng bài cả tuần (giờ nào đăng dạng nào) nằm ở bước 2.6 ngay sau đây.' },
+      { t: 'note', x: 'Lịch đăng bài cả tuần (giờ nào đăng dạng nào) nằm ở bước 2.6. Nhạc nền cho từng dạng nằm ở bước 2.7.' },
       { t: 'tip', x: 'Xong bước này khi bạn đã chọn từ khóa cho 10 dạng và quay thử được ít nhất 1 video mỗi dạng.' }
     ]
   },
@@ -372,6 +372,65 @@ window.STEPS = [
       ] },
       { t: 'p', x: 'Dạng 1–5 là video có giá trị, đều kết thúc bằng lời mời comment từ khóa để nhận tài liệu, nên vừa là video "Cho đi" vừa là video "Đẩy" ở bước 2.3. Dạng 6–10 là video đẩy sản phẩm, mỗi ngày tối đa 1 video. Giờ đăng vẫn theo lịch ở bước 2.3.' },
       { t: 'tip', x: 'Xong bước này khi bạn có bảng lịch tuần này và đã đặt lịch đăng (hoặc nhắc giờ) cho 3 video, 1 ảnh và cụm story của ngày mai.' }
+    ]
+  },
+
+  {
+    id: 's2-7', grp: 'g2', n: '2.7', title: 'Nhạc nền (sound) & cách chèn vào video',
+    lead: 'Kênh tham khảo chỉ dùng 4 bản nhạc piano nhẹ, lặp đi lặp lại. Bạn dùng đúng kiểu đó: chọn nhạc trong thư viện, hạ nhỏ âm lượng, để giọng nói là chính.',
+    blocks: [
+      { t: 'svg', k: 'soundmix', cap: 'Giọng nói to, nhạc nền chỉ nhỏ phía sau' },
+      { t: 'h', x: 'A. 4 bản nhạc kênh tham khảo dùng' },
+      { t: 'tbl', head: ['Sound (tên hiển thị)', 'Video dùng', 'Dùng cho dạng'], rows: [
+        ['Adrián Berenguer · Little Things (Piano Version)', '13/25 video', 'Dạng 5–10: nỗi đau, mở hộp, gói trải nghiệm, nói với camera'],
+        ['Dhruv Goel · The Simple Life', '5/25 video', 'Dạng 1, 3: danh sách thực phẩm, danh sách dấu hiệu'],
+        ['Chillout · Extraordinary Moment', '2/25 video', 'Dạng 2, 4: 16:8, lý do bỏ bữa sáng'],
+        ['Penguin Piano · Love Story (Indila)', '1/25 video', 'Thay đổi cho đỡ lặp'],
+        ['Original audio (giọng nói gốc, không nhạc)', '4/25 video', 'Dạng 10: nói thẳng vào camera']
+      ] },
+      { t: 'note', x: '<b class="l">Quy tắc chọn nhạc</b>Nhạc piano hoặc nhạc nhẹ chậm, không lời. Mỗi dạng nội dung gắn một bài cố định để kênh có "chất" riêng. Chọn nhạc trong thư viện của Facebook hoặc TikTok, không tải file về.' },
+
+      { t: 'h', x: 'B. Nghe thử các bản nhạc' },
+      { t: 'p', x: 'Các link dưới đây chỉ để <b>nghe thử</b> xem bài nghe thế nào, giúp bạn tìm đúng tên bài trong thư viện.' },
+      { t: 'p', x: '🎵 <b>Little Things (Piano Version) · Adrián Berenguer</b><br><a href="https://www.youtube.com/results?search_query=Little%20Things%20%28Piano%20Version%29%20Adri%C3%A1n%20Berenguer" target="_blank" rel="noopener">▶ Nghe thử trên YouTube</a> · <a href="https://open.spotify.com/search/Little%20Things%20%28Piano%20Version%29%20Adri%C3%A1n%20Berenguer" target="_blank" rel="noopener">▶ Nghe thử trên Spotify</a>' },
+      { t: 'p', x: '🎵 <b>The Simple Life · Dhruv Goel</b><br><a href="https://www.youtube.com/results?search_query=The%20Simple%20Life%20Dhruv%20Goel" target="_blank" rel="noopener">▶ Nghe thử trên YouTube</a> · <a href="https://open.spotify.com/search/The%20Simple%20Life%20Dhruv%20Goel" target="_blank" rel="noopener">▶ Nghe thử trên Spotify</a>' },
+      { t: 'p', x: '🎵 <b>Extraordinary Moment · Chillout</b><br><a href="https://www.youtube.com/results?search_query=Extraordinary%20Moment%20Chillout" target="_blank" rel="noopener">▶ Nghe thử trên YouTube</a> · <a href="https://open.spotify.com/search/Extraordinary%20Moment%20Chillout" target="_blank" rel="noopener">▶ Nghe thử trên Spotify</a>' },
+      { t: 'p', x: '🎵 <b>Love Story (Piano) · Penguin Piano</b><br><a href="https://www.youtube.com/results?search_query=Love%20Story%20%28Piano%29%20Penguin%20Piano" target="_blank" rel="noopener">▶ Nghe thử trên YouTube</a> · <a href="https://open.spotify.com/search/Love%20Story%20%28Piano%29%20Penguin%20Piano" target="_blank" rel="noopener">▶ Nghe thử trên Spotify</a>' },
+      { t: 'warn', x: '<b class="l">Không có link tải file nhạc</b>Anh không đưa link tải mp3 vì nhạc có bản quyền. Tải về rồi gắn vào video dễ bị gỡ video hoặc tắt tiếng. Cách đúng là chọn bài ngay trong thư viện nhạc của Facebook, TikTok (hoặc CapCut). Nhạc trong thư viện được cấp phép cho nền tảng đó. Nếu tài khoản của bạn là fanpage mà không thấy bài nào, chọn nhạc piano nhẹ khác trong mục "Bộ sưu tập âm thanh" của Facebook.' },
+
+      { t: 'h', x: 'C. Chèn nhạc ngay khi đăng Reels trên Facebook (khuyên dùng)' },
+      { t: 'p', x: 'Cách này dùng được đúng các bài kênh tham khảo dùng, vì chúng nằm trong thư viện của Facebook. Video chỉ có giọng nói, nhạc gắn lúc đăng.' },
+      { t: 'ck', items: [
+        'Mở Facebook, vào trang của bạn, bấm "Reels" rồi "Tạo thước phim" (hoặc dấu + rồi Reels).',
+        'Chọn video đã dựng xong (chỉ có giọng nói, chưa có nhạc).',
+        'Bấm biểu tượng nốt nhạc 🎵 "Âm thanh".',
+        'Gõ tên bài vào ô tìm kiếm, ví dụ "Little Things".',
+        'Bấm vào bài đúng tên và tên nghệ sĩ, bấm "Nghe thử" nếu muốn nghe.',
+        'Kéo thanh để chọn đoạn nhạc bắt đầu từ chỗ nào, rồi bấm "Xong".',
+        'Bấm "Âm lượng": kéo âm thanh gốc (giọng nói) lên 100%, kéo nhạc xuống 10–15%.',
+        'Xem lại video một lần: nghe rõ giọng nói, nhạc nhỏ phía sau thì bấm "Tiếp" để đăng.'
+      ] },
+      { t: 'h', x: 'D. Chèn nhạc ngay khi đăng video TikTok' },
+      { t: 'ck', items: [
+        'Bấm nút + rồi "Tải lên" và chọn video của bạn.',
+        'Bấm "Tiếp", rồi bấm "Âm thanh" ở phía trên màn hình.',
+        'Gõ tên bài vào ô tìm kiếm rồi chọn bài có tên giống kênh tham khảo.',
+        'Bấm "Âm lượng": âm thanh gốc 100%, nhạc 10–15%.',
+        'Bấm dấu ✓ rồi đăng như bình thường.'
+      ] },
+      { t: 'h', x: 'E. Chèn nhạc trong CapCut (nếu muốn làm sẵn khi dựng)' },
+      { t: 'ck', items: [
+        'Mở dự án video trong CapCut, kéo thanh thời gian về đầu video.',
+        'Bấm "Âm thanh" ở thanh công cụ dưới cùng, rồi "Âm thanh" một lần nữa.',
+        'Gõ tên bài vào ô tìm kiếm, bấm vào bài và bấm dấu + để thêm vào video.',
+        'Nhạc xuất hiện thành một thanh riêng. Kéo đuôi thanh nhạc cho vừa bằng độ dài video.',
+        'Bấm vào thanh nhạc, chọn "Âm lượng" rồi kéo xuống 10–15%.',
+        'Bấm vào thanh giọng nói của video, kiểm tra âm lượng ở mức 100%.',
+        'Bấm vào thanh nhạc, chọn "Mờ dần" (Fade) và đặt mờ cuối 2 giây để nhạc nhỏ dần khi hết video.',
+        'Bấm xuất video. Nếu đã chèn nhạc trong CapCut thì khi đăng không chèn thêm nhạc lần nữa, tránh bị 2 lớp nhạc.'
+      ] },
+      { t: 'note', x: 'Tên nút trong Facebook, TikTok và CapCut có thể khác chút theo phiên bản. Nếu không thấy, tìm biểu tượng nốt nhạc 🎵 hoặc chữ "Âm thanh".' },
+      { t: 'tip', x: 'Xong bước này khi bạn chèn được nhạc vào 1 video, nghe rõ giọng nói và nhạc nhỏ phía sau (âm lượng nhạc 10–15%).' }
     ]
   },
 
