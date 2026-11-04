@@ -13,7 +13,7 @@ const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login',
 
 // Giá + đồng hồ đếm ngược DÙNG CHUNG với ladipage (giai-nghiep/lp/, cùng origin nên cùng localStorage) —
 // khách đi từ ladipage sang app thấy đúng giá/đồng hồ đang chạy, không bị reset.
-const GN_PROMO_PRICE = 199000, GN_REGULAR_PRICE = 299000, GN_DEADLINE_KEY = 'gn21_lp_deadline_ts';
+const GN_PROMO_PRICE = 149000, GN_REGULAR_PRICE = 299000, GN_DEADLINE_KEY = 'gn21_lp_deadline_ts';
 function gnActivePrice(){
   let deadline = NaN;
   try { deadline = parseInt(localStorage.getItem(GN_DEADLINE_KEY), 10); } catch(e){}
@@ -238,7 +238,7 @@ function renderPaywall(){
   const p = AppState.profile;
   const refCode = p && p.ref_code;
   const amount = gnActivePrice();
-  // "GN21" là cờ để webhook biết đây là 21 Ngày Giải Nghiệp (giá 199k/299k trùng giá Sổ Dòng Tiền nên
+  // "GN21" là cờ để webhook biết đây là 21 Ngày Giải Nghiệp (giá chuyển khoản nên
   // KHÔNG thể phân biệt chỉ bằng số tiền) — xem nhánh GN21 trong api/sepay-webhook.js. Bắt đầu bằng SEVQR
   // vì VietinBank chỉ báo biến động số dư khi nội dung CK bắt đầu bằng từ khoá này.
   const memo = `SEVQR GN21 ${refCode || ''}`.trim();

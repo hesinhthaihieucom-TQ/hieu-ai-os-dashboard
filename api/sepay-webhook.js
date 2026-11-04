@@ -99,7 +99,7 @@ const TC_LIFETIME_AMOUNTS = new Set([TC_PRICE_TIER_1_AMOUNT, TC_PRICE_TIER_2_AMO
 // tiền (khác quy tắc "mỗi gói 1 giá riêng" ở trên) — thay vào đó nội dung CK của app này luôn chứa cờ "GN21"
 // ("SEVQR GN21 <ref_code>", xem giai-nghiep/js/app-shell.js + giai-nghiep/lp/). Nhánh GN21 được xét TRƯỚC mọi
 // nhánh số tiền khác, và chỉ nhận đúng 2 mức này — tránh nhầm sang Sổ Dòng Tiền/Xây Nhân Hiệu và ngược lại.
-const GN_AMOUNTS = new Set([199000, 299000]);
+const GN_AMOUNTS = new Set([149000, 199000, 299000]); // 149k = giá ưu đãi hiện tại (2026-11-04); 199k giữ lại để khách đã thấy bản cũ vẫn kích hoạt được
 function isGnContent(content) { return /\bGN21\b/i.test(content || ''); }
 // Chương trình giới thiệu tai-chinh (2026-08-23, chị Quỳnh chốt "20% cho người giới thiệu") — MỘT
 // CHIỀU, referee vẫn trả nguyên giá đang bán lúc đó (khác nhan-hieu có giảm giá riêng cho referee).
