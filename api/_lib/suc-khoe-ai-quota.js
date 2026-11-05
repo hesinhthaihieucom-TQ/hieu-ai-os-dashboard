@@ -5,11 +5,15 @@
 const SUPABASE_URL = 'https://ltcjlnvceuspnwldsbgi.supabase.co';
 
 // ĐỀ XUẤT ban đầu, CHƯA xác nhận với chị Quỳnh — chi phí thật ước tính ~150-250đ/lượt (input ngắn
-// + output ~100-150 từ, Sonnet 5 $3/$15 mỗi triệu token). 15/tháng vì đây là công cụ dùng khi có
-// biến cố/khủng hoảng thật, không phải tiện ích dùng hàng ngày — chị xem lại nếu cần đổi.
-const SK_MONTHLY_AI_LIMIT = 15;
+// + output ~100-150 từ, Sonnet 5 $3/$15 mỗi triệu token). Ban đầu chỉ 15/tháng vì chỉ có Insight (dùng
+// khi có biến cố thật, không phải hằng ngày).
+// 2026-10-05: thêm phân tích ảnh bữa ăn (dùng mỗi bữa, ~250đ/ảnh) nên nâng trần chung 15 -> 75/tháng
+// (≈60 ảnh/tháng = 2 ảnh/ngày + vài lượt Insight), mỗi ảnh tính 1 lượt, Insight vẫn 1 lượt — ĐỀ XUẤT,
+// chị Quỳnh chốt lại số cuối sau khi xem chi phí thật.
+const SK_MONTHLY_AI_LIMIT = 75;
 const SK_AI_WEIGHTS = {
   'sk-insight-xanh-trong-do': 1,
+  'sk-phan-tich-dia-an': 1,
 };
 
 async function supabaseRpc(fn, args) {

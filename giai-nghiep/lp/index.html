@@ -190,15 +190,19 @@
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
-// Đếm ngược giữ giá 149k — 24 GIỜ kể từ lần ĐẦU TIÊN 1 địa chỉ IP mở trang (chị Quỳnh chốt 2026-11-05): mốc lưu ở SERVER
-// (api/gn-gia.js, theo IP) nên xoá dữ liệu trình duyệt/mở lại sau vẫn KHÔNG reset; hết 24h tự lên 299k. Giá sinh mã QR
-// đọc CHUNG nguồn với giá hiển thị để đồng hồ là THẬT. Server lỗi/chưa tạo bảng → tạm dùng mốc 24h trong localStorage.
+// Đếm ngược giữ giá 149k — 24 GIỜ kể từ lần đầu khách mở trang (chị Quỳnh chốt 2026-11-05: chỉ để kích cầu, KHÔNG cần chặn chặt).
+// Mốc giờ tuyệt đối lưu localStorage nên F5/đóng mở lại link vẫn giữ nguyên mốc; hết 24h lặng lẽ lên 299k. Giá sinh mã QR đọc CHUNG
+// nguồn với giá hiển thị để đồng hồ là THẬT, không phải đếm ngược giả.
 (function(){
   const KEY = 'gn21_lp_deadline_ts', WINDOW_MS = 24*60*60*1000;
   const PROMO = 149000, REGULAR = 299000, ORIGINAL = 999000;
   let deadline = NaN;
   try { deadline = parseInt(localStorage.getItem(KEY), 10); } catch(e){}
-  const activePrice = () => (deadline && Date.now() < deadline) ? PROMO : REGULAR;
+  if(!deadline || isNaN(deadline)){
+    deadline = Date.now() + WINDOW_MS;
+    try { localStorage.setItem(KEY, String(deadline)); } catch(e){}
+  }
+  const activePrice = () => Date.now() < deadline ? PROMO : REGULAR;
   const fmt = n => n.toLocaleString('vi-VN') + 'đ';
   function updatePriceUI(){
     const p = activePrice();
@@ -210,39 +214,15 @@
   const two = n => (n<10?'0':'')+n;
   function tick(){
     const ms = deadline - Date.now();
-    if(!(ms > 0)){
+    if(ms <= 0){
       // Hết giờ: ẩn khối đếm ngược, lặng lẽ hiện giá mới — không báo "đã hết ưu đãi" để khách khỏi bỏ đi.
       document.querySelectorAll('.tc-lp-countdown-wrap').forEach(el => el.style.display = 'none');
       updatePriceUI(); clearInterval(timer); return;
     }
     const t = Math.floor(ms/1000), h = Math.floor(t/3600), m = Math.floor((t%3600)/60), sec = t%60;
-    const label = two(h)+':'+two(m)+':'+two(sec);
-    document.querySelectorAll('.tc-lp-countdown-time').forEach(el => el.textContent = label);
+    document.querySelectorAll('.tc-lp-countdown-time').forEach(el => el.textContent = two(h)+':'+two(m)+':'+two(sec));
   }
-  // Mã thiết bị ngẫu nhiên (localStorage + cookie 1 năm) gửi kèm để server chống lách bằng đổi mạng — xem api/gn-gia.js.
-  function gnDeviceId(){
-    let d = '';
-    try { d = localStorage.getItem('gn21_dev') || ''; } catch(e){}
-    if(!d){ const m = /(?:^|; )gn21_dev=([a-f0-9]+)/.exec(document.cookie || ''); if(m) d = m[1]; }
-    if(!/^[a-f0-9]{16,64}$/.test(d)){ d = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-    try { localStorage.setItem('gn21_dev', d); } catch(e){}
-    try { document.cookie = 'gn21_dev='+d+'; max-age=31536000; path=/; SameSite=Lax'; } catch(e){}
-    return d;
-  }
-  async function loadDeadline(){
-    // Server là nguồn đúng; chờ tối đa 2,5 giây rồi dùng mốc cục bộ để không kẹt trang.
-    try {
-      const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 2500);
-      const r = await fetch('../api/gn-gia?d='+gnDeviceId(), { signal: ctl.signal, cache:'no-store' }); clearTimeout(to);
-      const j = await r.json();
-      if(j && j.ok && j.deadline){ deadline = j.deadline; try { localStorage.setItem(KEY, String(deadline)); } catch(e){} return; }
-    } catch(e){}
-    if(!deadline || isNaN(deadline)){
-      deadline = Date.now() + WINDOW_MS;
-      try { localStorage.setItem(KEY, String(deadline)); } catch(e){}
-    }
-  }
-  window.gnLpReady = loadDeadline().then(()=>{ updatePriceUI(); tick(); timer = setInterval(tick, 1000); });
+  updatePriceUI(); tick(); timer = setInterval(tick, 1000);
 
   const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', name:'LE TU QUYNH' };
   const $ = id => document.getElementById(id);
@@ -268,7 +248,6 @@
     if(!pass || pass.length < 6){ showError('Mật khẩu cần ít nhất 6 ký tự.'); return; }
     btn.disabled = true; btn.textContent = 'Đang xử lý…';
     try{
-      await window.gnLpReady; // chắc chắn đã biết giá/mốc 24h từ server trước khi sinh mã QR
       // Tạo tài khoản qua server (Admin API) để lấy ngay ref_code dựng QR — xem api/gn-lp-signup.js.
       const resp = await fetch('../api/gn-lp-signup', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ full_name:name, email, password:pass, ref:refFromUrl }) });
       const data = await resp.json();
