@@ -41,3 +41,18 @@ function gnParas(lines){
   });
   flush(); return out;
 }
+
+// Ghi thêm 1 khoá vào answers của 1 ngày mà KHÔNG làm mất câu trả lời/checklist/done_at đang có (đọc dòng cũ → gộp → upsert).
+async function gnPatchAnswers(supabase, userId, day, patch){
+  let row = null;
+  try{
+    const { data } = await supabase.from('gn_progress').select('answers,checklist,done_at').eq('user_id', userId).eq('day', day).maybeSingle();
+    row = data;
+  } catch(e){}
+  const answers = Object.assign({}, (row && row.answers) || {}, patch);
+  const { error } = await supabase.from('gn_progress').upsert({
+    user_id: userId, day, answers, checklist: (row && row.checklist) || [], done_at: (row && row.done_at) || null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict:'user_id,day' });
+  return { error, answers };
+}

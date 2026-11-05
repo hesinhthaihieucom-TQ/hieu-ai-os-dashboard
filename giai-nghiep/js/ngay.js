@@ -25,14 +25,13 @@
         row = data;
       } catch(e){}
       const state = {
-        answers: Object.assign({ ex:[], jr:[] }, (row && row.answers) || {}),
+        answers: Object.assign({ ex:[], jr:[], sign:{} }, (row && row.answers) || {}),
         checklist: (row && row.checklist && row.checklist.length) ? row.checklist.slice() : d.checklist.map(()=>false),
         done_at: row && row.done_at,
       };
       ['ex','jr'].forEach(k=>{ state.answers[k] = state.answers[k] || []; });
 
       const more = [];
-      if(d.manifest.length) more.push(H('Biểu hiện trong đời sống') + `<ul style="padding-left:20px;line-height:1.7;font-size:16.5px;">${d.manifest.map(x=>`<li style="margin-bottom:6px;">${esc(x)}</li>`).join('')}</ul>`);
       d.ex.forEach((x,i)=>{ if(x) more.push(H('Ví dụ thực tế '+(i+1)) + P(x)); });
       if(d.conseq) more.push(H('Hệ quả của nghiệp') + P(d.conseq));
       if(d.essence || d.essenceQuote) more.push(H('Bản chất tâm thức') + (d.essence?P(d.essence):'') + (d.essenceQuote?`<div class="gn-quote" style="font-size:17px;">${esc(d.essenceQuote)}</div>`:''));
@@ -52,10 +51,11 @@
         </div>
 
         <div class="section" id="gn-read">
-          <h3>Hôm nay</h3>
-          <div class="body" style="white-space:normal;">${esc(d.intro)}</div>
+          <h3>Nghiệp ${esc(d.title)} là gì?</h3>
+          ${d.explain ? `<div class="body" style="white-space:normal;">${esc(d.explain)}</div>` : ''}
           ${d.pattern ? `<p style="font-size:16.5px;line-height:1.7;margin:12px 0 0;"><b>Mô thức cần quan sát:</b> ${esc(d.pattern)}</p>` : ''}
-          ${more.length ? `<details class="kt-section" style="margin-top:14px;"><summary class="kt-summary">Đọc thêm — nội dung đầy đủ của ngày ${n}</summary><div style="margin-top:6px;">${more.join('')}</div></details>` : ''}
+          ${d.manifest.length ? `<p style="font-size:16.5px;line-height:1.7;margin:12px 0 4px;"><b>Biểu hiện trong đời sống</b></p><ul style="padding-left:20px;line-height:1.7;font-size:16.5px;margin:0;">${d.manifest.map(x=>`<li style="margin-bottom:6px;">${esc(x)}</li>`).join('')}</ul>` : ''}
+          ${more.length ? `<details class="kt-section" style="margin-top:14px;"><summary class="kt-summary">Đọc thêm — ví dụ, hệ quả, gốc rễ và ứng dụng của ngày ${n}</summary><div style="margin-top:6px;">${more.join('')}</div></details>` : ''}
         </div>
 
         ${d.action ? `<div class="gn-action" id="gn-action"><b>⚡ Bước hành động hôm nay</b>${esc(d.action)}</div>` : ''}
@@ -86,6 +86,10 @@
         <div class="section highlight" id="gn-commit">
           <h3>Cam kết hôm nay</h3>
           <div class="gn-commit">${esc(d.commit)}</div>
+          <label style="display:block;font-weight:600;font-size:15px;color:var(--ink-soft);margin-top:14px;">Chữ ký</label>
+          <input id="gn-sign-name" type="text" placeholder="Gõ tên của bạn để ký" value="${esc((state.answers.sign&&state.answers.sign.name) || ((ctx.profile&&ctx.profile.full_name)||''))}">
+          <label style="display:block;font-weight:600;font-size:15px;color:var(--ink-soft);margin-top:10px;">Ngày</label>
+          <input id="gn-sign-date" type="date" value="${esc((state.answers.sign&&state.answers.sign.date) || new Date().toISOString().slice(0,10))}">
           <button class="btn btn-full" id="gn-sign">${state.done_at?'✓ Đã ký cam kết — bấm để bỏ ký':'✍️ Tôi cam kết — hoàn thành Ngày '+n}</button>
           ${state.done_at?`<div class="hint-box">Ngày ${n} đã hoàn thành. Cảm ơn bạn đã trung thực với chính mình.</div>`:''}
         </div>
@@ -120,6 +124,7 @@
         c.onchange = ()=>{ state.checklist[parseInt(c.getAttribute('data-ci'),10)] = c.checked; save(); };
       });
       container.querySelector('#gn-sign').onclick = async ()=>{
+        state.answers.sign = { name: container.querySelector('#gn-sign-name').value.trim(), date: container.querySelector('#gn-sign-date').value };
         state.done_at = state.done_at ? null : new Date().toISOString();
         await save();
         window.PendingGnDay = n; window.Modules['ngay'].render(container, ctx);

@@ -1,7 +1,8 @@
-// Nội dung 21 ngày — CHÉP NGUYÊN VĂN từ ebook "21 ngày Chuyển Nghiệp" (bản Heyzine 145 trang, 2026-11-04):
-// thứ tự ngày, tiêu đề, bài tập, nhật ký, checklist, cam kết đều theo ebook, không chỉnh câu chữ. CHỈ sửa 2 lỗi rõ ràng:
-// (1) chữ "từ tế" -> "tử tế"; (2) số ngày ghi sai trong ebook (vd ngày 5 ghi "Ngày 9"/"Đọc nội dung ngày 9") -> số đúng của ngày.
-// Ngày 4, 12, 14: tiêu đề và nội dung trong ebook đang lệch nhau (chủ ý giữ nguyên theo ebook, chờ chị Quỳnh sửa ebook rồi cập nhật file này).
+// Nội dung 21 ngày — CHÉP NGUYÊN VĂN từ ebook "21 ngày Chuyển Nghiệp" (bản Heyzine 145 trang, 2026-11-04): thứ tự ngày, tiêu đề,
+// bài tập, nhật ký, checklist, cam kết theo ebook, không chỉnh câu chữ. CHỈ sửa: (1) "từ tế" -> "tử tế"; (2) số ngày ghi sai trong ebook
+// (vd ngày 5 ghi "Ngày 9") -> số đúng. Ngày nào ebook còn ghi câu mẫu chung ("Mô thức 'X' có gốc rễ từ những trải nghiệm…") thì KHÔNG hiện câu
+// mẫu đó; phần giải thích từng loại nghiệp (explain) lấy từ workbook của chị cho các ngày ebook chưa viết (xem explainSrc). Ngày 4, 12, 14: tiêu đề và
+// nội dung trong ebook lệch nhau — giữ nguyên theo ebook, chờ chị Quỳnh sửa rồi cập nhật file này.
 window.GN_DAYS = [
  {
   "n": 1,
@@ -74,7 +75,9 @@ window.GN_DAYS = [
     "t": "Hành động 10 phút",
     "d": "Chọn điều né tránh nhỏ nhất. Dành đúng 10 phút để làm một việc cụ thể: mở app ngân hàng, nhắn một tin, viết một dòng thật. Ghi lại cảm giác sau khi làm xong."
    }
-  ]
+  ],
+  "explain": "Nghiệp né tránh là mô thức liên tục trì hoãn việc đối diện với sự thật. Đây không phải là lỗi tính cách, mà là một thói quen bên trong đã được luyện đi luyện lại cho đến khi mình tưởng nó là con người thật của mình. Khi gọi tên được nghiệp né tránh, người học bắt đầu tách mình ra khỏi mô thức cũ để có thêm quyền lựa chọn.",
+  "explainSrc": "ebook"
  },
  {
   "n": 2,
@@ -147,7 +150,9 @@ window.GN_DAYS = [
     "t": "Viết thư không gửi",
     "d": "Nghĩ đến tình huống gần đây bạn đã phản ứng theo cách mình không muốn. Viết một lá thư (không gửi) nói điều bạn thật sự muốn nói — không phải điều bạn đã nói trong cơn giận."
    }
-  ]
+  ],
+  "explain": "Nghiệp nổi giận là mô thức phản ứng bằng sự gay gắt, công kích, đóng sầm cảm xúc hoặc dùng lời nói mạnh để bảo vệ phần bên trong đang thấy bất an, bị xem thường, bị bỏ rơi hoặc không được lắng nghe. Người lặp nghiệp nổi giận có thể phản ứng nhanh hơn khả năng suy nghĩ, nói những câu làm người khác đau rồi hối hận.",
+  "explainSrc": "ebook"
  },
  {
   "n": 3,
@@ -221,7 +226,9 @@ window.GN_DAYS = [
     "t": "Nhận không áy náy",
     "d": "Hôm nay, khi ai đó đề nghị giúp bạn, thay vì từ chối, hãy nhận và nói 'Cảm ơn, mình ghi nhận.' Ghi lại: việc nhận cảm thấy như thế nào?"
    }
-  ]
+  ],
+  "explain": "Nghiệp tự gồng là mô thức luôn cố tỏ ra mạnh, tự xoay xở, tự chịu đựng và tự giải quyết mọi thứ một mình, kể cả khi bên trong đã rất mệt. Đây không phải là lỗi tính cách, mà là một thói quen bên trong đã được luyện đi luyện lại. Khi gọi tên được nghiệp tự gồng, chúng ta bắt đầu tách mình ra khỏi mô thức cũ để có thêm quyền lựa chọn.",
+  "explainSrc": "ebook"
  },
  {
   "n": 4,
@@ -296,18 +303,16 @@ window.GN_DAYS = [
     "t": "Định giá lại",
     "d": "Chọn một dịch vụ, sản phẩm hoặc công sức mà bạn đang cung cấp dưới giá trị thật. Hỏi: nếu mình tin mình xứng đáng, mình sẽ định giá lại như thế nào?"
    }
-  ]
+  ],
+  "explain": "Nghiệp tự ti là mô thức liên tục hạ thấp giá trị của bản thân, cho rằng mình chưa đủ tốt, chưa đủ đẹp, chưa đủ giỏi, chưa đủ xứng đáng hoặc luôn kém hơn người khác. Có những người rất giỏi nhìn thấy điều cần sửa ở bản thân, nhưng lại lúng túng khi phải nhìn nhận điều mình đã làm tốt.",
+  "explainSrc": "ebook"
  },
  {
   "n": 5,
   "title": "Không Biết Nhận",
   "intro": "Ngày 5 — Không Biết Nhận: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Không Biết Nhận' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Sếp khen ngợi dự án làm rất xuất sắc. Thay vì mỉm cười đón nhận, bạn lập tức xua tay: 'Dạ không có gì đâu sếp, ăn may thôi ạ, em làm còn nhiều lỗi lắm' — tự dìm giá trị bản thân.",
    "Bạn đang mang vác đồ rất nặng, một người tiến tới ngỏ ý giúp một tay. Bạn lập tức từ chối: 'Không sao đâu ạ, em tự xách được' dù mồ hôi đang vã ra và tay đau nhức."
@@ -315,34 +320,15 @@ window.GN_DAYS = [
   "conseq": "Khi liên tục từ chối, bạn đang phát ra tần số 'tôi không xứng đáng'. Vũ trụ ghi nhận tần số này và sẽ ngưng gửi đến bạn những cơ hội, những quý nhân trợ giúp sau này. Sự từ chối vô tình dập tắt niềm vui được cống hiến của người cho.",
   "essence": "Tâm thức 'không xứng đáng' bắt nguồn từ sự thiếu tự tin thẳm sâu từ thuở nhỏ. Học cách đón nhận là học cách cho phép phước lành cội nguồn được chảy tràn trề vào cuộc đời.",
   "essenceQuote": "Tôi hoàn toàn xứng đáng với mọi điều tốt đẹp trong cuộc đời này. Đón nhận trọn vẹn là cách tôi trân trọng phước báu của chính mình.",
-  "root": [
-   "Mô thức 'Không Biết Nhận' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'Không Biết Nhận' là mô thức — không phải bản chất không thể thay đổi.",
-   "Biết nhận là cho phép dòng trao đổi được cân bằng. Đó không phải tham lam.",
-   "Khi nhìn rõ mô thức 'Không Biết Nhận', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Biết nhận là cho phép dòng trao đổi được cân bằng. Đó không phải tham lam."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Khi được khen hoặc được giúp hôm nay, hãy nói 'Cảm ơn, mình nhận' mà không phủ nhận.",
   "proof": "Hôm nay, nếu nhận được bất kỳ lời khen, món quà hay sự giúp đỡ nào, hãy nhìn thẳng mắt đối phương, đặt tay lên ngực, mỉm cười ấm áp và nói: 'Cảm ơn bạn, tôi rất hạnh phúc khi nhận được điều này.'",
-  "practice": "Hôm nay, quan sát mô thức 'Không Biết Nhận' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Cảm giác ngầm ẩn nào trỗi dậy bên trong bạn khi được ai đó cho quà hoặc giúp đỡ?",
    "Bạn có đang vô tình đẩy đi những cơ hội thăng tiến hay tài chính tốt lành chỉ vì cái sĩ diện tự gánh vác không?",
@@ -369,18 +355,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp không biết nhận là mô thức khó đón nhận lời khen, tiền bạc, sự giúp đỡ hoặc tình yêu vì bên trong cảm thấy không xứng đáng. Biết nhận là cho phép dòng trao đổi được cân bằng.",
+  "explainSrc": "workbook"
  },
  {
   "n": 6,
   "title": "Giữ Quá Khứ",
   "intro": "Ngày 6 — Giữ Quá Khứ: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Giữ Quá Khứ' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Đã từng kinh doanh thất bại và mất một khoản tiền từ nhiều năm trước. Suốt những năm qua, ngày nào cũng tự dằn vặt: 'Tại sao ngày xưa mình lại ngu ngốc như vậy', không dám bắt đầu lại bất cứ dự án nào.",
    "Bị người yêu cũ phản bội. Mặc dù mối tình đã kết thúc từ lâu, vẫn liên tục lướt trang cá nhân của họ để theo dõi, ngầm oán hận và ôm lòng căm thù, từ chối mở lòng với bất kỳ ai khác."
@@ -388,34 +372,15 @@ window.GN_DAYS = [
   "conseq": "Biến Tàng thức thành một bãi rác chứa đầy những ký ức u tối. Những hạt giống hận thù này sẽ phát ra tần số tiêu cực cực mạnh, liên tục hút về những bối cảnh và con người độc hại tương tự ở hiện tại.",
   "essence": "Bám chấp quá khứ là cách bản ngã cố gắng thay đổi những điều không thể thay đổi. Buông bỏ quá khứ không phải là tha thứ cho người khác, mà là cởi trói cho chính lồng ngực của mình.",
   "essenceQuote": "Quá khứ đã khép lại. Bài học đã được nhận diện. Tôi trả tự do cho chính mình để sống trọn vẹn trong hiện tại.",
-  "root": [
-   "Mô thức 'Giữ Quá Khứ' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'Giữ Quá Khứ' là mô thức — không phải bản chất không thể thay đổi.",
-   "Dọn bớt không phải là mất đi. Đó là chọn lại điều xứng đáng.",
-   "Khi nhìn rõ mô thức 'Giữ Quá Khứ', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Dọn bớt không phải là mất đi. Đó là chọn lại điều xứng đáng."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Chọn 1 việc dang dở và hoàn tất hoặc chính thức hủy nó trong hôm nay.",
   "proof": "Viết ra một tờ giấy tên người hoặc sự kiện khiến bạn đau lòng nhất trong quá khứ. Đặt tay lên ngực và đọc thầm: 'Cảm ơn bài học đã giúp tôi trưởng thành. Tôi xin lỗi vì đã giữ bạn quá lâu trong uất hận. Giờ đây tôi chọn buông xả bạn và trả tự do cho tôi', sau đó xé hoặc đốt tờ giấy đó đi.",
-  "practice": "Hôm nay, quan sát mô thức 'Giữ Quá Khứ' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Tổn thương hay sai lầm nào từ quá khứ đang ngầm định hình cách bạn phản ứng lo âu ở hiện tại?",
    "Việc ôm giữ lòng oán hận đó đang mang lại lợi ích ngầm nào cho cái tôi của bạn?",
@@ -442,18 +407,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp giữ quá khứ là mô thức bám vào ký ức, câu chuyện hoặc phiên bản cũ của mình dù chúng không còn nuôi dưỡng đời sống hiện tại. Buông không phải là mất — đó là chọn lại điều xứng đáng.",
+  "explainSrc": "workbook"
  },
  {
   "n": 7,
   "title": "Tổng kết Tuần 1",
   "intro": "Ngày 7 — Tổng kết Tuần 1: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Tổng kết Tuần 1' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "",
    ""
@@ -461,34 +424,13 @@ window.GN_DAYS = [
   "conseq": "",
   "essence": "",
   "essenceQuote": "",
-  "root": [
-   "Mình không cần thay đổi mọi thứ cùng lúc. Mình chỉ cần tiếp tục chọn một vòng lặp lành hơn trong hôm nay.",
-   "Mô thức 'Tổng kết Tuần 1' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
-  "aw": [
-   "Nhận ra 'Tổng kết Tuần 1' là mô thức — không phải bản chất không thể thay đổi.",
-   "Khi nhìn rõ mô thức 'Tổng kết Tuần 1', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
-  ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "aw": [],
+  "apply": [],
   "action": "Nhìn lại 6 ngày vừa qua và viết ra 1 điều mình đã thật sự thay đổi.",
   "proof": "",
-  "practice": "Hôm nay, quan sát mô thức 'Tổng kết Tuần 1' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Mô thức 'Tổng kết Tuần 1' xuất hiện nhiều nhất trong lĩnh vực nào của cuộc sống mình?",
    "Điều gì đã duy trì mô thức này cho đến hôm nay?",
@@ -515,18 +457,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "",
+  "explainSrc": "none"
  },
  {
   "n": 8,
   "title": "Sợ Bị Bỏ Rơi",
   "intro": "Ngày 8 — Sợ Bị Bỏ Rơi: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Sợ Bị Bỏ Rơi' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Bạn đời đi làm về muộn 15 phút, bạn lập tức gọi điện dồn dập, nhắn tin tra hỏi, đầu óc vẽ ra hàng trăm viễn cảnh họ đang đi ngoại tình, lừa dối bạn.",
    "Bạn chấp nhận chịu đựng sự bạo lực, vô tâm hoặc phản bội của đối phương nhiều năm, không dám phản kháng hay rời đi chỉ vì sợ cảm giác phải ở một mình, sợ cô đơn."
@@ -534,34 +474,15 @@ window.GN_DAYS = [
   "conseq": "Sự nghi ngờ và dính mắc quá mức tạo ra một trường năng lượng nghẹt thở, ngột ngạt đẩy đối phương ra xa hơn, vô tình biến nỗi sợ bị bỏ rơi thành sự thật. Bạn hạ thấp mọi ranh giới và tiêu chuẩn sống, biến mình thành kẻ phụ thuộc cảm xúc hoàn toàn vào người khác.",
   "essence": "Tổn thương sợ bị bỏ rơi bắt nguồn sâu sắc từ đứa trẻ bị bỏ rơi hoặc thiếu thốn tình thương từ thuở nhỏ. Khi không biết cách tự yêu thương và làm chỗ dựa cho chính mình, bạn sẽ biến người khác thành 'bình oxy' để duy trì sự sống cảm xúc.",
   "essenceQuote": "Tôi là nguồn cội của tình yêu thương và sự an toàn của chính tôi. Tôi cam kết ở lại, ôm ấp và không bao giờ bỏ rơi chính mình.",
-  "root": [
-   "Mô thức 'Sợ Bị Bỏ Rơi' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Sự an toàn thật sự không đến từ việc giữ người khác — nó đến từ việc học cách ở lại với chính mình.",
-   "Nhận ra 'Sợ Bị Bỏ Rơi' là mô thức — không phải bản chất không thể thay đổi.",
-   "Khi nhìn rõ mô thức 'Sợ Bị Bỏ Rơi', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Sự an toàn thật sự không đến từ việc giữ người khác — nó đến từ việc học cách ở lại với chính mình."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Khi cảm thấy bất an, viết 3 câu: 'Tôi đang sợ...', 'Sự thật hiện tại là...', 'Tôi có thể chăm sóc mình bằng cách...'",
   "proof": "Dành ra 15 phút ngồi tĩnh lặng một mình trong phòng. Tự ôm lấy hai vai mình thật chặt và thì thầm nói với đứa trẻ bên trong: 'Tâm thức ơi, dù thế giới ngoài kia có ra sao, tôi cam kết sẽ luôn ở đây, bảo vệ và yêu thương bạn trọn vẹn.'",
-  "practice": "Hôm nay, quan sát mô thức 'Sợ Bị Bỏ Rơi' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Cảm giác trống rỗng hay nỗi sợ hãi nào trỗi dậy mạnh mẽ nhất khi bạn ở một mình không có ai bên cạnh?",
    "Bạn đã từng cố gắng thay đổi hay ép uổng bản thân thế nào để giữ chân một người không trân trọng bạn?",
@@ -588,18 +509,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp sợ bị bỏ rơi là mô thức sống trong nỗi lo người khác sẽ rời đi. Sự an toàn thật sự không đến từ việc giữ người khác — nó đến từ việc học cách ở lại với chính mình.",
+  "explainSrc": "workbook"
  },
  {
   "n": 9,
   "title": "Làm Hài Lòng Người Khác",
   "intro": "Ngày 9 — Làm Hài Lòng Người Khác: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Làm Hài Lòng Người Khác' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Đồng nghiệp đùn đẩy công việc của họ sang cho bạn ngay sát giờ về. Dù đã có hẹn ăn tối với gia đình, bạn vẫn mỉm cười nhận lời và làm hộ, trong lòng đầy bực bội và ấm ức.",
    "Bạn không hề thích ăn món lẩu thái, nhưng khi cả nhóm quyết định chọn món đó, bạn vẫn gật đầu đồng ý: 'Sao cũng được ạ, em ăn gì cũng được' chỉ để tỏ ra mình là người biết điều."
@@ -607,34 +526,15 @@ window.GN_DAYS = [
   "conseq": "Sự tự phản bội cảm xúc tích lũy lâu ngày sẽ biến thành một khối uất hận ngầm trong lồng ngực. Đến một ngày, nó sẽ bùng nổ dữ dội vào những chuyện rất nhỏ. Khi cố làm hài lòng tất cả mọi người, bạn trở thành người không có cá tính, khiến người khác lấn lướt và không còn trân trọng giá trị của bạn.",
   "essence": "Cố làm hài lòng người khác thực chất là một dạng 'tử tế giả tạo' để mua chuộc tình thương và sự công nhận. Bạn đang phản bội bản thể của chính mình để đổi lấy một cảm giác an toàn mong manh bên ngoài.",
   "essenceQuote": "Sự thật lòng mang lại sự tự do. Nói lời từ chối lành mạnh là cách tôi tôn trọng cảm xúc của bản thân và người khác.",
-  "root": [
-   "Mô thức 'Làm Hài Lòng Người Khác' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Tử tế không đồng nghĩa với tự phản bội. Một mối quan hệ lành mạnh có chỗ cho sự thật của cả hai.",
-   "Nhận ra 'Làm Hài Lòng Người Khác' là mô thức — không phải bản chất không thể thay đổi.",
-   "Khi nhìn rõ mô thức 'Làm Hài Lòng Người Khác', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Tử tế không đồng nghĩa với tự phản bội. Một mối quan hệ lành mạnh có chỗ cho sự thật của cả hai."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Hôm nay thực hành một lời từ chối nhỏ nhưng rõ ràng và tử tế.",
   "proof": "Hôm nay, hãy thực hành từ chối thẳng thắn nhưng lịch sự ít nhất một yêu cầu vượt quá giới hạn, khả năng hoặc mong muốn thực sự của bạn.",
-  "practice": "Hôm nay, quan sát mô thức 'Làm Hài Lòng Người Khác' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Sự ấm ức ngầm nào trỗi dậy khi bạn phải gượng ép mỉm cười làm vừa lòng người khác?",
    "Bạn sợ nhất điều gì xảy ra nếu bạn dám nói lên mong muốn thật lòng của mình?",
@@ -661,7 +561,9 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp làm hài lòng người khác là mô thức luôn ưu tiên cảm xúc của người khác đến mức đánh mất tiếng nói của mình. Tử tế không đồng nghĩa với tự phản bội.",
+  "explainSrc": "workbook"
  },
  {
   "n": 10,
@@ -736,18 +638,16 @@ window.GN_DAYS = [
     "t": "Ranh giới một lần",
     "d": "Hôm nay, từ chối một yêu cầu vượt quá sức. Chỉ cần nói: 'Hôm nay mình chưa nhận được việc này.' Ghi lại: bạn cảm thấy thế nào sau khi từ chối?"
    }
-  ]
+  ],
+  "explain": "Nghiệp cho đi quá mức là mô thức liên tục cho thời gian, tiền bạc, cảm xúc, công sức hoặc sự chăm sóc vượt quá khả năng thật của mình, rồi âm thầm cạn kiệt, buồn tủi hoặc thất vọng vì không được đáp lại tương tự. Người cho đi quá mức thường cho để được thương, nhận thì thấy áy náy.",
+  "explainSrc": "ebook"
  },
  {
   "n": 11,
   "title": "Thiếu Ranh Giới",
   "intro": "Ngày 11 — Thiếu Ranh Giới: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Thiếu Ranh Giới' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Bố mẹ chồng tự ý vào phòng riêng lục lọi đồ đạc, hoặc tự ý quyết định việc nuôi dạy con cái của bạn mà không hề hỏi ý kiến. Thay vì nói chuyện thiết lập giới hạn, bạn chọn cách ấm ức khóc thầm một mình.",
    "Bạn bè mượn tiền bạn hết lần này đến lần khác không trả, nhưng khi tiếp tục hỏi mượn, bạn vẫn cắn răng đưa tiền vì sợ mang tiếng là ích kỷ."
@@ -755,34 +655,15 @@ window.GN_DAYS = [
   "conseq": "Khi không có ranh giới, bạn biến bản thân thành một bãi đất trống để bất kỳ ai cũng có thể bước vào xéo giày lên năng lượng của bạn, làm rò rỉ toàn bộ nội lực tự thân. Bạn sẽ dần nuôi dưỡng sự oán hận đối với chính những người xung quanh vì cảm thấy mình bị lợi dụng.",
   "essence": "Ranh giới thép không phải là sự phòng thủ thù hận, mà là tấm khiên năng lượng giúp phân định rõ ràng đâu là việc của mình, đâu là việc của người và đâu là việc của Vũ trụ.",
   "essenceQuote": "Tôi thiết lập ranh giới năng lượng thép để bảo vệ ngôi đền thiêng liêng bên trong mình. Nói ra giới hạn của bản thân là cách tôi tôn trọng chính mình và người khác.",
-  "root": [
-   "Mô thức 'Thiếu Ranh Giới' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'Thiếu Ranh Giới' là mô thức — không phải bản chất không thể thay đổi.",
-   "Ranh giới không làm mình lạnh lùng — ranh giới giúp mình ở lại với người khác bằng sự tỉnh táo.",
-   "Khi nhìn rõ mô thức 'Thiếu Ranh Giới', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Ranh giới không làm mình lạnh lùng — ranh giới giúp mình ở lại với người khác bằng sự tỉnh táo."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Viết một câu ranh giới tử tế và rõ ràng cho tình huống đang khiến mình kiệt sức.",
   "proof": "Hãy thiết lập một ranh giới rõ ràng ngay hôm nay: Nói trực tiếp với người đang xâm phạm giới hạn của bạn một cách ôn hòa nhưng dứt khoát: 'Tôi rất trân trọng mối quan hệ này, nhưng tôi mong từ nay chúng ta sẽ tôn trọng quyết định riêng tư của nhau trong việc này.'",
-  "practice": "Hôm nay, quan sát mô thức 'Thiếu Ranh Giới' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Lĩnh vực nào trong đời sống hiện tại bạn đang để người khác lấn lướt ranh giới nhiều nhất?",
    "Nỗi sợ hãi nào đã khiến bạn không dám dựng lên ranh giới thép suốt bao năm qua?",
@@ -809,7 +690,9 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp thiếu ranh giới là mô thức để người khác bước qua thời gian, năng lượng và giá trị của mình mà không dám xác lập giới hạn rõ ràng. Ranh giới không làm mình lạnh lùng.",
+  "explainSrc": "workbook"
  },
  {
   "n": 12,
@@ -883,18 +766,16 @@ window.GN_DAYS = [
     "t": "Thực hành nói thật nhỏ",
     "d": "Chọn một người bạn tin. Thay vì 'mình ổn', nói một câu thật hơn về cảm xúc hiện tại. Ví dụ: 'Hôm nay mình hơi mệt mỏi và không rõ tại sao.'"
    }
-  ]
+  ],
+  "explain": "Nghiệp nén cảm xúc là mô thức kìm lại nỗi buồn, giận, thất vọng, tủi thân hoặc sợ hãi vì tin rằng cảm xúc ấy không được phép tồn tại, không quan trọng, hoặc sẽ gây phiền cho người khác. Khi gọi tên được nghiệp nén cảm xúc, chúng ta bắt đầu tách mình ra khỏi mô thức cũ để có thêm quyền lựa chọn.",
+  "explainSrc": "ebook"
  },
  {
   "n": 13,
   "title": "Yêu Sai Người",
   "intro": "Ngày 13 — Yêu Sai Người: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Yêu Sai Người' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Bạn vừa ly hôn người chồng vũ phu, bài bạc. Nhưng chỉ sau một thời gian ngắn, bạn lại say đắm một người đàn ông mới có tính cách nóng nảy, gia trưởng và bắt đầu kiểm soát tiền bạc của bạn y hệt người cũ.",
    "Bạn luôn đóng vai người đi cầu xin, quỵ lụy tình cảm của những người lạnh lùng, vô tâm. Bạn liên tục khóc lóc u uất vì bị bỏ rơi nhưng lại không thể dứt bỏ mối quan hệ đó."
@@ -902,34 +783,15 @@ window.GN_DAYS = [
   "conseq": "Năng lượng của bạn bị rút cạn trong những cuộc cãi vã, u uất, khiến cuộc sống của bạn chìm trong bóng tối. Tự khắc sâu thêm những vết sẹo tổn thương trong Tàng thức, khiến bạn hoàn toàn mất đi niềm tin vào tình yêu thương chân thật.",
   "essence": "Nghiệt duyên không phải do số phận trớ trêu, mà là lực hút đồng tần số của những tổn thương chưa được chữa lành bên trong bạn. Bạn hút họ đến để phản chiếu chính xác những khoảng trống và nỗi sợ bị bỏ rơi của đứa trẻ bên trong bạn.",
   "essenceQuote": "Tôi nâng cao tần số tự thân bằng tình yêu tự có. Tôi chỉ cho phép những mối quan hệ tôn trọng, bình an và đồng điệu được bước vào cuộc đời tôi.",
-  "root": [
-   "Mô thức 'Yêu Sai Người' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'Yêu Sai Người' là mô thức — không phải bản chất không thể thay đổi.",
-   "Không phải ai làm trái tim rung động cũng phù hợp với sự bình an của mình.",
-   "Khi nhìn rõ mô thức 'Yêu Sai Người', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Không phải ai làm trái tim rung động cũng phù hợp với sự bình an của mình."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Viết 2 danh sách: kiểu người bạn hay bị thu hút và giá trị bạn cần trong mối quan hệ. So sánh.",
   "proof": "Viết ra danh sách 3 hành vi độc hại của đối phương mà bạn cam kết từ hôm nay sẽ tuyệt đối không bao giờ chấp nhận thỏa hiệp nữa. Nếu đang kẹt trong một mối quan hệ độc hại, hãy dũng cảm thiết lập khoảng cách để bảo vệ năng lượng của mình.",
-  "practice": "Hôm nay, quan sát mô thức 'Yêu Sai Người' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Kịch bản đau khổ nào trong tình yêu đang lặp đi lặp lại trong cuộc đời của bạn như một vòng lặp vô tận?",
    "Đối phương đang phản chiếu vết thương hay nỗi sợ hãi thầm kín nào chưa được chữa lành bên trong bạn?",
@@ -956,18 +818,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp yêu sai người là mô thức bị thu hút bởi những mối quan hệ không an toàn khiến mình phải thu nhỏ giá trị để được yêu. Không phải ai làm trái tim rung động cũng phù hợp với sự bình an của mình.",
+  "explainSrc": "workbook"
  },
  {
   "n": 14,
   "title": "Phản Ứng Tự Động",
   "intro": "Ngày 14 — Phản Ứng Tự Động: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Phản Ứng Tự Động' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Mỗi khi bị phê bình dù nhỏ, bạn lập tức phản pháo hoặc đóng kín tâm lại, không cho ai tiếp cận, dù sau đó bạn biết mình đã phản ứng quá mức.",
    "Mỗi khi nghe tin tức tiêu cực, bạn lập tức hoảng loạn, mua sắm bừa bãi hoặc gọi điện cho hàng chục người để kể lể, dù vấn đề chưa thực sự liên quan đến mình."
@@ -975,34 +835,15 @@ window.GN_DAYS = [
   "conseq": "Khi phản ứng theo quán tính cũ, bạn đang để quá khứ và tổn thương cũ điều khiển cuộc đời hiện tại. Bạn liên tục tái tạo cùng một kịch bản đau khổ trong các mối quan hệ và công việc dù đã đổi người, đổi môi trường nhiều lần.",
   "essence": "Phản ứng tự động là những chương trình cũ được cài sẵn trong Tàng thức. Chúng không phải là bản chất của bạn — đó là những thói quen được lập trình để bảo vệ bạn trong quá khứ và nay đã lỗi thời.",
   "essenceQuote": "Tôi không để quá khứ trả lời thay mình. Giữa kích hoạt và phản ứng luôn có một khoảng dừng — tự do của tôi nằm ở đó.",
-  "root": [
-   "Mô thức 'Phản Ứng Tự Động' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'Phản Ứng Tự Động' là mô thức — không phải bản chất không thể thay đổi.",
-   "Phản ứng tự động không phải là bản chất — đó là thói quen được lập trình. Thói quen có thể thay đổi.",
-   "Khi nhìn rõ mô thức 'Phản Ứng Tự Động', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Phản ứng tự động không phải là bản chất — đó là thói quen được lập trình. Thói quen có thể thay đổi."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Chọn một tín hiệu vật lý và luyện tập nhịp dừng trong mọi tình huống nhỏ hôm nay.",
   "proof": "Hôm nay dành riêng để tổng kết tuần 2: nhìn lại các mô thức trong mối quan hệ bạn đã nhận ra, ghi lại 3 khoảnh khắc bạn đã chọn phản ứng khác đi.",
-  "practice": "Hôm nay, quan sát mô thức 'Phản Ứng Tự Động' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Sự thay đổi lớn nhất trong cách bạn nhìn nhận về bạn đời và những người xung quanh sau tuần thực hành này là gì?",
    "Bạn đã dũng cảm buông bỏ hành vi kiểm soát hay hy sinh mù quáng nào thành công?",
@@ -1029,18 +870,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp phản ứng tự động là mô thức hành động theo quán tính cũ ngay khi bị kích hoạt. Phản ứng tự động không phải bản chất — đó là thói quen được lập trình và có thể thay đổi.",
+  "explainSrc": "workbook"
  },
  {
   "n": 15,
   "title": "So Sánh",
   "intro": "Ngày 15 — So Sánh: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'So Sánh' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Lướt Facebook thấy đồng nghiệp cũ mua nhà mới sang trọng, miệng bạn thì bình luận 'Chúc mừng nhé', nhưng trong lòng trỗi dậy cảm giác tủi thân, ghen tị và nghĩ thầm: 'Chắc lại đi làm ăn phi pháp hoặc dựa hơi nhà vợ chứ năng lực có gì đâu.'",
    "Bạn liên tục so sánh con mình với 'con nhà người ta', mắng mỏ con chỉ vì con không đạt điểm cao hay có thành tích xuất chúng như con của bạn học cũ."
@@ -1048,34 +887,15 @@ window.GN_DAYS = [
   "conseq": "Khi bạn đố kỵ với sự giàu có của người khác, tâm thức bạn đang phát đi tín hiệu: 'Tôi ghét sự giàu có và thành công'. Vũ trụ ghi nhận tần số này và sẽ không bao giờ gửi sự thịnh vượng đến một người ghét nó.",
   "essence": "So sánh và đố kỵ xuất phát từ tâm thức túng thiếu thẳm sâu — niềm tin sai lệch rằng tài nguyên của Vũ trụ là có hạn, người khác có được thì mình sẽ bị mất đi.",
   "essenceQuote": "Thành công của người khác là bằng chứng cho thấy sự thịnh vượng luôn có sẵn cho tất cả. Tôi vui sướng chúc mừng hạnh phúc của họ và đón nhận dòng chảy của riêng mình.",
-  "root": [
-   "Mô thức 'So Sánh' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'So Sánh' là mô thức — không phải bản chất không thể thay đổi.",
-   "Người khác có thể là nguồn cảm hứng, nhưng không nên trở thành thước đo giá trị của mình.",
-   "Khi nhìn rõ mô thức 'So Sánh', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Người khác có thể là nguồn cảm hứng, nhưng không nên trở thành thước đo giá trị của mình."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Hôm nay tắt mạng xã hội 24 giờ và viết ra 3 tiêu chí thành công của riêng mình.",
   "proof": "Chủ động nhắn tin chúc mừng hoặc bình luận khen ngợi chân thành ít nhất một người đang gặt hái được thành công lớn trong lĩnh vực của họ.",
-  "practice": "Hôm nay, quan sát mô thức 'So Sánh' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Sự thành công của ai đang dễ kích hoạt cảm giác tự ti hoặc đố kỵ ngầm ẩn bên trong bạn nhất?",
    "Việc so sánh đó đang ngăn cản bạn ghi nhận những giá trị độc bản nào của chính mình?",
@@ -1102,18 +922,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp so sánh là mô thức đo giá trị bản thân bằng thành tựu của người khác. Người khác có thể là nguồn cảm hứng, nhưng không nên trở thành thước đo giá trị của mình.",
+  "explainSrc": "workbook"
  },
  {
   "n": 16,
   "title": "Lời Nói Làm Tổn Thương",
   "intro": "Ngày 16 — Lời Nói Làm Tổn Thương: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Lời Nói Làm Tổn Thương' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Khi nhân viên làm sai một việc nhỏ, thay vì hướng dẫn nhẹ nhàng, bạn mắng nhiếc: 'Đồ vô dụng, có mỗi việc này cũng làm không nên hồn!' khiến họ cảm thấy kiệt quệ và u uất.",
    "Bạn ngồi tụ tập với một nhóm bạn và say sưa bàn tán, bóc phốt, phán xét về đời tư của một người vắng mặt, thêu dệt thêm những chi tiết giật gân để mua vui."
@@ -1121,33 +939,13 @@ window.GN_DAYS = [
   "conseq": "Khẩu nghiệp tàn phá toàn bộ phước báu tích lũy của bạn nhanh nhất. Lời nói thô bạo sẽ tạo ra lực phản vệ cực lớn từ xung quanh, khiến bạn đi đâu cũng gặp thị phi, bị người khác ngầm ghét bỏ và cô lập.",
   "essence": "Lời nói phản chiếu chính xác trạng thái tâm thức bên trong. Người có lồng ngực chứa đầy tổn thương, tức giận mới phải dùng lời nói sắc nhọn để làm tổn thương người khác nhằm tự vệ.",
   "essenceQuote": "Lời nói là công cụ kiến tạo phước báu. Tôi chỉ dùng ái ngữ để xây dựng, động viên và mang lại sự bình an cho mọi người.",
-  "root": [
-   "Mô thức 'Lời Nói Làm Tổn Thương' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
-  "aw": [
-   "Nhận ra 'Lời Nói Làm Tổn Thương' là mô thức — không phải bản chất không thể thay đổi.",
-   "Lời nói không chỉ phản ánh suy nghĩ — lời nói tạo ra thực tại trong mối quan hệ. Khi nhìn rõ mô thức 'Lời Nói Làm Tổn Thương', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
-  ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "aw": [],
+  "apply": [],
   "action": "Trước cuộc trò chuyện khó, viết ra: sự kiện quan sát được, cảm xúc của mình, nhu cầu của mình.",
   "proof": "Thực hành Im lặng thông thái hoặc chỉ nói những lời động viên, khen ngợi, xây dựng chân thành. Nếu không có điều gì tốt đẹp để nói, hãy chọn cách mỉm cười và giữ im lặng.",
-  "practice": "Hôm nay, quan sát mô thức 'Lời Nói Làm Tổn Thương' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Trong ngày, bạn có thói quen phán xét hoặc nói xấu sau lưng ai đó để tìm cảm giác ưu việt giả tạo không?",
    "Lời nói thô bạo nào của bạn gần đây đã làm rạn nứt kết nối với người thân yêu?",
@@ -1174,18 +972,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp lời nói làm tổn thương là mô thức dùng lời nói để công kích, đổ lỗi hoặc trừng phạt. Lời nói không chỉ phản ánh suy nghĩ — lời nói tạo ra thực tại trong mối quan hệ.",
+  "explainSrc": "workbook"
  },
  {
   "n": 17,
   "title": "Tiền Bạc",
   "intro": "Ngày 17 — Tiền Bạc: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Tiền Bạc' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Mỗi khi phải thanh toán hóa đơn tiền điện hay tiền học cho con, bạn đều nhăn nhó, ấm ức, thở dài thườn thượt và nói: 'Lại tốn tiền, suốt ngày chỉ thấy tiền ra!'",
    "Bạn cất giữ tiền mặt rất kỹ, không dám ăn một bữa ngon, không dám mua sắm cho bản thân, nhưng khi có ai đó rủ rê đầu tư vào các dự án lãi cao, bạn liền mang hết số tiền tích cóp ra dâng cho họ."
@@ -1193,34 +989,15 @@ window.GN_DAYS = [
   "conseq": "Tần số lo âu, sợ hãi về tiền sẽ kiến tạo nên Dòng Tiền Sợ Hãi, khiến tiền dẫu có đến với bạn cũng mang theo sự tranh chấp, lo âu hoặc nhanh chóng đội nón ra đi bằng những biến cố bất ngờ.",
   "essence": "Tiền bạc là năng lượng trung tính, nó phản chiếu chính xác rung động lồng ngực của bạn đối với nó. Khi bạn tiêu tiền trong sự oán trách, bạn đang xua đuổi tiền. Khi bạn tiêu tiền trong sự biết ơn, tiền sẽ quay trở lại gấp nhiều lần.",
   "essenceQuote": "Tiền bạc là dòng chảy năng lượng dồi dào. Tôi biết ơn và trân trọng từng đồng tiền đi và đến với tôi trong sự bình an.",
-  "root": [
-   "Mô thức 'Tiền Bạc' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'Tiền Bạc' là mô thức — không phải bản chất không thể thay đổi.",
-   "Cách mình đối xử với tiền là tấm gương phản chiếu cách mình đối xử với chính mình.",
-   "Khi nhìn rõ mô thức 'Tiền Bạc', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Cách mình đối xử với tiền là tấm gương phản chiếu cách mình đối xử với chính mình."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Mở bảng tài chính thật, nhìn vào con số mà không phán xét. Chỉ nhìn.",
   "proof": "Thực hành tiêu tiền trong sự biết ơn chân thành: Mỗi khi trả tiền cho một món hàng hay dịch vụ hôm nay, hãy đặt tay lên ngực và thầm nói: 'Biết ơn số tiền này đã giúp tôi có được giá trị tốt đẹp, chúc cho số tiền này đi ra xã hội sẽ mang lại hạnh phúc cho người nhận và quay trở về với tôi gấp bội.'",
-  "practice": "Hôm nay, quan sát mô thức 'Tiền Bạc' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Cảm xúc ngầm ẩn trỗi dậy trong lồng ngực bạn mỗi khi chi tiền hằng ngày là gì — sợ hãi, tiếc nuối, hay bình an?",
    "Bạn có đang bị ám ảnh quá mức bởi các khoản nợ khiến bạn không thể cảm nhận được sự giàu có của hiện tại?",
@@ -1247,18 +1024,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp tiền bạc là mô thức lặp lại trong cách mình nghĩ, nói và hành động với tiền. Cách mình đối xử với tiền là tấm gương phản chiếu cách mình đối xử với chính mình.",
+  "explainSrc": "workbook"
  },
  {
   "n": 18,
   "title": "'Tôi Không Đủ Tốt'",
   "intro": "Ngày 18 — 'Tôi Không Đủ Tốt': Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức ''Tôi Không Đủ Tốt'' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Sếp trao cơ hội làm trưởng nhóm một dự án mới rất tiềm năng. Phản ứng đầu tiên của bạn là từ chối: 'Dạ em cảm ơn sếp, nhưng em thấy năng lực mình còn yếu, sếp giao cho anh A chị B đi ạ' vì sợ gánh vác trách nhiệm và sợ thất bại.",
    "Bạn làm việc cật lực ngày đêm để tạo ra sản phẩm chất lượng cao cho khách hàng, nhưng chỉ dám lấy giá rất rẻ vì sợ khách hàng chê đắt hoặc sợ bị đánh giá là tham lam."
@@ -1266,34 +1041,15 @@ window.GN_DAYS = [
   "conseq": "Bạn tự giam cầm mình trong cái bóng của sự tự ti, không bao giờ dám bứt phá để khẳng định giá trị bản thân ngoài xã hội. Bạn tự tay định giá thấp chất xám của mình, khiến thu nhập không xứng đáng với công sức bỏ ra.",
   "essence": "Niềm tin 'Tôi không đủ tốt' là một ảo tưởng của bản ngã được huân tập từ những lời chê bai, phủ nhận trong quá khứ. Hoàn hảo là một cái bẫy, sự tiến bộ qua từng hành động nhỏ mới là chân lý.",
   "essenceQuote": "Tôi là một phiên bản độc bản, đầy đủ năng lực và giá trị. Tôi tự tin gánh vác và định giá xứng đáng cho chất xám của mình.",
-  "root": [
-   "Mô thức ''Tôi Không Đủ Tốt'' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra ''Tôi Không Đủ Tốt'' là mô thức — không phải bản chất không thể thay đổi.",
-   "Kết quả là dữ liệu phản hồi — không phải bằng chứng về giá trị của bạn.",
-   "Khi nhìn rõ mô thức ''Tôi Không Đủ Tốt'', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Kết quả là dữ liệu phản hồi — không phải bằng chứng về giá trị của bạn."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Viết bảng: 'Giá trị tôi tạo ra', 'Bằng chứng cụ thể', và 'Điều tôi xứng đáng nhận'.",
   "proof": "Viết ra danh sách 5 thành tựu lớn nhất bạn đã từng đạt được trong đời để ghi nhận nội lực của mình. Đồng thời dám nhận ngay một việc nhỏ thử thách năng lực của bạn mà không trì hoãn.",
-  "practice": "Hôm nay, quan sát mô thức ''Tôi Không Đủ Tốt'' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Niềm tin giới hạn nào đang thì thầm lỗ tai bảo bạn rằng bạn chưa đủ giỏi để thành công?",
    "Việc duy trì sự tự ti này đang giúp bạn trốn tránh thử thách và trách nhiệm lớn lao nào?",
@@ -1320,18 +1076,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp 'Tôi không đủ tốt' là mô thức hạ thấp giá trị trong công việc, tình yêu và tiền bạc. Kết quả là dữ liệu phản hồi — không phải bằng chứng về giá trị của bạn.",
+  "explainSrc": "workbook"
  },
  {
   "n": 19,
   "title": "Không Hoàn Tất",
   "intro": "Ngày 19 — Không Hoàn Tất: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Không Hoàn Tất' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Bạn hào hứng đăng ký một khóa học chuyên sâu. Bạn học rất chăm chỉ trong 3 ngày đầu, nhưng đến ngày thứ tư khi bài tập bắt đầu khó lên, bạn tặc lưỡi bỏ bê và không bao giờ mở lại khóa học đó nữa.",
    "Bạn lên kế hoạch viết sách hoặc xây kênh video. Bạn viết được 2 chương đầu, quay được 3 clip rồi bỏ xó suốt nửa năm qua vì bận rộn hoặc chưa thấy có nhiều người xem."
@@ -1339,33 +1093,13 @@ window.GN_DAYS = [
   "conseq": "Mỗi dự án dang dở là một lỗ rò rỉ năng lượng trong Tàng thức. Nó tích tụ một thói quen vô thức cực kỳ nguy hiểm: 'Tôi là kẻ luôn bỏ cuộc'. Bạn liên tục gieo hạt gieo mầm nhưng không bao giờ kiên trì tưới tắm đến ngày hái quả.",
   "essence": "Nghiệp dang dở xuất phát từ tâm lý mong cầu kết quả nhanh chóng, thiếu nghị lực đối diện với khó khăn và thói quen nuông chiều cảm xúc nhất thời của bản ngã.",
   "essenceQuote": "Sức mạnh nằm ở sự hoàn tất. Tôi cam kết đi đến cùng từng bước nhỏ để khép vòng năng lượng tròn trịa.",
-  "root": [
-   "Mô thức 'Không Hoàn Tất' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
-  "aw": [
-   "Nhận ra 'Không Hoàn Tất' là mô thức — không phải bản chất không thể thay đổi.",
-   "Mỗi vòng hở là một ổ rò rỉ năng lượng. Khi khép lại được, tâm trí trở nên nhẹ hơn. Khi nhìn rõ mô thức 'Không Hoàn Tất', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
-  ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "aw": [],
+  "apply": [],
   "action": "Liệt kê 7 thứ đang dang dở và khép lại 1 thứ nhỏ nhất trong hôm nay.",
   "proof": "Chọn đúng một việc đang dang dở nhỏ nhất của bạn (dọn dẹp nốt cái tủ đồ đang dọn nửa chừng, đọc nốt chương sách cuối, hoàn thành nốt báo cáo cũ) và kiên trì thực hiện để hoàn tất nó hoàn toàn trong hôm nay.",
-  "practice": "Hôm nay, quan sát mô thức 'Không Hoàn Tất' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Dự án hay mục tiêu lớn nào trong cuộc đời bạn đang bỏ dở giữa chừng nhiều nhất?",
    "Cảm xúc hay rào cản nào dễ khiến bạn tặc lưỡi buông xuôi và bỏ cuộc nhất?",
@@ -1392,18 +1126,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp không hoàn tất là mô thức mở ra nhiều việc nhưng không khép lại, khiến năng lượng bị rò rỉ liên tục. Mỗi vòng hở là một ổ rò rỉ năng lượng. Khi khép lại được, tâm trí trở nên nhẹ hơn.",
+  "explainSrc": "workbook"
  },
  {
   "n": 20,
   "title": "Sợ Thành Công",
   "intro": "Ngày 20 — Sợ Thành Công: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Sợ Thành Công' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Doanh nghiệp của bạn đang phát triển rất tốt, sắp đạt mốc doanh thu mơ ước. Đột nhiên, bạn đưa ra một quyết định đầu tư liều lĩnh, vô lý vào một lĩnh vực không quen thuộc, dẫn đến thua lỗ toàn bộ lợi nhuận vừa kiếm được.",
    "Bạn sắp được đề bạt lên vị trí giám đốc vùng. Đêm trước ngày phỏng vấn quyết định, bạn tự nhiên đi nhậu say mướt, ngủ quên và đi muộn, tự tay tước đi cơ hội thăng tiến của chính mình."
@@ -1411,34 +1143,15 @@ window.GN_DAYS = [
   "conseq": "Bạn tự giới hạn dung tích chứa đựng phước lành của bản thân, suốt đời chỉ quanh quẩn ở mức trung bình dưới sức lực thực sự của mình. Bạn liên tục xây dựng rồi tự đập nát thành tựu, cuộc đời giống như dã tràng xe cát, mệt mỏi và kiệt quệ nội lực.",
   "essence": "Sợ thành công thực chất là cơ chế tự vệ vô thức của bản năng sinh tồn. Tàng thức ngầm tin rằng thành công sẽ mang lại tai họa, sự cô đơn, hoặc gánh nặng trách nhiệm quá lớn nên đã tự động đưa ra các hành vi phá hoại để giữ bạn ở lại vùng an toàn u tối cũ.",
   "essenceQuote": "Tôi hoàn toàn xứng đáng tỏa sáng và thành công rực rỡ. Sự thành công của tôi là công cụ vĩ đại để tôi giúp đỡ và phụng sự xã hội.",
-  "root": [
-   "Mô thức 'Sợ Thành Công' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Thành công không đòi hỏi bạn phải rời xa người mình yêu hay từ bỏ giá trị của mình.",
-   "Nhận ra 'Sợ Thành Công' là mô thức — không phải bản chất không thể thay đổi.",
-   "Khi nhìn rõ mô thức 'Sợ Thành Công', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Thành công không đòi hỏi bạn phải rời xa người mình yêu hay từ bỏ giá trị của mình."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Viết ra 3 điều mình sợ sẽ mất nếu thành công và một cách để bảo vệ điều đó khi phát triển.",
   "proof": "Thực hành hình dung rõ nét trong tâm trí bức tranh bạn thành công rực rỡ, được mọi người yêu thương, chúc mừng. Hãy viết ra 3 trách nhiệm lớn bạn sẵn sàng gánh vác khi đạt được mục tiêu đó trong sự bình an.",
-  "practice": "Hôm nay, quan sát mô thức 'Sợ Thành Công' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Nỗi sợ hãi sâu kín nào trỗi dậy khi bạn hình dung mình trở nên cực kỳ giàu có và nổi tiếng?",
    "Bạn có đang vô thức tự giới hạn bản thân chỉ vì sợ sự phán xét hay đố kỵ từ người thân xung quanh?",
@@ -1465,18 +1178,16 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Nghiệp sợ thành công là mô thức vừa muốn phát triển, vừa vô thức kìm mình lại vì sợ bị chú ý, bị phán xét hoặc bị xa cách. Thành công không đòi hỏi bạn phải rời xa người mình yêu.",
+  "explainSrc": "workbook"
  },
  {
   "n": 21,
   "title": "Khép Vòng Cũ",
   "intro": "Ngày 21 — Khép Vòng Cũ: Tiếp tục hành trình quan sát và chuyển hóa những mô thức quen thuộc trong suy nghĩ, lời nói và hành động của mình.",
-  "pattern": "Nhận diện mô thức 'Khép Vòng Cũ' trong đời sống hàng ngày của mình.",
-  "manifest": [
-   "Quan sát biểu hiện trong tiền bạc — nơi mô thức này thường rõ ràng nhất.",
-   "Quan sát trong mối quan hệ — nơi mô thức tạo ra khoảng cách hoặc xung đột.",
-   "Quan sát trong công việc và sự nghiệp — nơi mô thức ảnh hưởng đến kết quả lâu dài."
-  ],
+  "pattern": "",
+  "manifest": [],
   "ex": [
    "Ngồi thiền tĩnh lặng 20 phút, rải tâm từ bi và lòng biết ơn sâu sắc đến toàn bộ tiến trình 21 ngày đã đi qua.",
    "Viết một bức tâm thư gửi cho chính mình ở tương lai 1 năm sau, miêu tả rõ trạng thái bình an và những thành quả bạn đã gặt hái được nhờ sự chuyển hóa này."
@@ -1484,34 +1195,15 @@ window.GN_DAYS = [
   "conseq": "5 Trụ cột năng lượng của bạn được đồng bộ hóa và làm sạch hoàn toàn. Bạn chính thức khép lại vòng lặp nghiệp cũ u tối để bước vào một chu kỳ sinh mệnh mới ngập tràn ánh sáng, tình yêu và tài chính thịnh vượng thông suốt tự nhiên.",
   "essence": "Chuyển hóa không phải là đích đến — đó là một hành trình không ngừng nghỉ của sự tỉnh thức và chọn lựa. Mỗi ngày mới là một cơ hội để bạn tiếp tục trở về với bản thể chân thật của mình.",
   "essenceQuote": "Tôi hoàn thành 21 ngày này với lòng biết ơn và niềm tự hào sâu sắc. Tôi bước vào chu kỳ sống mới với 5 Trụ Cột Năng Lượng được làm sạch và củng cố.",
-  "root": [
-   "Mô thức 'Khép Vòng Cũ' có gốc rễ từ những trải nghiệm và niềm tin được hình thành sớm trong cuộc đời.",
-   "Khi gọi tên được gốc rễ, ta bắt đầu hiểu mà không tự kết án — và từ đó mới có thể chuyển hóa.",
-   "Hệ quả trong đời sống trưởng thành cần được quan sát với sự tử tế và trách nhiệm."
-  ],
+  "root": [],
   "awTitle": "",
   "aw": [
-   "Nhận ra 'Khép Vòng Cũ' là mô thức — không phải bản chất không thể thay đổi.",
-   "Chuyển hóa là nhận ra sớm hơn khi mình sắp nghĩ, nói hoặc hành động theo lối cũ — rồi chọn lại.",
-   "Khi nhìn rõ mô thức 'Khép Vòng Cũ', mình có thêm quyền lựa chọn một cách phản ứng khác — đúng hơn, lành hơn, có trách nhiệm hơn."
+   "Chuyển hóa là nhận ra sớm hơn khi mình sắp nghĩ, nói hoặc hành động theo lối cũ — rồi chọn lại."
   ],
-  "apply": [
-   [
-    "TRONG TIỀN BẠC",
-    "Quan sát mô thức này ảnh hưởng đến quyết định tài chính của mình ra sao."
-   ],
-   [
-    "TRONG MỐI QUAN HỆ",
-    "Nhận ra khi nào mô thức này xuất hiện và chọn một cách phản hồi mới."
-   ],
-   [
-    "TRONG CÔNG VIỆC",
-    "Áp dụng nhận thức mới vào một tình huống cụ thể trong công việc hôm nay."
-   ]
-  ],
+  "apply": [],
   "action": "Viết tổng kết 21 ngày và cam kết 90 ngày tiếp theo với 1 mô thức sẽ tiếp tục quan sát.",
   "proof": "Ngồi thiền tĩnh lặng 20 phút. Sau đó viết một bức tâm thư gửi cho chính mình ở tương lai 1 năm sau, miêu tả rõ trạng thái bình an và những thành quả bạn đã gặt hái được.",
-  "practice": "Hôm nay, quan sát mô thức 'Khép Vòng Cũ' trong một tình huống cụ thể. Viết xuống: điều mình nhận ra, cảm xúc đằng sau, và một hành động nhỏ để chọn khác đi.",
+  "practice": "",
   "journal": [
    "Trải nghiệm thay đổi lồng ngực diệu kỳ nhất của bạn trong suốt hành trình 21 ngày qua là gì?",
    "Bạn cam kết sẽ duy trì những thói quen thực chứng nào hằng ngày để bảo vệ 5 Trụ Cột Năng Lượng của mình?",
@@ -1538,7 +1230,9 @@ window.GN_DAYS = [
     "t": "Tích lũy bằng chứng",
     "d": "Viết ra 3 lần mình đã chọn khác đi thành công, dù nhỏ. Bằng chứng này xây dựng niềm tin vào khả năng thay đổi của mình."
    }
-  ]
+  ],
+  "explain": "Ngày cuối không phải để tuyên bố mình đã khác hoàn toàn. Đây là khoảng dừng để nhìn lại: vòng lặp nào vẫn muốn kéo mình về cách sống cũ? Chuyển hóa bền đến từ khả năng nhận ra sớm hơn.",
+  "explainSrc": "workbook"
  }
 ];
 window.GN_WEEKS = [
@@ -1741,10 +1435,11 @@ window.GN_FRONT = [
  }
 ];
 window.GN_UPSELL = [
- "MUỐN ĐI SÂU HƠN?",
+ "2 1  N G À Y  C H U Y Ể N  H Ó A  N G H I Ệ P Tú Quỳnh  ·  21 Ngày Chuyển Nghiệp",
+ "M U Ố N  Đ I  S Â U  H Ơ N ?",
  "Một số mô thức nghiệp",
  "không thể tự nhìn thấy một mình",
- "CHƯƠNG TRÌNH ĐỒNG HÀNH  ·  VÒNG TRÒN GIẢI NGHIỆP",
+ "C H Ư Ơ N G  T R Ì N H  Đ Ồ N G  H À N H    ·    V Ò N G  T R Ò N  G I Ả I  N G H I Ệ P",
  "Cùng Vòng Tròn Tâm Thức",
  "& Người Đồng Hành – Thiện Tri Thức",
  "Nếu sau khi đi hết 21 ngày, bạn muốn có vòng tròn nhỏ 5–7 người cùng hành trình và",
@@ -1761,5 +1456,5 @@ window.GN_UPSELL = [
  "\"Chuyển hóa không phải là xóa đi con người cũ.",
  "Đó là trở thành phiên bản đúng hơn của chính mình.\"",
  "— Tú Quỳnh",
- "HIỂU HẠNH  ·  HIỂU ĐỂ HẠNH PHÚC  ·  21 NGÀY CHUYỂN HÓA NGHIỆP"
+ "H I Ể U  H Ạ N H    ·    H I Ể U  Đ Ể  H Ạ N H  P H Ú C    ·    2 1  N G À Y  C H U Y Ể N  H Ó A  N G H I Ệ P"
 ];

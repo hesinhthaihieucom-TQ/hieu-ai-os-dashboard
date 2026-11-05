@@ -5,6 +5,7 @@
 const NAV = [
   { key:'trang-chu', title:'Hành Trình 21 Ngày' },
   { key:'gioi-thieu', title:'Giới Thiệu Hành Trình' },
+  { key:'cac-loai-nghiep', title:'Các Loại Nghiệp' },
   { key:'ngay', title:'Bài Học Hôm Nay', hidden:true }, // vào qua bấm 1 ngày ở Hành Trình
   { key:'nhat-ky', title:'Nhật Ký Của Tôi' },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm tên ở cuối sidebar

@@ -45,6 +45,7 @@
           ${next ? `<button class="btn btn-full" id="gn-continue">${doneCount===0?'Bắt đầu Ngày 1':'Tiếp tục Ngày '+next.n} — ${esc(next.title)} →</button>` :
             `<div class="hint-box">🌿 Bạn đã khép lại 21 ngày. Chuyển hóa không phải là xóa hết điều cũ, mà là nhận ra sớm hơn khi mình sắp nghĩ, nói hoặc hành động theo lối cũ — rồi chọn lại.</div>`}
         </div>
+        ${(prog[1] && prog[1].answers && prog[1].answers.covenant) ? '' : `<div class="hint-box" id="gn-cv-hint" style="cursor:pointer;margin-bottom:12px;">✍️ Bạn chưa ký <b>Lời khế ước tâm thức</b>. Đọc và ký khế ước trước khi bắt đầu Ngày 1 →</div>`}
         <div class="section" id="gn-gift" style="margin-top:16px;">
           <h3>🎁 Quà tặng của bạn</h3>
           <p style="margin:0 0 12px;color:var(--ink-soft);font-size:16px;line-height:1.6;">Ebook 21 Ngày Chuyển Hóa Nghiệp và Workbook thực hành — tải về để đọc hoặc in ra viết tay.</p>
@@ -60,6 +61,7 @@
       container.querySelectorAll('.gn-day').forEach(el=>{ el.onclick = ()=>open(parseInt(el.getAttribute('data-day'),10)); });
       const cont = container.querySelector('#gn-continue'); if(cont) cont.onclick = ()=>open(next.n);
       container.querySelector('#gn-intro').onclick = ()=>{ location.hash = 'gioi-thieu'; };
+      const cvh = container.querySelector('#gn-cv-hint'); if(cvh) cvh.onclick = ()=>{ location.hash = 'gioi-thieu'; };
       container.querySelectorAll('[data-dl]').forEach(btn=>{
         btn.onclick = async ()=>{
           const msg = container.querySelector('#gn-dl-msg');
