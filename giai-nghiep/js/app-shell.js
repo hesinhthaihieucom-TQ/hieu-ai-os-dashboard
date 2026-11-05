@@ -15,17 +15,24 @@ const AppState = { user:null, profile:null, covenant:false, route:'gioi-thieu', 
 function defaultRoute(){ return AppState.covenant ? 'trang-chu' : 'gioi-thieu'; }
 window.gnCovenantSigned = ()=>{ AppState.covenant = true; };
 
-// Giá + đồng hồ đếm ngược DÙNG CHUNG với ladipage (giai-nghiep/lp/, cùng origin nên cùng localStorage) —
-// khách đi từ ladipage sang app thấy đúng giá/đồng hồ đang chạy, không bị reset.
+// Giá ưu đãi 149k giữ 24 GIỜ kể từ lần đầu 1 địa chỉ IP mở ladipage/app (mốc lưu ở server, api/gn-gia.js — mở lại sau KHÔNG reset);
+// hết 24h là 299k. Mốc được cache vào localStorage (CHUNG key với ladipage, cùng origin) để các lần tính giá sau không phải gọi lại;
+// server lỗi thì tạm dùng cửa sổ 24h cục bộ.
 const GN_PROMO_PRICE = 149000, GN_REGULAR_PRICE = 299000, GN_DEADLINE_KEY = 'gn21_lp_deadline_ts';
 function gnActivePrice(){
   let deadline = NaN;
   try { deadline = parseInt(localStorage.getItem(GN_DEADLINE_KEY), 10); } catch(e){}
-  if(!deadline || isNaN(deadline)){
-    deadline = Date.now() + 60*60*1000;
-    try { localStorage.setItem(GN_DEADLINE_KEY, String(deadline)); } catch(e){}
-  }
-  return Date.now() < deadline ? GN_PROMO_PRICE : GN_REGULAR_PRICE;
+  return (deadline && Date.now() < deadline) ? GN_PROMO_PRICE : GN_REGULAR_PRICE;
+}
+async function gnSyncDeadline(){
+  try{
+    const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 2500);
+    const r = await fetch('api/gn-gia', { signal: ctl.signal, cache:'no-store' }); clearTimeout(to);
+    const j = await r.json();
+    if(j && j.ok && j.deadline){ try { localStorage.setItem(GN_DEADLINE_KEY, String(j.deadline)); } catch(e){} return; }
+  } catch(e){}
+  let d = NaN; try { d = parseInt(localStorage.getItem(GN_DEADLINE_KEY), 10); } catch(e){}
+  if(!d || isNaN(d)){ try { localStorage.setItem(GN_DEADLINE_KEY, String(Date.now() + 24*60*60*1000)); } catch(e){} }
 }
 const GN_PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 
@@ -241,8 +248,9 @@ function renderSetNewPasswordScreen(err, successMsg){
 let payPollTimer = null;
 function stopPayPolling(){ if(payPollTimer){ clearInterval(payPollTimer); payPollTimer = null; } }
 
-function renderPaywall(){
+async function renderPaywall(){
   const root = document.getElementById('app');
+  await gnSyncDeadline();
   const p = AppState.profile;
   const refCode = p && p.ref_code;
   const amount = gnActivePrice();

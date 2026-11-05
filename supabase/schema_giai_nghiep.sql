@@ -38,3 +38,11 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.update_my_full_name(text) to authenticated;
+
+-- Cửa sổ giá ưu đãi 24 giờ theo IP (xem api/gn-gia.js): mỗi IP (đã băm SHA-256, không lưu IP thô) chỉ có 1 mốc first_seen,
+-- mở lại sau không reset. RLS bật và KHÔNG có policy nào → chỉ service_role (server) đọc/ghi được, khách không đụng được.
+create table if not exists public.gn_price_window (
+  ip_hash text primary key,
+  first_seen timestamptz not null default now()
+);
+alter table public.gn_price_window enable row level security;
