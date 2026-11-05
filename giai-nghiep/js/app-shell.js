@@ -24,10 +24,20 @@ function gnActivePrice(){
   try { deadline = parseInt(localStorage.getItem(GN_DEADLINE_KEY), 10); } catch(e){}
   return (deadline && Date.now() < deadline) ? GN_PROMO_PRICE : GN_REGULAR_PRICE;
 }
+  // Mã thiết bị ngẫu nhiên (localStorage + cookie 1 năm) gửi kèm để server chống lách bằng đổi mạng — xem api/gn-gia.js.
+function gnDeviceId(){
+  let d = '';
+  try { d = localStorage.getItem('gn21_dev') || ''; } catch(e){}
+  if(!d){ const m = /(?:^|; )gn21_dev=([a-f0-9]+)/.exec(document.cookie || ''); if(m) d = m[1]; }
+  if(!/^[a-f0-9]{16,64}$/.test(d)){ d = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+  try { localStorage.setItem('gn21_dev', d); } catch(e){}
+  try { document.cookie = 'gn21_dev='+d+'; max-age=31536000; path=/; SameSite=Lax'; } catch(e){}
+  return d;
+}
 async function gnSyncDeadline(){
   try{
     const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 2500);
-    const r = await fetch('api/gn-gia', { signal: ctl.signal, cache:'no-store' }); clearTimeout(to);
+    const r = await fetch('api/gn-gia?d='+gnDeviceId(), { signal: ctl.signal, cache:'no-store' }); clearTimeout(to);
     const j = await r.json();
     if(j && j.ok && j.deadline){ try { localStorage.setItem(GN_DEADLINE_KEY, String(j.deadline)); } catch(e){} return; }
   } catch(e){}
