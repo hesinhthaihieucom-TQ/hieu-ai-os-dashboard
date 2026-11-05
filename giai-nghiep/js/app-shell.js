@@ -15,10 +15,10 @@ const AppState = { user:null, profile:null, covenant:false, route:'gioi-thieu', 
 function defaultRoute(){ return AppState.covenant ? 'trang-chu' : 'gioi-thieu'; }
 window.gnCovenantSigned = ()=>{ AppState.covenant = true; };
 
-// Giá ưu đãi 149k luôn là 149k (chị Quỳnh chốt 2026-11-05: đồng hồ 24h ở ladipage chỉ để kích cầu, mỗi lần khách mở lại link là đếm lại,
-// không bao giờ lên 299k) — nên app không có mốc giờ nào cả.
-const GN_PROMO_PRICE = 149000;
-function gnActivePrice(){ return GN_PROMO_PRICE; }
+// Giá ưu đãi 149k giữ 24 GIỜ kể từ lúc MỞ app (chị Quỳnh chốt 2026-11-05, chỉ để kích cầu): không lưu mốc ở đâu → tắt mở lại là 149k lại,
+// chỉ khi để nguyên 1 lần mở quá 24h mới lên 299k. Cùng cơ chế với ladipage (giai-nghiep/lp/).
+const GN_PROMO_PRICE = 149000, GN_REGULAR_PRICE = 299000, GN_OPENED_AT = Date.now();
+function gnActivePrice(){ return (Date.now() - GN_OPENED_AT) < 24*60*60*1000 ? GN_PROMO_PRICE : GN_REGULAR_PRICE; }
 const GN_PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
 
 function sidebarFootHtml(){

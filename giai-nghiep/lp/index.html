@@ -130,7 +130,7 @@
         <div class="lp-price-new tc-lp-price">149.000đ</div>
         <div class="lp-price-save">💰 Bạn tiết kiệm ngay <b class="tc-lp-save">850.000đ</b></div>
       </div>
-      <div class="lp-countdown tc-lp-countdown-wrap" style="margin:4px 0 16px;">⏰ Giá ưu đãi chỉ giữ trong <span class="tc-lp-countdown-time">24:00:00</span></div>
+      <div class="lp-countdown tc-lp-countdown-wrap" style="margin:4px 0 16px;">⏰ Giá này chỉ giữ trong <span class="tc-lp-countdown-time">24:00:00</span> — hết giờ tự lên <b>299.000đ</b></div>
       <div class="lp-price-gets">
         <div class="lp-price-gets-title">Tham gia hôm nay, bạn nhận trọn bộ:</div>
         <div class="lp-price-gets-item">✅ <span><b>Web App 21 ngày tự học</b> — dùng trên điện thoại hoặc máy tính, trọn đời</span></div>
@@ -190,13 +190,14 @@
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
-// Đếm ngược 24 GIỜ giá ưu đãi 149k — chỉ để KÍCH CẦU (chị Quỳnh chốt 2026-11-05): MỖI LẦN khách mở lại link là đếm lại 24h từ đầu,
-// KHÔNG bao giờ lên 299k (kể cả để trang mở quá 24h thì cũng đếm lại). Vì vậy không lưu mốc ở đâu cả, giá luôn là 149k.
+// Đếm ngược 24 GIỜ giá ưu đãi 149k — chỉ để KÍCH CẦU (chị Quỳnh chốt 2026-11-05): mốc tính từ lúc khách MỞ TRANG, không lưu ở đâu cả →
+// khách tắt link rồi mở lại là đếm lại 24h từ đầu (vẫn 149k). Chỉ khi để nguyên 1 lần mở quá 24h thì giá mới lên 299k. Giá sinh mã QR
+// đọc CHUNG nguồn với giá hiển thị để đồng hồ là THẬT, không phải đếm ngược giả.
 (function(){
   const WINDOW_MS = 24*60*60*1000;
-  const PROMO = 149000, ORIGINAL = 999000;
-  let deadline = Date.now() + WINDOW_MS;
-  const activePrice = () => PROMO;
+  const PROMO = 149000, REGULAR = 299000, ORIGINAL = 999000;
+  const deadline = Date.now() + WINDOW_MS;
+  const activePrice = () => Date.now() < deadline ? PROMO : REGULAR;
   const fmt = n => n.toLocaleString('vi-VN') + 'đ';
   function updatePriceUI(){
     const p = activePrice();
@@ -204,14 +205,19 @@
     document.querySelectorAll('.tc-lp-off').forEach(el => el.textContent = '-' + Math.round((ORIGINAL-p)/ORIGINAL*100) + '%');
     document.querySelectorAll('.tc-lp-save').forEach(el => el.textContent = fmt(ORIGINAL-p));
   }
+  let timer;
   const two = n => (n<10?'0':'')+n;
   function tick(){
-    let ms = deadline - Date.now();
-    if(ms <= 0){ deadline = Date.now() + WINDOW_MS; ms = WINDOW_MS; } // hết giờ thì đếm lại, không lên giá
+    const ms = deadline - Date.now();
+    if(ms <= 0){
+      // Hết giờ: ẩn khối đếm ngược, lặng lẽ hiện giá mới — không báo "đã hết ưu đãi" để khách khỏi bỏ đi.
+      document.querySelectorAll('.tc-lp-countdown-wrap').forEach(el => el.style.display = 'none');
+      updatePriceUI(); clearInterval(timer); return;
+    }
     const t = Math.floor(ms/1000), h = Math.floor(t/3600), m = Math.floor((t%3600)/60), sec = t%60;
     document.querySelectorAll('.tc-lp-countdown-time').forEach(el => el.textContent = two(h)+':'+two(m)+':'+two(sec));
   }
-  updatePriceUI(); tick(); setInterval(tick, 1000);
+  updatePriceUI(); tick(); timer = setInterval(tick, 1000);
 
   const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', name:'LE TU QUYNH' };
   const $ = id => document.getElementById(id);
