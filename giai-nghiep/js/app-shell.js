@@ -3,15 +3,17 @@
 // không vào được bài học. gn_has_paid CHỈ bật bởi api/sepay-webhook.js khi nội dung CK có "GN21".
 
 const NAV = [
-  { key:'trang-chu', title:'Hành Trình 21 Ngày' },
-  { key:'gioi-thieu', title:'Giới Thiệu Hành Trình' },
-  { key:'cac-loai-nghiep', title:'Các Loại Nghiệp' },
+  { key:'gioi-thieu', title:'Bắt Đầu Hành Trình' }, // nghiệp là gì + 5 Trụ Cột + khế ước — ĐẦU TIÊN
+  { key:'trang-chu', title:'Hành Trình 21 Ngày' },  // gồm cả giải thích từng loại nghiệp
   { key:'ngay', title:'Bài Học Hôm Nay', hidden:true }, // vào qua bấm 1 ngày ở Hành Trình
   { key:'nhat-ky', title:'Nhật Ký Của Tôi' },
   { key:'tai-khoan', title:'Tài khoản', hidden:true }, // vào qua bấm tên ở cuối sidebar
 ];
 
-const AppState = { user:null, profile:null, route:'trang-chu', authMode:'login', passwordRecoveryMode:false };
+const AppState = { user:null, profile:null, covenant:false, route:'gioi-thieu', authMode:'login', passwordRecoveryMode:false };
+// Chưa ký Lời khế ước thì mở "Bắt Đầu Hành Trình" trước; đã ký thì vào thẳng Hành Trình.
+function defaultRoute(){ return AppState.covenant ? 'trang-chu' : 'gioi-thieu'; }
+window.gnCovenantSigned = ()=>{ AppState.covenant = true; };
 
 // Giá + đồng hồ đếm ngược DÙNG CHUNG với ladipage (giai-nghiep/lp/, cùng origin nên cùng localStorage) —
 // khách đi từ ladipage sang app thấy đúng giá/đồng hồ đang chạy, không bị reset.
@@ -40,7 +42,7 @@ function sidebarFootHtml(){
 
 function currentRouteFromHash(){
   const h = (location.hash || '').replace('#','');
-  return NAV.some(n=>n.key===h) ? h : 'trang-chu';
+  return NAV.some(n=>n.key===h) ? h : defaultRoute();
 }
 
 async function initApp(){
@@ -60,15 +62,15 @@ async function initApp(){
       // Supabase bắn lại SIGNED_IN khi refresh token/focus tab — chỉ render lại khi là phiên MỚI.
       if(AppState.user && AppState.user.id === session.user.id) return;
       AppState.user = session.user;
-      AppState.route = 'trang-chu';
       loadProfile().then(()=>{
-        location.hash = 'trang-chu';
+        AppState.route = defaultRoute();
+        location.hash = AppState.route;
         renderApp();
         if(window.maybeShowInstallPrompt && hasAccess()) window.maybeShowInstallPrompt();
       });
     } else if(event === 'SIGNED_OUT'){
       stopPayPolling();
-      AppState.user = null; AppState.profile = null; AppState.route = 'trang-chu'; AppState.passwordRecoveryMode = false;
+      AppState.user = null; AppState.profile = null; AppState.covenant = false; AppState.route = 'gioi-thieu'; AppState.passwordRecoveryMode = false;
       location.hash = '';
       renderAuthScreen();
     }
@@ -97,6 +99,10 @@ async function loadProfile(){
   if(!AppState.user) return;
   const { data } = await supabaseClient.from('profiles').select('*').eq('id', AppState.user.id).maybeSingle();
   AppState.profile = data || null;
+  try{
+    const { data:cv } = await supabaseClient.from('gn_progress').select('answers').eq('user_id', AppState.user.id).eq('day', 1).maybeSingle();
+    AppState.covenant = !!(cv && cv.answers && cv.answers.covenant);
+  } catch(e){}
 }
 
 function hasAccess(){
@@ -277,7 +283,7 @@ function renderPaywall(){
     await loadProfile();
     if(hasAccess()){
       stopPayPolling();
-      location.hash = 'trang-chu';
+      location.hash = defaultRoute();
       renderApp();
       if(window.maybeShowInstallPrompt) window.maybeShowInstallPrompt();
     }
@@ -324,7 +330,7 @@ function renderApp(){
   const closeDrawer = ()=>{ sidebar.classList.remove('open'); overlay.classList.remove('open'); };
   root.querySelector('#menu-toggle-btn').onclick = ()=>{ sidebar.classList.add('open'); overlay.classList.add('open'); };
   overlay.onclick = closeDrawer;
-  root.querySelector('#sidebar-brand-home').onclick = ()=>{ location.hash = 'trang-chu'; closeDrawer(); };
+  root.querySelector('#sidebar-brand-home').onclick = ()=>{ location.hash = defaultRoute(); closeDrawer(); };
   nav.querySelectorAll('.sidebar-item').forEach(el=>{ el.onclick = ()=>{ location.hash = el.getAttribute('data-key'); closeDrawer(); }; });
   root.querySelector('#signout-btn').onclick = async ()=>{ await supabaseClient.auth.signOut(); };
   root.querySelector('#sidebar-foot-info').onclick = ()=>{ location.hash = 'tai-khoan'; };

@@ -31,38 +31,45 @@
       };
       ['ex','jr'].forEach(k=>{ state.answers[k] = state.answers[k] || []; });
 
-      const more = [];
-      d.ex.forEach((x,i)=>{ if(x) more.push(H('Ví dụ thực tế '+(i+1)) + P(x)); });
-      if(d.conseq) more.push(H('Hệ quả của nghiệp') + P(d.conseq));
-      if(d.essence || d.essenceQuote) more.push(H('Bản chất tâm thức') + (d.essence?P(d.essence):'') + (d.essenceQuote?`<div class="gn-quote" style="font-size:17px;">${esc(d.essenceQuote)}</div>`:''));
-      if(d.root.length) more.push(H('Gốc rễ & phân tích sâu — Tại sao mô thức này tồn tại?') + d.root.map(P).join(''));
-      if(d.awTitle || d.aw.length) more.push(H('Nhận thức mới — Góc nhìn cần cài lại') + (d.awTitle?`<p style="font-size:17px;line-height:1.7;font-weight:600;margin:0 0 8px;">${esc(d.awTitle)}</p>`:'') + d.aw.map(P).join(''));
-      if(d.apply.length) more.push(H('Ứng dụng vào đời sống') + `<div class="gn-apply">${d.apply.map(a=>`<div><b>${esc(a[0])}</b>${esc(a[1])}</div>`).join('')}</div>`);
-      if(d.practice) more.push(H('Thực hành chuyển nghiệp') + P(d.practice));
+      const wk = (d.n<=7?1:d.n<=14?2:3);
+      const P = (x)=>`<p style="font-size:16.5px;line-height:1.75;margin:0 0 10px;">${esc(x)}</p>`;
+      const parts = [];
+      // --- Bố cục theo ebook: badge → tên → intro → mô thức → biểu hiện → ví dụ → hệ quả → bản chất → gốc rễ → nhận thức mới → ứng dụng → thực hành
+      parts.push(`<div class="eb-badge"><b>${String(n).padStart(2,'0')}</b> Nhận diện nghiệp cũ</div>
+        <h1 class="eb-title">Giải nghiệp ${esc(d.title)}</h1>
+        <div class="eb-sub">Quan sát · Hiểu · Chuyển hóa</div>`);
+      if(d.explain) parts.push(`<div class="eb-label">Nghiệp ${esc(d.title)} là gì?</div><div class="eb-intro">${esc(d.explain)}</div>`);
+      if(d.pattern) parts.push(`<div class="eb-label">Mô thức cần quan sát</div><div class="eb-pattern">${esc(d.pattern)}</div>`);
+      if(d.manifest.length) parts.push(`<div class="eb-label">Biểu hiện trong đời sống</div>${d.manifest.map((x,i)=>`<div class="eb-num"><i>${String(i+1).padStart(2,'0')}</i><div>${esc(x)}</div></div>`).join('')}`);
+      const deep = [];
+      d.ex.forEach((x,i)=>{ if(x) deep.push(`<div class="eb-ex"><div class="eb-card-label">Ví dụ thực tế ${i+1}</div>${esc(x)}</div>`); });
+      if(d.conseq) deep.push(`<div class="eb-conseq"><div class="eb-card-label">⚡ Hệ quả của nghiệp</div>${esc(d.conseq)}</div>`);
+      if(d.essence) deep.push(`<div class="eb-essence"><div class="eb-card-label">🔍 Bản chất tâm thức</div>${esc(d.essence)}</div>`);
+      if(d.essenceQuote) deep.push(`<div class="eb-quote-or">“${esc(d.essenceQuote)}”</div>`);
+      if(d.root.length) deep.push(`<div class="eb-label">Gốc rễ &amp; phân tích sâu</div><div class="eb-essence"><div class="eb-card-label">🌱 Tại sao mô thức này tồn tại?</div>${d.root.map(P).join('')}</div>`);
+      if(d.awTitle || d.aw.length) deep.push(`<div class="eb-label">Nhận thức mới</div><div class="eb-dark"><b>Góc nhìn cần cài lại</b>${esc(d.awTitle||'')}${d.aw.map(x=>`<div style="margin-top:8px;font-size:16.5px;opacity:.95;">${esc(x)}</div>`).join('')}</div>`);
+      if(d.apply.length) deep.push(`<div class="eb-label">Ứng dụng vào đời sống</div><div class="eb-apply">${d.apply.map((a,i)=>`<div><b>${['💰','💚','🌿'][i]||''} ${esc(a[0])}</b>${esc(a[1])}</div>`).join('')}</div>`);
+      if(d.practice) deep.push(`<div class="eb-label">Thực hành chuyển nghiệp</div><div class="eb-pattern" style="font-style:normal;">${esc(d.practice)}</div>`);
+      if(deep.length) parts.push(`<details class="kt-section" style="margin-top:18px;" open><summary class="kt-summary">Nội dung đầy đủ của ngày ${n}</summary><div style="margin-top:6px;">${deep.join('')}</div></details>`);
 
       const upsell = (n===21 && window.GN_UPSELL && window.GN_UPSELL.length)
         ? `<details class="kt-section" style="margin-top:16px;"><summary class="kt-summary">${esc(window.GN_UPSELL[0])}</summary><div style="margin-top:8px;">${gnParas(window.GN_UPSELL.slice(1)).map(P).join('')}</div></details>` : '';
 
       container.innerHTML = `
-        <div class="page-head">
-          <span class="tag">Ngày ${String(n).padStart(2,'0')} · Nhận diện nghiệp cũ</span>
-          <h1>Giải nghiệp ${esc(d.title)}</h1>
-          <div style="margin-top:10px;"><span class="help-btn" id="gn-help">❓ Hướng dẫn</span></div>
+        <div class="gn-jump" id="gn-jump">
+          <a href="#" data-go="gn-read">📖 Đọc</a><a href="#" data-go="gn-act">⚡ Hành động</a><a href="#" data-go="gn-ex">✍️ Bài tập</a><a href="#" data-go="gn-jr">📔 Nhật ký</a><a href="#" data-go="gn-commit">🖊️ Cam kết</a>
         </div>
+        <div style="margin:0 0 10px;display:flex;gap:8px;flex-wrap:wrap;"><span class="help-btn" id="gn-home-top">← Hành trình</span><span class="help-btn" id="gn-help">❓ Hướng dẫn</span></div>
 
-        <div class="section" id="gn-read">
-          <h3>Nghiệp ${esc(d.title)} là gì?</h3>
-          ${d.explain ? `<div class="body" style="white-space:normal;">${esc(d.explain)}</div>` : ''}
-          ${d.pattern ? `<p style="font-size:16.5px;line-height:1.7;margin:12px 0 0;"><b>Mô thức cần quan sát:</b> ${esc(d.pattern)}</p>` : ''}
-          ${d.manifest.length ? `<p style="font-size:16.5px;line-height:1.7;margin:12px 0 4px;"><b>Biểu hiện trong đời sống</b></p><ul style="padding-left:20px;line-height:1.7;font-size:16.5px;margin:0;">${d.manifest.map(x=>`<li style="margin-bottom:6px;">${esc(x)}</li>`).join('')}</ul>` : ''}
-          ${more.length ? `<details class="kt-section" style="margin-top:14px;"><summary class="kt-summary">Đọc thêm — ví dụ, hệ quả, gốc rễ và ứng dụng của ngày ${n}</summary><div style="margin-top:6px;">${more.join('')}</div></details>` : ''}
-        </div>
+        <div class="eb-block" id="gn-read">${parts.join('')}</div>
 
-        ${d.action ? `<div class="gn-action" id="gn-action"><b>⚡ Bước hành động hôm nay</b>${esc(d.action)}</div>` : ''}
+        <div id="gn-act">
+        ${d.action ? `<div class="gn-action"><b>⚡ Bước hành động hôm nay</b>${esc(d.action)}</div>` : ''}
         ${d.proof ? `<div class="gn-action" style="margin-top:10px;"><b>⚡ Hành động thực chứng hôm nay</b>${esc(d.proof)}</div>` : ''}
+        </div>
 
-        <div class="section" id="gn-ex" style="margin-top:16px;">
-          <h3>Bài tập áp dụng</h3>
+        <div class="eb-block" id="gn-ex" style="margin-top:16px;">
+          <h2>Bài tập áp dụng</h2>
           ${d.exercises.map((e,i)=>`
             <div class="gn-ex">
               <div class="gn-ex-t">Bài tập ${i+1} — ${esc(e.t)}</div>
@@ -71,20 +78,20 @@
             </div>`).join('')}
         </div>
 
-        <div class="section" id="gn-jr">
-          <h3>Gợi ý suy ngẫm — nhật ký hôm nay</h3>
+        <div class="eb-block" id="gn-jr">
+          <h2>Gợi ý suy ngẫm — nhật ký hôm nay</h2>
           ${d.journal.map((q,i)=>`
             <div class="gn-q">${i+1}. ${esc(q)}</div>
             <textarea data-k="jr" data-i="${i}" placeholder="Viết thật, không cần hay…">${esc(state.answers.jr[i]||'')}</textarea>`).join('')}
         </div>
 
-        <div class="section" id="gn-check">
-          <h3>Danh sách kiểm tra tiến độ — Ngày ${String(n).padStart(2,'0')}</h3>
+        <div class="eb-block" id="gn-check">
+          <h2>Danh sách kiểm tra tiến độ — Ngày ${String(n).padStart(2,'0')}</h2>
           ${d.checklist.map((c,i)=>`<label class="gn-check"><input type="checkbox" data-ci="${i}" ${state.checklist[i]?'checked':''}><span>${esc(c)}</span></label>`).join('')}
         </div>
 
-        <div class="section highlight" id="gn-commit">
-          <h3>Cam kết hôm nay</h3>
+        <div class="eb-block" id="gn-commit" style="border-left:4px solid var(--gold);">
+          <h2>Cam kết hôm nay</h2>
           <div class="gn-commit">${esc(d.commit)}</div>
           <label style="display:block;font-weight:600;font-size:15px;color:var(--ink-soft);margin-top:14px;">Chữ ký</label>
           <input id="gn-sign-name" type="text" placeholder="Gõ tên của bạn để ký" value="${esc((state.answers.sign&&state.answers.sign.name) || ((ctx.profile&&ctx.profile.full_name)||''))}">
@@ -101,6 +108,9 @@
           <button class="btn btn-ghost" id="gn-home">Về hành trình</button>
           ${n<21?`<button class="btn btn-sm" id="gn-next">Ngày ${n+1} →</button>`:'<span></span>'}
         </div>`;
+
+      container.querySelectorAll('[data-go]').forEach(a=>{ a.onclick = (e)=>{ e.preventDefault(); const t = container.querySelector('#'+a.getAttribute('data-go')); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); }; });
+      container.querySelector('#gn-home-top').onclick = ()=>{ location.hash = 'trang-chu'; };
 
       const savedEl = container.querySelector('#gn-saved');
       let saving = false, dirty = false;
