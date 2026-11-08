@@ -247,7 +247,7 @@ function renderPaywall(){
     <div class="auth-shell" style="padding-top:40px;">
       <img src="assets/logo-hieu-hanh.png" class="auth-logo" alt="">
       <h1>Mở khoá 21 Ngày Giải Nghiệp</h1>
-      <div class="sub">Thanh toán 1 lần · Truy cập trọn đời</div>
+      <div class="sub">Phí cam kết năng lượng · Đóng 1 lần · Truy cập trọn đời</div>
       <div class="card" style="text-align:center;">
         ${refCode ? `
         <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);">
@@ -255,7 +255,7 @@ function renderPaywall(){
           <div class="gn-pay-row"><b>Ngân hàng:</b> Vietinbank</div>
           <div class="gn-pay-row"><b>Số tài khoản:</b> ${GN_PAYMENT_BANK.account} <span class="gn-copy" data-copy="${GN_PAYMENT_BANK.account}">Copy</span></div>
           <div class="gn-pay-row"><b>Chủ tài khoản:</b> ${GN_PAYMENT_BANK.accountName}</div>
-          <div class="gn-pay-row"><b>Số tiền:</b> ${amount.toLocaleString('vi-VN')}đ <span class="gn-copy" data-copy="${amount}">Copy</span></div>
+          <div class="gn-pay-row"><b>Phí cam kết năng lượng:</b> ${amount.toLocaleString('vi-VN')}đ <span class="gn-copy" data-copy="${amount}">Copy</span></div>
           <div class="gn-pay-row"><b>Nội dung CK (giữ nguyên):</b> ${esc(memo)} <span class="gn-copy" data-copy="${esc(memo)}">Copy</span></div>
         </div>
         <div class="hint-box" id="gn-pay-status">⏳ Đang chờ chuyển khoản… Chuyển xong trang tự mở khoá, không cần tải lại.</div>
