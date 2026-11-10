@@ -370,3 +370,8 @@ b, strong{ color:var(--white); }
 .lp-ba{ display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:560px; margin:0 auto; }
 .lp-ba figcaption b{ color:var(--white); letter-spacing:1px; } .lp-ba figcaption b.gold{ color:var(--gold); }
 @media (max-width:560px){ .lp-shot-gallery{ grid-template-columns:1fr 1fr; } }
+
+/* Video demo trước/sau (Quỳnh 11/10): khung dọc 9:16, không quá to trên máy tính */
+.lp-demo{ max-width:360px; margin:0 auto 26px; }
+.lp-demo video{ display:block; width:100%; height:auto; aspect-ratio:9/16; border-radius:14px; border:1px solid var(--line); background:#111; }
+.lp-demo-cap{ text-align:center; font-size:15px; line-height:1.6; color:var(--gray); margin-top:10px; }
