@@ -180,7 +180,7 @@
         <div class="lp-price-new tc-lp-price">990.000đ</div>
         <div class="lp-price-save">💰 Bạn tiết kiệm ngay <b class="tc-lp-save">2.510.000đ</b></div>
       </div>
-      <div class="lp-countdown tc-lp-countdown-wrap" style="margin:4px 0 16px;">⏰ Giá này chỉ giữ trong <span class="tc-lp-countdown-time">60:00</span> — hết giờ tự lên <b>1.290.000đ</b></div>
+      <div class="lp-countdown tc-lp-countdown-wrap" style="margin:4px 0 16px;">⏰ Giá này chỉ giữ trong <span class="tc-lp-countdown-time">24:00:00</span> — hết giờ tự lên <b>1.290.000đ</b></div>
       <div class="lp-price-gets">
         <div class="lp-price-gets-title">Đăng ký hôm nay, bạn nhận toàn bộ:</div>
         <div class="lp-price-gets-item">✅ <span><b>Khoá học trực tiếp</b> trọn lộ trình 5 module — khai giảng 11/11</span></div>
@@ -201,7 +201,7 @@
     <div class="lp-eyebrow-label" style="text-align:center;">Đăng ký &amp; thanh toán</div>
     <h2 class="lp-h2 lp-h2-center">Điền thông tin —<br><span class="gold">lấy mã QR ngay</span></h2>
     <div class="lp-h2-bar"></div>
-    <div class="lp-countdown tc-lp-countdown-wrap">⏰ Giá <s class="lp-old-inline">3.500.000đ</s> <span class="tc-lp-price">990.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">60:00</span></div>
+    <div class="lp-countdown tc-lp-countdown-wrap">⏰ Giá <s class="lp-old-inline">3.500.000đ</s> <span class="tc-lp-price">990.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">24:00:00</span></div>
     <div class="lp-signup-card" id="lp-signup-form-wrap">
       <label class="lp-signup-label">Họ và tên *</label>
       <input class="lp-signup-input" id="lp-su-name" type="text" placeholder="Nguyễn Văn A" autocomplete="name">
@@ -227,7 +227,7 @@
   </section>
 
   <section class="lp-final">
-    <div class="lp-countdown tc-lp-countdown-wrap">⏰ Giá <s class="lp-old-inline">3.500.000đ</s> <span class="tc-lp-price">990.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">60:00</span></div>
+    <div class="lp-countdown tc-lp-countdown-wrap">⏰ Giá <s class="lp-old-inline">3.500.000đ</s> <span class="tc-lp-price">990.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">24:00:00</span></div>
     <a class="lp-cta" href="#dang-ky">Đăng ký ngay — <s class="lp-old-inline lp-old-cta">3.500.000đ</s> <span class="tc-lp-price">990.000đ</span> →</a>
     <div class="lp-cta-note">Khai giảng 11/11 · Thanh toán 1 lần duy nhất · Cầm tay chỉ việc đến khi làm được</div>
   </section>
@@ -240,19 +240,14 @@
 </div>
 
 <script>
-// Đếm ngược giữ giá — cùng cơ chế ladipage Sổ Dòng Tiền / 21 Ngày Giải Nghiệp: 60 phút kể từ lúc khách vào trang
-// lần đầu (mốc giờ tuyệt đối lưu localStorage, F5 không reset), hết giờ lặng lẽ lên giá thường. Giá sinh mã QR đọc
-// CHUNG 1 nguồn với giá hiển thị nên đồng hồ là THẬT, không phải đếm ngược giả.
+// Đếm ngược 24 GIỜ giá ưu đãi 990k — làm giống ladipage 21 Ngày Giải Nghiệp (Quỳnh 11/10): mốc tính từ lúc khách MỞ TRANG, không lưu ở đâu cả →
+// khách tắt link rồi mở lại là đếm lại 24h từ đầu (vẫn 990k). Chỉ khi để nguyên 1 lần mở quá 24h thì giá mới lên 1.290k, lặng lẽ, không báo "hết ưu đãi".
+// Giá sinh mã QR đọc CHUNG 1 nguồn với giá hiển thị nên đồng hồ là THẬT, không phải đếm ngược giả.
 (function(){
-  const KEY = 'editai_lp_deadline_ts', WINDOW_MS = 60*60*1000;
+  const WINDOW_MS = 24*60*60*1000;
   // Giá do chủ khoá quyết định: ưu đãi 990k (theo nội dung Quỳnh gửi); giá sau khi hết giờ 1.290k là mức ĐỀ XUẤT, đổi ở đây (và dòng "hết giờ tự lên" ở khối giá).
   const PROMO = 990000, REGULAR = 1290000, ORIGINAL = 3500000;
-  let deadline = NaN;
-  try { deadline = parseInt(localStorage.getItem(KEY), 10); } catch(e){}
-  if(!deadline || isNaN(deadline)){
-    deadline = Date.now() + WINDOW_MS;
-    try { localStorage.setItem(KEY, String(deadline)); } catch(e){}
-  }
+  const deadline = Date.now() + WINDOW_MS;
   const activePrice = () => Date.now() < deadline ? PROMO : REGULAR;
   const fmt = n => n.toLocaleString('vi-VN') + 'đ';
   function updatePriceUI(){
@@ -268,8 +263,9 @@
       document.querySelectorAll('.tc-lp-countdown-wrap').forEach(el => el.style.display = 'none');
       updatePriceUI(); clearInterval(timer); return;
     }
-    const t = Math.floor(ms/1000), m = Math.floor(t/60), s = t%60;
-    const label = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    const t = Math.floor(ms/1000), h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
+    const two = n => (n<10?'0':'')+n;
+    const label = two(h)+':'+two(m)+':'+two(s);
     document.querySelectorAll('.tc-lp-countdown-time').forEach(el => el.textContent = label);
   }
   updatePriceUI(); tick(); timer = setInterval(tick, 1000);
