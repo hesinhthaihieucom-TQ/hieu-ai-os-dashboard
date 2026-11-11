@@ -15,5 +15,10 @@ Sheet tự lấy tiền VÀO từ SePay, chỉ giữ khoản có nội dung chuy
 - Mỗi dòng = 1 khoản tiền về: giờ, SĐT, số tiền, "Đúng giá?" (so với 990.000đ), nội dung, mã giao dịch.
 - Cột **"Đã mời vào nhóm Zalo?"** có ô tick để bạn đánh dấu người đã vào nhóm (trang cũng tự đưa khách vào nhóm khi tiền về).
 - Dòng **tô đỏ** = bất thường: thiếu tiền, hoặc không đọc được SĐT — nhắn hỏi khách.
-- Sheet chỉ ghi tên theo SĐT vì ladipage chỉ đưa SĐT vào nội dung chuyển khoản; muốn có cả họ tên thì cần thêm bước lưu tên khi khách bấm "lấy mã QR" (nói để làm thêm).
+- **Cột Họ tên:** lấy từ form đăng ký trên ladipage (khớp theo SĐT). Cần làm thêm bước "Nhận họ tên" bên dưới; chưa làm thì cột Họ tên để trống.
 - Tiền thật chỉ tính khi giao dịch hiện trong SePay; khách chuyển sai nội dung sẽ KHÔNG vào sheet này — kiểm tra thêm trong my.sepay.vn.
+
+## Nhận họ tên (làm 1 lần, sau các bước cài ở trên)
+1. Apps Script → **Triển khai → Tùy chọn triển khai mới → Ứng dụng web**: *Thực thi với tư cách* = **Tôi**, *Ai có quyền truy cập* = **Bất kỳ ai** → **Triển khai** → copy **URL ứng dụng web** (dạng `https://script.google.com/macros/s/.../exec`).
+2. Gửi URL đó cho Claude (hoặc dán vào hằng số `SHEET_HOOK` trong `edit-video-ai/lp/index.html`). Từ đó mỗi khách bấm "lấy mã QR" thì họ tên + SĐT được ghi vào tab "Đăng ký (chưa chắc đã CK)", và cột Họ tên ở tab chính tự điền khi tiền về.
+3. Mỗi lần sửa script phải **Triển khai → Quản lý bản triển khai → Phiên bản mới**, nếu không web app vẫn chạy bản cũ.

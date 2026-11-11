@@ -297,8 +297,17 @@
     $('lp-signup-error').hidden = true;
     if(!name){ showError('Vui lòng nhập họ tên.'); return; }
     if(!/^0\d{9}$/.test(phone)){ showError('Số điện thoại cần đủ 10 số, bắt đầu bằng 0.'); return; }
+    guiHoTen(name, phone);
     renderPayment(name, phone);
   };
+
+  // Gửi họ tên + SĐT về Google Sheet (Apps Script web app, doPost) để sheet ghi tên cạnh số tiền về. Để trống = không gửi.
+  // Lỗi mạng/Sheet không bao giờ chặn khách thanh toán (no-cors, bắt lỗi im lặng).
+  const SHEET_HOOK = '';
+  function guiHoTen(name, phone){
+    if(!SHEET_HOOK) return;
+    try { fetch(SHEET_HOOK, { method:'POST', mode:'no-cors', body:new URLSearchParams({name:name, phone:phone}) }).catch(()=>{}); } catch(e){}
+  }
 
   function renderPayment(name, phone){
     $('lp-signup-form-wrap').hidden = true;
