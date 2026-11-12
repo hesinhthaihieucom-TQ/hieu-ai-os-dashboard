@@ -274,6 +274,23 @@
       // Tạo tài khoản qua server (Admin API) để lấy ngay ref_code dựng QR — xem api/gn-lp-signup.js.
       const resp = await fetch('../api/gn-lp-signup', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ full_name:name, email, password:pass, ref:refFromUrl }) });
       const data = await resp.json();
+      if(!resp.ok && data.code === 'exists'){
+        // Email đã có tài khoản (thường do đã dùng app khác của HIỂU) → đăng nhập bằng mật khẩu vừa gõ, lấy mã QR từ tài khoản đó.
+        const { data: li, error: liErr } = await lpSupabase.auth.signInWithPassword({ email, password: pass });
+        if(liErr || !li || !li.user){
+          showError('Email này đã có tài khoản (có thể bạn đã dùng một app khác của HIỂU). Hãy nhập đúng MẬT KHẨU cũ của email này rồi bấm lại. Quên mật khẩu? Vào https://hesinhthaihieu.com/21ngaygiainghiep/ → "Quên mật khẩu".');
+          btn.disabled=false; btn.textContent='Xác nhận thông tin — lấy mã QR →'; return;
+        }
+        const { data: prof } = await lpSupabase.from('profiles').select('ref_code, gn_has_paid').eq('id', li.user.id).maybeSingle();
+        if(prof && prof.gn_has_paid){
+          showError('Tài khoản này đã mở khoá 21 Ngày Giải Nghiệp rồi — vào app đăng nhập là dùng được: https://hesinhthaihieu.com/21ngaygiainghiep/');
+          btn.disabled=false; btn.textContent='Xác nhận thông tin — lấy mã QR →'; return;
+        }
+        if(!prof || !prof.ref_code){ showError('Chưa lấy được mã thanh toán — vào app đăng nhập để lấy mã QR giúp mình.'); btn.disabled=false; btn.textContent='Xác nhận thông tin — lấy mã QR →'; return; }
+        capturedEmail = email; capturedPass = pass;
+        renderPayment(prof.ref_code);
+        return;
+      }
       if(!resp.ok || !data.ok){ showError(data.error || 'Không tạo được tài khoản — thử lại giúp mình.'); btn.disabled=false; btn.textContent='Xác nhận thông tin — lấy mã QR →'; return; }
       if(!data.ref_code){ showError(data.warn || 'Tài khoản đã tạo — vào app đăng nhập để lấy mã QR.'); btn.disabled=false; btn.textContent='Xác nhận thông tin — lấy mã QR →'; return; }
       capturedEmail = email; capturedPass = pass;

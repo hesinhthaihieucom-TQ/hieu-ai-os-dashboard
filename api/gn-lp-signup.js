@@ -37,10 +37,13 @@ module.exports = async (req, res) => {
 
   if (!createResp.ok) {
     const rawMsg = createData.msg || createData.message || createData.error_description || '';
-    const msg = /already.*registered|already.*exists|duplicate/i.test(rawMsg)
-      ? 'Email này đã có tài khoản rồi — vào app 21 Ngày Giải Nghiệp, đăng nhập để lấy mã thanh toán.'
+    // Cùng 1 tài khoản dùng chung cho cả hệ sinh thái HIỂU (Sổ Dòng Tiền, các app khác...) nên khách đã từng đăng ký
+    // ở app khác sẽ gặp lỗi này — trả code 'exists' để ladipage thử đăng nhập bằng mật khẩu khách vừa gõ rồi cho đi tiếp tới QR.
+    const exists = /already.*registered|already.*exists|duplicate/i.test(rawMsg);
+    const msg = exists
+      ? 'Email này đã có tài khoản rồi.'
       : (rawMsg || 'Không tạo được tài khoản — thử lại giúp mình.');
-    res.status(400).json({ error: msg });
+    res.status(400).json({ error: msg, code: exists ? 'exists' : undefined });
     return;
   }
 
