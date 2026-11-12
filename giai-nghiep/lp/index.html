@@ -179,6 +179,7 @@
     <div class="lp-h2-bar"></div>
     <div class="lp-countdown tc-lp-countdown-wrap">⏰ Phí cam kết <s class="lp-old-inline">999.000đ</s> <span class="tc-lp-price">149.000đ</span> chỉ giữ trong <span class="tc-lp-countdown-time">24:00:00</span></div>
     <div class="lp-signup-card" id="lp-signup-form-wrap">
+      <div class="lp-callout" style="margin:0 0 14px;font-size:14.5px;">💡 Đã từng dùng app nào của HIỂU (Sổ Dòng Tiền...)? Cứ điền <b>đúng email và mật khẩu cũ</b> — không cần tạo tài khoản mới.</div>
       <label class="lp-signup-label">Họ và tên *</label>
       <input class="lp-signup-input" id="lp-su-name" type="text" placeholder="Nguyễn Văn A" autocomplete="name">
       <label class="lp-signup-label">Email *</label>
@@ -186,6 +187,7 @@
       <label class="lp-signup-label">Mật khẩu (để đăng nhập vào app) *</label>
       <input class="lp-signup-input" id="lp-su-pass" type="password" placeholder="Ít nhất 6 ký tự" autocomplete="new-password">
       <div id="lp-signup-error" class="lp-signup-error" hidden></div>
+      <div id="lp-forgot-wrap" hidden style="margin-top:10px;"><button type="button" id="lp-forgot-btn" class="lp-cta" style="width:100%;border:none;cursor:pointer;background:transparent;border:1px solid var(--gold);color:var(--gold);box-shadow:none;">Quên mật khẩu? Gửi link đặt lại vào email →</button></div>
       <button class="lp-cta" id="lp-su-submit" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Xác nhận thông tin — lấy mã QR →</button>
     </div>
     <div class="lp-signup-card" id="lp-payment-wrap" hidden><div id="lp-payment-inner"></div></div>
@@ -261,6 +263,18 @@
     setTimeout(() => $('lp-su-name').focus(), 400);
   };
   function showError(msg){ const el=$('lp-signup-error'); el.textContent=msg; el.hidden=false; }
+  // Gửi email đặt lại mật khẩu ngay tại ladipage (khách khỏi sang app mới đặt lại được) — link trong email dẫn về app, nơi có sẵn màn đặt mật khẩu mới.
+  $('lp-forgot-btn').onclick = async () => {
+    const email = $('lp-su-email').value.trim(), b = $('lp-forgot-btn');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showError('Nhập email vào ô Email ở trên rồi bấm lại.'); return; }
+    b.disabled = true; b.textContent = 'Đang gửi…';
+    try{
+      const { error } = await lpSupabase.auth.resetPasswordForEmail(email, { redirectTo: new URL('../', location.href).href });
+      if(error) throw error;
+      showError('Đã gửi email đặt lại mật khẩu tới ' + email + ' — kiểm tra hộp thư (cả mục Spam), đặt mật khẩu mới xong quay lại trang này điền lại là ra mã QR.');
+      b.textContent = 'Đã gửi ✓';
+    }catch(e){ showError('Chưa gửi được email — thử lại sau ít phút hoặc nhắn Zalo 0866849193 giúp mình.'); b.disabled=false; b.textContent='Quên mật khẩu? Gửi link đặt lại vào email →'; }
+  };
 
   $('lp-su-submit').onclick = async () => {
     const name = $('lp-su-name').value.trim(), email = $('lp-su-email').value.trim(), pass = $('lp-su-pass').value;
@@ -278,7 +292,8 @@
         // Email đã có tài khoản (thường do đã dùng app khác của HIỂU) → đăng nhập bằng mật khẩu vừa gõ, lấy mã QR từ tài khoản đó.
         const { data: li, error: liErr } = await lpSupabase.auth.signInWithPassword({ email, password: pass });
         if(liErr || !li || !li.user){
-          showError('Email này đã có tài khoản (có thể bạn đã dùng một app khác của HIỂU). Hãy nhập đúng MẬT KHẨU cũ của email này rồi bấm lại. Quên mật khẩu? Vào https://hesinhthaihieu.com/21ngaygiainghiep/ → "Quên mật khẩu".');
+          $('lp-forgot-wrap').hidden = false;
+          showError('Email này đã có tài khoản (có thể bạn đã dùng một app khác của HIỂU). Hãy nhập đúng MẬT KHẨU cũ của email này rồi bấm lại. Quên mật khẩu thì bấm nút bên dưới.');
           btn.disabled=false; btn.textContent='Xác nhận thông tin — lấy mã QR →'; return;
         }
         const { data: prof } = await lpSupabase.from('profiles').select('ref_code, gn_has_paid').eq('id', li.user.id).maybeSingle();
