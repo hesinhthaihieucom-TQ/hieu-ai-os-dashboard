@@ -38,3 +38,21 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, pg_temp;
 grant execute on function public.update_my_full_name(text) to authenticated;
+
+-- Admin mở khoá 21 Ngày Giải Nghiệp bằng tay cho 1 email (khi khách đã chuyển khoản mà webhook không tự khớp được).
+-- Khoá này KHÔNG có nút trong trang quản trị Xây Nhân Hiệu/Sổ Dòng Tiền (chúng chỉ bật has_paid/tc_has_paid), nên cần hàm riêng.
+-- Chỉ admin gọi được (kiểm is_admin() bên trong); trả về số dòng đã cập nhật (0 = không thấy email).
+create or replace function public.admin_set_gn_paid(p_email text, p_paid boolean default true)
+returns integer as $$
+declare n integer;
+begin
+  if not public.is_admin() then raise exception 'Không có quyền'; end if;
+  update public.profiles
+    set gn_has_paid = p_paid, gn_paid_at = case when p_paid then coalesce(gn_paid_at, now()) else gn_paid_at end
+    where lower(email) = lower(trim(p_email));
+  get diagnostics n = row_count;
+  return n;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+revoke all on function public.admin_set_gn_paid(text, boolean) from public, anon;
+grant execute on function public.admin_set_gn_paid(text, boolean) to authenticated;
