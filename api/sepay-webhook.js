@@ -483,7 +483,18 @@ module.exports = async (req, res) => {
                         <p>Chào ${escHtml(profile.full_name || 'bạn')},</p>
                         <p>Cảm ơn bạn đã tin tưởng — tài khoản <b>${escHtml(profile.email)}</b> vừa được kích hoạt <b>trọn đời</b> 21 Ngày Giải Nghiệp (${transferAmount.toLocaleString('vi-VN')}đ, thanh toán 1 lần duy nhất).</p>
                         <p><a href="https://hesinhthaihieu.com/21ngaygiainghiep/" style="display:inline-block;background:#D9A93A;color:#241a03;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:700;">Bắt đầu Ngày 1 →</a></p>
-                        <p style="color:#666;font-size:13px;margin-top:24px;">Đăng nhập bằng đúng email và mật khẩu bạn đã tạo lúc đăng ký. Cần hỗ trợ, nhắn Zalo: 0866849193.</p>
+                        <div style="background:#faf6ea;border-radius:12px;padding:16px 18px;margin-top:20px;">
+                          <p style="margin:0 0 8px;font-weight:700;color:#111;">Cách dùng app — 5 bước:</p>
+                          <ol style="margin:0;padding-left:20px;line-height:1.7;">
+                            <li><b>Đăng nhập</b> bằng đúng email và mật khẩu bạn đã tạo lúc đăng ký (đã từng dùng app khác của HIỂU thì dùng mật khẩu cũ).</li>
+                            <li>Vào mục <b>Bắt Đầu Hành Trình</b>: đọc "Nghiệp là gì" và <b>ký Lời khế ước</b> với chính mình.</li>
+                            <li>Sang <b>Hành Trình 21 Ngày</b>: mỗi ngày mở đúng 1 bài — đọc, làm 3 bài tập, trả lời 3 câu nhật ký, rồi ký cam kết. Mọi thứ tự động lưu.</li>
+                            <li>Mục <b>Nhật Ký</b>: xem lại toàn bộ những gì bạn đã viết, bất cứ lúc nào.</li>
+                            <li>Quà tặng: <b>Ebook PDF + Workbook</b> nằm ở trang Hành Trình 21 Ngày — bấm để tải về.</li>
+                          </ol>
+                          <p style="margin:10px 0 0;font-size:13px;color:#666;">Lỡ ngày nào cũng không sao, cứ quay lại làm bù nhẹ nhàng. Mẹo: mở app trên điện thoại rồi chọn "Thêm vào màn hình chính" để vào mỗi ngày cho tiện.</p>
+                        </div>
+                        <p style="color:#666;font-size:13px;margin-top:24px;">Cần hỗ trợ, nhắn Zalo: 0866849193.</p>
                       </div>
                     `,
                   });
