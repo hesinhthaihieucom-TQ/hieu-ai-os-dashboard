@@ -490,7 +490,7 @@ module.exports = async (req, res) => {
                             <li>Vào mục <b>Bắt Đầu Hành Trình</b>: đọc "Nghiệp là gì" và <b>ký Lời khế ước</b> với chính mình.</li>
                             <li>Sang <b>Hành Trình 21 Ngày</b>: mỗi ngày mở đúng 1 bài — đọc, làm 3 bài tập, trả lời 3 câu nhật ký, rồi ký cam kết. Mọi thứ tự động lưu.</li>
                             <li>Mục <b>Nhật Ký</b>: xem lại toàn bộ những gì bạn đã viết, bất cứ lúc nào.</li>
-                            <li>Quà tặng: <b>Ebook PDF + Workbook</b> nằm ở trang Hành Trình 21 Ngày — bấm để tải về.</li>
+                            <li>Quà tặng: <b>Ebook (đọc như lật sách, có nhạc) + Workbook</b> nằm ở trang Hành Trình 21 Ngày — bấm là mở.</li>
                           </ol>
                           <p style="margin:10px 0 0;font-size:13px;color:#666;">Lỡ ngày nào cũng không sao, cứ quay lại làm bù nhẹ nhàng. Mẹo: mở app trên điện thoại rồi chọn "Thêm vào màn hình chính" để vào mỗi ngày cho tiện.</p>
                         </div>

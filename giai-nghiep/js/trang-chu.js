@@ -57,10 +57,12 @@
         <div style="margin:0 0 14px;"><span class="help-btn" id="gn-help">❓ Hướng dẫn</span></div>
         <div class="eb-block" id="gn-gift">
           <h2 style="font-size:20px;">🎁 Quà tặng của bạn</h2>
-          <p style="margin:0 0 12px;color:var(--ink-soft);font-size:16px;line-height:1.6;">Ebook 21 Ngày Chuyển Hóa Nghiệp và Workbook thực hành — tải về để đọc hoặc in ra viết tay.</p>
+          <p style="margin:0 0 12px;color:var(--ink-soft);font-size:16px;line-height:1.6;">Ebook 21 Ngày Chuyển Hóa Nghiệp — mở ra đọc như lật sách, có nhạc nhẹ. Workbook thực hành — tải về để in ra viết tay.</p>
           <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
-            <button class="btn btn-sm" data-dl="ebook">📘 Tải Ebook (PDF)</button>
+            <!-- Ebook đọc qua link Heyzine (lật trang + nhạc nền) theo yêu cầu chị Quỳnh 2026-11-12; bản PDF vẫn giữ làm phương án dự phòng. -->
+            <a class="btn btn-sm" href="https://heyzine.com/flip-book/f8cdf33d49.html" target="_blank" rel="noopener" style="text-decoration:none;">📖 Đọc Ebook (có nhạc)</a>
             <button class="btn btn-ghost btn-sm" data-dl="workbook">📝 Tải Workbook (Word)</button>
+            <button class="btn btn-ghost btn-sm" data-dl="ebook">📘 Tải Ebook PDF</button>
           </div>
           <div id="gn-dl-msg" style="margin-top:10px;font-size:15px;color:var(--ink-soft);"></div>
         </div>
@@ -92,7 +94,7 @@
         if(!window.startPageTour) return;
         window.startPageTour([
           { selector:'#gn-summary', title:'Tiến độ của bạn', text:'Vòng tròn cho biết bạn đã hoàn thành bao nhiêu ngày. Một ngày được tính là hoàn thành khi bạn bấm "Tôi cam kết" ở cuối bài.' },
-          { selector:'#gn-gift', title:'Quà tặng', text:'Tải Ebook PDF và Workbook Word về máy để đọc hoặc in ra viết tay.' },
+          { selector:'#gn-gift', title:'Quà tặng', text:'Bấm "Đọc Ebook" để lật sách và nghe nhạc nhẹ như trên Heyzine; Workbook Word tải về để in ra viết tay.' },
           { selector:'#gn-weeks', title:'21 ngày, mỗi ngày một loại nghiệp', text:'Bấm vào từng ngày để đọc giải thích loại nghiệp đó, rồi bấm "Học ngày này". Không bị khoá ngày — lỡ ngày nào cứ quay lại làm bù nhẹ nhàng.' },
         ]);
       };
