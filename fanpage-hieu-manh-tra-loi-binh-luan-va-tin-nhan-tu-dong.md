@@ -194,4 +194,4 @@ Lê Tú Quỳnh
 Nội dung ck ghi rõ: Tên FB
 ```
 
-Lưu ý: tin 9 và tin 10 chưa được tạo trong Saved Replies của Meta (Chrome bị ngắt giữa chừng), cần tạo thêm.
+Tin 9 và tin 10 đã được tạo trong Saved Replies của Meta (gõ /tin9, /tin10).
