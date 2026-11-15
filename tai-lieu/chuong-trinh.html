@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chương trình chăm sóc sức khỏe | Hiểu Mạnh</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fff;--ink:#2b2f2a;--soft:#5d645b;--green:#3f7d5a;--green-d:#2f6347;--line:#e3dfd2;--gold:#c8891f;--gold-bg:#fff6e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.hero{background:linear-gradient(135deg,#3f7d5a,#2f6347);color:#fff;padding:30px 16px 34px;text-align:center}
+.hero .in,.wrap{max-width:820px;margin:0 auto}
+.brand{font-size:15px;opacity:.9}
+.hero h1{font-size:28px;line-height:1.3;margin:8px 0 6px}
+.hero p{margin:0;opacity:.93}
+.wrap{padding:0 16px 48px}
+h2{font-size:21px;color:var(--green-d);margin:28px 0 10px;text-align:center}
+.pkgs{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:760px){.pkgs{grid-template-columns:repeat(3,1fr)}}
+.pkg{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 18px;position:relative;display:flex;flex-direction:column}
+.pkg.best{border:2px solid var(--gold);background:var(--gold-bg)}
+.tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;font-size:14px;font-weight:700;padding:3px 14px;border-radius:999px;white-space:nowrap}
+.pkg h3{margin:4px 0 2px;font-size:20px;color:var(--green-d)}
+.for{font-size:15.5px;color:var(--soft);margin:0 0 10px}
+.price{font-size:32px;font-weight:800;color:var(--green-d);margin:6px 0 2px}
+.price small{font-size:16px;font-weight:600;color:var(--soft)}
+.pkg ul{margin:10px 0 14px;padding-left:20px;flex:1}
+.pkg li{margin:6px 0}
+.btn{display:block;text-align:center;background:var(--green);color:#fff;text-decoration:none;padding:13px 16px;border-radius:10px;font-weight:700}
+.best .btn{background:var(--gold)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.card h3{margin:0 0 8px;color:var(--green-d);font-size:19px}
+.ok li{list-style:none;margin:8px 0;padding-left:0}
+.ok{padding:0;margin:0}
+.note{background:#fff5e0;border-left:4px solid #e0a02a;color:#8a5a00;padding:12px 14px;border-radius:8px;margin:18px 0;font-size:16px}
+.small{font-size:15px;color:var(--soft)}
+.poster{display:grid;gap:16px;margin:22px 0 0}.poster img{width:100%;height:auto;border-radius:16px;display:block;box-shadow:0 4px 18px rgba(0,0,0,.12)}@media(min-width:760px){.poster{grid-template-columns:1fr 1fr}}
+details{border-top:1px solid var(--line);padding:10px 0}
+summary{cursor:pointer;font-weight:600}
+.cta{background:#eef5f0;border:1px solid #cfe3d6;border-radius:14px;padding:18px;margin:22px 0;text-align:center}
+.cta .btn{display:inline-block;margin:6px 4px 0}
+</style>
+</head>
+<body>
+<div class="hero"><div class="in">
+<div class="brand">Hiểu Mạnh · Chương trình chăm sóc sức khỏe</div>
+<h1>Chọn gói phù hợp để bắt đầu thay đổi nhịp sống</h1>
+<p>Sản phẩm hỗ trợ + lịch trình từng ngày + người đồng hành, cho chị em U40</p>
+</div></div>
+
+<div class="wrap">
+
+<div class="poster"><img src="img/bang-gia-combo.jpg" alt="Combo 3 sản phẩm 5.880.000đ" loading="lazy"><img src="img/bang-gia-2-goi.jpg" alt="Gói Cơ Bản 4.990.000đ và Gói Tăng Tốc 6.990.000đ" loading="lazy"></div>
+
+<h2>Chi tiết 3 lựa chọn</h2>
+<div class="pkgs">
+
+<div class="pkg">
+<h3>Gói Cơ Bản</h3>
+<p class="for">Dành cho người mới bắt đầu, muốn xây nền tảng nhẹ nhàng</p>
+<div class="price">4.990.000đ <small>/ bộ</small></div>
+<ul>
+<li>1 hộp Bios Life Slim</li>
+<li>1 hộp Unimate</li>
+<li>Lịch trình dùng theo từng ngày trong app Hiểu để Khỏe</li>
+<li>Quỳnh đồng hành, giải đáp trong thời gian dùng</li>
+</ul>
+<a class="btn" href="https://m.me/773214459214657">Nhắn Quỳnh chọn gói này</a>
+</div>
+
+<div class="pkg best">
+<span class="tag">ĐƯỢC CHỌN NHIỀU</span>
+<h3>Combo 3 Sản Phẩm</h3>
+<p class="for">Hỗ trợ cả cân nặng, tiêu hoá và năng lượng trong một bộ</p>
+<div class="price">5.880.000đ <small>/ bộ</small></div>
+<ul>
+<li>1 hộp Bios Life Slim</li>
+<li>1 hộp Unimate</li>
+<li>1 lọ Aloe Vera</li>
+<li>Lịch trình dùng theo từng ngày trong app Hiểu để Khỏe</li>
+<li>Quỳnh đồng hành, giải đáp trong thời gian dùng</li>
+</ul>
+<a class="btn" href="https://m.me/773214459214657">Nhắn Quỳnh chọn gói này</a>
+</div>
+
+<div class="pkg">
+<h3>Gói Tăng Tốc</h3>
+<p class="for">Dành cho người muốn đầu tư nghiêm túc hơn cho 30 ngày</p>
+<div class="price">6.990.000đ <small>/ bộ</small></div>
+<ul>
+<li>1 hộp Bios Life Slim</li>
+<li>2 hộp Unimate (vị chanh và chanh gừng)</li>
+<li>Lịch trình dùng theo từng ngày trong app Hiểu để Khỏe</li>
+<li>Quỳnh đồng hành, giải đáp trong thời gian dùng</li>
+</ul>
+<a class="btn" href="https://m.me/773214459214657">Nhắn Quỳnh chọn gói này</a>
+</div>
+
+</div>
+
+<h2>Bạn nhận được gì ngoài sản phẩm?</h2>
+<div class="card"><ul class="ok">
+<li>📅 <b>Lịch trình từng ngày:</b> sáng, trưa, tối dùng gì, ăn gì, vận động giờ nào, theo chiều cao và cân nặng của riêng bạn.</li>
+<li>✅ <b>Checklist mỗi ngày</b> trong app Hiểu để Khỏe, để biết mình đã làm được bao nhiêu.</li>
+<li>📈 <b>Theo dõi tuần:</b> cân nặng, giấc ngủ, năng lượng, tâm trạng, có biểu đồ để thấy xu hướng.</li>
+<li>💬 <b>Người đồng hành:</b> nhắn Quỳnh khi chưa rõ, không phải tự mò một mình.</li>
+<li>👭 <b>Nhóm Zalo</b> chị em cùng áp dụng, mỗi tuần một thói quen mới.</li>
+</ul></div>
+
+<h2>Nên chọn gói nào?</h2>
+<div class="card">
+<p><b>Gói Cơ Bản:</b> bạn mới bắt đầu, muốn thử nhẹ nhàng và giữ kỷ luật ăn uống trước.</p>
+<p><b>Combo 3 Sản Phẩm:</b> bạn muốn hỗ trợ đồng thời tiêu hoá và cân nặng, trọn bộ trong một lần.</p>
+<p><b>Gói Tăng Tốc:</b> bạn đã quen nhịp ăn uống và muốn dùng đủ liều hơn trong 30 ngày.</p>
+<p class="small">Chưa chắc chọn gói nào? Nhắn Quỳnh vài thông tin (tuổi, chiều cao, cân nặng, bệnh nền), Quỳnh gợi ý gói hợp nhất.</p>
+</div>
+
+<h2>Câu hỏi thường gặp</h2>
+<div class="card">
+<details><summary>Dùng bao lâu thì thấy thay đổi?</summary><p>Tuỳ cơ địa, thói quen ăn uống và ngủ nghỉ của từng người nên mình không hứa con số cụ thể. Bạn theo dõi vòng eo và cân nặng mỗi tuần để thấy xu hướng.</p></details>
+<details><summary>Tôi đang có bệnh nền hoặc đang uống thuốc thì dùng được không?</summary><p>Bạn hỏi bác sĩ điều trị trước khi dùng. Mang thai, cho con bú, bệnh tiểu đường, thận, tim mạch hoặc đang dùng thuốc đều cần hỏi bác sĩ.</p></details>
+<details><summary>Sản phẩm có phải thuốc không?</summary><p>Không. Đây là thực phẩm bổ sung hỗ trợ, không có tác dụng thay thế thuốc chữa bệnh.</p></details>
+<details><summary>Mua rồi có người hướng dẫn cách dùng không?</summary><p>Có. Lịch trình dùng theo từng ngày nằm trong app Hiểu để Khỏe, và bạn nhắn Quỳnh bất cứ lúc nào chưa rõ.</p></details>
+<details><summary>Thanh toán và giao hàng thế nào?</summary><p>Nhắn Quỳnh để được hướng dẫn thanh toán và giao hàng đến địa chỉ của bạn.</p></details>
+</div>
+
+<div class="note"><b>Lưu ý:</b> Sản phẩm là thực phẩm bổ sung, không phải thuốc và không thay thế thuốc chữa bệnh. Kết quả tuỳ cơ địa từng người. Giá và thành phần các gói có thể thay đổi theo từng thời điểm, vui lòng nhắn Quỳnh để xác nhận.</div>
+
+<div class="cta"><b>Chưa chắc nên chọn gói nào?</b><br>Làm bài kiểm tra sức khỏe 2 phút, hoặc nhắn Quỳnh để được gợi ý.<br>
+<a class="btn" href="https://hieu-ai-os-dashboard.vercel.app/suc-khoe/#kiem-tra-suc-khoe">Làm kiểm tra miễn phí</a>
+<a class="btn" style="background:#1877f2" href="https://m.me/773214459214657">Nhắn Quỳnh</a>
+<a class="btn" style="background:#0068ff" href="https://zalo.me/g/pcbopu444">Vào nhóm Zalo</a></div>
+
+</div>
+</body>
+</html>
