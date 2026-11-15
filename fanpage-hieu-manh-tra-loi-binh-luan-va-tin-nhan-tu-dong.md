@@ -1,6 +1,6 @@
 # Fanpage "Hiểu Mạnh": trả lời bình luận + tin nhắn tự động
 
-Dùng với các từ khóa đang có sẵn trong phễu: **16:8, INSULIN, SỬA, ĐĨA, TỐI**. Giọng: ấm áp, gọi "chị", xưng "mình" (khách chủ yếu là nữ U40).
+Dùng với các từ khóa đang có sẵn trong phễu: **16:8, INSULIN, SỬA, ĐĨA, TỐI**. Giọng: ấm áp, gọi "chị", xưng "em" (Quỳnh xưng em, gọi khách là chị) (khách chủ yếu là nữ U40).
 Quy tắc nền: không hứa kết quả (giảm bao nhiêu cân/cm), không chẩn đoán, không nói "chữa". Chỉ dùng "gợi ý", "tuỳ cơ địa", "nên hỏi bác sĩ".
 
 ---
@@ -25,31 +25,31 @@ Lưu ý quan trọng:
 ## PHẦN B. TRẢ LỜI BÌNH LUẬN (công khai)
 
 ### B1. Bình luận có từ khóa (xoay vòng 4 mẫu)
-1. "Mình gửi chị qua tin nhắn rồi nhé 💛 chị kiểm tra hộp thư giúp mình."
-2. "Cảm ơn chị đã quan tâm 🌿 Mình vừa nhắn tài liệu cho chị, chị xem tin nhắn nha."
-3. "Đã gửi chị qua inbox rồi ạ 💛 Nếu chưa thấy, chị xem mục Tin nhắn chờ giúp mình."
-4. "Mình gửi tài liệu cho chị rồi nhé 🌸 Có gì chưa rõ chị cứ nhắn mình."
+1. "Em gửi chị qua tin nhắn rồi nhé 💛 chị kiểm tra hộp thư giúp em."
+2. "Cảm ơn chị đã quan tâm 🌿 Em vừa nhắn tài liệu cho chị, chị xem tin nhắn nha."
+3. "Đã gửi chị qua inbox rồi ạ 💛 Nếu chưa thấy, chị xem mục Tin nhắn chờ giúp em."
+4. "Em gửi tài liệu cho chị rồi nhé 🌸 Có gì chưa rõ chị cứ nhắn em."
 
 ### B2. Bình luận hỏi chung (chưa có từ khóa)
 | Khách hỏi | Trả lời |
 |---|---|
-| "Cho mình xin tài liệu / xin với" | "Chị comment đúng từ khóa dưới video (ví dụ **16:8**, **INSULIN**, **ĐĨA**), mình gửi qua tin nhắn ngay nhé 💛" |
-| "Chương trình này là gì / làm sao tham gia" | "Chị cho mình nhắn riêng nhé, mình gửi chị thông tin chi tiết và hỏi thêm tình trạng của chị để tư vấn đúng hơn 🌿" |
-| "Giá bao nhiêu" | "Mình nhắn riêng báo chị chi tiết nhé, vì mỗi người một nhu cầu khác nhau ạ 💛" (không ghi giá công khai) |
-| "Mình bị tiểu đường / huyết áp / bệnh nền, dùng được không" | "Chị đang có bệnh nền thì nên hỏi bác sĩ điều trị trước ạ. Mình nhắn riêng chia sẻ thêm cho chị nhé 💛" |
-| "Có hiệu quả không / giảm được bao nhiêu" | "Mỗi người một cơ địa nên mình không dám hứa con số chị ạ. Mình nhắn riêng chia sẻ cách mọi người đang áp dụng nhé 🌿" |
-| "Ở đâu / ship không" | "Chị nhắn riêng cho mình địa chỉ khu vực, mình báo chị ngay nhé 💛" |
+| "Cho em xin tài liệu / xin với" | "Chị comment đúng từ khóa dưới video (ví dụ **16:8**, **INSULIN**, **ĐĨA**), em gửi qua tin nhắn ngay nhé 💛" |
+| "Chương trình này là gì / làm sao tham gia" | "Chị cho em nhắn riêng nhé, em gửi chị thông tin chi tiết và hỏi thêm tình trạng của chị để tư vấn đúng hơn 🌿" |
+| "Giá bao nhiêu" | "Em nhắn riêng báo chị chi tiết nhé, vì mỗi người một nhu cầu khác nhau ạ 💛" (không ghi giá công khai) |
+| "Em bị tiểu đường / huyết áp / bệnh nền, dùng được không" | "Chị đang có bệnh nền thì nên hỏi bác sĩ điều trị trước ạ. Em nhắn riêng chia sẻ thêm cho chị nhé 💛" |
+| "Có hiệu quả không / giảm được bao nhiêu" | "Mỗi người một cơ địa nên em không dám hứa con số chị ạ. Em nhắn riêng chia sẻ cách mọi người đang áp dụng nhé 🌿" |
+| "Ở đâu / ship không" | "Chị nhắn riêng cho em địa chỉ khu vực, em báo chị ngay nhé 💛" |
 
 ### B3. Bình luận tích cực / cảm ơn
-- "Cảm ơn chị nhiều ạ 💛 Chị cứ theo dõi trang, mỗi tuần mình có thêm chia sẻ mới cho chị em U40 nha."
-- "Mừng quá chị ơi 🌸 Chị áp dụng được thì cho mình xin cảm nhận để chị em khác tham khảo nhé."
+- "Cảm ơn chị nhiều ạ 💛 Chị cứ theo dõi trang, mỗi tuần em có thêm chia sẻ mới cho chị em U40 nha."
+- "Mừng quá chị ơi 🌸 Chị áp dụng được thì cho em xin cảm nhận để chị em khác tham khảo nhé."
 
 ### B4. Bình luận tiêu cực / nghi ngờ (trả lời bình tĩnh, ngắn, không tranh cãi)
 | Dạng | Trả lời |
 |---|---|
-| "Quảng cáo, lừa đảo" | "Mình hiểu chị còn băn khoăn ạ. Trang chỉ chia sẻ thông tin tham khảo, chị cần gì cứ nhắn riêng, mình giải đáp rõ ràng nhé 🌿" |
+| "Quảng cáo, lừa đảo" | "Em hiểu chị còn băn khoăn ạ. Trang chỉ chia sẻ thông tin tham khảo, chị cần gì cứ nhắn riêng, em giải đáp rõ ràng nhé 🌿" |
 | Hỏi mỉa/trêu | Thả tim hoặc để im, **không** cãi |
-| Chê nội dung sai | "Cảm ơn chị góp ý ạ. Mình sẽ kiểm tra lại nội dung. Thông tin trên trang chỉ để tham khảo, chị nên hỏi bác sĩ khi có vấn đề sức khỏe nhé 💛" |
+| Chê nội dung sai | "Cảm ơn chị góp ý ạ. Em sẽ kiểm tra lại nội dung. Thông tin trên trang chỉ để tham khảo, chị nên hỏi bác sĩ khi có vấn đề sức khỏe nhé 💛" |
 | Spam, link lạ, quảng cáo trang khác, chửi bới | **Ẩn bình luận** rồi chặn nếu lặp lại, không trả lời |
 
 ### B5. Quy tắc quản lý hằng ngày
@@ -63,10 +63,10 @@ Lưu ý quan trọng:
 ## PHẦN C. LUỒNG TIN NHẮN TỰ ĐỘNG (kích hoạt khách tìm hiểu chương trình)
 
 ### Tin 1: Gửi ngay khi khách comment (tặng quà, chưa bán)
-> Chào chị {tên} 💛 Mình là Quỳnh, bên trang Hiểu Mạnh.
-> Đây là tài liệu **{tên tài liệu}** mình hứa gửi chị: {link/ảnh}
-> Chị đọc xong có gì chưa rõ cứ hỏi mình nhé 🌿
-> Cho mình hỏi nhanh để mình gợi ý đúng hơn: chị đang quan tâm nhất vấn đề nào ạ?
+> Chào chị {tên} 💛 Em là Quỳnh, bên trang Hiểu Mạnh.
+> Đây là tài liệu **{tên tài liệu}** em hứa gửi chị: {link/ảnh}
+> Chị đọc xong có gì chưa rõ cứ hỏi em nhé 🌿
+> Cho em hỏi nhanh để em gợi ý đúng hơn: chị đang quan tâm nhất vấn đề nào ạ?
 
 **Nút bấm (quick reply):**
 - 🎯 Giảm mỡ bụng
@@ -78,33 +78,33 @@ Ghép tên tài liệu theo từ khóa: 16:8 = Lịch ăn 16:8 mẫu 7 ngày cho
 
 ### Tin 2: Sau khi khách bấm nút (hỏi thêm 1 câu)
 > Cảm ơn chị đã chia sẻ 💛 Nhiều chị em cũng giống chị đó ạ.
-> Chị cho mình biết thêm: chị bao nhiêu tuổi, và vấn đề này kéo dài bao lâu rồi ạ? (Mình hỏi để gợi ý cho đúng, chị không cần trả lời nếu ngại nha 🌿)
+> Chị cho em biết thêm: chị bao nhiêu tuổi, và vấn đề này kéo dài bao lâu rồi ạ? (Em hỏi để gợi ý cho đúng, chị không cần trả lời nếu ngại nha 🌿)
 
 (Đây là chỗ **người thật** vào trả lời, chuyển từ tự động sang tay.)
 
 ### Tin 3: Mời nhóm Zalo miễn phí (nếu khách trả lời)
-> Cảm ơn chị 🌸 Mình có nhóm Zalo miễn phí, mỗi tuần chia sẻ 1 thói quen ăn uống cho chị em U40. Chị muốn vào không ạ?
+> Cảm ơn chị 🌸 Em có nhóm Zalo miễn phí, mỗi tuần chia sẻ 1 thói quen ăn uống cho chị em U40. Chị muốn vào không ạ?
 
 **Nút:** ✅ Vào nhóm Zalo · ❌ Để sau
 
 ### Tin 4: Giới thiệu chương trình chăm sóc sức khỏe (gửi khi khách hỏi, hoặc 2 ngày sau khi vào nhóm)
-> Chị ơi, ngoài tài liệu miễn phí, bên mình có **chương trình chăm sóc sức khỏe đồng hành theo từng giai đoạn**:
+> Chị ơi, ngoài tài liệu miễn phí, bên em có **chương trình chăm sóc sức khỏe đồng hành theo từng giai đoạn**:
 > • Lịch trình mỗi ngày cụ thể: sáng, trưa, tối ăn uống gì, tập giờ nào
 > • Theo dõi tuần: cân nặng, giấc ngủ, năng lượng, tâm trạng
 > • Có người đồng hành, nhắc nhở và giải đáp trong suốt thời gian áp dụng
-> Kết quả tuỳ cơ địa từng người nên mình không hứa con số, nhưng chị sẽ có lộ trình rõ ràng để làm theo.
-> Chị muốn mình gửi thông tin chi tiết và tư vấn riêng cho chị không ạ?
+> Kết quả tuỳ cơ địa từng người nên em không hứa con số, nhưng chị sẽ có lộ trình rõ ràng để làm theo.
+> Chị muốn em gửi thông tin chi tiết và tư vấn riêng cho chị không ạ?
 
 **Nút:** 💬 Cho mình xem chi tiết · ⏰ Nhắc mình sau
 
 ### Tin 5: Khi khách chọn "Cho mình xem chi tiết"
-> Dạ, mình gửi chị thông tin chi tiết nhé 💛 {link giới thiệu / bảng giá gói}
-> Để tư vấn gói hợp nhất, chị cho mình xin: chiều cao, cân nặng, và chị có đang dùng thuốc hay có bệnh nền gì không ạ? (Nếu có bệnh nền, mình sẽ gợi ý chị hỏi bác sĩ trước khi bắt đầu.)
+> Dạ, em gửi chị thông tin chi tiết nhé 💛 {link giới thiệu / bảng giá gói}
+> Để tư vấn gói hợp nhất, chị cho em xin: chiều cao, cân nặng, và chị có đang dùng thuốc hay có bệnh nền gì không ạ? (Nếu có bệnh nền, em sẽ gợi ý chị hỏi bác sĩ trước khi bắt đầu.)
 
 → Từ đây **người thật** nhắn tay, tự động dừng.
 
 ### Tin nhắc lại (chỉ gửi 1 lần, nếu khách im 23 giờ sau Tin 1 hoặc Tin 4)
-> Chị ơi, mình nhắc nhẹ: chị đã xem được tài liệu chưa ạ? Chị cần mình giải thích phần nào cứ nhắn mình nhé 🌿
+> Chị ơi, em nhắc nhẹ: chị đã xem được tài liệu chưa ạ? Chị cần em giải thích phần nào cứ nhắn em nhé 🌿
 
 (Phải gửi trước khi hết 24 giờ. Quá hạn thì Facebook chặn. Gửi **tối đa 1 lần**, không dí khách.)
 
@@ -118,14 +118,14 @@ Ghép tên tài liệu theo từ khóa: 16:8 = Lịch ăn 16:8 mẫu 7 ngày cho
 **Nút:** 📚 Nhận tài liệu miễn phí · 🌿 Hỏi về chương trình · 👩 Nói chuyện với mình
 
 **Trả lời ngoài giờ (tự động):**
-> Mình đã nhận được tin nhắn của chị 💛 Mình sẽ trả lời chị trong sáng mai (trước 9h) nhé. Trong lúc chờ, chị có thể comment từ khóa dưới video để nhận tài liệu miễn phí ngay.
+> Em đã nhận được tin nhắn của chị 💛 Em sẽ trả lời chị trong sáng mai (trước 9h) nhé. Trong lúc chờ, chị có thể comment từ khóa dưới video để nhận tài liệu miễn phí ngay.
 
 **Câu hỏi thường gặp (menu):**
 | Chọn | Trả lời |
 |---|---|
 | Chương trình gồm gì | Nội dung Tin 4 |
-| Có phù hợp với tôi không | "Mình hỏi chị vài câu rồi gợi ý nhé: chị bao nhiêu tuổi, có bệnh nền hoặc đang dùng thuốc gì không ạ? Nếu có, chị nên hỏi bác sĩ trước 💛" |
-| Giá | "Mỗi gói một mức giá tuỳ nhu cầu. Mình tư vấn riêng để chị chọn gói đúng, không tốn oan ạ 🌿" |
+| Có phù hợp với tôi không | "Em hỏi chị vài câu rồi gợi ý nhé: chị bao nhiêu tuổi, có bệnh nền hoặc đang dùng thuốc gì không ạ? Nếu có, chị nên hỏi bác sĩ trước 💛" |
+| Giá | "Mỗi gói một mức giá tuỳ nhu cầu. Em tư vấn riêng để chị chọn gói đúng, không tốn oan ạ 🌿" |
 | Gặp người thật | Chuyển cho Quỳnh, tắt tự động với khách này |
 
 ---
@@ -164,3 +164,34 @@ Nhóm Zalo: https://zalo.me/g/pcbopu444
 - **Tin 8 (khi chê đắt):** gợi ý Gói Cơ Bản, tài liệu miễn phí và nhóm Zalo.
 
 Quy tắc: có bệnh nền/mang thai/cho con bú/đang uống thuốc thì không gợi ý gói, nhắc hỏi bác sĩ. Không hứa kết quả.
+
+- **Tin 9 (mẫu đăng ký chốt gói, tên tắt `tin9`):** gửi khi khách đồng ý, để khách điền tên, địa chỉ, số điện thoại. Điền tên chương trình và số tiền theo gói khách chọn.
+
+```
+Chị điền giúp em mẫu bên dưới rồi gửi lại em nhé 💛
+
+E chốt gói ạ:
+Chương trình CSSK Chuyên nghiệp Thải độc và Giảm mỡ (đổi tên chương trình cho phù hợp với gói khách chọn)
+🍀 Tên:
+🍀 Địa chỉ:
+🍀 ĐT:
+
+💰 [Số tiền gói chị chọn]
+✔️ Tặng 1 bình lắc
+✔️ Tặng gói HLV online
+✔️ Tặng gói Chăm sóc 30 ngày
+✔️ Tặng gói tư vấn dinh dưỡng sức khỏe trọn đời
+✔️ Tặng quyền sử dụng app Hiểu để Khoẻ trong 1 năm
+```
+
+- **Tin 10 (thông tin chuyển khoản, tên tắt `tin10`):** gửi sau khi khách điền xong tin 9.
+
+```
+♥️ Em cảm ơn chị đã tin tưởng và sử dụng dịch vụ, chị ck stk này cho em nha:
+VietinBank 199339288888
+Lê Tú Quỳnh
+
+Nội dung ck ghi rõ: Tên FB
+```
+
+Lưu ý: tin 9 và tin 10 chưa được tạo trong Saved Replies của Meta (Chrome bị ngắt giữa chừng), cần tạo thêm.
