@@ -148,3 +148,19 @@ Ghép tên tài liệu theo từ khóa: 16:8 = Lịch ăn 16:8 mẫu 7 ngày cho
 | Số khách xem chi tiết chương trình (Tin 5) | ghi lại, chưa cần mục tiêu |
 
 Sau 2–3 tuần, xem mẫu nào bị bỏ ngang nhiều nhất (thường Tin 1 hoặc Tin 4) và sửa lại câu chữ.
+
+---
+
+## PHẦN G. TIN NHẮN NHANH GIỚI THIỆU CHƯƠNG TRÌNH (đã tạo trong Saved Replies của Meta Business Suite, gõ tên tắt tin4 đến tin8)
+
+Link báo giá: https://hieu-ai-os-dashboard.vercel.app/tai-lieu/chuong-trinh
+Link tài liệu miễn phí: https://hieu-ai-os-dashboard.vercel.app/tai-lieu/
+Nhóm Zalo: https://zalo.me/g/pcbopu444
+
+- **Tin 4 (giới thiệu chương trình):** gửi khi khách hỏi hoặc 1-2 ngày sau khi khách đọc tài liệu. Có link báo giá.
+- **Tin 5 (hỏi thông tin):** tuổi, chiều cao, cân nặng, mong muốn, bệnh nền/mang thai/thuốc.
+- **Tin 6 (gợi ý gói):** điền gói, lý do, giá, thành phần theo từng khách.
+- **Tin 7 (nhắc nhẹ):** 1 lần, còn trong 24 giờ.
+- **Tin 8 (khi chê đắt):** gợi ý Gói Cơ Bản, tài liệu miễn phí và nhóm Zalo.
+
+Quy tắc: có bệnh nền/mang thai/cho con bú/đang uống thuốc thì không gợi ý gói, nhắc hỏi bác sĩ. Không hứa kết quả.
