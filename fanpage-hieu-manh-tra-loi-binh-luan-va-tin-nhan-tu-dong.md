@@ -153,8 +153,8 @@ Sau 2–3 tuần, xem mẫu nào bị bỏ ngang nhiều nhất (thường Tin 1
 
 ## PHẦN G. TIN NHẮN NHANH GIỚI THIỆU CHƯƠNG TRÌNH (đã tạo trong Saved Replies của Meta Business Suite, gõ tên tắt tin4 đến tin8)
 
-Link báo giá: https://hieu-ai-os-dashboard.vercel.app/tai-lieu/chuong-trinh
-Link tài liệu miễn phí: https://hieu-ai-os-dashboard.vercel.app/tai-lieu/
+Link báo giá: https://hesinhthaihieu.com/tailieu/chuong-trinh
+Link tài liệu miễn phí: https://hesinhthaihieu.com/tailieu/
 Nhóm Zalo: https://zalo.me/g/pcbopu444
 
 - **Tin 4 (giới thiệu chương trình):** gửi khi khách hỏi hoặc 1-2 ngày sau khi khách đọc tài liệu. Có link báo giá.
