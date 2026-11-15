@@ -68,6 +68,7 @@ export default {
       { prefix: '/trolytuvancrm', originPath: '/tro-ly-crm' }, // MỚI (2026-08-29) — "Trợ Lý AI Tư Vấn & CRM"
       { prefix: '/21ngaygiainghiep', originPath: '/giai-nghiep' }, // MỚI (2026-10-04) — app + ladipage "21 Ngày Giải Nghiệp" (lp/), cần thêm Route riêng trong Dashboard mới chạy được
       { prefix: '/edit-video-ai', originPath: '/edit-video-ai' }, // MỚI (2026-11-07) — ladipage khoá "Làm Chủ Edit Video Bằng AI" (lp/ + api/), cần thêm Route riêng trong Dashboard: hesinhthaihieu.com/edit-video-ai*
+      { prefix: '/tailieu', originPath: '/tai-lieu' }, // MỚI (2026-11-15) — tài liệu quà tặng fanpage Hiểu Mạnh + trang báo giá (tai-lieu/), cần thêm Route riêng trong Dashboard: hesinhthaihieu.com/tailieu*. Luôn gửi link có dấu / cuối cho mục lục (hesinhthaihieu.com/tailieu/) vì trang dùng đường dẫn tương đối
       { prefix: '/apptaosanphamso', originPath: '/san-pham-so' }, // MỚI — app "Sản Phẩm Số", cần thêm Route riêng trong Dashboard (xem README.md) mới chạy được
     ];
 
