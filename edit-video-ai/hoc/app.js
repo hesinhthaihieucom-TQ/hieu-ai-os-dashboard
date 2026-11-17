@@ -96,6 +96,16 @@
     return el('div', { class:'video' }, [ f ]);
   }
 
+  // Khung "Bắt đầu nhanh trong 10 phút": 5 bước nhìn là hiểu, bấm vào để xem bài chi tiết (Quỳnh 11/18: hướng dẫn đang khó quá)
+  function quickStart(){
+    const steps = [ ['🖥️', 'Tải ứng dụng Claude', 'claude.com/download, đăng nhập, mở thẻ Code'], ['📦', 'Tải và giải nén bộ kit', 'Nút "Tải bộ kit" ở khung bên dưới'], ['📂', 'Chọn thư mục bộ kit', 'Làm thư mục làm việc trong thẻ Code'],
+                    ['💬', 'Nhờ Claude cài giúp', 'Dán 1 câu, thấy hỏi thì bấm Cho phép'], ['🎬', 'Nói: "Dựng giúp mình video này"', 'Kèm đường dẫn video của bạn'] ];
+    const list = el('ol', { class:'qs-list' });
+    steps.forEach((s, i) => list.appendChild(el('li', {}, [ el('span', { class:'qs-ico', text:s[0] }), el('div', {}, [ el('b', { text:(i+1) + '. ' + s[1] }), el('div', { class:'meta', text:s[2] }) ]) ])));
+    const b = el('button', { class:'btn qs-btn', type:'button', text:'Xem hướng dẫn chi tiết từng bước →' }); b.onclick = () => openLesson('m1-0');
+    return el('div', { class:'box qs' }, [ el('h3', { text:'⚡ Bắt đầu nhanh trong 10 phút' }), list, b ]);
+  }
+
   function kitBox(){
     const kit = data.kitUrl
       ? el('a', { class:'btn', href:data.kitUrl, target:'_blank', rel:'noopener', text:'📦 Tải bộ kit' })
@@ -113,6 +123,7 @@
         el('div', { class:'crumb', text:'Chào mừng bạn' }), el('h2', { text:'Làm chủ edit video bằng AI, từng bước một' }),
         el('div', { class:'teacher' }, [ el('img', { src:'img/nguoi-day.jpg', alt:'Lê Tú Quỳnh', width:'72', height:'72' }), el('div', {}, [ el('b', { text:'Lê Tú Quỳnh' }), el('div', { class:'meta', text:'Người sáng lập Hệ Sinh Thái HIỂU · đồng hành cùng bạn trong khoá này' }), el('p', { text:'Mình sẽ cầm tay chỉ việc để bạn tự dựng được video bằng AI. Làm theo từng bước, chỗ nào vướng cứ nhắn mình trong nhóm Zalo lớp.' }) ]) ]),
         el('p', { class:'meta', text:data.modules.length + ' module · ' + all.length + ' bài ngắn. Làm theo thứ tự, mỗi bài có các bước cụ thể và danh sách tự kiểm tra.' }),
+        quickStart(),
         kitBox(),
         (() => { const b = el('button', { class:'btn', type:'button', text:'Bắt đầu: ' + next.title + ' →' }); b.onclick = () => openLesson(next.id); return b; })()
       ]));

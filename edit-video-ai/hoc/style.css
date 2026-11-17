@@ -106,3 +106,11 @@ a{ color:var(--gold); } b,strong{ color:var(--white); }
 
 /* Hình minh hoạ (SVG tự vẽ, không dùng logo thương hiệu) */
 .illu{ display:block; width:100%; max-width:640px; height:auto; margin:12px auto; border-radius:14px; }
+
+/* Bắt đầu nhanh trong 10 phút */
+.qs{ border-color:rgba(240,194,75,.45); }
+.qs-list{ list-style:none; margin:6px 0 14px; padding:0; display:grid; gap:10px; }
+.qs-list li{ display:flex; gap:12px; align-items:center; background:var(--black); border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+.qs-ico{ flex:none; width:42px; height:42px; display:flex; align-items:center; justify-content:center; font-size:22px; background:rgba(240,194,75,.12); border-radius:50%; }
+.qs-list b{ color:var(--white); } .qs-list .meta{ margin:0; font-size:14px; }
+.qs-btn{ width:100%; font-size:16px; }
