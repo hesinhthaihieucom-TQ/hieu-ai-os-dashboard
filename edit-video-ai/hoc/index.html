@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Học Edit Video Bằng AI — Hướng dẫn làm từng bước</title>
+<meta name="description" content="Các module hướng dẫn làm từng bước: cài bộ kit, dựng video, chỉnh bằng lời nói và đăng đều mỗi ngày.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Màn vào học: nhập SĐT đã dùng khi đăng ký, máy chủ kiểm tra đã chuyển khoản chưa -->
+<section id="login" class="login">
+  <div class="login-card">
+    <div class="login-brand">Edit Video<br>Bằng AI</div>
+    <h1>Vào học</h1>
+    <p>Nhập số điện thoại bạn đã dùng khi đăng ký khoá học.</p>
+    <input id="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Số điện thoại, ví dụ 0912345678" maxlength="14">
+    <button id="go" class="btn">Vào học →</button>
+    <div id="msg" class="msg" hidden></div>
+    <div class="login-foot">Chưa đăng ký? <a href="../lp/">Xem khoá học</a> · Cần hỗ trợ: <a href="https://zalo.me/0866849193" target="_blank" rel="noopener">Zalo 0866 849 193</a></div>
+  </div>
+</section>
+
+<!-- Màn học -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="top-brand">Edit Video Bằng AI</div>
+    <div class="top-prog"><div class="bar"><i id="barfill"></i></div><span id="progtxt">0%</span></div>
+    <button id="helpbtn" class="ghost" type="button">❓ Hướng dẫn</button>
+    <button id="logout" class="ghost" type="button">Thoát</button>
+  </header>
+  <div class="layout">
+    <nav id="menu" class="menu" aria-label="Danh sách bài học"></nav>
+    <main id="main" class="main"></main>
+  </div>
+</div>
+
+<!-- Hướng dẫn sử dụng app (quy tắc chung: mỗi trang/tính năng mới có nút "Hướng dẫn") -->
+<div id="help" class="help" hidden>
+  <div class="help-card">
+    <h2>Cách học trong app này</h2>
+    <ol>
+      <li><b>Chọn bài</b> ở danh sách bên trái (trên điện thoại: bấm "Danh sách bài").</li>
+      <li><b>Làm theo từng bước</b> trong bài, rồi tick các ô "Tự kiểm tra".</li>
+      <li><b>Bấm "Đã học xong"</b> để tính tiến độ. Tiến độ tự lưu trên máy bạn.</li>
+      <li><b>Bộ kit</b> và nhóm Zalo lớp học nằm ở khung phía trên bài.</li>
+    </ol>
+    <p class="help-note">Tiến độ lưu trên trình duyệt đang dùng. Đổi máy hoặc xoá dữ liệu trình duyệt thì phải đánh dấu lại.</p>
+    <button id="helpclose" class="btn">Đã hiểu</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
