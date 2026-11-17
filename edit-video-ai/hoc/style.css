@@ -103,3 +103,6 @@ a{ color:var(--gold); } b,strong{ color:var(--white); }
 
 /* Khung kết quả mẫu (chữ thật từ lệnh của kit) */
 .term{ margin:0 0 8px; padding:14px; background:#050505; border:1px solid var(--line); border-radius:12px; color:#a7f3d0; font:14px/1.6 ui-monospace,Menlo,Consolas,monospace; overflow-x:auto; white-space:pre; }
+
+/* Hình minh hoạ (SVG tự vẽ, không dùng logo thương hiệu) */
+.illu{ display:block; width:100%; max-width:640px; height:auto; margin:12px auto; border-radius:14px; }

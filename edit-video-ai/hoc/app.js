@@ -127,6 +127,7 @@
     main.appendChild(el('div', { class:'meta', text:'⏱ khoảng ' + l.min + ' phút' }));
     if (i === 0) main.appendChild(kitBox());
     const vb = videoBox(l); if (vb) main.appendChild(vb);
+    if (l.image) main.appendChild(el('img', { class:'illu', src:'img/' + l.image, alt:'Hình minh hoạ: ' + l.title, loading:'lazy' }));
     main.appendChild(el('div', { class:'box goal' }, [ el('h3', { text:'🎯 Sau bài này bạn có' }), el('p', { text:l.goal }) ]));
     main.appendChild(el('div', { class:'box' }, [ el('details', {}, [ el('summary', { text:'💡 Vì sao quan trọng' }), el('p', { text:l.why }) ]) ]));
     if (l.sample) main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🖥️ ' + l.sample.title }), el('pre', { class:'term', text:l.sample.text }), l.sample.note ? el('p', { class:'meta', text:l.sample.note }) : el('span') ]));

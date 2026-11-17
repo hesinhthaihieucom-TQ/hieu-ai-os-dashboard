@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" role="img" aria-label="Hình minh hoạ trình duyệt Chrome với tiện ích Claude được ghim">
+  <rect x="10" y="10" width="620" height="280" rx="16" fill="#111" stroke="#F0C24B" stroke-opacity=".55" stroke-width="1.5"/>
+  <rect x="10" y="10" width="620" height="58" rx="16" fill="#222"/><rect x="10" y="40" width="620" height="28" fill="#222"/>
+  <circle cx="34" cy="30" r="6" fill="#ef4444"/><circle cx="56" cy="30" r="6" fill="#F0C24B"/><circle cx="78" cy="30" r="6" fill="#4ade80"/>
+  <rect x="30" y="42" width="470" height="20" rx="10" fill="#0c0c0c"/><text x="46" y="57" font-family="sans-serif" font-size="12" fill="#888">chromewebstore.google.com</text>
+  <rect x="520" y="40" width="26" height="24" rx="6" fill="#0c0c0c" stroke="#F0C24B" stroke-opacity=".5"/>
+  <path d="M527 52h12M533 46v12" stroke="#F0C24B" stroke-width="2" stroke-linecap="round"/>
+  <rect x="556" y="40" width="26" height="24" rx="6" fill="#F0C24B"/><text x="569" y="57" text-anchor="middle" font-family="Georgia,serif" font-size="14" font-weight="700" fill="#1a1200">C</text>
+  <path d="M569 70v18" stroke="#F0C24B" stroke-width="1.5" stroke-dasharray="3 3"/><text x="569" y="104" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#F0C24B">ghim tiện ích</text>
+  <rect x="150" y="130" width="340" height="120" rx="14" fill="#1a1a1a" stroke="#333"/>
+  <text x="170" y="162" font-family="sans-serif" font-size="17" font-weight="700" fill="#fff">Claude in Chrome</text>
+  <text x="170" y="186" font-family="sans-serif" font-size="13" fill="#999">Tiện ích mở rộng cho Chrome</text>
+  <rect x="170" y="204" width="150" height="32" rx="16" fill="#F0C24B"/><text x="245" y="225" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#1a1200">Add to Chrome</text>
+  <text x="630" y="288" text-anchor="end" font-family="sans-serif" font-size="11" fill="#666">Hình minh hoạ</text>
+</svg>
