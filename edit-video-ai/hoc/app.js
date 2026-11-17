@@ -99,7 +99,7 @@
   // Khung "Bắt đầu nhanh trong 10 phút": 5 bước nhìn là hiểu, bấm vào để xem bài chi tiết (Quỳnh 11/18: hướng dẫn đang khó quá)
   function quickStart(){
     const steps = [ ['🖥️', 'Tải ứng dụng Claude', 'claude.com/download, đăng nhập, mở thẻ Code'], ['📦', 'Tải và giải nén bộ kit', 'Nút "Tải bộ kit" ở khung bên dưới'], ['📂', 'Chọn thư mục bộ kit', 'Làm thư mục làm việc trong thẻ Code'],
-                    ['💬', 'Nhờ Claude cài giúp', 'Dán 1 câu, thấy hỏi thì bấm Cho phép'], ['🎬', 'Nói: "Dựng giúp mình video này"', 'Kèm đường dẫn video của bạn'] ];
+                    ['💬', 'Nhờ Claude cài giúp', 'Dán 1 câu, thấy hỏi thì bấm Cho phép'], ['🎬', 'Gõ /biz-video kèm đường dẫn video', 'Kit tự chọn đúng cách dựng cho bạn'] ];
     const list = el('ol', { class:'qs-list' });
     steps.forEach((s, i) => list.appendChild(el('li', {}, [ el('span', { class:'qs-ico', text:s[0] }), el('div', {}, [ el('b', { text:(i+1) + '. ' + s[1] }), el('div', { class:'meta', text:s[2] }) ]) ])));
     const b = el('button', { class:'btn qs-btn', type:'button', text:'Xem hướng dẫn chi tiết từng bước →' }); b.onclick = () => openLesson('m1-0');
