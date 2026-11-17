@@ -132,6 +132,7 @@
     main.appendChild(videoBox(l));
     main.appendChild(el('div', { class:'box goal' }, [ el('h3', { text:'🎯 Sau bài này bạn có' }), el('p', { text:l.goal }) ]));
     main.appendChild(el('div', { class:'box' }, [ el('details', {}, [ el('summary', { text:'💡 Vì sao quan trọng' }), el('p', { text:l.why }) ]) ]));
+    if (l.sample) main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🖥️ ' + l.sample.title }), el('pre', { class:'term', text:l.sample.text }), l.sample.note ? el('p', { class:'meta', text:l.sample.note }) : el('span') ]));
     const ol = el('ol', { class:'steps' }); l.steps.forEach(s => ol.appendChild(el('li', { text:s })));
     main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🛠️ Các bước làm' }), ol ]));
     const saved = prog.checks[id] || [];
