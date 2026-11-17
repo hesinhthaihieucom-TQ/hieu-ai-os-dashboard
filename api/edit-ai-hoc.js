@@ -2,7 +2,9 @@
 // sepay-webhook ghi mọi giao dịch vào sepay_transactions, nội dung CK luôn "SEVQR EDITAI <sđt>").
 // OWNER_PHONES: sđt chủ khoá (Quỳnh) luôn được vào để xem/thử app, không cần chuyển khoản.
 const { supabaseAdmin } = require('./_lib/supabase-admin');
-const { MODULES, KIT_URL } = require('./_lib/edit-ai-hoc-content');
+const { MODULES } = require('./_lib/edit-ai-hoc-content');
+// Link tải bộ kit đặt trong BIẾN MÔI TRƯỜNG Vercel EDITAI_KIT_URL (không để trong mã nguồn vì kho mã công khai — ai cũng đọc được; kit là sản phẩm trả phí).
+const KIT_URL = process.env.EDITAI_KIT_URL || '';
 
 const GROUP_URL = 'https://zalo.me/g/c9y7thxlocz9b9axgw1k';
 const AMOUNTS = [990000, 1290000];

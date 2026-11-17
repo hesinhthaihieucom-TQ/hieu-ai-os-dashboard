@@ -2,7 +2,6 @@
 // Nội dung nằm ở server và chỉ trả khi đã thanh toán (api/edit-ai-hoc.js), không để lộ trong mã nguồn trang.
 // Mỗi bài theo khuôn: goal (kết quả sau bài) · why (điều quan trọng) · steps (các bước làm) · check (tự kiểm tra) · note (nhớ một điều, tuỳ chọn).
 // Chỉ dùng lệnh/tính năng CÓ THẬT trong bộ kit "Hiểu Kênh Edit Video AI" 1.4.0 (xem video-editor-kit/product/README.md, HUONG-DAN.md).
-const KIT_URL = '';   // dán link tải bộ kit (zip) vào đây khi đã tải lên chỗ lưu trữ; để trống = app hiện "kit gửi trong nhóm Zalo"
 
 const MODULES = [
   { id: 'm1', title: 'Bắt đầu: cài bộ kit', desc: 'Cài một lần ~10 phút, kiểm tra máy chạy được.', lessons: [
@@ -118,4 +117,4 @@ const MODULES = [
   ]}
 ];
 
-module.exports = { MODULES, KIT_URL };
+module.exports = { MODULES };
