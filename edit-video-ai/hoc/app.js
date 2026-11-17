@@ -62,6 +62,22 @@
     updateProgress();
   }
 
+  // Đổi link video (YouTube / Vimeo / Google Drive) thành link nhúng; link lạ hoặc để trống → không nhúng.
+  function embedUrl(u){
+    u = String(u || '').trim(); if (!u) return '';
+    let m;
+    if ((m = u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/))) return 'https://www.youtube-nocookie.com/embed/' + m[1] + '?rel=0';
+    if ((m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/))) return 'https://player.vimeo.com/video/' + m[1];
+    if ((m = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/))) return 'https://drive.google.com/file/d/' + m[1] + '/preview';
+    return '';
+  }
+  function videoBox(l){
+    const src = embedUrl(l.video);
+    if (!src) return el('div', { class:'video empty' }, [ el('div', { text:'🎬 Video bài này đang được cập nhật' }), el('small', { text:'Bạn có thể làm theo các bước bên dưới trước.' }) ]);
+    const f = el('iframe', { src:src, title:'Video bài: ' + l.title, loading:'lazy', allow:'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen', allowfullscreen:'' });
+    return el('div', { class:'video' }, [ f ]);
+  }
+
   function kitBox(){
     const kit = data.kitUrl
       ? el('a', { class:'btn', href:data.kitUrl, target:'_blank', rel:'noopener', text:'📦 Tải bộ kit' })
@@ -91,6 +107,7 @@
     main.appendChild(el('h2', { text:l.title }));
     main.appendChild(el('div', { class:'meta', text:'⏱ khoảng ' + l.min + ' phút' }));
     if (i === 0) main.appendChild(kitBox());
+    main.appendChild(videoBox(l));
     main.appendChild(el('div', { class:'box goal' }, [ el('h3', { text:'🎯 Sau bài này bạn có' }), el('p', { text:l.goal }) ]));
     main.appendChild(el('div', { class:'box' }, [ el('details', {}, [ el('summary', { text:'💡 Vì sao quan trọng' }), el('p', { text:l.why }) ]) ]));
     const ol = el('ol', { class:'steps' }); l.steps.forEach(s => ol.appendChild(el('li', { text:s })));
