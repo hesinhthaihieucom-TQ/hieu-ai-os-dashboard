@@ -18,6 +18,24 @@
   }
   const flat = () => data.modules.flatMap(m => m.lessons.map(l => Object.assign({ mod:m }, l)));
 
+  // Biểu tượng nét mảnh cho 7 module (màu theo chữ vàng của app)
+  const ICON = {
+    m1:'<path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/>',
+    m2:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
+    m3:'<circle cx="6" cy="7" r="2.5"/><circle cx="6" cy="17" r="2.5"/><path d="M8 8.5L20 18M8 15.5L20 6"/>',
+    m4:'<path d="M4 20l4-1 11-11a2.1 2.1 0 00-3-3L5 16l-1 4z"/><path d="M14 7l3 3"/>',
+    m5:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 9"/>',
+    m6:'<path d="M5 12l4 4L19 7"/><rect x="3" y="3" width="18" height="18" rx="3"/>',
+    m7:'<path d="M3 17l6-6 4 4 8-9M15 6h6v6"/>'
+  };
+  function svgIcon(id, size){
+    const w = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    w.setAttribute('viewBox', '0 0 24 24'); w.setAttribute('width', size || 20); w.setAttribute('height', size || 20);
+    w.setAttribute('fill', 'none'); w.setAttribute('stroke', 'currentColor'); w.setAttribute('stroke-width', '1.6');
+    w.setAttribute('stroke-linecap', 'round'); w.setAttribute('stroke-linejoin', 'round'); w.setAttribute('class', 'ico');
+    w.innerHTML = ICON[id] || ICON.m1; return w;
+  }
+
   function showMsg(t){ const m = $('msg'); m.textContent = t; m.hidden = false; }
 
   async function enter(p){
@@ -49,7 +67,7 @@
     const inner = el('div', { id:'menuinner' });
     data.modules.forEach((m, i) => {
       const d = el('details'); if (i === 0) d.open = true; d.dataset.mod = m.id;
-      d.appendChild(el('summary', {}, [ document.createTextNode('Module ' + (i+1) + ': ' + m.title), el('small', { text: m.desc }) ]));
+      d.appendChild(el('summary', {}, [ svgIcon(m.id, 20), el('span', { class:'sumtxt' }, [ document.createTextNode('Module ' + (i+1) + ': ' + m.title), el('small', { text: m.desc }) ]) ]));
       m.lessons.forEach(l => {
         const a = el('a', { class:'les', href:'#'+l.id }, [ el('span', { class:'dot' }), document.createTextNode(l.title) ]);
         a.dataset.id = l.id; a.onclick = ev => { ev.preventDefault(); openLesson(l.id); if (window.innerWidth <= 820) menu.classList.add('collapsed'); };
@@ -73,7 +91,10 @@
   }
   function videoBox(l){
     const src = embedUrl(l.video);
-    if (!src) return el('div', { class:'video empty' }, [ el('div', { text:'🎬 Video bài này đang được cập nhật' }), el('small', { text:'Bạn có thể làm theo các bước bên dưới trước.' }) ]);
+    if (!src) {   // bìa bài giảng (chữ vàng trên nền đen) thay cho khối đen trống; có video thật thì bìa này không hiện nữa
+      const mi = data.modules.indexOf(l.mod);
+      return el('div', { class:'video empty cover' }, [ svgIcon(l.mod.id, 44), el('div', { class:'cv-mod', text:'MODULE ' + (mi+1) }), el('div', { class:'cv-title', text:l.title }), el('small', { text:'Video bài này đang được cập nhật — bạn có thể làm theo các bước bên dưới trước.' }) ]);
+    }
     const f = el('iframe', { src:src, title:'Video bài: ' + l.title, loading:'lazy', allow:'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen', allowfullscreen:'' });
     return el('div', { class:'video' }, [ f ]);
   }
@@ -93,6 +114,7 @@
       const next = all.find(l => !prog.done[l.id]) || all[0];
       main.appendChild(el('div', { class:'welcome' }, [
         el('div', { class:'crumb', text:'Chào mừng bạn' }), el('h2', { text:'Làm chủ edit video bằng AI, từng bước một' }),
+        el('div', { class:'teacher' }, [ el('img', { src:'img/nguoi-day.jpg', alt:'Lê Tú Quỳnh', width:'72', height:'72' }), el('div', {}, [ el('b', { text:'Lê Tú Quỳnh' }), el('div', { class:'meta', text:'Người sáng lập Hệ Sinh Thái HIỂU · đồng hành cùng bạn trong khoá này' }), el('p', { text:'Mình sẽ cầm tay chỉ việc để bạn tự dựng được video bằng AI. Làm theo từng bước, chỗ nào vướng cứ nhắn mình trong nhóm Zalo lớp.' }) ]) ]),
         el('p', { class:'meta', text:data.modules.length + ' module · ' + all.length + ' bài ngắn. Làm theo thứ tự, mỗi bài có các bước cụ thể và danh sách tự kiểm tra.' }),
         kitBox(),
         (() => { const b = el('button', { class:'btn', type:'button', text:'Bắt đầu: ' + next.title + ' →' }); b.onclick = () => openLesson(next.id); return b; })()
@@ -124,6 +146,13 @@
     const done = el('button', { class:'btn done-btn' + (prog.done[id] ? ' is-done' : ''), type:'button', text: prog.done[id] ? '✓ Đã học xong (bấm để bỏ)' : 'Đã học xong bài này' });
     done.onclick = () => { prog.done[id] = !prog.done[id]; saveProg(); updateProgress(); openLesson(id); };
     main.appendChild(done);
+    const left = l.mod.lessons.filter(x => !prog.done[x.id]).length, allDone = data.modules.every(m => m.lessons.every(x => prog.done[x.id]));
+    if (prog.done[id]) {
+      const msg = allDone ? '🏆 Chúc mừng! Bạn đã hoàn thành cả khoá. Giờ hãy dựng video đều mỗi ngày và nhắn mình kết quả nhé.'
+        : left === 0 ? '🎉 Bạn đã đi hết Module ' + (mi+1) + ': ' + l.mod.title + '. Còn ' + data.modules.filter(m => !m.lessons.every(x => prog.done[x.id])).length + ' module nữa.'
+        : 'Còn ' + left + ' bài nữa là xong Module ' + (mi+1) + '.';
+      main.appendChild(el('div', { class:'cheer', text:msg }));
+    }
     const pg = el('div', { class:'pager' });
     if (i > 0) { const b = el('button', { class:'ghost', type:'button', text:'← ' + all[i-1].title }); b.onclick = () => openLesson(all[i-1].id); pg.appendChild(b); }
     if (i < all.length - 1) { const b = el('button', { class:'ghost', type:'button', text:all[i+1].title + ' →' }); b.onclick = () => openLesson(all[i+1].id); pg.appendChild(b); }
