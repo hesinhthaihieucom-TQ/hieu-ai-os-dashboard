@@ -91,10 +91,7 @@
   }
   function videoBox(l){
     const src = embedUrl(l.video);
-    if (!src) {   // bìa bài giảng (chữ vàng trên nền đen) thay cho khối đen trống; có video thật thì bìa này không hiện nữa
-      const mi = data.modules.indexOf(l.mod);
-      return el('div', { class:'video empty cover' }, [ svgIcon(l.mod.id, 44), el('div', { class:'cv-mod', text:'MODULE ' + (mi+1) }), el('div', { class:'cv-title', text:l.title }), el('small', { text:'Video bài này đang được cập nhật — bạn có thể làm theo các bước bên dưới trước.' }) ]);
-    }
+    if (!src) return null;   // chưa có video thì KHÔNG hiện khung (Quỳnh 11/18: bỏ khung trống); gắn link vào content là khung tự hiện
     const f = el('iframe', { src:src, title:'Video bài: ' + l.title, loading:'lazy', allow:'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen', allowfullscreen:'' });
     return el('div', { class:'video' }, [ f ]);
   }
@@ -129,7 +126,7 @@
     main.appendChild(el('h2', { text:l.title }));
     main.appendChild(el('div', { class:'meta', text:'⏱ khoảng ' + l.min + ' phút' }));
     if (i === 0) main.appendChild(kitBox());
-    main.appendChild(videoBox(l));
+    const vb = videoBox(l); if (vb) main.appendChild(vb);
     main.appendChild(el('div', { class:'box goal' }, [ el('h3', { text:'🎯 Sau bài này bạn có' }), el('p', { text:l.goal }) ]));
     main.appendChild(el('div', { class:'box' }, [ el('details', {}, [ el('summary', { text:'💡 Vì sao quan trọng' }), el('p', { text:l.why }) ]) ]));
     if (l.sample) main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🖥️ ' + l.sample.title }), el('pre', { class:'term', text:l.sample.text }), l.sample.note ? el('p', { class:'meta', text:l.sample.note }) : el('span') ]));
