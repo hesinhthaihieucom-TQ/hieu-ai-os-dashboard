@@ -372,6 +372,8 @@
       <input class="lp-signup-input" id="lp-su-email" type="email" placeholder="email@gmail.com">
       <label class="lp-signup-label">Mật khẩu (để đăng nhập lại app sau này) *</label>
       <input class="lp-signup-input" id="lp-su-pass" type="password" placeholder="Ít nhất 6 ký tự">
+      <label class="lp-show-pass"><input type="checkbox" id="lp-su-showpass"> Hiện mật khẩu để kiểm tra không gõ nhầm</label>
+      <div class="lp-save-note">📝 <b>Hãy ghi lại email + mật khẩu này</b> (chụp màn hình cũng được) — bạn sẽ dùng đúng 2 thứ này để vào app sau khi thanh toán.</div>
       <div id="lp-signup-error" class="lp-signup-error" hidden></div>
       <button class="lp-cta" id="lp-su-submit" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Xác nhận thông tin — lấy mã QR →</button>
       <div style="text-align:center;margin-top:16px;">
@@ -533,6 +535,9 @@
     el.hidden = false;
   }
 
+  const showPass = document.getElementById('lp-su-showpass');
+  if(showPass) showPass.onchange = ()=>{ document.getElementById('lp-su-pass').type = showPass.checked ? 'text' : 'password'; };
+
   const submitBtn = document.getElementById('lp-su-submit');
   if(submitBtn) submitBtn.onclick = async ()=>{
     const name = document.getElementById('lp-su-name').value.trim();
@@ -563,6 +568,7 @@
     }
   };
 
+  function escHtmlLp(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   let pollTimer = null;
   function renderPaymentCard(refCode){
     document.getElementById('lp-signup-form-wrap').hidden = true;
@@ -586,8 +592,20 @@
         <div class="lp-pay-row"><b>Nội dung CK (bắt buộc giữ nguyên):</b> ${transferContent} <span class="lp-pay-copy" data-copy="${transferContent}">Copy</span></div>
       </div>
       <div class="lp-shot-cap" style="margin-top:14px;">Chuyển đúng số tiền + giữ nguyên nội dung (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận.</div>
+      <div class="lp-cred-box">
+        <div class="lp-cred-title">🔑 Thông tin đăng nhập app của bạn — hãy chụp màn hình lưu lại</div>
+        <div class="lp-pay-row"><b>Email:</b> ${escHtmlLp(capturedEmail||'')}</div>
+        <div class="lp-pay-row"><b>Mật khẩu:</b> <span id="lp-cred-pass">••••••••</span> <span class="lp-pay-copy" id="lp-cred-toggle">Hiện</span></div>
+      </div>
       <div class="lp-pay-status" id="lp-pay-status">⏳ Đang chờ chuyển khoản…</div>
     `;
+    const credToggle = document.getElementById('lp-cred-toggle');
+    if(credToggle) credToggle.onclick = ()=>{
+      const el = document.getElementById('lp-cred-pass');
+      const hidden = el.textContent.indexOf('•') === 0;
+      el.textContent = hidden ? (capturedPass||'') : '••••••••';
+      credToggle.textContent = hidden ? 'Ẩn' : 'Hiện';
+    };
     wrap.querySelectorAll('[data-copy]').forEach(el=>{
       el.onclick = async ()=>{
         try{ await navigator.clipboard.writeText(el.getAttribute('data-copy')); const old=el.textContent; el.textContent='Đã copy ✓'; setTimeout(()=>{el.textContent=old;},1500); } catch(e){}
@@ -626,7 +644,21 @@
               // ?prefill_email= chỉ là lưới an toàn phòng khi signInWithPassword() ở trên lỡ fail —
               // app tự điền sẵn email này ở modal đăng nhập (xem TC_PREFILL_EMAIL/authFields ở
               // app-shell.js), khách chỉ cần gõ lại mật khẩu, không phải gõ lại từ đầu.
-              statusEl.innerHTML = '✅ Đã thanh toán thành công! <a href="../index.html?prefill_email=' + encodeURIComponent(capturedEmail||'') + '" style="color:var(--gold);font-weight:700;">Vào app ngay →</a>';
+              const em = encodeURIComponent(capturedEmail||'');
+              statusEl.className = 'lp-pay-status paid lp-pay-done';
+              statusEl.innerHTML =
+                '<div style="font-size:19px;margin-bottom:10px;">✅ Thanh toán thành công — app đã mở khoá trọn đời!</div>' +
+                '<a class="lp-cta" style="display:block;margin:0 0 14px;" href="../index.html?prefill_email=' + em + '">Vào app ngay →</a>' +
+                '<div class="lp-next-steps">' +
+                  '<div class="lp-next-title">Hướng dẫn vào app (3 bước)</div>' +
+                  '<ol>' +
+                    '<li>Bấm nút <b>"Vào app ngay"</b> ở trên. Nếu app hiện sẵn Trang chủ là bạn đã đăng nhập xong.</li>' +
+                    '<li>Nếu app hỏi đăng nhập: dùng <b>đúng email ' + escHtmlLp(capturedEmail||'đã đăng ký') + '</b> và <b>mật khẩu bạn vừa tạo ở trang này</b>.</li>' +
+                    '<li>Vào mục <b>Chấm Điểm Nghiệp Tiền</b> làm bài đầu tiên (5 phút), rồi sang <b>Ghi Chép Hàng Ngày</b> ghi khoản đầu tiên.</li>' +
+                  '</ol>' +
+                  '<div class="lp-forgot-box">🔐 <b>Quên mật khẩu?</b> Không sao — <a href="../index.html?forgot=1&prefill_email=' + em + '">bấm vào đây để đặt lại mật khẩu</a>: app gửi link đặt mật khẩu mới về email của bạn (nhớ xem cả mục Spam/Quảng cáo). ' +
+                  'Vẫn chưa được thì nhắn Zalo <b>0866849193</b>, mình hỗ trợ ngay.</div>' +
+                '</div>';
             }
           })();
         }

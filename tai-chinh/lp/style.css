@@ -340,3 +340,19 @@ b, strong{ color:var(--white); }
 .lp-tab.on{ background:linear-gradient(135deg,var(--gold-light),var(--orange-dark)); color:#241a03; border-color:transparent; }
 .lp-tab-panel{ display:none; }
 .lp-tab-panel.on{ display:block; }
+
+/* Hướng dẫn đăng nhập + quên mật khẩu quanh bước thanh toán (2026-11-18: khách trả tiền xong quên mật khẩu). */
+.lp-show-pass{ display:flex; align-items:center; gap:8px; font-size:15px; color:var(--gray); margin:8px 0 4px; cursor:pointer; }
+.lp-show-pass input{ width:18px; height:18px; }
+.lp-save-note{ background:rgba(240,194,75,.1); border:1px dashed rgba(240,194,75,.5); border-radius:10px; padding:11px 14px; font-size:15px; line-height:1.55; color:var(--gold-light); margin:10px 0 4px; }
+.lp-cred-box{ background:rgba(240,194,75,.08); border:1px solid rgba(240,194,75,.4); border-radius:12px; padding:14px 16px; margin-top:16px; }
+.lp-cred-title{ font-weight:700; color:var(--gold-light); font-size:15.5px; margin-bottom:8px; line-height:1.5; }
+.lp-pay-done{ text-align:left; color:#fff; font-weight:500; }
+.lp-pay-done .lp-cta{ text-align:center; text-decoration:none; }
+.lp-next-steps{ background:var(--black3); border-radius:12px; padding:16px 18px; font-size:16px; line-height:1.6; color:var(--gray); }
+.lp-next-title{ font-weight:800; color:var(--gold-light); font-size:17px; margin-bottom:8px; }
+.lp-next-steps ol{ margin:0 0 12px; padding-left:20px; }
+.lp-next-steps li{ margin-bottom:8px; }
+.lp-next-steps b{ color:#fff; }
+.lp-forgot-box{ border-top:1px solid var(--line); padding-top:12px; font-size:15.5px; }
+.lp-forgot-box a{ color:var(--gold); font-weight:700; }

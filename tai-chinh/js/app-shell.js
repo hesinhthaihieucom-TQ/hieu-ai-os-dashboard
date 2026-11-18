@@ -40,6 +40,10 @@ function tcHasLpPromo(){
 // đăng nhập, khách chỉ cần gõ lại đúng mật khẩu đã tạo, khỏi phải gõ cả email lẫn mật khẩu từ đầu.
 let TC_PREFILL_EMAIL = '';
 try { TC_PREFILL_EMAIL = new URLSearchParams(location.search).get('prefill_email') || ''; } catch(e){}
+// ?forgot=1 → mở thẳng khung "Quên mật khẩu" (ladipage gắn vào nút "Quên mật khẩu?" sau thanh toán, chị
+// Quỳnh 2026-11-18: khách vừa trả tiền xong thì quên mật khẩu, không biết bấm đâu).
+let TC_OPEN_FORGOT = false;
+try { TC_OPEN_FORGOT = new URLSearchParams(location.search).get('forgot') === '1'; } catch(e){}
 // Đồng bộ đồng hồ đếm ngược 60 phút với ladipage (chị Quỳnh chốt 2026-09-17: "làm bài Chấm Điểm
 // Nghiệp Tiền rồi quay lại đăng ký thì giá cũng phải hết hạn giống hệt bên ladipage, không được để
 // đi đường vòng qua bài test thì thoải mái không bị thúc giục"). Đọc lại ĐÚNG key
@@ -514,6 +518,7 @@ function renderGuestShell(){
   `;
   root.querySelector('#guest-brand-home').onclick = ()=>{ location.hash = 'trang-chu'; };
   root.querySelector('#guest-login-btn').onclick = ()=>{ AppState.authMode = 'login'; renderTcAuthModal(); };
+  if(TC_OPEN_FORGOT){ TC_OPEN_FORGOT = false; AppState.authMode = 'forgot'; renderTcAuthModal(); }
   const content = root.querySelector('#guest-content');
   const mod = window.Modules && window.Modules[AppState.route];
   if(mod && mod.render) mod.render(content, { supabase: supabaseClient, user: null, profile: null });
