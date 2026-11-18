@@ -26,7 +26,8 @@
     m4:'<path d="M4 20l4-1 11-11a2.1 2.1 0 00-3-3L5 16l-1 4z"/><path d="M14 7l3 3"/>',
     m5:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 9"/>',
     m6:'<path d="M5 12l4 4L19 7"/><rect x="3" y="3" width="18" height="18" rx="3"/>',
-    m7:'<path d="M3 17l6-6 4 4 8-9M15 6h6v6"/>'
+    m7:'<path d="M3 17l6-6 4 4 8-9M15 6h6v6"/>',
+    m8:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>'
   };
   function svgIcon(id, size){
     const w = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
