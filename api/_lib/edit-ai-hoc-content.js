@@ -60,10 +60,15 @@ const MODULES = [
       steps: ['Tả gu ngay trong lệnh nếu muốn: tối giản, rực rỡ bán hàng, sang trọng vàng đen, nữ tính nhẹ nhàng...', 'Không tả thì kit hỏi một câu kèm các lựa chọn dễ hiểu, bạn chọn một.', 'Kit có sẵn 7 phong cách, hoặc bạn tự mô tả bằng lời, kit tự hiểu.'],
       check: ['Biết ít nhất hai cách để chọn gu', 'Đã thử dựng một video với gu mình thích'] },
     { id: 'm3-3', title: 'Kit cắt lặp, cắt hơi thở thế nào', min: 6, video: '',
-      goal: 'Hiểu kit đã cắt gì để kiểm tra đúng chỗ.',
-      why: 'Biết cách kit cắt giúp bạn phát hiện nhanh chỗ cắt chưa ưng và nhờ sửa đúng.',
-      steps: ['Kit cắt khoảng lặng, hơi thở và từ thừa.', 'Câu nói lặp thì kit giữ lần nói cuối cùng.', 'Nếu bản thu có tiếng ồn nền cao, kit tự đo lại các quãng nghỉ để cắt cho sát.', 'Xem lại video và để ý: có chỗ nào cắt lẹm vào chữ cuối không? Có chỗ nào còn bị chững không?'],
-      check: ['Đã xem lại video để tìm chỗ cắt lẹm', 'Đã ghi lại thời điểm (giây) của chỗ cần sửa nếu có'] }
+      goal: 'Hiểu kit đã cắt gì và biết kiểm tra lại kết quả cắt.',
+      why: 'Câu nói vấp rồi nói lại là lỗi dễ thấy nhất, nhất là ở câu mở đầu. Biết kit cắt thế nào giúp bạn kiểm tra nhanh và yên tâm.',
+      steps: ['Trước khi dựng, kit tự chạy bước cắt lặp: dò câu hoặc cụm từ bị nói hai lần liền nhau (kể cả khi có chữ đệm như "thì, là, ờ" ở giữa), cắt lần nói trước và giữ lần nói sau cùng.',
+              'Cắt xong kit chép chữ lại video để kiểm tra. Còn lặp thì cắt thêm, tối đa 3 vòng. Vẫn còn lặp sau 3 vòng thì kit dừng và báo lỗi, không dựng tiếp để tránh ra video sai.',
+              'Sau đó kit cắt khoảng lặng và hơi thở. Nếu bản thu có tiếng ồn nền cao, kit tự đo lại các quãng nghỉ để cắt cho sát.',
+              'Từ đơn bị nói lặp liền (như "dần dần", "xanh xanh") kit không tự cắt vì có thể là từ láy tự nhiên. Kit chỉ báo "hãy nghe lại" để bạn quyết định.',
+              'Trước khi đăng, nhờ kit kiểm tra lại video thành phẩm bằng câu: "kiểm tra giúp mình video đã dựng còn chỗ nào nói lặp không". Xem video và ghi lại giây nào còn bị cắt lẹm hoặc còn chững.'],
+      check: ['Biết kit cắt lặp tự động trước khi dựng', 'Đã nghe lại các từ đơn kit báo "nên nghe lại"', 'Đã kiểm tra video thành phẩm còn lặp không'],
+      note: 'Kit chỉ bắt được chỗ lặp mà chữ giống hệt nhau. Nếu hai lần nói khác nhau một chút (nói lại bằng chữ khác) thì bạn vẫn nên đọc lướt bản chép chữ một lần. Cắt lặp chạy mất vài phút cho mỗi video ngắn.' }
   ]},
   { id: 'm4', title: 'Chỉnh bằng lời nói', desc: 'Sửa đúng chỗ cần sửa bằng câu nói tự nhiên, không cần dựng lại từ đầu.', lessons: [
     { id: 'm4-1', title: 'Sửa chữ, bớt đồ hoạ, đổi màu', min: 10, video: '',
