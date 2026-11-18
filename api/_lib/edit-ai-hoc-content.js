@@ -35,17 +35,16 @@ const MODULES = [
       check: ['Biết lệnh nào bắt buộc, lệnh nào tuỳ chọn', 'Biết /biz-video tự chọn đúng quy trình cho video của mình'],
       note: 'Chỉ cần edit video thì bạn chỉ dùng hai lệnh: /biz-help một lần để kiểm tra máy, sau đó /biz-video cho mỗi video. Chỉnh sửa và chốt bản thì nói bằng lời, không cần thêm lệnh.' }
   ]},
-  { id: 'm2', title: 'Chuẩn bị video thô', desc: 'Quay sao cho dựng ra đẹp, và đưa file đúng chỗ.', lessons: [
-    { id: 'm2-1', title: 'Quay thế nào để AI dựng đẹp', min: 8, video: '',
-      goal: 'Quay được video thô ít phải sửa nhất.',
+  { id: 'm2', title: 'Chuẩn bị video thô', desc: 'Quay sao cho dựng ra đẹp, và đưa file cho kit.', lessons: [
+    { id: 'm2-1', title: 'Quay video và đưa cho kit', min: 10, video: '',
+      goal: 'Quay được video thô ít phải sửa nhất và đưa đúng file cho kit.',
       why: 'AI cắt và dựng giỏi, nhưng video thô tốt vẫn cho kết quả tốt hơn hẳn. Vài thói quen nhỏ tiết kiệm cả tiếng chỉnh sửa.',
-      steps: ['Quay dọc (9:16), mặt rõ, đặt mặt ở khoảng giữa khung, chừa chỗ phía trên và phía dưới cho chữ.', 'Chọn nơi yên tĩnh, ánh sáng đều vào mặt. Tiếng ồn nền nhỏ thì kit cắt khoảng nghỉ chính xác hơn.', 'Nói liền mạch. Vấp thì nói lại luôn câu đó: kit giữ lần nói cuối của mỗi câu lặp.', 'Nếu muốn giữ nụ cười ở cuối video, cứ cười hết, kit sẽ giữ lại.'],
-      check: ['Video quay dọc', 'Mặt rõ, đủ sáng', 'Nói vấp thì đã nói lại luôn câu đó'] },
-    { id: 'm2-2', title: 'Đưa video cho kit', min: 5, video: '',
-      goal: 'Dán đúng đường dẫn video vào lệnh dựng.',
-      why: 'Kit làm việc trên file có thật trong máy. Biết lấy đường dẫn là bước nhỏ nhưng ai cũng cần.',
-      steps: ['Chép video vào máy (video điện thoại dạng HEVC cũng được, kit tự đổi sang H.264).', 'Chuột phải vào file, chọn Copy as path để chép đường dẫn.', 'Không nhớ video nằm đâu: cứ nói "tìm video tôi quay hôm qua", kit quét máy, đưa danh sách và hiện khung hình để bạn xác nhận.'],
-      check: ['Chép được đường dẫn file video', 'Biết cách nhờ kit tìm video khi quên chỗ lưu'] }
+      steps: ['Quay dọc (9:16), mặt rõ, đặt mặt ở khoảng giữa khung, chừa chỗ phía trên và phía dưới cho chữ.',
+              'Chọn nơi yên tĩnh, ánh sáng đều vào mặt. Tiếng ồn nền nhỏ thì kit cắt khoảng nghỉ chính xác hơn.',
+              'Nói liền mạch. Vấp thì nói lại luôn câu đó: kit giữ lần nói cuối của mỗi câu lặp. Muốn giữ nụ cười ở cuối video thì cứ cười hết.',
+              'Chép video vào máy tính (video điện thoại dạng HEVC cũng được, kit tự đổi sang H.264).',
+              'Chuột phải vào file, chọn Copy as path để chép đường dẫn rồi dán vào lệnh /biz-video. Không nhớ video nằm đâu thì cứ nói "tìm video tôi quay hôm qua", kit sẽ tìm giúp.'],
+      check: ['Video quay dọc, mặt rõ, đủ sáng', 'Nói vấp thì đã nói lại luôn câu đó', 'Chép được đường dẫn file video'] }
   ]},
   { id: 'm3', title: 'Dựng video người nói', desc: 'Từ video thô thành video cắt gọn, có phụ đề, chỉ bằng một lệnh.', lessons: [
     { id: 'm3-1', title: 'Lệnh dựng đầu tiên', min: 12, video: '',
@@ -96,12 +95,7 @@ const MODULES = [
       goal: 'Có thói quen soát video theo một danh sách cố định.',
       why: 'Video lỗi chính tả hay chữ tràn lề làm người xem mất tin tưởng. Soát một lượt chỉ mất vài phút.',
       steps: ['Soát chính tả toàn bộ phụ đề, theo nghĩa của câu.', 'Phụ đề không có dấu chấm cuối dòng, mỗi dòng ngắn (tối đa khoảng 24 ký tự, câu dài tự chia hai dòng).', 'Chữ không tràn lề, không bị nút và mô tả của TikTok, Reels che.', 'Tiêu đề không che mặt người nói.', 'Xem ảnh khung trước khi render cả video: kit dựng thử vài ảnh (tiêu đề, phụ đề, thanh chữ, cuối video). Sai ở đây tiết kiệm cả tiếng render lại.'],
-      check: ['Đã soát chính tả', 'Chữ không tràn lề', 'Đã xem ảnh khung trước khi render'] },
-    { id: 'm6-2', title: 'Máy yếu và cách xử lý lỗi hay gặp', min: 8, video: '',
-      goal: 'Dựng ổn định trên máy RAM thấp và tự xử lý lỗi thường gặp.',
-      why: 'Render là việc nặng nhất. Vài thói quen đúng giúp máy 6 GB cũng chạy xong.',
-      steps: ['Đóng Chrome và ứng dụng nặng trước khi render.', 'Máy RAM dưới 8 GB: dùng 2 luồng (--concurrency=2), không tăng lên 3–4.', 'Báo lỗi "delayRender" hay hết giờ: đóng ứng dụng nặng rồi chạy lại.', 'Render rất chậm: kiểm tra RAM trong Activity Monitor hoặc Task Manager.', 'Video điện thoại (HEVC) giật: kit tự đổi sang H.264 ở lần xử lý đầu.'],
-      check: ['Biết cách đóng ứng dụng nặng trước khi render', 'Biết dùng 2 luồng cho máy yếu', 'Biết đọc dòng lỗi delayRender'] }
+      check: ['Đã soát chính tả', 'Chữ không tràn lề', 'Đã xem ảnh khung trước khi render'] }
   ]},
   { id: 'm7', title: 'Làm đều mỗi ngày', desc: 'Biến quy trình thành thói quen: nhanh, ít lỗi, đăng đều.', lessons: [
     { id: 'm7-1', title: 'Quy trình mỗi video trong vài phút', min: 8, video: '',
@@ -161,7 +155,12 @@ const MODULES = [
               'Lưu ý: máy tính phải đang bật và Claude Code đang chạy. Máy ngủ thì tự nối lại khi bật lại. Ảnh bạn gửi từ điện thoại sẽ tới phiên trên máy tính.',
               'Muốn nhận thông báo khi việc chạy xong: bật thông báo đẩy trong /config (phần Remote Control).'],
       check: ['Đã tải app Claude và đăng nhập đúng tài khoản', 'Thấy thẻ Code trong app', 'Đã thử chạy claude remote-control và thấy phiên trên điện thoại', 'Biết máy tính phải bật khi điều khiển từ xa'],
-      note: 'Một số lệnh chỉ chạy trong cửa sổ lệnh (như /plugin, /resume) không dùng được từ app, và không chọn được chế độ Bypass permissions trên app. Claude Cowork cũng có trên điện thoại để giao việc và theo dõi, nhưng dựng video bằng kit vẫn làm trên máy tính. Tính năng thay đổi nhanh và tuỳ gói đăng ký, nên xem hướng dẫn chính thức của Claude để biết gói của bạn dùng được gì.' }
+      note: 'Một số lệnh chỉ chạy trong cửa sổ lệnh (như /plugin, /resume) không dùng được từ app, và không chọn được chế độ Bypass permissions trên app. Claude Cowork cũng có trên điện thoại để giao việc và theo dõi, nhưng dựng video bằng kit vẫn làm trên máy tính. Tính năng thay đổi nhanh và tuỳ gói đăng ký, nên xem hướng dẫn chính thức của Claude để biết gói của bạn dùng được gì.' },
+    { id: 'm6-2', title: 'Máy yếu và cách xử lý lỗi hay gặp', min: 8, video: '',
+      goal: 'Dựng ổn định trên máy RAM thấp và tự xử lý lỗi thường gặp.',
+      why: 'Render là việc nặng nhất. Vài thói quen đúng giúp máy 6 GB cũng chạy xong.',
+      steps: ['Đóng Chrome và ứng dụng nặng trước khi render.', 'Máy RAM dưới 8 GB: dùng 2 luồng (--concurrency=2), không tăng lên 3–4.', 'Báo lỗi "delayRender" hay hết giờ: đóng ứng dụng nặng rồi chạy lại.', 'Render rất chậm: kiểm tra RAM trong Activity Monitor hoặc Task Manager.', 'Video điện thoại (HEVC) giật: kit tự đổi sang H.264 ở lần xử lý đầu.'],
+      check: ['Biết cách đóng ứng dụng nặng trước khi render', 'Biết dùng 2 luồng cho máy yếu', 'Biết đọc dòng lỗi delayRender'] }
   ]}
 ];
 
