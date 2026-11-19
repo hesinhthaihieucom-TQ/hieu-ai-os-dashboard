@@ -33,7 +33,7 @@
     <img src="../assets/logo-hieu-hanh.png" alt="">
     <span>Sổ Dòng Tiền<br>Tâm Thức</span>
   </div>
-  <a href="../index.html">Đăng nhập →</a>
+  <a href="../">Đăng nhập →</a>
 </header>
 
 <!-- SECTION 1: HERO -->
@@ -378,7 +378,7 @@
       <button class="lp-cta" id="lp-su-submit" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Xác nhận thông tin — lấy mã QR →</button>
       <div style="text-align:center;margin-top:16px;">
         <div class="lp-shot-cap" style="margin-bottom:10px;">Chưa chắc chắn?</div>
-        <a class="lp-cta-secondary" href="../index.html?promo=lp199k#thiet-lap-nhanh">📊 Làm bài Chấm Điểm Nghiệp Tiền miễn phí trước →</a>
+        <a class="lp-cta-secondary" href="../?promo=lp199k#thiet-lap-nhanh">📊 Làm bài Chấm Điểm Nghiệp Tiền miễn phí trước →</a>
         <div class="lp-shot-cap" style="margin-top:10px;">Không cần tài khoản · Ưu đãi vẫn được giữ khi bạn quay lại đăng ký</div>
       </div>
     </div>
@@ -431,7 +431,7 @@
     <div class="lp-cta-note">Trọn đời · Thanh toán 1 lần duy nhất · Không ràng buộc</div>
     <div style="text-align:center;margin-top:20px;">
       <div class="lp-shot-cap" style="margin-bottom:10px;">Vẫn còn lăn tăn?</div>
-      <a class="lp-cta-secondary" href="../index.html?promo=lp199k#thiet-lap-nhanh">📊 Làm bài Chấm Điểm Nghiệp Tiền miễn phí →</a>
+      <a class="lp-cta-secondary" href="../?promo=lp199k#thiet-lap-nhanh">📊 Làm bài Chấm Điểm Nghiệp Tiền miễn phí →</a>
       <div class="lp-shot-cap" style="margin-top:10px;">Không cần tài khoản · Ưu đãi vẫn được giữ khi bạn quay lại đăng ký</div>
     </div>
   </section>
@@ -453,6 +453,21 @@
      khỏi cần truyền token qua URL hay sửa gì ở app-shell.js. -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
+// Link về app: KHÔNG dùng "../index.html" — Vercel bật cleanUrls nên nó bị 308 sang "/tai-chinh" (không
+// có tiền tố /sodongtientamthuc) và trên hesinhthaihieu.com ra 404 (sự cố 2026-11-19: khách quên mật khẩu bấm
+// link "Quên mật khẩu" bị 404). Cũng không dùng "../" thuần, vì ladipage mở được cả dạng "/lp" (không dấu "/"
+// cuối) và khi đó "../" nhảy về gốc "/" của tên miền. Tự suy ra thư mục app từ đường dẫn đang mở, y như
+// tai-khoan.js trong app.
+function tcAppUrl(suffix){
+  var base = location.pathname.replace(/\/lp(\/index\.html)?\/?$/, '/');
+  if (base.charAt(base.length - 1) !== '/') base += '/';
+  return base + (suffix || '');
+}
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('a[href^="../?"], a[href="../"]').forEach(function(a){
+    a.setAttribute('href', tcAppUrl(a.getAttribute('href').slice(3)));
+  });
+});
 // Đếm ngược giữ giá 199k — chị Quỳnh chốt 2026-09-17: 60 phút kể từ lúc khách THẬT SỰ vào trang lần
 // đầu (mốc giờ tuyệt đối lưu localStorage, không reset khi F5 lại trang), hết giờ tự lên 299.000đ —
 // TRÙNG với TC_PRICE_TIER_1_AMOUNT app đang bán nên không cần thêm số tiền mới ở webhook. Giá dùng
@@ -648,7 +663,7 @@
               statusEl.className = 'lp-pay-status paid lp-pay-done';
               statusEl.innerHTML =
                 '<div style="font-size:19px;margin-bottom:10px;">✅ Thanh toán thành công — app đã mở khoá trọn đời!</div>' +
-                '<a class="lp-cta" style="display:block;margin:0 0 14px;" href="../index.html?prefill_email=' + em + '">Vào app ngay →</a>' +
+                '<a class="lp-cta" style="display:block;margin:0 0 14px;" href="' + tcAppUrl('?prefill_email=' + em) + '">Vào app ngay →</a>' +
                 '<div class="lp-next-steps">' +
                   '<div class="lp-next-title">Hướng dẫn vào app (3 bước)</div>' +
                   '<ol>' +
@@ -656,7 +671,7 @@
                     '<li>Nếu app hỏi đăng nhập: dùng <b>đúng email ' + escHtmlLp(capturedEmail||'đã đăng ký') + '</b> và <b>mật khẩu bạn vừa tạo ở trang này</b>.</li>' +
                     '<li>Vào mục <b>Chấm Điểm Nghiệp Tiền</b> làm bài đầu tiên (5 phút), rồi sang <b>Ghi Chép Hàng Ngày</b> ghi khoản đầu tiên.</li>' +
                   '</ol>' +
-                  '<div class="lp-forgot-box">🔐 <b>Quên mật khẩu?</b> Không sao — <a href="../index.html?forgot=1&prefill_email=' + em + '">bấm vào đây để đặt lại mật khẩu</a>: app gửi link đặt mật khẩu mới về email của bạn (nhớ xem cả mục Spam/Quảng cáo). ' +
+                  '<div class="lp-forgot-box">🔐 <b>Quên mật khẩu?</b> Không sao — <a href="' + tcAppUrl('?forgot=1&prefill_email=' + em) + '">bấm vào đây để đặt lại mật khẩu</a>: app gửi link đặt mật khẩu mới về email của bạn (nhớ xem cả mục Spam/Quảng cáo). ' +
                   'Vẫn chưa được thì nhắn Zalo <b>0866849193</b>, mình hỗ trợ ngay.</div>' +
                 '</div>';
             }
