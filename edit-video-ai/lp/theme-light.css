@@ -123,3 +123,8 @@ a{ color:var(--orange-dark); }
 .lp-demo-cap,.lp-shot-gallery figcaption,.lp-ba figcaption{ color:var(--gray); }
 .lp-footer{ color:var(--gray2); background:transparent; }
 .lp-final{ position:relative; }
+
+/* ---- sửa độ tương phản chữ cam nhạt trên nền sáng ---- */
+.lp-price-gets-title,.lp-price-label,.lp-price-label-new{ color:#C2410C; }
+.lp-old-inline{ color:#6B7280; }
+.lp-cta-secondary:hover{ background:#FFEDD5; }
