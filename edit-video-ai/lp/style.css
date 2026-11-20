@@ -389,3 +389,30 @@ b, strong{ color:var(--white); }
 .lp-teacher-shot{ margin:0; }
 .lp-teacher-shot img{ display:block; width:100%; height:auto; border-radius:12px; border:1px solid var(--line); }
 .lp-teacher-shot figcaption{ font-size:15px; color:var(--gray); text-align:center; margin-top:8px; line-height:1.5; }
+
+/* ===== Sửa theo cách dẫn dắt của trang tham khảo (proeditor.goskill.club), giữ nguyên bảng màu đen-vàng (Quỳnh 11/20) ===== */
+.lp-ticks{ list-style:none; padding:0; margin:14px auto 6px; max-width:420px; text-align:left; }
+.lp-ticks li{ position:relative; padding:6px 0 6px 34px; color:var(--white); font-weight:600; font-size:17px; }
+.lp-ticks li::before{ content:'✓'; position:absolute; left:0; top:5px; width:24px; height:24px; border-radius:50%; background:rgba(240,194,75,.18); color:var(--gold); text-align:center; line-height:24px; font-size:14px; }
+.lp-zalo-box{ display:flex; gap:14px; align-items:center; text-decoration:none; border:1px solid rgba(240,194,75,.5); background:rgba(240,194,75,.07); border-radius:16px; padding:14px 16px; margin:16px auto; max-width:520px; color:var(--gray); font-size:15.5px; line-height:1.5; }
+.lp-zalo-box b{ color:var(--white); font-size:16.5px; }
+.lp-zalo-badge{ flex:none; background:#0068FF; color:#fff; font-weight:800; font-size:15px; border-radius:12px; padding:12px 10px; }
+.lp-chips{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:10px 0 18px; }
+.lp-chips span{ border:1px solid var(--line); border-radius:999px; padding:7px 13px; font-size:14.5px; color:var(--gray); background:var(--black2); }
+.lp-vs{ display:grid; gap:12px; margin:8px 0; }
+.lp-vs-row{ display:grid; gap:8px; }
+.lp-vs-no, .lp-vs-yes{ display:flex; gap:10px; align-items:flex-start; border-radius:14px; padding:12px 14px; font-size:16px; line-height:1.55; }
+.lp-vs-no{ background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25); color:#e7c5c5; }
+.lp-vs-yes{ background:rgba(74,222,128,.07); border:1px solid rgba(74,222,128,.28); color:#d6f5e0; }
+.lp-vs-no i, .lp-vs-yes i{ font-style:normal; flex:none; width:24px; height:24px; border-radius:50%; text-align:center; line-height:24px; font-weight:800; font-size:13px; }
+.lp-vs-no i{ background:rgba(239,68,68,.25); color:#fecaca; } .lp-vs-yes i{ background:rgba(74,222,128,.3); color:#bbf7d0; }
+.lp-stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; }
+.lp-stats div{ background:var(--black2); border:1px solid var(--line); border-radius:14px; padding:14px 10px; text-align:center; }
+.lp-stats b{ display:block; font:700 24px 'Playfair Display',serif; color:var(--gold); }
+.lp-stats span{ font-size:14.5px; color:var(--gray); line-height:1.4; display:block; }
+.lp-outcome{ margin-top:8px; padding:8px 12px; background:rgba(240,194,75,.08); border-radius:10px; color:var(--gold-light,#F5D77A); font-size:15px; font-weight:600; line-height:1.5; }
+.lp-need{ margin:14px 0 6px; padding:12px 14px; border:1px dashed rgba(240,194,75,.45); border-radius:12px; color:var(--gray); font-size:15px; line-height:1.55; }
+.lp-promise-list{ list-style:none; margin:0 0 6px; padding:0; display:grid; gap:10px; }
+.lp-promise-list li{ background:var(--black2); border:1px solid var(--line); border-radius:14px; padding:13px 14px 13px 44px; position:relative; color:var(--gray); font-size:16px; line-height:1.55; }
+.lp-promise-list li::before{ content:'✓'; position:absolute; left:13px; top:13px; width:22px; height:22px; border-radius:50%; background:rgba(240,194,75,.2); color:var(--gold); text-align:center; line-height:22px; font-size:13px; }
+@media (min-width:700px){ .lp-vs-row{ grid-template-columns:1fr 1fr; } .lp-stats{ grid-template-columns:repeat(4,1fr); } }
