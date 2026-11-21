@@ -91,6 +91,8 @@
     return '';
   }
   function videoBox(l){
+    // Video tự lưu trong thư mục hoc/video (quay màn hình điện thoại, dọc): phát bằng thẻ video, không qua YouTube
+    if (/\.mp4(\?|$)/i.test(String(l.video || ''))) return el('div', { class:'video-file' }, [ el('video', { src:l.video + '?v=1', controls:'', playsinline:'', preload:'metadata' }) ]);
     const src = embedUrl(l.video);
     if (!src) return null;   // chưa có video thì KHÔNG hiện khung (Quỳnh 11/18: bỏ khung trống); gắn link vào content là khung tự hiện
     const f = el('iframe', { src:src, title:'Video bài: ' + l.title, loading:'lazy', allow:'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen', allowfullscreen:'' });

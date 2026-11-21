@@ -89,3 +89,7 @@ a{ color:#C2410C; }
 /* Ảnh chụp màn hình thật kèm chú thích */
 .shot{margin:0 0 16px}
 .shot figcaption{font-size:15px;line-height:1.55;color:#555;margin-top:8px}
+
+/* Video quay màn hình điện thoại (dọc) tự lưu trong app */
+.video-file{margin:12px 0;text-align:center}
+.video-file video{max-width:100%;max-height:560px;border-radius:14px;background:#000}
