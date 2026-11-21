@@ -85,3 +85,7 @@ a{ color:#C2410C; }
 .copytext{ background:#0B1120; color:#E5E7EB; border-radius:12px; padding:14px; font-size:15px; line-height:1.6; margin:8px 0 12px; user-select:all; }
 .copy-btn{ width:100%; }
 @media (max-width:560px){ .flow-node{ width:76px; } .flow-ico{ width:54px; height:54px; font-size:26px; } .flow-lb{ font-size:13.5px; } .flow-arr{ font-size:18px; margin-top:16px; } }
+
+/* Ảnh chụp màn hình thật kèm chú thích */
+.shot{margin:0 0 16px}
+.shot figcaption{font-size:15px;line-height:1.55;color:#555;margin-top:8px}
