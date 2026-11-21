@@ -107,6 +107,37 @@
     return el('div', { class:'box qs' }, [ el('h3', { text:'⚡ Cài đặt nhanh: 5 bước' }), list, b ]);
   }
 
+  // Dải hình các bước (mỗi bài có `flow`: 3-4 ô biểu tượng nối nhau) — nhìn là hiểu, đỡ phải đọc chữ (Quỳnh 11/21)
+  function flowStrip(items){
+    const w = el('div', { class:'flow' });
+    items.forEach((it, i) => {
+      if (i) w.appendChild(el('span', { class:'flow-arr', text:'→' }));
+      w.appendChild(el('div', { class:'flow-node' }, [ el('span', { class:'flow-ico', text:it[0] }), el('span', { class:'flow-lb', text:it[1] }) ]));
+    });
+    return w;
+  }
+  // Mỗi bước thành 1 thẻ có số lớn: câu đầu in đậm, phần giải thích thêm nằm nhỏ phía dưới (dài thì thu gọn "Xem chi tiết")
+  function stepCard(text, n){
+    const m = text.match(/^(.{10,95}?)(?:: |\. )([\s\S]+)$/);
+    const lead = m ? m[1] : text, rest = m ? m[2] : '';
+    const body = el('div', { class:'st-body' }, [ el('div', { class:'st-lead', text:lead + (m && text.slice(lead.length, lead.length + 1) === '.' ? '.' : '') }) ]);
+    if (rest) {
+      if (rest.length > 140) body.appendChild(el('details', { class:'st-more' }, [ el('summary', { text:'Xem chi tiết' }), el('div', { text:rest }) ]));
+      else body.appendChild(el('div', { class:'st-rest', text:rest }));
+    }
+    return el('div', { class:'step' }, [ el('div', { class:'st-n', text:String(n) }), body ]);
+  }
+  function copyBox(c){
+    const pre = el('div', { class:'copytext', text:c.text });
+    const b = el('button', { class:'btn copy-btn', type:'button', text:'📋 Sao chép' });
+    b.onclick = async () => {
+      try { await navigator.clipboard.writeText(c.text); b.textContent = '✓ Đã sao chép'; }
+      catch(e){ const r = document.createRange(); r.selectNodeContents(pre); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = 'Bấm Ctrl+C / Cmd+C để chép'; }
+      setTimeout(() => { b.textContent = '📋 Sao chép'; }, 2500);
+    };
+    return el('div', { class:'box' }, [ el('h3', { text:'📋 ' + c.label }), pre, b ]);
+  }
+
   function kitBox(){
     const kit = data.kitUrl
       ? el('a', { class:'btn', href:data.kitUrl, target:'_blank', rel:'noopener', text:'📦 Tải bộ kit' })
@@ -137,14 +168,16 @@
     main.appendChild(el('div', { class:'crumb', text:'Module ' + (mi+1) + ' · ' + l.mod.title }));
     main.appendChild(el('h2', { text:l.title }));
     main.appendChild(el('div', { class:'meta', text:'⏱ khoảng ' + l.min + ' phút' }));
+    if (l.flow) main.appendChild(flowStrip(l.flow));
     if (i === 0) main.appendChild(kitBox());
     const vb = videoBox(l); if (vb) main.appendChild(vb);
     if (l.image) main.appendChild(el('img', { class:'illu', src:'img/' + l.image + '?v=3', alt:'Hình minh hoạ: ' + l.title, loading:'lazy' }));
     main.appendChild(el('div', { class:'box goal' }, [ el('h3', { text:'🎯 Sau bài này bạn có' }), el('p', { text:l.goal }) ]));
     main.appendChild(el('div', { class:'box' }, [ el('details', {}, [ el('summary', { text:'💡 Vì sao quan trọng' }), el('p', { text:l.why }) ]) ]));
     if (l.sample) main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🖥️ ' + l.sample.title }), el('pre', { class:'term', text:l.sample.text }), l.sample.note ? el('p', { class:'meta', text:l.sample.note }) : el('span') ]));
-    const ol = el('ol', { class:'steps' }); l.steps.forEach(s => ol.appendChild(el('li', { text:s })));
-    main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🛠️ Các bước làm' }), ol ]));
+    if (l.copy) main.appendChild(copyBox(l.copy));
+    const sc = el('div', { class:'steps-cards' }); l.steps.forEach((s, k) => sc.appendChild(stepCard(s, k + 1)));
+    main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🛠️ Các bước làm' }), sc ]));
     const saved = prog.checks[id] || [];
     const chk = el('div', { class:'checks' });
     l.check.forEach((c, k) => {

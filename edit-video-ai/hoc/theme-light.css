@@ -66,3 +66,22 @@ a{ color:#C2410C; }
 /* nút Bài trước / Bài sau: cho phép xuống dòng, không đẩy tràn ngang màn hình */
 .pager .ghost{ white-space:normal; min-width:0; line-height:1.35; }
 .pager{ min-width:0; } .main{ overflow-wrap:anywhere; }
+
+/* ===== Dải hình các bước, thẻ bước, ô sao chép (Quỳnh 11/21: "lắm chữ quá, thêm hình cho dễ học") ===== */
+.flow{ display:flex; align-items:flex-start; justify-content:center; gap:6px; flex-wrap:wrap; margin:14px 0 6px; padding:16px 10px; background:#fff; border:1px solid #FED7AA; border-radius:18px; box-shadow:0 8px 24px -16px rgba(249,115,22,.5); }
+.flow-node{ display:flex; flex-direction:column; align-items:center; gap:8px; width:96px; text-align:center; }
+.flow-ico{ width:62px; height:62px; border-radius:50%; background:linear-gradient(180deg,#FFF7ED,#FFEDD5); border:2px solid #FDBA74; display:flex; align-items:center; justify-content:center; font-size:30px; }
+.flow-lb{ font-size:14.5px; font-weight:700; color:#111827; line-height:1.3; }
+.flow-arr{ color:#EA580C; font-weight:900; font-size:22px; margin-top:18px; }
+.steps-cards{ display:grid; gap:10px; margin-top:4px; }
+.step{ display:flex; gap:12px; align-items:flex-start; padding:12px 14px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:14px; }
+.st-n{ flex:none; width:34px; height:34px; border-radius:50%; background:linear-gradient(180deg,#FB923C,#EA580C); color:#fff; font-weight:900; font-size:17px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+.st-body{ min-width:0; flex:1; }
+.st-lead{ font-weight:700; color:#111827; font-size:16.5px; line-height:1.5; }
+.st-rest{ margin-top:4px; color:#4B5563; font-size:15.5px; line-height:1.6; }
+.st-more{ margin-top:4px; }
+.st-more summary{ cursor:pointer; color:#C2410C; font-weight:700; font-size:15px; }
+.st-more div{ margin-top:6px; color:#4B5563; font-size:15.5px; line-height:1.6; }
+.copytext{ background:#0B1120; color:#E5E7EB; border-radius:12px; padding:14px; font-size:15px; line-height:1.6; margin:8px 0 12px; user-select:all; }
+.copy-btn{ width:100%; }
+@media (max-width:560px){ .flow-node{ width:76px; } .flow-ico{ width:54px; height:54px; font-size:26px; } .flow-lb{ font-size:13.5px; } .flow-arr{ font-size:18px; margin-top:16px; } }
