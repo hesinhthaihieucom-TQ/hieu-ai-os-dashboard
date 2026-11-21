@@ -9,7 +9,7 @@ const CAU_CAI_HET = 'Mình vừa mở bộ kit dựng video Hiểu Kênh trong C
 
 const MODULES = [
   { id: 'm1', title: 'Cài đặt (làm một lần)', desc: 'Đi thẳng một đường, khoảng 30 phút. Phần khó Claude làm giúp bạn.', lessons: [
-    { id: 'm1-1', flow: [["🖥️", "Tải Claude"], ["🔑", "Đăng nhập"], ["💳", "Mua gói Pro"], ["💻", "Thẻ Code"]], title: 'Cài Claude trên laptop và mua gói Pro', min: 10, video: '',
+    { id: 'm1-1', flow: [["🖥️", "Tải Claude"], ["🔑", "Đăng nhập"], ["💳", "Mua gói Pro"], ["💻", "Thẻ Code"]], title: 'Cài Claude trên laptop và mua gói Pro', min: 10, video: '', image: 'chup-claude-tai.jpg',
       goal: 'Có ứng dụng Claude trên laptop, đã đăng nhập và có gói trả phí.',
       why: 'Claude là "người dựng video" làm việc cho bạn. Phải có gói trả phí mới dùng được Claude Code, phần chạy bộ kit.',
       steps: ['Vào claude.com/download, tải ứng dụng Claude cho máy tính (Windows hoặc Mac) rồi cài như phần mềm bình thường.',
@@ -51,7 +51,7 @@ const MODULES = [
               'Khi Claude báo "máy đã sẵn sàng" là xong.'],
       check: ['Đã dán câu vào Claude', 'Đã bấm cho phép các lệnh Claude xin', 'Claude báo máy đã sẵn sàng'],
       note: 'Nếu Claude báo lỗi, chép nguyên dòng lỗi dán lại cho Claude, nó sẽ tự sửa. Việc này chưa kiểm tra được trên mọi loại máy.' },
-    { id: 'm1-6', flow: [["🛒", "Mua Google AI Pro"], ["🌐", "Đăng nhập Chrome"], ["🎬", "Nhờ Claude tạo nền"]], title: 'Mua Google AI Pro để Claude tự tạo video nền', min: 10, video: '',
+    { id: 'm1-6', flow: [["🛒", "Mua Google AI Pro"], ["🌐", "Đăng nhập Chrome"], ["🎬", "Nhờ Claude tạo nền"]], title: 'Mua Google AI Pro để Claude tự tạo video nền', min: 10, video: '', image: 'chup-google-ai-pro.jpg',
       goal: 'Có tài khoản Google AI Pro (Gemini và Flow) để Claude tạo cảnh nền và video nền cho bạn.',
       why: 'Khi video cần cảnh minh hoạ, Claude mở Flow trong Chrome tạo giúp bạn, nên bạn không phải đi quay thêm hay tự tìm hình.',
       steps: ['Vào gói Google AI Pro (trong tài khoản Google của bạn) và đăng ký gói này. Gói này dùng được Gemini và công cụ tạo video Flow.',
