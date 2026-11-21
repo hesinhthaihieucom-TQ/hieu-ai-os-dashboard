@@ -1,0 +1,64 @@
+/* App học: giao diện sáng + font Be Vietnam Pro, KHỚP với ladipage (edit-video-ai/lp/theme-light.css, Quỳnh 11/21).
+   Nạp SAU style.css. Muốn quay lại bản đen-vàng: gỡ dòng <link ... theme-light.css> trong index.html. */
+:root{ --black:#F9FAFB; --black2:#FFFFFF; --black3:#F3F4F6; --gold:#EA580C; --gold-l:#FB923C; --white:#111827; --gray:#4B5563; --gray2:#6B7280; --line:rgba(17,24,39,.10); --green:#16A34A; --ink:#111827; }
+body{ background:#F9FAFB; color:var(--gray); font-family:'Be Vietnam Pro',sans-serif; }
+h1,h2,h3,.top-brand,.login-brand,.video.cover .cv-title{ font-family:'Be Vietnam Pro',sans-serif; color:var(--ink); }
+h1,h2{ font-weight:900; letter-spacing:-.01em; }
+b,strong{ color:var(--ink); }
+a{ color:#C2410C; }
+.btn{ background:linear-gradient(180deg,#FB923C,#EA580C); color:#fff; font-weight:800; border-radius:14px; box-shadow:0 12px 30px -8px rgba(249,115,22,.55), inset 0 0 0 1px rgba(255,255,255,.12); }
+.btn:hover{ filter:brightness(1.04); }
+.ghost{ color:#C2410C; background:#fff; border:1px solid #FDBA74; border-radius:12px; }
+.ghost:hover{ border-color:#EA580C; background:#FFF7ED; }
+
+/* màn vào học */
+.login{ background:linear-gradient(180deg,#FFF7ED 0%,#FFFFFF 70%); }
+.login-card{ background:#fff; border:1px solid #E5E7EB; box-shadow:0 18px 40px -22px rgba(17,24,39,.3); border-radius:20px; }
+.login-brand{ color:#EA580C; font-weight:900; }
+.login-card h1{ font-weight:900; text-transform:uppercase; font-size:28px; }
+.login-card input{ background:#fff; color:var(--ink); border:1.5px solid #D1D5DB; }
+.login-card input:focus{ border-color:#F97316; }
+.msg{ background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; }
+.login-foot{ color:var(--gray2); }
+
+/* khung app */
+.top{ background:rgba(255,255,255,.95); border-bottom:1px solid #E5E7EB; box-shadow:0 6px 18px -14px rgba(17,24,39,.25); }
+.top-brand{ font-weight:900; color:var(--ink); }
+.bar{ background:#E5E7EB; } .bar i{ background:linear-gradient(90deg,#FB923C,#EA580C); }
+#progtxt{ color:#C2410C; font-weight:800; }
+.menu{ background:#fff; border-right:1px solid #E5E7EB; }
+.menu summary{ color:var(--ink); font-weight:800; }
+.menu summary .ico{ color:#EA580C; }
+.menu a.les{ color:#4B5563; }
+.menu a.les:hover{ background:#F3F4F6; }
+.menu a.les.on{ background:#FFEDD5; color:#9A3412; font-weight:700; }
+.menu a.les .dot{ border-color:#9CA3AF; color:#fff; }
+.menu a.les.done .dot{ background:#16A34A; border-color:#16A34A; }
+.crumb{ color:#C2410C; font-weight:800; }
+.main h2{ font-weight:900; font-size:clamp(24px,5vw,32px); text-transform:uppercase; line-height:1.2; }
+.meta{ color:var(--gray2); }
+
+/* thẻ */
+.box,.teacher,.help-card,.qs{ background:#fff; border:1px solid #E5E7EB; box-shadow:0 1px 2px rgba(17,24,39,.04), 0 8px 24px -14px rgba(17,24,39,.14); }
+.goal{ border:1.5px solid #FDBA74; background:#FFF7ED; }
+.box h3{ color:#C2410C; font-weight:800; }
+.box p,.steps,.checks label,.teacher p,.help-card ol{ color:#374151; }
+.box details summary{ color:#C2410C; }
+.checks input{ accent-color:#EA580C; }
+.note{ border-left:3px solid #F97316; background:#FFFBEB; color:#78350F; }
+.note b{ color:#78350F; }
+.qs{ border:1.5px solid #FDBA74; }
+.qs-list li{ background:#FFF7ED; border:1px solid #FED7AA; }
+.qs-ico{ background:#FFEDD5; }
+.qs-list b{ color:var(--ink); }
+.teacher img{ border-color:#F97316; }
+.cheer{ background:#F0FDF4; border:1px solid #BBF7D0; color:#14532D; }
+.done-btn.is-done{ background:#16A34A; color:#fff; box-shadow:none; }
+.help{ background:rgba(17,24,39,.55); }
+.help-card{ border:1.5px solid #FDBA74; }
+.help-note{ color:var(--gray2); }
+
+/* video, khung kết quả (giữ nền tối cho dễ đọc như cửa sổ lệnh) */
+.video{ background:#000; border:1px solid #E5E7EB; box-shadow:0 18px 40px -22px rgba(17,24,39,.4); }
+.term{ background:#0B1120; border:1px solid #1F2937; color:#A7F3D0; }
+.illu{ box-shadow:0 12px 30px -18px rgba(17,24,39,.4); }
