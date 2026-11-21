@@ -93,3 +93,14 @@ a{ color:#C2410C; }
 /* Video quay màn hình điện thoại (dọc) tự lưu trong app */
 .video-file{margin:12px 0;text-align:center}
 .video-file video{max-width:100%;max-height:560px;border-radius:14px;background:#000}
+
+/* Khoanh vùng trên ảnh chụp: xanh = bấm, đỏ = đừng bấm */
+.shot-wrap{position:relative;display:inline-block;max-width:100%}
+.shot-wrap.narrow{max-width:420px}
+.shot-wrap .illu{display:block;width:100%;height:auto;margin:0}
+.mark{position:absolute;border:3px solid;border-radius:10px;box-sizing:border-box}
+.mark.ok{border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.25)}
+.mark.no{border-color:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.25)}
+.mark::after{content:attr(data-label);position:absolute;top:100%;left:0;margin-top:4px;padding:2px 8px;border-radius:6px;font:700 13px/1.4 'Be Vietnam Pro',sans-serif;color:#fff;white-space:nowrap}
+.mark.ok::after{background:#16a34a;left:auto;right:0;top:auto;bottom:100%;margin:0 0 4px}
+.mark.no::after{background:#dc2626}

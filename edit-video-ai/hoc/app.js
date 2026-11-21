@@ -174,7 +174,11 @@
     if (i === 0) main.appendChild(kitBox());
     const vb = videoBox(l); if (vb) main.appendChild(vb);
     if (l.image) main.appendChild(el('img', { class:'illu', src:'img/' + l.image + '?v=4', alt:'Hình minh hoạ: ' + l.title, loading:'lazy' }));
-    if (l.shots) l.shots.forEach(function (sh) { main.appendChild(el('figure', { class:'shot' }, [ el('img', { class:'illu', src:'img/' + sh.src + '?v=5', alt:sh.cap, loading:'lazy' }), el('figcaption', { text:sh.cap }) ])); });
+    if (l.shots) l.shots.forEach(function (sh) {
+      const wrap = el('div', { class:'shot-wrap' + (sh.narrow ? ' narrow' : '') }, [ el('img', { class:'illu', src:'img/' + sh.src + '?v=6', alt:sh.cap, loading:'lazy' }) ]);
+      (sh.marks || []).forEach(function (m) { wrap.appendChild(el('div', { class:'mark ' + m.t, style:'left:' + m.x + '%;top:' + m.y + '%;width:' + m.w + '%;height:' + m.h + '%', 'data-label':m.label || '' })); });
+      main.appendChild(el('figure', { class:'shot' }, [ wrap, el('figcaption', { text:sh.cap }) ]));
+    });
     main.appendChild(el('div', { class:'box goal' }, [ el('h3', { text:'🎯 Sau bài này bạn có' }), el('p', { text:l.goal }) ]));
     main.appendChild(el('div', { class:'box' }, [ el('details', {}, [ el('summary', { text:'💡 Vì sao quan trọng' }), el('p', { text:l.why }) ]) ]));
     if (l.sample) main.appendChild(el('div', { class:'box' }, [ el('h3', { text:'🖥️ ' + l.sample.title }), el('pre', { class:'term', text:l.sample.text }), l.sample.note ? el('p', { class:'meta', text:l.sample.note }) : el('span') ]));

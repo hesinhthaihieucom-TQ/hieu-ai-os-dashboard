@@ -42,11 +42,16 @@ const MODULES = [
               'Đặt thư mục vừa giải nén ở nơi dễ nhớ, ví dụ trong Documents, và đừng đổi tên hay chuyển đi chỗ khác nữa.'],
       check: ['Đã tải file zip bộ kit', 'Đã giải nén ra một thư mục', 'Biết thư mục đó nằm ở đâu'] },
     { id: 'm1-4', flow: [["💻", "Thẻ Code"], ["📂", "Chọn thư mục kit"], ["⌨️", "Gõ dấu /"], ["✅", "Thấy /hieukenh"]], title: 'Mở bộ kit trong Claude', min: 5, video: '',
+      shots: [
+        { src: 'chup-phien-moi-trong-thu-muc.jpg', narrow: true,
+          marks: [ { t: 'no', x: 3, y: 2, w: 33, h: 10, label: 'KHÔNG bấm' }, { t: 'ok', x: 86, y: 86, w: 11, h: 11, label: 'BẤM' } ],
+          cap: 'Ô khoanh XANH: dấu + nằm cạnh tên thư mục bộ kit (ở đây là video-editor-kit). Bấm vào đó để mở phiên chat trong đúng thư mục bộ kit. Ô khoanh ĐỎ: nút "New" (Phiên mới) ở trên cùng, đừng bấm nút này.' }
+      ],
       goal: 'Bộ kit đã được mở trong Claude, sẵn sàng nhận lệnh.',
       why: 'Lệnh /hieukenh nằm trong thư mục bộ kit, nên phải cho Claude làm việc đúng trong thư mục đó thì mới dùng được.',
       steps: ['Trong ứng dụng Claude, vào thẻ "Code".',
               'Chọn thư mục làm việc (Select folder / Chọn thư mục) và trỏ tới thư mục bộ kit bạn vừa giải nén.',
-              'QUAN TRỌNG: mở phiên chat trong đúng thư mục bộ kit. Ở danh sách bên trái, rê chuột vào tên thư mục bộ kit rồi bấm dấu + nằm ngay cạnh tên thư mục đó. Đừng bấm nút "+ Phiên mới" (New session) ở phía trên, vì phiên đó không nằm trong thư mục bộ kit nên sẽ không có lệnh /hieukenh.',
+              'QUAN TRỌNG: mở phiên chat trong đúng thư mục bộ kit. Ở danh sách bên trái, rê chuột vào tên thư mục bộ kit rồi bấm dấu + nằm ngay cạnh tên thư mục đó. Đừng bấm nút "New" (tiếng Việt: Phiên mới) ở phía trên, vì phiên đó không nằm trong thư mục bộ kit nên sẽ không có lệnh /hieukenh.',
               'Gõ thử / (dấu gạch chéo) vào ô chat. Nếu thấy /hieukenh, /hieukenh-suckhoe và /hieukenh-help là bộ kit đã vào Claude.'],
       check: ['Đã mở phiên chat bằng dấu + cạnh tên thư mục bộ kit (không phải nút Phiên mới ở trên)', 'Thấy các lệnh /hieukenh khi gõ dấu /'],
       note: 'Không thấy lệnh thì kiểm tra lại bạn có chọn đúng thư mục bộ kit chưa (thư mục có chứa tệp CLAUDE.md). Nếu bạn thấy các lệnh bắt đầu bằng /biz (ví dụ /biz-video) thì đó là bộ kit bản cũ, hãy tải lại bản mới có lệnh /hieukenh. Vẫn không thấy cũng không sao: cứ nói bằng lời "dựng giúp mình video này", Claude vẫn làm.' },
