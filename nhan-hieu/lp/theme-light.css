@@ -129,3 +129,8 @@ a{ color:var(--orange-dark); }
 .lp-old-inline{ color:#6B7280; }
 .lp-cta-secondary:hover{ background:#FFEDD5; }
 .lp-teacher-top img{ object-position:50% 12%; }
+
+/* v4: xuống dòng hợp lý ở đầu trang (mỗi ý 1 dòng, cân đều, không để 1 chữ lẻ) */
+.lp-hero-pain span{ display:block; text-wrap:balance; }
+.lp-hero h1, .lp-hero .sub, .lp-ticks li, .lp-cta-note{ text-wrap:balance; }
+.lp-hero h1 .gold{ display:block; margin-top:6px; }
