@@ -476,8 +476,11 @@ function render(container, ctx){
   }
 
   // Danh sách (mảng chuỗi) — bỏ qua hẳn cả section nếu mảng rỗng, thay vì hiện tiêu đề với danh sách trống.
+  // Tài khoản dán/parse kết quả có sẵn (api/dinh-vi-reconstruct-answers.js) đôi khi cho ra field này
+  // không đúng dạng mảng — Array.isArray chịu được cả trường hợp đó thay vì ".filter is not a function".
   function listSectionHtml(title, items, highlight){
-    const list = (items||[]).filter(x=>x && String(x).trim());
+    const arr = Array.isArray(items) ? items : (items ? [items] : []);
+    const list = arr.filter(x=>x && String(x).trim());
     if(list.length===0) return '';
     return `<div class="section${highlight?' highlight':''}"><h3>${esc(title)}</h3><ul>${list.map(x=>`<li>${escBold(x)}</li>`).join('')}</ul></div>`;
   }
