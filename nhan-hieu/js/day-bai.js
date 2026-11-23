@@ -223,7 +223,7 @@ function render(container, ctx){
     if(!m) return '';
     if(kind==='cmt') return m.cmt_tu_dang || '';
     if(kind==='keyword') return m.tra_loi_tu_khoa_cta || '';
-    if(kind==='reply') return (m.goi_y_tra_loi_cmt || [])[Number(idx)] || '';
+    if(kind==='reply') return (Array.isArray(m.goi_y_tra_loi_cmt) ? m.goi_y_tra_loi_cmt : [])[Number(idx)] || '';
     return '';
   }
 
@@ -275,7 +275,7 @@ function render(container, ctx){
               ` : ''}
 
               <div style="font-size:12.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">💬 Gợi ý trả lời bình luận người khác</div>
-              ${(m.goi_y_tra_loi_cmt||[]).map((c,ci)=>`
+              ${(Array.isArray(m.goi_y_tra_loi_cmt)?m.goi_y_tra_loi_cmt:[]).map((c,ci)=>`
                 <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
                   <div style="font-size:15.5px;color:var(--ink);line-height:1.5;">${esc(c)}</div>
                   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">

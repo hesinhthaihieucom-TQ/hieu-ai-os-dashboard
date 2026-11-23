@@ -52,7 +52,7 @@ function render(container, ctx){
       <div class="section"><h3>Có đúng tệp không</h3><div class="body">${esc(r.dung_tep_khong)}</div></div>
       <div class="section"><h3>Dự đoán mức độ dừng lại: ${esc(r.du_doan_muc_do_dung_lai)}</h3><div class="body">${esc(r.giai_thich_du_doan)}</div></div>
       <div class="section"><h3>Điểm yếu</h3><div class="body">${esc(r.diem_yeu)}</div></div>
-      <div class="section"><h3>3 bản cải thiện</h3><ul>${r.ban_cai_thien.map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
+      <div class="section"><h3>3 bản cải thiện</h3><ul>${(Array.isArray(r.ban_cai_thien)?r.ban_cai_thien:[]).map(h=>`<li>${esc(h)}</li>`).join('')}</ul></div>
       <div class="btn-row"><span class="btn-ghost btn" data-action="improve" ${state.improving?'disabled':''}>${state.improving?'Đang viết lại…':'Viết lại 5 hook mới theo góp ý này →'}</span> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>
       ${state.improveError?`<div class="error-box">${esc(state.improveError)}</div>`:''}
       ${state.improved ? `

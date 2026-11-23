@@ -41,7 +41,7 @@ function render(container, ctx){
     return `
       <div class="section highlight"><h3>Điểm tổng</h3><div class="body" style="font-size:32px;font-weight:700;">${r.diem_tong}<span style="font-size:17px;">/100</span></div></div>
       <div class="section"><h3>Phân loại</h3><div class="body"><b>Tầng:</b> ${esc(r.tang_noi_dung)} &nbsp;·&nbsp; <b>Loại content:</b> ${esc(r.loai_content)}</div></div>
-      ${r.tieu_chi.map(t=>`
+      ${(Array.isArray(r.tieu_chi)?r.tieu_chi:[]).map(t=>`
         <div class="section">
           <h3>${esc(t.ten)} — ${t.diem}/10</h3>
           <div class="body">${esc(t.nhan_xet)}</div>
@@ -94,7 +94,7 @@ function render(container, ctx){
   // CTA, cấu trúc...) thay vì chỉ sửa vá thô ngay tại đây — tránh viết trùng 2 nơi 2 kiểu khác nhau.
   function rewrite(){
     const r = state.result;
-    const weakBits = (r.tieu_chi||[]).filter(t=>t.diem<8).map(t=>`- ${t.ten} (${t.diem}/10): ${t.nhan_xet} → Cần sửa: ${t.goi_y_sua}`).join('\n');
+    const weakBits = (Array.isArray(r.tieu_chi)?r.tieu_chi:[]).filter(t=>t && t.diem<8).map(t=>`- ${t.ten} (${t.diem}/10): ${t.nhan_xet} → Cần sửa: ${t.goi_y_sua}`).join('\n');
     window.PendingTopic = `Viết lại HOÀN CHỈNH bài viết dưới đây, sửa ĐÚNG các lỗi đã được AI chỉ ra khi chấm điểm, không lặp lại lỗi cũ:\n${weakBits}\nCâu/đoạn yếu nhất cần sửa: ${r.cau_yeu_nhat}\nHướng sửa gợi ý: ${r.ban_sua_de_xuat}\n\nBÀI GỐC:\n${state.text}`;
     window.PendingRewriteAuto = true;
     location.hash = 'viet-content';

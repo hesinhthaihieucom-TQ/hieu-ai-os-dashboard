@@ -564,8 +564,9 @@ function render(container, ctx){
     if(s){
       if(s.tu_khoa_cta) ctaParts.push({ label:'Từ khoá CTA', value: s.tu_khoa_cta });
       if(s.cau_cmt_ghim) ctaParts.push({ label:'Bình luận ghim', value: s.cau_cmt_ghim });
-      (s.cmt_cta_san_pham||[]).filter(Boolean).forEach((c,i)=>{
-        ctaParts.push({ label:`Bình luận CTA sản phẩm/group${(s.cmt_cta_san_pham.length>1)?` #${i+1}`:''}`, value: c });
+      const cmtCtaSanPham = Array.isArray(s.cmt_cta_san_pham) ? s.cmt_cta_san_pham : [];
+      cmtCtaSanPham.filter(Boolean).forEach((c,i)=>{
+        ctaParts.push({ label:`Bình luận CTA sản phẩm/group${(cmtCtaSanPham.length>1)?` #${i+1}`:''}`, value: c });
       });
     }
     return `

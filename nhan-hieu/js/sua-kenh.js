@@ -136,16 +136,17 @@ function render(container, ctx){
 
   function resultHtml(){
     const r = state.result;
-    // AI đôi khi bỏ sót 1 field dù schema đánh dấu required (API không ép buộc điều này) —
-    // dùng giá trị rỗng an toàn thay vì để cả trang crash vì undefined.ly_do/.map trên 1 field thiếu.
+    // AI đôi khi bỏ sót 1 field dù schema đánh dấu required (API không ép buộc điều này), hoặc trả về
+    // sai kiểu (string thay vì mảng) — Array.isArray chịu được cả 2 trường hợp thay vì để cả trang
+    // crash vì undefined.ly_do/.map trên 1 field thiếu hoặc ".map is not a function" trên field sai kiểu.
     const cover = r.goi_y_anh_bia || {};
-    const hangMuc = r.hang_muc || [];
+    const hangMuc = (Array.isArray(r.hang_muc) ? r.hang_muc : []).filter(Boolean);
     return `
       <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Kết quả audit kênh</h1></div>
       <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:17px;">/100</span></div></div>
-      <div class="section"><h3>Điểm mạnh</h3><ul>${(r.top_diem_manh||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Điểm nghẽn</h3><ul>${(r.top_diem_nghen||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${(r.thu_tu_uu_tien||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
+      <div class="section"><h3>Điểm mạnh</h3><ul>${(Array.isArray(r.top_diem_manh)?r.top_diem_manh:[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="section"><h3>Điểm nghẽn</h3><ul>${(Array.isArray(r.top_diem_nghen)?r.top_diem_nghen:[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="section"><h3>Thứ tự ưu tiên sửa</h3><ol>${(Array.isArray(r.thu_tu_uu_tien)?r.thu_tu_uu_tien:[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
       ${hangMuc.map(hm=>`
         <div class="section">
           <h3>${esc(hm.ten)} — ${hm.diem}/20 · ${PRIORITY_LABEL[hm.uu_tien]||''}</h3>

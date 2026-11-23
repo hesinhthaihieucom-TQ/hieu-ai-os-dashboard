@@ -445,7 +445,7 @@ function render(container, ctx){
     return {
       hanh_dong_dac_trung: d.hanh_dong_dac_trung||'', do_vat_prop: d.do_vat_prop||'',
       khong_gian_signature: d.khong_gian_signature||'', phong_cach_xuat_hien: d.phong_cach_xuat_hien||'',
-      goc_quay_pov: d.goc_quay_pov||'', canh_mo_dau: (d.canh_mo_dau||[]).filter(Boolean),
+      goc_quay_pov: d.goc_quay_pov||'', canh_mo_dau: (Array.isArray(d.canh_mo_dau)?d.canh_mo_dau:[]).filter(Boolean),
     };
   }
   function noiDauSnapshot(){
@@ -615,7 +615,7 @@ function render(container, ctx){
               </div>
             </div>
           ` : `<div style="margin-top:10px;">${collapsibleTextHtml('cau-chuyen-ca-nhan', cc.cau_chuyen, state.expandedIds, t=>`<div class="body">${escBold(breakSentences(t))}</div>`)}</div>`}
-          ${!state.editingStory && cc.qua_so_sai && (cc.cau_hoi_lam_ro||[]).length ? `
+          ${!state.editingStory && cc.qua_so_sai && Array.isArray(cc.cau_hoi_lam_ro) && cc.cau_hoi_lam_ro.length ? `
             <div class="hint-box" style="margin-top:12px;">
               <div style="margin-bottom:10px;">Câu trả lời của bạn ở phần biến cố/hành trình còn hơi chung chung — trả lời thêm mấy câu dưới đây rồi bấm <b>"Cập nhật câu chuyện"</b> để AI viết lại mượt hơn, hoặc bấm "Sửa trực tiếp" ở trên để tự gõ, không cần làm lại cả Định Vị:</div>
               ${cc.cau_hoi_lam_ro.map((q,i)=>`
@@ -639,7 +639,7 @@ function render(container, ctx){
           ['Hành động đặc trưng', d.hanh_dong_dac_trung], ['Đồ vật/prop', d.do_vat_prop],
           ['Không gian', d.khong_gian_signature], ['Phong cách', d.phong_cach_xuat_hien], ['Góc quay POV', d.goc_quay_pov],
         ]);
-        const canh = (d.canh_mo_dau||[]).filter(Boolean);
+        const canh = (Array.isArray(d.canh_mo_dau)?d.canh_mo_dau:[]).filter(Boolean);
         if(!body && canh.length===0 && !state.editingDauAn) return '';
         return `<div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -744,7 +744,7 @@ function render(container, ctx){
               <div style="color:#fff;font-size:17px;font-weight:700;">${esc(truc.truc_chinh)}</div>
             </div>
             <div style="font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Trục phụ (bổ trợ)</div>
-            ${(truc.tru_phu||[]).map(t=>`
+            ${(Array.isArray(truc.tru_phu)?truc.tru_phu:[]).map(t=>`
               <div style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
                 <b>${esc(t.ten)}</b><br><span style="font-size:14.5px;color:var(--ink-soft);">${esc(t.vai_tro)}</span>
               </div>
@@ -753,7 +753,7 @@ function render(container, ctx){
         </div>
         ${(()=>{
           const dt = r2.dong_tien_phu_hop || {};
-          const list = (dt.danh_sach||[]).filter(d=>d && d.ten);
+          const list = (Array.isArray(dt.danh_sach)?dt.danh_sach:[]).filter(d=>d && d.ten);
           if(!dt.uu_tien && list.length===0) return '';
           return `<div class="section"><h3>Dòng tiền phù hợp</h3>${dt.uu_tien?`<div class="body" style="margin-bottom:10px;">${esc(breakSentences(dt.uu_tien))}</div>`:''}
           ${list.length?`<ul>${list.map(d=>`<li><b>${esc(d.ten)}</b>${d.thoi_han?` (${esc(d.thoi_han)})`:''}${d.ly_do?` — ${esc(d.ly_do)}`:''}</li>`).join('')}</ul>`:''}</div>`;
@@ -874,7 +874,7 @@ function render(container, ctx){
     if(editTrucBtn) editTrucBtn.onclick = ()=>{
       const truc = (state.luot2 && state.luot2.he_truc_noi_dung) || { truc_chinh:'', tru_phu:[] };
       state.editTrucChinh = truc.truc_chinh || '';
-      state.editTruPhu = (truc.tru_phu || []).map(t=>({ ten:t.ten||'', vai_tro:t.vai_tro||'' }));
+      state.editTruPhu = (Array.isArray(truc.tru_phu)?truc.tru_phu:[]).map(t=>({ ten:(t&&t.ten)||'', vai_tro:(t&&t.vai_tro)||'' }));
       state.editTrucError = null;
       state.editingTruc = true;
       draw();

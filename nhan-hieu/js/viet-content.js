@@ -282,7 +282,7 @@ function render(container, ctx){
           <span style="font-size:14.5px;font-weight:400;color:var(--ink-soft);margin-left:8px;">${esc(s.tang_noi_dung)} · ${esc(s.loai_content)}</span>
         </div>
       </div>
-      ${(s.tieu_chi||[]).filter(t=>t.diem<8).map(t=>`
+      ${(Array.isArray(s.tieu_chi)?s.tieu_chi:[]).filter(t=>t && t.diem<8).map(t=>`
         <div class="section"><h3>${esc(t.ten)} — ${t.diem}/10</h3>
           <div class="body">${esc(t.nhan_xet)}</div>
           <div class="body" style="margin-top:8px;background:var(--accent-soft);padding:12px;border-radius:8px;"><b>Gợi ý sửa:</b> ${esc(t.goi_y_sua)}</div>
@@ -321,7 +321,7 @@ function render(container, ctx){
   function resolveCopyText(field){
     const r = state.result;
     if(!r) return '';
-    if(field==='hashtag') return (r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ');
+    if(field==='hashtag') return (Array.isArray(r.hashtag)?r.hashtag:[]).map(h=>'#'+String(h).replace(/^#/,'')).join(' ');
     if(field==='caption_chinh') return (r.goi_y_caption && r.goi_y_caption.caption_chinh) || '';
     if(field.startsWith('caption_platform:')){
       const i = Number(field.split(':')[1]);
@@ -343,11 +343,11 @@ function render(container, ctx){
     if(!r.hashtag) return '';
     return `
       <div class="section"><h3>Hashtag (5)</h3>
-        <div class="body">${(r.hashtag||[]).map(h=>'#'+h.replace(/^#/,'')).join(' ')}</div>
+        <div class="body">${(Array.isArray(r.hashtag)?r.hashtag:[]).map(h=>'#'+String(h).replace(/^#/,'')).join(' ')}</div>
         <div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('hashtag')}</div>
       </div>
       <div class="section"><h3>Gợi ý hình ảnh/video</h3><div class="body">${esc(r.goi_y_hinh_anh)}</div></div>
-      ${(r.cmt_cta_san_pham && r.cmt_cta_san_pham.length) ? `
+      ${(Array.isArray(r.cmt_cta_san_pham) && r.cmt_cta_san_pham.length) ? `
         <div class="section"><h3>Bình luận CTA sản phẩm/group</h3>
           ${r.cmt_cta_san_pham.map((c,i)=>`
             <div style="padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -356,11 +356,11 @@ function render(container, ctx){
             </div>
           `).join('')}
         </div>` : ''}
-      ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (r.goi_y_caption.theo_nen_tang||[]).length)) ? `
+      ${(r.goi_y_caption && (r.goi_y_caption.caption_chinh || (Array.isArray(r.goi_y_caption.theo_nen_tang) && r.goi_y_caption.theo_nen_tang.length))) ? `
         <div class="section"><h3>Caption gợi ý (khi đăng dạng video)</h3>
           <div class="body">${esc(r.goi_y_caption.caption_chinh)}${r.goi_y_caption.giu_nguyen_tieu_de ? ' <span style="color:var(--ink-soft);font-size:14px;">(giữ nguyên tiêu đề thumbnail)</span>' : ''}</div>
           ${r.goi_y_caption.caption_chinh?`<div class="btn-row no-print" style="margin-top:10px;justify-content:flex-start;">${copyBtnHtml('caption_chinh')}</div>`:''}
-          ${(r.goi_y_caption.theo_nen_tang||[]).length ? `
+          ${(Array.isArray(r.goi_y_caption.theo_nen_tang) && r.goi_y_caption.theo_nen_tang.length) ? `
             <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
               ${r.goi_y_caption.theo_nen_tang.map((p,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;">
                 <b>${esc(p.nen_tang)}:</b> ${esc(p.caption)}
@@ -393,7 +393,7 @@ function render(container, ctx){
   function resultHtml(){
     const r = state.result;
     return `
-      ${(r.cau_chuyen_qua_chung_chung && (r.cau_hoi_lam_ro||[]).length) ? `
+      ${(r.cau_chuyen_qua_chung_chung && Array.isArray(r.cau_hoi_lam_ro) && r.cau_hoi_lam_ro.length) ? `
         <div class="section highlight-dark">
           <h3>Câu chuyện của bạn còn hơi chung chung</h3>
           <div class="body">AI vẫn viết bài bên dưới, nhưng để bài cá nhân hoá thật hơn, thử trả lời mấy câu này rồi sửa lại phần "Câu chuyện riêng của bạn" ở trên và bấm tạo lại:</div>
