@@ -810,7 +810,7 @@ function render(container, ctx){
     return hint + pillarChipsHtml(state.sharedBank, state.chungPillar, 'chung-pillar') + searchHtml + items.map(b=>`
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(b.tags&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
+          <div class="meta" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">${esc(SOURCE_MAP[b.source_type]||b.source_type||'')}${(Array.isArray(b.tags)&&b.tags.length)?' · '+b.tags.map(esc).join(', '):''}</div>
           ${adminMenuHtml(b)}
         </div>
         <h3>${esc(b.title)}</h3>

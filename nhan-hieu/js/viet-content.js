@@ -751,8 +751,8 @@ function render(container, ctx){
   // không phải bình luận riêng, nên vẫn cần có sẵn khi copy nguyên bài đi đăng, không cần label thừa.
   function contentForSave(r){
     let out = r.bai_hoan_chinh;
-    if(r.hashtag && r.hashtag.length){
-      out += `\n\n${r.hashtag.map(h=>'#'+h.replace(/^#/,'')).join(' ')}`;
+    if(Array.isArray(r.hashtag) && r.hashtag.length){
+      out += `\n\n${r.hashtag.map(h=>'#'+String(h).replace(/^#/,'')).join(' ')}`;
     }
     return out;
   }
