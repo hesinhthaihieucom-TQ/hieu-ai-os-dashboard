@@ -128,3 +128,4 @@ a{ color:var(--orange-dark); }
 .lp-price-gets-title,.lp-price-label,.lp-price-label-new{ color:#C2410C; }
 .lp-old-inline{ color:#6B7280; }
 .lp-cta-secondary:hover{ background:#FFEDD5; }
+.lp-teacher-top img{ object-position:50% 12%; }
