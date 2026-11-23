@@ -1,0 +1,130 @@
+/* ============================================================================================
+   THEME SÁNG KIỂU TRANG THAM KHẢO proeditor.goskill.club (Quỳnh 11/20: "thiết kế như thế luôn" + "font chữ như trang mẫu").
+   Nạp SAU style.css, đổi biến màu + ghi đè các chỗ màu cứng của bản đen–vàng cũ. Muốn quay lại bản đen–vàng: bỏ dòng
+   <link rel="stylesheet" href="theme-light.css"> trong index.html (bản cũ vẫn còn nguyên ở style.css).
+   Mã màu lấy từ trang mẫu: nền #F9FAFB / trắng xen kẽ, chữ #111827, nút cam #FB923C -> #EA580C, bo góc ~14px, font Be Vietnam Pro 400–900.
+   ============================================================================================ */
+:root{
+  --black:#F9FAFB; --black2:#FFFFFF; --black3:#F3F4F6; --black4:#E5E7EB;
+  --gold:#EA580C; --gold-light:#FB923C; --orange:#F97316; --orange-dark:#EA580C;
+  --white:#111827; --gray:#4B5563; --gray2:#6B7280;
+  --red:#DC2626; --red-dark:#B91C1C;
+  --line:rgba(17,24,39,.10); --radius:18px;
+  --ink:#111827;
+}
+html,body{ overflow-x:hidden; }
+body{ background:var(--black); color:var(--gray); font-family:'Be Vietnam Pro',sans-serif; }
+h1,h2,h3,.lp-brand span,.lp-calc-big,.lp-price-new,.tc-lp-countdown-time,.lp-hero-trust-item b,.lp-stats b,.lp-teacher-name{ font-family:'Be Vietnam Pro',sans-serif; }
+h1,h2{ font-weight:900; letter-spacing:-.01em; }
+b,strong{ color:var(--ink); }
+a{ color:var(--orange-dark); }
+
+/* ---- dải nền toàn chiều rộng xen kẽ trắng / xám nhạt như trang mẫu ---- */
+.lp-section{ position:relative; isolation:isolate; border-top:none; padding:46px 0; }
+.lp-section::before{ content:''; position:absolute; top:0; bottom:0; left:50%; width:100vw; transform:translateX(-50%); background:#fff; z-index:-1; }
+.lp-section:nth-of-type(even)::before{ background:#F9FAFB; }
+.lp-hero{ position:relative; isolation:isolate; padding:30px 0 20px; }
+.lp-hero::before{ content:''; position:absolute; top:0; bottom:0; left:50%; width:100vw; transform:translateX(-50%); z-index:-1; background:linear-gradient(180deg,#FFF7ED 0%,#FFFFFF 70%); }
+.lp-header{ background:transparent; }
+.lp-brand span{ color:var(--ink); font-weight:800; }
+.lp-header a{ color:var(--orange-dark); font-weight:700; }
+
+/* ---- chữ ---- */
+.lp-hero .eyebrow{ color:#C2410C; background:#FFEDD5; border:1px solid #FDBA74; font-weight:700; }
+.lp-hero-pain{ color:var(--gray); font-weight:600; font-size:18px; }
+.lp-hero h1{ font-weight:900; text-transform:uppercase; line-height:1.16; font-size:clamp(27px,7vw,42px); }
+.lp-hero h1 .gold{ color:var(--orange-dark); }
+.lp-hero .sub{ color:var(--gray); }
+.lp-eyebrow-label{ color:#C2410C; font-weight:800; }
+.lp-h2{ font-size:clamp(26px,6vw,34px); text-transform:uppercase; line-height:1.18; }
+.lp-h2 .gold{ color:var(--orange-dark); }
+.lp-h2-bar{ background:linear-gradient(90deg,#FB923C,#EA580C); }
+.lp-h2-sub{ color:var(--gray); }
+
+/* ---- nút cam bóng như trang mẫu ---- */
+.lp-cta{ background:linear-gradient(180deg,#FB923C,#EA580C); color:#fff; font-weight:800; border-radius:14px; box-shadow:0 12px 30px -8px rgba(249,115,22,.65), inset 0 0 0 1px rgba(255,255,255,.12); }
+.lp-cta b{ color:#fff; }
+.lp-cta:hover{ opacity:.95; }
+@keyframes lpCtaPulse{ 0%,100%{ box-shadow:0 12px 30px -8px rgba(249,115,22,.55); } 50%{ box-shadow:0 14px 40px -6px rgba(249,115,22,.85); } }
+.lp-cta-secondary{ color:#C2410C; border:1.5px solid #FDBA74; background:#FFF7ED; border-radius:14px; }
+.lp-cta-note{ color:var(--gray2); }
+.lp-old-cta{ color:rgba(255,255,255,.8); text-decoration-color:#fff; }
+
+/* ---- đồng hồ ---- */
+.lp-countdown{ background:#FEF2F2; border:1.5px solid #FCA5A5; color:#B91C1C; animation:none; border-radius:14px; }
+.lp-countdown b{ color:#B91C1C; }
+.tc-lp-countdown-time{ background:#111827; color:#fff; }
+.lp-countdown-sm{ color:#B91C1C; } .lp-countdown-sm .tc-lp-countdown-time{ background:#111827; color:#fff; }
+
+/* ---- thẻ trắng, viền xám, đổ bóng nhẹ ---- */
+.lp-card,.lp-problem-item,.lp-program-item,.lp-calc-box,.lp-faq-item,.lp-price-card,.lp-signup-card,.lp-shot-card,.lp-teacher-card,.lp-promise-list li,.lp-stats div,.lp-testi-card{ background:#fff; border:1px solid #E5E7EB; box-shadow:0 1px 2px rgba(17,24,39,.04), 0 8px 24px -14px rgba(17,24,39,.12); }
+.lp-section:nth-of-type(odd) .lp-program-item,.lp-section:nth-of-type(odd) .lp-calc-box{ background:#F9FAFB; }
+.lp-callout{ background:#FFF7ED; border:1px solid #FED7AA; color:#7C2D12; }
+.lp-callout b,.lp-callout .gold{ color:#9A3412; }
+.lp-program-num{ color:#C2410C; }
+.lp-outcome{ background:#FFF7ED; color:#9A3412; border:1px solid #FED7AA; }
+.lp-calc-big{ color:#DC2626; font-weight:900; }
+
+/* ---- ✕ / ✓ ---- */
+.lp-vs-no{ background:#FEF2F2; border:1px solid #FECACA; color:#7F1D1D; }
+.lp-vs-yes{ background:#F0FDF4; border:1px solid #BBF7D0; color:#14532D; }
+.lp-vs-no i{ background:#FECACA; color:#B91C1C; } .lp-vs-yes i{ background:#BBF7D0; color:#15803D; }
+.lp-vs-no b,.lp-vs-yes b{ color:inherit; }
+.lp-stats b{ color:#EA580C; }
+.lp-ticks li{ color:var(--ink); }
+.lp-ticks li::before,.lp-promise-list li::before{ background:#FFEDD5; color:#EA580C; }
+.lp-chips span{ background:#fff; border:1px solid #E5E7EB; color:#374151; }
+.lp-zalo-box{ background:#FFF7ED; border:1.5px solid #FDBA74; color:#7C2D12; box-shadow:0 8px 24px -14px rgba(249,115,22,.5); }
+.lp-zalo-box b{ color:#9A3412; }
+.lp-need{ background:#FFFBEB; border:1px dashed #FBBF24; color:#78350F; }
+.lp-need b{ color:#78350F; }
+.lp-hero-img{ filter:drop-shadow(0 18px 40px rgba(17,24,39,.15)); }
+.lp-hero-trust{ color:var(--gray); } .lp-hero-trust-item b{ color:#EA580C; }
+.lp-hero-trust-sep{ background:#D1D5DB; }
+
+/* ---- giá ---- */
+.lp-price-card{ border:2px solid #FDBA74; }
+.lp-price-badge{ background:linear-gradient(180deg,#FB923C,#EA580C); color:#fff; }
+.lp-price-stack{ background:#FFF7ED; border:1px solid #FED7AA; }
+.lp-price-new{ color:#EA580C; text-shadow:none; font-weight:900; }
+.lp-price-off{ background:#DC2626; color:#fff; }
+.lp-price-save{ background:#DCFCE7; border:1px solid #86EFAC; color:#166534; } .lp-price-save b{ color:#14532D; }
+.lp-price-why,.lp-price-perday{ background:#FFF7ED; border:1px solid #FED7AA; }
+.lp-price-gets-item b,.lp-price-guarantee b,.lp-gal-sub b{ color:var(--ink); }
+.lp-old-inline{ color:#9CA3AF; text-decoration-color:#DC2626; }
+.lp-signup-input{ background:#fff; color:var(--ink); border:1.5px solid #D1D5DB; }
+.lp-signup-input:focus{ border-color:#F97316; }
+.lp-signup-error{ background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; }
+.lp-pay-copy{ background:#FFF7ED; border:1px solid #FED7AA; color:#C2410C; }
+.lp-pay-status.paid{ color:#15803D; }
+.lp-faq-item summary{ color:var(--ink); } .lp-faq-item summary::after{ color:#EA580C; }
+.lp-tab.on{ background:linear-gradient(180deg,#FB923C,#EA580C); color:#fff; }
+
+/* ---- thanh cố định cuối màn hình ---- */
+.lp-sticky{ background:rgba(255,255,255,.94); border-top:1px solid #E5E7EB; box-shadow:0 -8px 24px -12px rgba(17,24,39,.18); }
+
+/* ---- khối Cam kết: dải tối như dải ink của trang mẫu ---- */
+.lp-promise::before{ background:#111827; }
+.lp-promise .lp-h2,.lp-promise .lp-h2 .gold{ color:#fff; } .lp-promise .lp-h2 .gold{ color:#FB923C; }
+.lp-promise .lp-eyebrow-label{ color:#FDBA74; }
+.lp-promise-list li{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:#D1D5DB; box-shadow:none; }
+.lp-promise-list li b{ color:#fff; }
+.lp-promise .lp-zalo-box{ background:rgba(249,115,22,.12); border-color:rgba(251,146,60,.6); color:#FED7AA; } .lp-promise .lp-zalo-box b{ color:#fff; }
+
+/* ---- người dạy ---- */
+.lp-teacher-top img{ border-color:#F97316; }
+.lp-teacher-name{ color:var(--ink); font-weight:800; }
+.lp-teacher-pills span{ color:#C2410C; background:#FFF7ED; border:1px solid #FED7AA; }
+.lp-teacher-quote{ color:#374151; } .lp-teacher-quote b{ color:#C2410C; }
+
+/* ---- video & ảnh ---- */
+.lp-demo video{ border:1px solid #E5E7EB; box-shadow:0 18px 40px -20px rgba(17,24,39,.35); }
+.lp-shot-gallery figure,.lp-ba figure{ background:#fff; border:1px solid #E5E7EB; box-shadow:0 8px 24px -14px rgba(17,24,39,.18); }
+.lp-demo-cap,.lp-shot-gallery figcaption,.lp-ba figcaption{ color:var(--gray); }
+.lp-footer{ color:var(--gray2); background:transparent; }
+.lp-final{ position:relative; }
+
+/* ---- sửa độ tương phản chữ cam nhạt trên nền sáng ---- */
+.lp-price-gets-title,.lp-price-label,.lp-price-label-new{ color:#C2410C; }
+.lp-old-inline{ color:#6B7280; }
+.lp-cta-secondary:hover{ background:#FFEDD5; }

@@ -2,552 +2,306 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Xây Nhân Hiệu — App AI đóng gói công thức nhân hiệu</title>
+<title>Xây Nhân Hiệu: App AI xây kênh chỉ 15 phút mỗi ngày</title>
+<meta name="description" content="App AI đóng gói công thức Xây Nhân Hiệu: Định vị, Sửa kênh, Viết content, Lịch đăng bài. 8 công cụ AI gộp 1 gói, bạn chỉ duyệt và đăng. Bắt đầu chỉ 499K/tháng.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Xây Nhân Hiệu: App AI xây kênh chỉ 15 phút mỗi ngày">
+<meta property="og:description" content="Định vị, Sửa kênh, Viết content, Lịch đăng bài trong 1 app. Bắt đầu chỉ 499K/tháng.">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="App AI đóng gói công thức Xây Nhân Hiệu — Định vị, Sửa kênh, Viết Content, Lịch Đăng Bài. Bắt đầu chỉ 499K/tháng.">
+<meta name="theme-color" content="#FFF7ED">
 <link rel="icon" href="../assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Be+Vietnam+Pro:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0A0A0A; --card:#1A1A1A; --card-2:#111111; --line:rgba(255,255,255,.1); --line-soft:rgba(255,255,255,.06);
-    --ink:#FFFFFF; --ink-soft:#B3B3B3; --ink-faint:#7A7A7A;
-    --gold:#E3A83B; --gold-hi:#F5D77A; --gold-soft:rgba(212,175,55,.1); --gold-soft-2:rgba(212,175,55,.06);
-    --orange:#F97316; --orange-soft:rgba(249,115,22,.12); --red:#EF4444; --red-soft:rgba(239,68,68,.15);
-    --shadow:0 24px 60px -28px rgba(0,0,0,.7);
-  }
-  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
-  body{ background:var(--bg); color:var(--ink); font-family:'Be Vietnam Pro',system-ui,-apple-system,sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
-  h1,h2,h3{ font-family:'Playfair Display',Georgia,serif; text-wrap:balance; margin:0; }
-  p{ margin:0; }
-  .wrap{ max-width:1080px; margin:0 auto; padding:0 28px; }
-  .hero-inner{ max-width:700px; margin:0 auto; }
-  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-family:'Be Vietnam Pro',sans-serif; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); background:var(--gold-soft); border:1px solid var(--gold-soft); padding:7px 13px; border-radius:999px; }
-  a{ color:inherit; } ::selection{ background:var(--gold); color:#1A1300; }
-  .card{ background:var(--card); border:1px solid var(--line-soft); border-radius:16px; }
-  img{ max-width:100%; display:block; }
-
-  .topbar{ padding:20px 0; border-bottom:1px solid var(--line-soft); }
-  .topbar .in{ display:flex; align-items:center; justify-content:space-between; max-width:1080px; margin:0 auto; padding:0 28px; }
-  .topbar .mark{ display:flex; align-items:center; gap:10px; font-family:'Playfair Display',serif; font-weight:600; font-size:16px; }
-  .topbar .mark .dot{ width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 4px var(--gold-soft); }
-  .topbar .eco{ font-size:12px; color:var(--ink-faint); }
-
-  .hero{ padding:56px 0 64px; position:relative; text-align:center; }
-  .hero::before{ content:""; position:absolute; top:-80px; left:50%; transform:translateX(-50%); width:900px; height:420px; background:radial-gradient(ellipse at top, var(--gold-soft), transparent 68%); pointer-events:none; }
-  .badge-pill{ display:inline-flex; align-items:center; gap:12px; padding:8px 20px 8px 8px; border-radius:999px; background:var(--card); border:1px solid var(--line); margin-bottom:24px; position:relative; }
-  .badge-pill .avatar{ width:44px; height:44px; border-radius:50%; overflow:hidden; flex-shrink:0; border:2px solid var(--gold-soft); }
-  .badge-pill .avatar img{ width:100%; height:100%; object-fit:cover; object-position:50% 12%; }
-  .badge-pill b{ color:var(--ink); font-weight:600; font-size:13.5px; display:block; text-align:left; } .badge-pill span{ font-size:11.5px; color:var(--ink-soft); }
-  .hero-title{ font-size:46px; line-height:1.12; font-weight:700; letter-spacing:-.01em; margin-bottom:20px; position:relative; }
-  .hero-title .hi{ color:var(--gold); display:block; }
-  @media (max-width:640px){ .hero-title{ font-size:34px; } }
-  .hero-sub{ font-size:16px; line-height:1.65; color:var(--ink-soft); max-width:56ch; margin:0 auto 28px; position:relative; }
-  .hero-sub b{ color:var(--ink); }
-  .meta-list{ display:flex; flex-direction:column; gap:0; margin:0 auto 28px; text-align:left; position:relative; }
-  .meta-row{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line-soft); font-size:14.5px; }
-  .meta-row:last-child{ border-bottom:none; }
-  .meta-row .mi{ font-size:15px; width:20px; text-align:center; flex-shrink:0; }
-  .meta-row .mv{ color:var(--ink-soft); } .meta-row .mv b{ color:var(--gold); font-weight:600; }
-  .hero-ctas{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; position:relative; }
-  .btn{ display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:17px; padding:16px 28px; border-radius:10px; border:none; cursor:pointer; text-decoration:none; transition:transform .15s, box-shadow .15s; font-family:'Be Vietnam Pro',sans-serif; }
-  .btn:hover{ transform:translateY(-1px); } .btn:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
-  .btn-gold{ background:linear-gradient(180deg,var(--gold-hi),var(--gold)); color:#241A05; box-shadow:0 14px 28px -12px rgba(227,168,59,.45); }
-  .btn-ghost{ background:transparent; color:var(--ink); border:1px solid var(--line); }
-  .btn-block{ width:100%; justify-content:center; }
-  .btn[disabled]{ opacity:.6; cursor:default; transform:none; }
-
-  .pricegrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:8px; }
-  @media (max-width:760px){ .pricegrid{ grid-template-columns:1fr; } }
-  .pricecard{ padding:22px; text-align:center; }
-  .pricecard.active{ background:var(--gold-soft); border-color:rgba(212,175,55,.35); }
-  .pricecard .p-tag{ font-family:'Be Vietnam Pro',sans-serif; font-size:9.5px; font-weight:700; letter-spacing:.05em; color:var(--gold); background:rgba(0,0,0,.3); padding:3px 9px; border-radius:5px; display:inline-block; text-transform:uppercase; margin-bottom:12px; }
-  .pricecard .p-name{ font-family:'Playfair Display',serif; font-size:18px; font-weight:700; margin-bottom:6px; }
-  .pricecard .p-price{ font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:28px; color:var(--ink); font-variant-numeric:tabular-nums; }
-  .pricecard.active .p-price{ color:var(--gold-hi); }
-  .pricecard .p-price small{ font-size:12px; font-weight:500; color:var(--ink-faint); }
-  .pricecard .p-day{ font-size:11.5px; color:var(--gold); font-weight:600; margin-top:4px; }
-  .pricecard .p-note{ font-size:13px; color:var(--ink-faint); margin-top:8px; line-height:1.55; }
-  .pricecard .p-feats{ margin-top:14px; padding-top:14px; border-top:1px dashed rgba(212,175,55,.3); display:flex; flex-direction:column; gap:6px; text-align:left; }
-  .pricecard .p-feats div{ font-size:12.5px; line-height:1.5; color:var(--ink-soft); display:flex; gap:6px; align-items:flex-start; }
-  .pricecard .p-feats div span:first-child{ color:var(--gold); flex-shrink:0; }
-  .incl-list{ margin-top:18px; padding-top:18px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:8px; }
-  .incl-list .ir{ display:flex; align-items:flex-start; gap:8px; font-size:14.5px; color:var(--ink-soft); line-height:1.55; }
-  .incl-list .ir span:first-child{ color:var(--gold); flex-shrink:0; }
-  .price-foot{ margin-top:18px; font-size:13.5px; color:var(--ink-faint); line-height:1.6; text-align:center; } .price-foot b{ color:var(--ink-soft); }
-  .value-note{ margin-top:20px; padding:16px 20px; background:var(--gold-soft); border-radius:12px; font-size:15px; line-height:1.65; color:var(--ink-soft); text-align:center; max-width:640px; margin-left:auto; margin-right:auto; }
-  .value-note b{ color:var(--gold-hi); }
-  .compare-tag{ margin-bottom:10px; }
-  .compare-tag .was-lbl{ font-size:10.5px; color:var(--ink-faint); display:block; margin-bottom:2px; }
-  .compare-tag .was{ font-size:15px; color:var(--ink-faint); text-decoration:line-through; text-decoration-color:var(--red); font-weight:600; }
-  .compare-tag .arrow{ font-size:11px; color:var(--gold); margin:0 4px; }
-
-  .usp-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:8px; }
-  @media (max-width:980px){ .usp-grid{ grid-template-columns:1fr 1fr; } }
-  @media (max-width:560px){ .usp-grid{ grid-template-columns:1fr; } }
-  .usp-card{ padding:22px; text-align:left; }
-  .usp-card .ic{ width:40px; height:40px; border-radius:10px; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px; }
-  .usp-card h3{ font-family:'Playfair Display',serif; font-size:16.5px; font-weight:700; margin-bottom:7px; line-height:1.3; }
-  .usp-card p{ font-size:14.5px; line-height:1.6; color:var(--ink-faint); }
-  .usp-stat{ margin-top:20px; padding:18px 22px; text-align:center; font-size:14.5px; line-height:1.65; color:var(--ink-soft); }
-  .usp-stat b{ color:var(--gold-hi); font-family:'Playfair Display',serif; font-size:17px; }
-
-  .section{ padding:74px 0; }
-  .section-head{ max-width:660px; margin:0 auto 42px; text-align:center; }
-  .section-head h2{ font-size:33px; font-weight:600; line-height:1.16; margin-top:14px; }
-  .section-head p{ font-size:15px; line-height:1.65; color:var(--ink-soft); margin-top:12px; }
-  .section-alt{ background:var(--card-2); border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); }
-
-  .painlist{ display:flex; flex-direction:column; gap:10px; }
-  .painrow{ display:flex; gap:14px; align-items:flex-start; padding:18px 20px; }
-  .painrow .pdot{ width:8px; height:8px; border-radius:50%; background:var(--red); margin-top:7px; flex-shrink:0; }
-  .painrow p{ font-size:15px; line-height:1.55; color:var(--ink-soft); text-align:left; } .painrow p b{ color:var(--ink); font-weight:600; }
-  .pain-close{ margin-top:20px; padding:22px 24px; font-size:15px; line-height:1.7; color:var(--ink-soft); border-left:2px solid var(--gold); text-align:left; }
-  .pain-close b{ color:var(--gold-hi); font-family:'Be Vietnam Pro',sans-serif; font-size:11px; letter-spacing:.06em; display:block; margin-bottom:8px; text-transform:uppercase; }
-
-  .flow{ display:flex; align-items:center; gap:10px; margin-top:36px; flex-wrap:wrap; }
-  @media (max-width:880px){ .flow{ flex-direction:column; align-items:stretch; } }
-  .flow-step{ flex:1; min-width:180px; padding:20px 18px; text-align:center; }
-  .flow-step .fn{ font-family:'Be Vietnam Pro',sans-serif; font-size:10px; font-weight:700; color:var(--gold); letter-spacing:.06em; margin-bottom:8px; text-transform:uppercase; }
-  .flow-step .ft{ font-size:15px; font-weight:700; color:var(--ink); line-height:1.4; }
-  .flow-arrow{ color:var(--gold); font-size:20px; flex-shrink:0; }
-  @media (max-width:880px){ .flow-arrow{ transform:rotate(90deg); align-self:center; } }
-
-  .dgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:8px; }
-  @media (max-width:760px){ .dgrid{ grid-template-columns:1fr; } }
-  .dcard{ padding:24px; text-align:left; }
-  .dcard .dn{ font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-bottom:10px; }
-  .dcard .dn span{ display:block; font-family:'Be Vietnam Pro',sans-serif; font-size:10px; font-weight:700; letter-spacing:.05em; color:var(--gold); text-transform:uppercase; margin-bottom:6px; }
-  .dcard p{ font-size:14.5px; line-height:1.6; color:var(--ink-faint); }
-
-  .mockrow{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:44px; }
-  @media (max-width:980px){ .mockrow{ grid-template-columns:1fr 1fr; } }
-  @media (max-width:640px){ .mockrow{ grid-template-columns:1fr; } }
-  .mock{ overflow:hidden; text-align:left; }
-  .mock-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line-soft); }
-  .mock-head .mtitle{ font-size:13px; font-weight:700; color:var(--ink); } .mock-head .msub{ font-family:'Be Vietnam Pro',sans-serif; font-size:9.5px; font-weight:700; color:var(--gold); letter-spacing:.04em; text-transform:uppercase; }
-  .mock-shot{ background:#F7F4EC; }
-  .mockfoot{ margin-top:14px; font-size:11px; color:var(--ink-faint); text-align:center; }
-
-  .proofsec{ display:flex; flex-direction:column; gap:18px; text-align:left; }
-  .proofcard{ padding:24px; }
-  .proofcard .pf-top{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-  .proofcard .pf-top img, .proofcard .pf-top .pf-fallback{ width:52px; height:52px; border-radius:50%; object-fit:cover; object-position:50% 12%; border:2px solid var(--gold); flex-shrink:0; }
-  .proofcard .pf-fallback{ background:var(--gold-soft); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-weight:700; color:var(--gold); font-size:16px; }
-  .proofcard .pf-nm{ font-size:15px; font-weight:700; color:var(--ink); }
-  .proofcard .pf-rl{ font-size:12px; color:var(--ink-faint); margin-top:2px; }
-  .proofcard .pf-quote{ font-size:15.5px; line-height:1.75; color:var(--ink-soft); margin-bottom:16px; }
-  .proofcard .pf-quote b{ color:var(--gold-hi); font-weight:700; }
-  .pillrow{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
-  .pill{ font-size:11.5px; font-weight:700; color:var(--gold-hi); background:var(--gold-soft); padding:6px 12px; border-radius:999px; }
-  .shotwrap{ margin-bottom:12px; }
-  .shotwrap .shot-label{ font-size:11.5px; color:var(--ink-faint); margin-bottom:7px; }
-  .shotwrap img{ width:100%; border-radius:10px; border:1px solid var(--line-soft); }
-  .shotrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  @media (max-width:520px){ .shotrow{ grid-template-columns:1fr; } }
-  .pf-cap{ font-size:12px; line-height:1.6; color:var(--ink-faint); font-style:italic; margin-top:8px; }
-  .disclaimer{ padding:16px 18px; font-size:13.5px; line-height:1.65; color:var(--ink-faint); border:1px dashed var(--line); border-radius:12px; }
-
-  .quoteblock{ padding:44px; text-align:center; }
-  .quoteblock .qav{ width:64px; height:64px; border-radius:50%; object-fit:cover; object-position:50% 15%; margin:0 auto 18px; border:2px solid var(--gold-soft); }
-  .quoteblock p{ font-family:'Playfair Display',serif; font-weight:600; font-size:20px; line-height:1.55; color:var(--ink); max-width:56ch; margin:0 auto 18px; }
-  .quoteblock .by{ font-family:'Be Vietnam Pro',sans-serif; font-size:12px; font-weight:700; color:var(--gold); letter-spacing:.04em; text-transform:uppercase; }
-
-  .tgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-  @media (max-width:880px){ .tgrid{ grid-template-columns:1fr; } }
-  .tcard{ padding:20px; text-align:left; }
-  .tcard .who{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-  .tcard .who .av{ width:38px; height:38px; border-radius:50%; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
-  .tcard .who .nm{ font-size:15px; font-weight:700; color:var(--ink); } .tcard .who .rl{ font-size:11.5px; color:var(--ink-faint); }
-  .tcard .quote{ font-size:15px; line-height:1.6; color:var(--ink-soft); margin-bottom:12px; white-space:pre-line; }
-  .tcard .tagrow{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-faint); } .tcard .tagrow .heart{ color:var(--red); }
-  .tnote{ margin-top:20px; font-size:11.5px; color:var(--ink-faint); text-align:center; font-family:'Be Vietnam Pro',sans-serif; line-height:1.6; }
-
-  .msgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-  @media (max-width:880px){ .msgrid{ grid-template-columns:1fr; } }
-  .msshot{ overflow:hidden; text-align:left; }
-  .msshot img{ width:100%; }
-  .msshot .ms-cap{ padding:12px 16px; font-size:11px; color:var(--ink-faint); line-height:1.5; }
-
-  .whogrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-  @media (max-width:640px){ .whogrid{ grid-template-columns:1fr; } }
-  .whoitem{ display:flex; gap:12px; align-items:flex-start; padding:16px 18px; text-align:left; }
-  .whoitem .ck{ color:var(--gold); font-weight:700; flex-shrink:0; } .whoitem p{ font-size:15px; line-height:1.55; color:var(--ink-soft); }
-  .noitem .ck{ color:var(--red); }
-
-  .reg-steps{ display:flex; gap:10px; margin-bottom:32px; }
-  .reg-step{ flex:1; display:flex; align-items:center; gap:10px; padding:14px 16px; text-decoration:none; color:inherit; }
-  .reg-step .rsn{ width:26px; height:26px; border-radius:50%; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; }
-  .reg-step .rst{ font-size:13.5px; color:var(--ink-soft); font-weight:600; }
-  @media (max-width:640px){ .reg-steps{ flex-direction:column; } }
-
-  .signup-card{ padding:28px; max-width:480px; margin:0 auto; }
-  .signup-label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin:14px 0 6px; }
-  .signup-label:first-child{ margin-top:0; }
-  /* font-size 16px KHÔNG CHỈ để dễ đọc — dưới 16px Safari trên iPhone tự động zoom vào ô input lúc
-     chạm để gõ, làm vỡ bố cục ngay giữa lúc khách đang điền thông tin thanh toán. */
-  .signup-input{ width:100%; padding:14px; border-radius:10px; border:1px solid var(--line); background:var(--card-2); color:var(--ink); font-size:16px; font-family:'Be Vietnam Pro',sans-serif; }
-  .signup-input:focus{ outline:2px solid var(--gold); outline-offset:1px; }
-  .signup-error{ margin-top:12px; padding:11px 14px; background:var(--red-soft); color:#FCA5A5; border-radius:8px; font-size:13.5px; line-height:1.5; }
-  .signup-hint{ margin-top:14px; font-size:12px; color:var(--ink-faint); text-align:center; line-height:1.6; }
-  .pay-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line-soft); font-size:15px; gap:10px; }
-  .pay-row:last-of-type{ border-bottom:none; }
-  .pay-copy{ font-size:10.5px; font-weight:600; color:var(--gold); background:var(--gold-soft); border:1px solid rgba(212,175,55,.3); padding:4px 9px; border-radius:6px; cursor:pointer; flex-shrink:0; }
-  .pay-status{ margin-top:16px; padding:14px; text-align:center; border-radius:10px; background:var(--card-2); font-size:14.5px; font-weight:600; color:var(--ink-soft); }
-  .pay-status.paid{ background:rgba(34,197,94,.15); color:#4ADE80; }
-
-  .faq{ display:flex; flex-direction:column; gap:10px; text-align:left; }
-  .faqitem{ overflow:hidden; }
-  .faqitem summary{ list-style:none; cursor:pointer; padding:18px 22px; font-size:16px; font-weight:600; color:var(--ink); display:flex; justify-content:space-between; align-items:center; gap:12px; }
-  .faqitem summary::-webkit-details-marker{ display:none; }
-  .faqitem summary::after{ content:"+"; font-family:'Be Vietnam Pro',sans-serif; font-weight:700; font-size:18px; color:var(--gold); flex-shrink:0; transition:transform .2s; }
-  .faqitem[open] summary::after{ transform:rotate(45deg); }
-  .faqitem .a{ padding:0 22px 20px; font-size:15px; line-height:1.65; color:var(--ink-soft); }
-
-  .finalcta{ padding:60px 44px; text-align:center; position:relative; overflow:hidden; }
-  .finalcta::before{ content:""; position:absolute; inset:0; background:radial-gradient(60% 90% at 50% 0%, var(--gold-soft), transparent 65%); }
-  .finalcta > *{ position:relative; } .finalcta h2{ font-size:32px; margin-bottom:14px; }
-  .finalcta p{ font-size:15px; color:var(--ink-soft); max-width:52ch; margin:0 auto 28px; line-height:1.6; }
-
-  footer{ padding:36px 0 100px; text-align:center; font-size:12px; color:var(--ink-faint); border-top:1px solid var(--line-soft); margin-top:20px; }
-  footer a{ color:var(--gold); text-decoration:none; font-weight:600; }
-  footer .flinks{ margin-top:10px; display:flex; gap:16px; justify-content:center; font-size:11px; }
-
-  .stickybar{ position:sticky; bottom:0; z-index:20; background:rgba(10,10,10,.92); backdrop-filter:blur(10px); border-top:1px solid var(--line); }
-  .stickybar .in{ max-width:1080px; margin:0 auto; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-  .stickybar .sp{ font-family:'Be Vietnam Pro',sans-serif; } .stickybar .sp .now{ font-size:17px; font-weight:700; color:var(--gold-hi); font-variant-numeric:tabular-nums; } .stickybar .sp .lbl{ font-size:11px; color:var(--ink-faint); display:block; margin-bottom:1px; }
-  .stickybar .sp .was{ text-decoration:line-through; text-decoration-color:var(--red); color:var(--ink-faint); font-weight:600; }
-  @media (max-width:520px){ .stickybar .lbl{ display:none; } .btn{ padding:13px 18px; font-size:15px; } }
-  @media (max-width:400px){ .stickybar .was{ display:none; } }
-  [hidden]{ display:none!important; }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="theme-light.css?v=2">
 </head>
 <body>
 
-<div class="topbar"><div class="in"><div class="mark"><span class="dot"></span>XÂY NHÂN HIỆU</div><div class="eco">Hệ Sinh Thái HIỂU · Hiểu Kênh</div></div></div>
+<header class="lp-header">
+  <div class="lp-brand"><span>Xây<br>Nhân Hiệu</span></div>
+  <a href="#dang-ky">Đăng ký →</a>
+</header>
 
-<div class="hero">
-  <div class="wrap hero-inner">
-    <div class="badge-pill"><span class="avatar"><img src="../assets/ladipage/founder.jpg" alt="Lê Tú Quỳnh"></span><span><b>Lê Tú Quỳnh</b><span>140K followers · Hệ Sinh Thái HIỂU Kênh</span></span></div>
-    <h1 class="hero-title">Cách xây kênh chỉ mất 15 phút mỗi ngày<span class="hi">Không cần mua rời ChatGPT, lịch đăng, Canva — 8 công cụ AI gộp 1 gói, bạn chỉ duyệt và đăng</span></h1>
-    <p class="hero-sub">Biến uy tín cá nhân thành <b>dòng tiền thụ động bền vững</b><br>— bằng Trợ lý AI & bộ công cụ <b>Định vị · Sửa kênh · Content · Lịch đăng</b><br>được đóng gói từ đúng công thức tôi đã đi qua<br>để từ 25K lên hơn 140K followers.</p>
-    <div class="meta-list card">
-      <div class="meta-row"><span class="mi">🧭</span><span class="mv">Định vị thương hiệu <b>độc bản</b></span></div>
-      <div class="meta-row"><span class="mi">🩺</span><span class="mv">Siêu âm & sửa kênh đang bị <b>bóp tương tác</b></span></div>
-      <div class="meta-row"><span class="mi">📝</span><span class="mv">Ma trận content chuẩn <b>Tâm Thức</b></span></div>
-      <div class="meta-row"><span class="mi">📅</span><span class="mv">Lịch đăng bài <b>AI tự làm — nhanh, gọn, nhẹ</b></span></div>
-    </div>
-    <div class="hero-ctas">
-      <a href="#dang-ky" class="btn btn-gold">Mua ngay — 499K →</a>
-      <a href="#that-su" class="btn btn-ghost">Vì sao cày kênh mãi vẫn không ra tiền?</a>
-    </div>
+<!-- HERO: nỗi đau TRƯỚC giải pháp (quy tắc chung mọi ladipage) -->
+<section class="lp-hero wrap">
+  <div class="eyebrow">🧭 Web App AI · Hệ Sinh Thái HIỂU · Chỉ từ 499K/tháng</div>
+  <div class="lp-hero-pain">Cày nội dung mỗi ngày mà ví vẫn không đầy.<br>Hứng lên thì đăng dồn dập, hết ý tưởng là bỏ kênh cả tuần.<br>Còn người khác thì kênh lên đều, khách tự tìm đến.</div>
+  <h1>Xây kênh chỉ mất 15 phút mỗi ngày: <span class="gold">8 công cụ AI gộp 1 gói, bạn chỉ duyệt và đăng</span></h1>
+  <p class="sub">Biến uy tín cá nhân thành <b>dòng tiền bền vững</b> bằng Trợ lý AI <b>Định vị · Sửa kênh · Content · Lịch đăng</b>, đóng gói từ đúng công thức đã đưa kênh của Tú Quỳnh từ 25K lên hơn 140K người theo dõi.</p>
+  <ul class="lp-ticks">
+    <li>Không cần mua rời ChatGPT, công cụ lên lịch, Canva</li>
+    <li>Không cần biết công nghệ, dùng được trên điện thoại và máy tính</li>
+    <li>Làm Định Vị xong là có ngay hướng đi và bài đăng bám đúng giọng của bạn</li>
+  </ul>
+  <div class="lp-cta-wrap">
+    <a class="lp-cta lp-cta-pulse" href="#dang-ky">Tôi muốn xây nhân hiệu bằng AI →</a>
+    <div class="lp-cta-note">Chỉ 499K cho tháng đầu · Không tự động gia hạn · Huỷ bất kỳ lúc nào bằng cách không gia hạn</div>
   </div>
+  <a class="lp-zalo-box" href="https://zalo.me/0866849193" target="_blank" rel="noopener">
+    <span class="lp-zalo-badge">Zalo</span>
+    <span><b>Tôi muốn hỏi trước</b><br>Kể mình nghe kênh của bạn đang ở đâu, mình nói thẳng app có hợp với bạn không.</span>
+  </a>
+  <div class="lp-chips">
+    <span>🧭 Định vị thương hiệu độc bản</span><span>🩺 Siêu âm &amp; sửa kênh bị bóp tương tác</span><span>📝 Ma trận content chuẩn Tâm Thức</span>
+    <span>📅 Lịch đăng bài AI xếp cả tuần</span><span>📱 Dùng trên điện thoại &amp; máy tính</span><span>📈 Theo dõi tiến độ &amp; đà đăng bài</span>
+  </div>
+  <div class="lp-hero-trust">
+    <div class="lp-hero-trust-item"><b>140K</b> người theo dõi</div>
+    <div class="lp-hero-trust-sep"></div>
+    <div class="lp-hero-trust-item"><b>4</b> công cụ lõi</div>
+    <div class="lp-hero-trust-sep"></div>
+    <div class="lp-hero-trust-item"><b>499K</b> bắt đầu</div>
+  </div>
+  <figure class="lp-testi-card" style="margin-top:22px;">
+    <div class="lp-testi-shot"><img src="../assets/ladipage/app-checklist.png" alt="Ảnh chụp checklist quy trình dùng app Xây Nhân Hiệu" width="1280" height="886" fetchpriority="high"></div>
+    <div class="lp-testi-meta"><div><div class="lp-testi-name">Trang chủ app: quy trình dùng từng bước</div><div class="lp-testi-role">Ảnh chụp thật từ app. Số liệu trong ảnh là dữ liệu mẫu minh hoạ.</div></div></div>
+  </figure>
+</section>
+
+<div class="wrap">
+
+  <section class="lp-section" id="that-su">
+    <div class="lp-eyebrow-label" style="text-align:center;">Nghe có quen không?</div>
+    <h2 class="lp-h2 lp-h2-center">Vòng lặp cày kênh<br><span class="gold">kiệt sức nhưng không ra tiền</span></h2>
+    <div class="lp-h2-bar"></div>
+    <p class="lp-h2-sub center">Bên trên là điều bạn đang gặp. Bên dưới là điều app làm thay sau khi bạn bắt đầu.</p>
+    <div class="lp-vs">
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Cày nội dung ngàn view nhưng ví vẫn xẹp. Chạy theo trend, hút toàn tệp xem chùa, không chịu chi tiền.</span></div><div class="lp-vs-yes"><i>✓</i><span><b>Định vị</b> bóc tách đúng thế mạnh và chân dung khách hàng của riêng bạn, để kênh hút đúng tệp khách có nhu cầu thật.</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>"Giả an" và mất bản sắc. Cố đóng vai người hoàn hảo, bên trong luôn ngột ngạt vì sợ bị bóc phốt.</span></div><div class="lp-vs-yes"><i>✓</i><span>Chiết xuất giá trị sống và trải nghiệm thật của bạn thành nội dung chân thật, nhất quán, <b>không cần gồng mình diễn</b>.</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Thất thường và trì hoãn. Hứng lên đăng dồn, cạn ý tưởng là bỏ kênh cả tuần.</span></div><div class="lp-vs-yes"><i>✓</i><span><b>Lịch đăng bài</b> do AI viết bài hoàn chỉnh và xếp thẳng vào lịch cả tuần. Bạn chỉ duyệt và đăng.</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Bị bóp tương tác, lệch tệp. Đăng bài không ai xem, không biết kênh đang thủng ở đâu.</span></div><div class="lp-vs-yes"><i>✓</i><span><b>Siêu âm kênh</b> chỉ ra chỗ đang đứt gãy tương tác và đưa phương án sửa để hút đúng tệp khách chất lượng.</span></div></div>
+    </div>
+    <div class="lp-callout" style="margin-top:22px;text-align:center;">Nhân hiệu không phải lượt follow bề nổi. Đó là <b>uy tín được xây từ nội lực thật</b>. Lời nói không khớp hành động thì kênh càng cày càng kiệt sức.</div>
+    <div class="lp-stats">
+      <div><b>15 phút</b><span>mỗi ngày để duyệt và đăng</span></div>
+      <div><b>8 công cụ</b><span>AI trong 1 gói</span></div>
+      <div><b>499K</b><span>để bắt đầu, không ràng buộc</span></div>
+      <div><b>24/7</b><span>dùng được trên mọi thiết bị</span></div>
+    </div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Bài toán tiền bạc</div>
+    <h2 class="lp-h2 lp-h2-center">Một gói thay<br><span class="gold">nhiều công cụ lẻ</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-calc">
+      <div class="lp-calc-box">
+        <h3>Nếu bạn GHÉP CÔNG CỤ LẺ</h3>
+        <p>Mua riêng ChatGPT để viết bài, công cụ lên lịch đăng, Canva để thiết kế ảnh.</p>
+        <p>Cộng lại mỗi tháng thường:</p>
+        <div class="lp-calc-big">hơn 499K</div>
+        <p style="margin-top:8px;">…mà vẫn phải tự nghĩ ý, tự ghép từng bước.</p>
+      </div>
+      <div class="lp-calc-box">
+        <h3>Nếu bạn dùng APP XÂY NHÂN HIỆU</h3>
+        <p>Trọn bộ 8 công cụ AI trong 1 gói, bám đúng công thức định vị – nội dung – dòng tiền.</p>
+        <p>Gói thấp nhất chỉ:</p>
+        <div class="lp-calc-big" style="color:#16A34A;">499K/tháng</div>
+        <p style="margin-top:8px;">≈ 17K mỗi ngày, hết tháng không tự trừ tiền.</p>
+      </div>
+    </div>
+    <div class="lp-callout" style="text-align:center;">Khoá học trực tiếp "Xây Nhân Hiệu" có học phí <b>1.990.000đ</b>. App đóng gói lại toàn bộ công cụ đó thành AI, <b>dùng ngay không cần học trước</b>.</div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Giải pháp</div>
+    <h2 class="lp-h2 lp-h2-center">4 công cụ lõi<br><span class="gold">từ định vị đến ra tiền</span></h2>
+    <div class="lp-h2-bar"></div>
+    <p class="lp-h2-sub center">App không dạy mẹo bắt trend hay diễn cho ống kính. Đây là bộ lọc AI giúp bạn biến giá trị sống và tri thức thật của mình thành một thương hiệu cá nhân sắc sảo, có sức hút tự nhiên.</p>
+    <div class="lp-program-grid">
+      <div class="lp-program-item"><div class="lp-program-num">Công cụ 1</div><div class="lp-program-ten"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Định vị thương hiệu độc bản</div><div class="lp-program-mota">Bóc tách đúng thế mạnh và chân dung khách hàng của riêng bạn. Loại bỏ mô thức so sánh, giúp bạn tự tin đứng trước ống kính với đúng thần thái và vị thế chuyên gia.<div class="lp-outcome">🎯 Làm được: biết mình là ai, nói với ai và nói bằng giọng nào.</div></div></div>
+      <div class="lp-program-item"><div class="lp-program-num">Công cụ 2</div><div class="lp-program-ten"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5M8 11h6M11 8v6"/></svg>Siêu âm &amp; sửa kênh chuẩn hoá</div><div class="lp-program-mota">Bắt đúng lý do kênh đang bị đứt gãy tương tác, đưa phương án sửa để hút đúng tệp khách hàng chất lượng, sẵn sàng chi tiền cho giá trị thật.<div class="lp-outcome">🎯 Làm được: biết kênh đang thủng ở đâu và sửa thế nào.</div></div></div>
+      <div class="lp-program-item"><div class="lp-program-num">Công cụ 3</div><div class="lp-program-ten"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7"/></svg>Ma trận content chuẩn Tâm Thức</div><div class="lp-program-mota">Hàng trăm cấu trúc kịch bản Reels/TikTok và bài viết chạm đúng nỗi đau, khao khát của khách hàng. Viết chân thật, nhất quán, không cần gồng mình diễn.<div class="lp-outcome">🎯 Làm được: có bài và kịch bản bám đúng giọng của bạn, không bí ý.</div></div></div>
+      <div class="lp-program-item"><div class="lp-program-num">Công cụ 4</div><div class="lp-program-ten"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Lịch đăng bài &amp; quản trị kỷ luật</div><div class="lp-program-mota">AI xếp lịch đăng cả tuần theo đúng trục nội dung. Biến việc xây kênh thành thói quen nhẹ nhàng mỗi ngày, dẹp bỏ thói quen trì hoãn.<div class="lp-outcome">🎯 Làm được: một tuần đăng đều mà không phải nghĩ "hôm nay đăng gì".</div></div></div>
+      <div class="lp-program-item full"><div class="lp-program-num">Cách dùng</div><div class="lp-program-ten"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/></svg>Nội lực của bạn → App (bộ lọc AI) → Kênh hút đúng khách → Dòng tiền bền vững</div><div class="lp-program-mota">Bạn đưa vào giá trị thật của mình, app lọc và đóng gói. Bạn chỉ duyệt và đăng.</div></div>
+    </div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Sản phẩm thật</div>
+    <h2 class="lp-h2 lp-h2-center">Giao diện app<br><span class="gold">chụp từ chính app</span></h2>
+    <div class="lp-h2-bar"></div>
+    <p class="lp-h2-sub center">Nội dung và số liệu trong ảnh là dữ liệu mẫu minh hoạ, không phải của một khách hàng cụ thể.</p>
+    <div class="lp-testi-list">
+      <figure class="lp-testi-card" style="margin-left:0;margin-right:0;">
+        <div class="lp-testi-shot"><img src="../assets/ladipage/app-momentum.png" alt="Ảnh chụp thống kê đà đăng bài trong app Xây Nhân Hiệu" loading="lazy" width="1280" height="444"></div>
+        <div class="lp-testi-meta"><div><div class="lp-testi-name">Đà đăng bài của bạn</div><div class="lp-testi-role">Theo dõi tiến độ để giữ nhịp đăng đều</div></div></div>
+      </figure>
+      <figure class="lp-testi-card" style="margin-left:0;margin-right:0;">
+        <div class="lp-testi-shot"><img src="../assets/ladipage/app-calendar.png" alt="Ảnh chụp lịch đăng bài theo tuần trong app Xây Nhân Hiệu" loading="lazy" width="2672" height="1474"></div>
+        <div class="lp-testi-meta"><div><div class="lp-testi-name">Lịch đăng bài theo tuần</div><div class="lp-testi-role">AI viết bài và xếp thẳng vào lịch</div></div></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="lp-section lp-teacher">
+    <div class="lp-eyebrow-label" style="text-align:center;">Người xây dựng</div>
+    <h2 class="lp-h2 lp-h2-center">Công thức này<br><span class="gold">đã đi qua kênh thật</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-teacher-card">
+      <div class="lp-teacher-top">
+        <img src="../assets/ladipage/founder.jpg" alt="Lê Tú Quỳnh" width="360" height="379" loading="lazy">
+        <div><div class="lp-teacher-name">Lê Tú Quỳnh</div><div class="lp-teacher-role">Người sáng tạo nội dung số · Người sáng lập Hệ Sinh Thái HIỂU</div></div>
+      </div>
+      <p class="lp-teacher-quote">"Có giai đoạn mình đăng bài đều đặn mà <b>không biết mình đang xây cái gì</b>. Không định vị, không hệ thống, chỉ đăng rồi chờ. Cho đến khi hiểu ra công thức, mọi thứ thay đổi. Từ <b>25K</b>, sau <b>6 tháng</b> lên hơn <b>130K người theo dõi</b> và thu nhập <b>nhân lên gấp nhiều lần</b>. Hiện tại đã hơn <b>140K</b>."</p>
+      <div class="lp-teacher-pills"><span>25K → 140K người theo dõi</span><span>X10 thu nhập</span><span>6 tháng</span></div>
+      <figure class="lp-teacher-shot"><img src="../assets/ladipage/fb-proof-140k-v2.jpg" alt="Profile Facebook thực tế của Tú Quỳnh, 140K người theo dõi" loading="lazy"><figcaption>Profile Facebook thực tế của Tú Quỳnh, 140K người theo dõi. Đây là kết quả từ hệ thống định vị – nội dung – niềm tin – dòng tiền, không phải đăng bài ngẫu hứng.</figcaption></figure>
+    </div>
+
+    <div class="lp-teacher-card" style="margin-top:16px;">
+      <div class="lp-teacher-top">
+        <div class="lp-testi-avatar">NT</div>
+        <div><div class="lp-teacher-name">Nga Tiến</div><div class="lp-teacher-role">Mẹ của Tú Quỳnh · Trước đó không quen dùng Facebook</div></div>
+      </div>
+      <p class="lp-teacher-quote">"Mẹ tôi bắt đầu gần như từ <b>con số 0</b>, không quen với Facebook, không có nền tảng nội dung. Sau <b>2 tháng</b> làm theo công thức, mẹ được bật kiếm tiền, nhận <b>gần 500 đô</b> trong tháng đầu và tăng <b>gần 20K người theo dõi</b> chỉ trong 1 tháng."</p>
+      <div class="lp-teacher-pills"><span>~500 USD tháng đầu</span><span>+20K theo dõi / 1 tháng</span><span>2 tháng triển khai</span></div>
+      <figure class="lp-teacher-shot"><img src="../assets/ladipage/proof-earnings.jpg" alt="Dashboard kiếm tiền nội dung Facebook của Nga Tiến" loading="lazy"><figcaption>Dashboard kiếm tiền Facebook: 486 USD, 5,5 triệu lượt xem</figcaption></figure>
+      <figure class="lp-teacher-shot"><img src="../assets/ladipage/proof-reels.jpg" alt="Feed Reels của Nga Tiến" loading="lazy"><figcaption>Feed Reels: nhiều video đạt 200K–981K lượt xem</figcaption></figure>
+    </div>
+    <div class="lp-need" style="margin-top:16px;">⚠️ Kết quả trên là case thực tế trong quá trình triển khai của Tú Quỳnh và gia đình, không phải cam kết thu nhập hay cam kết tăng trưởng dành cho tất cả người dùng app. Kết quả của mỗi người phụ thuộc vào nền tảng ban đầu, nội dung, mức độ triển khai, sự nhất quán và chính sách nền tảng tại từng thời điểm.</div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Người dùng nói gì</div>
+    <h2 class="lp-h2 lp-h2-center">Đánh giá thật<br><span class="gold">trong app</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-testi-list">
+      <div class="lp-testi-card"><div class="lp-testi-meta"><div class="lp-testi-avatar">D</div><div><div class="lp-testi-name">Nguyễn Thị Dung</div><div class="lp-testi-role">Người dùng Xây Nhân Hiệu</div></div></div><p style="padding:0 16px 16px;margin:0;font-size:16.5px;line-height:1.7;">"Tôi là phụ nữ U50, bắt đầu học tập và xây thương hiệu không dễ dàng. Tôi đã học rất nhiều khóa học, nhưng vẫn mãi chưa bắt đầu xây kênh lộ mặt vì nhiều yếu tố. Nhưng qua app xây nhân hiệu của cô Quỳnh, tôi đã cảm thấy xây kênh đơn giản hơn, và quyết tâm bắt tay vào làm liền."</p></div>
+      <div class="lp-testi-card"><div class="lp-testi-meta"><div class="lp-testi-avatar">N</div><div><div class="lp-testi-name">Ngọc bình an</div><div class="lp-testi-role">Người dùng Xây Nhân Hiệu</div></div></div><p style="padding:0 16px 16px;margin:0;font-size:16.5px;line-height:1.7;">"Từ khi được vào app xây nhân hiệu mình không bí vốn từ để làm content nữa, ý đưa ra càng rõ ràng thì nội dung được làm ra vô cùng ưng ý luôn, cảm ơn Tú Quỳnh đã tạo ra một sân chơi vô cùng thiết thực, tiết kiệm rất nhiều thời gian khi tạo ra một chuỗi theo ý mình."</p></div>
+      <div class="lp-testi-card"><div class="lp-testi-meta"><div class="lp-testi-avatar">T</div><div><div class="lp-testi-name">Thu Oanh</div><div class="lp-testi-role">Người dùng Xây Nhân Hiệu</div></div></div><p style="padding:0 16px 16px;margin:0;font-size:16.5px;line-height:1.7;">"Giờ có app mà mình tạo ảnh chuyên nghiệp rất nhanh, không tốn thời gian và đúng với định vị trên Facebook cùng 1 dạng. Mình cũng học được các content hay các câu hook hay."</p></div>
+    </div>
+    <div class="lp-callout" style="margin-top:18px;text-align:center;">Học viên Nga Tiến chia sẻ trong đánh giá app: <b>"tiết kiệm được thời gian và công sức 90%"</b> so với tự làm thủ công.</div>
+
+    <div class="lp-eyebrow-label" style="text-align:center;margin-top:34px;">Học viên khoá học</div>
+    <p class="lp-h2-sub center">Tin nhắn thật từ học viên đã học công thức 8 Dòng Tiền Từ Nhân Hiệu, nền tảng phương pháp được đóng gói thành app. Đây là cảm nhận về công thức và buổi học, không phải đánh giá riêng cho app.</p>
+    <div class="lp-testi-list">
+      <figure class="lp-testi-card" style="margin-left:0;margin-right:0;"><div class="lp-testi-shot"><img src="../assets/ladipage/fb-linh-khuc.jpg" alt="Tin nhắn cảm nhận của học viên Linh Khúc" loading="lazy"></div><div class="lp-testi-meta"><div><div class="lp-testi-name">Linh Khúc</div><div class="lp-testi-role">Tìm ra đúng ngách của mình sau khi học công thức định vị</div></div></div></figure>
+      <figure class="lp-testi-card" style="margin-left:0;margin-right:0;"><div class="lp-testi-shot"><img src="../assets/ladipage/fb-quynh-nhu.jpg" alt="Tin nhắn cảm nhận của học viên Hà Thị Quỳnh Như" loading="lazy"></div><div class="lp-testi-meta"><div><div class="lp-testi-name">Hà Thị Quỳnh Như</div><div class="lp-testi-role">Tin nhắn cảm ơn sau buổi học</div></div></div></figure>
+      <figure class="lp-testi-card" style="margin-left:0;margin-right:0;"><div class="lp-testi-shot"><img src="../assets/ladipage/fb-ngoc-quyen.jpg" alt="Tin nhắn cảm nhận của học viên Đinh Ngọc Quyên" loading="lazy"></div><div class="lp-testi-meta"><div><div class="lp-testi-name">Đinh Ngọc Quyên</div><div class="lp-testi-role">Tin nhắn cảm ơn sau buổi học</div></div></div></figure>
+    </div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Dành cho ai</div>
+    <h2 class="lp-h2 lp-h2-center">App hợp với bạn<br><span class="gold">nếu bạn…</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-fit-chips">
+      <span class="lp-fit-chip">✓ Muốn xây nhân hiệu nhưng chưa biết bắt đầu từ đâu</span>
+      <span class="lp-fit-chip">✓ Đang đăng bài nhưng không ra đơn, không ra tiền</span>
+      <span class="lp-fit-chip">✓ Mãi chưa bật được kiếm tiền Facebook</span>
+      <span class="lp-fit-chip">✓ Muốn làm affiliate, sản phẩm số, coaching, booking nhãn hàng từ kênh cá nhân</span>
+      <span class="lp-fit-chip">✓ Muốn dùng AI xây kênh nhanh hơn nhưng chưa biết dùng đúng cách</span>
+      <span class="lp-fit-chip">✓ Sẵn sàng đăng đều đặn, có hệ thống thay vì ngẫu hứng</span>
+    </div>
+    <div class="lp-eyebrow-label" style="text-align:center;margin-top:28px;">Chưa hợp với</div>
+    <div class="lp-fit-chips" style="margin-top:12px;">
+      <span class="lp-fit-chip">⛔ Người muốn "giàu nhanh sau 1 đêm", tìm mẹo lừa đảo hoặc chạy theo trào lưu bẩn</span>
+      <span class="lp-fit-chip">⛔ Người đổ lỗi cho thuật toán, không sẵn sàng tự chịu trách nhiệm cho kết quả</span>
+      <span class="lp-fit-chip">⛔ Người mua về để đó, không thực hành</span>
+    </div>
+  </section>
+
+  <section class="lp-section" id="goi">
+    <div class="lp-eyebrow-label" style="text-align:center;">Chọn gói</div>
+    <h2 class="lp-h2 lp-h2-center">Bắt đầu chỉ<br><span class="gold">499K <small style="font-size:.5em;">/tháng</small></span></h2>
+    <div class="lp-h2-bar"></div>
+    <p class="lp-h2-sub center">Vào tiền thấp nhất chỉ 499K, không ràng buộc dài hạn nếu chỉ mua 1 tháng. Muốn dùng tiếp thì chuyển khoản lại, không muốn thì tài khoản tự dừng khi hết hạn.</p>
+    <div class="lp-price-card">
+      <div class="lp-price-badge">🎁 Giá thấp nhất để bắt đầu</div>
+      <div class="lp-price-stack">
+        <div class="lp-price-label">Học phí khoá học Xây Nhân Hiệu</div>
+        <div class="lp-price-old">1.990.000đ</div>
+        <div class="lp-price-arrow">⬇</div>
+        <div class="lp-price-label lp-price-label-new">Dùng App, gói 1 tháng</div>
+        <div class="lp-price-new">499K</div>
+        <div class="lp-price-save">≈ <b>17K mỗi ngày</b>, dùng thật ngay hôm nay</div>
+      </div>
+      <div class="lp-price-gets">
+        <div class="lp-price-gets-title">Bạn nhận được:</div>
+        <div class="lp-price-gets-item">✅ <span><b>Định Vị AI</b> đầy đủ</span></div>
+        <div class="lp-price-gets-item">✅ <span><b>Sửa Kênh + Viết Content</b> không giới hạn</span></div>
+        <div class="lp-price-gets-item">✅ <span><b>Lịch Đăng Bài AI</b> cả tháng</span></div>
+        <div class="lp-price-gets-item">✅ <span>Quyền truy cập <b>24/7</b> Web App Xây Nhân Hiệu</span></div>
+        <div class="lp-price-gets-item">✅ <span>Hệ thống <b>theo dõi tiến độ</b> và đà đăng bài</span></div>
+        <div class="lp-price-gets-title lp-gets-bonus-title">Các gói dài hơn:</div>
+        <div class="lp-price-gets-item">📅 <span><b>6 tháng: 2.390K</b> (~398K/tháng, ≈ 13K/ngày), tiết kiệm ~20%</span></div>
+        <div class="lp-price-gets-item">📅 <span><b>12 tháng: 3.990K</b> (~332,5K/tháng, ≈ 11K/ngày), tiết kiệm ~33%</span></div>
+      </div>
+      <div class="lp-need">
+        <b>Lưu ý:</b> Mã QR bên dưới là cho gói 1 tháng (499K). Muốn mua gói 6 hoặc 12 tháng, nhắn Zalo trợ lý sau khi tạo tài khoản. Giới thiệu bạn bè qua link riêng, bạn được giảm <b>15%</b>. Đã là học viên khoá học? Nhắn Zalo trợ lý để nhận thêm ưu đãi riêng.
+      </div>
+      <a class="lp-cta lp-cta-pulse" style="margin-top:18px;" href="#dang-ky">Đăng ký ngay chỉ 499K →</a>
+      <div class="lp-price-micro">🔒 Thanh toán qua QR · Hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận</div>
+      <div class="lp-price-micro">🔁 Không tự động gia hạn, không trừ tiền ẩn</div>
+    </div>
+  </section>
+
+  <section class="lp-section lp-promise">
+    <div class="lp-eyebrow-label" style="text-align:center;">Cam kết</div>
+    <h2 class="lp-h2 lp-h2-center">Cam kết của mình<br><span class="gold">với bạn</span></h2>
+    <div class="lp-h2-bar"></div>
+    <ul class="lp-promise-list">
+      <li><b>Không giỏi công nghệ vẫn dùng được.</b> Giao diện tối giản, chỉ vài thao tác là có kịch bản và định hướng kênh cho riêng bạn.</li>
+      <li><b>Không cần đóng vai người khác.</b> Định Vị giúp bạn tìm đúng phong cách của chính mình để tự tin xuất hiện.</li>
+      <li><b>Chưa chắc hợp?</b> Nhắn hỏi trước, nếu không hợp mình nói thẳng.</li>
+      <li><b>Không hợp đồng ràng buộc.</b> Huỷ bất kỳ lúc nào bằng cách không gia hạn tiếp.</li>
+      <li><b>Nói đúng sự thật.</b> Các case trong trang là kết quả thật của Tú Quỳnh và gia đình, không phải cam kết thu nhập cho mọi người dùng.</li>
+    </ul>
+    <a class="lp-zalo-box" href="https://zalo.me/0866849193" target="_blank" rel="noopener">
+      <span class="lp-zalo-badge">Zalo</span>
+      <span><b>Trao đổi trực tiếp với mình qua Zalo</b><br>Chưa rõ chỗ nào cứ hỏi, mình giải thích rồi bạn hãy quyết định.</span>
+    </a>
+  </section>
+
+  <section class="lp-section" id="dang-ky">
+    <div class="lp-eyebrow-label" style="text-align:center;">Đăng ký &amp; thanh toán</div>
+    <h2 class="lp-h2 lp-h2-center">Tạo tài khoản —<br><span class="gold">lấy mã QR ngay</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-signup-card" id="lp-signup-form-wrap">
+      <label class="lp-signup-label">Họ và tên *</label>
+      <input class="lp-signup-input" id="lp-su-name" type="text" placeholder="Nguyễn Văn A" autocomplete="name">
+      <label class="lp-signup-label">Email *</label>
+      <input class="lp-signup-input" id="lp-su-email" type="email" placeholder="email@gmail.com" autocomplete="email">
+      <label class="lp-signup-label">Mật khẩu (để đăng nhập lại app sau này) *</label>
+      <input class="lp-signup-input" id="lp-su-pass" type="password" placeholder="Ít nhất 6 ký tự" autocomplete="new-password">
+      <div id="lp-signup-error" class="lp-signup-error" hidden></div>
+      <button class="lp-cta" id="lp-su-submit" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Xác nhận thông tin — lấy mã QR →</button>
+      <div class="lp-price-micro">Đây là mã QR cho gói 1 tháng (499K). Muốn mua gói 6/12 tháng tiết kiệm hơn, nhắn Zalo trợ lý sau khi tạo tài khoản.</div>
+    </div>
+    <div class="lp-signup-card" id="lp-payment-wrap" hidden><div id="lp-payment-inner"></div></div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Câu hỏi thường gặp</div>
+    <h2 class="lp-h2 lp-h2-center">Giải đáp<br><span class="gold">thắc mắc</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-faq">
+      <details class="lp-faq-item" open><summary>Tôi không giỏi công nghệ thì có dùng được không?</summary><div class="lp-faq-answer">Có. Giao diện Web App được tối giản hoá tối đa, dễ dùng trên cả điện thoại và máy tính. Chỉ vài thao tác nhấp chuột là bạn đã có ngay kịch bản và định hướng kênh cho riêng mình.</div></details>
+      <details class="lp-faq-item"><summary>499K/tháng có bị gia hạn tự động hoặc trừ tiền ẩn không?</summary><div class="lp-faq-answer">Tuyệt đối không. Bạn chủ động gia hạn từng tháng theo nhu cầu, không tự trừ tiền định kỳ. Mỗi lần chuyển khoản là mở đúng số ngày tương ứng. Muốn dùng tiếp thì chuyển khoản lại, không muốn thì tài khoản tự dừng khi hết hạn.</div></details>
+      <details class="lp-faq-item"><summary>Tôi chưa từng quay video hay viết bài, app có giúp tôi tự tin lộ diện không?</summary><div class="lp-faq-answer">Có. Định Vị giúp bạn tìm ra phong cách phù hợp nhất với chính mình, nói chuyện nhẹ nhàng hay phân tích sắc bén, để bạn tự tin xuất hiện mà không cần đóng vai người khác.</div></details>
+      <details class="lp-faq-item"><summary>Tôi chưa biết mình muốn làm niche gì thì sao?</summary><div class="lp-faq-answer">Không sao. Định Vị chính là bước giúp bạn tìm ra điều đó. Trả lời vài câu đầu là AI đã gợi ý được hướng, phần còn lại hoàn thiện dần sau.</div></details>
+      <details class="lp-faq-item"><summary>App có tự đăng bài lên Facebook giúp tôi không?</summary><div class="lp-faq-answer">App viết bài hoàn chỉnh và xếp lịch cho bạn. Việc đăng bạn vẫn tự bấm (trừ Fanpage kết nối riêng có thể tự đăng theo giờ). Đẩy Bài và CTA Comment thì gợi ý đúng lúc để bạn tự tương tác.</div></details>
+    </div>
+  </section>
+
+  <section class="lp-final">
+    <h2 class="lp-h2 lp-h2-center" style="margin-bottom:14px;">Xây nhân hiệu từ gốc rễ,<br><span class="gold">không ngẫu hứng</span></h2>
+    <a class="lp-cta" href="#dang-ky">Đăng ký ngay — chỉ 499K →</a>
+    <div class="lp-cta-note">Làm xong Định Vị ngay hôm nay và thấy content AI viết ra bám đúng giọng của bạn đến đâu</div>
+  </section>
 </div>
 
-<section class="section" id="that-su">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">🔍 Bóc trần sự thật</span><h2>Vòng lặp cày kênh<br>kiệt sức nhưng vẫn không có tiền</h2><p>Có phải bạn đang rơi vào vòng lặp bế tắc này mỗi ngày khi xây kênh Facebook/TikTok?</p></div>
-    <div class="painlist card">
-      <div class="painrow"><span class="pdot"></span><p><b>Cày nội dung ngàn view nhưng ví vẫn xẹp</b> — chạy theo trend, diễn theo kịch bản của người khác, hút toàn tệp "xem chùa" hời hợt, không chịu chi tiền.</p></div>
-      <div class="painrow"><span class="pdot"></span><p><b>"Giả an" & mất bản sắc</b> — cố đóng vai một người hoàn hảo, khoe thịnh vượng giả tạo bên ngoài, nhưng bên trong luôn ngột ngạt vì sợ bị bóc phốt.</p></div>
-      <div class="painrow"><span class="pdot"></span><p><b>Thất thường & trì hoãn</b> — hứng lên đăng dồn dập, tụt mood hay cạn ý tưởng là bỏ kênh cả tuần, không có hệ thống quản trị nội dung bài bản.</p></div>
-      <div class="painrow"><span class="pdot"></span><p><b>Bị bóp tương tác & lệch tệp</b> — đăng bài không ai tương tác, không biết kênh đang "thủng" ở đâu, sửa sao cho đúng tệp khách hàng có tiền.</p></div>
-    </div>
-    <div class="pain-close card">
-      <b>Sự thật trần trụi</b>
-      Nhân hiệu không phải là lượt follow bề nổi, mà là tần số uy tín được xây từ nội lực thực chứng. Lời nói không khớp với hành động sẽ tạo ra đứt gãy, khiến năng lượng kênh bị tắc nghẽn — và đó là lý do càng cày càng kiệt sức mà vẫn không ra tiền.
-    </div>
-  </div>
-</section>
+<footer class="lp-footer">© 2026 Lê Tú Quỳnh · Hệ Sinh Thái HIỂU, Hiểu Kênh<br>Hỗ trợ qua Zalo: <a href="https://zalo.me/0866849193" target="_blank" rel="noopener">0866 849 193</a></footer>
 
-<section class="section section-alt">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">🧭 Giải pháp</span><h2>Không dạy mẹo thuật toán —<br>đóng gói lại đúng gốc rễ</h2><p>Web App Xây Nhân Hiệu không dạy bạn mẹo giật gân bắt trend hay diễn cho ống kính. Đây là bộ công cụ AI giúp bạn chiết xuất giá trị sống, tri thức và trải nghiệm thật của chính mình thành một thương hiệu cá nhân sang trọng, sắc sảo và có sức hút tự nhiên.</p></div>
-    <div class="flow">
-      <div class="flow-step card"><div class="fn">Bước 1</div><div class="ft">Nội lực độc bản<br>của riêng bạn</div></div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-step card"><div class="fn">Bước 2</div><div class="ft">Web App Xây Nhân Hiệu<br>(bộ lọc AI)</div></div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-step card"><div class="fn">Bước 3</div><div class="ft">Kênh hút đúng<br>tệp khách chất lượng</div></div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-step card"><div class="fn">Bước 4</div><div class="ft">Dòng tiền<br>thịnh vượng bền vững</div></div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">🛠️ 4 tính năng lõi</span><h2>Từ định vị<br>đến ra tiền</h2></div>
-    <div class="dgrid">
-      <div class="dcard card"><div class="dn"><span>01</span>Định vị thương hiệu độc bản</div><p>Bóc tách đúng thế mạnh và chân dung khách hàng của riêng bạn. Loại bỏ mô thức so sánh, giúp bạn tự tin đứng trước ống kính với đúng thần thái và vị thế chuyên gia.</p></div>
-      <div class="dcard card"><div class="dn"><span>02</span>Siêu âm & sửa kênh chuẩn hoá</div><p>Bắt đúng lý do kênh đang bị đứt gãy tương tác. Tự động đưa phương án sửa kênh để hút đúng tệp khách hàng chất lượng, sẵn sàng chi tiền cho giá trị thật.</p></div>
-      <div class="dcard card"><div class="dn"><span>03</span>Ma trận content chuẩn Tâm Thức</div><p>Hàng trăm cấu trúc kịch bản Reels/TikTok và bài viết chạm đúng nỗi đau, khao khát của khách hàng. Viết chân thật, nhất quán, không cần gồng mình diễn.</p></div>
-      <div class="dcard card"><div class="dn"><span>04</span>Lịch đăng bài & quản trị kỷ luật</div><p>AI xếp lịch đăng cả tuần theo đúng trục nội dung. Biến việc xây kênh thành một thói quen nhẹ nhàng mỗi ngày, dẹp bỏ hoàn toàn thói quen trì hoãn.</p></div>
-    </div>
-
-    <div class="mockrow">
-      <div class="mock card">
-        <div class="mock-head"><span class="mtitle">Trang chủ — Quy trình dùng app</span><span class="msub">Ảnh chụp thật từ app</span></div>
-        <div class="mock-shot"><img src="../assets/ladipage/app-checklist.png" alt="Ảnh chụp checklist quy trình dùng app Xây Nhân Hiệu"></div>
-      </div>
-      <div class="mock card">
-        <div class="mock-head"><span class="mtitle">Trang chủ — Đà đăng bài của bạn</span><span class="msub">Ảnh chụp thật từ app</span></div>
-        <div class="mock-shot"><img src="../assets/ladipage/app-momentum.png" alt="Ảnh chụp thống kê đà đăng bài trong app Xây Nhân Hiệu"></div>
-      </div>
-      <div class="mock card">
-        <div class="mock-head"><span class="mtitle">Lịch đăng bài theo tuần</span><span class="msub">Ảnh chụp thật từ app</span></div>
-        <div class="mock-shot"><img src="../assets/ladipage/app-calendar.png" alt="Ảnh chụp lịch đăng bài theo tuần trong app Xây Nhân Hiệu"></div>
-      </div>
-    </div>
-    <p class="mockfoot">Ảnh chụp thật từ giao diện app — nội dung/số liệu trong ảnh là dữ liệu mẫu minh hoạ, không phải của một khách hàng cụ thể.</p>
-  </div>
-</section>
-
-<section class="section section-alt">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">⚡ Vì sao chọn app này</span><h2>Không ở đâu<br>đóng gói được như thế này</h2><p>Không phải ChatGPT chung chung, không phải ghép nhiều công cụ rời rạc — mà là 1 hệ thống AI duy nhất được xây riêng cho đúng công thức nhân hiệu.</p></div>
-    <div class="usp-grid">
-      <div class="usp-card card">
-        <div class="ic">⏱</div>
-        <h3>Tiết kiệm hàng chục giờ mỗi tháng</h3>
-        <p>Không cần tự nghĩ ý tưởng, tự viết từng bài, tự canh giờ đăng. AI làm thay từ định vị đến xếp lịch cả tuần — bạn chỉ cần duyệt và đăng.</p>
-      </div>
-      <div class="usp-card card">
-        <div class="ic">💰</div>
-        <h3>Rẻ hơn gộp nhiều công cụ lẻ</h3>
-        <p>Tự mua riêng ChatGPT viết bài + công cụ lên lịch + Canva thiết kế ảnh thường tốn hơn 499K/tháng cộng lại — ở đây gồm trọn bộ 8 công cụ trong 1 gói.</p>
-      </div>
-      <div class="usp-card card">
-        <div class="ic">🤖</div>
-        <h3>Lịch Đăng Bài tự động 100%</h3>
-        <p>AI tự viết bài hoàn chỉnh + tự xếp thẳng vào lịch cả tuần theo đúng trục nội dung — không phải chỉ gợi ý chủ đề rồi để bạn tự viết tiếp.</p>
-      </div>
-      <div class="usp-card card">
-        <div class="ic">🎯</div>
-        <h3>Đóng gói riêng cho Nhân Hiệu</h3>
-        <p>Không phải AI trả lời chung chung — mà bám đúng công thức định vị – nội dung – dòng tiền đã kiểm chứng bằng chính kênh 140K người theo dõi.</p>
-      </div>
-    </div>
-    <div class="usp-stat card">Học viên Nga Tiến chia sẻ trong đánh giá app thật: <b>"tiết kiệm được thời gian và công sức 90%"</b> so với tự làm thủ công.</div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">🏆 Bằng chứng thật</span><h2>Khi có hệ thống,<br>kết quả thay đổi</h2><p>Đây là hành trình thực tế — không phải kịch bản lý tưởng, không phải case được tô vẽ thêm.</p></div>
-    <div class="proofsec">
-      <div class="proofcard card">
-        <div class="pf-top">
-          <img src="../assets/ladipage/founder.jpg" alt="Lê Tú Quỳnh">
-          <div><div class="pf-nm">Lê Tú Quỳnh</div><div class="pf-rl">Người sáng tạo nội dung số · Người sáng lập</div></div>
-        </div>
-        <p class="pf-quote">"Có giai đoạn tôi đăng bài đều đặn mà <b>không biết mình đang xây cái gì</b>. Không định vị, không hệ thống — chỉ đăng rồi chờ. Cho đến khi hiểu ra công thức, mọi thứ thay đổi. Từ <b>25K</b>, sau <b>6 tháng</b> lên hơn <b>130K followers</b> và thu nhập <b>nhân lên gấp nhiều lần</b> — hiện tại đã hơn <b>140K</b>."</p>
-        <div class="pillrow">
-          <span class="pill">25K → 140K followers</span>
-          <span class="pill">X10 thu nhập</span>
-          <span class="pill">6 tháng</span>
-        </div>
-        <div class="shotwrap">
-          <div class="shot-label">Profile Facebook thực tế của Tú Quỳnh — 140K người theo dõi</div>
-          <img src="../assets/ladipage/fb-proof-140k-v2.jpg" alt="Profile Facebook thực tế của Tú Quỳnh">
-        </div>
-        <p class="pf-cap">Đây là kết quả từ hệ thống định vị – nội dung – niềm tin – dòng tiền, không phải đăng bài ngẫu hứng.</p>
-      </div>
-
-      <div class="proofcard card">
-        <div class="pf-top">
-          <div class="pf-fallback">NT</div>
-          <div><div class="pf-nm">Mẹ của Tú Quỳnh — Nga Tiến</div><div class="pf-rl">Trước đó: không quen dùng Facebook</div></div>
-        </div>
-        <p class="pf-quote">"Mẹ tôi bắt đầu gần như từ <b>con số 0</b> — không quen với Facebook, không có nền tảng nội dung. Sau <b>2 tháng</b> làm theo công thức, mẹ được bật kiếm tiền, nhận <b>gần 500 đô</b> trong tháng đầu và tăng <b>gần 20K followers</b> chỉ trong 1 tháng."</p>
-        <div class="pillrow">
-          <span class="pill">~500 USD tháng đầu</span>
-          <span class="pill">+20K followers / 1 tháng</span>
-          <span class="pill">2 tháng triển khai</span>
-        </div>
-        <div class="shotrow">
-          <div class="shotwrap">
-            <div class="shot-label">Dashboard kiếm tiền Facebook — 486 USD, 5,5 triệu view</div>
-            <img src="../assets/ladipage/proof-earnings.jpg" alt="Dashboard kiếm tiền nội dung Facebook của Nga Tiến">
-          </div>
-          <div class="shotwrap">
-            <div class="shot-label">Feed Reels — nhiều video đạt 200K–981K view</div>
-            <img src="../assets/ladipage/proof-reels.jpg" alt="Feed Reels của Nga Tiến">
-          </div>
-        </div>
-      </div>
-
-      <div class="disclaimer">⚠️ Kết quả trên là case thực tế trong quá trình triển khai của Tú Quỳnh và gia đình, không phải cam kết thu nhập hay cam kết tăng trưởng dành cho tất cả người dùng app. Kết quả của mỗi người phụ thuộc vào nền tảng ban đầu, nội dung, mức độ triển khai, sự nhất quán và chính sách nền tảng tại từng thời điểm.</div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <div class="quoteblock card">
-      <img class="qav" src="../assets/ladipage/founder2.jpg" alt="Lê Tú Quỳnh">
-      <p>"Ngoài kia người ta dạy bạn đăng bài câu view — còn app này ở đây để bạn xây hệ thống thật: định vị đúng, nội dung đúng trục, lịch đăng không đứt quãng. Không phải may rủi, mà là công thức tôi đã đi qua để từ 25K lên hơn 140K followers."</p>
-      <span class="by">— Lê Tú Quỳnh</span>
-    </div>
-  </div>
-</section>
-
-<section class="section section-alt">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">💬 Học viên nói gì</span><h2>Cảm nhận thật<br>về công thức 8 Dòng Tiền</h2><p>Tin nhắn thật từ học viên đã học công thức 8 Dòng Tiền Từ Nhân Hiệu — nền tảng phương pháp được đóng gói thành app này.</p></div>
-    <div class="msgrid">
-      <div class="msshot card"><img src="../assets/ladipage/fb-linh-khuc.jpg" alt="Tin nhắn cảm nhận của học viên Linh Khúc"><div class="ms-cap">Linh Khúc — tìm ra đúng ngách của mình sau khi học công thức định vị</div></div>
-      <div class="msshot card"><img src="../assets/ladipage/fb-quynh-nhu.jpg" alt="Tin nhắn cảm nhận của học viên Hà Thị Quỳnh Như"><div class="ms-cap">Hà Thị Quỳnh Như — tin nhắn cảm ơn sau buổi học</div></div>
-      <div class="msshot card"><img src="../assets/ladipage/fb-ngoc-quyen.jpg" alt="Tin nhắn cảm nhận của học viên Đinh Ngọc Quyên"><div class="ms-cap">Đinh Ngọc Quyên — tin nhắn cảm ơn sau buổi học</div></div>
-    </div>
-    <p class="tnote">Đây là cảm nhận về công thức/buổi học, không phải đánh giá riêng cho app. Đánh giá thật của người đang dùng app nằm ở mục bên dưới.</p>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">⭐ App reviews</span><h2>Người dùng app<br>nói gì</h2></div>
-    <div class="tgrid">
-      <div class="tcard card"><div class="who"><span class="av">D</span><div><div class="nm">Nguyễn Thị Dung</div><div class="rl">Người dùng Xây Nhân Hiệu</div></div></div><p class="quote">"Tôi là phụ nữ U50, bắt đầu học tập và xây thương hiệu không dễ dàng. Tôi đã học rất nhiều khóa học, nhưng vẫn mãi chưa bắt đầu xây kênh lộ mặt vì nhiều yếu tố. Nhưng qua app xây nhân hiệu của cô Quỳnh, tôi đã cảm thấy xây kênh đơn giản hơn, và quyết tâm bắt tay vào làm liền."</p><div class="tagrow"><span class="heart">❤️</span> Người dùng thực tế · Đánh giá trong app</div></div>
-      <div class="tcard card"><div class="who"><span class="av">N</span><div><div class="nm">Ngọc bình an</div><div class="rl">Người dùng Xây Nhân Hiệu</div></div></div><p class="quote">"Từ khi được vào app xây nhân hiệu mình không bí vốn từ để làm content nữa, ý đưa ra càng rõ ràng thì nội dung được làm ra vô cùng ưng ý luôn, cảm ơn Tú Quỳnh đã tạo ra một sân chơi vô cùng thiết thực, tiết kiệm rất nhiều thời gian khi tạo ra một chuỗi theo ý mình."</p><div class="tagrow"><span class="heart">❤️</span> Người dùng thực tế · Đánh giá trong app</div></div>
-      <div class="tcard card"><div class="who"><span class="av">T</span><div><div class="nm">Thu Oanh</div><div class="rl">Người dùng Xây Nhân Hiệu</div></div></div><p class="quote">"Giờ có app mà mình tạo ảnh chuyên nghiệp rất nhanh, không tốn thời gian và đúng với định vị trên Facebook cùng 1 dạng. Mình cũng học được các content hay các câu hook hay."</p><div class="tagrow"><span class="heart">❤️</span> Người dùng thực tế · Đánh giá trong app</div></div>
-    </div>
-    <p class="tnote">3 đánh giá thật, lấy trực tiếp từ bảng app_reviews (app='nhan-hieu', đã duyệt) — không chỉnh sửa nội dung.</p>
-  </div>
-</section>
-
-<section class="section section-alt">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">🙋 Dành cho ai</span><h2>App này phù hợp<br>với bạn nếu</h2></div>
-    <div class="whogrid">
-      <div class="whoitem card"><span class="ck">✓</span><p>Muốn xây nhân hiệu nhưng chưa biết bắt đầu từ đâu</p></div>
-      <div class="whoitem card"><span class="ck">✓</span><p>Đang đăng bài nhưng không ra đơn, không ra tiền</p></div>
-      <div class="whoitem card"><span class="ck">✓</span><p>Mãi chưa bật được kiếm tiền Facebook dù đã cố đủ cách</p></div>
-      <div class="whoitem card"><span class="ck">✓</span><p>Muốn làm affiliate, sản phẩm số, coaching, booking nhãn hàng từ kênh cá nhân</p></div>
-      <div class="whoitem card"><span class="ck">✓</span><p>Muốn dùng AI để xây kênh nhanh hơn — nhưng chưa biết dùng đúng cách</p></div>
-      <div class="whoitem card"><span class="ck">✓</span><p>Sẵn sàng đăng bài đều đặn, có hệ thống thay vì ngẫu hứng</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">🛡️ Cam kết năng lượng</span><h2>Ai không nên<br>dùng app này</h2><p>Để bảo vệ năng lượng chung cho cộng đồng, app này xin phép không dành cho:</p></div>
-    <div class="whogrid">
-      <div class="whoitem noitem card"><span class="ck">⛔</span><p>Người muốn "giàu nhanh sau 1 đêm", tìm mẹo lừa đảo hoặc chạy theo trào lưu bẩn</p></div>
-      <div class="whoitem noitem card"><span class="ck">⛔</span><p>Người có tư duy nạn nhân, đổ lỗi cho thuật toán, không sẵn sàng tự chịu trách nhiệm cho kết quả của mình</p></div>
-      <div class="whoitem noitem card"><span class="ck">⛔</span><p>Người không chịu thực hành, mua app về để đó và chờ phép màu tự xảy ra</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section section-alt" id="dang-ky">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">🚀 Bắt đầu ngay</span><h2>Chọn gói<br>bắt đầu ngay</h2><p>Vào tiền thấp nhất chỉ 499K — không ràng buộc dài hạn nếu chỉ mua 1 tháng.</p></div>
-
-    <div class="pricegrid">
-      <div class="pricecard card active">
-        <div class="p-tag">Giá thấp nhất để bắt đầu</div>
-        <div class="p-name">1 tháng</div>
-        <div class="compare-tag"><span class="was-lbl">So với học phí khoá học Xây Nhân Hiệu</span><span class="was">1.990.000đ</span></div>
-        <div class="p-price">499K<small>/tháng</small></div>
-        <div class="p-day">≈ 17K/ngày</div>
-        <div class="p-note">Vào tiền thấp nhất, dùng thật ngay hôm nay</div>
-        <div class="p-feats">
-          <div><span>✓</span><span>Định Vị AI đầy đủ</span></div>
-          <div><span>✓</span><span>Sửa Kênh + Viết Content không giới hạn</span></div>
-          <div><span>✓</span><span>Lịch Đăng Bài AI cả tháng</span></div>
-        </div>
-      </div>
-      <div class="pricecard card">
-        <div class="p-name">6 tháng</div>
-        <div class="p-price">2.390K<small>~398K/tháng</small></div>
-        <div class="p-day">≈ 13K/ngày</div>
-        <div class="p-note">Tiết kiệm ~20% so với mua lẻ từng tháng</div>
-      </div>
-      <div class="pricecard card">
-        <div class="p-name">12 tháng</div>
-        <div class="p-price">3.990K<small>~332,5K/tháng</small></div>
-        <div class="p-day">≈ 11K/ngày</div>
-        <div class="p-note">Tiết kiệm ~33%, giữ giá lâu nhất</div>
-      </div>
-    </div>
-
-    <div class="incl-list" style="max-width:520px;margin-left:auto;margin-right:auto;">
-      <div class="ir"><span>✓</span><span>Quyền truy cập 24/7 Web App Xây Nhân Hiệu</span></div>
-      <div class="ir"><span>✓</span><span>Trọn bộ Định vị · Sửa kênh · Content · Lịch đăng</span></div>
-      <div class="ir"><span>✓</span><span>Hệ thống theo dõi tiến độ & đà đăng bài</span></div>
-    </div>
-    <p class="price-foot">Không hợp đồng ràng buộc — huỷ bất kỳ lúc nào bằng cách không gia hạn tiếp. Giới thiệu bạn bè qua link riêng — bạn được giảm <b>15%</b>.</p>
-
-    <div class="value-note">💡 Khoá học <b>"Xây Nhân Hiệu"</b> dạy trực tiếp đúng công thức này, học phí <b>1.990.000đ</b> — App đóng gói lại toàn bộ công cụ đó thành AI, dùng ngay không cần học trước, chỉ từ <b>499K/tháng</b>. Đã là học viên khoá học? Nhắn Zalo trợ lý để nhận thêm ưu đãi riêng khi mua App.</div>
-
-    <div style="margin-top:44px;">
-      <div class="reg-steps">
-        <a href="#lp-signup-form-wrap" class="reg-step card" id="lp-scroll-signup"><span class="rsn">1</span><span class="rst">Tạo tài khoản</span></a>
-        <div class="reg-step card"><span class="rsn">2</span><span class="rst">Chuyển khoản mở gói 499K</span></div>
-        <div class="reg-step card"><span class="rsn">3</span><span class="rst">Làm Định Vị, bắt đầu ngay</span></div>
-      </div>
-
-      <div class="signup-card card" id="lp-signup-form-wrap">
-        <h3 style="font-size:16px;margin-bottom:18px;text-align:center;">Tạo tài khoản — lấy mã QR ngay</h3>
-        <label class="signup-label">Họ và tên *</label>
-        <input class="signup-input" id="lp-su-name" type="text" placeholder="Nguyễn Văn A">
-        <label class="signup-label">Email *</label>
-        <input class="signup-input" id="lp-su-email" type="email" placeholder="email@gmail.com">
-        <label class="signup-label">Mật khẩu (để đăng nhập lại app sau này) *</label>
-        <input class="signup-input" id="lp-su-pass" type="password" placeholder="Ít nhất 6 ký tự">
-        <div id="lp-signup-error" class="signup-error" hidden></div>
-        <button class="btn btn-gold btn-block" id="lp-su-submit" style="margin-top:16px;">Xác nhận thông tin — lấy mã QR →</button>
-        <div class="signup-hint">Đây là mã QR cho gói 1 tháng (499K) — muốn mua gói 6/12 tháng tiết kiệm hơn, nhắn Zalo trợ lý sau khi tạo tài khoản.</div>
-      </div>
-
-      <div class="signup-card card" id="lp-payment-wrap" hidden>
-        <div id="lp-payment-inner"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow">❓ Câu hỏi thường gặp</span><h2>Giải đáp thắc mắc</h2></div>
-    <div class="faq">
-      <details class="faqitem card" open><summary>Tôi không giỏi công nghệ thì có dùng được không?</summary><div class="a">Có. Giao diện Web App được tối giản hoá tối đa, dễ dùng trên cả điện thoại và máy tính — chỉ vài thao tác nhấp chuột là bạn đã có ngay kịch bản và định hướng kênh cho riêng mình.</div></details>
-      <details class="faqitem card"><summary>499K/tháng có bị gia hạn tự động hoặc trừ tiền ẩn không?</summary><div class="a">Tuyệt đối không. Bạn hoàn toàn chủ động gia hạn từng tháng theo nhu cầu — không tự trừ tiền định kỳ, mỗi lần chuyển khoản là mở đúng số ngày tương ứng. Muốn dùng tiếp thì chuyển khoản lại, không muốn thì tài khoản tự dừng khi hết hạn.</div></details>
-      <details class="faqitem card"><summary>Tôi chưa từng quay video/viết bài bao giờ, App có giúp tôi tự tin lộ diện không?</summary><div class="a">Có. Định Vị sẽ giúp bạn tìm ra phong cách phù hợp nhất với chính mình — nói chuyện nhẹ nhàng hay phân tích sắc bén — để bạn tự tin xuất hiện mà không cần đóng vai người khác.</div></details>
-      <details class="faqitem card"><summary>Tôi chưa biết mình muốn làm niche gì thì sao?</summary><div class="a">Không sao — Định Vị chính là bước giúp bạn tìm ra điều đó. Trả lời vài câu đầu là AI đã gợi ý được hướng, phần còn lại có thể hoàn thiện dần sau.</div></details>
-      <details class="faqitem card"><summary>App có tự đăng bài lên Facebook giúp tôi không?</summary><div class="a">App viết bài hoàn chỉnh và xếp lịch cho bạn — việc đăng bạn vẫn tự bấm (trừ Fanpage kết nối riêng có thể tự đăng theo giờ). Đẩy Bài & CTA Comment thì gợi ý đúng lúc để bạn tự tương tác.</div></details>
-    </div>
-  </div>
-</section>
-
-<section class="section section-alt">
-  <div class="wrap">
-    <div class="finalcta card">
-      <span class="eyebrow">🚀 Bắt đầu ngay hôm nay</span>
-      <h2 style="margin-top:16px;">Xây nhân hiệu<br>từ gốc rễ, không ngẫu hứng</h2>
-      <p>Chỉ 499K để bắt đầu — làm xong Định Vị ngay hôm nay và thấy content AI viết ra bám đúng giọng của bạn đến đâu.</p>
-      <a href="#dang-ky" class="btn btn-gold">Mua ngay — 499K →</a>
-    </div>
-  </div>
-</section>
-
-<footer>
-  © 2026 Lê Tú Quỳnh · Hệ Sinh Thái HIỂU — Hiểu Kênh
-  <div class="flinks"><a href="#">Hotline/Zalo hỗ trợ</a><a href="#">Điều khoản dịch vụ</a><a href="#">Chính sách bảo mật</a></div>
-</footer>
-
-<div class="stickybar"><div class="in"><div class="sp"><span class="lbl">Học phí khoá học <span class="was">1.990K</span></span><span class="now">Dùng App chỉ 499K</span></div><a href="#dang-ky" class="btn btn-gold">Mua ngay →</a></div></div>
+<div class="lp-sticky">
+  <a class="lp-cta" href="#dang-ky">Dùng App chỉ 499K →</a>
+</div>
 
 <script>
-// Đăng ký + thanh toán NGAY TẠI Landing Page (2026-09-16, cùng pattern chị Quỳnh đã chốt cho
-// tai-chinh/lp/) — gọi api/nh-lp-signup (server tạo tài khoản qua Admin API rồi trả về ref_code, vì
-// trang tĩnh này không có phiên đăng nhập để tự đọc profiles.ref_code qua RLS như luồng đăng ký
-// thường của app). Đường dẫn gọi API phải là "../api/..." (lùi 1 cấp từ lp/) — vercel.json chỉ
-// rewrite đúng "/nhan-hieu/api/*", gọi thẳng "/api/..." từ đây sẽ ra ngoài phạm vi rewrite khi chạy
-// qua domain proxy Cloudflare.
+// Đăng ký + thanh toán NGAY TẠI Landing Page (giữ nguyên logic cũ): gọi api/nh-lp-signup (server tạo tài khoản
+// qua Admin API rồi trả về ref_code), sinh QR 499K, rồi hỏi api/nh-lp-status tới khi tiền về.
+// Đường dẫn API phải là "../api/..." (lùi 1 cấp từ lp/) — vercel.json chỉ rewrite đúng "/nhan-hieu/api/*".
 (function(){
   const PAYMENT_BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
   const AMOUNT = 499000;
@@ -598,19 +352,18 @@
     const transferContent = `SEVQR ${refCode}`;
     const qrUrl = `https://img.vietqr.io/image/${PAYMENT_BANK.code}-${PAYMENT_BANK.account}-compact2.png?amount=${AMOUNT}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(PAYMENT_BANK.accountName)}`;
     document.getElementById('lp-payment-inner').innerHTML = `
-      <h3 style="font-size:16px;margin-bottom:18px;text-align:center;">Quét mã để chuyển khoản</h3>
       <div style="text-align:center;">
-        <img src="${qrUrl}" alt="Mã VietQR" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);margin:0 auto;">
+        <img src="${qrUrl}" alt="Mã VietQR VietinBank" style="max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line);margin:0 auto;">
       </div>
       <div style="margin-top:16px;">
-        <div class="pay-row"><span>Ngân hàng</span><b>VietinBank</b></div>
-        <div class="pay-row"><span>Số tài khoản</span><span style="display:flex;align-items:center;gap:8px;"><b>${PAYMENT_BANK.account}</b><span class="pay-copy" data-copy="${PAYMENT_BANK.account}">Copy</span></span></div>
-        <div class="pay-row"><span>Chủ tài khoản</span><b>${PAYMENT_BANK.accountName}</b></div>
-        <div class="pay-row"><span>Số tiền</span><span style="display:flex;align-items:center;gap:8px;"><b>${AMOUNT.toLocaleString('vi-VN')}đ</b><span class="pay-copy" data-copy="${AMOUNT}">Copy</span></span></div>
-        <div class="pay-row"><span>Nội dung CK (bắt buộc giữ nguyên)</span><span style="display:flex;align-items:center;gap:8px;"><b>${transferContent}</b><span class="pay-copy" data-copy="${transferContent}">Copy</span></span></div>
+        <div class="lp-pay-row"><b>Ngân hàng:</b> VietinBank</div>
+        <div class="lp-pay-row"><b>Số tài khoản:</b> ${PAYMENT_BANK.account} <span class="lp-pay-copy" data-copy="${PAYMENT_BANK.account}">Copy</span></div>
+        <div class="lp-pay-row"><b>Chủ tài khoản:</b> ${PAYMENT_BANK.accountName}</div>
+        <div class="lp-pay-row"><b>Số tiền:</b> ${AMOUNT.toLocaleString('vi-VN')}đ <span class="lp-pay-copy" data-copy="${AMOUNT}">Copy</span></div>
+        <div class="lp-pay-row"><b>Nội dung CK (giữ nguyên):</b> ${transferContent} <span class="lp-pay-copy" data-copy="${transferContent}">Copy</span></div>
       </div>
-      <div class="signup-hint">Chuyển đúng số tiền + giữ nguyên nội dung (bắt buộc có chữ SEVQR ở đầu) — hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận.</div>
-      <div class="pay-status" id="lp-pay-status">⏳ Đang chờ chuyển khoản…</div>
+      <div class="lp-shot-cap" style="margin-top:14px;">Chuyển đúng số tiền và giữ nguyên nội dung (bắt buộc có chữ SEVQR ở đầu). Hệ thống tự đối chiếu và mở khoá, không cần chờ ai xác nhận. Cứ giữ trang này mở.</div>
+      <div class="lp-pay-status" id="lp-pay-status">⏳ Đang chờ chuyển khoản…</div>
     `;
     wrap.querySelectorAll('[data-copy]').forEach(el=>{
       el.onclick = async ()=>{
@@ -631,25 +384,13 @@
           clearInterval(pollTimer);
           const statusEl = document.getElementById('lp-pay-status');
           if(statusEl){
-            statusEl.className = 'pay-status paid';
+            statusEl.className = 'lp-pay-status paid';
             statusEl.innerHTML = '✅ Đã thanh toán thành công! <a href="../index.html" style="color:var(--gold);font-weight:700;">Vào app ngay →</a>';
           }
         }
       } catch(e){}
     }, 4000);
   }
-
-  document.querySelectorAll('.copybtn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      const val = btn.getAttribute('data-copy');
-      try{
-        navigator.clipboard.writeText(val).then(function(){
-          const old = btn.textContent; btn.textContent = 'Đã chép ✓';
-          setTimeout(function(){ btn.textContent = old; }, 1500);
-        });
-      }catch(e){}
-    });
-  });
 })();
 </script>
 </body>
