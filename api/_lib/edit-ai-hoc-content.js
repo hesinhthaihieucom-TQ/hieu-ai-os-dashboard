@@ -96,12 +96,12 @@ const MODULES = [
     ,{ id: 'm1-9', flow: [["⬇️", "Tải TeamViewer"], ["🖥️", "Cài trên máy tính"], ["🔢", "Lấy ID và mật khẩu"], ["🤝", "Gửi cho người hỗ trợ"]], title: 'Cài TeamViewer để được hỗ trợ 1:1 (tuỳ chọn)', min: 5, video: '',
       goal: 'Máy tính của bạn có TeamViewer, để người hỗ trợ vào điều khiển giúp bạn khi bạn bị kẹt.',
       why: 'Có lúc cài đặt hoặc dựng video bị kẹt mà nói qua tin nhắn khó hiểu. Với TeamViewer, người hỗ trợ nhìn thẳng màn hình máy bạn và sửa giúp.',
-      steps: ['Lưu ý về hỗ trợ 1:1: miễn phí trong tháng 11/2026. Từ tháng 12/2026 trở đi, mỗi lần hỗ trợ 1:1 tính phí 499.000đ. Bạn không dùng 1:1 thì không cần cài bài này.',
+      steps: ['Lưu ý về hỗ trợ 1:1: chỉ một buổi duy nhất, không giới hạn thời gian trong buổi đó. Miễn phí trong tháng 11/2026. Từ tháng 12/2026 trở đi, buổi hỗ trợ 1:1 là 499.000đ. Bạn không dùng 1:1 thì không cần cài bài này.',
               'Trên MÁY TÍNH (cùng máy đang cài Claude), vào teamviewer.com/vi/download (tiếng Anh: teamviewer.com/en/download), tải bản cho Windows hoặc Mac và cài như phần mềm bình thường.',
               'Mở TeamViewer. Trên máy sẽ hiện "ID của bạn" (tiếng Anh: Your ID) và "Mật khẩu" (tiếng Anh: Password). Mac có thể hỏi cấp quyền Quay màn hình (Screen Recording) và Trợ năng (Accessibility): bấm mở Cài đặt hệ thống (System Settings) và bật cho TeamViewer.',
               'Nhắn ID và mật khẩu cho người hỗ trợ qua Zalo. Mật khẩu đổi sau mỗi lần mở lại TeamViewer, nên khi cần hỗ trợ hãy gửi mật khẩu đang hiện lúc đó.',
               'Khi người hỗ trợ kết nối, màn hình sẽ hiện thông báo cho bạn. Hỗ trợ xong, bấm đóng phiên kết nối hoặc tắt TeamViewer.'],
-      check: ['TeamViewer đã cài trên máy tính và hiện ID cùng Mật khẩu', 'Biết rằng hỗ trợ 1:1 miễn phí trong tháng 11, từ tháng 12 là 499.000đ'],
+      check: ['TeamViewer đã cài trên máy tính và hiện ID cùng Mật khẩu', 'Biết rằng hỗ trợ 1:1 chỉ một buổi, miễn phí trong tháng 11, từ tháng 12 là 499.000đ'],
       note: 'Chỉ gửi ID và mật khẩu cho người hỗ trợ của khoá, không gửi cho ai khác. Đóng TeamViewer khi không dùng để không ai kết nối được vào máy bạn.' }
   ]},
   { id: 'm2', title: 'Edit video từng bước', desc: 'Từ video thô tới video hoàn chỉnh, rồi làm đều mỗi ngày.', lessons: [
