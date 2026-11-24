@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Bộ công cụ 7 bước: Lập kênh Facebook để kiếm tiền từ nội dung</title>
+<meta name="description" content="Quà tặng miễn phí: hướng dẫn chi tiết 7 bước lập 1 nick/page Facebook bí mật, đăng đều mỗi ngày và đủ điều kiện kiếm tiền. Có hình minh hoạ từng bước, checklist tick được, bảng soi số mỗi tuần.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bộ công cụ 7 bước lập kênh Facebook kiếm tiền (tặng miễn phí)">
+<meta property="og:description" content="Hướng dẫn chi tiết có hình minh hoạ, checklist, bảng soi số mỗi tuần, danh sách điều cấm.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FFF7ED">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="theme-light.css?v=4">
+<style>
+/* Bộ công cụ 7 bước: dùng chung màu và font với ladipage Edit video AI, chỉ thêm khối bước + hình minh hoạ */
+.bc-progress{ position:sticky; top:8px; z-index:15; background:#fff; border:1px solid var(--line); border-radius:14px; padding:9px 14px; font-size:14px; font-weight:700; color:var(--gray); display:flex; align-items:center; gap:12px; box-shadow:0 8px 22px -16px rgba(234,88,12,.6); }
+.bc-bar{ flex:1; height:9px; background:#FFEDD5; border-radius:99px; overflow:hidden; }
+.bc-bar i{ display:block; height:100%; width:0; background:linear-gradient(90deg,#FB923C,#EA580C); transition:width .2s; }
+.bc-step{ background:#fff; border:1px solid var(--line); border-radius:22px; padding:22px 18px 20px; margin:22px 0; box-shadow:0 14px 34px -24px rgba(234,88,12,.7); }
+.bc-tag{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.bc-num{ flex:0 0 46px; height:46px; border-radius:14px; background:linear-gradient(180deg,#FB923C,#EA580C); color:#fff; font-weight:900; font-size:23px; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 20px -10px rgba(234,88,12,.8); }
+.bc-step h3{ font-size:21px; line-height:1.3; font-weight:900; color:var(--white); }
+.bc-why{ background:#FFF1E0; border:1px solid #FED7AA; border-radius:14px; padding:11px 14px; margin:10px 0 14px; font-size:15.5px; color:#7C2D12; line-height:1.6; }
+.bc-fig{ margin:14px 0 6px; background:#FFFBF5; border:1px solid #FED7AA; border-radius:18px; padding:8px; }
+.bc-fig svg{ display:block; width:100%; height:auto; }
+.bc-fig figcaption{ font-size:13.5px; color:var(--gray2); text-align:center; padding:4px 8px 6px; }
+.bc-step h4{ font-size:13.5px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gold); margin:18px 0 8px; font-weight:800; }
+.bc-step ol{ padding-left:0; list-style:none; counter-reset:s; }
+.bc-step ol > li{ counter-increment:s; position:relative; padding:9px 0 9px 42px; font-size:16.5px; color:var(--gray); line-height:1.65; border-bottom:1px dashed #FED7AA; }
+.bc-step ol > li:last-child{ border-bottom:none; }
+.bc-step ol > li::before{ content:counter(s); position:absolute; left:0; top:9px; width:28px; height:28px; border-radius:50%; background:#FFEDD5; color:#C2410C; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; }
+.bc-step ol > li b{ color:var(--white); }
+.bc-ticks{ list-style:none; padding:0; }
+.bc-ticks li{ position:relative; padding:9px 0 9px 36px; font-size:16.5px; color:var(--white); cursor:pointer; user-select:none; }
+.bc-ticks li::before{ content:""; position:absolute; left:2px; top:11px; width:22px; height:22px; border:2px solid #FB923C; border-radius:7px; background:#fff; }
+.bc-ticks li.on{ color:var(--gray2); text-decoration:line-through; }
+.bc-ticks li.on::before{ background:#16A34A; border-color:#16A34A; content:"✓"; color:#fff; font-weight:900; font-size:14px; line-height:18px; text-align:center; }
+.bc-tip{ border-left:4px solid #FB923C; background:#FFFBF5; border-radius:0 12px 12px 0; padding:10px 14px; margin:12px 0; font-size:15.5px; color:var(--gray); }
+.bc-warn{ border-left:4px solid #DC2626; background:#FEF2F2; border-radius:0 12px 12px 0; padding:10px 14px; margin:12px 0; font-size:15.5px; color:#7F1D1D; }
+.bc-step table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:15.5px; background:#fff; }
+.bc-step th,.bc-step td{ padding:9px 10px; border-bottom:1px solid #FFEDD5; text-align:left; vertical-align:top; color:var(--gray); }
+.bc-step th{ background:#FFEDD5; color:#7C2D12; font-size:13px; text-transform:uppercase; letter-spacing:.4px; }
+.bc-step td b{ color:var(--white); }
+.bc-three{ display:grid; gap:14px; margin-top:16px; }
+.bc-card{ background:#fff; border:1px solid var(--line); border-radius:20px; padding:18px 16px; box-shadow:0 14px 30px -24px rgba(234,88,12,.8); }
+.bc-card .ic{ width:46px; height:46px; border-radius:14px; background:#FFEDD5; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+.bc-card .ic svg{ width:26px; height:26px; color:#EA580C; }
+.bc-card h3{ font-size:19px; font-weight:900; color:var(--white); margin-bottom:4px; }
+.bc-card p{ font-size:15.5px; color:var(--gray); margin-bottom:14px; line-height:1.6; }
+.bc-card .lp-cta{ display:block; text-align:center; font-size:16px; padding:14px 16px; }
+.bc-zalo{ background:linear-gradient(180deg,#2B8AFF,#0068FF) !important; box-shadow:0 12px 26px -10px rgba(0,104,255,.7) !important; }
+.bc-fig{ cursor:zoom-in; }
+.bc-fig .bc-hint{ display:none; font-size:12.5px; color:var(--gold); text-align:center; font-weight:700; padding-bottom:4px; }
+@media (max-width:640px){ .bc-fig .bc-hint{ display:block; } }
+.bc-zoom{ position:fixed; inset:0; z-index:100; background:rgba(17,24,39,.88); display:none; flex-direction:column; }
+.bc-zoom.on{ display:flex; }
+.bc-zoom-bar{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; color:#fff; font-weight:700; font-size:14px; }
+.bc-zoom-bar button{ background:#fff; color:#111827; border:0; border-radius:999px; padding:8px 16px; font-weight:800; font-family:inherit; font-size:14px; }
+.bc-zoom-body{ flex:1; overflow:auto; padding:8px 12px 30px; -webkit-overflow-scrolling:touch; }
+.bc-zoom-body svg{ width:880px; max-width:none; height:auto; background:#FFFBF5; border-radius:16px; display:block; margin:0 auto; }
+@media (min-width:720px){ .bc-three{ grid-template-columns:1fr 1fr 1fr; } .wrap{ max-width:720px; } }
+</style>
+</head>
+<body>
+
+<header class="lp-header">
+  <div class="lp-brand"><span>Bộ công cụ<br>7 bước</span></div>
+  <a href="#ba-thu">3 thứ đi tiếp →</a>
+</header>
+
+<section class="lp-hero wrap">
+  <div class="eyebrow">🎁 Quà tặng miễn phí cho bạn</div>
+  <div class="lp-hero-pain"><span>Đăng bài mỗi ngày</span><span>mà Facebook vẫn im re.</span><span>Không biết mình sai ở đâu,</span><span>cũng không biết làm gì tiếp.</span></div>
+  <h1>Bộ công cụ <span class="gold">7 bước</span> lập kênh Facebook để kiếm tiền từ nội dung</h1>
+  <p class="sub">Hướng dẫn chi tiết từng bước, có hình minh hoạ và ô tick. Không cần giỏi công nghệ, không cần lộ mặt, không cần có sẵn người theo dõi.</p>
+  <ul class="lp-ticks">
+    <li>Làm theo đúng thứ tự là xong</li>
+    <li>Mỗi bước có checklist để tick</li>
+    <li>Đọc trong 15 phút, làm cả tuần</li>
+  </ul>
+  <div class="lp-cta-wrap">
+    <a class="lp-cta lp-cta-pulse" href="#buoc-1">Bắt đầu từ bước 1 →</a>
+    <div class="lp-cta-note">Miễn phí · Tick tới đâu, trang nhớ tới đó trên máy bạn</div>
+  </div>
+
+  <figure class="bc-fig" style="margin-top:26px;">
+    <svg viewBox="0 0 640 170" role="img" aria-label="Lộ trình 7 bước từ dọn nền đến những điều cấm">
+      <defs><linearGradient id="g0" x1="0" x2="1"><stop offset="0" stop-color="#FB923C"/><stop offset="1" stop-color="#EA580C"/></linearGradient></defs>
+      <line x1="48" y1="60" x2="592" y2="60" stroke="#FED7AA" stroke-width="6" stroke-linecap="round"/>
+      <g font-family="Be Vietnam Pro,sans-serif" text-anchor="middle">
+        <g><circle cx="48" cy="60" r="24" fill="url(#g0)"/><text x="48" y="68" font-size="22" font-weight="800" fill="#fff">1</text><text x="48" y="108" font-size="13" font-weight="700" fill="#111827">Dọn nền</text></g>
+        <g><circle cx="138" cy="60" r="24" fill="url(#g0)"/><text x="138" y="68" font-size="22" font-weight="800" fill="#fff">2</text><text x="138" y="108" font-size="13" font-weight="700" fill="#111827">Đăng đúng</text><text x="138" y="124" font-size="13" font-weight="700" fill="#111827">thứ trả tiền</text></g>
+        <g><circle cx="228" cy="60" r="24" fill="url(#g0)"/><text x="228" y="68" font-size="22" font-weight="800" fill="#fff">3</text><text x="228" y="108" font-size="13" font-weight="700" fill="#111827">Giữ chân</text><text x="228" y="124" font-size="13" font-weight="700" fill="#111827">người xem</text></g>
+        <g><circle cx="318" cy="60" r="24" fill="url(#g0)"/><text x="318" y="68" font-size="22" font-weight="800" fill="#fff">4</text><text x="318" y="108" font-size="13" font-weight="700" fill="#111827">Đăng nhiều,</text><text x="318" y="124" font-size="13" font-weight="700" fill="#111827">kiên trì</text></g>
+        <g><circle cx="408" cy="60" r="24" fill="url(#g0)"/><text x="408" y="68" font-size="22" font-weight="800" fill="#fff">5</text><text x="408" y="108" font-size="13" font-weight="700" fill="#111827">Tập người</text><text x="408" y="124" font-size="13" font-weight="700" fill="#111827">của riêng bạn</text></g>
+        <g><circle cx="498" cy="60" r="24" fill="url(#g0)"/><text x="498" y="68" font-size="22" font-weight="800" fill="#fff">6</text><text x="498" y="108" font-size="13" font-weight="700" fill="#111827">Soi số</text><text x="498" y="124" font-size="13" font-weight="700" fill="#111827">mỗi tuần</text></g>
+        <g><circle cx="588" cy="60" r="24" fill="#DC2626"/><text x="588" y="68" font-size="22" font-weight="800" fill="#fff">7</text><text x="588" y="108" font-size="13" font-weight="700" fill="#111827">Điều cấm</text></g>
+      </g>
+    </svg>
+    <figcaption>Lộ trình 7 bước. Làm đúng thứ tự, đừng nhảy cóc.</figcaption>
+  </figure>
+</section>
+
+<div class="wrap">
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Nghe có quen không?</div>
+    <h2 class="lp-h2 lp-h2-center">Đăng thì đăng được.<br><span class="gold">Chỗ khó là đăng đúng thứ Facebook trả tiền.</span></h2>
+    <div class="lp-h2-bar"></div>
+    <p class="lp-h2-sub center">Bên trái là cách nhiều người đang làm. Bên phải là cách bộ công cụ này chỉ bạn.</p>
+    <div class="lp-vs">
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Dồn hết sức làm video, mà video chỉ chiếm phần nhỏ thu nhập.</span></div><div class="lp-vs-yes"><i>✓</i><span>Biết <b>ảnh và chữ mới là mỏ vàng</b>, đăng đủ 7 dạng.</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Một tài khoản làm đủ thứ, Facebook không biết bạn là ai.</span></div><div class="lp-vs-yes"><i>✓</i><span><b>1 tài khoản = 1 ngách</b>, rõ ràng trong 2 giây.</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Xin like, copy một câu trả lời cho tất cả.</span></div><div class="lp-vs-yes"><i>✓</i><span>Giữ chân người xem, mỗi người <b>một câu trả lời khác nhau</b>.</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Đăng 1 tuần không thấy gì rồi bỏ cuộc.</span></div><div class="lp-vs-yes"><i>✓</i><span>Soi số mỗi tuần, <b>đánh giá sau đủ 28 ngày</b>.</span></div></div>
+    </div>
+    <div class="lp-callout" style="margin-top:22px;text-align:center;">Bạn không cần đăng nhiều nhất. Bạn cần <b>đăng đúng, đều, và không phạm điều cấm</b>.</div>
+  </section>
+
+  <div class="bc-progress" aria-live="polite"><span id="pct">0%</span><div class="bc-bar"><i id="bar"></i></div><span id="cnt">0 ô</span></div>
+
+  <!-- ===================== BƯỚC 1 ===================== -->
+  <article class="bc-step" id="buoc-1">
+    <div class="bc-tag"><div class="bc-num">1</div><h3>Dọn nền trước khi đăng</h3></div>
+    <div class="bc-why"><b>Vì sao:</b> nền sai thì đăng bao nhiêu cũng uổng. Dọn 1 lần cho đúng, sau này chỉ việc đăng.</div>
+
+    <figure class="bc-fig">
+      <svg viewBox="0 0 640 340" role="img" aria-label="Ví dụ trang Page rõ ngách trong 2 giây">
+        <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset="1" stop-color="#EA580C"/></linearGradient></defs>
+        <g font-family="Be Vietnam Pro,sans-serif">
+          <rect x="14" y="14" width="360" height="312" rx="20" fill="#fff" stroke="#FED7AA" stroke-width="2"/>
+          <rect x="26" y="26" width="336" height="106" rx="14" fill="url(#g1)"/>
+          <text x="194" y="76" font-size="20" font-weight="800" fill="#fff" text-anchor="middle">Mẹ Bỉm Khoẻ &amp; Đẹp</text>
+          <text x="194" y="102" font-size="14" fill="#FFF7ED" text-anchor="middle">Chăm sức khoẻ sau sinh mỗi ngày</text>
+          <circle cx="84" cy="140" r="36" fill="#fff"/><circle cx="84" cy="140" r="31" fill="#EA580C"/>
+          <text x="84" y="150" font-size="28" font-weight="800" fill="#fff" text-anchor="middle">M</text>
+          <text x="134" y="146" font-size="19" font-weight="800" fill="#111827">Mẹ Bỉm Khoẻ &amp; Đẹp</text>
+          <text x="134" y="166" font-size="13.5" fill="#6B7280">Sức khoẻ · Làm mẹ · 1 ngách duy nhất</text>
+          <rect x="34" y="196" width="150" height="40" rx="11" fill="#EA580C"/><text x="109" y="222" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">Nhắn tin</text>
+          <rect x="196" y="196" width="150" height="40" rx="11" fill="#FFF1E0" stroke="#FDBA74"/><text x="271" y="222" font-size="15" font-weight="700" fill="#C2410C" text-anchor="middle">Theo dõi</text>
+          <rect x="34" y="258" width="300" height="10" rx="5" fill="#F3F4F6"/><rect x="34" y="278" width="230" height="10" rx="5" fill="#F3F4F6"/><rect x="34" y="298" width="270" height="10" rx="5" fill="#F3F4F6"/>
+          <!-- callouts -->
+          <g stroke="#EA580C" stroke-width="2" fill="none"><path d="M362 80 H398"/><path d="M122 190 L122 196" opacity="0"/><path d="M346 216 H398"/><path d="M262 160 H398"/></g>
+          <circle cx="410" cy="80" r="14" fill="#EA580C"/><text x="410" y="86" font-size="15" font-weight="800" fill="#fff" text-anchor="middle">1</text>
+          <text x="432" y="76" font-size="14.5" font-weight="700" fill="#111827">Ảnh bìa + ảnh đại diện</text><text x="432" y="95" font-size="13.5" fill="#6B7280">nói rõ bạn làm gì</text>
+          <circle cx="410" cy="160" r="14" fill="#EA580C"/><text x="410" y="166" font-size="15" font-weight="800" fill="#fff" text-anchor="middle">2</text>
+          <text x="432" y="156" font-size="14.5" font-weight="700" fill="#111827">1 ngách duy nhất</text><text x="432" y="175" font-size="13.5" fill="#6B7280">không trộn nhiều chủ đề</text>
+          <circle cx="410" cy="216" r="14" fill="#EA580C"/><text x="410" y="222" font-size="15" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+          <text x="432" y="212" font-size="14.5" font-weight="700" fill="#111827">Nút bấm rõ ràng</text><text x="432" y="231" font-size="13.5" fill="#6B7280">người lạ biết bấm gì</text>
+          <rect x="398" y="262" width="228" height="52" rx="14" fill="#FFF1E0" stroke="#FDBA74"/>
+          <text x="512" y="285" font-size="14" font-weight="800" fill="#C2410C" text-anchor="middle">Người lạ nhìn 2 giây</text>
+          <text x="512" y="303" font-size="14" font-weight="800" fill="#C2410C" text-anchor="middle">phải hiểu bạn là ai</text>
+        </g>
+      </svg>
+      <figcaption>Ví dụ một Page "dọn nền" đúng: ảnh, tên, nút bấm cùng nói về 1 ngách.</figcaption>
+      <div class="bc-hint">Chạm vào hình để phóng to</div>
+    </figure>
+
+    <h4>Làm theo thứ tự</h4>
+    <ol>
+      <li><b>Chọn loại nền.</b> Chưa có gì: tạo <b>Page</b> mới. Đã có profile lớn: giữ nguyên, hoặc chơi cả hai (profile cho người quen, Page cho nội dung kiếm tiền).</li>
+      <li><b>Chọn đúng 1 ngách</b> và viết ra giấy: bạn giúp ai, giải quyết chuyện gì. Ví dụ "mẹ bỉm sau sinh", "dân văn phòng đau lưng". Chọn thứ bạn thật sự thích nói mỗi ngày.</li>
+      <li><b>Làm sạch bộ mặt:</b> ảnh đại diện, ảnh bìa, nút bấm (Nhắn tin, Gọi, Xem thêm) phải cho người lạ hiểu bạn làm gì trong 2 giây.</li>
+      <li><b>Bật chế độ chuyên nghiệp</b> (với profile) và bật thông báo trong mục <b>Kiếm tiền</b> để Facebook báo khi bạn đủ điều kiện.</li>
+      <li><b>Muốn hút người xem Mỹ, Anh, Úc, New Zealand, Canada?</b> Dùng Page rồi vào cài đặt <b>giới hạn quốc gia</b> cho Page đó.</li>
+      <li><b>Cài thanh toán và thuế ngay từ đầu.</b> Đừng để nước đến chân mới nhảy.</li>
+    </ol>
+    <div class="bc-warn"><b>1 tài khoản = 1 ngách.</b> KHÔNG trộn. Muốn làm ngách thứ hai thì lập thêm 1 page riêng.</div>
+
+    <h4>Tick khi xong</h4>
+    <ul class="bc-ticks">
+      <li>Đã chọn Page hoặc profile</li>
+      <li>Đã chốt 1 ngách, viết ra 1 câu "mình giúp ai, chuyện gì"</li>
+      <li>Ảnh đại diện, ảnh bìa, nút bấm đã nói rõ trong 2 giây</li>
+      <li>Đã bật chế độ chuyên nghiệp và thông báo Kiếm tiền</li>
+      <li>(Nếu nhắm thị trường nước ngoài) Đã giới hạn quốc gia</li>
+      <li>Đã cài thanh toán và thuế</li>
+    </ul>
+  </article>
+
+  <!-- ===================== BƯỚC 2 ===================== -->
+  <article class="bc-step" id="buoc-2">
+    <div class="bc-tag"><div class="bc-num">2</div><h3>Đăng đúng thứ Facebook trả tiền</h3></div>
+    <div class="bc-why"><b>Vì sao:</b> ảnh và chữ mới là mỏ vàng, Reels chỉ chiếm phần rất nhỏ thu nhập. Nhiều người dồn hết vào video nên làm rất mệt mà thu ít.</div>
+
+    <figure class="bc-fig">
+      <svg viewBox="0 0 640 420" role="img" aria-label="7 dạng bài và quy tắc album">
+        <g font-family="Be Vietnam Pro,sans-serif" text-anchor="middle">
+          <!-- hàng 1 -->
+          <g><rect x="12" y="12" width="144" height="104" rx="14" fill="#fff" stroke="#FED7AA"/><rect x="24" y="24" width="120" height="60" rx="10" fill="#EA580C"/><text x="84" y="64" font-size="26" font-weight="900" fill="#fff">Aa</text><text x="84" y="104" font-size="13.5" font-weight="700" fill="#111827">Text nền màu</text></g>
+          <g><rect x="170" y="12" width="144" height="104" rx="14" fill="#fff" stroke="#FED7AA"/><rect x="184" y="28" width="116" height="9" rx="4" fill="#FB923C"/><rect x="184" y="46" width="90" height="9" rx="4" fill="#E5E7EB"/><rect x="184" y="64" width="104" height="9" rx="4" fill="#E5E7EB"/><text x="242" y="104" font-size="13.5" font-weight="700" fill="#111827">Text ngắn</text></g>
+          <g><rect x="328" y="12" width="144" height="104" rx="14" fill="#fff" stroke="#FED7AA"/><g fill="#E5E7EB"><rect x="342" y="24" width="116" height="7" rx="3"/><rect x="342" y="37" width="116" height="7" rx="3"/><rect x="342" y="50" width="100" height="7" rx="3"/><rect x="342" y="63" width="116" height="7" rx="3"/><rect x="342" y="76" width="70" height="7" rx="3"/></g><text x="400" y="104" font-size="13.5" font-weight="700" fill="#111827">Text dài</text></g>
+          <g><rect x="486" y="12" width="144" height="104" rx="14" fill="#fff" stroke="#FED7AA"/><rect x="498" y="24" width="120" height="60" rx="10" fill="#FFEDD5"/><circle cx="522" cy="42" r="7" fill="#FB923C"/><path d="M498 84 L530 56 L552 74 L574 50 L618 84 Z" fill="#EA580C"/><text x="558" y="104" font-size="13.5" font-weight="700" fill="#111827">Ảnh bìa</text></g>
+          <!-- hàng 2 -->
+          <g><rect x="12" y="130" width="144" height="104" rx="14" fill="#fff" stroke="#FED7AA"/><rect x="28" y="168" width="18" height="40" rx="4" fill="#FDBA74"/><rect x="54" y="152" width="18" height="56" rx="4" fill="#FB923C"/><rect x="80" y="160" width="18" height="48" rx="4" fill="#EA580C"/><rect x="106" y="144" width="18" height="64" rx="4" fill="#C2410C"/><text x="84" y="226" font-size="13.5" font-weight="700" fill="#111827">Infographic</text></g>
+          <g><rect x="170" y="130" width="144" height="104" rx="14" fill="#fff" stroke="#FED7AA"/><rect x="206" y="146" width="72" height="54" rx="8" fill="#FED7AA"/><rect x="198" y="152" width="72" height="54" rx="8" fill="#FDBA74"/><rect x="190" y="158" width="72" height="54" rx="8" fill="#EA580C"/><text x="242" y="226" font-size="13.5" font-weight="700" fill="#111827">Album</text></g>
+          <g><rect x="328" y="130" width="144" height="104" rx="14" fill="#fff" stroke="#FED7AA"/><rect x="378" y="142" width="44" height="66" rx="9" fill="#111827"/><path d="M394 164 L408 175 L394 186 Z" fill="#fff"/><text x="400" y="226" font-size="13.5" font-weight="700" fill="#111827">Reels</text></g>
+          <g><rect x="486" y="130" width="144" height="104" rx="14" fill="#FFF1E0" stroke="#FDBA74" stroke-dasharray="5 4"/><text x="558" y="176" font-size="34" font-weight="900" fill="#EA580C">7</text><text x="558" y="200" font-size="13.5" font-weight="800" fill="#C2410C">dạng, xoay vòng</text><text x="558" y="218" font-size="13.5" font-weight="800" fill="#C2410C">trong tuần</text></g>
+        </g>
+        <!-- quy tắc album -->
+        <g font-family="Be Vietnam Pro,sans-serif">
+          <rect x="12" y="252" width="618" height="156" rx="16" fill="#fff" stroke="#FED7AA"/>
+          <text x="28" y="280" font-size="15" font-weight="800" fill="#111827">Quy tắc album: chỉ 1 loại</text>
+          <g><rect x="28" y="296" width="180" height="96" rx="12" fill="#F0FDF4" stroke="#86EFAC"/><rect x="40" y="308" width="36" height="36" rx="6" fill="#FDBA74"/><rect x="82" y="308" width="36" height="36" rx="6" fill="#FB923C"/><rect x="124" y="308" width="36" height="36" rx="6" fill="#EA580C"/><rect x="166" y="308" width="30" height="36" rx="6" fill="#C2410C"/><text x="118" y="372" font-size="13.5" font-weight="700" fill="#166534" text-anchor="middle">✓ Toàn ảnh</text></g>
+          <g><rect x="230" y="296" width="180" height="96" rx="12" fill="#F0FDF4" stroke="#86EFAC"/><g fill="#111827"><rect x="244" y="306" width="30" height="44" rx="6"/><rect x="282" y="306" width="30" height="44" rx="6"/><rect x="320" y="306" width="30" height="44" rx="6"/><rect x="358" y="306" width="30" height="44" rx="6"/></g><text x="320" y="372" font-size="13.5" font-weight="700" fill="#166534" text-anchor="middle">✓ Toàn Reels</text></g>
+          <g><rect x="432" y="296" width="186" height="96" rx="12" fill="#FEF2F2" stroke="#FCA5A5"/><rect x="446" y="308" width="34" height="36" rx="6" fill="#FDBA74"/><rect x="486" y="306" width="30" height="44" rx="6" fill="#111827"/><rect x="522" y="308" width="34" height="36" rx="6" fill="#FB923C"/><rect x="562" y="306" width="30" height="44" rx="6" fill="#111827"/><text x="525" y="372" font-size="13.5" font-weight="700" fill="#B91C1C" text-anchor="middle">✕ Trộn ảnh + Reels</text></g>
+        </g>
+      </svg>
+      <figcaption>7 dạng bài cần xoay vòng, và quy tắc của album.</figcaption>
+      <div class="bc-hint">Chạm vào hình để phóng to</div>
+    </figure>
+
+    <h4>Gợi ý cách làm nhanh từng dạng</h4>
+    <table>
+      <tr><th>Dạng</th><th>Cách làm nhanh</th></tr>
+      <tr><td><b>Text nền màu</b></td><td>1 câu mạnh, chọn nền màu có sẵn của Facebook</td></tr>
+      <tr><td><b>Text ngắn</b></td><td>3 đến 5 dòng, một ý duy nhất</td></tr>
+      <tr><td><b>Text dài</b></td><td>Kể chuyện hoặc liệt kê, dùng "Xem thêm"</td></tr>
+      <tr><td><b>Ảnh bìa</b></td><td>1 ảnh rõ, chữ to, ít hơn 8 chữ</td></tr>
+      <tr><td><b>Infographic</b></td><td>1 ảnh tóm tắt mẹo hoặc các bước</td></tr>
+      <tr><td><b>Album</b></td><td>Nhiều ảnh cùng 1 chủ đề, hoặc nhiều Reels cùng chủ đề</td></tr>
+      <tr><td><b>Reels</b></td><td>Video dọc ngắn, đơn giản là được</td></tr>
+    </table>
+    <div class="bc-warn"><b>Album: toàn ảnh HOẶC toàn Reels.</b> Tuyệt đối không trộn ảnh với Reels trong 1 album.</div>
+    <div class="bc-tip">Vẫn cần <b>tối thiểu 3 Reels trong 90 ngày</b> để đủ điều kiện. Làm đơn giản thôi, miễn có. Mỗi tuần 1 Reels là dư.</div>
+
+    <h4>Tick khi xong</h4>
+    <ul class="bc-ticks">
+      <li>Đã đăng thử đủ 7 dạng bài ít nhất 1 lần</li>
+      <li>Album nào cũng chỉ có 1 loại (ảnh hoặc Reels)</li>
+      <li>Đã đăng Reels thứ 1, thứ 2, thứ 3</li>
+    </ul>
+  </article>
+
+  <!-- ===================== BƯỚC 3 ===================== -->
+  <article class="bc-step" id="buoc-3">
+    <div class="bc-tag"><div class="bc-num">3</div><h3>Giữ chân người xem, không chỉ xin like</h3></div>
+    <div class="bc-why"><b>Vì sao:</b> Facebook trả tiền cho <b>thời gian người ta ở lại bài của bạn</b>, không phải cho số like.</div>
+
+    <figure class="bc-fig">
+      <svg viewBox="0 0 640 330" role="img" aria-label="So sánh câu mở đầu yếu và mạnh">
+        <g font-family="Be Vietnam Pro,sans-serif">
+          <rect x="12" y="12" width="300" height="306" rx="18" fill="#fff" stroke="#E5E7EB" stroke-width="2"/>
+          <rect x="12" y="12" width="300" height="38" rx="18" fill="#F3F4F6"/><text x="162" y="37" font-size="14.5" font-weight="800" fill="#6B7280" text-anchor="middle">Mở bài YẾU</text>
+          <circle cx="44" cy="82" r="16" fill="#D1D5DB"/><rect x="68" y="72" width="100" height="9" rx="4" fill="#E5E7EB"/><rect x="68" y="88" width="64" height="8" rx="4" fill="#F3F4F6"/>
+          <text x="28" y="132" font-size="15.5" fill="#6B7280">Xin chào các bạn, hôm nay</text>
+          <text x="28" y="154" font-size="15.5" fill="#6B7280">mình xin chia sẻ một chút</text>
+          <text x="28" y="176" font-size="15.5" fill="#6B7280">về chủ đề sức khoẻ…</text>
+          <rect x="28" y="204" width="268" height="9" rx="4" fill="#F3F4F6"/><rect x="28" y="222" width="220" height="9" rx="4" fill="#F3F4F6"/>
+          <circle cx="162" cy="276" r="24" fill="#FEE2E2"/><text x="162" y="285" font-size="26" font-weight="900" fill="#DC2626" text-anchor="middle">✕</text>
+          <text x="162" y="312" font-size="12.5" fill="#B91C1C" text-anchor="middle" font-weight="700">Người ta lướt qua trong 0,5 giây</text>
+
+          <rect x="328" y="12" width="300" height="306" rx="18" fill="#fff" stroke="#FB923C" stroke-width="2.5"/>
+          <rect x="328" y="12" width="300" height="38" rx="18" fill="#FFEDD5"/><text x="478" y="37" font-size="14.5" font-weight="800" fill="#C2410C" text-anchor="middle">Mở bài MẠNH</text>
+          <circle cx="360" cy="82" r="16" fill="#EA580C"/><rect x="384" y="72" width="100" height="9" rx="4" fill="#FED7AA"/><rect x="384" y="88" width="64" height="8" rx="4" fill="#FFEDD5"/>
+          <rect x="340" y="112" width="276" height="62" rx="10" fill="#FFF1E0"/>
+          <text x="352" y="136" font-size="16" font-weight="800" fill="#111827">Mình từng đau lưng 3 năm.</text>
+          <text x="352" y="159" font-size="16" font-weight="800" fill="#EA580C">Chỉ đổi đúng 1 thói quen này:</text>
+          <rect x="344" y="190" width="268" height="9" rx="4" fill="#E5E7EB"/><rect x="344" y="208" width="200" height="9" rx="4" fill="#E5E7EB"/>
+          <rect x="344" y="228" width="92" height="26" rx="8" fill="#EA580C"/><text x="390" y="246" font-size="13.5" font-weight="700" fill="#fff" text-anchor="middle">Xem thêm</text>
+          <circle cx="478" cy="288" r="12" fill="#DCFCE7"/><text x="478" y="294" font-size="15" font-weight="900" fill="#16A34A" text-anchor="middle">✓</text>
+          <text x="500" y="293" font-size="12.5" fill="#166534" font-weight="700">Muốn bấm đọc tiếp</text>
+        </g>
+      </svg>
+      <figcaption>Cùng một nội dung, khác ở 2 dòng đầu: người ta dừng lại hay lướt qua.</figcaption>
+      <div class="bc-hint">Chạm vào hình để phóng to</div>
+    </figure>
+
+    <h4>5 việc làm cho mỗi bài</h4>
+    <ol>
+      <li><b>Câu mở đầu đấm thẳng vào mắt.</b> Bạn chỉ có nửa giây. Mở bằng nỗi đau, con số hoặc câu hỏi, đừng mở bằng lời chào.</li>
+      <li><b>Dùng định dạng giữ người đọc:</b> carousel (nhiều ảnh vuốt ngang), text dài, nút "Xem thêm", bình luận chuỗi đánh số (1, 2, 3...).</li>
+      <li><b>Cài từ khoá ngách</b> vào chữ trong bài và chữ trên ảnh để Facebook biết bài thuộc ngách nào.</li>
+      <li><b>Trả lời mỗi người một câu KHÁC NHAU.</b> Copy một câu cho tất cả là tự bóp reach của mình.</li>
+      <li><b>Không ghi số tiền</b> trong bài hay trên ảnh.</li>
+    </ol>
+    <div class="bc-tip"><b>Mẫu câu mở đầu dùng được ngay:</b> "Mình từng [nỗi đau]. Sau [thời gian], mình chỉ đổi đúng 1 điều này:" rồi mới vào chi tiết.</div>
+
+    <h4>Tick khi xong</h4>
+    <ul class="bc-ticks">
+      <li>Câu đầu mỗi bài đọc lên là muốn bấm "Xem thêm"</li>
+      <li>Có từ khoá ngách trong chữ và trên ảnh</li>
+      <li>Mỗi bình luận trả lời 1 câu riêng</li>
+      <li>Không có con số tiền nào trong bài</li>
+    </ul>
+  </article>
+
+  <!-- ===================== BƯỚC 4 ===================== -->
+  <article class="bc-step" id="buoc-4">
+    <div class="bc-tag"><div class="bc-num">4</div><h3>Đăng nhiều, kiên trì</h3></div>
+    <div class="bc-why"><b>Vì sao:</b> Facebook cần thời gian để hiểu kênh bạn. Đăng đều thắng đăng dồn.</div>
+
+    <figure class="bc-fig">
+      <svg viewBox="0 0 640 320" role="img" aria-label="Nhịp tăng số bài mỗi ngày theo tuần, không vượt 25 bài">
+        <g font-family="Be Vietnam Pro,sans-serif">
+          <rect x="12" y="12" width="616" height="296" rx="16" fill="#fff" stroke="#FED7AA"/>
+          <text x="30" y="40" font-size="15" font-weight="800" fill="#111827">Số bài mỗi ngày, tăng dần theo tuần</text>
+          <line x1="50" y1="262" x2="610" y2="262" stroke="#E5E7EB" stroke-width="2"/>
+          <!-- trần 25 -->
+          <line x1="50" y1="78" x2="610" y2="78" stroke="#DC2626" stroke-width="2" stroke-dasharray="7 6"/>
+          <text x="606" y="70" font-size="12.5" font-weight="800" fill="#DC2626" text-anchor="end">TRẦN 25 bài/ngày. Đừng vượt.</text>
+          <g text-anchor="middle" font-size="13" font-weight="700">
+            <rect x="76" y="212" width="62" height="50" rx="8" fill="#FDBA74"/><text x="107" y="204" fill="#C2410C">3 đến 5</text><text x="107" y="282" fill="#6B7280">Tuần 1</text>
+            <rect x="170" y="196" width="62" height="66" rx="8" fill="#FDBA74"/><text x="201" y="188" fill="#C2410C">5 đến 6</text><text x="201" y="282" fill="#6B7280">Tuần 2</text>
+            <rect x="264" y="172" width="62" height="90" rx="8" fill="#FB923C"/><text x="295" y="164" fill="#C2410C">8</text><text x="295" y="282" fill="#6B7280">Tuần 3</text>
+            <rect x="358" y="146" width="62" height="116" rx="8" fill="#F97316"/><text x="389" y="138" fill="#C2410C">10 đến 12</text><text x="389" y="282" fill="#6B7280">Tuần 4</text>
+            <rect x="452" y="116" width="62" height="146" rx="8" fill="#EA580C"/><text x="483" y="108" fill="#C2410C">15</text><text x="483" y="282" fill="#6B7280">Tuần 5</text>
+          </g>
+          <g><rect x="536" y="150" width="82" height="76" rx="12" fill="#FFF1E0" stroke="#FDBA74"/><text x="577" y="176" font-size="12.5" font-weight="800" fill="#C2410C" text-anchor="middle">Giãn bài,</text><text x="577" y="194" font-size="12.5" font-weight="800" fill="#C2410C" text-anchor="middle">không nhồi</text><text x="577" y="212" font-size="12.5" font-weight="800" fill="#C2410C" text-anchor="middle">1 giờ</text></g>
+        </g>
+      </svg>
+      <figcaption>Tăng dần từng tuần, giãn đều trong ngày. Đừng chạm trần 25 bài.</figcaption>
+      <div class="bc-hint">Chạm vào hình để phóng to</div>
+    </figure>
+
+    <h4>Làm theo thứ tự</h4>
+    <ol>
+      <li><b>Giãn bài ra.</b> Đừng nhồi nhiều bài trong 1 giờ. Cách nhau ít nhất 1 đến 2 giờ.</li>
+      <li><b>Lên lịch cả tuần miễn phí</b> bằng Meta Business Suite: chọn Lên lịch bài viết, chọn ngày giờ, nhớ lên lịch kèm luôn bình luận.</li>
+      <li><b>Săn ý tưởng đã thắng:</b> tìm bài có ít nhất 100 lượt chia sẻ, tốt nhất 1.000 trở lên (gõ thử "K shares" để lọc). Lưu 10 bài mỗi tuần.</li>
+      <li><b>Copy MÔ HÌNH, không copy BÀI.</b> Giữ cấu trúc đã thắng, nhưng đổi hook, ý chính, ví dụ, bố cục và định dạng.</li>
+      <li><b>Bài nào của mình thắng</b>, tuần sau làm lại phiên bản mới của nó.</li>
+    </ol>
+
+    <h4>Tick khi xong</h4>
+    <ul class="bc-ticks">
+      <li>Đã lên lịch đủ 7 ngày tới bằng Meta Business Suite</li>
+      <li>Đã lưu 10 bài mẫu thắng (100+ chia sẻ)</li>
+      <li>Mỗi bài mẫu đã đổi hook, ý, ví dụ và bố cục</li>
+    </ul>
+  </article>
+
+  <!-- ===================== BƯỚC 5 ===================== -->
+  <article class="bc-step" id="buoc-5">
+    <div class="bc-tag"><div class="bc-num">5</div><h3>Xây tập người theo dõi của riêng bạn</h3></div>
+    <div class="bc-why"><b>Vì sao:</b> reach có thể chết sau một đêm. Danh sách của bạn thì không.</div>
+
+    <figure class="bc-fig">
+      <svg viewBox="0 0 640 320" role="img" aria-label="Reach Facebook có thể chết sau một đêm, danh sách riêng thì không">
+        <g font-family="Be Vietnam Pro,sans-serif" text-anchor="middle">
+          <rect x="12" y="12" width="290" height="296" rx="18" fill="#fff" stroke="#E5E7EB" stroke-width="2"/>
+          <text x="157" y="42" font-size="15" font-weight="800" fill="#6B7280">Reach trên Facebook</text>
+          <g opacity=".85"><circle cx="110" cy="130" r="42" fill="#E5E7EB"/><circle cx="160" cy="112" r="52" fill="#E5E7EB"/><circle cx="212" cy="134" r="40" fill="#E5E7EB"/><rect x="92" y="130" width="140" height="44" fill="#E5E7EB"/></g>
+          <path d="M168 120 L146 160 L164 160 L150 198 L192 148 L172 148 L186 120 Z" fill="#F59E0B"/>
+          <text x="157" y="232" font-size="14" font-weight="800" fill="#DC2626">Có thể tắt sau 1 đêm</text>
+          <text x="157" y="254" font-size="13" fill="#6B7280">Bạn không điều khiển được</text>
+          <text x="157" y="276" font-size="13" fill="#6B7280">thuật toán</text>
+
+          <rect x="338" y="12" width="290" height="296" rx="18" fill="#fff" stroke="#FB923C" stroke-width="2.5"/>
+          <text x="483" y="42" font-size="15" font-weight="800" fill="#C2410C">Danh sách của riêng bạn</text>
+          <g font-size="14" font-weight="700">
+            <rect x="358" y="62" width="122" height="46" rx="12" fill="#FFF1E0" stroke="#FDBA74"/><text x="419" y="91" fill="#9A3412">Group</text>
+            <rect x="494" y="62" width="122" height="46" rx="12" fill="#FFF1E0" stroke="#FDBA74"/><text x="555" y="91" fill="#9A3412">Zalo / WhatsApp</text>
+            <rect x="358" y="120" width="122" height="46" rx="12" fill="#FFF1E0" stroke="#FDBA74"/><text x="419" y="149" fill="#9A3412">Email</text>
+            <rect x="494" y="120" width="122" height="46" rx="12" fill="#FFF1E0" stroke="#FDBA74"/><text x="555" y="149" fill="#9A3412">Page ngách 2</text>
+          </g>
+          <rect x="358" y="182" width="258" height="46" rx="12" fill="#EA580C"/><text x="487" y="211" font-size="15" font-weight="800" fill="#fff">Bài mới → báo thẳng cho họ</text>
+          <text x="483" y="256" font-size="14" font-weight="800" fill="#16A34A">Không ai tắt được</text>
+          <text x="483" y="278" font-size="13" fill="#6B7280">Của bạn, mang đi đâu cũng được</text>
+        </g>
+      </svg>
+      <figcaption>Đừng đặt cược cả đời vào 1 tài khoản. Có danh sách riêng là có chỗ dựa.</figcaption>
+      <div class="bc-hint">Chạm vào hình để phóng to</div>
+    </figure>
+
+    <h4>Làm theo thứ tự</h4>
+    <ol>
+      <li><b>Chia sẻ bài hữu ích</b> vào các group công khai cùng ngách (đọc luật group trước khi đăng).</li>
+      <li><b>Bấm "Mời tất cả"</b> những ai đã like bài để họ theo dõi Page.</li>
+      <li><b>Làm hết nhiệm vụ tuần</b> trong Bảng điều khiển chuyên nghiệp.</li>
+      <li><b>Xây kênh của riêng bạn:</b> group Facebook, nhóm Zalo hoặc WhatsApp, danh sách email.</li>
+      <li><b>Chạy thêm 1 page ngách khác.</b> Đừng đặt cược cả đời vào 1 tài khoản.</li>
+    </ol>
+
+    <h4>Tick khi xong</h4>
+    <ul class="bc-ticks">
+      <li>Đã chia sẻ bài vào ít nhất 3 group đúng ngách</li>
+      <li>Đã mời những người like bài theo dõi Page</li>
+      <li>Đã tạo 1 nhóm Zalo hoặc group của riêng mình</li>
+      <li>Đã nghĩ ra ngách cho page thứ hai</li>
+    </ul>
+  </article>
+
+  <!-- ===================== BƯỚC 6 ===================== -->
+  <article class="bc-step" id="buoc-6">
+    <div class="bc-tag"><div class="bc-num">6</div><h3>Soi số mỗi tuần, đừng đoán mò</h3></div>
+    <div class="bc-why"><b>Vì sao:</b> Facebook chỉ thẳng cho bạn biết còn thiếu gì. Mở ra xem đúng 1 lần mỗi tuần là đủ.</div>
+
+    <figure class="bc-fig">
+      <svg viewBox="0 0 640 360" role="img" aria-label="Màn hình tiêu chí kiếm tiền với các thanh tiến độ">
+        <g font-family="Be Vietnam Pro,sans-serif">
+          <rect x="12" y="12" width="616" height="336" rx="18" fill="#fff" stroke="#FED7AA" stroke-width="2"/>
+          <rect x="12" y="12" width="616" height="48" rx="18" fill="#FFEDD5"/>
+          <text x="30" y="42" font-size="14" font-weight="800" fill="#7C2D12">Bảng điều khiển chuyên nghiệp  ›  Kiếm tiền  ›  Tiêu chí</text>
+          <g font-size="14" font-weight="700" fill="#111827">
+            <text x="30" y="96">Page/profile từ 30 ngày tuổi</text><text x="610" y="96" text-anchor="end" fill="#16A34A">Đạt ✓</text>
+            <rect x="30" y="106" width="580" height="14" rx="7" fill="#F3F4F6"/><rect x="30" y="106" width="580" height="14" rx="7" fill="#22C55E"/>
+            <text x="30" y="156">3 Reels trong 90 ngày gần nhất</text><text x="610" y="156" text-anchor="end" fill="#C2410C">2 / 3</text>
+            <rect x="30" y="166" width="580" height="14" rx="7" fill="#F3F4F6"/><rect x="30" y="166" width="387" height="14" rx="7" fill="#FB923C"/>
+            <text x="30" y="216">10.000 người theo dõi</text><text x="610" y="216" text-anchor="end" fill="#C2410C">4.800 / 10.000</text>
+            <rect x="30" y="226" width="580" height="14" rx="7" fill="#F3F4F6"/><rect x="30" y="226" width="278" height="14" rx="7" fill="#FB923C"/>
+            <text x="30" y="276">150.000 lượt xem riêng biệt trong 28 ngày</text><text x="610" y="276" text-anchor="end" fill="#C2410C">46.000 / 150.000</text>
+            <rect x="30" y="286" width="580" height="14" rx="7" fill="#F3F4F6"/><rect x="30" y="286" width="178" height="14" rx="7" fill="#EA580C"/>
+          </g>
+          <text x="320" y="334" font-size="12.5" fill="#6B7280" text-anchor="middle">Số trên hình chỉ là ví dụ minh hoạ. Hãy xem màn hình của chính bạn.</text>
+        </g>
+      </svg>
+      <figcaption>Màn hình tiêu chí cho bạn thấy ngay còn thiếu bao nhiêu.</figcaption>
+      <div class="bc-hint">Chạm vào hình để phóng to</div>
+    </figure>
+
+    <h4>Mở ở đâu</h4>
+    <p style="color:var(--gray);font-size:16.5px;">Bảng điều khiển chuyên nghiệp → <b>Kiếm tiền</b> → màn hình <b>tiêu chí</b>.</p>
+
+    <h4>Bảng điều kiện</h4>
+    <table>
+      <tr><th>Tiêu chí</th><th>Mức cần</th></tr>
+      <tr><td><b>Độ tuổi, quốc gia</b></td><td>Từ 18 tuổi, ở quốc gia đủ điều kiện</td></tr>
+      <tr><td><b>Tuổi tài khoản</b></td><td>Page/profile ít nhất 30 ngày tuổi</td></tr>
+      <tr><td><b>Reels</b></td><td>3 Reels trong 90 ngày gần nhất</td></tr>
+      <tr><td><b>Người theo dõi</b></td><td>10.000</td></tr>
+      <tr><td><b>Lượt xem</b></td><td>150.000 lượt xem riêng biệt trong 28 ngày</td></tr>
+    </table>
+    <div class="bc-tip">Tiêu chí có thể khác theo từng tài khoản. Hãy xem màn hình của chính bạn.</div>
+
+    <h4>Việc làm mỗi tuần</h4>
+    <ol>
+      <li>Lọc <b>90 ngày qua</b> theo tương tác và thu nhập.</li>
+      <li>Ghi lại <b>top 5 bài thắng</b>, tuần sau nhân bản đúng dạng đó.</li>
+      <li>Chỉ đánh giá sau <b>đủ 28 ngày</b>, không phải sau 3 hôm.</li>
+    </ol>
+    <div class="bc-tip"><b>28 ngày đăng đều thắng mọi sự chờ may mắn.</b></div>
+
+    <h4>Tick khi xong</h4>
+    <ul class="bc-ticks">
+      <li>Đã mở màn hình tiêu chí và chụp lại để so sánh tuần sau</li>
+      <li>Đã ghi top 5 bài thắng 90 ngày qua</li>
+      <li>Đã đặt lịch nhắc "soi số" mỗi tuần</li>
+    </ul>
+  </article>
+
+  <!-- ===================== BƯỚC 7 ===================== -->
+  <article class="bc-step" id="buoc-7">
+    <div class="bc-tag"><div class="bc-num" style="background:linear-gradient(180deg,#EF4444,#B91C1C)">7</div><h3>Những điều cấm</h3></div>
+    <div class="bc-why" style="background:#FEF2F2;border-color:#FCA5A5;color:#7F1D1D"><b>Vì sao:</b> làm là mất reach, mất kiếm tiền. Đọc kỹ, dán lên bàn làm việc.</div>
+
+    <figure class="bc-fig">
+      <svg viewBox="0 0 640 330" role="img" aria-label="8 điều cấm khi làm kênh Facebook">
+        <g font-family="Be Vietnam Pro,sans-serif" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">
+          <g id="no"><g transform="translate(86,70)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><rect x="-18" y="-20" width="26" height="32" rx="4" fill="#9CA3AF"/><rect x="-8" y="-12" width="26" height="32" rx="4" fill="#6B7280"/><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="86" y="136">Copy bài</text><text x="86" y="152" font-weight="500" fill="#6B7280">người khác</text></g>
+          <g transform="translate(246,70)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><path d="M0 14 C-26 -4 -16 -26 0 -12 C16 -26 26 -4 0 14 Z" fill="#9CA3AF"/><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="246" y="136">Mua like, share,</text><text x="246" y="152" font-weight="500" fill="#6B7280">bình luận, view</text>
+          <g transform="translate(406,70)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><rect x="-22" y="-18" width="44" height="30" rx="8" fill="#9CA3AF"/><path d="M-6 12 L-12 24 L6 12 Z" fill="#9CA3AF"/><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="406" y="136">Câu tương tác rẻ</text><text x="406" y="152" font-weight="500" fill="#6B7280">"Like nếu đồng ý"</text>
+          <g transform="translate(566,70)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><circle cx="-8" cy="12" r="9" fill="#9CA3AF"/><rect x="-1" y="-22" width="5" height="34" fill="#9CA3AF"/><path d="M4 -22 L20 -14 L4 -8 Z" fill="#9CA3AF"/><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="566" y="136">Nhạc bản quyền,</text><text x="566" y="152" font-weight="500" fill="#6B7280">nhạc trend</text>
+          <g transform="translate(86,222)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><rect x="-22" y="-14" width="44" height="28" rx="6" fill="#9CA3AF"/><text y="7" font-size="14" font-weight="900" fill="#fff">BRAND</text><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="86" y="288">Nhắc tên</text><text x="86" y="304" font-weight="500" fill="#6B7280">thương hiệu lớn</text>
+          <g transform="translate(246,222)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><text y="12" font-size="38" font-weight="900" fill="#9CA3AF">?!</text><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="246" y="288">Tin giả,</text><text x="246" y="304" font-weight="500" fill="#6B7280">chưa kiểm chứng</text>
+          <g transform="translate(406,222)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><rect x="-26" y="-14" width="20" height="28" rx="4" fill="#9CA3AF"/><rect x="-4" y="-14" width="20" height="28" rx="4" fill="#6B7280"/><rect x="18" y="-14" width="10" height="28" rx="4" fill="#9CA3AF"/><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="406" y="288">Đăng 1 bài lên</text><text x="406" y="304" font-weight="500" fill="#6B7280">nhiều page</text>
+          <g transform="translate(566,222)"><circle r="40" fill="#FEF2F2" stroke="#DC2626" stroke-width="5"/><circle cx="-12" cy="-6" r="12" fill="#FDBA74"/><circle cx="12" cy="-6" r="12" fill="#9CA3AF"/><circle cx="0" cy="10" r="12" fill="#6B7280"/><line x1="-30" y1="30" x2="30" y2="-30" stroke="#DC2626" stroke-width="6"/></g><text x="566" y="288">Trộn nhiều ngách</text><text x="566" y="304" font-weight="500" fill="#6B7280">trên 1 tài khoản</text>
+        </g>
+      </svg>
+      <figcaption>8 điều cấm. Phạm một trong số này là mất reach, mất kiếm tiền.</figcaption>
+      <div class="bc-hint">Chạm vào hình để phóng to</div>
+    </figure>
+
+    <ul class="bc-ticks">
+      <li>KHÔNG copy-paste bài người khác</li>
+      <li>KHÔNG mua like, share, bình luận, view</li>
+      <li>KHÔNG dùng câu tương tác rẻ tiền ("Like nếu đồng ý", "Share để trúng thưởng")</li>
+      <li>KHÔNG dùng nhạc bản quyền hoặc nhạc trend trong Reels (chỉ dùng nhạc miễn phí bản quyền)</li>
+      <li>KHÔNG nhắc tên thương hiệu lớn trong bài</li>
+      <li>KHÔNG đăng tin giả, thông tin chưa kiểm chứng</li>
+      <li>KHÔNG đăng 1 bài lên nhiều page</li>
+      <li>KHÔNG trộn nhiều ngách trên 1 tài khoản</li>
+    </ul>
+    <div class="bc-tip">Tick ô nghĩa là "mình đã đọc và sẽ không làm".</div>
+  </article>
+
+  <section class="lp-section">
+    <div class="lp-eyebrow-label" style="text-align:center;">Làm theo là được</div>
+    <h2 class="lp-h2 lp-h2-center">Lịch 1 tuần mẫu<br><span class="gold">để bạn làm theo</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-program-grid">
+      <div class="lp-program-item"><div class="lp-program-num">Thứ 2</div><div class="lp-program-mota">Soi số (bước 6), chọn 10 bài mẫu thắng, lên lịch cả tuần bằng Meta Business Suite.</div></div>
+      <div class="lp-program-item"><div class="lp-program-num">Thứ 3 đến thứ 6</div><div class="lp-program-mota">Đăng 3 đến 5 bài mỗi ngày, xoay 7 dạng bài, trả lời mỗi bình luận 1 câu riêng.</div></div>
+      <div class="lp-program-item"><div class="lp-program-num">Thứ 7</div><div class="lp-program-mota">1 Reels đơn giản, chia sẻ vào group cùng ngách, mời người đã like theo dõi.</div></div>
+      <div class="lp-program-item"><div class="lp-program-num">Chủ nhật</div><div class="lp-program-mota">Nghỉ. Nhìn lại top 5 bài thắng để làm lại phiên bản mới tuần sau.</div></div>
+    </div>
+  </section>
+
+  <!-- ===================== 3 THỨ CUỐI ===================== -->
+  <section class="lp-section" id="ba-thu">
+    <div class="lp-eyebrow-label" style="text-align:center;">Đi tiếp để không phải làm một mình</div>
+    <h2 class="lp-h2 lp-h2-center">3 thứ giúp bạn<br><span class="gold">làm đều mỗi ngày</span></h2>
+    <div class="lp-h2-bar"></div>
+    <p class="lp-h2-sub center">Biết 7 bước là một chuyện, làm đều mỗi ngày là chuyện khác. Đây là 3 thứ mình dùng để làm được.</p>
+    <div class="bc-three">
+      <div class="bc-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 11C12 7 9 4.5 5 4.5 5 8.5 7.5 11 12 11Z"/><path d="M12 14c0-3.2 2.4-5.5 6-5.5 0 3.4-2.2 5.5-6 5.5Z"/></svg></div>
+        <h3>Xây Nhân Hiệu</h3>
+        <p>App AI xây kênh chỉ 15 phút mỗi ngày: gợi ý ngách, ý tưởng bài và lịch đăng, bạn chỉ việc làm theo.</p>
+        <a class="lp-cta" href="https://hesinhthaihieu.com/webxaynhanhieu/lp/" target="_blank" rel="noopener">Xem Xây Nhân Hiệu →</a>
+      </div>
+      <div class="bc-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg></div>
+        <h3>Dựng video bằng AI</h3>
+        <p>Hết thức khuya cắt ghép: AI cắt vấp, thêm phụ đề tiếng Việt và hình minh hoạ. Có video mẫu xem thử trước.</p>
+        <a class="lp-cta" href="https://hesinhthaihieu.com/edit-video-ai/lp/" target="_blank" rel="noopener">Xem video mẫu →</a>
+      </div>
+      <div class="bc-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5"/><path d="M15.5 14c3 0 5.5 1.6 5.5 4.5"/></svg></div>
+        <h3>Cộng đồng Xây Nhân Hiệu</h3>
+        <p>Nhóm Zalo cùng đi, hỏi gì cũng có người trả lời, miễn phí.</p>
+        <a class="lp-cta bc-zalo" href="https://zalo.me/g/l7gtoqapk3iyn6o6q00y" target="_blank" rel="noopener">Vào cộng đồng →</a>
+      </div>
+    </div>
+    <div class="lp-callout" style="margin-top:22px;text-align:center;">Chúc bạn kiên trì và sớm có kênh của riêng mình 💛</div>
+  </section>
+
+</div>
+
+<footer style="text-align:center;color:var(--gray2);font-size:13.5px;padding:10px 20px 90px;">© Hiểu Để Hạnh Phúc · hesinhthaihieu.com<br>Tiêu chí kiếm tiền của Facebook có thể thay đổi, hãy luôn kiểm tra màn hình của chính bạn.</footer>
+<div class="bc-zoom" id="zoom"><div class="bc-zoom-bar"><span>Vuốt để xem hết hình</span><button type="button" id="zc">Đóng ✕</button></div><div class="bc-zoom-body" id="zb"></div></div>
+
+<script>
+(function(){
+  var KEY='bocc7_ticks_v2';
+  var items=[].slice.call(document.querySelectorAll('.bc-ticks li'));
+  var saved={};
+  try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+  function render(){
+    var n=0;items.forEach(function(li){if(li.classList.contains('on'))n++});
+    var p=items.length?Math.round(n*100/items.length):0;
+    document.getElementById('pct').textContent=p+'%';
+    document.getElementById('bar').style.width=p+'%';
+    document.getElementById('cnt').textContent=n+'/'+items.length+' ô';
+  }
+  items.forEach(function(li,i){
+    if(saved[i])li.classList.add('on');
+    li.addEventListener('click',function(){
+      li.classList.toggle('on');
+      saved[i]=li.classList.contains('on')?1:0;
+      try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}
+      render();
+    });
+  });
+  var z=document.getElementById('zoom'),zb=document.getElementById('zb');
+  [].slice.call(document.querySelectorAll('.bc-fig')).forEach(function(f){
+    f.addEventListener('click',function(){var sv=f.querySelector('svg');if(!sv)return;zb.innerHTML='';var c=sv.cloneNode(true);c.removeAttribute('id');zb.appendChild(c);z.classList.add('on');});
+  });
+  function cl(){z.classList.remove('on');zb.innerHTML='';}
+  document.getElementById('zc').addEventListener('click',cl);
+  z.addEventListener('click',function(e){if(e.target===z)cl();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')cl();});
+  render();
+})();
+</script>
+</body>
+</html>
