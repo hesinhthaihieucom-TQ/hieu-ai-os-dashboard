@@ -19,6 +19,16 @@ const MODULES = [
               'Mở lại ứng dụng, bấm thẻ "Code" ở thanh bên. Thấy thẻ này là gói của bạn đã dùng được.'],
       check: ['Đã cài ứng dụng Claude trên máy tính (không phải điện thoại, không phải bản web)', 'Đã đăng nhập', 'Đã mua gói Pro và thấy thẻ Code'],
       note: 'Chi phí gói Claude là khoản riêng, bạn đăng ký trực tiếp với Claude, không nằm trong học phí khoá.' },
+    { id: 'm1-9', flow: [["⬇️", "Tải TeamViewer"], ["🖥️", "Cài trên máy tính"], ["🔢", "Lấy ID và mật khẩu"], ["🤝", "Gửi cho người hỗ trợ"]], title: 'Cài TeamViewer để được hỗ trợ 1:1 (tuỳ chọn)', min: 5, video: '',
+      goal: 'Máy tính của bạn có TeamViewer, để người hỗ trợ vào điều khiển giúp bạn khi bạn bị kẹt.',
+      why: 'Có lúc cài đặt hoặc dựng video bị kẹt mà nói qua tin nhắn khó hiểu. Với TeamViewer, người hỗ trợ nhìn thẳng màn hình máy bạn và sửa giúp.',
+      steps: ['Lưu ý về hỗ trợ 1:1: chỉ một buổi duy nhất, không giới hạn thời gian trong buổi đó. Miễn phí trong tháng 11/2026. Từ tháng 12/2026 trở đi, buổi hỗ trợ 1:1 là 499.000đ. Bạn không dùng 1:1 thì không cần cài bài này.',
+              'Trên MÁY TÍNH (cùng máy đang cài Claude), vào teamviewer.com/vi/download (tiếng Anh: teamviewer.com/en/download), tải bản cho Windows hoặc Mac và cài như phần mềm bình thường.',
+              'Mở TeamViewer. Trên máy sẽ hiện "ID của bạn" (tiếng Anh: Your ID) và "Mật khẩu" (tiếng Anh: Password). Mac có thể hỏi cấp quyền Quay màn hình (Screen Recording) và Trợ năng (Accessibility): bấm mở Cài đặt hệ thống (System Settings) và bật cho TeamViewer.',
+              'Nhắn ID và mật khẩu cho người hỗ trợ qua Zalo. Mật khẩu đổi sau mỗi lần mở lại TeamViewer, nên khi cần hỗ trợ hãy gửi mật khẩu đang hiện lúc đó.',
+              'Khi người hỗ trợ kết nối, màn hình sẽ hiện thông báo cho bạn. Hỗ trợ xong, bấm đóng phiên kết nối hoặc tắt TeamViewer.'],
+      check: ['TeamViewer đã cài trên máy tính và hiện ID cùng Mật khẩu', 'Biết rằng hỗ trợ 1:1 chỉ một buổi, miễn phí trong tháng 11, từ tháng 12 là 499.000đ'],
+      note: 'Chỉ gửi ID và mật khẩu cho người hỗ trợ của khoá, không gửi cho ai khác. Đóng TeamViewer khi không dùng để không ai kết nối được vào máy bạn.' },
     { id: 'm1-2', flow: [["⋮", "Menu Chrome"], ["🧩", "Extensions"], ["🛒", "Chrome Web Store"], ["➕", "Add to Chrome"]], title: 'Cài Claude vào Chrome', min: 5, video: '',
       shots: [
         { src: 'chup-chrome-menu.jpg', cap: 'Bước 2-3: bấm dấu 3 chấm ⋮ góc phải trên Chrome, chọn "Tiện ích mở rộng" (Extensions), rồi chọn "Truy cập Cửa hàng Chrome trực tuyến" (Visit Chrome Web Store).' },
@@ -93,16 +103,6 @@ const MODULES = [
               'Từ giờ bạn nhắn tiếp cho Claude ngay trên điện thoại: giao việc, xem tiến độ, gửi thêm ảnh. Công việc vẫn chạy trên laptop.'],
       check: ['Đã tải app Claude và đăng nhập đúng tài khoản', 'Thấy thẻ Code trong app', 'Đã kết nối phiên đang chạy trên laptop và nhắn thử một câu'],
       note: 'Laptop phải đang bật và Claude đang chạy. Máy ngủ thì tự nối lại khi bật lại. Một số lệnh chỉ chạy trong cửa sổ trên laptop. Việc dựng video vẫn chạy trên laptop, điện thoại chỉ để điều khiển và theo dõi. Tính năng này thay đổi nhanh và tuỳ gói đăng ký, nên xem hướng dẫn chính thức của Claude nếu cách trên khác đi.' }
-    ,{ id: 'm1-9', flow: [["⬇️", "Tải TeamViewer"], ["🖥️", "Cài trên máy tính"], ["🔢", "Lấy ID và mật khẩu"], ["🤝", "Gửi cho người hỗ trợ"]], title: 'Cài TeamViewer để được hỗ trợ 1:1 (tuỳ chọn)', min: 5, video: '',
-      goal: 'Máy tính của bạn có TeamViewer, để người hỗ trợ vào điều khiển giúp bạn khi bạn bị kẹt.',
-      why: 'Có lúc cài đặt hoặc dựng video bị kẹt mà nói qua tin nhắn khó hiểu. Với TeamViewer, người hỗ trợ nhìn thẳng màn hình máy bạn và sửa giúp.',
-      steps: ['Lưu ý về hỗ trợ 1:1: chỉ một buổi duy nhất, không giới hạn thời gian trong buổi đó. Miễn phí trong tháng 11/2026. Từ tháng 12/2026 trở đi, buổi hỗ trợ 1:1 là 499.000đ. Bạn không dùng 1:1 thì không cần cài bài này.',
-              'Trên MÁY TÍNH (cùng máy đang cài Claude), vào teamviewer.com/vi/download (tiếng Anh: teamviewer.com/en/download), tải bản cho Windows hoặc Mac và cài như phần mềm bình thường.',
-              'Mở TeamViewer. Trên máy sẽ hiện "ID của bạn" (tiếng Anh: Your ID) và "Mật khẩu" (tiếng Anh: Password). Mac có thể hỏi cấp quyền Quay màn hình (Screen Recording) và Trợ năng (Accessibility): bấm mở Cài đặt hệ thống (System Settings) và bật cho TeamViewer.',
-              'Nhắn ID và mật khẩu cho người hỗ trợ qua Zalo. Mật khẩu đổi sau mỗi lần mở lại TeamViewer, nên khi cần hỗ trợ hãy gửi mật khẩu đang hiện lúc đó.',
-              'Khi người hỗ trợ kết nối, màn hình sẽ hiện thông báo cho bạn. Hỗ trợ xong, bấm đóng phiên kết nối hoặc tắt TeamViewer.'],
-      check: ['TeamViewer đã cài trên máy tính và hiện ID cùng Mật khẩu', 'Biết rằng hỗ trợ 1:1 chỉ một buổi, miễn phí trong tháng 11, từ tháng 12 là 499.000đ'],
-      note: 'Chỉ gửi ID và mật khẩu cho người hỗ trợ của khoá, không gửi cho ai khác. Đóng TeamViewer khi không dùng để không ai kết nối được vào máy bạn.' }
   ]},
   { id: 'm2', title: 'Edit video từng bước', desc: 'Từ video thô tới video hoàn chỉnh, rồi làm đều mỗi ngày.', lessons: [
     { id: 'm2-1', flow: [["🎥", "Quay dọc"], ["📲", "Chép sang máy"], ["📁", "Thư mục riêng"], ["📍", "Copy đường dẫn"]], title: 'Quay video và đưa cho kit', min: 10, video: '',
