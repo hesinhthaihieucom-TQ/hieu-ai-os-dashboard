@@ -101,7 +101,7 @@
 
   // Khung "Bắt đầu nhanh trong 10 phút": 5 bước nhìn là hiểu, bấm vào để xem bài chi tiết (Quỳnh 11/18: hướng dẫn đang khó quá)
   function quickStart(){
-    const steps = [ ['🖥️', 'Cài Claude và mua gói Pro', 'claude.com/download, đăng nhập, gói Pro khoảng 20 USD/tháng'], ['🌐', 'Cài Claude vào Chrome', 'Chrome Web Store, bấm Add to Chrome'], ['📦', 'Tải và giải nén bộ kit', 'Nút "Tải bộ kit" ngay bên dưới'],
+    const steps = [ ['🖥️', 'Cài Claude TRÊN MÁY TÍNH và mua gói Pro', 'claude.com/download (bản máy tính, không phải điện thoại), đăng nhập, gói Pro khoảng 20 USD/tháng'], ['🌐', 'Cài Claude vào Chrome', 'Chrome Web Store, bấm Add to Chrome'], ['📦', 'Tải và giải nén bộ kit', 'Nút "Tải bộ kit" ngay bên dưới'],
                     ['💬', 'Mở bộ kit trong Claude, dán 1 câu để cài hết', 'Claude tự cài mọi thứ còn lại, bạn chỉ bấm Cho phép'], ['🎬', 'Gõ /hieukenh kèm đường dẫn video', 'Kit tự chọn cách dựng đúng cho bạn'] ];
     const list = el('ol', { class:'qs-list' });
     steps.forEach((s, i) => list.appendChild(el('li', {}, [ el('span', { class:'qs-ico', text:s[0] }), el('div', {}, [ el('b', { text:(i+1) + '. ' + s[1] }), el('div', { class:'meta', text:s[2] }) ]) ])));
