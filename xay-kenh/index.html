@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Checklist Lưu Ý Khi Xây Kênh TikTok, Facebook, YouTube</title>
+<meta name="description" content="Quiz 1 phút: biết kênh của bạn đang kẹt ở đâu và nhận checklist lưu ý khi xây kênh trên TikTok, Facebook, YouTube.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Checklist lưu ý khi xây kênh TikTok, Facebook, YouTube">
+<meta property="og:description" content="Quiz 1 phút: biết kênh của bạn đang kẹt ở đâu và nên làm gì tiếp theo.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FFF7ED">
+<link rel="icon" href="../nhan-hieu/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- Khuôn lấy từ ladipage Xây Nhân Hiệu (nhan-hieu/lp): style.css + theme-light.css copy nguyên, chỉ thêm vài class quiz bên dưới -->
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="theme-light.css?v=4">
+<style>
+.xk-progress{ height:8px; background:#E5E7EB; border-radius:99px; overflow:hidden; margin-bottom:8px; }
+.xk-progress i{ display:block; height:100%; width:0; background:linear-gradient(90deg,#FB923C,#EA580C); transition:width .3s; }
+.xk-step{ font-size:14.5px; color:var(--gray2); margin-bottom:12px; font-weight:600; }
+.xk-q{ font-size:22px; line-height:1.35; font-weight:800; color:var(--ink); margin-bottom:16px; }
+.xk-opts{ display:grid; gap:10px; }
+.xk-opt{ text-align:left; background:#fff; border:2px solid #E5E7EB; border-radius:14px; padding:14px 16px; font:inherit; font-size:16.5px; font-weight:600; color:var(--ink); cursor:pointer; line-height:1.45; }
+.xk-opt:hover,.xk-opt:focus-visible{ border-color:#F97316; background:#FFF7ED; outline:none; }
+.xk-back{ background:none; border:0; color:var(--gray2); font:inherit; font-size:15px; margin-top:14px; cursor:pointer; padding:6px 0; }
+.xk-tag{ display:inline-block; background:#DCFCE7; color:#166534; font-weight:700; font-size:14px; padding:5px 12px; border-radius:99px; margin-bottom:12px; border:1px solid #86EFAC; }
+.xk-result h2{ font-size:24px; line-height:1.3; margin-bottom:12px; text-transform:none; }
+.xk-rec{ background:#FFF7ED; border:2px solid #FDBA74; border-radius:var(--radius); padding:18px; }
+.xk-rec h3{ font-size:19px; margin-bottom:8px; }
+.xk-rec ul{ margin:0 0 14px; padding-left:20px; color:var(--ink); }
+.xk-also{ font-size:15.5px; margin-top:14px; }
+.xk-also a{ font-weight:700; }
+.xk-ck{ list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.xk-ck li{ display:grid; grid-template-columns:26px 1fr; gap:6px; color:var(--ink); font-weight:600; }
+.xk-ck li::before{ content:'☐'; color:#EA580C; font-size:20px; line-height:1.4; }
+.xk-hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<header class="lp-header">
+  <div class="lp-brand"><span>Xây Kênh<br>Từ Gốc</span></div>
+  <a href="#quiz">Nhận checklist →</a>
+</header>
+
+<section class="lp-hero wrap">
+  <div class="eyebrow">🎁 Quiz miễn phí · Buổi chia sẻ 29/11</div>
+  <div class="lp-hero-pain"><span>Đăng đều mấy tuần mà view lẹt đẹt,</span><span>chưa ai hỏi mua.</span></div>
+  <h1>Lưu ý khi xây kênh: <span class="gold">TikTok, Facebook, YouTube</span></h1>
+  <p class="sub">Trả lời 4 câu hỏi. Biết <b>kênh đang kẹt ở đâu</b> và nhận checklist đúng nền tảng của bạn.</p>
+  <div class="lp-cta-wrap">
+    <a class="lp-cta lp-cta-pulse" href="#quiz">Làm quiz nhận checklist →</a>
+    <div class="lp-cta-note">Mất 1 phút · Không cần tạo tài khoản</div>
+  </div>
+  <div class="lp-hero-trust">
+    <div class="lp-hero-trust-item"><b>3</b> nền tảng</div>
+    <div class="lp-hero-trust-sep"></div>
+    <div class="lp-hero-trust-item"><b>4</b> câu hỏi</div>
+    <div class="lp-hero-trust-sep"></div>
+    <div class="lp-hero-trust-item"><b>1</b> phút</div>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <section class="lp-section" id="buoi-chia-se">
+    <div class="lp-eyebrow-label" style="text-align:center;">Buổi chia sẻ ngày 29/11</div>
+    <h2 class="lp-h2 lp-h2-center">Trong buổi này<br><span class="gold">bạn nhận được</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-fit-chips">
+      <span class="lp-fit-chip">✓ Thuật toán Facebook: bài nào được đẩy, bài nào bị bóp</span>
+      <span class="lp-fit-chip">✓ Thuật toán TikTok và YouTube: khác nhau ở đâu</span>
+      <span class="lp-fit-chip">✓ Lỗi khiến kênh bị hạn chế và cách tránh</span>
+      <span class="lp-fit-chip">✓ Chọn trục nội dung hẹp để người xem nhớ bạn</span>
+      <span class="lp-fit-chip">✓ Đặt link đúng chỗ, dẫn khách từ video sang mua</span>
+      <span class="lp-fit-chip">✓ Checklist xây kênh theo từng nền tảng</span>
+    </div>
+    <div class="lp-price-card" style="margin-top:22px;">
+      <div class="lp-price-stack">
+        <div class="lp-price-label">Phí cam kết năng lượng</div>
+        <div class="lp-price-new">199K</div>
+      </div>
+      <a class="lp-cta lp-cta-pulse" style="margin-top:16px;" href="#dang-ky">Đăng ký giữ chỗ →</a>
+      <div class="lp-price-micro">Chưa chắc? Làm quiz miễn phí bên dưới trước.</div>
+    </div>
+  </section>
+
+  <section class="lp-section" id="thuat-toan">
+    <div class="lp-eyebrow-label" style="text-align:center;">Minh hoạ</div>
+    <h2 class="lp-h2 lp-h2-center">Thuật toán Facebook<br><span class="gold">hoạt động thế nào?</span></h2>
+    <div class="lp-h2-bar"></div>
+    <svg viewBox="0 0 360 340" role="img" aria-label="Sơ đồ: đăng bài, Facebook cho nhóm nhỏ xem thử, nếu tương tác tốt thì đẩy rộng, yếu thì phân phối chậm lại" style="width:100%;height:auto;display:block;font-family:'Be Vietnam Pro',sans-serif;">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#EA580C"/></marker></defs>
+      <rect x="30" y="6" width="300" height="52" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+      <text x="180" y="38" text-anchor="middle" font-size="16" font-weight="800" fill="#111827">1. Bạn đăng bài</text>
+      <line x1="180" y1="60" x2="180" y2="84" stroke="#EA580C" stroke-width="2.5" marker-end="url(#ar)"/>
+      <rect x="30" y="88" width="300" height="66" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+      <text x="180" y="116" text-anchor="middle" font-size="16" font-weight="800" fill="#111827">2. Facebook cho một nhóm</text>
+      <text x="180" y="138" text-anchor="middle" font-size="16" font-weight="800" fill="#111827">nhỏ xem thử trước</text>
+      <line x1="180" y1="156" x2="180" y2="180" stroke="#EA580C" stroke-width="2.5" marker-end="url(#ar)"/>
+      <rect x="30" y="184" width="300" height="66" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+      <text x="180" y="212" text-anchor="middle" font-size="16" font-weight="800" fill="#111827">3. Họ có xem hết, bình luận,</text>
+      <text x="180" y="234" text-anchor="middle" font-size="16" font-weight="800" fill="#111827">chia sẻ không?</text>
+      <line x1="120" y1="252" x2="90" y2="272" stroke="#16A34A" stroke-width="2.5" marker-end="url(#ar)"/>
+      <line x1="240" y1="252" x2="270" y2="272" stroke="#DC2626" stroke-width="2.5" marker-end="url(#ar)"/>
+      <rect x="8" y="276" width="168" height="58" rx="14" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2"/>
+      <text x="92" y="302" text-anchor="middle" font-size="15" font-weight="800" fill="#14532D">Có: đẩy cho</text>
+      <text x="92" y="322" text-anchor="middle" font-size="15" font-weight="800" fill="#14532D">nhiều người hơn</text>
+      <rect x="184" y="276" width="168" height="58" rx="14" fill="#FEF2F2" stroke="#FECACA" stroke-width="2"/>
+      <text x="268" y="302" text-anchor="middle" font-size="15" font-weight="800" fill="#7F1D1D">Ít: phân phối</text>
+      <text x="268" y="322" text-anchor="middle" font-size="15" font-weight="800" fill="#7F1D1D">chậm lại</text>
+    </svg>
+    <p class="lp-h2-sub center" style="font-size:14.5px;margin-top:8px;">Sơ đồ đơn giản hoá. Facebook không công bố chi tiết thuật toán.</p>
+    <div class="lp-vs" style="margin-top:16px;">
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Video còn logo nền tảng khác</span></div><div class="lp-vs-yes"><i>✓</i><span>Video dọc sạch, rõ chữ</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Dán link ngoài vào bài</span></div><div class="lp-vs-yes"><i>✓</i><span>Link ở bình luận của tác giả</span></div></div>
+      <div class="lp-vs-row"><div class="lp-vs-no"><i>✕</i><span>Người xem lướt đi sau vài giây đầu</span></div><div class="lp-vs-yes"><i>✓</i><span>Mở bằng nỗi đau, người xem xem hết</span></div></div>
+    </div>
+  </section>
+
+  <section class="lp-section" id="kiem-tien">
+    <div class="lp-eyebrow-label" style="text-align:center;">Minh hoạ</div>
+    <h2 class="lp-h2 lp-h2-center">Kiếm tiền trên Facebook<br><span class="gold">từ những nguồn nào?</span></h2>
+    <div class="lp-h2-bar"></div>
+    <svg viewBox="0 0 360 310" role="img" aria-label="Sơ đồ: kênh có người xem đúng tệp, từ đó kiếm tiền qua Reels, affiliate, sản phẩm số, coaching" style="width:100%;height:auto;display:block;font-family:'Be Vietnam Pro',sans-serif;">
+      <rect x="40" y="6" width="280" height="52" rx="14" fill="#EA580C"/>
+      <text x="180" y="38" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">Kênh có người xem đúng tệp</text>
+      <line x1="180" y1="58" x2="180" y2="78" stroke="#EA580C" stroke-width="2.5"/>
+      <line x1="92" y1="78" x2="268" y2="78" stroke="#EA580C" stroke-width="2.5"/>
+      <line x1="92" y1="78" x2="92" y2="94" stroke="#EA580C" stroke-width="2.5"/>
+      <line x1="268" y1="78" x2="268" y2="94" stroke="#EA580C" stroke-width="2.5"/>
+      <g font-weight="800" text-anchor="middle">
+        <rect x="8" y="96" width="168" height="94" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+        <text x="92" y="128" font-size="26">📺</text><text x="92" y="153" font-size="15" fill="#111827">Kiếm tiền Facebook</text><text x="92" y="173" font-size="14" font-weight="500" fill="#4B5563">từ Reels, bài viết</text>
+        <rect x="184" y="96" width="168" height="94" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+        <text x="268" y="128" font-size="26">🛒</text><text x="268" y="153" font-size="15" fill="#111827">Affiliate</text><text x="268" y="173" font-size="14" font-weight="500" fill="#4B5563">gắn link sản phẩm</text>
+        <rect x="8" y="204" width="168" height="94" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+        <text x="92" y="236" font-size="26">📘</text><text x="92" y="261" font-size="15" fill="#111827">Sản phẩm số</text><text x="92" y="281" font-size="14" font-weight="500" fill="#4B5563">khoá học, ebook</text>
+        <rect x="184" y="204" width="168" height="94" rx="14" fill="#FFF7ED" stroke="#FDBA74" stroke-width="2"/>
+        <text x="268" y="236" font-size="26">🎯</text><text x="268" y="261" font-size="15" fill="#111827">Coaching</text><text x="268" y="281" font-size="14" font-weight="500" fill="#4B5563">booking nhãn hàng</text>
+      </g>
+    </svg>
+    <div class="lp-testi-list" style="margin-top:22px;">
+      <figure class="lp-testi-card" style="margin-left:0;margin-right:0;">
+        <div class="lp-testi-shot"><img src="img/proof-earnings.jpg" alt="Bảng kiếm tiền nội dung Facebook của Nga Tiến" width="600" height="831" loading="lazy"></div>
+        <div class="lp-testi-meta"><div><div class="lp-testi-name">Kiếm tiền Facebook: 486 USD</div><div class="lp-testi-role">5,5 triệu lượt xem. Nga Tiến, mẹ của Quỳnh, mới bắt đầu từ số 0</div></div></div>
+      </figure>
+      <figure class="lp-testi-card" style="margin-left:0;margin-right:0;">
+        <div class="lp-testi-shot"><img src="img/proof-reels.jpg" alt="Danh sách Reels của Nga Tiến" width="600" height="1117" loading="lazy"></div>
+        <div class="lp-testi-meta"><div><div class="lp-testi-name">Nhiều video đạt 200K–981K lượt xem</div></div></div>
+      </figure>
+    </div>
+    <div class="lp-need" style="margin-top:14px;">⚠️ Đây là kết quả thật của gia đình mình, không phải cam kết thu nhập cho mọi người.</div>
+  </section>
+
+  <section class="lp-section lp-teacher" id="ve-minh">
+    <div class="lp-eyebrow-label" style="text-align:center;">Người chia sẻ</div>
+    <h2 class="lp-h2 lp-h2-center">Về mình<br><span class="gold">Lê Tú Quỳnh</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-teacher-card">
+      <div class="lp-teacher-top">
+        <img src="img/founder.jpg" alt="Lê Tú Quỳnh" width="360" height="379" loading="lazy">
+        <div><div class="lp-teacher-name">Lê Tú Quỳnh</div><div class="lp-teacher-role">Người sáng tạo nội dung số · Người sáng lập Hệ Sinh Thái HIỂU</div></div>
+      </div>
+      <p class="lp-teacher-quote">"Có giai đoạn mình đăng đều mà <b>không biết mình đang xây cái gì</b>. Khi hiểu ra công thức, từ <b>25K</b> sau <b>6 tháng</b> lên hơn <b>130K người theo dõi</b>. Hiện tại hơn <b>140K</b>."</p>
+      <div class="lp-teacher-pills"><span>25K → 140K người theo dõi</span><span>6 tháng</span></div>
+      <figure class="lp-teacher-shot"><img src="img/fb-proof-140k-v2.jpg" alt="Trang Facebook thật của Tú Quỳnh, hơn 140K người theo dõi" width="1320" height="1415" loading="lazy"><figcaption>Trang Facebook thật của Tú Quỳnh</figcaption></figure>
+    </div>
+    <div class="lp-need" style="margin-top:14px;">⚠️ Kết quả của mỗi người phụ thuộc vào nền tảng ban đầu, nội dung và mức độ triển khai.</div>
+  </section>
+
+  <section class="lp-section" id="dang-ky">
+    <h2 class="lp-h2 lp-h2-center">Đăng ký giữ chỗ<br><span class="gold">lấy mã QR</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-signup-card" id="regWrap">
+      <label class="lp-signup-label" for="rName">Tên *</label>
+      <input class="lp-signup-input" type="text" id="rName" autocomplete="name" placeholder="Ví dụ: Lan Anh">
+      <label class="lp-signup-label" for="rZalo">Số Zalo *</label>
+      <input class="lp-signup-input" type="tel" id="rZalo" autocomplete="tel" inputmode="numeric" placeholder="0901234567">
+      <label class="lp-signup-label" for="rEmail">Email (không bắt buộc)</label>
+      <input class="lp-signup-input" type="email" id="rEmail" autocomplete="email" placeholder="email@gmail.com">
+      <div class="lp-signup-error" id="regErr" hidden></div>
+      <button class="lp-cta" id="regBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Lấy mã QR 199K →</button>
+    </div>
+    <div class="lp-signup-card" id="payWrap" hidden></div>
+  </section>
+
+  <section class="lp-section" id="quiz">
+    <h2 class="lp-h2 lp-h2-center">Kênh của bạn<br><span class="gold">đang kẹt ở đâu?</span></h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-signup-card" id="quizCard">
+      <div class="xk-progress"><i id="bar"></i></div>
+      <div class="xk-step" id="stepLabel"></div>
+
+      <div id="qBox">
+        <div class="xk-q" id="qTitle"></div>
+        <div class="xk-opts" id="qOpts"></div>
+        <button class="xk-back xk-hidden" id="backBtn" type="button">← Câu trước</button>
+      </div>
+
+      <form id="leadForm" class="xk-hidden" novalidate>
+        <div class="xk-q">Gửi kết quả cho bạn ở đâu?</div>
+        <label class="lp-signup-label" for="fName">Tên *</label>
+        <input class="lp-signup-input" type="text" id="fName" autocomplete="name" placeholder="Ví dụ: Lan Anh">
+        <label class="lp-signup-label" for="fZalo">Số Zalo *</label>
+        <input class="lp-signup-input" type="tel" id="fZalo" autocomplete="tel" inputmode="numeric" placeholder="0901234567">
+        <label class="lp-signup-label" for="fEmail">Email (không bắt buộc)</label>
+        <input class="lp-signup-input" type="email" id="fEmail" autocomplete="email" placeholder="email@gmail.com">
+        <div class="lp-signup-error" id="formErr" hidden></div>
+        <button class="lp-cta" type="submit" id="submitBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Xem kết quả →</button>
+        <button class="xk-back" type="button" id="backToQ">← Sửa câu trả lời</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="lp-section xk-hidden" id="result">
+    <div class="lp-signup-card xk-result" id="resultCard"></div>
+
+    <h2 class="lp-h2 lp-h2-center" style="margin-top:36px;" id="ckTitle">Checklist</h2>
+    <div class="lp-h2-bar"></div>
+    <div class="lp-faq" id="ckBox"></div>
+
+    <a class="lp-zalo-box" href="https://zalo.me/0866849193" target="_blank" rel="noopener">
+      <span class="lp-zalo-badge">Zalo</span>
+      <span><b>Cần hỏi thêm?</b><br>Nhắn Quỳnh qua Zalo.</span>
+    </a>
+    <div style="text-align:center;margin-top:12px;"><button class="xk-back" type="button" id="redoBtn">Làm lại quiz</button></div>
+  </section>
+
+</div>
+
+<footer class="lp-footer">© 2026 Lê Tú Quỳnh · Hệ Sinh Thái HIỂU<br>Zalo: <a href="https://zalo.me/0866849193" target="_blank" rel="noopener">0866 849 193</a></footer>
+
+<div class="lp-sticky" id="stickyBar">
+  <a class="lp-cta" href="#quiz">Nhận checklist miễn phí →</a>
+</div>
+
+<script>
+(function(){
+  var QUESTIONS = [
+    { key:'platform', title:'Bạn định xây kênh ở đâu?', opts:[
+      ['tiktok','TikTok'],['facebook','Facebook'],['youtube','YouTube'],['chua_chon','Chưa chọn']] },
+    { key:'stage', title:'Kênh của bạn đang ở đâu?', opts:[
+      ['chua_co','Chưa có kênh'],['moi_lam','Có kênh nhưng view ít'],['co_nguoi_xem','Có người xem nhưng ít khách']] },
+    { key:'pain', title:'Bạn mệt nhất việc gì?', opts:[
+      ['video','Dựng video quá lâu'],['noi_dung','Không biết nói gì'],['ban_hang','Có người xem, không ra khách'],['tat_ca','Rối hết']] },
+    { key:'support', title:'Bạn muốn học thế nào?', opts:[
+      ['tu_lam','Tự làm theo hướng dẫn'],['cam_tay','Có người chỉ thẳng vào kênh của mình']] }
+  ];
+  var PLATFORM_NAME = { tiktok:'TikTok', facebook:'Facebook', youtube:'YouTube', chua_chon:'' };
+
+  // Checklist: mỗi ý chỉ 1 dòng, khách đọc lướt được
+  var COMMON = [
+    'Chọn trục nội dung thật hẹp trước khi quay video đầu tiên',
+    'Một kênh chỉ nói với một kiểu người xem',
+    'Mở video bằng nỗi đau hoặc câu hỏi, không chào hỏi dài',
+    'Đăng ít nhưng đều, đừng đăng dồn rồi bỏ',
+    'Mỗi video chỉ một lời mời hành động'
+  ];
+  var BY_PLATFORM = {
+    tiktok:[
+      'Phần giới thiệu kênh nói rõ: bạn giúp ai, làm được gì',
+      'Không dán link vào bình luận, dễ bị coi là spam',
+      'Không đăng lại video còn logo nền tảng khác',
+      'Trả lời bình luận sớm và thả tim',
+      'Video ngắn gọn, đi thẳng vào ý để người xem xem hết',
+      'Không hứa kết quả quá đà về thu nhập, chữa bệnh'
+    ],
+    facebook:[
+      'Dùng video dọc 9:16, không dính logo nền tảng khác',
+      'Để link ở bình luận của tác giả, đừng nhét vào bài',
+      'Giữ trang cá nhân để tạo niềm tin, fanpage làm kho nội dung',
+      'Trả lời bình luận trong giờ đầu sau khi đăng',
+      'Không kết bạn, nhắn tin hàng loạt',
+      'Cẩn thận với nội dung sức khoẻ và tài chính'
+    ],
+    youtube:[
+      'Shorts kéo người mới, video dài tạo niềm tin để bán',
+      'Nghĩ tiêu đề và hình thu nhỏ trước khi quay',
+      'Trong 30 giây đầu nói rõ người xem nhận được gì',
+      'Đặt link sản phẩm ở đầu phần mô tả',
+      'Chỉ dùng nhạc và hình có bản quyền rõ ràng',
+      'Kiên nhẫn: YouTube ra khách chậm nhưng bền'
+    ]
+  };
+
+  var PRODUCTS = {
+    edit_video:{
+      tag:'Điểm nghẽn: dựng video',
+      title:'Bạn tốn quá nhiều thời gian cho khâu dựng video',
+      name:'Làm Chủ Edit Video Bằng AI',
+      bullets:['Cắt vấp, phụ đề tiếng Việt tự động','Có người cầm tay chỉ việc'],
+      url:'../edit-video-ai/lp/', cta:'Xem khoá Edit Video Bằng AI →'
+    },
+    app_nhan_hieu:{
+      tag:'Điểm nghẽn: nội dung và hướng đi',
+      title:'Kênh của bạn cần hướng đi rõ ràng và nội dung đều mỗi ngày',
+      name:'App Xây Nhân Hiệu',
+      bullets:['Xác định trục nội dung và người xem','Gợi ý hook, kịch bản, lịch đăng'],
+      url:'../nhan-hieu/lp/', cta:'Xem app Xây Nhân Hiệu →'
+    },
+    huan_luyen_1_1:{
+      tag:'Điểm nghẽn: cần người đi cùng',
+      title:'Bạn cần người nhìn thẳng vào kênh của bạn và chỉ chỗ cần sửa',
+      name:'Huấn Luyện 1:1',
+      bullets:['Làm trực tiếp trên kênh của bạn','Đồng hành đến khi bạn tự làm được'],
+      url:'../xay-nhan-hieu-1-1/lp/', cta:'Xem Huấn Luyện 1:1 →'
+    }
+  };
+
+  function recommend(a){
+    if (a.support === 'cam_tay' && a.pain !== 'video') return 'huan_luyen_1_1';
+    if (a.pain === 'tat_ca') return 'huan_luyen_1_1';
+    if (a.pain === 'video') return 'edit_video';
+    if (a.pain === 'ban_hang') return a.support === 'cam_tay' ? 'huan_luyen_1_1' : 'app_nhan_hieu';
+    return 'app_nhan_hieu';
+  }
+
+  var KEY = 'xay_kenh_quiz_v1';
+  var state = { i:0, a:{}, done:null };
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+  function load(){ try { var s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.a) state = s; } catch(e){} }
+
+  var $ = function(id){ return document.getElementById(id); };
+  var HIDE = 'xk-hidden';
+
+  function renderQuestion(){
+    var q = QUESTIONS[state.i];
+    $('qBox').classList.remove(HIDE); $('leadForm').classList.add(HIDE);
+    $('stepLabel').textContent = 'Câu ' + (state.i + 1) + '/' + QUESTIONS.length;
+    $('bar').style.width = (state.i / (QUESTIONS.length + 1) * 100) + '%';
+    $('qTitle').textContent = q.title;
+    var box = $('qOpts'); box.innerHTML = '';
+    q.opts.forEach(function(o){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'xk-opt'; b.textContent = o[1];
+      b.addEventListener('click', function(){
+        state.a[q.key] = o[0];
+        if (state.i < QUESTIONS.length - 1) state.i++; else state.i = QUESTIONS.length;
+        save(); route();
+      });
+      box.appendChild(b);
+    });
+    $('backBtn').classList.toggle(HIDE, state.i === 0);
+  }
+
+  function renderForm(){
+    $('qBox').classList.add(HIDE); $('leadForm').classList.remove(HIDE);
+    $('stepLabel').textContent = 'Bước cuối';
+    $('bar').style.width = (QUESTIONS.length / (QUESTIONS.length + 1) * 100) + '%';
+  }
+
+  function addGroup(parent, title, list, open){
+    var det = document.createElement('details'); det.className = 'lp-faq-item'; if (open) det.open = true;
+    var sm = document.createElement('summary'); sm.textContent = title;
+    var ul = document.createElement('ul'); ul.className = 'xk-ck';
+    list.forEach(function(t){ var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+    var body = document.createElement('div'); body.className = 'lp-faq-answer'; body.appendChild(ul);
+    det.appendChild(sm); det.appendChild(body); parent.appendChild(det);
+  }
+
+  function renderResult(){
+    var a = state.a, rec = PRODUCTS[recommend(a)];
+    $('quiz').classList.add(HIDE); $('result').classList.remove(HIDE); $('stickyBar').classList.add(HIDE);
+    var card = $('resultCard'); card.innerHTML = '';
+    var tag = document.createElement('div'); tag.className = 'xk-tag'; tag.textContent = rec.tag; card.appendChild(tag);
+    var h = document.createElement('h2'); h.textContent = rec.title; card.appendChild(h);
+    var box = document.createElement('div'); box.className = 'xk-rec';
+    var h3 = document.createElement('h3'); h3.textContent = 'Gợi ý: ' + rec.name; box.appendChild(h3);
+    var ul = document.createElement('ul'); rec.bullets.forEach(function(t){ var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); box.appendChild(ul);
+    var cta = document.createElement('a'); cta.className = 'lp-cta'; cta.style.display = 'block'; cta.style.textAlign = 'center'; cta.href = rec.url; cta.textContent = rec.cta; box.appendChild(cta);
+    card.appendChild(box);
+    var also = document.createElement('div'); also.className = 'xk-also'; also.appendChild(document.createTextNode('Xem thêm: '));
+    var first = true;
+    Object.keys(PRODUCTS).forEach(function(k){
+      if (PRODUCTS[k] === rec) return;
+      if (!first) also.appendChild(document.createTextNode(' · ')); first = false;
+      var l = document.createElement('a'); l.href = PRODUCTS[k].url; l.textContent = PRODUCTS[k].name; also.appendChild(l);
+    });
+    card.appendChild(also);
+
+    // Nền tảng khách chọn mở sẵn, phần còn lại gập lại
+    var pf = a.platform, pfName = PLATFORM_NAME[pf], ck = $('ckBox'); ck.innerHTML = '';
+    $('ckTitle').textContent = pfName ? 'Checklist ' + pfName : 'Checklist cho người mới';
+    if (pfName) addGroup(ck, 'Riêng cho ' + pfName, BY_PLATFORM[pf], true);
+    addGroup(ck, 'Chung cho mọi nền tảng', COMMON, !pfName);
+    ['tiktok','facebook','youtube'].forEach(function(k){
+      if (k !== pf) addGroup(ck, 'Xem thêm: ' + PLATFORM_NAME[k], BY_PLATFORM[k], false);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function route(){
+    if (state.done) return renderResult();
+    if (state.i >= QUESTIONS.length) return renderForm();
+    renderQuestion();
+  }
+
+  $('backBtn').addEventListener('click', function(){ if (state.i > 0) { state.i--; save(); route(); } });
+  $('backToQ').addEventListener('click', function(){ state.i = QUESTIONS.length - 1; save(); route(); });
+  $('redoBtn').addEventListener('click', function(){
+    state = { i:0, a:{}, done:null }; save();
+    $('result').classList.add(HIDE); $('quiz').classList.remove(HIDE); $('stickyBar').classList.remove(HIDE); route();
+    $('quiz').scrollIntoView({ behavior:'smooth' });
+  });
+
+  $('leadForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = $('fName').value.trim(), zalo = $('fZalo').value.replace(/[\s.\-]/g,''), email = $('fEmail').value.trim();
+    var err = $('formErr'); err.hidden = true;
+    function fail(m){ err.textContent = m; err.hidden = false; }
+    if (!name) { fail('Bạn nhập giúp mình tên nhé.'); return; }
+    if (!/^0\d{9}$/.test(zalo)) { fail('Số Zalo cần đủ 10 số, bắt đầu bằng 0.'); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fail('Email chưa đúng, sửa lại hoặc để trống.'); return; }
+    var btn = $('submitBtn'), label = 'Xem kết quả →';
+    btn.disabled = true; btn.textContent = 'Đang gửi…';
+    var payload = Object.assign({}, state.a, { name:name, zalo:zalo, email:email, recommended:recommend(state.a) });
+    fetch('api/xay-kenh-lead', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(payload) })
+      .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
+      .then(function(res){
+        if (!res.ok) { fail((res.j && res.j.error) || 'Chưa gửi được, thử lại giúp mình.'); btn.disabled = false; btn.textContent = label; return; }
+        state.done = { name:name }; save(); renderResult();
+      })
+      .catch(function(){ fail('Mất kết nối, thử lại giúp mình.'); btn.disabled = false; btn.textContent = label; });
+  });
+
+  load(); route();
+
+  // ===== Đăng ký buổi 29/11 + mã QR 199K =====
+  // Nội dung CK "SEVQR BUOI29 <mã>": SEVQR để VietinBank báo biến động; BUOI29 + mã riêng không dính tiền tố app nào
+  // (199.000đ trùng giá Sổ Dòng Tiền) nên webhook không tự kích hoạt gì, Quỳnh đối chiếu theo mã.
+  var BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
+  var AMOUNT = 199000, REG_KEY = 'xay_kenh_buoi_v1';
+  function showPay(ref){
+    var content = 'SEVQR BUOI29 ' + ref;
+    var qr = 'https://img.vietqr.io/image/' + BANK.code + '-' + BANK.account + '-compact2.png?amount=' + AMOUNT + '&addInfo=' + encodeURIComponent(content) + '&accountName=' + encodeURIComponent(BANK.accountName);
+    $('regWrap').hidden = true;
+    var w = $('payWrap'); w.hidden = false; w.innerHTML = '';
+    var c = document.createElement('div'); c.style.textAlign = 'center';
+    var img = document.createElement('img'); img.src = qr; img.alt = 'Mã VietQR VietinBank'; img.style.cssText = 'max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line)';
+    c.appendChild(img); w.appendChild(c);
+    var rows = [['Ngân hàng','VietinBank'],['Số tài khoản',BANK.account,BANK.account],['Chủ tài khoản',BANK.accountName],['Số tiền','199.000đ','199000'],['Nội dung CK',content,content]];
+    var box = document.createElement('div'); box.style.marginTop = '16px';
+    rows.forEach(function(r){
+      var d = document.createElement('div'); d.className = 'lp-pay-row';
+      var b = document.createElement('b'); b.textContent = r[0] + ': '; d.appendChild(b); d.appendChild(document.createTextNode(r[1] + ' '));
+      if (r[2]) { var s = document.createElement('span'); s.className = 'lp-pay-copy'; s.textContent = 'Copy';
+        s.onclick = function(){ try { navigator.clipboard.writeText(r[2]); s.textContent = 'Đã copy ✓'; setTimeout(function(){ s.textContent = 'Copy'; }, 1500); } catch(e){} };
+        d.appendChild(s); }
+      box.appendChild(d);
+    });
+    w.appendChild(box);
+    var note = document.createElement('div'); note.className = 'lp-shot-cap'; note.style.marginTop = '14px';
+    note.textContent = 'Giữ nguyên nội dung CK. Chuyển xong, nhắn Zalo kèm ảnh chuyển khoản để Quỳnh xác nhận và gửi thông tin buổi.';
+    w.appendChild(note);
+    var z = document.createElement('a'); z.className = 'lp-cta'; z.style.cssText = 'display:block;text-align:center;margin-top:14px'; z.target = '_blank'; z.rel = 'noopener';
+    z.href = 'https://zalo.me/0866849193'; z.textContent = 'Nhắn Zalo xác nhận →'; w.appendChild(z);
+    w.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+  try { var saved = JSON.parse(localStorage.getItem(REG_KEY) || 'null'); if (saved && saved.ref) showPay(saved.ref); } catch(e){}
+
+  $('regBtn').addEventListener('click', function(){
+    var name = $('rName').value.trim(), zalo = $('rZalo').value.replace(/[\s.\-]/g,''), email = $('rEmail').value.trim();
+    var err = $('regErr'); err.hidden = true;
+    function fail(m){ err.textContent = m; err.hidden = false; }
+    if (!name) { fail('Bạn nhập giúp mình tên nhé.'); return; }
+    if (!/^0\d{9}$/.test(zalo)) { fail('Số Zalo cần đủ 10 số, bắt đầu bằng 0.'); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fail('Email chưa đúng, sửa lại hoặc để trống.'); return; }
+    var btn = $('regBtn'), label = 'Lấy mã QR 199K →'; btn.disabled = true; btn.textContent = 'Đang xử lý…';
+    fetch('api/xay-kenh-buoi-dang-ky', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ name:name, zalo:zalo, email:email }) })
+      .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
+      .then(function(res){
+        if (!res.ok || !res.j.ref) { fail((res.j && res.j.error) || 'Chưa lấy được mã, thử lại giúp mình.'); btn.disabled = false; btn.textContent = label; return; }
+        try { localStorage.setItem(REG_KEY, JSON.stringify({ ref:res.j.ref })); } catch(e){}
+        showPay(res.j.ref);
+      })
+      .catch(function(){ fail('Mất kết nối, thử lại giúp mình.'); btn.disabled = false; btn.textContent = label; });
+  });
+})();
+</script>
+</body>
+</html>

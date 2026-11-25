@@ -10,7 +10,8 @@
     { "source": "/giai-nghiep/api/:path*", "destination": "/api/:path*" },
     { "source": "/edit-video-ai/api/:path*", "destination": "/api/:path*" },
     { "source": "/zoom-dung-video-ai/api/:path*", "destination": "/api/:path*" },
-    { "source": "/xay-nhan-hieu-1-1/api/:path*", "destination": "/api/:path*" }
+    { "source": "/xay-nhan-hieu-1-1/api/:path*", "destination": "/api/:path*" },
+    { "source": "/xay-kenh/api/:path*", "destination": "/api/:path*" }
   ],
   "functions": {
     "api/*.js": { "maxDuration": 300, "includeFiles": "api/_lib/fonts/**" },
