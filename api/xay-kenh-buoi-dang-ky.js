@@ -1,6 +1,6 @@
-// Đăng ký buổi chia sẻ 29/11 (phí cam kết năng lượng 199K) từ trang xay-kenh/. Tạo 1 dòng
+// Đăng ký buổi chia sẻ 29/11 (phí cam kết năng lượng 99K) từ trang xay-kenh/. Tạo 1 dòng
 // xay_kenh_buoi_dang_ky với mã ref ngẫu nhiên, trả ref cho trang dựng mã QR. KHÔNG kích hoạt gì tự động:
-// 199.000đ trùng giá Sổ Dòng Tiền/21 Ngày Giải Nghiệp nên mã ở đây cố ý không dính tiền tố app nào
+// mã ở đây cố ý không dính tiền tố app nào (XNH/SPS/CRM/SPUP) để webhook SePay không nhận nhầm
 // (xem schema_xay_kenh_leads.sql) — Quỳnh đối chiếu sao kê theo ref rồi gửi link buổi qua Zalo.
 const crypto = require('crypto');
 const { supabaseAdmin } = require('./_lib/supabase-admin');
@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
     try {
       const r = await supabaseAdmin('xay_kenh_buoi_dang_ky', {
         method: 'POST',
-        body: JSON.stringify({ name, zalo, email: email || null, ref: candidate }),
+        body: JSON.stringify({ name, zalo, email: email || null, ref: candidate, amount: 99000 }),
         prefer: 'return=minimal',
       });
       if (r.ok) ref = candidate;
@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
   if (to) {
     await sendEmail({
       to,
-      subject: `Đăng ký buổi 29/11: ${name} (chờ CK 199K)`,
+      subject: `Đăng ký buổi 29/11: ${name} (chờ CK 99K)`,
       html: `<p><b>${escHtml(name)}</b> — Zalo: ${escHtml(zalo)}${email ? ' — ' + escHtml(email) : ''}</p><p>Mã CK: <code>SEVQR BUOI29 ${ref}</code></p>`,
     }).catch(() => {});
   }

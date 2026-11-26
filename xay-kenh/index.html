@@ -78,7 +78,7 @@
     <div class="lp-price-card" style="margin-top:22px;">
       <div class="lp-price-stack">
         <div class="lp-price-label">Phí cam kết năng lượng</div>
-        <div class="lp-price-new">199K</div>
+        <div class="lp-price-new">99K</div>
       </div>
       <a class="lp-cta lp-cta-pulse" style="margin-top:16px;" href="#dang-ky">Đăng ký giữ chỗ →</a>
       <div class="lp-price-micro">Chưa chắc? Làm quiz miễn phí bên dưới trước.</div>
@@ -180,7 +180,7 @@
       <label class="lp-signup-label" for="rEmail">Email (không bắt buộc)</label>
       <input class="lp-signup-input" type="email" id="rEmail" autocomplete="email" placeholder="email@gmail.com">
       <div class="lp-signup-error" id="regErr" hidden></div>
-      <button class="lp-cta" id="regBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Lấy mã QR 199K →</button>
+      <button class="lp-cta" id="regBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Lấy mã QR 99K →</button>
     </div>
     <div class="lp-signup-card" id="payWrap" hidden></div>
   </section>
@@ -426,11 +426,11 @@
 
   load(); route();
 
-  // ===== Đăng ký buổi 29/11 + mã QR 199K =====
+  // ===== Đăng ký buổi 29/11 + mã QR 99K =====
   // Nội dung CK "SEVQR BUOI29 <mã>": SEVQR để VietinBank báo biến động; BUOI29 + mã riêng không dính tiền tố app nào
-  // (199.000đ trùng giá Sổ Dòng Tiền) nên webhook không tự kích hoạt gì, Quỳnh đối chiếu theo mã.
+  // BUOI29 + mã riêng không dính tiền tố app nào nên webhook không tự kích hoạt gì, Quỳnh đối chiếu theo mã.
   var BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
-  var AMOUNT = 199000, REG_KEY = 'xay_kenh_buoi_v1';
+  var AMOUNT = 99000, REG_KEY = 'xay_kenh_buoi_v1';
   function showPay(ref){
     var content = 'SEVQR BUOI29 ' + ref;
     var qr = 'https://img.vietqr.io/image/' + BANK.code + '-' + BANK.account + '-compact2.png?amount=' + AMOUNT + '&addInfo=' + encodeURIComponent(content) + '&accountName=' + encodeURIComponent(BANK.accountName);
@@ -439,7 +439,7 @@
     var c = document.createElement('div'); c.style.textAlign = 'center';
     var img = document.createElement('img'); img.src = qr; img.alt = 'Mã VietQR VietinBank'; img.style.cssText = 'max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line)';
     c.appendChild(img); w.appendChild(c);
-    var rows = [['Ngân hàng','VietinBank'],['Số tài khoản',BANK.account,BANK.account],['Chủ tài khoản',BANK.accountName],['Số tiền','199.000đ','199000'],['Nội dung CK',content,content]];
+    var rows = [['Ngân hàng','VietinBank'],['Số tài khoản',BANK.account,BANK.account],['Chủ tài khoản',BANK.accountName],['Số tiền','99.000đ','99000'],['Nội dung CK',content,content]];
     var box = document.createElement('div'); box.style.marginTop = '16px';
     rows.forEach(function(r){
       var d = document.createElement('div'); d.className = 'lp-pay-row';
@@ -466,7 +466,7 @@
     if (!name) { fail('Bạn nhập giúp mình tên nhé.'); return; }
     if (!/^0\d{9}$/.test(zalo)) { fail('Số Zalo cần đủ 10 số, bắt đầu bằng 0.'); return; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fail('Email chưa đúng, sửa lại hoặc để trống.'); return; }
-    var btn = $('regBtn'), label = 'Lấy mã QR 199K →'; btn.disabled = true; btn.textContent = 'Đang xử lý…';
+    var btn = $('regBtn'), label = 'Lấy mã QR 99K →'; btn.disabled = true; btn.textContent = 'Đang xử lý…';
     fetch('api/xay-kenh-buoi-dang-ky', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ name:name, zalo:zalo, email:email }) })
       .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
       .then(function(res){

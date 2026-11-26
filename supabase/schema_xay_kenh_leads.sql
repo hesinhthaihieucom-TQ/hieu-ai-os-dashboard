@@ -19,9 +19,9 @@ alter table xay_kenh_leads enable row level security;
 create index if not exists xay_kenh_leads_created_idx on xay_kenh_leads (created_at desc);
 create index if not exists xay_kenh_leads_recommended_idx on xay_kenh_leads (recommended);
 
--- Đăng ký buổi chia sẻ 29/11 (phí cam kết năng lượng 199K) — api/xay-kenh-buoi-dang-ky.js.
+-- Đăng ký buổi chia sẻ 29/11 (phí cam kết năng lượng 99K) — api/xay-kenh-buoi-dang-ky.js.
 -- ref là mã trong nội dung CK "SEVQR BUOI29 <ref>"; cố ý KHÔNG bắt đầu bằng XNH/SPS/CRM/SPUP để webhook SePay
--- không nhận nhầm sang app nào (199.000đ trùng giá Sổ Dòng Tiền / 21 Ngày Giải Nghiệp) — giao dịch này rơi vào
+-- không nhận nhầm sang app nào (tiền tố lạ) — giao dịch này rơi vào
 -- sepay_transactions với status unmatched_code, Quỳnh đối chiếu tay theo ref.
 create table if not exists xay_kenh_buoi_dang_ky (
   id uuid primary key default gen_random_uuid(),
@@ -29,10 +29,13 @@ create table if not exists xay_kenh_buoi_dang_ky (
   zalo text not null,
   email text,
   ref text not null unique,
-  amount integer not null default 199000,
+  amount integer not null default 99000,
   status text not null default 'cho_thanh_toan', -- cho_thanh_toan | da_thanh_toan | hoan_tien
   note text,
   created_at timestamptz not null default now()
 );
 alter table xay_kenh_buoi_dang_ky enable row level security;
 create index if not exists xay_kenh_buoi_dang_ky_created_idx on xay_kenh_buoi_dang_ky (created_at desc);
+
+-- Đổi phí buổi 29/11 từ 199K xuống 99K (2026-11-26): bảng đã tạo với default cũ thì chạy dòng này.
+alter table xay_kenh_buoi_dang_ky alter column amount set default 99000;
