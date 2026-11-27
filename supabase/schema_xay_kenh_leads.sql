@@ -29,7 +29,7 @@ create table if not exists xay_kenh_buoi_dang_ky (
   zalo text not null,
   email text,
   ref text not null unique,
-  amount integer not null default 99000,
+  amount integer not null default 79000,
   status text not null default 'cho_thanh_toan', -- cho_thanh_toan | da_thanh_toan | hoan_tien
   note text,
   created_at timestamptz not null default now()
@@ -73,3 +73,6 @@ drop trigger if exists xay_kenh_app_bonus on public.profiles;
 create trigger xay_kenh_app_bonus
   after insert on public.profiles
   for each row execute procedure public.xay_kenh_grant_app_bonus();
+
+-- Đổi phí buổi 29/11 từ 99K xuống 79K (2026-11-27): bảng đã tạo với default cũ thì chạy dòng này.
+alter table xay_kenh_buoi_dang_ky alter column amount set default 79000;

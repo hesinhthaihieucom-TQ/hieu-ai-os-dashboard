@@ -132,10 +132,10 @@
     <div class="lp-price-card" style="margin-top:16px;">
       <div class="lp-price-stack">
         <div class="lp-price-label">Phí cam kết năng lượng</div>
-        <div class="lp-price-new">99K</div>
+        <div class="lp-price-new">79K</div>
         <div class="lp-price-save">Đây là <b>phí cam kết năng lượng</b>, để mọi người kỷ luật vào: đã đăng ký là có mặt và làm theo.</div>
       </div>
-      <a class="lp-cta lp-cta-pulse" style="margin-top:16px;" href="#dang-ky">Đăng ký giữ chỗ 99K →</a>
+      <a class="lp-cta lp-cta-pulse" style="margin-top:16px;" href="#dang-ky">Đăng ký giữ chỗ 79K →</a>
       <div class="lp-price-micro">⏰ Đăng ký trước buổi 29/11 · Link Zoom gửi qua Zalo sau khi xác nhận</div>
       <div class="lp-price-micro">Không tham gia được? Nhắn Zalo trước buổi để Quỳnh hỗ trợ.</div>
     </div>
@@ -266,7 +266,7 @@
       <input class="lp-signup-input" type="email" id="rEmail" autocomplete="email" placeholder="email@gmail.com">
       <div class="lp-need" style="margin-top:8px;">⚠️ <b>Nhớ dùng đúng email này</b> để đăng ký app Xây Nhân Hiệu sau đó, mới được tặng 7 ngày. Dùng email khác sẽ không được tặng tự động. Thư chào mừng cũng gửi về email này.</div>
       <div class="lp-signup-error" id="regErr" hidden></div>
-      <button class="lp-cta" id="regBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Lấy mã QR 99K →</button>
+      <button class="lp-cta" id="regBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Lấy mã QR 79K →</button>
     </div>
     <div class="lp-signup-card" id="payWrap" hidden></div>
   </section>
@@ -491,11 +491,11 @@
 
   load(); route();
 
-  // ===== Đăng ký buổi 29/11 + mã QR 99K =====
+  // ===== Đăng ký buổi 29/11 + mã QR 79K =====
   // Nội dung CK "SEVQR BUOI29 <mã>": SEVQR để VietinBank báo biến động; BUOI29 + mã riêng không dính tiền tố app nào
   // BUOI29 + mã riêng không dính tiền tố app nào nên webhook không tự kích hoạt gì, Quỳnh đối chiếu theo mã.
   var BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
-  var AMOUNT = 99000, REG_KEY = 'xay_kenh_buoi_v1';
+  var AMOUNT = 79000, REG_KEY = 'xay_kenh_buoi_v1';
   var ZALO_GROUP = 'https://zalo.me/g/iestml7pbiricqiyzmfa', pollT = null;
   function showPaid(name){
     clearInterval(pollT);
@@ -524,7 +524,7 @@
     var c = document.createElement('div'); c.style.textAlign = 'center';
     var img = document.createElement('img'); img.src = qr; img.alt = 'Mã VietQR VietinBank'; img.style.cssText = 'max-width:260px;width:100%;border-radius:12px;border:1px solid var(--line)';
     c.appendChild(img); w.appendChild(c);
-    var rows = [['Ngân hàng','VietinBank'],['Số tài khoản',BANK.account,BANK.account],['Chủ tài khoản',BANK.accountName],['Số tiền','99.000đ','99000'],['Nội dung CK',content,content]];
+    var rows = [['Ngân hàng','VietinBank'],['Số tài khoản',BANK.account,BANK.account],['Chủ tài khoản',BANK.accountName],['Số tiền','79.000đ','79000'],['Nội dung CK',content,content]];
     var box = document.createElement('div'); box.style.marginTop = '16px';
     rows.forEach(function(r){
       var d = document.createElement('div'); d.className = 'lp-pay-row';
@@ -553,7 +553,7 @@
     if (!name) { fail('Bạn nhập giúp mình tên nhé.'); return; }
     if (!/^0\d{9}$/.test(zalo)) { fail('Số Zalo cần đủ 10 số, bắt đầu bằng 0.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fail('Bạn nhập email giúp mình để nhận thư chào mừng nhé.'); return; }
-    var btn = $('regBtn'), label = 'Lấy mã QR 99K →'; btn.disabled = true; btn.textContent = 'Đang xử lý…';
+    var btn = $('regBtn'), label = 'Lấy mã QR 79K →'; btn.disabled = true; btn.textContent = 'Đang xử lý…';
     fetch('api/xay-kenh-buoi-dang-ky', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ name:name, zalo:zalo, email:email }) })
       .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
       .then(function(res){

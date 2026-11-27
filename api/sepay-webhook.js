@@ -401,7 +401,8 @@ async function supabaseAdmin(path, opts = {}) {
 
 // Buổi chia sẻ 29/11 (xay-kenh/): mã 6 ký tự trong nội dung CK "SEVQR BUOI29 <mã>". Bảng chữ cái của mã (xem
 // api/xay-kenh-buoi-dang-ky.js) cố ý bỏ S/X/I/L/O/0/1 để không bao giờ khớp được XNH/SPS/CRM/SPUP/GN21.
-const XAY_KENH_BUOI_AMOUNT = 99000;
+// 79.000đ là giá hiện tại (đổi từ 99.000đ ngày 2026-11-27); vẫn nhận 99.000đ để QR cũ đã tạo trước đó không bị kẹt.
+const XAY_KENH_BUOI_AMOUNTS = new Set([79000, 99000]);
 const XAY_KENH_ZALO_GROUP = 'https://zalo.me/g/iestml7pbiricqiyzmfa';
 function extractBuoiRefCode(content) {
   const m = /BUOI29\s*([A-Z0-9]{6})/i.exec(content || '');
@@ -455,7 +456,7 @@ module.exports = async (req, res) => {
     const buoiRef = extractBuoiRefCode(content);
     if (buoiRef) {
       let buoiStatus = 'unmatched_code';
-      if (Number(transferAmount) !== XAY_KENH_BUOI_AMOUNT) {
+      if (!XAY_KENH_BUOI_AMOUNTS.has(Number(transferAmount))) {
         buoiStatus = 'unmatched_amount';
       } else {
         const upd = await supabaseAdmin(`xay_kenh_buoi_dang_ky?ref=eq.${buoiRef}&status=eq.cho_thanh_toan`, {
