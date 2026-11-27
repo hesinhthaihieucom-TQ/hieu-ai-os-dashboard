@@ -473,7 +473,7 @@ module.exports = async (req, res) => {
               await sendEmail({
                 to: rows[0].email,
                 subject: 'Chào mừng bạn đến buổi chia sẻ Facebook 19h30 tối 29/11',
-                html: `<p>Chào ${escHtml(rows[0].name)},</p><p>Mình đã nhận được phí cam kết của bạn. Chào mừng bạn đến buổi chia sẻ xây kênh Facebook qua Zoom lúc <b>19h30 tối 29/11</b>.</p><p>Bạn vào nhóm Zalo của buổi này để nhận link Zoom và thông tin:<br><a href="${XAY_KENH_ZALO_GROUP}">${XAY_KENH_ZALO_GROUP}</a></p><p>Hẹn gặp bạn,<br>Tú Quỳnh</p>`,
+                html: `<p>Chào ${escHtml(rows[0].name)},</p><p>Mình đã nhận được phí cam kết của bạn. Chào mừng bạn đến buổi chia sẻ xây kênh Facebook qua Zoom lúc <b>19h30 tối 29/11</b>.</p><p><b>👉 Việc cần làm ngay: vào nhóm Zalo</b> để nhận link Zoom và thông tin buổi:<br><a href="${XAY_KENH_ZALO_GROUP}" style="display:inline-block;margin-top:6px;background:#EA580C;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold">Vào nhóm Zalo buổi 29/11</a></p><p><b>Chuẩn bị cho buổi:</b> mở sẵn trang Facebook hoặc kênh bạn đang làm để mình chỉ thẳng vào đó.</p><p><b>Trong lúc chờ buổi, bạn có thể xem thêm:</b></p><ul><li>App Xây Nhân Hiệu (sẽ được hướng dẫn dùng trong buổi): <a href="https://hesinhthaihieu.com/webxaynhanhieu/lp/">hesinhthaihieu.com/webxaynhanhieu/lp/</a></li><li>Khoá Làm Chủ Edit Video Bằng AI: <a href="https://hesinhthaihieu.com/edit-video-ai/lp/">hesinhthaihieu.com/edit-video-ai/lp/</a></li></ul><p>Hẹn gặp bạn,<br>Tú Quỳnh</p>`,
               });
             } catch (e) { /* bỏ qua */ }
           }
