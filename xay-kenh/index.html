@@ -258,7 +258,7 @@
       <input class="lp-signup-input" type="text" id="rName" autocomplete="name" placeholder="Ví dụ: Lan Anh">
       <label class="lp-signup-label" for="rZalo">Số Zalo *</label>
       <input class="lp-signup-input" type="tel" id="rZalo" autocomplete="tel" inputmode="numeric" placeholder="0901234567">
-      <label class="lp-signup-label" for="rEmail">Email (không bắt buộc)</label>
+      <label class="lp-signup-label" for="rEmail">Email *</label>
       <input class="lp-signup-input" type="email" id="rEmail" autocomplete="email" placeholder="email@gmail.com">
       <div class="lp-signup-error" id="regErr" hidden></div>
       <button class="lp-cta" id="regBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Lấy mã QR 99K →</button>
@@ -546,7 +546,7 @@
     function fail(m){ err.textContent = m; err.hidden = false; }
     if (!name) { fail('Bạn nhập giúp mình tên nhé.'); return; }
     if (!/^0\d{9}$/.test(zalo)) { fail('Số Zalo cần đủ 10 số, bắt đầu bằng 0.'); return; }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fail('Email chưa đúng, sửa lại hoặc để trống.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fail('Bạn nhập email giúp mình để nhận thư chào mừng nhé.'); return; }
     var btn = $('regBtn'), label = 'Lấy mã QR 99K →'; btn.disabled = true; btn.textContent = 'Đang xử lý…';
     fetch('api/xay-kenh-buoi-dang-ky', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ name:name, zalo:zalo, email:email }) })
       .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })

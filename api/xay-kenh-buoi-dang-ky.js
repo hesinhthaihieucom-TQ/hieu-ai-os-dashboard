@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
   const email = String(b.email || '').trim().slice(0, 160);
   if (!name) { res.status(400).json({ error: 'Vui lòng nhập tên.' }); return; }
   if (!/^0\d{9}$/.test(zalo)) { res.status(400).json({ error: 'Số Zalo cần đủ 10 số, bắt đầu bằng 0.' }); return; }
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { res.status(400).json({ error: 'Email chưa đúng.' }); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { res.status(400).json({ error: 'Vui lòng nhập email để nhận thư chào mừng.' }); return; }
 
   // Mã trùng (unique) cực hiếm — thử lại vài lần là đủ.
   let ref = null;
@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
     try {
       const r = await supabaseAdmin('xay_kenh_buoi_dang_ky', {
         method: 'POST',
-        body: JSON.stringify({ name, zalo, email: email || null, ref: candidate, amount: 99000 }),
+        body: JSON.stringify({ name, zalo, email, ref: candidate, amount: 99000 }),
         prefer: 'return=minimal',
       });
       if (r.ok) ref = candidate;
