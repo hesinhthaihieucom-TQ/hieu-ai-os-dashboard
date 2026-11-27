@@ -125,7 +125,11 @@
       <div class="xk-tl-item"><div class="xk-tl-time">21h10</div><div class="xk-tl-card"><span class="ic">✂️</span><div><b>Demo edit video bằng AI</b><span class="s">Quay thô thành Reels nhanh</span></div></div></div>
       <div class="xk-tl-item"><div class="xk-tl-time">21h20</div><div class="xk-tl-card"><span class="ic">🙋</span><div><b>Hỏi đáp</b><span class="s">Hỏi thẳng về kênh của bạn</span></div></div></div>
     </div>
-    <div class="lp-price-card" style="margin-top:26px;">
+    <div class="xk-icard" style="margin-top:22px;text-align:left;display:flex;gap:14px;align-items:center;border:2px solid #FDBA74;background:#FFF7ED;">
+      <span class="ic" style="margin:0;font-size:40px;">🎁</span>
+      <div><b>Tặng 7 ngày dùng app Xây Nhân Hiệu</b><span class="s">Định vị, viết content, lịch đăng bài. Đăng ký app bằng đúng email bạn dùng ở đây là được tặng tự động.</span></div>
+    </div>
+    <div class="lp-price-card" style="margin-top:16px;">
       <div class="lp-price-stack">
         <div class="lp-price-label">Phí cam kết năng lượng</div>
         <div class="lp-price-new">99K</div>
@@ -260,6 +264,7 @@
       <input class="lp-signup-input" type="tel" id="rZalo" autocomplete="tel" inputmode="numeric" placeholder="0901234567">
       <label class="lp-signup-label" for="rEmail">Email *</label>
       <input class="lp-signup-input" type="email" id="rEmail" autocomplete="email" placeholder="email@gmail.com">
+      <div class="lp-price-micro" style="text-align:left;margin-top:6px;">Dùng email này để nhận quà 7 ngày dùng app Xây Nhân Hiệu và thư chào mừng.</div>
       <div class="lp-signup-error" id="regErr" hidden></div>
       <button class="lp-cta" id="regBtn" style="width:100%;margin-top:14px;border:none;cursor:pointer;">Lấy mã QR 99K →</button>
     </div>
@@ -499,6 +504,7 @@
     var h = document.createElement('div'); h.style.cssText = 'font-size:44px;line-height:1'; h.textContent = '🎉'; c.appendChild(h);
     var t = document.createElement('h3'); t.style.cssText = 'margin:10px 0 8px;font-size:22px'; t.textContent = 'Chào mừng ' + (name || 'bạn') + '!'; c.appendChild(t);
     var p = document.createElement('p'); p.style.margin = '0 0 16px'; p.textContent = 'Bạn đã giữ chỗ thành công buổi chia sẻ 19h30 tối 29/11. Vào nhóm Zalo để nhận link Zoom và thông tin buổi.'; c.appendChild(p);
+    var gp = document.createElement('p'); gp.style.cssText = 'margin:0 0 16px;font-size:15.5px'; gp.appendChild(document.createTextNode('🎁 Quà tặng: 7 ngày dùng app Xây Nhân Hiệu. Đăng ký hoặc đăng nhập app bằng đúng email bạn vừa dùng tại ')); var ga = document.createElement('a'); ga.href = 'https://hesinhthaihieu.com/webxaynhanhieu/'; ga.target = '_blank'; ga.rel = 'noopener'; ga.textContent = 'hesinhthaihieu.com/webxaynhanhieu'; gp.appendChild(ga); c.appendChild(gp);
     var g = document.createElement('a'); g.className = 'lp-cta'; g.style.cssText = 'display:block;text-align:center'; g.target = '_blank'; g.rel = 'noopener';
     g.href = ZALO_GROUP; g.textContent = 'Vào nhóm Zalo buổi 29/11 →'; c.appendChild(g);
     w.appendChild(c); w.scrollIntoView({ behavior:'smooth', block:'center' });

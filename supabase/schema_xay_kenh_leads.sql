@@ -39,3 +39,37 @@ create index if not exists xay_kenh_buoi_dang_ky_created_idx on xay_kenh_buoi_da
 
 -- Đổi phí buổi 29/11 từ 199K xuống 99K (2026-11-26): bảng đã tạo với default cũ thì chạy dòng này.
 alter table xay_kenh_buoi_dang_ky alter column amount set default 99000;
+
+-- Quà tặng 7 ngày dùng app Xây Nhân Hiệu cho người đã chuyển khoản buổi 29/11 (2026-11-27, chị Quỳnh chốt "cách 1: tự động").
+-- Cần schema_core.sql đã chạy (bảng profiles). Trần lượt AI KHÔNG đổi: tài khoản mới vẫn có trial_ai_limit 50 (xem handle_new_user).
+-- Hai đường tặng: (1) đã có tài khoản app cùng email lúc chuyển khoản -> api/sepay-webhook.js cộng 7 ngày; (2) đăng ký app SAU khi
+-- đã trả phí buổi -> trigger bên dưới đặt access_until = now() + 7 ngày. Cột app_bonus_granted_at chống tặng 2 lần.
+alter table xay_kenh_buoi_dang_ky add column if not exists app_bonus_granted_at timestamptz;
+
+create or replace function public.xay_kenh_grant_app_bonus()
+returns trigger as $$
+declare
+  v_id uuid;
+begin
+  -- Tuyệt đối không được làm vỡ việc đăng ký tài khoản (trigger này chạy cùng giao dịch với handle_new_user):
+  -- mọi lỗi đều nuốt im, tệ nhất là khách không được tặng tự động và chị Quỳnh tặng tay.
+  begin
+    if new.email is null then return new; end if;
+    select id into v_id from public.xay_kenh_buoi_dang_ky
+      where lower(email) = lower(new.email) and status = 'da_thanh_toan' and app_bonus_granted_at is null
+      order by created_at limit 1;
+    if v_id is not null then
+      update public.profiles set access_until = now() + interval '7 days' where id = new.id;
+      update public.xay_kenh_buoi_dang_ky set app_bonus_granted_at = now() where id = v_id;
+    end if;
+  exception when others then
+    null;
+  end;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+
+drop trigger if exists xay_kenh_app_bonus on public.profiles;
+create trigger xay_kenh_app_bonus
+  after insert on public.profiles
+  for each row execute procedure public.xay_kenh_grant_app_bonus();
