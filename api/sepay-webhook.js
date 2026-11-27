@@ -399,6 +399,15 @@ async function supabaseAdmin(path, opts = {}) {
   }
 }
 
+// Buổi chia sẻ 29/11 (xay-kenh/): mã 6 ký tự trong nội dung CK "SEVQR BUOI29 <mã>". Bảng chữ cái của mã (xem
+// api/xay-kenh-buoi-dang-ky.js) cố ý bỏ S/X/I/L/O/0/1 để không bao giờ khớp được XNH/SPS/CRM/SPUP/GN21.
+const XAY_KENH_BUOI_AMOUNT = 99000;
+const XAY_KENH_ZALO_GROUP = 'https://zalo.me/g/iestml7pbiricqiyzmfa';
+function extractBuoiRefCode(content) {
+  const m = /BUOI29\s*([A-Z0-9]{6})/i.exec(content || '');
+  return m ? m[1].toUpperCase() : null;
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ success: false }); return; }
 
@@ -438,6 +447,52 @@ module.exports = async (req, res) => {
         res.status(200).json({ success: true });
         return;
       }
+    }
+
+    // Buổi chia sẻ 29/11 (trang xay-kenh/, nội dung CK "SEVQR BUOI29 <mã 6 ký tự>", 99.000đ) — nhánh RIÊNG, đứng
+    // trước mọi nhánh app khác và return luôn, nên không thể kích hoạt nhầm gói của app nào. Chỉ đánh dấu
+    // da_thanh_toan trong xay_kenh_buoi_dang_ky (chỉ chuyển từ cho_thanh_toan, nên SePay gửi lại không gây gì thêm).
+    const buoiRef = extractBuoiRefCode(content);
+    if (buoiRef) {
+      let buoiStatus = 'unmatched_code';
+      if (Number(transferAmount) !== XAY_KENH_BUOI_AMOUNT) {
+        buoiStatus = 'unmatched_amount';
+      } else {
+        const upd = await supabaseAdmin(`xay_kenh_buoi_dang_ky?ref=eq.${buoiRef}&status=eq.cho_thanh_toan`, {
+          method: 'PATCH',
+          prefer: 'return=representation',
+          body: JSON.stringify({ status: 'da_thanh_toan' }),
+        });
+        const rows = upd.ok ? await upd.json() : [];
+        if (rows[0]) {
+          buoiStatus = 'matched';
+          // Email chào mừng + link nhóm Zalo — chỉ khi khách có điền email VÀ đã cấu hình Resend; thất bại cũng
+          // không ảnh hưởng gì (trang sẽ tự hiện lời chào + nút vào nhóm khi khách đang mở).
+          if (rows[0].email) {
+            try {
+              await sendEmail({
+                to: rows[0].email,
+                subject: 'Chào mừng bạn đến buổi chia sẻ Facebook 19h30 tối 29/11',
+                html: `<p>Chào ${escHtml(rows[0].name)},</p><p>Mình đã nhận được phí cam kết của bạn. Chào mừng bạn đến buổi chia sẻ xây kênh Facebook qua Zoom lúc <b>19h30 tối 29/11</b>.</p><p>Bạn vào nhóm Zalo của buổi này để nhận link Zoom và thông tin:<br><a href="${XAY_KENH_ZALO_GROUP}">${XAY_KENH_ZALO_GROUP}</a></p><p>Hẹn gặp bạn,<br>Tú Quỳnh</p>`,
+              });
+            } catch (e) { /* bỏ qua */ }
+          }
+        } else {
+          buoiStatus = 'unmatched_code'; // không có mã này, hoặc đã được đánh dấu rồi
+        }
+      }
+      await supabaseAdmin('sepay_transactions', {
+        method: 'POST',
+        prefer: 'return=minimal',
+        body: JSON.stringify({
+          sepay_id: sepayId || null, gateway: gateway || null, transaction_date: transactionDate || null,
+          account_number: accountNumber || null, transfer_amount: transferAmount || null, content: content || null,
+          ref_code_found: buoiRef, matched_profile_id: null, matched_product_order_id: null,
+          days_granted: null, topup_luot_granted: null, status: buoiStatus,
+        }),
+      });
+      res.status(200).json({ success: true });
+      return;
     }
 
     const refCode = extractRefCode(content);

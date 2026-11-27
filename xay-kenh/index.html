@@ -491,6 +491,25 @@
   // BUOI29 + mã riêng không dính tiền tố app nào nên webhook không tự kích hoạt gì, Quỳnh đối chiếu theo mã.
   var BANK = { code:'vietinbank', account:'199339288888', accountName:'LE TU QUYNH' };
   var AMOUNT = 99000, REG_KEY = 'xay_kenh_buoi_v1';
+  var ZALO_GROUP = 'https://zalo.me/g/iestml7pbiricqiyzmfa', pollT = null;
+  function showPaid(name){
+    clearInterval(pollT);
+    var w = $('payWrap'); w.hidden = false; $('regWrap').hidden = true; w.innerHTML = '';
+    var c = document.createElement('div'); c.style.textAlign = 'center';
+    var h = document.createElement('div'); h.style.cssText = 'font-size:44px;line-height:1'; h.textContent = '🎉'; c.appendChild(h);
+    var t = document.createElement('h3'); t.style.cssText = 'margin:10px 0 8px;font-size:22px'; t.textContent = 'Chào mừng ' + (name || 'bạn') + '!'; c.appendChild(t);
+    var p = document.createElement('p'); p.style.margin = '0 0 16px'; p.textContent = 'Bạn đã giữ chỗ thành công buổi chia sẻ 19h30 tối 29/11. Vào nhóm Zalo để nhận link Zoom và thông tin buổi.'; c.appendChild(p);
+    var g = document.createElement('a'); g.className = 'lp-cta'; g.style.cssText = 'display:block;text-align:center'; g.target = '_blank'; g.rel = 'noopener';
+    g.href = ZALO_GROUP; g.textContent = 'Vào nhóm Zalo buổi 29/11 →'; c.appendChild(g);
+    w.appendChild(c); w.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+  function startPoll(ref){
+    clearInterval(pollT);
+    pollT = setInterval(function(){
+      fetch('api/xay-kenh-buoi-status?ref=' + encodeURIComponent(ref)).then(function(r){ return r.json(); })
+        .then(function(j){ if (j && j.paid) showPaid(j.name); }).catch(function(){});
+    }, 5000);
+  }
   function showPay(ref){
     var content = 'SEVQR BUOI29 ' + ref;
     var qr = 'https://img.vietqr.io/image/' + BANK.code + '-' + BANK.account + '-compact2.png?amount=' + AMOUNT + '&addInfo=' + encodeURIComponent(content) + '&accountName=' + encodeURIComponent(BANK.accountName);
@@ -511,12 +530,12 @@
     });
     w.appendChild(box);
     var note = document.createElement('div'); note.className = 'lp-shot-cap'; note.style.marginTop = '14px';
-    note.textContent = 'Giữ nguyên nội dung CK. Chuyển xong, nhắn Zalo kèm ảnh chuyển khoản để Quỳnh xác nhận và gửi link Zoom buổi 19h30 tối 29/11.';
+    note.textContent = 'Giữ nguyên nội dung CK. Chuyển xong, trang này tự nhận và hiện nút vào nhóm Zalo của buổi (thường trong vài chục giây). Cứ giữ trang mở.';
     w.appendChild(note);
     var z = document.createElement('a'); z.className = 'lp-cta'; z.style.cssText = 'display:block;text-align:center;margin-top:14px'; z.target = '_blank'; z.rel = 'noopener';
-    z.href = 'https://zalo.me/0866849193'; z.textContent = 'Nhắn Zalo xác nhận →'; w.appendChild(z);
-    var g = document.createElement('a'); g.className = 'lp-cta'; g.style.cssText = 'display:block;text-align:center;margin-top:10px;background:#fff;color:#EA580C;border:2px solid #EA580C;box-shadow:none'; g.target = '_blank'; g.rel = 'noopener';
-    g.href = 'https://zalo.me/g/iestml7pbiricqiyzmfa'; g.textContent = 'Vào nhóm Zalo buổi 29/11 →'; w.appendChild(g);
+    z.href = 'https://zalo.me/0866849193'; z.textContent = 'Chưa thấy cập nhật? Nhắn Zalo cho Quỳnh →'; w.appendChild(z);
+    var st = document.createElement('div'); st.className = 'lp-pay-status'; st.textContent = '⏳ Đang chờ chuyển khoản…'; w.appendChild(st);
+    startPoll(ref);
     w.scrollIntoView({ behavior:'smooth', block:'center' });
   }
   try { var saved = JSON.parse(localStorage.getItem(REG_KEY) || 'null'); if (saved && saved.ref) showPay(saved.ref); } catch(e){}
