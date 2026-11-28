@@ -1073,8 +1073,8 @@ function renderAuthScreen(err, successMsg){
         <label>Email</label>
         <input id="af-email" type="email" placeholder="ban@email.com" value="${esc(authFields.email)}">
         <label>Mật khẩu</label>
-        <div class="pass-field-wrap"><input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.pass)}"><span class="pass-toggle" data-pass-toggle="af-pass">Hiện</span></div>
-        ${!isLogin ? `<label>Xác nhận mật khẩu</label><div class="pass-field-wrap"><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(authFields.passConfirm)}"><span class="pass-toggle" data-pass-toggle="af-pass-confirm">Hiện</span></div>` : ''}
+        <input id="af-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.pass)}">
+        ${!isLogin ? `<label>Xác nhận mật khẩu</label><input id="af-pass-confirm" type="password" placeholder="Nhập lại mật khẩu" value="${esc(authFields.passConfirm)}">` : ''}
         ${!isLogin ? `
           <label>Bạn đã học khoá Xây Nhân Hiệu chưa?</label>
           <div class="chips" id="af-student-chips" style="margin-bottom:14px;">
@@ -1099,7 +1099,6 @@ function renderAuthScreen(err, successMsg){
   root.querySelector('#af-email').oninput = (e)=>{ authFields.email = e.target.value; };
   root.querySelector('#af-pass').oninput = (e)=>{ authFields.pass = e.target.value; };
   const confirmEl = root.querySelector('#af-pass-confirm'); if(confirmEl) confirmEl.oninput = ()=>{ authFields.passConfirm = confirmEl.value; };
-  bindPassToggles(root);
 
   root.querySelectorAll('#af-student-chips [data-student]').forEach(el=>{
     el.onclick = ()=>{ signupIsStudent = (el.getAttribute('data-student') === 'yes'); renderAuthScreen(); };
@@ -1162,9 +1161,9 @@ function renderSetNewPasswordScreen(err, successMsg){
       <div class="sub">Nhập mật khẩu mới cho tài khoản ${esc((AppState.user&&AppState.user.email)||'')}.</div>
       <div class="card">
         <label>Mật khẩu mới</label>
-        <div class="pass-field-wrap"><input id="af-new-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.newPass)}"><span class="pass-toggle" data-pass-toggle="af-new-pass">Hiện</span></div>
+        <input id="af-new-pass" type="password" placeholder="Ít nhất 6 ký tự" value="${esc(authFields.newPass)}">
         <label>Xác nhận mật khẩu mới</label>
-        <div class="pass-field-wrap"><input id="af-new-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" value="${esc(authFields.newPassConfirm)}"><span class="pass-toggle" data-pass-toggle="af-new-pass-confirm">Hiện</span></div>
+        <input id="af-new-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" value="${esc(authFields.newPassConfirm)}">
         <button class="btn btn-full" id="af-submit-new-pass">Đặt mật khẩu mới</button>
         ${err ? `<div class="error-box">${esc(err)}</div>` : ''}
         ${successMsg ? `<div class="hint-box">${esc(successMsg)}</div>` : ''}
@@ -1173,7 +1172,6 @@ function renderSetNewPasswordScreen(err, successMsg){
   `;
   root.querySelector('#af-new-pass').oninput = (e)=>{ authFields.newPass = e.target.value; };
   root.querySelector('#af-new-pass-confirm').oninput = (e)=>{ authFields.newPassConfirm = e.target.value; };
-  bindPassToggles(root);
   root.querySelector('#af-submit-new-pass').onclick = async ()=>{
     const pass = root.querySelector('#af-new-pass').value;
     const confirmPass = root.querySelector('#af-new-pass-confirm').value;

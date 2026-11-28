@@ -177,9 +177,9 @@ function render(container, ctx){
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:12px;">Đổi mật khẩu</h3>
         <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Mật khẩu mới (ít nhất 6 ký tự)</label>
-        <div class="pass-field-wrap" style="margin-bottom:10px;"><input id="tk-pass" type="password" placeholder="Mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;"><span class="pass-toggle" data-pass-toggle="tk-pass">Hiện</span></div>
+        <input id="tk-pass" type="password" placeholder="Mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;margin-bottom:10px;">
         <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Nhập lại mật khẩu mới</label>
-        <div class="pass-field-wrap" style="margin-bottom:10px;"><input id="tk-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;"><span class="pass-toggle" data-pass-toggle="tk-pass-confirm">Hiện</span></div>
+        <input id="tk-pass-confirm" type="password" placeholder="Nhập lại mật khẩu mới" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15.5px;margin-bottom:10px;">
         <button class="btn btn-sm" data-action="save-password" ${state.passwordSaving?'disabled':''}>${state.passwordSaving?'Đang đổi…':'Đổi mật khẩu'}</button>
         ${state.passwordError?`<div class="error-box" style="margin-top:10px;">${esc(state.passwordError)}</div>`:''}
         ${state.passwordSaved?`<div style="color:var(--accent);font-size:14px;margin-top:8px;">✓ Đã đổi mật khẩu thành công</div>`:''}
@@ -245,7 +245,6 @@ function render(container, ctx){
   }
 
   function bind(){
-    bindPassToggles(container);
     const copyRefBtn = container.querySelector('[data-action="copy-referral-link"]');
     if(copyRefBtn) copyRefBtn.onclick = async ()=>{
       try{ await navigator.clipboard.writeText(referralLink()); } catch(e){}
