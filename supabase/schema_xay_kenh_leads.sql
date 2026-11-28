@@ -76,3 +76,14 @@ create trigger xay_kenh_app_bonus
 
 -- Đổi phí buổi 29/11 từ 99K xuống 79K (2026-11-27): bảng đã tạo với default cũ thì chạy dòng này.
 alter table xay_kenh_buoi_dang_ky alter column amount set default 79000;
+
+-- Đếm phễu trang xay-kenh/ (2026-11-28) — api/xay-kenh-track.js. Chỉ service role ghi/đọc.
+create table if not exists xay_kenh_events (
+  id bigint generated always as identity primary key,
+  sid text not null,
+  event text not null,   -- view | form_seen | form_focus | qr_click | qr_shown
+  src text,              -- nguồn: utm_source hoặc domain referrer (facebook, zalo...)
+  created_at timestamptz not null default now()
+);
+alter table xay_kenh_events enable row level security;
+create index if not exists xay_kenh_events_created_idx on xay_kenh_events (created_at desc);

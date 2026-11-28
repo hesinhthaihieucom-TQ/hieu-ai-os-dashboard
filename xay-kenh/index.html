@@ -573,5 +573,25 @@
   });
 })();
 </script>
+<script>
+// Đếm phễu ẩn danh (api/xay-kenh-track): mỗi bước chỉ gửi 1 lần cho mỗi người. Hỏng thì im lặng.
+(function(){
+  try {
+    var sid; try { sid = localStorage.getItem('xk_sid'); if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('xk_sid', sid); } } catch(e){ sid = Math.random().toString(36).slice(2); }
+    var q = new URLSearchParams(location.search), src = q.get('utm_source') || '';
+    if (!src && document.referrer) { try { src = new URL(document.referrer).hostname.replace(/^www\./,''); } catch(e){} }
+    var sent = {};
+    function t(ev){ if (sent[ev]) return; sent[ev] = 1;
+      try { fetch('api/xay-kenh-track', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ event:ev, sid:sid, src:src }), keepalive:true }).catch(function(){}); } catch(e){} }
+    t('view');
+    var dk = document.getElementById('dang-ky');
+    if (dk && 'IntersectionObserver' in window) { var io = new IntersectionObserver(function(en){ if (en[0].isIntersecting) { t('form_seen'); io.disconnect(); } }, { threshold:0.3 }); io.observe(dk); }
+    ['rName','rZalo','rEmail'].forEach(function(id){ var el = document.getElementById(id); if (el) el.addEventListener('focus', function(){ t('form_focus'); }); });
+    var btn = document.getElementById('regBtn'); if (btn) btn.addEventListener('click', function(){ t('qr_click'); });
+    var pw = document.getElementById('payWrap');
+    if (pw && 'MutationObserver' in window) { new MutationObserver(function(){ if (!pw.hidden) t('qr_shown'); }).observe(pw, { attributes:true, attributeFilter:['hidden'] }); }
+  } catch(e){}
+})();
+</script>
 </body>
 </html>
