@@ -69,6 +69,12 @@ a{ color:inherit; }
   font-size:16px; font-family:'Be Vietnam Pro',sans-serif; background:#FDFCF8; color:var(--ink);
 }
 .auth-shell input:focus{ outline:none; border-color:var(--accent); }
+.pass-field-wrap{ position:relative; }
+.pass-field-wrap input{ padding-right:52px !important; }
+.pass-toggle{
+  position:absolute; right:14px; top:50%; transform:translateY(-50%); cursor:pointer;
+  font-size:13.5px; font-weight:700; color:var(--accent); user-select:none;
+}
 .auth-tabs{ display:flex; gap:8px; margin-bottom:10px; justify-content:center; }
 .auth-tab{ padding:8px 16px; border-radius:999px; font-size:14.5px; cursor:pointer; color:var(--ink-soft); }
 .auth-tab.active{ background:var(--accent-soft); color:var(--accent); font-weight:600; }

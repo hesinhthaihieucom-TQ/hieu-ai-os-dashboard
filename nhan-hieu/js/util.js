@@ -339,6 +339,23 @@ function startOfWeek(d){
   return dt;
 }
 
+// "Hiện/Ẩn" mật khẩu — chị Quỳnh 2026-11-28: khách gõ xong không biết mình có gõ đúng không (nhất là
+// trên điện thoại, bàn phím hay gõ nhầm), cho xem lại trước khi bấm gửi. Dùng chung cho mọi màn có ô
+// mật khẩu (đăng nhập/đăng ký, quên mật khẩu, đổi mật khẩu ở Tài khoản) — mỗi ô cần bọc trong
+// <div class="pass-field-wrap"> và thêm <span class="pass-toggle" data-pass-toggle="id-cua-input">Hiện</span>
+// ngay sau input, rồi gọi bindPassToggles(root) sau khi render xong.
+function bindPassToggles(root){
+  (root || document).querySelectorAll('[data-pass-toggle]').forEach(el=>{
+    el.onclick = ()=>{
+      const input = document.getElementById(el.getAttribute('data-pass-toggle'));
+      if(!input) return;
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      el.textContent = showing ? 'Hiện' : 'Ẩn';
+    };
+  });
+}
+
 async function callApiOnce(relativePath, body, timeoutMs){
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData && sessionData.session ? sessionData.session.access_token : null;
