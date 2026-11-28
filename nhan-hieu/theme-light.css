@@ -22,13 +22,15 @@
 body{ background:var(--bg); }
 ::selection{ background:#FDBA74; color:#111827; }
 
-/* ---- Sidebar: viết lại cho nền SÁNG (bản gốc viết cứng màu cho nền tối, không dùng biến) ---- */
-.sidebar{ border-right:1px solid var(--line); box-shadow:none; }
+/* ---- Sidebar: viết lại cho nền SÁNG (bản gốc viết cứng màu cho nền tối, không dùng biến) ----
+   Quỳnh 2026-11-28: "các phần mục lục đang bị chìm quá" — bản đầu để badge số + viền sidebar quá
+   nhạt (gần như biến mất trên nền sáng), tăng tương phản lại cho rõ. */
+.sidebar{ border-right:1px solid var(--line); box-shadow:2px 0 14px rgba(17,24,39,.045); }
 .sidebar-brand small{ color:#9CA3AF; }
 .sidebar-item{ color:#374151; }
 .sidebar-item:hover{ background:rgba(234,88,12,.07); color:var(--ink); }
 .sidebar-item.active{ background:var(--accent-soft); color:var(--accent); font-weight:700; }
-.sidebar-item .num{ background:rgba(17,24,39,.05); color:#9CA3AF; }
+.sidebar-item .num{ background:rgba(17,24,39,.08); color:#6B7280; font-weight:700; }
 .sidebar-item.active .num{ background:var(--accent); color:#fff; }
 .sidebar-foot{ color:#9CA3AF; border-top-color:var(--line); }
 .sidebar-foot .signout{ color:#6B7280; }
