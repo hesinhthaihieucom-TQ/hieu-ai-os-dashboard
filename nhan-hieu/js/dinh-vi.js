@@ -277,7 +277,17 @@ function render(container, ctx){
       <div class="source-grid">
         ${GROUPS.map((g,i)=>`<div class="source-card"><div class="ic">${i+1}</div><div class="label">${esc(g.title)}</div></div>`).join('')}
       </div>
-      <div class="btn-row" style="align-items:center;">
+
+      <div class="section" style="margin-top:20px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">📘 Ví dụ minh hoạ — không phải kết quả thật của bạn</div>
+        <div style="padding:14px 16px;background:var(--accent);border-radius:10px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:#FFEDD5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Trục chính</div>
+          <div style="color:#fff;font-size:17px;font-weight:700;">Tài chính gia đình</div>
+        </div>
+        <div style="font-size:14.5px;color:var(--ink-soft);line-height:1.6;">"Nếu tóm gọn, kênh của bạn nên được định vị là <b style="color:var(--ink);">Tài chính gia đình</b>" — và AI sẽ trả về đầy đủ: chân dung khách hàng, nỗi đau 4 tầng, 3-5 việc cần sửa ngay, lộ trình dẫn về dòng tiền... tất cả dựa đúng trên câu trả lời thật của bạn, không áp công thức chung.</div>
+      </div>
+
+      <div class="btn-row" style="align-items:center;margin-top:20px;">
         <button class="btn" data-action="start" ${state.reconstructingAnswers?'disabled':''}>${state.reconstructingAnswers?'Đang khôi phục câu trả lời…':(hasSaved?'Sửa lại câu trả lời':'Bắt đầu')}</button>
         ${!state.reconstructingAnswers?`<span style="font-size:12.5px;color:var(--ink-soft);">(tốn 8 lượt AI)</span>`:''}
         ${hasSaved?`<button class="btn-ghost btn" data-action="view-saved">Xem định vị đã lưu</button>`:''}

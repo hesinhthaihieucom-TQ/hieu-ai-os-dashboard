@@ -47,3 +47,29 @@ body{ background:var(--bg); }
 .section.highlight, .section.highlight-dark{ background:#FFF4E8; border-color:#FDE4C8; }
 .section.highlight .body b, .section.highlight-dark .body b{ color:#C2410C; }
 table.plan th{ background:#FFF4E8; }
+
+/* ---- Danh sách (ul/ol) trong mọi .section/.card/.hint-box — chị Quỳnh 2026-11-28: "các dạng liệt
+   kê dễ nhìn á". Bản gốc dùng bullet/số mặc định của trình duyệt, không có style riêng — đổi 1 lần ở
+   đây, áp dụng cho MỌI nơi dùng <ul>/<ol> (Sửa Kênh, Định Vị, Viết Content, Chấm Điểm, Dạng Content...)
+   mà không cần sửa từng file JS. */
+.section ul, .card ul, .hint-box ul,
+.section ol, .card ol, .hint-box ol{
+  list-style:none; margin:10px 0 0; padding-left:0;
+  display:flex; flex-direction:column; gap:10px;
+}
+.section ul li, .card ul li, .hint-box ul li{
+  position:relative; padding-left:26px; font-size:15.5px; line-height:1.6; color:var(--ink);
+}
+.section ul li::before, .card ul li::before, .hint-box ul li::before{
+  content:''; position:absolute; left:2px; top:7px; width:8px; height:8px; border-radius:50%; background:var(--accent);
+}
+.section ol, .card ol{ counter-reset:xnh-item; }
+.section ol li, .card ol li{
+  position:relative; padding-left:30px; font-size:15.5px; line-height:1.6; color:var(--ink);
+  counter-increment:xnh-item;
+}
+.section ol li::before{
+  content:counter(xnh-item); position:absolute; left:0; top:0; width:21px; height:21px; border-radius:50%;
+  background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
