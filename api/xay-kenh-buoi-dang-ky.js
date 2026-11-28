@@ -1,4 +1,4 @@
-// Đăng ký buổi chia sẻ 29/11 (phí cam kết năng lượng 79K) từ trang xay-kenh/. Tạo 1 dòng
+// Đăng ký buổi chia sẻ 30/11 (phí cam kết năng lượng 79K) từ trang xay-kenh/. Tạo 1 dòng
 // xay_kenh_buoi_dang_ky với mã ref ngẫu nhiên, trả ref cho trang dựng mã QR. KHÔNG kích hoạt gì tự động:
 // mã ở đây cố ý không dính tiền tố app nào (XNH/SPS/CRM/SPUP) để webhook SePay không nhận nhầm
 // (xem schema_xay_kenh_leads.sql) — Quỳnh đối chiếu sao kê theo ref rồi gửi link buổi qua Zalo.
@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
   if (to) {
     await sendEmail({
       to,
-      subject: `Đăng ký buổi 29/11: ${name} (chờ CK 79K)`,
+      subject: `Đăng ký buổi 30/11: ${name} (chờ CK 79K)`,
       html: `<p><b>${escHtml(name)}</b> — Zalo: ${escHtml(zalo)}${email ? ' — ' + escHtml(email) : ''}</p><p>Mã CK: <code>SEVQR BUOI29 ${ref}</code></p>`,
     }).catch(() => {});
   }

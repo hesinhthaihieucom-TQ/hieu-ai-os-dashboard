@@ -1,4 +1,4 @@
-// Trang xay-kenh/ hỏi mỗi vài giây: khách đã chuyển khoản buổi 29/11 chưa? (webhook SePay đánh dấu da_thanh_toan,
+// Trang xay-kenh/ hỏi mỗi vài giây: khách đã chuyển khoản buổi 30/11 chưa? (webhook SePay đánh dấu da_thanh_toan,
 // xem nhánh BUOI29 ở api/sepay-webhook.js). Mã ref là chuỗi ngẫu nhiên khó đoán, chỉ trả về paid + tên gọi ngắn,
 // không lộ Zalo/email.
 const { supabaseAdmin } = require('./_lib/supabase-admin');
