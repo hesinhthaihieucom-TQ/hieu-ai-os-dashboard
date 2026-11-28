@@ -116,7 +116,7 @@ function render(container, ctx){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
       <span class="tour-trigger" id="db-start-tour">❓ Hướng dẫn</span>
-      <div class="page-head"><h1>Đẩy Bài &amp; CTA Comment</h1><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — cho ĐỦ CẢ 5 mốc lượt xem cùng lúc, 1 lần bấm.</p>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('day-bai')}<h1>Đẩy Bài &amp; CTA Comment</h1></div><p>Gợi ý bình luận tự đăng, cách trả lời bình luận, và tài sản nên gắn — cho ĐỦ CẢ 5 mốc lượt xem cùng lúc, 1 lần bấm.</p>
       ${state.result ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
       </div>
 

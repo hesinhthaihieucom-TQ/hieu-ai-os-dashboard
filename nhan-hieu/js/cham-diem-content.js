@@ -21,7 +21,7 @@ function render(container, ctx){
 
   function html(){
     return `
-      <div class="page-head"><h1>Chấm Điểm Content</h1><p>Dán bài viết vào — AI chấm theo 6 tiêu chí: hook, chất liệu thật, giá trị, CTA, có bị "AI hoá" không${state.positioning&&state.positioning.luot1?', và khớp giọng điệu định vị':''}.</p></div>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('cham-diem-content')}<h1>Chấm Điểm Content</h1></div><p>Dán bài viết vào — AI chấm theo 6 tiêu chí: hook, chất liệu thật, giá trị, CTA, có bị "AI hoá" không${state.positioning&&state.positioning.luot1?', và khớp giọng điệu định vị':''}.</p></div>
       <div class="card">
         <textarea id="score-input" placeholder="Dán nguyên văn bài viết cần chấm vào đây...">${esc(state.text)}</textarea>
         <div class="btn-row"><button class="btn" data-action="score" ${state.loading?'disabled':''}>${state.loading?'Đang chấm…':'Chấm điểm bài này'}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 2 lượt AI)</span></div>

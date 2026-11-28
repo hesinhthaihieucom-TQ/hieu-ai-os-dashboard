@@ -29,7 +29,7 @@ function render(container, ctx){
 
   function html(){
     return `
-      <div class="page-head"><h1>Chấm Điểm Hook</h1><p>Dán 1 câu hook — AI phân tích cơ chế tâm lý, dự đoán mức độ dừng lại, và gợi ý 3 bản cải thiện.</p></div>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('cham-diem-hook')}<h1>Chấm Điểm Hook</h1></div><p>Dán 1 câu hook — AI phân tích cơ chế tâm lý, dự đoán mức độ dừng lại, và gợi ý 3 bản cải thiện.</p></div>
       <div class="card">
         <textarea id="hook-input" style="min-height:70px;" placeholder="Ví dụ: Vì sao bạn viết đều mà vẫn không ai nhớ đến?">${esc(state.text)}</textarea>
         <div class="btn-row"><button class="btn" data-action="score" ${state.loading?'disabled':''}>${state.loading?'Đang chấm…':'Chấm điểm hook này'}</button> <span style="font-size:12.5px;color:var(--ink-soft);align-self:center;">(tốn 1 lượt AI)</span></div>

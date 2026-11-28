@@ -137,7 +137,7 @@ function render(container, ctx){
 
     return `
       <span class="tour-trigger" id="vc-start-tour">❓ Hướng dẫn</span>
-      <div class="page-head"><div class="tag">Bước 4 · Viết Content</div><h1>Viết bài tự động</h1>
+      <div class="page-head"><div class="tag">Bước 4 · Viết Content</div><div style="display:flex;align-items:center;gap:14px;"><h1>Viết bài tự động</h1>${pageIconHtml('viet-content')}</div>
       <p>Nhập chủ đề/ý tưởng, hoặc bấm "Viết →" từ 1 ý tưởng ở bước khác — AI sẽ viết bài đầy đủ.</p>
       ${(state.result || state.ideaText || state.khoGocSource) ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
       </div>

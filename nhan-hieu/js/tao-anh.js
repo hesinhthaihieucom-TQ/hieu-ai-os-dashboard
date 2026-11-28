@@ -304,7 +304,7 @@ function render(container, ctx){
   function html(){
     return `
       <span class="tour-trigger" id="ta-start-tour">❓ Hướng dẫn</span>
-      <div class="page-head"><h1>Tạo Ảnh Thương Hiệu</h1><p>Dùng để tạo ảnh có chữ đăng content (dạng "Text trên ảnh") — tải ảnh nền, chọn bố cục / font / màu, điền tiêu đề, tải PNG đăng ngay.</p></div>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('tao-anh')}<h1>Tạo Ảnh Thương Hiệu</h1></div><p>Dùng để tạo ảnh có chữ đăng content (dạng "Text trên ảnh") — tải ảnh nền, chọn bố cục / font / màu, điền tiêu đề, tải PNG đăng ngay.</p></div>
       <div class="ta-layout">
         <div class="card">
           <label style="display:block;font-size:14.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Ảnh nền</label>

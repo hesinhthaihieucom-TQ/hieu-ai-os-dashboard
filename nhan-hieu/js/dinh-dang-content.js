@@ -192,7 +192,7 @@ function render(container, ctx){
     const list = filtered();
     return `
       <span class="tour-trigger" id="ddc-start-tour">❓ Hướng dẫn</span>
-      <div class="page-head"><h1>Dạng Content</h1><p>AI gợi ý 2-3 dạng phù hợp nhất với trục nội dung của bạn — vẫn hiển thị đủ các dạng còn lại để tham khảo, bạn có thể tự bấm "Chọn dạng này" ở bất kỳ dạng nào mình thấy hợp.</p></div>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('dinh-dang-content')}<h1>Dạng Content</h1></div><p>AI gợi ý 2-3 dạng phù hợp nhất với trục nội dung của bạn — vẫn hiển thị đủ các dạng còn lại để tham khảo, bạn có thể tự bấm "Chọn dạng này" ở bất kỳ dạng nào mình thấy hợp.</p></div>
       ${suggestBlock()}
       <div class="card" style="margin-bottom:20px;">
         <input type="text" id="fmt-search" placeholder="Tìm theo tên dạng content hoặc ngành, ví dụ: sức khoẻ, coach, video..." value="${esc(state.query)}"

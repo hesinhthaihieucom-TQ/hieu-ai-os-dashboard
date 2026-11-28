@@ -40,7 +40,7 @@ function render(container, ctx){
     if(state.screen==='loading') return `<div class="loading"><div class="spinner"></div><p>Đang tải…</p></div>`;
     return `
       <span class="tour-trigger" id="tcv-start-tour">❓ Hướng dẫn</span>
-      <div class="page-head"><h1>Phân Tích &amp; Tái Chế Content Viral</h1>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('tai-che-viral')}<h1>Phân Tích &amp; Tái Chế Content Viral</h1></div>
       <p>Dán 1 bài/video đang viral, để AI mổ xẻ đúng lý do nó thành công — rồi áp dụng chính cấu trúc tâm lý đó cho chủ đề của bạn.</p>
       ${(state.phanTich || state.viralText) ? `<span class="btn-ghost btn btn-sm" data-action="reset-draft" style="margin-top:8px;">Reset, làm bài mới</span>` : ''}
       </div>

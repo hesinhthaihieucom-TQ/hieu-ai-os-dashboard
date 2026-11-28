@@ -510,7 +510,7 @@ function render(container, ctx){
     </div>`;
     return `
       <span class="tour-trigger" id="ld-start-tour">❓ Hướng dẫn</span>
-      <div class="page-head"><div class="tag">Bước 5 · Lịch Đăng Bài</div><h1>Lịch đăng bài theo tuần</h1></div>
+      <div class="page-head"><div class="tag">Bước 5 · Lịch Đăng Bài</div><div style="display:flex;align-items:center;gap:14px;"><h1>Lịch đăng bài theo tuần</h1>${pageIconHtml('lich-dang')}</div></div>
       <div class="tab-row">
         <div class="tab-btn ${state.tab==='lich'?'active':''}" data-tab="lich">Lịch</div>
         <div class="tab-btn ${state.tab==='thong-bao'?'active':''}" data-tab="thong-bao">Thông báo &amp; giờ đăng</div>

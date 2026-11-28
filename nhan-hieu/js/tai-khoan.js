@@ -149,7 +149,7 @@ function render(container, ctx){
 
   function html(){
     return `
-      <div class="page-head"><h1>Tài khoản</h1><p>Thông tin đăng nhập, ảnh đại diện, và cách lượt AI được tính để bạn tự lên kế hoạch dùng trong tháng.</p></div>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('tai-khoan')}<h1>Tài khoản</h1></div><p>Thông tin đăng nhập, ảnh đại diện, và cách lượt AI được tính để bạn tự lên kế hoạch dùng trong tháng.</p></div>
 
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:12px;">Hồ sơ</h3>

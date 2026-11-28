@@ -142,7 +142,7 @@ function render(container, ctx){
     const cover = r.goi_y_anh_bia || {};
     const hangMuc = (Array.isArray(r.hang_muc) ? r.hang_muc : []).filter(Boolean);
     return `
-      <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><h1>Kết quả audit kênh</h1></div>
+      <div class="page-head"><div class="tag">Bước 2 · Sửa Kênh</div><div style="display:flex;align-items:center;gap:14px;"><h1>Kết quả audit kênh</h1>${pageIconHtml('sua-kenh')}</div></div>
       <div class="section highlight"><h3>Tổng điểm</h3><div class="body" style="font-size:32px;font-weight:700;">${r.tong_diem}<span style="font-size:17px;">/100</span></div></div>
       <div class="section"><h3>Điểm mạnh</h3><ul>${(Array.isArray(r.top_diem_manh)?r.top_diem_manh:[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="section"><h3>Điểm nghẽn</h3><ul>${(Array.isArray(r.top_diem_nghen)?r.top_diem_nghen:[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>

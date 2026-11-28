@@ -19,17 +19,11 @@ const STEPS = [
 const STEP_GROUP_LABEL = { once:'Làm 1 lần đầu tiên (nền tảng)', weekly:'Lặp lại mỗi khi sản xuất content mới' };
 
 // Icon minh hoạ cho từng bước — chị Quỳnh 2026-11-28: "thêm hình ảnh minh hoạ cho trực quan dễ nhìn
-// dễ học dễ làm". Dùng icon nét đơn (SVG inline, không phải emoji/ảnh ngoài) để nhất quán và nhẹ,
-// y hệt kiểu icon (.lp-ico) đã dùng ở các ladipage gần đây.
-const STEP_ICON_SVG = {
-  'dinh-vi': '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor"/>',
-  'sua-kenh': '<path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.4"/>',
-  'lich-dang': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  'viet-content': '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
-  'day-bai': '<path d="M3 17l6-6 4 4 7-8"/><path d="M15 6h5v5"/>',
-};
+// dễ học dễ làm", sau đó mở rộng "làm hết" ra mọi màn — dùng chung bộ icon PAGE_ICON_SVG/pageIconHtml
+// ở util.js (cùng 1 "công thức vẽ": SVG nét đơn, không emoji) để nhất quán xuyên suốt app, tránh định
+// nghĩa trùng icon ở 2 nơi.
 function stepIconSvg(key){
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;">${STEP_ICON_SVG[key]||''}</svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;">${PAGE_ICON_SVG[key]||''}</svg>`;
 }
 
 const IMPORTANT_NOTES = [

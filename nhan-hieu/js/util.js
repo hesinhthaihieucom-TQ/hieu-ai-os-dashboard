@@ -424,3 +424,33 @@ async function saveModuleDraft(ctx, key, data){
 async function clearModuleDraft(ctx, key){
   try{ await ctx.supabase.from('module_drafts').delete().eq('user_id', ctx.user.id).eq('module_key', key); } catch(e){}
 }
+
+// Icon minh hoạ tiêu đề từng màn — chị Quỳnh 2026-11-28: "icon minh hoạ kiểu công thức vẽ cho dễ
+// nhìn, làm hết đi". Dùng chung 1 "công thức vẽ" cho mọi icon (SVG nét đơn, viewBox 24x24, stroke
+// currentColor 1.6, không fill, không emoji) để nhất quán xuyên suốt app — đặt trong util.js vì dùng
+// chung nhiều module, giống bindPassToggles trước đây. Key khớp đúng route key đăng ký ở window.Modules.
+const PAGE_ICON_SVG = {
+  'dinh-vi': '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor"/>',
+  'sua-kenh': '<path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.4"/>',
+  'dinh-dang-content': '<rect x="3" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.2"/>',
+  'kho-content': '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M9.5 12h5"/>',
+  'kho-hook': '<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
+  'viet-content': '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  'tai-che-viral': '<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 16H3v5"/>',
+  'cham-diem-content': '<path d="m12 2.5 2.9 6 6.6 1-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.2 1.2-6.5-4.8-4.6 6.6-1Z"/>',
+  'cham-diem-hook': '<path d="m12 2.5 2.9 6 6.6 1-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.2 1.2-6.5-4.8-4.6 6.6-1Z"/>',
+  'lich-dang': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  'day-bai': '<path d="M3 17l6-6 4 4 7-8"/><path d="M15 6h5v5"/>',
+  'tao-anh': '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-4 4-3-3-6 6"/>',
+  'tai-khoan': '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/>',
+};
+// size mặc định 40px (khớp icon bước ở Trang chủ) — truyền size nhỏ hơn (vd 30) cho tiêu đề phụ.
+function pageIconHtml(key, size){
+  const px = size || 40;
+  const svgPx = Math.round(px * 0.475);
+  const path = PAGE_ICON_SVG[key];
+  if(!path) return '';
+  return `<div style="flex-shrink:0;width:${px}px;height:${px}px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:${svgPx}px;height:${svgPx}px;">${path}</svg>
+  </div>`;
+}

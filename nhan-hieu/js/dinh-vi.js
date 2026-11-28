@@ -268,6 +268,7 @@ function render(container, ctx){
     return `
       <span class="tour-trigger" id="dv-start-tour">❓ Hướng dẫn</span>
       <div class="page-head" style="text-align:center;">
+        <div style="display:flex;justify-content:center;margin-bottom:10px;">${pageIconHtml('dinh-vi')}</div>
         <div class="tag">Bước 1 · Định Vị</div>
         <h1>Tìm ra định vị thương hiệu chuẩn nhất</h1>
         <p>Trả lời thật 16 câu hỏi trong 5 nhóm — mất khoảng 9-11 phút. AI sẽ phân tích và trả về bản định vị đầy đủ, dùng được ngay.</p>

@@ -276,7 +276,7 @@ function render(container, ctx){
   function html(){
     return `
       <span class="tour-trigger" id="kc-start-tour">❓ Hướng dẫn</span>
-      <div class="page-head"><h1>Kho Content</h1><p>Bài đã viết, tư liệu bạn tự sưu tầm, và Kho Content Viral do đội ngũ tuyển chọn.</p></div>
+      <div class="page-head"><div style="display:flex;align-items:center;gap:14px;">${pageIconHtml('kho-content')}<h1>Kho Content</h1></div><p>Bài đã viết, tư liệu bạn tự sưu tầm, và Kho Content Viral do đội ngũ tuyển chọn.</p></div>
       <div class="tab-row">
         <div class="tab-btn ${state.tab==='da-viet'?'active':''}" data-tab="da-viet">Bài đã viết (${state.posts.length})</div>
         <div class="tab-btn ${state.tab==='kho-toi'?'active':''}" data-tab="kho-toi">Kho của tôi (${state.personalBank.length})</div>
