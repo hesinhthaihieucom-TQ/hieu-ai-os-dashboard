@@ -18,6 +18,20 @@ const STEPS = [
 ];
 const STEP_GROUP_LABEL = { once:'Làm 1 lần đầu tiên (nền tảng)', weekly:'Lặp lại mỗi khi sản xuất content mới' };
 
+// Icon minh hoạ cho từng bước — chị Quỳnh 2026-11-28: "thêm hình ảnh minh hoạ cho trực quan dễ nhìn
+// dễ học dễ làm". Dùng icon nét đơn (SVG inline, không phải emoji/ảnh ngoài) để nhất quán và nhẹ,
+// y hệt kiểu icon (.lp-ico) đã dùng ở các ladipage gần đây.
+const STEP_ICON_SVG = {
+  'dinh-vi': '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor"/>',
+  'sua-kenh': '<path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.4"/>',
+  'lich-dang': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  'viet-content': '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  'day-bai': '<path d="M3 17l6-6 4 4 7-8"/><path d="M15 6h5v5"/>',
+};
+function stepIconSvg(key){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;">${STEP_ICON_SVG[key]||''}</svg>`;
+}
+
 const IMPORTANT_NOTES = [
   { icon:'🎯', text:'<b>Định Vị luôn làm trước tiên</b> — nhưng không cần trả lời hết 16 câu ngay từ đầu. Trả lời 3 câu đầu là bấm "Xem kết quả ngay" được, phần còn lại tự sửa/bổ sung dần sau đó (miễn phí, không tốn lượt) mà không cần làm lại từ đầu.' },
   { icon:'💾', text:'<b>Không lo mất dữ liệu khi chuyển trang</b> — mọi tiến trình đang làm dở (câu trả lời, bài đang viết, ảnh đã tải lên...) tự động lưu lại, quay lại vẫn còn nguyên.' },
@@ -162,8 +176,11 @@ function render(container, ctx){
           ${groupHeader}
           <div class="list-item">
             <div style="display:flex;align-items:flex-start;gap:12px;">
-              <div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:700;
-                background:${isDone?'var(--accent)':'var(--accent-soft)'};color:${isDone?'#fff':'var(--accent)'};">${isDone?'✓':i+1}</div>
+              <div style="flex-shrink:0;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
+                background:${isDone?'var(--accent)':'var(--accent-soft)'};color:${isDone?'#fff':'var(--accent)'};">
+                ${isDone?'<span style="font-size:17px;font-weight:700;">✓</span>':stepIconSvg(s.key)}
+                <span style="position:absolute;bottom:-4px;right:-4px;width:17px;height:17px;border-radius:50%;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ink-soft);">${i+1}</span>
+              </div>
               <div class="txt">
                 <b>${esc(s.label)}</b><br>
                 <span style="color:var(--ink-soft);font-size:14.5px;">${esc(s.why)}</span>

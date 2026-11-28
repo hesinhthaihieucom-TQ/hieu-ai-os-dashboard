@@ -44,6 +44,10 @@
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {
+      "source": "/nhan-hieu/theme-light.css",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
       "source": "/nhan-hieu/sw.js",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },

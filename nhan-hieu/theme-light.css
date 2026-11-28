@@ -1,0 +1,49 @@
+/* ============================================================================================
+   THEME SÁNG ẤM — đồng bộ với các ladipage gần đây (edit-video-ai/lp, huan-luyen-1-1/lp, xay-nhan-hieu-1-1/lp):
+   nền kem/trắng, chữ cam, font Be Vietnam Pro + Playfair Display. Nạp SAU style.css trong index.html,
+   chỉ đổi biến màu (:root) + ghi đè đúng những chỗ màu cứng không dùng biến (sidebar bản cũ viết cho
+   nền tối). Muốn quay lại theme cũ: bỏ dòng <link rel="stylesheet" href="theme-light.css"> trong
+   index.html — bản gốc vẫn còn nguyên trong style.css. Quỳnh 2026-11-28: "áp theo đúng kiểu ladipage".
+   ============================================================================================ */
+:root{
+  --bg: #FFF7ED;
+  --panel: #FFFFFF;
+  --ink: #111827;
+  --ink-soft: #4B5563;
+  --line: rgba(17,24,39,.10);
+  --accent: #EA580C;
+  --accent-soft: #FFEDD5;
+  --gold: #FB923C;
+  --danger: #DC2626;
+  --sidebar-bg: #FFFBF5;
+  --sidebar-ink: #111827;
+}
+
+body{ background:var(--bg); }
+::selection{ background:#FDBA74; color:#111827; }
+
+/* ---- Sidebar: viết lại cho nền SÁNG (bản gốc viết cứng màu cho nền tối, không dùng biến) ---- */
+.sidebar{ border-right:1px solid var(--line); box-shadow:none; }
+.sidebar-brand small{ color:#9CA3AF; }
+.sidebar-item{ color:#374151; }
+.sidebar-item:hover{ background:rgba(234,88,12,.07); color:var(--ink); }
+.sidebar-item.active{ background:var(--accent-soft); color:var(--accent); font-weight:700; }
+.sidebar-item .num{ background:rgba(17,24,39,.05); color:#9CA3AF; }
+.sidebar-item.active .num{ background:var(--accent); color:#fff; }
+.sidebar-foot{ color:#9CA3AF; border-top-color:var(--line); }
+.sidebar-foot .signout{ color:#6B7280; }
+.sidebar-foot .signout:hover{ color:var(--accent); }
+.topbar-mobile .menu-toggle{ background:rgba(17,24,39,.05); color:var(--ink); }
+
+/* ---- Màn đăng nhập/đăng ký: nền gradient ấm áp giống hero ladipage, thay vì phẳng 1 màu ---- */
+.auth-shell{ position:relative; isolation:isolate; }
+.auth-shell::before{
+  content:''; position:fixed; inset:0; z-index:-1;
+  background:linear-gradient(180deg,#FFF7ED 0%,#FFFFFF 62%);
+}
+.auth-shell .card{ box-shadow:0 20px 44px rgba(234,88,12,.08); }
+
+/* ---- Vài chỗ màu cứng khác trong style.css, đổi cho hợp tông ấm (không dùng biến) ---- */
+.section.highlight, .section.highlight-dark{ background:#FFF4E8; border-color:#FDE4C8; }
+.section.highlight .body b, .section.highlight-dark .body b{ color:#C2410C; }
+table.plan th{ background:#FFF4E8; }
